@@ -35,7 +35,7 @@ class TestPluginSearchBase(unittest.TestCase):
         self.assertRaises(NotImplementedError, OverridingNameSearchPlugin)
 
     def test_config_structure_ok(self):
-        """Config of a Search plugin instance must have 3 mandatory keys and one or more optional keys"""
+        """SystemConfig of a Search plugin instance must have 3 mandatory keys and one or more optional keys"""
         mandatory_keys_nbr = 2
         instance_without_optional_key = self.PluginClass({
             'api_endpoint': 'http://www.valid.url/path/to/api'
@@ -60,7 +60,7 @@ class TestPluginSearchBase(unittest.TestCase):
         )
 
     def test_config_product_type_is_a_dict(self):
-        """productType config must be a dictionary"""
+        """productType system_config must be a dictionary"""
         self.assertRaises(
             MisconfiguredError,
             self.PluginClass,
@@ -79,7 +79,7 @@ class TestPluginSearchBase(unittest.TestCase):
         }))
 
     def test_plugin_instance_config_api_endpoint_mandatory(self):
-        """A plugin instance must be constructed with a valid api_endpoint config key"""
+        """A plugin instance must be constructed with a valid api_endpoint system_config key"""
         # Makes no sense to instantiate a Search plugin without an api endpoint url
         self.assertRaises(MisconfiguredError, self.PluginClass, {})
         self.assertRaises(MisconfiguredError, self.PluginClass, {'products': {'a': 'p1', 'b': 'p2'}})
@@ -101,7 +101,7 @@ class TestPluginSearchBase(unittest.TestCase):
 
     @unittest.skip('Does not belong to this set of tests')
     def test_config_plugin_name_ok(self):
-        """Plugin name in config must be plugin class name"""
+        """Plugin name in system_config must be plugin class name"""
         instance = self.PluginClass({
             'plugin': 'SearchPlugin',
             'api_endpoint': 'http://www.valid.url/path/to/api'
@@ -110,7 +110,7 @@ class TestPluginSearchBase(unittest.TestCase):
 
     @unittest.skip('Does not belong to this set of tests')
     def test_config_plugin_exists(self):
-        """Plugin key in config should be registered in plugin list"""
+        """Plugin key in system_config should be registered in plugin list"""
         instance = self.PluginClass({
             'plugin': 'SearchPlugin',
             'api_endpoint': 'http://www.valid.url/path/to/api'

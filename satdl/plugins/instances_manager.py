@@ -65,9 +65,9 @@ class PluginInstancesManager(object):
             instance = PluginClass(instance_config[topic])
             # Each instance will be identified by its name, independently of the plugin implementation
             instance.instance_name = instance_name
-            instances.append(
-                instance
-            )
+            # Update instance priority
+            instance.priority = instance_config.get('priority', instance.priority)
+            instances.append(instance)
         return instances
 
     def __get_base_class(self, topic):

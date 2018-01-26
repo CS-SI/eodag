@@ -37,7 +37,13 @@ class HTTPDownload(Download):
             elif os.path.isfile(record_filename):
                 os.remove(record_filename)
             hook_print = lambda r, *args, **kwargs: print('\n', r.url)
-            with requests.get(url, stream=True, auth=auth, hooks={'response': hook_print}) as stream:
+            with requests.get(
+                    url,
+                    stream=True,
+                    auth=auth,
+                    hooks={'response': hook_print},
+                    params=self.config.get('dl_url_params', {})
+            ) as stream:
                 stream_size = int(stream.headers.get('content-length', 0))
                 with open(local_file_path, 'wb') as fhandle:
                     pbar = tqdm(total=stream_size, unit='KB')

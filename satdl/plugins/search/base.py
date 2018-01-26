@@ -32,11 +32,11 @@ class Search(metaclass=GeoProductDownloaderPluginMount):
             validate_url(self.config['api_endpoint'])
         except ValidationError as e:
             raise MisconfiguredError(e.message)
-        try:
-            self.priority = int(config.get('priority', self.priority))
-        except ValueError:
-            raise MisconfiguredError("'priority' must be an integer (lower value means lower priority, even for "
-                                     "negative values)")
+        # try:
+        #     self.priority = int(config.get('priority', self.priority))
+        # except ValueError:
+        #     raise MisconfiguredError("'priority' must be an integer (lower value means lower priority, even for "
+        #                              "negative values)")
 
     def query(self, *args, **kwargs):
         """Implementation of how the products must be searched goes here.

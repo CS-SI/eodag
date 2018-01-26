@@ -3,12 +3,8 @@
 # All rights reserved
 import os
 from operator import attrgetter
-from os.path import join as join_path
-from pathlib import Path
 
-from contextlib import contextmanager
-
-from satdl.config import Config
+from satdl.config import SimpleYamlProxyConfig
 from satdl.plugins.instances_manager import PluginInstancesManager
 from satdl.utils.exceptions import PluginImplementationError
 
@@ -16,151 +12,35 @@ from satdl.utils.exceptions import PluginImplementationError
 class SatImagesAPI(object):
     """An API for downloading a wide variety of geospatial products originating from different types of systems."""
 
-    def __init__(self, config_filepath=None):
-        # if config_filepath is None:
+    def __init__(self, user_conf_file_path=None, system_conf_file_path=None):
+        # if user_conf_file_path is None:
         #     config_path = Path(join_path(os.path.dirname(__file__), 'resources', 'default_config.yml'))
         # else:
-        #     config_path = Path(os.path.abspath(os.path.realpath(config_filepath)))
+        #     config_path = Path(os.path.abspath(os.path.realpath(user_conf_file_path)))
         # self.config_path = config_path
-        # self.config = Config(config_path)
-        self.config = {
-            'eocloud': {
-                'search': {
-                    'plugin': 'RestoSearch',
-                    'priority': 1000,
-                    'api_endpoint': 'http://finder.eocloud.eu/resto/api/',
-                    'products': {
-                        'Sentinel2': {
-                            'min_start_date': '2016-12-10',  # new S2 products specification
-                            'product_types': 'L1C',
-                            'instrument': None,
-                            'band2_pattern': '*B02.tif',
-                            'lms': '40',
-                        },
-                        'Landsat8': {
-                            'min_start_date': '2013-05-26',
-                            'product_types': 'L1T',
-                            'instrument': 'OLI',
-                            'band2_pattern': '*_B2.tif',
-                            'lms': '120',
-                        },
-                        'Envisat': {
-                            'min_start_date': '2002-05-17',
-                            'product_types': 'FRS',
-                            'instrument': None,
-                            'band2_pattern': '*_band_02.tif',
-                            'lms': '1200',
-                        },
-                    },
-                },
-                'download': {
-                    'plugin': 'HTTPDownload',
-                    'priority': 1000,
-                    'authenticate': True,
-                    'on_site': False,
-                    'base_uri': 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo',
-                    'outputs_prefix': '/home/adrien/workspace/geoproductsgod',
-                },
-                'auth': {
-                    'plugin': 'TokenAuth',
-                    'auth_uri': 'https://finder.eocloud.eu/resto/api/authidentity',
-                    'token_type': 'json',
-                    'credentials': {
-                        'domainName': 'cloud_00154',
-                        'userName': 'vincent.gaudissart@c-s.fr',
-                        'userPass': 'Moimoi31!',
-                    },
-                },
-            },
-            # 'thiea-landsat': {
-            #     'search': {
-            #         'plugin': 'RestoSearch',
-            #         'priority': 1,
-            #         'api_endpoint': 'https://theia-landsat.cnes.fr/resto/api/',
-            #         'products': {
-            #             'Landsat': {
-            #                 'product_types': [
-            #                     'REFLECTANCE',
-            #                     'REFLECTANCETOA',
-            #                 ],
-            #             },
-            #         },
-            #     },
-            #     'download': {
-            #         'plugin': 'HTTPDownload',
-            #         'priority': 1,
-            #         'auth': {
-            #             'method': 'basic',
-            #             'auth_uri': '',
-            #             'credentials': {
-            #                 'username': '',
-            #                 'password': '',
-            #             },
-            #         },
-            #         'issuer_id': '',
-            #     }
-            # },
-            'thiea': {
-                'search': {
-                    'plugin': 'RestoSearch',
-                    'priority': 10,
-                    'api_endpoint': 'https://theia.cnes.fr/atdistrib/resto2/api',
-                    'products': {
-                        'SpotWorldHeritage': {
-                            'product_types': 'REFLECTANCETOA',
-                            'min_start_date': '2018-01-01',
-                        },
-                        'SENTINEL2': {
-                            'product_types': 'REFLECTANCE',
-                            'min_start_date': '2018-01-01',
-                        },
-                        'Snow': {
-                            'product_types': ['REFLECTANCE', 'SNOW_MASK'],
-                            'min_start_date': '2018-01-01',
-                        },
-                    },
-                },
-                'download': {
-                    'plugin': 'HTTPDownload',
-                    'priority': 10,
-                    'authenticate': False,
-                    'base_uri': 'https://theia.cnes.fr/atdistrib/resto2',
-                    'dl_url_params': {
-                        'issuerId': 'theia'
-                    }
-                },
-                'auth': {
-                    'plugin': 'TokenAuth',
-                    'auth_uri': 'https://theia.cnes.fr/atdistrib/services/authenticate/',
-                    'credentials': {
-                        'ident': '',
-                        'pass': '',
-                    },
-                },
-            },
-            # 'scihub': {
-            #     'search': {
-            #         'plugin': 'SentinelSearch',
-            #         'priority': 0,
-            #         'api_endpoint': 'https://scihub.copernicus.eu/apihub/',
-            #         'products': {},
-            #     },
-            #     'download': {
-            #         'plugin': 'HTTPDownload',
-            #         'priority': 0,
-            #         'auth': {
-            #             'method': 'basic',
-            #             'auth_uri': '',
-            #             'credentials': {
-            #                 'username': '',
-            #                 'password': '',
-            #             },
-            #         },
-            #         'issuer_id': '',
-            #     }
-            # }
-        }
-        self.pim = PluginInstancesManager(self.config)
+        # self.system_config = SystemConfig(config_path)
+        self.system_config = SimpleYamlProxyConfig(
+            os.path.join(os.path.abspath(os.path.realpath(__file__)), '..', '..', '..', 'system_conf_default.yml')
+        )
+        if system_conf_file_path is not None:
+            # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
+            # TODO (continues) : param within an instance configuration
+            self.system_config.update(SimpleYamlProxyConfig(system_conf_file_path))
+        self.user_config = SimpleYamlProxyConfig(user_conf_file_path)
+        # By now only auth system config can be overriden by user credentials
+        for instance_name in self.user_config:
+            if instance_name in self.system_config:
+                if 'credentials' in self.user_config[instance_name]:
+                    self.system_config[instance_name]['auth'].update(self.user_config[instance_name])
+                if 'outputs_prefix' in self.user_config:
+                    user_spec = self.user_config['outputs_prefix']
+                    default_outputs_prefix = self.system_config[instance_name]['download'].setdefault(
+                        'outputs_prefix',
+                        '/data/satellites_images/'
+                    )
+                    if default_outputs_prefix != user_spec:
+                        self.system_config[instance_name]['download']['outputs_prefix'] = user_spec
+        self.pim = PluginInstancesManager(self.system_config)
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
@@ -195,7 +75,7 @@ class SatImagesAPI(object):
         if interface.authenticate:
             authenticator = self.pim.instantiate_plugin_by_config(
                 topic_name='auth',
-                topic_config=self.config[interface.instance_name]['auth']
+                topic_config=self.system_config[interface.instance_name]['auth']
             )
             authentication = authenticator.authenticate()
         try:
@@ -236,4 +116,3 @@ class SatImagesAPI(object):
     def __get_interface_query_params(self, interface, generic_query_params):
         """If a mapping should be done for the interface, do it here"""
         return generic_query_params
-

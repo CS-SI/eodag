@@ -65,24 +65,26 @@ class RestoSearch(Search):
             params=params
         )
         response.raise_for_status()
-        results = response.json()['features']
-        return self.normalize_results(results)
+        return self.normalize_results(response.json())
 
     @staticmethod
     def normalize_results(results):
         normalized = []
-        for result in results:
+        for result in results['features']:
             product = EOProduct(result)
-            if result['properties']['organisationName'] in ('CNES', 'THEIA'):
-                product.location_url_tpl = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
-                    collection=result['properties']['collection'],
-                    feature_id=result['id'],
-                )
-                product.local_filename = result['id'] + '.zip'
-            elif result['properties']['organisationName'] in ('ESA',):
+            if result['properties']['organisationName'] in ('ESA',):
                 product.location_url_tpl = '{base}' + '/{prodId}.zip'.format(
                     prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
                 )
                 product.local_filename = result['properties']['title'] + '.zip'
+            else:
+                if result['properties']['services']['download']['url']:
+                    product.location_url_tpl = result['properties']['services']['download']['url']
+                else:
+                    product.location_url_tpl = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
+                        collection=result['properties']['collection'],
+                        feature_id=result['id'],
+                    )
+                product.local_filename = result['id'] + '.zip'
             normalized.append(product)
         return normalized

@@ -1,49 +1,39 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from copy import deepcopy
+import os
+
+import yaml
+import yaml.parser
 
 
-INSTANCE_CONFIG_STRUCTURE = {
-    'search': {
-        'plugin': '',
-        'productType': {''},
-        'instanceUrl': '',
-        'additionalConfig': {}
-    },
-    'download': {
-        'plugin': '',
-        'linkInfo': '',
-    },
-    'filter': {
-        'plugin': '',
-    },
-}
+class SimpleYamlProxyConfig(object):
+    """A simple configuration class acting as a proxy to an underlying dict object as returned by yaml.load"""
 
+    def __init__(self, conf_file_path):
+        with open(os.path.abspath(os.path.realpath(conf_file_path)), 'r') as fh:
+            try:
+                self.source = yaml.load(fh)
+            except yaml.parser.ParserError as e:
+                print('Unable to load user configuration file')
+                raise e
 
-class Config(object):
-    def __init__(self, conf_path):
-        self.conf_path = conf_path
-        self.temporary = {
-            'eocloud': deepcopy(INSTANCE_CONFIG_STRUCTURE),
-            'theia': deepcopy(INSTANCE_CONFIG_STRUCTURE),
-        }
-        self.temporary['eocloud']['search'].update({
-            'plugin': 'resto',
-            'productType': {'S2L1B'}
-        })
-        self.temporary['eocloud']['download'].update({
-            'plugin': 'resto',
-            'linkInfo': 'productIdentifier',
-        })
+    def __getitem__(self, item):
+        return self.source[item]
 
-        self.temporary['theia']['search'].update({
-            'plugin': 'resto',
-            'productType': {'S2_L1C', 'S2_L2A'}
-        })
-        self.temporary['theia']['download'].update({
-            'plugin': 'resto',
-            'linkInfo': 'url',
-        })
+    def __contains__(self, item):
+        return item in self.source
 
+    def __iter__(self):
+        return iter(self.source)
 
+    def items(self):
+        return self.source.items()
+
+    def values(self):
+        return self.source.values()
+
+    def update(self, other):
+        if not isinstance(other, self.__class__):
+            raise ValueError("'{}' must be of type {}".format(other, self.__class__))
+        self.source.update(other.source)

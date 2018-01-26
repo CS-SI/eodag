@@ -16,13 +16,7 @@ class GenericAuth(Authentication):
         if not method:
             method = 'basic'
         if method == 'basic':
-            return HTTPBasicAuth(
-                self.config['auth']['credentials']['username'],
-                self.config['auth']['credentials']['password']
-            )
+            return HTTPBasicAuth(*tuple(self.config['credentials'].values()))
         if method == 'digest':
-            return HTTPDigestAuth(
-                self.config['auth']['credentials']['username'],
-                self.config['auth']['credentials']['password']
-            )
+            return HTTPDigestAuth(*tuple(self.config['credentials'].values()))
 

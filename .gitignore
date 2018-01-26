@@ -88,3 +88,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# All kind of user files (mostly configuration files with passwords)
+*/*.user*
+*.user*
