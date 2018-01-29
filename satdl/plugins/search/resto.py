@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+import logging
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -8,6 +9,9 @@ from dateutil.parser import parse as dateparse
 
 from satdl.api.product import EOProduct
 from .base import Search
+
+
+logger = logging.getLogger('satdl.plugins.search.resto')
 
 
 class RestoSearch(Search):
@@ -22,6 +26,7 @@ class RestoSearch(Search):
         )
 
     def query(self, product_type, **kwargs):
+        logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         collection = None
         for key, value in self.config['products'].items():
             if product_type in value['product_types']:
@@ -29,10 +34,15 @@ class RestoSearch(Search):
         if not collection:
             raise RuntimeError('Unknown product type')
 
-        cloud_cover = kwargs.pop('cloudCover', self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER))
+        logger.debug('Collection found for product type %s: %s', product_type, collection)
+
+        cloud_cover = kwargs.pop('maxCloudCover', self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER))
+        if not cloud_cover:
+            cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
         if cloud_cover and not 0 <= cloud_cover <= 100:
             raise RuntimeError("Invalid cloud cover criterium: '{}'. Should be a percentage (bounded in [0-100])")
         if cloud_cover > self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER):
+            logger.info('maxCloudCover query search parameter too high, capping it to %s', self.DEFAULT_MAX_CLOUD_COVER)
             cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
 
         collection_config = self.config['products'][collection]
@@ -55,20 +65,24 @@ class RestoSearch(Search):
         if end_date:
             params['completionDate'] = end_date
 
-        bbox = kwargs.pop('bbox', None)
-        if bbox:
-            params['box'] = str(bbox.reproject())
+        footprint = kwargs.pop('footprint')
+        if footprint:
+            if len(footprint.keys()) == 2:
+                # footprint will be a dict with {'lat': ..., 'lon': ...} => simply update the param dict
+                params.update(footprint)
+            elif len(footprint.keys()) == 4:
+                params['box'] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
 
-        params.update(kwargs)
-        response = requests.get(
-            self.query_url_tpl.format(collection=collection),
-            params=params
-        )
+        params.update({key: value for key, value in kwargs.items() if value is not None})
+        url = self.query_url_tpl.format(collection=collection)
+        logger.debug('Making request to %s with params : %s', url, params)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         return self.normalize_results(response.json())
 
     @staticmethod
     def normalize_results(results):
+        logger.debug('Adapting plugin results to satdl product representation')
         normalized = []
         for result in results['features']:
             product = EOProduct(result)
@@ -87,4 +101,5 @@ class RestoSearch(Search):
                     )
                 product.local_filename = result['id'] + '.zip'
             normalized.append(product)
+        logger.debug('Normalized product : %s', normalized)
         return normalized

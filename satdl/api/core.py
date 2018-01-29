@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+import logging
 import os
 from operator import attrgetter
+
+import click
 
 from satdl.config import SimpleYamlProxyConfig
 from satdl.plugins.instances_manager import PluginInstancesManager
 from satdl.utils.exceptions import PluginImplementationError
 
 
+logger = logging.getLogger('satdl.core')
+
+
 class SatImagesAPI(object):
     """An API for downloading a wide variety of geospatial products originating from different types of systems."""
 
     def __init__(self, user_conf_file_path=None, system_conf_file_path=None):
-        # if user_conf_file_path is None:
-        #     config_path = Path(join_path(os.path.dirname(__file__), 'resources', 'default_config.yml'))
-        # else:
-        #     config_path = Path(os.path.abspath(os.path.realpath(user_conf_file_path)))
-        # self.config_path = config_path
-        # self.system_config = SystemConfig(config_path)
         self.system_config = SimpleYamlProxyConfig(
             os.path.join(os.path.abspath(os.path.realpath(__file__)), '..', '..', '..', 'system_conf_default.yml')
         )
@@ -48,6 +48,7 @@ class SatImagesAPI(object):
         The interfaces are required to return a list as a result of their processing, we enforce this requirement here.
         """
         interface = self.__get_searcher()
+        logger.debug('Using interface for search: %s on instance *%s*', interface.name, interface.instance_name)
         query_params = self.__get_interface_query_params(interface, kwargs)
         results = interface.query(product_type, **query_params)
         if not isinstance(results, list):
@@ -65,14 +66,18 @@ class SatImagesAPI(object):
 
     def download_all(self, products):
         """Download all products of a search"""
-        for product in products:
-            yield self.__download(product)
+        with click.progressbar(products, length=len(products), label='Downloading products') as bar:
+            for product in bar:
+                yield self.__download(product)
 
     def __download(self, product):
         """Download a single product"""
         interface = self.__get_downloader()
+        logger.debug('Using interface for download : %s on instance *%s*', interface.name, interface.instance_name)
         authentication = None
         if interface.authenticate:
+            logger.debug('Authentication required for interface : %s on instance *%s*', interface.name,
+                         interface.instance_name)
             authenticator = self.pim.instantiate_plugin_by_config(
                 topic_name='auth',
                 topic_config=self.system_config[interface.instance_name]['auth']
@@ -81,8 +86,8 @@ class SatImagesAPI(object):
         try:
             local_filename = interface.download(product, auth=authentication)
             if local_filename is None:
-                print(
-                    'WARNING: the download method of a Download plugin should return the absolute path to the '
+                logger.debug(
+                    'The download method of a Download plugin should return the absolute path to the '
                     'downloaded resource'
                 )
             else:
@@ -97,12 +102,14 @@ class SatImagesAPI(object):
 
     def __get_searcher(self):
         """Look for a search interface to use, based on the configuration of the api"""
+        logger.debug('Looking for the appropriate Search instance to use')
         search_plugin_instances = self.pim.instantiate_configured_plugins(topic='search')
         # The searcher used will be the one with higher priority
         search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
         return search_plugin_instances[0]
 
     def __get_downloader(self):
+        logger.debug('Looking for the appropriate Download instance to use')
         dl_plugin_instances = self.pim.instantiate_configured_plugins(topic='download')
         dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
         return dl_plugin_instances[0]

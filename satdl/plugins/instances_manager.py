@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+import logging
 
 from satdl import plugins
 from satdl.plugins.authentication.base import Authentication
@@ -9,6 +10,9 @@ from satdl.plugins.download.base import Download
 from satdl.plugins.filter.base import Filter
 from satdl.plugins.search.base import Search
 from satdl.utils.import_system import import_all_modules
+
+
+logger = logging.getLogger('satdl.plugins.instances_manager')
 
 
 class PluginInstancesManager(object):
@@ -55,9 +59,11 @@ class PluginInstancesManager(object):
 
     def instantiate_configured_plugins(self, topic):
         """Instantiate the plugins"""
+        logger.debug('Creating configured *%s* plugin instances', topic.upper())
         PluginBaseClass = self.__get_base_class(topic)
         instances = []
         for instance_name, instance_config in self.instances_config.items():
+            logger.debug('Creating *%s* plugin instance with name *%s*', topic.upper(), instance_name)
             PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
                 PluginBaseClass,
                 instance_config[topic]['plugin']
@@ -83,6 +89,7 @@ class PluginInstancesManager(object):
         return PluginBaseClass
 
     def instantiate_plugin_by_config(self, topic_name, topic_config):
+        logger.debug('Creating *%s* plugin instance with config %s', topic_name.upper(), topic_config)
         PluginBaseClass = self.__get_base_class(topic_name)
         PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
             PluginBaseClass,

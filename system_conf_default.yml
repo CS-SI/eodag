@@ -1,5 +1,5 @@
 eocloud:
-#  priority: 10000
+  priority: 10000
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
@@ -79,7 +79,7 @@ theia:
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
 
 peps:
-  priority: 10000
+#  priority: 10000
   search:
     plugin: RestoSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api'

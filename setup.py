@@ -10,8 +10,11 @@ with open('README.rst') as f:
 with open('LICENSE') as f:
     license = f.read()
 
+with open('requirements.txt') as f:
+    requirements = f.readlines()
+
 setup(
-    name='gpgod',
+    name='satdl',
     version='0.1.0',
     description='A library and cli for downloading satellites images',
     long_description=readme,
@@ -19,6 +22,11 @@ setup(
     author_email='adrien.oyono@c-s.fr',
     url='',
     license=license,
-    packages=find_packages(exclude=('tests', 'docs'))
+    packages=find_packages(exclude=('tests', 'docs')),
+    install_requires=requirements,
+    entry_points='''
+        [console_scripts]
+        satdl=satdl.cli:main
+    ''',
 )
 

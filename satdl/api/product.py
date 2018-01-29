@@ -16,7 +16,7 @@ class EOProduct(object):
         self.local_filename = None
 
     def __repr__(self):
-        return 'EOProduct\n\toriginal: {}'.format(
+        return '{}'.format(
             repr(self.original_repr)
         )
 

@@ -2,13 +2,19 @@
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
 import hashlib
+import logging
 import os
+
+import click
 import requests
 from requests import HTTPError
 from tqdm import tqdm
 
 from satdl.plugins.download.base import Download
 from satdl.plugins.search.base import MisconfiguredError
+
+
+logger = logging.getLogger('satdl.plugins.download.http')
 
 
 class HTTPDownload(Download):
@@ -19,11 +25,13 @@ class HTTPDownload(Download):
             raise MisconfiguredError('{} plugin require a base_uri configuration key'.format(self.name))
         self.config.setdefault('outputs_prefix', '/tmp')
         self.config.setdefault('on_site', False)
+        logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
     def download(self, product, auth=None):
         """Download a product from resto-like platforms"""
         if not self.config['on_site']:
             url = self.__build_download_url(product, auth)
+            logger.debug('Download url: %s', url)
             filename = product.local_filename
             local_file_path = os.path.join(self.config['outputs_prefix'], filename)
             download_records = os.path.join(self.config['outputs_prefix'], '.downloaded')
@@ -47,17 +55,18 @@ class HTTPDownload(Download):
                 stream_size = int(stream.headers.get('content-length', 0))
                 with open(local_file_path, 'wb') as fhandle:
                     pbar = tqdm(total=stream_size, unit='KB')
-                    for chunk in stream.iter_content(chunk_size=64*1024):
+                    for chunk in stream.iter_content(chunk_size=64 * 1024):
                         if chunk:
                             pbar.update(len(chunk))
                             fhandle.write(chunk)
                 try:
                     stream.raise_for_status()
                 except HTTPError as e:
-                    print("Error while getting resource : %s" % e.args)
+                    logger.error("Error while getting resource : %s", e)
                 else:
                     with open(record_filename, 'w') as fh:
                         fh.write(url)
+                    logger.debug('Download recorded in %s', record_filename)
                     return local_file_path
         else:
             # Do not download data if we are on site. Instead give back the absolute path to the data
@@ -74,4 +83,3 @@ class HTTPDownload(Download):
             return url
         except Exception:
             raise RuntimeError('Product {} is incompatible with download plugin {}'.format(product, self.name))
-
