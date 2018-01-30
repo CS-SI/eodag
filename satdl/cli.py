@@ -11,8 +11,8 @@ from satdl.utils.logging import setup_logging
 @click.command()
 @click.option('--point', type=(float,) * 2, default=(None,) * 2,
               help='Search for a product on a point providing its lat and lon (in this order)')
-@click.option('--rectangle', type=(float,) * 4, default=(None,) * 4,
-              help='Search for a product on a rectangle providing its minlat, minlon, maxlat and maxlon (in this '
+@click.option('--bbox', type=(float,) * 4, default=(None,) * 4,
+              help='Search for a product on a bounding box, providing its minlat, minlon, maxlat and maxlon (in this '
                    'order)')
 @click.option('--startDate', help='Maximum age of the product')
 @click.option('--endDate', help='Minimum age of the product')
@@ -27,8 +27,8 @@ def main(producttype, **kwargs):
     if kwargs['point'] != (None,) * 2:
         point = kwargs.pop('point')
         footprint = {'lat': point[0], 'lon': point[1]}
-    elif kwargs['rectangle'] != (None,) * 4:
-        rect = kwargs.pop('rectangle')
+    elif kwargs['bbox'] != (None,) * 4:
+        rect = kwargs.pop('bbox')
         footprint = {'latmin': rect[0], 'lonmin': rect[1], 'latmax': rect[2], 'lonmax': rect[3]}
     else:
         footprint = None

@@ -1,17 +1,16 @@
 # Only known system configuration can be overridden for their credentials config key under auth config.
 # Unknown keys will simply be ignored, and the corresponding configuration not overridden.
+output_prefix:
+extract: # true or false
 peps:
-    output_prefix:
     credentials:
         email:
         password:
 theia:
-    outputs_prefix:
     credentials:
         ident:
         pass:
 eocloud:
-    outputs_prefix:
     credentials:
         domainName:
         userName:

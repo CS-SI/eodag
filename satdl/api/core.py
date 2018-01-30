@@ -4,11 +4,13 @@
 import logging
 import os
 from operator import attrgetter
+import types
 
 import click
 
 from satdl.config import SimpleYamlProxyConfig
 from satdl.plugins.instances_manager import PluginInstancesManager
+from satdl.utils import maybe_generator
 from satdl.utils.exceptions import PluginImplementationError
 
 
@@ -32,14 +34,15 @@ class SatImagesAPI(object):
             if instance_name in self.system_config:
                 if 'credentials' in self.user_config[instance_name]:
                     self.system_config[instance_name]['auth'].update(self.user_config[instance_name])
-                if 'outputs_prefix' in self.user_config:
-                    user_spec = self.user_config['outputs_prefix']
-                    default_outputs_prefix = self.system_config[instance_name]['download'].setdefault(
-                        'outputs_prefix',
-                        '/data/satellites_images/'
-                    )
-                    if default_outputs_prefix != user_spec:
-                        self.system_config[instance_name]['download']['outputs_prefix'] = user_spec
+                for key in ('outputs_prefix', 'extract'):
+                    if key in self.user_config:
+                        user_spec = self.user_config[key]
+                        default_outputs_prefix = self.system_config[instance_name]['download'].setdefault(
+                            key,
+                            '/data/satellites_images/' if key == 'outputs_prefix' else True
+                        )
+                        if default_outputs_prefix != user_spec:
+                            self.system_config[instance_name]['download'][key] = user_spec
         self.pim = PluginInstancesManager(self.system_config)
 
     def search(self, product_type, **kwargs):
@@ -78,7 +81,9 @@ class SatImagesAPI(object):
                     label='Downloading products'
             ) as bar:
                 for product in bar:
-                    yield self.__download(product)
+                    # yield self.__download(product)
+                    for path in self.__download(product):
+                        yield path
         else:
             click.echo('Empty product list, nothing to be downloaded !')
 
@@ -96,14 +101,14 @@ class SatImagesAPI(object):
             )
             authentication = authenticator.authenticate()
         try:
-            local_filename = interface.download(product, auth=authentication)
-            if local_filename is None:
-                logger.debug(
-                    'The download method of a Download plugin should return the absolute path to the '
-                    'downloaded resource'
-                )
-            else:
-                return local_filename
+            for local_filename in maybe_generator(interface.download(product, auth=authentication)):
+                if local_filename is None:
+                    logger.debug(
+                        'The download method of a Download plugin should return the absolute path to the '
+                        'downloaded resource or a generator of absolute paths to the downloaded and extracted '
+                        'resource'
+                    )
+                yield local_filename
         except TypeError as e:
             # Enforcing the requirement for download plugins to implement a download method with auth kwarg
             if any("got an unexpected keyword argument 'auth'" in arg for arg in e.args):

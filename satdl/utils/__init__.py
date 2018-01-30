@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+import types
+
 import click
 from requests.auth import AuthBase
 
@@ -45,4 +47,13 @@ class FloatRange(click.types.FloatParamType):
 
     def __repr__(self):
         return 'FloatRange(%r, %r)' % (self.min, self.max)
+
+
+def maybe_generator(obj):
+    """Generator function that get an arbitrary object and generate values from it if the object is a generator."""
+    if isinstance(obj, types.GeneratorType):
+        for elt in obj:
+            yield elt
+    else:
+        yield obj
 

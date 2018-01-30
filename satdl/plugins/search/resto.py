@@ -89,6 +89,7 @@ class RestoSearch(Search):
     def normalize_results(results):
         normalized = []
         if results['features']:
+            logger.info('Found %s products', len(results['features']))
             logger.debug('Adapting plugin results to satdl product representation')
             for result in results['features']:
                 product = EOProduct(result)

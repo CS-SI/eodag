@@ -54,7 +54,7 @@ def setup_logging(**kwargs):
             'disable_existing_loggers': False,
             'formatters': {
                 'verbose': {
-                    'format': '%(asctime)s-15s %(name)-32s [%(levelname)-8s] (%(module)-20s) %(message)s'
+                    'format': '%(asctime)s-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s'
                 },
             },
             'handlers': {
