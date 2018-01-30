@@ -66,9 +66,21 @@ class SatImagesAPI(object):
 
     def download_all(self, products):
         """Download all products of a search"""
-        with click.progressbar(products, length=len(products), label='Downloading products') as bar:
-            for product in bar:
-                yield self.__download(product)
+        if products:
+            with click.progressbar(
+                    products,
+                    fill_char='O',
+                    item_show_func=lambda prod: click.echo(
+                        'Downloaded {}'.format(prod.local_filename)
+                    ) if prod else click.echo('Missing local path to the downloaded product'),
+                    length=len(products),
+                    width=0,  # Full terminal width
+                    label='Downloading products'
+            ) as bar:
+                for product in bar:
+                    yield self.__download(product)
+        else:
+            click.echo('Empty product list, nothing to be downloaded !')
 
     def __download(self, product):
         """Download a single product"""

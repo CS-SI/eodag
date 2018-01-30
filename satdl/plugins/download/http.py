@@ -69,15 +69,17 @@ class HTTPDownload(Download):
                     logger.debug('Download recorded in %s', record_filename)
                     return local_file_path
         else:
+            logger.info('Product already present on this platform. Identifier: %s',
+                        product.original_repr['properties']['productIdentifier'])
             # Do not download data if we are on site. Instead give back the absolute path to the data
-            # TODO: this is broken
-            return product['properties']['productIdentifier']
+            return product.original_repr['properties']['productIdentifier']
 
     def __build_download_url(self, product, auth):
         try:
             url = product.location_url_tpl.format(
                 base=self.config['base_uri'],
             )
+            # TODO : This is weak !!!
             if product.original_repr['properties']['organisationName'] in ('ESA',):
                 url += '?token={}'.format(auth.token)
             return url

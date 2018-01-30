@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-import logging
-import logging.config
 
 import click
 
 from satdl.api.core import SatImagesAPI
-from satdl.utils import FloatRange
 from satdl.utils.logging import setup_logging
 
 
@@ -20,7 +17,7 @@ from satdl.utils.logging import setup_logging
 @click.option('--startDate', help='Maximum age of the product')
 @click.option('--endDate', help='Minimum age of the product')
 @click.option('--dates', type=(str, str), default=(None,) * 2, help='start and date of products (in this order)')
-@click.option('--maxcloud', help='Maximum cloud cover percentage needed for the product', type=FloatRange(0, 100))
+@click.option('--maxcloud', help='Maximum cloud cover percentage needed for the product', type=click.IntRange(0, 100))
 @click.option('--conf', help='File path to the user configuration file with its credentials',
               type=click.Path(exists=True))
 @click.option('-v', '--verbose', count=True)
