@@ -1,1 +1,4 @@
+include README.rst
 include LICENSE
+include docs/*.rst
+include satdl/resources/*

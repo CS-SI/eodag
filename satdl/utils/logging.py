@@ -46,6 +46,11 @@ def setup_logging(**kwargs):
                     'propagate': True,
                     'level': 'INFO',
                 },
+                'sentinelsat': {
+                    'handlers': ['console'],
+                    'propagate': True,
+                    'level': 'INFO',
+                },
             }
         })
     elif verbosity == 3:
@@ -66,6 +71,11 @@ def setup_logging(**kwargs):
             },
             'loggers': {
                 'satdl': {
+                    'handlers': ['console'],
+                    'propagate': True,
+                    'level': 'DEBUG',
+                },
+                'sentinelsat': {
                     'handlers': ['console'],
                     'propagate': True,
                     'level': 'DEBUG',

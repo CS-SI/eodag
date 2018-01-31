@@ -20,7 +20,7 @@ setup(
     long_description=readme,
     author="CS Systemes d'Information (CS SI)",
     author_email='adrien.oyono@c-s.fr',
-    url='',
+    url='https://bitbucket.org/geostorm/eodag',
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=requirements,

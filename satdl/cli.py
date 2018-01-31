@@ -8,28 +8,29 @@ from satdl.api.core import SatImagesAPI
 from satdl.utils.logging import setup_logging
 
 
-@click.command()
+@click.command(help='Program for searching and downloading satellite images')
 @click.option('--point', type=(float,) * 2, default=(None,) * 2,
-              help='Search for a product on a point providing its lat and lon (in this order)')
+              help='Search for a product on a point providing its lon and lat (in this order)')
 @click.option('--bbox', type=(float,) * 4, default=(None,) * 4,
-              help='Search for a product on a bounding box, providing its minlat, minlon, maxlat and maxlon (in this '
+              help='Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this '
                    'order)')
-@click.option('--startDate', help='Maximum age of the product')
-@click.option('--endDate', help='Minimum age of the product')
-@click.option('--dates', type=(str, str), default=(None,) * 2, help='start and date of products (in this order)')
+@click.option('--startDate', help='Maximum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)')
+@click.option('--endDate', help='Minimum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)')
+@click.option('--dates', type=(str, str), default=(None,) * 2,
+              help='start and date of products (in this order and in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)')
 @click.option('--maxcloud', help='Maximum cloud cover percentage needed for the product', type=click.IntRange(0, 100))
 @click.option('--conf', help='File path to the user configuration file with its credentials',
               type=click.Path(exists=True))
-@click.option('-v', '--verbose', count=True)
+@click.option('-v', '--verbose', count=True, help='Control the verbosity of the logs. For maximum verbosity, type -vvv')
 @click.argument('productType')
 def main(producttype, **kwargs):
     setup_logging(**kwargs)
     if kwargs['point'] != (None,) * 2:
         point = kwargs.pop('point')
-        footprint = {'lat': point[0], 'lon': point[1]}
+        footprint = {'lon': point[0], 'lat': point[1]}
     elif kwargs['bbox'] != (None,) * 4:
         rect = kwargs.pop('bbox')
-        footprint = {'latmin': rect[0], 'lonmin': rect[1], 'latmax': rect[2], 'lonmax': rect[3]}
+        footprint = {'lonmin': rect[0], 'latmin': rect[1], 'lonmax': rect[2], 'latmax': rect[3]}
     else:
         footprint = None
     if kwargs['dates'] != (None,) * 2:

@@ -4,7 +4,6 @@
 import logging
 import os
 from operator import attrgetter
-import types
 
 import click
 
@@ -22,14 +21,20 @@ class SatImagesAPI(object):
 
     def __init__(self, user_conf_file_path=None, system_conf_file_path=None):
         self.system_config = SimpleYamlProxyConfig(
-            os.path.join(os.path.abspath(os.path.realpath(__file__)), '..', '..', '..', 'system_conf_default.yml')
+            os.path.join(
+                os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
+                os.pardir,
+                'resources',
+                'system_conf_default.yml'
+            )
         )
         if system_conf_file_path is not None:
             # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
             # TODO (continues) : param within an instance configuration
             self.system_config.update(SimpleYamlProxyConfig(system_conf_file_path))
         self.user_config = SimpleYamlProxyConfig(user_conf_file_path)
-        # By now only auth system config can be overriden by user credentials
+
+        # Override system default config with user values for some keys
         for instance_name in self.user_config:
             if instance_name in self.system_config:
                 if 'credentials' in self.user_config[instance_name]:
@@ -52,8 +57,7 @@ class SatImagesAPI(object):
         """
         interface = self.__get_searcher()
         logger.debug('Using interface for search: %s on instance *%s*', interface.name, interface.instance_name)
-        query_params = self.__get_interface_query_params(interface, kwargs)
-        results = interface.query(product_type, **query_params)
+        results = interface.query(product_type, **kwargs)
         if not isinstance(results, list):
             raise PluginImplementationError(
                 'The query function of a Search plugin must return a list of results, got {} '
@@ -81,7 +85,6 @@ class SatImagesAPI(object):
                     label='Downloading products'
             ) as bar:
                 for product in bar:
-                    # yield self.__download(product)
                     for path in self.__download(product):
                         yield path
         else:
@@ -123,7 +126,15 @@ class SatImagesAPI(object):
         search_plugin_instances = self.pim.instantiate_configured_plugins(topic='search')
         # The searcher used will be the one with higher priority
         search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
-        return search_plugin_instances[0]
+        selected_instance = search_plugin_instances[0]
+        # For sentinel search we need credentials even for search
+        if selected_instance.name == 'SentinelSearch':
+            if 'credentials' not in self.system_config[selected_instance.instance_name]['auth']:
+                raise RuntimeError('Please provide your scihub credentials to perform a search')
+            selected_instance.config.update({
+                'credentials': self.system_config[selected_instance.instance_name]['auth']['credentials']
+            })
+        return selected_instance
 
     def __get_downloader(self):
         logger.debug('Looking for the appropriate Download instance to use')
@@ -136,7 +147,3 @@ class SatImagesAPI(object):
         for consolidator in Filter.plugins:
             if True:
                 return consolidator()
-
-    def __get_interface_query_params(self, interface, generic_query_params):
-        """If a mapping should be done for the interface, do it here"""
-        return generic_query_params

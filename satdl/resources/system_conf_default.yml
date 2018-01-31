@@ -1,5 +1,5 @@
 eocloud:
-  priority: 10000
+#  priority: 10000
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
@@ -70,7 +70,7 @@ theia:
         min_start_date: 2018-01-01
   download:
     plugin: HTTPDownload
-    authenticate: false
+    authenticate: true
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
     dl_url_params:
       issuerId: theia
@@ -92,7 +92,7 @@ peps:
         min_start_date: 2018-01-01
       S2:
         product_types: S2MSI1C
-        min_start_date: 2018-01-01
+        min_start_date: 2018-01-01T00:00:00
       S3:
         product_types:
           - OL_1_EFR___
@@ -108,7 +108,7 @@ peps:
         product_types:
           - S2MSI1C
           - S2MSI2Ap
-        min_start_date: 2018-01-01
+        min_start_date: 2018-01-01T00:00:00
   download:
     plugin: HTTPDownload
     authenticate: true
@@ -118,3 +118,20 @@ peps:
   auth:
     plugin: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
+
+scihub:
+  priority: 10000
+  search:
+    plugin: SentinelSearch
+    api_endpoint: 'https://scihub.copernicus.eu/apihub/'
+    products:
+      stub:
+        product_types: []
+        min_start_date: 2018-01-01
+  download:
+    plugin: SentinelSatDownload
+    authenticate: true
+    base_uri: 'https://scihub.copernicus.eu/apihub/'
+  auth:
+    plugin: DummyAuth
+    auth_uri: 'https://scihub.copernicus.eu/apihub/'
