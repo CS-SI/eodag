@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from satdl.plugins.base import GeoProductDownloaderPluginMount
-from satdl.utils.exceptions import ValidationError
-from satdl.utils.validators import URLValidator
+from eodag.plugins.base import GeoProductDownloaderPluginMount
+from eodag.utils.exceptions import ValidationError
+from eodag.utils.validators import URLValidator
 
 
 class Search(metaclass=GeoProductDownloaderPluginMount):
@@ -41,7 +41,7 @@ class Search(metaclass=GeoProductDownloaderPluginMount):
     def query(self, *args, **kwargs):
         """Implementation of how the products must be searched goes here.
 
-        This method must return a list of EOProduct instances (see satdl.api.product module) which will
+        This method must return a list of EOProduct instances (see eodag.api.product module) which will
         be processed by a Download plugin.
         """
         raise NotImplementedError('A Search plugin must implement a method named query')

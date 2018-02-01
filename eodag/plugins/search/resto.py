@@ -8,11 +8,11 @@ from urllib.parse import urljoin, urlparse
 import requests
 from dateutil.parser import parse as dateparse
 
-from satdl.api.product import EOProduct
+from eodag.api.product import EOProduct
 from .base import Search
 
 
-logger = logging.getLogger('satdl.plugins.search.resto')
+logger = logging.getLogger('eodag.plugins.search.resto')
 
 
 class RestoSearch(Search):
@@ -90,7 +90,7 @@ class RestoSearch(Search):
         normalized = []
         if results['features']:
             logger.info('Found %s products', len(results['features']))
-            logger.debug('Adapting plugin results to satdl product representation')
+            logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
                 product = EOProduct(result)
                 if result['properties']['organisationName'] in ('ESA',):

@@ -120,7 +120,7 @@ peps:
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 
 scihub:
-  priority: 10000
+#  priority: 10000
   search:
     plugin: SentinelSearch
     api_endpoint: 'https://scihub.copernicus.eu/apihub/'

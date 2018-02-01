@@ -7,11 +7,11 @@ import logging
 from shapely import geometry
 from sentinelsat import SentinelAPI
 
-from satdl.api.product import EOProduct
+from eodag.api.product import EOProduct
 from .base import Search
 
 
-logger = logging.getLogger('satdl.plugins.search.sentinelsat')
+logger = logging.getLogger('eodag.plugins.search.sentinelsat')
 
 
 class SentinelSearch(Search):

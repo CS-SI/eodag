@@ -3,16 +3,16 @@
 # All rights reserved
 import logging
 
-from satdl import plugins
-from satdl.plugins.authentication.base import Authentication
-from satdl.plugins.base import GeoProductDownloaderPluginMount
-from satdl.plugins.download.base import Download
-from satdl.plugins.filter.base import Filter
-from satdl.plugins.search.base import Search
-from satdl.utils.import_system import import_all_modules
+from eodag import plugins
+from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.base import GeoProductDownloaderPluginMount
+from eodag.plugins.download.base import Download
+from eodag.plugins.filter.base import Filter
+from eodag.plugins.search.base import Search
+from eodag.utils.import_system import import_all_modules
 
 
-logger = logging.getLogger('satdl.plugins.instances_manager')
+logger = logging.getLogger('eodag.plugins.instances_manager')
 
 
 class PluginInstancesManager(object):

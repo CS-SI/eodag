@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from satdl.utils.exceptions import PluginNotFoundError
+from eodag.utils.exceptions import PluginNotFoundError
 
 
 class GeoProductDownloaderPluginMount(type):

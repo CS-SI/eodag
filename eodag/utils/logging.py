@@ -17,7 +17,7 @@ def setup_logging(**kwargs):
                 },
             },
             'loggers': {
-                'satdl': {
+                'eodag': {
                     'handlers': ['null'],
                     'propagate': True,
                     'level': 'INFO',
@@ -41,7 +41,7 @@ def setup_logging(**kwargs):
                 },
             },
             'loggers': {
-                'satdl': {
+                'eodag': {
                     'handlers': ['console'],
                     'propagate': True,
                     'level': 'INFO',
@@ -70,7 +70,7 @@ def setup_logging(**kwargs):
                 },
             },
             'loggers': {
-                'satdl': {
+                'eodag': {
                     'handlers': ['console'],
                     'propagate': True,
                     'level': 'DEBUG',

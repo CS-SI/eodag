@@ -3,6 +3,8 @@
 # All rights reserved
 from setuptools import setup, find_packages
 
+from eodag import __version__
+
 
 with open('README.rst') as f:
     readme = f.read()
@@ -14,8 +16,8 @@ with open('requirements.txt') as f:
     requirements = f.readlines()
 
 setup(
-    name='satdl',
-    version='0.1.0',
+    name='eodag',
+    version=__version__,
     description='A library and cli for downloading satellites images',
     long_description=readme,
     author="CS Systemes d'Information (CS SI)",
@@ -26,7 +28,7 @@ setup(
     install_requires=requirements,
     entry_points='''
         [console_scripts]
-        satdl=satdl.cli:main
+        eodag=eodag.cli:main
     ''',
 )
 

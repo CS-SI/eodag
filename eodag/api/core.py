@@ -7,13 +7,13 @@ from operator import attrgetter
 
 import click
 
-from satdl.config import SimpleYamlProxyConfig
-from satdl.plugins.instances_manager import PluginInstancesManager
-from satdl.utils import maybe_generator
-from satdl.utils.exceptions import PluginImplementationError
+from eodag.config import SimpleYamlProxyConfig
+from eodag.plugins.instances_manager import PluginInstancesManager
+from eodag.utils import maybe_generator
+from eodag.utils.exceptions import PluginImplementationError
 
 
-logger = logging.getLogger('satdl.core')
+logger = logging.getLogger('eodag.core')
 
 
 class SatImagesAPI(object):

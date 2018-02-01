@@ -11,11 +11,11 @@ import requests
 from requests import HTTPError
 from tqdm import tqdm
 
-from satdl.plugins.download.base import Download
-from satdl.plugins.search.base import MisconfiguredError
+from eodag.plugins.download.base import Download
+from eodag.plugins.search.base import MisconfiguredError
 
 
-logger = logging.getLogger('satdl.plugins.download.http')
+logger = logging.getLogger('eodag.plugins.download.http')
 
 
 class HTTPDownload(Download):

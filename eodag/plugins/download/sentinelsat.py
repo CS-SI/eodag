@@ -7,11 +7,11 @@ import zipfile
 import click
 from sentinelsat import SentinelAPI
 
-from satdl.plugins.authentication import DummyAuth
-from satdl.plugins.download.base import Download
+from eodag.plugins.authentication import DummyAuth
+from eodag.plugins.download.base import Download
 
 
-logger = logging.getLogger('satdl.plugins.download.sentinelsat')
+logger = logging.getLogger('eodag.plugins.download.sentinelsat')
 
 
 class SentinelSatDownload(Download):

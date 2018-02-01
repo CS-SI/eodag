@@ -10,8 +10,8 @@
 import requests
 from requests import HTTPError
 
-from satdl.plugins.authentication.base import Authentication
-from satdl.utils import RequestsTokenAuth
+from eodag.plugins.authentication.base import Authentication
+from eodag.utils import RequestsTokenAuth
 
 
 class TokenAuth(Authentication):

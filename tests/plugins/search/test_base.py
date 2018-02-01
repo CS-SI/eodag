@@ -3,7 +3,7 @@
 # All rights reserved
 import unittest
 
-from satdl.plugins.search.base import MisconfiguredError
+from eodag.plugins.search.base import MisconfiguredError
 from tests.context import Search
 
 

@@ -3,7 +3,7 @@
 # All rights reserved
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
-from satdl.plugins.authentication.base import Authentication
+from eodag.plugins.authentication.base import Authentication
 
 
 class GenericAuth(Authentication):

@@ -8,7 +8,7 @@ import ipaddress
 import re
 from urllib.parse import urlsplit, urlunsplit
 
-from satdl.utils.exceptions import ValidationError
+from eodag.utils.exceptions import ValidationError
 
 
 class RegexValidator(object):

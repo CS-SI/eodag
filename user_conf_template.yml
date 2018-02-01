@@ -15,3 +15,7 @@ eocloud:
         domainName:
         userName:
         userPass:
+scihub:
+    credentials:
+        user:
+        password:
