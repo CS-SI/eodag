@@ -75,7 +75,8 @@ class SatImagesAPI(object):
         """
         interface = self.__get_searcher()
         logger.debug('Using interface for search: %s on instance *%s*', interface.name, interface.instance_name)
-        results = interface.query(product_type, **kwargs)
+        authentication = self.__get_authentication(interface)
+        results = interface.query(product_type, auth=authentication, **kwargs)
         if not isinstance(results, list):
             raise PluginImplementationError(
                 'The query function of a Search plugin must return a list of results, got {} '
@@ -92,7 +93,8 @@ class SatImagesAPI(object):
     def download_all(self, products):
         """Download all products of a search"""
         if products:
-            with click.progressbar(products, fill_char='O', length=len(products), width=0, label='Downloading products') as bar:
+            with click.progressbar(products, fill_char='O', length=len(products), width=0,
+                                   label='Downloading products') as bar:
                 for product in bar:
                     for path in self.__download(product):
                         yield path
@@ -103,15 +105,7 @@ class SatImagesAPI(object):
         """Download a single product"""
         interface = self.__get_downloader()
         logger.debug('Using interface for download : %s on instance *%s*', interface.name, interface.instance_name)
-        authentication = None
-        if interface.authenticate:
-            logger.debug('Authentication required for interface : %s on instance *%s*', interface.name,
-                         interface.instance_name)
-            authenticator = self.pim.instantiate_plugin_by_config(
-                topic_name='auth',
-                topic_config=self.system_config[interface.instance_name]['auth']
-            )
-            authentication = authenticator.authenticate()
+        authentication = self.__get_authentication(interface)
         try:
             for local_filename in maybe_generator(interface.download(product, auth=authentication)):
                 if local_filename is None:
@@ -128,6 +122,16 @@ class SatImagesAPI(object):
                     'The download method of a Download plugin must support auth keyword argument'
                 )
             raise e
+
+    def __get_authentication(self, interface):
+        if 'auth' in self.system_config[interface.instance_name]:
+            logger.debug('Authentication middleware initialisation for interface: %s on instance %s', interface.name,
+                         interface.instance_name)
+            authenticator = self.pim.instantiate_plugin_by_config(
+                topic_name='auth',
+                topic_config=self.system_config[interface.instance_name]['auth']
+            )
+            return authenticator.authenticate()
 
     def __get_searcher(self):
         """Look for a search interface to use, based on the configuration of the api"""

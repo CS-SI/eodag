@@ -18,7 +18,6 @@ eocloud:
         collection: Envisat
   download:
     plugin: HTTPDownload
-    authenticate: true
     on_site: false
     base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
   auth:
@@ -71,7 +70,6 @@ theia:
         collection: Snow
   download:
     plugin: HTTPDownload
-    authenticate: true
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
     dl_url_params:
       issuerId: theia
@@ -139,7 +137,6 @@ peps:
         min_start_date: 2018-01-01T00:00:00
   download:
     plugin: HTTPDownload
-    authenticate: true
     base_uri: 'https://peps.cnes.fr/resto'
     dl_url_params:
       issuerId: peps
