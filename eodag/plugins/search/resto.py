@@ -19,8 +19,8 @@ class RestoSearch(Search):
     SEARCH_PATH = '/collections/{collection}/search.json'
     DEFAULT_MAX_CLOUD_COVER = 20
 
-    def __init__(self, config=None):
-        super(RestoSearch, self).__init__(config=config)
+    def __init__(self, config):
+        super(RestoSearch, self).__init__(config)
         self.query_url_tpl = urljoin(
             self.config['api_endpoint'],
             urlparse(self.config['api_endpoint']).path.rstrip('/') + self.SEARCH_PATH
@@ -29,13 +29,16 @@ class RestoSearch(Search):
     def query(self, product_type, **kwargs):
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         collection = None
-        for key, value in self.config['products'].items():
-            if product_type in value['product_types']:
-                collection = key
+        resto_product_type = None
+        pt_config = self.config['products'].setdefault(product_type, {})
+        if pt_config:
+            collection = pt_config['collection']
+            resto_product_type = pt_config['product_type']
         if not collection:
             raise RuntimeError('Unknown product type')
 
         logger.debug('Collection found for product type %s: %s', product_type, collection)
+        logger.debug('Corresponding Resto product_type found for product type %s: %s', product_type, resto_product_type)
 
         cloud_cover = kwargs.pop('maxCloudCover', self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER))
         if not cloud_cover:
@@ -47,16 +50,16 @@ class RestoSearch(Search):
                         self.DEFAULT_MAX_CLOUD_COVER)
             cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
 
-        collection_config = self.config['products'][collection]
+        product_config = self.config['products'][product_type]
         params = {
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'cloudCover': '[0,{}]'.format(cloud_cover),
-            'productType': product_type,
+            'productType': resto_product_type,
         }
 
         start_date = kwargs.pop('startDate', None)
-        config_start_date = collection_config['min_start_date']
+        config_start_date = product_config['min_start_date']
         if any(isinstance(config_start_date, klass) for klass in (datetime.date, datetime.datetime)):
             config_start_date = config_start_date.isoformat()
         if start_date:

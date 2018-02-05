@@ -2,6 +2,8 @@
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
 
+import sys
+
 import click
 
 from eodag.api.core import SatImagesAPI
@@ -38,7 +40,15 @@ def main(**kwargs):
         'maxCloudCover': kwargs.pop('maxcloud'),
     }
     producttype = kwargs.pop('producttype')
-    god = SatImagesAPI(user_conf_file_path=click.format_filename(kwargs.pop('conf')))
+    conf_file = kwargs.pop('conf')
+    if conf_file:
+        conf_file = click.format_filename(conf_file)
+    if not producttype:
+        with click.Context(main) as ctx:
+            print('Give me some work to do. See below for how to do that:', end='\n\n')
+            click.echo(main.get_help(ctx))
+        sys.exit(0)
+    god = SatImagesAPI(user_conf_file_path=conf_file)
     for downloaded_file in god.download_all(god.filter(god.search(producttype, **criteria))):
         if downloaded_file is None:
             click.echo('A file may have been downloaded but we cannot locate it')

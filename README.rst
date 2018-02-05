@@ -8,24 +8,24 @@ You can search and download satellite products:
 
 * through the embedded cli:
 
-.. code-block:: bash
+    .. code-block:: bash
 
-    eodag --conf user.conf.yaml --bbox 1 43 2 44 --startDate 2018-01-01 --endDate 2018-01-31 --productType SLC
-    # With the shortcut arguments
-    eodag -f user.conf.yaml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c 20 -p SLC
+        eodag --conf user.conf.yaml --bbox 1 43 2 44 --startDate 2018-01-01 --endDate 2018-01-31 --productType SLC
+        # With the shortcut arguments
+        eodag -f user.conf.yaml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c 20 -p SLC
 
 * by interacting with the api in your Python scripts:
 
-.. code-block:: Python
+    .. code-block:: python
 
-    from eodag import SatImagesAPI
+        from eodag import SatImagesAPI
 
-    api = SatImagesAPI(user_conf_file_path='/path/to/user/conf.yaml')
-    producttype = 'SLC'
-    footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
-    start, end = '2018-01-01', '2018-01-31'
-    for local_filename in api.download_all(api.search(producttype, footprint=footprint, startDate=start, endDate=end):
-        print('Downloaded : {}'.format(local_filename))
+        api = SatImagesAPI(user_conf_file_path='/path/to/user/conf.yaml')
+        producttype = 'SLC'
+        footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
+        start, end = '2018-01-01', '2018-01-31'
+        for local_filename in api.download_all(api.search(producttype, footprint=footprint, startDate=start, endDate=end):
+            print('Downloaded : {}'.format(local_filename))
 
 
 If you wish to extend the supported productor systems instances, you can :
@@ -55,15 +55,21 @@ Command line interface
 Create a configuration file from the template provided with the repository, filling in your credentials as expected by
 each system:
 
-    cp eodag/user_conf_template.yml my_conf.yml
+    .. code-block:: bash
+
+        cp eodag/user_conf_template.yml my_conf.yml
 
 Then you can start playing with it:
 
-    eodag --conf my_conf.yml --bbox 1 43 2 44 --startDate 2018-01-01 --endDate 2018-01-31 --productType SLC
+    .. code-block:: bash
+
+        eodag --conf my_conf.yml --bbox 1 43 2 44 --startDate 2018-01-01 --endDate 2018-01-31 --productType SLC
 
 To see all the available options:
 
-    eodag --help
+    .. code-block:: bash
+
+        eodag --help
 
 Here is a list of supported arguments and options:
 

@@ -32,22 +32,40 @@ class SatImagesAPI(object):
             # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
             # TODO (continues) : param within an instance configuration
             self.system_config.update(SimpleYamlProxyConfig(system_conf_file_path))
-        self.user_config = SimpleYamlProxyConfig(user_conf_file_path)
+        if user_conf_file_path:
+            self.user_config = SimpleYamlProxyConfig(user_conf_file_path)
 
-        # Override system default config with user values for some keys
-        for instance_name in self.user_config:
-            if instance_name in self.system_config:
-                if 'credentials' in self.user_config[instance_name]:
-                    self.system_config[instance_name]['auth'].update(self.user_config[instance_name])
-                for key in ('outputs_prefix', 'extract'):
-                    if key in self.user_config:
-                        user_spec = self.user_config[key]
-                        default_outputs_prefix = self.system_config[instance_name]['download'].setdefault(
-                            key,
-                            '/data/satellites_images/' if key == 'outputs_prefix' else True
-                        )
-                        if default_outputs_prefix != user_spec:
-                            self.system_config[instance_name]['download'][key] = user_spec
+            # Override system default config with user values for some keys
+            for instance_name, instance_config in self.user_config.items():
+                if isinstance(instance_config, dict):
+                    if instance_name in self.system_config:
+                        if 'credentials' in instance_config:
+                            if 'api' in self.system_config[instance_name]:
+                                self.system_config[instance_name]['api'].update(instance_config)
+                            else:
+                                auth_conf = self.system_config[instance_name].setdefault('auth', {})
+                                auth_conf.update(instance_config)
+                        for key in ('outputs_prefix', 'extract'):
+                            if key in self.user_config:
+                                user_spec = self.user_config[key]
+                                if 'api' in self.system_config[instance_name]:
+                                    default_dl_option = self.system_config[instance_name]['api'].setdefault(
+                                        key,
+                                        '/data/satellites_images/' if key == 'outputs_prefix' else True
+                                    )
+                                else:
+                                    default_dl_option = self.system_config[instance_name].setdefault(
+                                        'download',
+                                        {}
+                                    ).setdefault(
+                                        key,
+                                        '/data/satellites_images/' if key == 'outputs_prefix' else True
+                                    )
+                                if default_dl_option != user_spec:
+                                    if 'api' in self.system_config[instance_name]:
+                                        self.system_config[instance_name]['api'][key] = user_spec
+                                    else:
+                                        self.system_config[instance_name]['download'][key] = user_spec
         self.pim = PluginInstancesManager(self.system_config)
 
     def search(self, product_type, **kwargs):
@@ -74,16 +92,7 @@ class SatImagesAPI(object):
     def download_all(self, products):
         """Download all products of a search"""
         if products:
-            with click.progressbar(
-                    products,
-                    fill_char='O',
-                    item_show_func=lambda prod: click.echo(
-                        'Downloaded {}'.format(prod.local_filename)
-                    ) if prod else click.echo('Missing local path to the downloaded product'),
-                    length=len(products),
-                    width=0,  # Full terminal width
-                    label='Downloading products'
-            ) as bar:
+            with click.progressbar(products, fill_char='O', length=len(products), width=0, label='Downloading products') as bar:
                 for product in bar:
                     for path in self.__download(product):
                         yield path
@@ -123,22 +132,15 @@ class SatImagesAPI(object):
     def __get_searcher(self):
         """Look for a search interface to use, based on the configuration of the api"""
         logger.debug('Looking for the appropriate Search instance to use')
-        search_plugin_instances = self.pim.instantiate_configured_plugins(topic='search')
+        search_plugin_instances = self.pim.instantiate_configured_plugins(topics=('search', 'api'))
         # The searcher used will be the one with higher priority
         search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
         selected_instance = search_plugin_instances[0]
-        # For sentinel search we need credentials even for search
-        if selected_instance.name == 'SentinelSearch':
-            if 'credentials' not in self.system_config[selected_instance.instance_name]['auth']:
-                raise RuntimeError('Please provide your scihub credentials to perform a search')
-            selected_instance.config.update({
-                'credentials': self.system_config[selected_instance.instance_name]['auth']['credentials']
-            })
         return selected_instance
 
     def __get_downloader(self):
         logger.debug('Looking for the appropriate Download instance to use')
-        dl_plugin_instances = self.pim.instantiate_configured_plugins(topic='download')
+        dl_plugin_instances = self.pim.instantiate_configured_plugins(topics=('download', 'api'))
         dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
         return dl_plugin_instances[0]
 

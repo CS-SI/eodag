@@ -2,8 +2,10 @@
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
 import logging
+from collections import Iterable
 
 from eodag import plugins
+from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import GeoProductDownloaderPluginMount
 from eodag.plugins.download.base import Download
@@ -48,6 +50,7 @@ class PluginInstancesManager(object):
         'download': Download,
         'filter': Filter,
         'auth': Authentication,
+        'api': Api,
     }
 
     def __init__(self, config):
@@ -57,23 +60,37 @@ class PluginInstancesManager(object):
         # 'RestoSearch' will be available in self.supported_topics['search'].plugins
         import_all_modules(plugins, depth=2, exclude=('base', __name__.split('.')[-1],))
 
-    def instantiate_configured_plugins(self, topic):
+    def instantiate_configured_plugins(self, topics):
         """Instantiate the plugins"""
+        if isinstance(topics, Iterable):
+            instances = []
+            for topic in topics:
+                instances.extend(
+                    self.__get_instances(topic)
+                )
+        else:
+            instances = self.__get_instances(topics)
+        return instances
+
+    def __get_instances(self, topic):
+        instances = []
         logger.debug('Creating configured *%s* plugin instances', topic.upper())
         PluginBaseClass = self.__get_base_class(topic)
-        instances = []
         for instance_name, instance_config in self.instances_config.items():
-            logger.debug('Creating *%s* plugin instance with name *%s*', topic.upper(), instance_name)
-            PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
-                PluginBaseClass,
-                instance_config[topic]['plugin']
-            )
-            instance = PluginClass(instance_config[topic])
-            # Each instance will be identified by its name, independently of the plugin implementation
-            instance.instance_name = instance_name
-            # Update instance priority
-            instance.priority = instance_config.get('priority', instance.priority)
-            instances.append(instance)
+            if topic in instance_config:
+                logger.debug('Creating *%s* plugin instance with name *%s*', topic.upper(), instance_name)
+                PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
+                    PluginBaseClass,
+                    instance_config[topic]['plugin']
+                )
+                instance = PluginClass(instance_config[topic])
+                # Each instance will be identified by its name, independently of the plugin implementation
+                instance.instance_name = instance_name
+                # Update instance priority
+                instance.priority = instance_config.get('priority', instance.priority)
+                instances.append(instance)
+            else:
+                logger.debug('Skipping *%s* instance creation for instance *%s*', topic.upper(), instance_name)
         return instances
 
     def __get_base_class(self, topic):
