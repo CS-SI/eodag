@@ -29,6 +29,7 @@ class CSWSearch(Search):
         self.catalog = None
 
     def query(self, product_type, **kwargs):
+        logger.info('New search for product type : %s on %s interface', product_type, self.name)
         auth = kwargs.pop('auth', None)
         if auth is not None:
             self.__init_catalog(**auth.config['credentials'])
@@ -38,8 +39,10 @@ class CSWSearch(Search):
         for product_type_search_tag in self.config[SEARCH_DEF][PRODUCT_TYPE]:
             constraints = self.__convert_query_params(product_type_search_tag, product_type, kwargs)
             with patch_owslib_requests(verify=False):
+                logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
                 self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
             results.extend(EOProduct(record) for record in self.catalog.records.values())
+        logger.info('Found %s results', len(results))
         return results
 
     def __init_catalog(self, username=None, password=None):

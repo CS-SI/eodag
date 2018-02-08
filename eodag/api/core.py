@@ -20,14 +20,10 @@ class SatImagesAPI(object):
     """An API for downloading a wide variety of geospatial products originating from different types of systems."""
 
     def __init__(self, user_conf_file_path=None, system_conf_file_path=None):
-        self.system_config = SimpleYamlProxyConfig(
-            os.path.join(
+        self.system_config = SimpleYamlProxyConfig(os.path.join(
                 os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
-                os.pardir,
-                'resources',
-                'system_conf_default.yml'
-            )
-        )
+                os.pardir, 'resources', 'system_conf_default.yml'
+            ))
         if system_conf_file_path is not None:
             # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
             # TODO (continues) : param within an instance configuration
@@ -67,16 +63,26 @@ class SatImagesAPI(object):
                                     else:
                                         self.system_config[instance_name]['download'][key] = user_spec
         self.pim = PluginInstancesManager(self.system_config)
+        # Prepare the api to perform its main operations
+        self.search_interface = self.__get_searcher()
+        self.download_interface = self.__get_downloader()
+        self.preferred_instance = self.search_interface.instance_name
+        logger.debug('Preferred instance : %s', self.preferred_instance)
+        if self.download_interface.instance_name != self.search_interface.instance_name:
+            logger.warning('The download interface does not belongs to preferred instance (%s instead of %s)',
+                           self.download_interface.instance_name, self.preferred_instance)
+            logger.warning('A download config may be missing for preferred instance')
+            logger.warning('SatImagesAPI may not be able to download products from search results')
+        self.auth_interface = self.__get_authenticator(self.preferred_instance)
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
 
         The interfaces are required to return a list as a result of their processing, we enforce this requirement here.
         """
-        interface = self.__get_searcher()
-        logger.debug('Using interface for search: %s on instance *%s*', interface.name, interface.instance_name)
-        authentication = self.__get_authenticator(interface)
-        results = interface.query(product_type, auth=authentication, **kwargs)
+        logger.debug('Using interface for search: %s on instance *%s*', self.search_interface.name,
+                     self.preferred_instance)
+        results = self.search_interface.query(product_type, auth=self.auth_interface, **kwargs)
         if not isinstance(results, list):
             raise PluginImplementationError(
                 'The query function of a Search plugin must return a list of results, got {} '
@@ -103,17 +109,14 @@ class SatImagesAPI(object):
 
     def __download(self, product):
         """Download a single product"""
-        interface = self.__get_downloader()
-        logger.debug('Using interface for download : %s on instance *%s*', interface.name, interface.instance_name)
-        authentication = self.__get_authenticator(interface)
+        logger.debug('Using interface for download : %s on instance *%s*', self.download_interface.name,
+                     self.download_interface.instance_name)
         try:
-            for local_filename in maybe_generator(interface.download(product, auth=authentication.authenticate())):
+            for local_filename in maybe_generator(self.download_interface.download(product, auth=self.auth_interface.authenticate())):  # noqa
                 if local_filename is None:
-                    logger.debug(
-                        'The download method of a Download plugin should return the absolute path to the '
-                        'downloaded resource or a generator of absolute paths to the downloaded and extracted '
-                        'resource'
-                    )
+                    logger.debug('The download method of a Download plugin should return the absolute path to the '
+                                 'downloaded resource or a generator of absolute paths to the downloaded and extracted '
+                                 'resource')
                 yield local_filename
         except TypeError as e:
             # Enforcing the requirement for download plugins to implement a download method with auth kwarg
@@ -123,13 +126,12 @@ class SatImagesAPI(object):
                 )
             raise e
 
-    def __get_authenticator(self, interface):
-        if 'auth' in self.system_config[interface.instance_name]:
-            logger.debug('Authentication middleware initialisation for interface: %s on instance %s', interface.name,
-                         interface.instance_name)
+    def __get_authenticator(self, instance_name):
+        if 'auth' in self.system_config[instance_name]:
+            logger.debug('Authentication initialisation for instance %s', instance_name)
             return self.pim.instantiate_plugin_by_config(
                 topic_name='auth',
-                topic_config=self.system_config[interface.instance_name]['auth']
+                topic_config=self.system_config[instance_name]['auth']
             )
 
     def __get_searcher(self):

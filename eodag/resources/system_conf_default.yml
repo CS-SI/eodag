@@ -167,8 +167,5 @@ geostorm-ce:
       date_tags:
         start: 'apiso:TempExtent_begin'
         end: 'apiso:TempExtent_end'
-  download:
-    plugin: HTTPDownload
-    base_uri: 'http://geostorm-ce/'
   auth:
     plugin: GenericAuth
