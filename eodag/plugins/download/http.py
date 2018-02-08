@@ -33,6 +33,9 @@ class HTTPDownload(Download):
         """Download a product from resto-like platforms"""
         if not self.config['on_site']:
             url = self.__build_download_url(product, auth)
+            if not url:
+                logger.debug('Unable to get download url for %s, skipping download', product)
+                return
             logger.debug('Download url: %s', url)
 
             filename = product.local_filename
@@ -53,7 +56,7 @@ class HTTPDownload(Download):
 
             hook_print = lambda r, *args, **kwargs: print('\n', r.url)
             with requests.get(url, stream=True, auth=auth, hooks={'response': hook_print},
-                              params=self.config.get('dl_url_params', {})) as stream:
+                              params=self.config.get('dl_url_params', {}), verify=False) as stream:
                 stream_size = int(stream.headers.get('content-length', 0))
                 with open(local_file_path, 'wb') as fhandle:
                     progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
@@ -69,7 +72,7 @@ class HTTPDownload(Download):
                     with open(record_filename, 'w') as fh:
                         fh.write(url)
                     logger.debug('Download recorded in %s', record_filename)
-                    if self.config['extract'] and local_file_path.endswith('.zip'):
+                    if self.config['extract'] and zipfile.is_zipfile(local_file_path):
                         logger.info('Extraction activated')
                         with zipfile.ZipFile(local_file_path, 'r') as zfile:
                             fileinfos = zfile.infolist()
@@ -87,13 +90,15 @@ class HTTPDownload(Download):
             yield product.original_repr['properties']['productIdentifier']
 
     def __build_download_url(self, product, auth):
-        try:
-            url = product.location_url_tpl.format(
-                base=self.config['base_uri'],
-            )
-            # TODO : This is weak !!!
-            if product.original_repr['properties']['organisationName'] in ('ESA',):
-                url += '?token={}'.format(auth.token)
-            return url
-        except Exception:
-            raise RuntimeError('Product {} is incompatible with download plugin {}'.format(product, self.name))
+        if product.location_url_tpl:
+            try:
+                url = product.location_url_tpl.format(
+                    base=self.config.get('base_uri'),
+                )
+                # TODO : This is weak !!!
+                if isinstance(product.original_repr, dict):
+                    if product.original_repr.get('properties', {}).get('organisationName') in ('ESA',):
+                        url += '?token={}'.format(auth.token)
+                return url
+            except Exception:
+                raise RuntimeError('Product {} is incompatible with download plugin {}'.format(product, self.name))

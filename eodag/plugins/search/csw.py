@@ -2,6 +2,8 @@
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
 import logging
+import uuid
+from urllib.parse import urlparse
 
 from owslib.csw import CatalogueServiceWeb
 from owslib.fes import (
@@ -36,12 +38,31 @@ class CSWSearch(Search):
         else:
             self.__init_catalog()
         results = []
+
+        def build_product(rec):
+            """Enable search results to be handled by http download plugin"""
+            eop = EOProduct(rec)
+            for ref in eop.original_repr.references:
+                if 'WWW:DOWNLOAD' in ref['scheme'] and 'http--download' in ref['scheme']:
+                    # TODO: remove this dirty hack specific to geostorm-ce hostname
+                    parsed_ref_url = urlparse(ref['url'])
+                    parsed_config_url = urlparse(self.config['api_endpoint'])
+                    if parsed_ref_url.netloc != parsed_config_url.netloc:
+                        eop.location_url_tpl = '{}://{}{}{}{}'.format(
+                            parsed_ref_url.scheme, parsed_config_url.netloc, ':'.join(parsed_ref_url.port or ''),
+                            parsed_ref_url.path, parsed_ref_url.query
+                        )
+                    else:
+                        eop.location_url_tpl = ref['url']
+                    eop.local_filename = rec.identifier.replace(':', '_').replace('-', '_')
+                    break
+            return eop
         for product_type_search_tag in self.config[SEARCH_DEF][PRODUCT_TYPE]:
             constraints = self.__convert_query_params(product_type_search_tag, product_type, kwargs)
             with patch_owslib_requests(verify=False):
                 logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
                 self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
-            results.extend(EOProduct(record) for record in self.catalog.records.values())
+            results.extend(build_product(record) for record in self.catalog.records.values())
         logger.info('Found %s results', len(results))
         return results
 

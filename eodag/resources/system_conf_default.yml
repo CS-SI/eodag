@@ -158,7 +158,7 @@ geostorm-ce:
     mode: default
     search_definitions:
       pt_tags:  # Can be any xml tag of the catalogue that can be queryable
-        - 'csw:AnyText'
+        - 'dc:title'
       matching:
         '*': fuzzy  # fuzzy match of the search tag value for all search tags
 #        'dc:subject': prefix    # fuzzy match with the query as a prefix: L1C*
@@ -167,5 +167,8 @@ geostorm-ce:
       date_tags:
         start: 'apiso:TempExtent_begin'
         end: 'apiso:TempExtent_end'
+  download:
+    plugin: HTTPDownload
+    base_uri: ''    # no need for such a thing !
   auth:
     plugin: GenericAuth
