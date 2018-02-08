@@ -145,7 +145,30 @@ peps:
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 
 scihub:
-  priority: 10000
+#  priority: 10000
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://scihub.copernicus.eu/apihub/'
+
+geostorm-ce:
+  priority: 10000
+  search:
+    plugin: CSWSearch
+    api_endpoint: 'http://geostorm-ce/rest/catalog/csw/'
+    mode: default
+    search_definitions:
+      pt_tags:  # Can be any xml tag of the catalogue that can be queryable
+        - 'csw:AnyText'
+      matching:
+        '*': fuzzy  # fuzzy match of the search tag value for all search tags
+#        'dc:subject': prefix    # fuzzy match with the query as a prefix: L1C*
+#        'dc:subject': postfix    # fuzzy match with the query as a suffix: *L1C
+#        'dc:subject': fuzzy    # pre- and post-fix fuzzy match : *L1C*
+      date_tags:
+        start: 'apiso:TempExtent_begin'
+        end: 'apiso:TempExtent_end'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'http://geostorm-ce/'
+  auth:
+    plugin: GenericAuth

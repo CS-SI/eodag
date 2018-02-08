@@ -7,11 +7,7 @@ from eodag.plugins.base import GeoProductDownloaderPluginMount
 class Authentication(metaclass=GeoProductDownloaderPluginMount):
 
     def __init__(self, config):
-        self.config = {
-            'uri': '',
-            'credentials': {}
-        }
-        self.config.update(config)
+        self.config = config
 
     def authenticate(self):
         raise NotImplementedError

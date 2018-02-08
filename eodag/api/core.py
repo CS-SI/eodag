@@ -54,13 +54,13 @@ class SatImagesAPI(object):
                                         '/data/satellites_images/' if key == 'outputs_prefix' else True
                                     )
                                 else:
-                                    default_dl_option = self.system_config[instance_name].setdefault(
-                                        'download',
-                                        {}
-                                    ).setdefault(
-                                        key,
-                                        '/data/satellites_images/' if key == 'outputs_prefix' else True
-                                    )
+                                    if 'download' in self.system_config[instance_name]:
+                                        default_dl_option = self.system_config[instance_name].get('download', {}).setdefault(   # noqa
+                                            key,
+                                            '/data/satellites_images/' if key == 'outputs_prefix' else True
+                                        )
+                                    else:
+                                        default_dl_option = user_spec   # allows skipping next if block
                                 if default_dl_option != user_spec:
                                     if 'api' in self.system_config[instance_name]:
                                         self.system_config[instance_name]['api'][key] = user_spec
@@ -75,7 +75,7 @@ class SatImagesAPI(object):
         """
         interface = self.__get_searcher()
         logger.debug('Using interface for search: %s on instance *%s*', interface.name, interface.instance_name)
-        authentication = self.__get_authentication(interface)
+        authentication = self.__get_authenticator(interface)
         results = interface.query(product_type, auth=authentication, **kwargs)
         if not isinstance(results, list):
             raise PluginImplementationError(
@@ -105,9 +105,9 @@ class SatImagesAPI(object):
         """Download a single product"""
         interface = self.__get_downloader()
         logger.debug('Using interface for download : %s on instance *%s*', interface.name, interface.instance_name)
-        authentication = self.__get_authentication(interface)
+        authentication = self.__get_authenticator(interface)
         try:
-            for local_filename in maybe_generator(interface.download(product, auth=authentication)):
+            for local_filename in maybe_generator(interface.download(product, auth=authentication.authenticate())):
                 if local_filename is None:
                     logger.debug(
                         'The download method of a Download plugin should return the absolute path to the '
@@ -123,15 +123,14 @@ class SatImagesAPI(object):
                 )
             raise e
 
-    def __get_authentication(self, interface):
+    def __get_authenticator(self, interface):
         if 'auth' in self.system_config[interface.instance_name]:
             logger.debug('Authentication middleware initialisation for interface: %s on instance %s', interface.name,
                          interface.instance_name)
-            authenticator = self.pim.instantiate_plugin_by_config(
+            return self.pim.instantiate_plugin_by_config(
                 topic_name='auth',
                 topic_config=self.system_config[interface.instance_name]['auth']
             )
-            return authenticator.authenticate()
 
     def __get_searcher(self):
         """Look for a search interface to use, based on the configuration of the api"""

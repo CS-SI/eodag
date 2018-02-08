@@ -8,9 +8,6 @@ from eodag.plugins.authentication.base import Authentication
 
 class GenericAuth(Authentication):
 
-    def __init__(self, config):
-        super(GenericAuth, self).__init__(config)
-
     def authenticate(self):
         method = self.config.get('method')
         if not method:
