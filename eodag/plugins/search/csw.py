@@ -2,6 +2,7 @@
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
 import logging
+import re
 
 from owslib.csw import CatalogueServiceWeb
 from owslib.fes import (
@@ -70,13 +71,16 @@ class CSWSearch(Search):
                     password=password
                 )
 
-    @staticmethod
-    def __build_product(rec):
+    def __build_product(self, rec):
         """Enable search results to be handled by http download plugin"""
         eop = EOProduct(rec)
+        resource_filter = re.compile(self.config[SEARCH_DEF].get('resource_location_filter', ''))
         for ref in eop.original_repr.references:
             if ref['scheme'] in SUPPORTED_REFERENCE_SCHEMES:
-                eop.location_url_tpl = ref['url']
+                if resource_filter.pattern and resource_filter.search(ref['url']):
+                    eop.location_url_tpl = ref['url']
+                else:
+                    eop.location_url_tpl = ref['url']
                 eop.local_filename = slugify(rec.identifier)
                 break
         return eop

@@ -156,6 +156,8 @@ geostorm-ce:
     plugin: CSWSearch
     api_endpoint: 'http://geostorm-ce/rest/catalog/csw/'
     search_definitions:
+      # A regex that will be parsed to decide which reference to consider as download url
+      resource_location_filter: '^https?'   # match the first resource reference that starts with http or https
       pt_tags:
         # name can be any xml tag of the catalogue that can be queryable (WARNING: the verification of query-ability is not done)
         # matching can be one of:
