@@ -155,16 +155,18 @@ geostorm-ce:
   search:
     plugin: CSWSearch
     api_endpoint: 'http://geostorm-ce/rest/catalog/csw/'
-    mode: default
     search_definitions:
-      pt_tags:  # Can be any xml tag of the catalogue that can be queryable
-        - 'dc:title'
-        - 'dc:subject'
-      matching:
-        '*': fuzzy  # fuzzy match of the search tag value for all search tags
-#        'dc:subject': prefix    # fuzzy match with the query as a prefix: L1C*
-#        'dc:subject': postfix    # fuzzy match with the query as a suffix: *L1C
-#        'dc:subject': fuzzy    # pre- and post-fix fuzzy match : *L1C*
+      pt_tags:
+        # name can be any xml tag of the catalogue that can be queryable (WARNING: the verification of query-ability is not done)
+        # matching can be one of:
+          # exact: exact match of the query (e.g. L1C)
+          # prefix: fuzzy match with the query as a prefix (e.g. L1C*)
+          # postfix: fuzzy match with the query as a suffix (e.g. *L1C)
+          # fuzzy: pre- and post-fix fuzzy match (e.g. *L1C*)
+          # if nothing is given, fuzzy matching is assumed
+        - name: 'dc:title'
+        - name: 'dc:subject'
+          matching: exact
       date_tags:
         start: 'apiso:TempExtent_begin'
         end: 'apiso:TempExtent_end'

@@ -2,8 +2,6 @@
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
 import logging
-import uuid
-from urllib.parse import urlparse
 
 from owslib.csw import CatalogueServiceWeb
 from owslib.fes import (
@@ -25,7 +23,6 @@ SUPPORTED_REFERENCE_SCHEMES = [
 # Configuration keys
 SEARCH_DEF = 'search_definitions'
 PRODUCT_TYPE = 'pt_tags'
-MATCHING = 'matching'
 DATE = 'date_tags'
 
 
@@ -43,9 +40,10 @@ class CSWSearch(Search):
         else:
             self.__init_catalog()
         results = []
-        for product_type_search_tag in self.config[SEARCH_DEF][PRODUCT_TYPE]:
+        for product_type_def in self.config[SEARCH_DEF][PRODUCT_TYPE]:
+            product_type_search_tag = product_type_def['name']
             logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
-            constraints = self.__convert_query_params(product_type_search_tag, product_type, kwargs)
+            constraints = self.__convert_query_params(product_type_def, product_type, kwargs)
             with patch_owslib_requests(verify=False):
                 try:
                     self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
@@ -82,14 +80,11 @@ class CSWSearch(Search):
                 break
         return eop
 
-    def __convert_query_params(self, pt_tag, product_type, params):
+    def __convert_query_params(self, product_type_def, product_type, params):
         """Translates eodag search to CSW constraints using owslib constraint classes"""
         constraints = []
-        # How the match should be performed (fuzzy, prefix or postfix). defaults to fuzzy
-        matching = self.config[SEARCH_DEF][MATCHING].get(
-            pt_tag,
-            self.config[SEARCH_DEF][MATCHING].get('*', 'fuzzy')
-        )
+        # How the match should be performed (fuzzy, prefix, postfix or exact). defaults to fuzzy
+        pt_tag, matching = product_type_def['name'], product_type_def.get('matching', 'fuzzy')
         if matching == 'prefix':
             constraints.append(PropertyIsLike(pt_tag, '{}%'.format(product_type)))
         elif matching == 'postfix':
