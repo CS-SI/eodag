@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+import re
 import types
+import unicodedata
 
 import click
 from requests.auth import AuthBase
@@ -49,6 +51,23 @@ class FloatRange(click.types.FloatParamType):
         return 'FloatRange(%r, %r)' % (self.min, self.max)
 
 
+def slugify(value, allow_unicode=False):
+    """Copied from Django Source code, only modifying last line (no need for safe strings).
+    source: https://github.com/django/django/blob/master/django/utils/text.py
+
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces to hyphens.
+    Remove characters that aren't alphanumerics, underscores, or hyphens.
+    Convert to lowercase. Also strip leading and trailing whitespace.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value).strip().lower()
+    return re.sub(r'[-\s]+', '-', value)
+
+
 def maybe_generator(obj):
     """Generator function that get an arbitrary object and generate values from it if the object is a generator."""
     if isinstance(obj, types.GeneratorType):
@@ -56,4 +75,3 @@ def maybe_generator(obj):
             yield elt
     else:
         yield obj
-

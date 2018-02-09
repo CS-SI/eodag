@@ -11,6 +11,7 @@ from owslib.ows import ExceptionReport
 
 from eodag.api.product import EOProduct
 from eodag.plugins.search.base import Search
+from eodag.utils import slugify
 from eodag.utils.import_system import patch_owslib_requests
 
 
@@ -76,7 +77,7 @@ class CSWSearch(Search):
         for ref in eop.original_repr.references:
             if ref['scheme'] in SUPPORTED_REFERENCE_SCHEMES:
                 eop.location_url_tpl = ref['url']
-                eop.local_filename = rec.identifier.replace(':', '_').replace('-', '_')
+                eop.local_filename = slugify(rec.identifier)
                 break
         return eop
 
