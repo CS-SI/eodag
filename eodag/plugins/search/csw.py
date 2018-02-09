@@ -9,6 +9,7 @@ from owslib.csw import CatalogueServiceWeb
 from owslib.fes import (
     BBox, PropertyIsEqualTo, PropertyIsGreaterThanOrEqualTo, PropertyIsLessThanOrEqualTo, PropertyIsLike,
 )
+from owslib.ows import ExceptionReport
 
 from eodag.api.product import EOProduct
 from eodag.plugins.search.base import Search
@@ -16,6 +17,10 @@ from eodag.utils.import_system import patch_owslib_requests
 
 
 logger = logging.getLogger('eodag.plugins.search.csw')
+
+SUPPORTED_REFERENCE_SCHEMES = [
+    'WWW:DOWNLOAD-1.0-http--download',
+]
 
 # Configuration keys
 SEARCH_DEF = 'search_definitions'
@@ -38,32 +43,20 @@ class CSWSearch(Search):
         else:
             self.__init_catalog()
         results = []
-
-        def build_product(rec):
-            """Enable search results to be handled by http download plugin"""
-            eop = EOProduct(rec)
-            for ref in eop.original_repr.references:
-                if 'WWW:DOWNLOAD' in ref['scheme'] and 'http--download' in ref['scheme']:
-                    # TODO: remove this dirty hack specific to geostorm-ce hostname
-                    parsed_ref_url = urlparse(ref['url'])
-                    parsed_config_url = urlparse(self.config['api_endpoint'])
-                    if parsed_ref_url.netloc != parsed_config_url.netloc:
-                        eop.location_url_tpl = '{}://{}{}{}{}'.format(
-                            parsed_ref_url.scheme, parsed_config_url.netloc, ':'.join(parsed_ref_url.port or ''),
-                            parsed_ref_url.path, parsed_ref_url.query
-                        )
-                    else:
-                        eop.location_url_tpl = ref['url']
-                    eop.local_filename = rec.identifier.replace(':', '_').replace('-', '_')
-                    break
-            return eop
         for product_type_search_tag in self.config[SEARCH_DEF][PRODUCT_TYPE]:
+            logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
             constraints = self.__convert_query_params(product_type_search_tag, product_type, kwargs)
             with patch_owslib_requests(verify=False):
-                logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
-                self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
-            results.extend(build_product(record) for record in self.catalog.records.values())
-        logger.info('Found %s results', len(results))
+                try:
+                    self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
+                except ExceptionReport as er:
+                    logger.warning('Failed to query %s for product type %s : %s', product_type_search_tag,
+                                   product_type, er)
+                    continue
+            partial_results = [self.__build_product(record) for record in self.catalog.records.values()]
+            logger.info('Found %s results querying %s', len(partial_results), product_type_search_tag)
+            results.extend(partial_results)
+        logger.info('Found %s overall results', len(results))
         return results
 
     def __init_catalog(self, username=None, password=None):
@@ -77,6 +70,17 @@ class CSWSearch(Search):
                     username=username,
                     password=password
                 )
+
+    @staticmethod
+    def __build_product(rec):
+        """Enable search results to be handled by http download plugin"""
+        eop = EOProduct(rec)
+        for ref in eop.original_repr.references:
+            if ref['scheme'] in SUPPORTED_REFERENCE_SCHEMES:
+                eop.location_url_tpl = ref['url']
+                eop.local_filename = rec.identifier.replace(':', '_').replace('-', '_')
+                break
+        return eop
 
     def __convert_query_params(self, pt_tag, product_type, params):
         """Translates eodag search to CSW constraints using owslib constraint classes"""

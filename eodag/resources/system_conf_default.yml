@@ -159,6 +159,7 @@ geostorm-ce:
     search_definitions:
       pt_tags:  # Can be any xml tag of the catalogue that can be queryable
         - 'dc:title'
+        - 'dc:subject'
       matching:
         '*': fuzzy  # fuzzy match of the search tag value for all search tags
 #        'dc:subject': prefix    # fuzzy match with the query as a prefix: L1C*
