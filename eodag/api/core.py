@@ -21,9 +21,9 @@ class SatImagesAPI(object):
 
     def __init__(self, user_conf_file_path=None, system_conf_file_path=None):
         self.system_config = SimpleYamlProxyConfig(os.path.join(
-                os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
-                os.pardir, 'resources', 'system_conf_default.yml'
-            ))
+            os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
+            os.pardir, 'resources', 'system_conf_default.yml'
+        ))
         if system_conf_file_path is not None:
             # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
             # TODO (continues) : param within an instance configuration
@@ -51,12 +51,14 @@ class SatImagesAPI(object):
                                     )
                                 else:
                                     if 'download' in self.system_config[instance_name]:
-                                        default_dl_option = self.system_config[instance_name].get('download', {}).setdefault(   # noqa
+                                        default_dl_option = self.system_config[instance_name].get('download',
+                                                                                                  {}).setdefault(
+                                            # noqa
                                             key,
                                             '/data/satellites_images/' if key == 'outputs_prefix' else True
                                         )
                                     else:
-                                        default_dl_option = user_spec   # allows skipping next if block
+                                        default_dl_option = user_spec  # allows skipping next if block
                                 if default_dl_option != user_spec:
                                     if 'api' in self.system_config[instance_name]:
                                         self.system_config[instance_name]['api'][key] = user_spec
@@ -64,30 +66,36 @@ class SatImagesAPI(object):
                                         self.system_config[instance_name]['download'][key] = user_spec
         self.pim = PluginInstancesManager(self.system_config)
         # Prepare the api to perform its main operations
-        self.search_interface = self.__get_searcher()
-        self.download_interface = self.__get_downloader()
-        self.preferred_instance = self.search_interface.instance_name
-        logger.debug('Preferred instance : %s', self.preferred_instance)
-        if self.download_interface.instance_name != self.search_interface.instance_name:
-            logger.warning('The download interface does not belongs to preferred instance (%s instead of %s)',
-                           self.download_interface.instance_name, self.preferred_instance)
-            logger.warning('A download config may be missing for preferred instance')
-            logger.warning('SatImagesAPI may not be able to download products from search results')
-        self.auth_interface = self.__get_authenticator(self.preferred_instance)
+        self.search_interfaces = self.__get_searchers()
+        self.download_interfaces = self.__get_downloaders()
+        if len(self.search_interfaces) == 1:
+            # If we only have one interface, reduce the list of downloaders to have only one instance (the one
+            # corresponding to the unique search interface)
+            self.download_interfaces = self.download_interfaces[:1]
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
 
         The interfaces are required to return a list as a result of their processing, we enforce this requirement here.
         """
-        logger.debug('Using interface for search: %s on instance *%s*', self.search_interface.name,
-                     self.preferred_instance)
-        results = self.search_interface.query(product_type, auth=self.auth_interface, **kwargs)
-        if not isinstance(results, list):
-            raise PluginImplementationError(
-                'The query function of a Search plugin must return a list of results, got {} '
-                'instead'.format(type(results))
-            )
+        results = []
+        # "recursive" search
+        for iface in self.search_interfaces:
+            logger.debug('Using interface for search: %s on instance *%s*', iface.name, iface.instance_name)
+            auth = self.__get_authenticator(iface.instance_name)
+            try:
+                r = iface.query(product_type, auth=auth, **kwargs)
+                if not isinstance(r, list):
+                    raise PluginImplementationError(
+                        'The query function of a Search plugin must return a list of results, got {} '
+                        'instead'.format(type(r))
+                    )
+                results.extend(r)
+            except RuntimeError as rte:
+                if 'Unknown product type' in rte.args:
+                    logger.debug('Product type %s not known by %s instance', product_type, iface.instance_name)
+                else:
+                    raise rte
         return results
 
     def filter(self, results):
@@ -109,22 +117,25 @@ class SatImagesAPI(object):
 
     def __download(self, product):
         """Download a single product"""
-        logger.debug('Using interface for download : %s on instance *%s*', self.download_interface.name,
-                     self.download_interface.instance_name)
-        try:
-            for local_filename in maybe_generator(self.download_interface.download(product, auth=self.auth_interface.authenticate())):  # noqa
-                if local_filename is None:
-                    logger.debug('The download method of a Download plugin should return the absolute path to the '
-                                 'downloaded resource or a generator of absolute paths to the downloaded and extracted '
-                                 'resource')
-                yield local_filename
-        except TypeError as e:
-            # Enforcing the requirement for download plugins to implement a download method with auth kwarg
-            if any("got an unexpected keyword argument 'auth'" in arg for arg in e.args):
-                raise PluginImplementationError(
-                    'The download method of a Download plugin must support auth keyword argument'
-                )
-            raise e
+        # try to download the product from all the download interfaces known (functionality introduced by the necessity
+        # to take into account that a product type may be distributed to many instances)
+        for iface in self.download_interfaces:
+            logger.debug('Using interface for download : %s on instance *%s*', iface.name, iface.instance_name)
+            try:
+                auth = self.__get_authenticator(iface.instance_name).authenticate()
+                for local_filename in maybe_generator(iface.download(product, auth=auth)):
+                    if local_filename is None:
+                        logger.debug('The download method of a Download plugin should return the absolute path to the '
+                                     'downloaded resource or a generator of absolute paths to the downloaded and '
+                                     'extracted resource')
+                    yield local_filename
+            except TypeError as e:
+                # Enforcing the requirement for download plugins to implement a download method with auth kwarg
+                if any("got an unexpected keyword argument 'auth'" in arg for arg in e.args):
+                    raise PluginImplementationError(
+                        'The download method of a Download plugin must support auth keyword argument'
+                    )
+                raise e
 
     def __get_authenticator(self, instance_name):
         if 'auth' in self.system_config[instance_name]:
@@ -134,20 +145,26 @@ class SatImagesAPI(object):
                 topic_config=self.system_config[instance_name]['auth']
             )
 
-    def __get_searcher(self):
+    def __get_searchers(self):
         """Look for a search interface to use, based on the configuration of the api"""
         logger.debug('Looking for the appropriate Search instance to use')
         search_plugin_instances = self.pim.instantiate_configured_plugins(topics=('search', 'api'))
         # The searcher used will be the one with higher priority
         search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
         selected_instance = search_plugin_instances[0]
-        return selected_instance
+        for name, prod in selected_instance.config['products'].items():
+            # If a known product is a subset of its type, we will perform search on all configured instances
+            if prod.get('partial'):
+                logger.debug("Detected partial product type '%s' on instance '%s' => recursive search and download "
+                             "activated", name, selected_instance.instance_name)
+                return search_plugin_instances
+        return [selected_instance]
 
-    def __get_downloader(self):
+    def __get_downloaders(self):
         logger.debug('Looking for the appropriate Download instance to use')
         dl_plugin_instances = self.pim.instantiate_configured_plugins(topics=('download', 'api'))
         dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
-        return dl_plugin_instances[0]
+        return dl_plugin_instances
 
     def __get_consolidator(self, search_result):
         from .plugins.filter.base import Filter

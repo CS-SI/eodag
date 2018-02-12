@@ -1,5 +1,5 @@
 eocloud:
-#  priority: 10000
+  priority: 10000
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
@@ -8,6 +8,7 @@ eocloud:
         min_start_date: 2016-12-10  # new S2 products specification
         product_type: L1C
         collection: Sentinel2
+#        partial: true   # This means not all the products of this type are located here
       LS-L1T:
         min_start_date: 2013-05-26
         product_type: L1T
@@ -151,7 +152,7 @@ scihub:
     endpoint: 'https://scihub.copernicus.eu/apihub/'
 
 geostorm-ce:
-  priority: 10000
+#  priority: 10000
   search:
     plugin: CSWSearch
     api_endpoint: 'http://geostorm-ce/rest/catalog/csw/'
