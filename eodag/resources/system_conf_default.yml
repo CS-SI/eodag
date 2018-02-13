@@ -87,14 +87,165 @@ thiea-landsat:
     plugin: RestoSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
     products:
+      SP-DEM:
+        collection: Spirit
+        product_type: DEM
+      SP-DEM9V20:
+        collection: Spirit
+        product_type: DEM9V20
+      SP-DEMS09V20:
+        collection: Spirit
+        product_type: DEMS09V20
+      SP-DEMS9V20:
+        collection: Spirit
+        product_type: DEMS9V20
+      SP-DEMSV20:
+        collection: Spirit
+        product_type: DEMSV20
+      SP-MXS:
+        collection: Spirit
+        product_type: 'Multispectral (XS)'
+      SP-PAN:
+        collection: Spirit
+        product_type: 'Panchromatique (Pan)'
+      SP-PXS:
+        collection: Spirit
+        product_type: 'Pansharpened (Pan+XS)'
+      SP-RFL:
+        collection: Spirit
+        product_type: REFLECTANCE
+      SP-TOA:
+        collection: Spirit
+        product_type: REFLECTANCETOA
+      SP-SDEM:
+        collection: Spirit
+        product_type: SPOTDEM
+      SP-S-DEM:
+        collection: Spirit
+        product_type: 'SPOT DEM'
+      SP-BUNDLE:
+        collection: Spirit
+        product_type: 'Bundle (Pan, XS)'
+
+      SH-DEM:
+        collection: SpotWorldHeritage
+        product_type: DEM
+      SH-DEM9V20:
+        collection: SpotWorldHeritage
+        product_type: DEM9V20
+      SH-DEMS09V20:
+        collection: SpotWorldHeritage
+        product_type: DEMS09V20
+      SH-DEMS9V20:
+        collection: SpotWorldHeritage
+        product_type: DEMS9V20
+      SH-DEMSV20:
+        collection: SpotWorldHeritage
+        product_type: DEMSV20
+      SH-MXS:
+        collection: SpotWorldHeritage
+        product_type: 'Multispectral (XS)'
+      SH-PAN:
+        collection: SpotWorldHeritage
+        product_type: 'Panchromatique (Pan)'
+      SH-PXS:
+        collection: SpotWorldHeritage
+        product_type: 'Pansharpened (Pan+XS)'
+      SH-RFL:
+        collection: SpotWorldHeritage
+        product_type: REFLECTANCE
+      SH-TOA:
+        collection: SpotWorldHeritage
+        product_type: REFLECTANCETOA
+      SH-SDEM:
+        collection: SpotWorldHeritage
+        product_type: SPOTDEM
+      SH-S-DEM:
+        collection: SpotWorldHeritage
+        product_type: 'SPOT DEM'
+      SH-BUNDLE:
+        collection: SpotWorldHeritage
+        product_type: 'Bundle (Pan, XS)'
+
+      LS-DEM:
+        collection: Landsat
+        product_type: DEM
+      LS-DEM9V20:
+        collection: Landsat
+        product_type: DEM9V20
+      LS-DEMS09V20:
+        collection: Landsat
+        product_type: DEMS09V20
+      LS-DEMS9V20:
+        collection: Landsat
+        product_type: DEMS9V20
+      LS-DEMSV20:
+        collection: Landsat
+        product_type: DEMSV20
+      LS-MXS:
+        collection: Landsat
+        product_type: 'Multispectral (XS)'
+      LS-PAN:
+        collection: Landsat
+        product_type: 'Panchromatique (Pan)'
+      LS-PXS:
+        collection: Landsat
+        product_type: 'Pansharpened (Pan+XS)'
       LS-RFL:
         collection: Landsat
         product_type: REFLECTANCE
-        min_start_date: 2018-01-01
       LS-TOA:
         collection: Landsat
         product_type: REFLECTANCETOA
-        min_start_date: 2018-01-01
+      LS-SDEM:
+        collection: Landsat
+        product_type: SPOTDEM
+      LS-S-DEM:
+        collection: Landsat
+        product_type: 'SPOT DEM'
+      LS-BUNDLE:
+        collection: Landsat
+        product_type: 'Bundle (Pan, XS)'
+
+      PD-DEM:
+        collection: Pleiades
+        product_type: DEM
+      PD-DEM9V20:
+        collection: Pleiades
+        product_type: DEM9V20
+      PD-DEMS09V20:
+        collection: Pleiades
+        product_type: DEMS09V20
+      PD-DEMS9V20:
+        collection: Pleiades
+        product_type: DEMS9V20
+      PD-DEMSV20:
+        collection: Pleiades
+        product_type: DEMSV20
+      PD-MXS:
+        collection: Pleiades
+        product_type: 'Multispectral (XS)'
+      PD-PAN:
+        collection: Pleiades
+        product_type: 'Panchromatique (Pan)'
+      PD-PXS:
+        collection: Pleiades
+        product_type: 'Pansharpened (Pan+XS)'
+      PD-RFL:
+        collection: Pleiades
+        product_type: REFLECTANCE
+      PD-TOA:
+        collection: Pleiades
+        product_type: REFLECTANCETOA
+      PD-SDEM:
+        collection: Pleiades
+        product_type: SPOTDEM
+      PD-S-DEM:
+        collection: Pleiades
+        product_type: 'SPOT DEM'
+      PD-BUNDLE:
+        collection: Pleiades
+        product_type: 'Bundle (Pan, XS)'
   download:
     plugin: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
