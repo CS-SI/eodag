@@ -59,7 +59,7 @@ class RestoSearch(Search):
         }
 
         start_date = kwargs.pop('startDate', None)
-        config_start_date = product_config['min_start_date']
+        config_start_date = product_config.get('min_start_date', '1970-01-01')
         if any(isinstance(config_start_date, klass) for klass in (datetime.date, datetime.datetime)):
             config_start_date = config_start_date.isoformat()
         if start_date:

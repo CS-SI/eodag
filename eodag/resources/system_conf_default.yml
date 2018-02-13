@@ -4,19 +4,74 @@ eocloud:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
     products:
+      S1-OCN:
+        product_type: OCN
+        collection: Sentinel1
+        partial: true
+      S1-GRD:
+        product_type: GRD
+        collection: Sentinel1
+        partial: true
+      S1-SLC:
+        product_type: SLC
+        collection: Sentinel1
+        partial: true
+      S1-RAW:
+        product_type: RAW
+        collection: Sentinel1
+        partial: true
       S2-L1C:
-        min_start_date: 2016-12-10  # new S2 products specification
         product_type: L1C
         collection: Sentinel2
-#        partial: true   # This means not all the products of this type are located here
-      LS-L1T:
-        min_start_date: 2013-05-26
+        partial: true   # This means not all the products of this type are located here
+      L8-L1T:
         product_type: L1T
         collection: Landsat8
+      L8-L1GT:
+        product_type: L1GT
+        collection: Landsat8
+      L7-L1GT:
+        product_type: L1GT
+        collection: Landsat7
+      L7-L1G:
+        product_type: L1G
+        collection: Landsat7
+      L7-L1T:
+        product_type: L1T
+        collection: Landsat7
+      L5-L1GT:
+        product_type: L1GT
+        collection: Landsat5
+      L5-L1G:
+        product_type: L1G
+        collection: Landsat5
+      L5-L1T:
+        product_type: L1T
+        collection: Landsat5
       ES-FRS:
-        min_start_date: 2002-05-17
         product_type: FRS
         collection: Envisat
+      S3-EFR:
+        product_type: EFR
+        collection: Sentinel3
+      S3-ERR:
+        product_type: ERR
+        collection: Sentinel3
+      S3-RBT:
+        product_type: RBT
+        collection: Sentinel3
+      S3-SRA:
+        product_type: SRA
+        collection: Sentinel3
+      S3-WAT:
+        product_type: WAT
+        collection: Sentinel3
+      S3-LAN:
+        product_type: LAN
+        collection: Sentinel3
+      S3-LST:
+        product_type: LST
+        collection: Sentinel3
   download:
     plugin: HTTPDownload
     on_site: false
