@@ -96,6 +96,7 @@ class RestoSearch(Search):
             logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
                 product = EOProduct(result)
+                product.id = result['id']
                 if result['properties']['organisationName'] in ('ESA',):
                     product.location_url_tpl = '{base}' + '/{prodId}.zip'.format(
                         prodId=result['properties']['productIdentifier'].replace('/eodata/', '')

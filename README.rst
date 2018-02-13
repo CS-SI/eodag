@@ -94,7 +94,7 @@ Here is a list of supported arguments and options:
 Features to be implemented
 ==========================
 
-* [ ] search recursion for Resto search plugin: search a product type in many of the supported systems
-* [ ] crunch plugins
+* [X] search recursion for Resto search plugin: search a product type in many of the supported systems
+* [X] crunch plugins
 * [ ] opensearch search plugin
 * [ ] configure an instance of `PICTO <https://www.picto-occitanie.fr/accueil>`_ to test another use case of CSW search

@@ -74,6 +74,7 @@ class CSWSearch(Search):
     def __build_product(self, rec):
         """Enable search results to be handled by http download plugin"""
         eop = EOProduct(rec)
+        eop.id = rec.identifier
         resource_filter = re.compile(self.config[SEARCH_DEF].get('resource_location_filter', ''))
         for ref in eop.original_repr.references:
             if ref['scheme'] in SUPPORTED_REFERENCE_SCHEMES:

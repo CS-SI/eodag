@@ -76,6 +76,8 @@ eocloud:
     plugin: HTTPDownload
     on_site: false
     base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
+  crunch:
+    plugin: RemoveDoubles
   auth:
     plugin: TokenAuth
     auth_uri: 'https://finder.eocloud.eu/resto/api/authidentity'
@@ -249,6 +251,8 @@ thiea-landsat:
   download:
     plugin: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
+  crunch:
+    plugin: RemoveDoubles
   auth:
     plugin: TokenAuth
     auth_uri: 'https://theia-landsat.cnes.fr/resto/api/auth/theia'
@@ -280,6 +284,8 @@ theia:
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
     dl_url_params:
       issuerId: theia
+  crunch:
+    plugin: RemoveDoubles
   auth:
     plugin: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
@@ -347,6 +353,8 @@ peps:
     base_uri: 'https://peps.cnes.fr/resto'
     dl_url_params:
       issuerId: peps
+  crunch:
+    plugin: RemoveDoubles
   auth:
     plugin: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
@@ -356,6 +364,8 @@ scihub:
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://scihub.copernicus.eu/apihub/'
+  crunch:
+    plugin: RemoveDoubles
 
 geostorm-ce:
 #  priority: 10000
@@ -382,5 +392,7 @@ geostorm-ce:
   download:
     plugin: HTTPDownload
     base_uri: ''    # no need for such a thing !
+  crunch:
+    plugin: RemoveDoubles
   auth:
     plugin: GenericAuth

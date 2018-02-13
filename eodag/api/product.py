@@ -14,9 +14,8 @@ class EOProduct(object):
         self.original_repr = remote_repr
         self.location_url_tpl = None
         self.local_filename = None
+        self.id = None
 
     def __repr__(self):
-        return '{}'.format(
-            repr(self.original_repr)
-        )
+        return self.id
 

@@ -68,10 +68,12 @@ class SatImagesAPI(object):
         # Prepare the api to perform its main operations
         self.search_interfaces = self.__get_searchers()
         self.download_interfaces = self.__get_downloaders()
+        self.crunchers = self.__get_crunchers()
         if len(self.search_interfaces) == 1:
-            # If we only have one interface, reduce the list of downloaders to have only one instance (the one
-            # corresponding to the unique search interface)
+            # If we only have one interface, reduce the list of downloaders and crunchers to have only one instance (the
+            # one corresponding to the unique search interface)
             self.download_interfaces = self.download_interfaces[:1]
+            self.crunchers = self.crunchers[:1]
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
@@ -100,7 +102,12 @@ class SatImagesAPI(object):
 
     def crunch(self, results):
         """Consolidate results of a search (prepare for downloading)"""
-        return results
+        crunched_results = []
+        for cruncher in self.crunchers:
+            crunched_results.extend(
+                cruncher.proceed(results)
+            )
+        return crunched_results
 
     def download_all(self, products):
         """Download all products of a search"""
@@ -150,7 +157,7 @@ class SatImagesAPI(object):
         # The searcher used will be the one with higher priority
         search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
         selected_instance = search_plugin_instances[0]
-        for name, prod in selected_instance.config['products'].items():
+        for name, prod in selected_instance.config.get('products', {}).items():
             # If a known product is a subset of its type, we will perform search on all configured instances
             if prod.get('partial'):
                 logger.debug("Detected partial product type '%s' on instance '%s' => recursive search and download "
@@ -164,8 +171,9 @@ class SatImagesAPI(object):
         dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
         return dl_plugin_instances
 
-    def __get_consolidator(self, search_result):
-        from .plugins.filter.base import Filter
-        for consolidator in Filter.plugins:
-            if True:
-                return consolidator()
+    def __get_crunchers(self):
+        """Get a list of plugins to use for preparing search results for download"""
+        logger.debug('Getting the list of Crunch plugin instances to use')
+        crunchers = self.pim.instantiate_configured_plugins(topics=('crunch',))
+        crunchers.sort(key=attrgetter('priority'), reverse=True)
+        return crunchers

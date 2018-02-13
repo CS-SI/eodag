@@ -24,10 +24,15 @@ class SentinelSearch(Search):
         )
         query_params = self.__convert_query_params(kwargs)
         try:
-            return [
-                EOProduct(original)
-                for original in sentinelsat.query(producttype=product_type, limit=10, **query_params)
-            ]
+            final = []
+            results = sentinelsat.query(producttype=product_type, limit=10, **query_params)
+            if results:
+                append_to_final = final.append
+                for _id, original in results.items():
+                    eop = EOProduct(original)
+                    eop.id = _id
+                    append_to_final(eop)
+            return final
         except TypeError as e:
             # Sentinelsat api query method raises a TypeError for finding None in the json feed received as a response
             # from the sentinel server, when looking for 'opensearch:totalResults' key. This may be interpreted as the
