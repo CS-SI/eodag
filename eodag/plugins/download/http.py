@@ -100,5 +100,7 @@ class HTTPDownload(Download):
                     if product.original_repr.get('properties', {}).get('organisationName') in ('ESA',):
                         url += '?token={}'.format(auth.token)
                 return url
-            except Exception:
-                raise RuntimeError('Product {} is incompatible with download plugin {}'.format(product, self.name))
+            except Exception as e:
+                raise RuntimeError('Product {} is incompatible with download plugin {}. Got error: {}'.format(
+                    product, self.name, e
+                ))

@@ -83,7 +83,7 @@ eocloud:
     auth_uri: 'https://finder.eocloud.eu/resto/api/authidentity'
     token_type: json
 
-thiea-landsat:
+theia-landsat:
 #  priority: 1000
   search:
     plugin: RestoSearch
@@ -255,7 +255,7 @@ thiea-landsat:
     plugin: RemoveDoubles
   auth:
     plugin: TokenAuth
-    auth_uri: 'https://theia-landsat.cnes.fr/resto/api/auth/theia'
+    auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
 
 theia:
 #  priority: 10000

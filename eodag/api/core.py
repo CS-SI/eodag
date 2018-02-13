@@ -127,7 +127,9 @@ class SatImagesAPI(object):
         for iface in self.download_interfaces:
             logger.debug('Using interface for download : %s on instance *%s*', iface.name, iface.instance_name)
             try:
-                auth = self.__get_authenticator(iface.instance_name).authenticate()
+                auth = self.__get_authenticator(iface.instance_name)
+                if auth:
+                    auth = auth.authenticate()
                 for local_filename in maybe_generator(iface.download(product, auth=auth)):
                     if local_filename is None:
                         logger.debug('The download method of a Download plugin should return the absolute path to the '
@@ -141,6 +143,12 @@ class SatImagesAPI(object):
                         'The download method of a Download plugin must support auth keyword argument'
                     )
                 raise e
+            except RuntimeError as rte:
+                # Skip download errors, allowing other downloads to take place anyway
+                if 'is incompatible with download plugin' in rte.args[0]:
+                    logger.warning('Download plugin incompatibility found. Skipping download...')
+                else:
+                    raise rte
 
     def __get_authenticator(self, instance_name):
         if 'auth' in self.system_config[instance_name]:
