@@ -4,6 +4,6 @@
 from eodag.plugins.base import GeoProductDownloaderPluginMount
 
 
-class Filter(metaclass=GeoProductDownloaderPluginMount):
+class Crunch(metaclass=GeoProductDownloaderPluginMount):
     def process(self):
         pass

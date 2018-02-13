@@ -49,7 +49,7 @@ def main(**kwargs):
             click.echo(main.get_help(ctx))
         sys.exit(0)
     god = SatImagesAPI(user_conf_file_path=conf_file)
-    for downloaded_file in god.download_all(god.filter(god.search(producttype, **criteria))):
+    for downloaded_file in god.download_all(god.crunch(god.search(producttype, **criteria))):
         if downloaded_file is None:
             click.echo('A file may have been downloaded but we cannot locate it')
         else:

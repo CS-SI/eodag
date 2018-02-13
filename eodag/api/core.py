@@ -98,11 +98,9 @@ class SatImagesAPI(object):
                     raise rte
         return results
 
-    def filter(self, results):
-        """Consolidate results of a search (prep for downloading)"""
+    def crunch(self, results):
+        """Consolidate results of a search (prepare for downloading)"""
         return results
-        # interface = self.__get_consolidator(results)
-        # return interface.process()
 
     def download_all(self, products):
         """Download all products of a search"""

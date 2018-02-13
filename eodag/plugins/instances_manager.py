@@ -9,7 +9,7 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import GeoProductDownloaderPluginMount
 from eodag.plugins.download.base import Download
-from eodag.plugins.filter.base import Filter
+from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.search.base import Search
 from eodag.utils.import_system import import_all_modules
 
@@ -34,8 +34,8 @@ class PluginInstancesManager(object):
                 'plugin': 'HTTPDownload',
                 ...
             },
-            'filter': {
-                'plugin': 'VeryComplexFilter',
+            'crunch': {
+                'plugin': 'VeryComplexCruncher',
                 ...
             }
         },
@@ -48,7 +48,7 @@ class PluginInstancesManager(object):
     supported_topics = {
         'search': Search,
         'download': Download,
-        'filter': Filter,
+        'crunch': Crunch,
         'auth': Authentication,
         'api': Api,
     }
