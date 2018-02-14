@@ -10,6 +10,10 @@ theia:
     credentials:
         ident:
         pass:
+theia-landsat:
+    credentials:
+        ident:
+        pass:
 eocloud:
     credentials:
         domainName:
@@ -18,4 +22,8 @@ eocloud:
 scihub:
     credentials:
         user:
+        password:
+geostorm-ce:
+    credentials:
+        username:
         password:
