@@ -309,7 +309,7 @@ peps:
         collection: S1
         min_start_date: 2018-01-01
       S2-S2MSI1C:
-        collecion: S2
+        collection: S2
         product_type: S2MSI1C
         min_start_date: 2018-01-01T00:00:00
       S3-EFR:
