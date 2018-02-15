@@ -10,6 +10,8 @@ import os
 import yaml
 import yaml.parser
 
+from eodag.utils import utf8_everywhere
+
 
 class SimpleYamlProxyConfig(object):
     """A simple configuration class acting as a proxy to an underlying dict object as returned by yaml.load"""
@@ -18,6 +20,7 @@ class SimpleYamlProxyConfig(object):
         with open(os.path.abspath(os.path.realpath(conf_file_path)), 'r') as fh:
             try:
                 self.source = yaml.load(fh)
+                utf8_everywhere(self.source)
             except yaml.parser.ParserError as e:
                 print('Unable to load user configuration file')
                 raise e

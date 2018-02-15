@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+from __future__ import unicode_literals
+
 import re
+import sys
 import types
 import unicodedata
 
@@ -66,6 +69,15 @@ def slugify(value, allow_unicode=False):
         value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value).strip().lower()
     return re.sub(r'[-\s]+', '-', value)
+
+
+def utf8_everywhere(mapping):
+    """Recursively transforms all string found in the dict mapping to UTF-8 if we are on Python 2"""
+    for key, value in mapping.items():
+        if isinstance(value, dict):
+            utf8_everywhere(value)
+        elif isinstance(value, str) and sys.version_info.major == 2 and sys.version_info.minor == 7:
+            mapping[key] = value.decode('utf-8')
 
 
 def maybe_generator(obj):
