@@ -131,7 +131,11 @@ class SatImagesAPI(object):
         for iface in self.download_interfaces:
             logger.debug('Using interface for download : %s on instance *%s*', iface.name, iface.instance_name)
             try:
-                auth = self.__get_authenticator(iface.instance_name)
+                auth = None
+                if not iface.config.get('on_site', False):
+                    auth = self.__get_authenticator(iface.instance_name)
+                else:
+                    logger.debug('On site usage detected. Authentication for download skipped !')
                 if auth:
                     auth = auth.authenticate()
                 for local_filename in maybe_generator(iface.download(product, auth=auth)):
