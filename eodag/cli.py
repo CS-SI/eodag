@@ -20,7 +20,17 @@ from eodag.utils.logging import setup_logging
 click.disable_unicode_literals_warning = True
 
 
-@click.command(help='Program for searching and downloading satellite images')
+@click.group()
+@click.option('-v', '--verbose', count=True,
+              help='Control the verbosity of the logs. For maximum verbosity, type -vvv')
+@click.pass_context
+def eodag(ctx, verbose):
+    if ctx.obj is None:
+        ctx.obj = {}
+    ctx.obj['verbosity'] = verbose
+
+
+@eodag.command(help='Search, crunch and download satellite images')
 @click.option('-b', '--bbox', type=(float,) * 4, default=(None,) * 4,
               help='Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this '
                    'order)')
@@ -32,31 +42,12 @@ click.disable_unicode_literals_warning = True
               help='Maximum cloud cover percentage needed for the product')
 @click.option('-f', '--conf', help='File path to the user configuration file with its credentials',
               type=click.Path(exists=True))
-@click.option('-v', '--verbose', count=True,
-              help='Control the verbosity of the logs. For maximum verbosity, type -vvv')
 @click.option('-p', '--productType',
               help='The product type to search')
-@click.option('-l', '--list', is_flag=True,
-              help='List supported product types and exit')
-def main(**kwargs):
+@click.pass_context
+def go(ctx, **kwargs):
+    kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
-    if kwargs.pop('list'):
-        def format_system_pt(sys_conf):
-            return 'product_type={product_type};collection={collection}'.format(**sys_conf)
-        with open(os.path.join(os.path.dirname(__file__), 'resources', 'system_conf_default.yml'), 'r') as fh:
-            try:
-                conf = yaml.load(fh)
-                for name, config in conf.items():
-                    if 'search' in config and 'products' in config['search']:
-                        click.echo('Product types available for instance {}:'.format(name))
-                        for eodag_pt, real_pt in config['search']['products'].items():
-                            click.echo('- eodag code: {}\t\tcode on system: {}'.format(
-                                eodag_pt, format_system_pt(real_pt)
-                            ))
-                sys.exit(0)
-            except yaml.parser.ParserError as e:
-                click.echo('Unable to load user configuration file: {}'.format(e))
-                sys.exit(1)
     if kwargs['bbox'] != (None,) * 4:
         rect = kwargs.pop('bbox')
         footprint = {'lonmin': rect[0], 'latmin': rect[1], 'lonmax': rect[2], 'latmax': rect[3]}
@@ -73,9 +64,9 @@ def main(**kwargs):
     if conf_file:
         conf_file = click.format_filename(conf_file)
     if not producttype:
-        with click.Context(main) as ctx:
+        with click.Context(go) as ctx:
             print('Give me some work to do. See below for how to do that:', end='\n\n')
-            click.echo(main.get_help(ctx))
+            click.echo(go.get_help(ctx))
         sys.exit(0)
     god = SatImagesAPI(user_conf_file_path=conf_file)
     for downloaded_file in god.download_all(god.crunch(god.search(producttype, **criteria))):
@@ -85,5 +76,42 @@ def main(**kwargs):
             click.echo('Downloaded {}'.format(downloaded_file))
 
 
+@eodag.command(name='list', help='List supported product types')
+@click.option('-s', '--system', help='Name of the system for which we should list available product types')
+@click.pass_context
+def list_pt(ctx, **kwargs):
+    def format_system_pt(sys_conf):
+        return 'product_type={product_type};collection={collection}'.format(**sys_conf)
+
+    def print_list(name, config):
+        if 'search' in config and 'products' in config['search']:
+            click.echo('Product types available for instance {}:'.format(name))
+            for eodag_pt, real_pt in config['search']['products'].items():
+                click.echo('- eodag code: {}\t\tcode on system: {}'.format(
+                    eodag_pt, format_system_pt(real_pt)
+                ))
+
+    kwargs['verbose'] = ctx.obj['verbosity']
+    setup_logging(**kwargs)
+    with open(os.path.join(os.path.dirname(__file__), 'resources', 'system_conf_default.yml'), 'r') as fh:
+        conf = yaml.load(fh)
+        system = kwargs.pop('system')
+        try:
+            if system and system not in conf:
+                click.echo('Unsupported system. You may have a typo')
+                click.echo('Available systems: {}'.format(', '.join(conf.keys())))
+                sys.exit(1)
+            for name, config in conf.items():
+                if system:
+                    if name == system:
+                        print_list(name, config)
+                        break
+                else:
+                    print_list(name, config)
+        except yaml.parser.ParserError as e:
+            click.echo('Unable to load user configuration file: {}'.format(e))
+            sys.exit(1)
+
+
 if __name__ == '__main__':
-    main()
+    eodag(obj={})
