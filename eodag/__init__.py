@@ -4,4 +4,7 @@
 __version__ = '0.1.0'
 
 
-from .api.core import SatImagesAPI
+try:
+    from .api.core import SatImagesAPI
+except ImportError:
+    pass
