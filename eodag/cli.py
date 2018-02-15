@@ -13,6 +13,10 @@ from eodag.api.core import SatImagesAPI
 from eodag.utils.logging import setup_logging
 
 
+# disable warning on Python 2
+click.disable_unicode_literals_warning = True
+
+
 @click.command(help='Program for searching and downloading satellite images')
 @click.option('-b', '--bbox', type=(float,) * 4, default=(None,) * 4,
               help='Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this '
