@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import datetime
 import logging
-from urllib.parse import urljoin, urlparse
+try:    #PY3
+    from urllib.parse import urljoin, urlparse
+except ImportError:     #PY2
+    from urlparse import urljoin, urlparse
 
 import requests
 from dateutil.parser import parse as dateparse

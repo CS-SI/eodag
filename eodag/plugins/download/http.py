@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import hashlib
 import logging
 import os
@@ -47,7 +51,8 @@ class HTTPDownload(Download):
             record_filename = os.path.join(download_records, url_hash)
             if os.path.isfile(record_filename) and os.path.isfile(local_file_path):
                 logger.info('Product already downloaded. Retrieve it at %s', local_file_path)
-                return local_file_path
+                yield local_file_path
+                return
             # Remove the record file if local_file_path is absent (e.g. it was deleted while record wasn't)
             elif os.path.isfile(record_filename):
                 logger.debug('Record file found (%s) but not the actual file', record_filename)
