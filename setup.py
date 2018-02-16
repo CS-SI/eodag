@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+import os
 from setuptools import setup, find_packages
 
 from eodag import __version__
 
+BASEDIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 
-with open('README.rst') as f:
+with open(os.path.join(BASEDIR, 'README.rst'), 'r') as f:
     readme = f.read()
 
-with open('LICENSE') as f:
+with open(os.path.join(BASEDIR, 'LICENSE'), 'r') as f:
     license = f.read()
 
-with open('requirements.txt') as f:
+with open(os.path.join(BASEDIR, 'requirements.txt'), 'r') as f:
     requirements = f.readlines()
 
 setup(
