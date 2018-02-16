@@ -6,3 +6,4 @@ click
 sentinelsat
 shapely
 owslib
+six

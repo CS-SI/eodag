@@ -7,14 +7,15 @@ from __future__ import unicode_literals
 
 import logging
 
+import six
+
 from eodag.plugins.base import GeoProductDownloaderPluginMount
 
 
 logger = logging.getLogger('eodag.plugins.apis.base')
 
 
-class Api(object):
-    __metaclass__ = GeoProductDownloaderPluginMount
+class Api(six.with_metaclass(GeoProductDownloaderPluginMount)):
 
     def __init__(self, config):
         self.config = config

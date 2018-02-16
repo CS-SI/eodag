@@ -5,11 +5,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import six
+
 from eodag.plugins.base import GeoProductDownloaderPluginMount
 
 
-class Crunch(object):
-    __metaclass__ = GeoProductDownloaderPluginMount
+class Crunch(six.with_metaclass(GeoProductDownloaderPluginMount)):
 
     def __init__(self, config):
         self.config = config
