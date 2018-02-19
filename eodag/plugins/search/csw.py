@@ -46,20 +46,21 @@ class CSWSearch(Search):
         else:
             self.__init_catalog()
         results = []
-        for product_type_def in self.config[SEARCH_DEF][PRODUCT_TYPE]:
-            product_type_search_tag = product_type_def['name']
-            logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
-            constraints = self.__convert_query_params(product_type_def, product_type, kwargs)
-            with patch_owslib_requests(verify=False):
-                try:
-                    self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
-                except ExceptionReport as er:
-                    logger.warning('Failed to query %s for product type %s : %s', product_type_search_tag,
-                                   product_type, er)
-                    continue
-            partial_results = [self.__build_product(record) for record in self.catalog.records.values()]
-            logger.info('Found %s results querying %s', len(partial_results), product_type_search_tag)
-            results.extend(partial_results)
+        if self.catalog:
+            for product_type_def in self.config[SEARCH_DEF][PRODUCT_TYPE]:
+                product_type_search_tag = product_type_def['name']
+                logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
+                constraints = self.__convert_query_params(product_type_def, product_type, kwargs)
+                with patch_owslib_requests(verify=False):
+                    try:
+                        self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
+                    except ExceptionReport as er:
+                        logger.warning('Failed to query %s for product type %s : %s', product_type_search_tag,
+                                       product_type, er)
+                        continue
+                partial_results = [self.__build_product(record) for record in self.catalog.records.values()]
+                logger.info('Found %s results querying %s', len(partial_results), product_type_search_tag)
+                results.extend(partial_results)
         logger.info('Found %s overall results', len(results))
         return results
 
@@ -68,12 +69,15 @@ class CSWSearch(Search):
         if not self.catalog:
             logger.debug('Initialising CSW catalog at %s', self.config['api_endpoint'])
             with patch_owslib_requests(verify=False):
-                self.catalog = CatalogueServiceWeb(
-                    self.config['api_endpoint'],
-                    version=self.config.get('version', '2.0.2'),
-                    username=username,
-                    password=password
-                )
+                try:
+                    self.catalog = CatalogueServiceWeb(
+                        self.config['api_endpoint'],
+                        version=self.config.get('version', '2.0.2'),
+                        username=username,
+                        password=password
+                    )
+                except Exception as e:
+                    logger.warning('Initialization of catalog failed due to error: (%s: %s)', type(e), e)
 
     def __build_product(self, rec):
         """Enable search results to be handled by http download plugin"""

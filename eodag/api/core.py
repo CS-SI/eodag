@@ -91,6 +91,10 @@ class SatImagesAPI(object):
                 results.extend(r)
                 # Decide if we should go on with the search (if the iface stores the product_type partially)
                 if not iface.config.get('products', {}).get(product_type, {}).get('partial', False):
+                    if len(search_interfaces) > 1 and idx == 0 and len(r) == 0:
+                        logger.debug("No result from preferred interface: '%r'. Search continues on other instances "
+                                     "supporting product type: '%r'", iface.instance_name, product_type)
+                        continue
                     break
                 if idx == 0:
                     logger.debug("Detected partial product type '%s' on priviledged instance '%s'. Search continues on "

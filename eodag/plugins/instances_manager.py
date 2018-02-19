@@ -78,12 +78,16 @@ class PluginInstancesManager(object):
         return instances
 
     def __filter_instances(self, topic, pt):
-        """Returns a list of instances names supporting a particular product type"""
+        """Returns a list of instances names supporting a particular product type.
+
+        CSWSearch are included by default in the list to enable its instances to take over if they are the preferred
+        platforms"""
         if topic == 'search':
             return [
                 system
                 for system, config in self.instances_config.items()
-                if 'products' in config.get(topic, {}) and pt in config.get(topic, {}).get('products')
+                if (('products' in config.get(topic, {}) and pt in config.get(topic, {}).get('products'))
+                    or config.get(topic, {}).get('plugin') == 'CSWSearch')
             ]
         return []
 
