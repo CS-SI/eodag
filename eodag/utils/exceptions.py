@@ -16,3 +16,7 @@ class PluginNotFoundError(Exception):
 class PluginImplementationError(Exception):
     """Error when a plugin does not behave as expected"""
 
+
+class MisconfiguredError(Exception):
+    """An error indicating a Search Plugin that is not well configured"""
+

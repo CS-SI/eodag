@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
-import six
-
-from eodag.plugins.base import GeoProductDownloaderPluginMount
+from eodag.plugins.base import PluginTopic
+from eodag.utils.exceptions import MisconfiguredError
 
 
-class Search(six.with_metaclass(GeoProductDownloaderPluginMount)):
+class Search(PluginTopic):
 
     def __init__(self, config):
         # Defining a products key in the config is made optional
@@ -28,7 +25,3 @@ class Search(six.with_metaclass(GeoProductDownloaderPluginMount)):
         be processed by a Download plugin.
         """
         raise NotImplementedError('A Search plugin must implement a method named query')
-
-
-class MisconfiguredError(Exception):
-    """An error indicating a Search Plugin that is not well configured"""

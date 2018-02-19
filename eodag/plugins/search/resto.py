@@ -95,14 +95,13 @@ class RestoSearch(Search):
         response.raise_for_status()
         return self.normalize_results(response.json())
 
-    @staticmethod
-    def normalize_results(results):
+    def normalize_results(self, results):
         normalized = []
         if results['features']:
             logger.info('Found %s products', len(results['features']))
             logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
-                product = EOProduct(result)
+                product = EOProduct(result, self.instance_name)
                 product.id = result['id']
                 if result['properties']['organisationName'] in ('ESA',):
                     product.location_url_tpl = '{base}' + '/{prodId}.zip'.format(

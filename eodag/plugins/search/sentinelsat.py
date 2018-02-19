@@ -33,7 +33,7 @@ class SentinelSearch(Search):
             if results:
                 append_to_final = final.append
                 for _id, original in results.items():
-                    eop = EOProduct(original)
+                    eop = EOProduct(original, self.instance_name)
                     eop.id = _id
                     append_to_final(eop)
             return final

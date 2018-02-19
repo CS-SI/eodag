@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import six
 from eodag.utils.exceptions import PluginNotFoundError
 
 
@@ -27,6 +28,9 @@ class GeoProductDownloaderPluginMount(type):
             # Every plugin class has a priority attribute that an instance can override. Minimum priority by default =>
             # an instance must override this with higher priority if it wants to be used
             cls.priority = 0
+            cls.instance_name = ''
+
+            attrs.update({'name': cls.name, 'priority': cls.priority, 'instance_name': cls.instance_name})
 
     def get_plugins(cls, *args, **kwargs):
         return [plugin(*args, **kwargs) for plugin in cls.plugins]
@@ -36,3 +40,12 @@ class GeoProductDownloaderPluginMount(type):
             if name == plugin.name:
                 return plugin
         raise PluginNotFoundError("'{}' not found for {} class of plugins".format(name, cls))
+
+
+class PluginTopic(six.with_metaclass(GeoProductDownloaderPluginMount)):
+    """Base of all plugin topics in eodag"""
+
+    def __repr__(self):
+        return '{}(instance_name={}, priority={}, topic={})'.format(
+            self.name, self.instance_name, self.priority, self.__class__.mro()[1].__name__
+        )

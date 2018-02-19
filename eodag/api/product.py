@@ -13,12 +13,13 @@ class EOProduct(object):
     return a list made up of a list of such instances, providing a uniform object on which the other plugins can work.
     """
 
-    def __init__(self, remote_repr):
+    def __init__(self, remote_repr, producer):
         self.original_repr = remote_repr
         self.location_url_tpl = None
         self.local_filename = None
         self.id = None
+        self.producer = producer
 
     def __repr__(self):
-        return self.id
+        return '{}(id={}, producer={})'.format(self.__class__.__name__, self.id, self.producer)
 

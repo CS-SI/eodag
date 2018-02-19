@@ -64,37 +64,50 @@ class PluginInstancesManager(object):
         # 'RestoSearch' will be available in self.supported_topics['search'].plugins
         import_all_modules(plugins, depth=2, exclude=('base', __name__.split('.')[-1],))
 
-    def instantiate_configured_plugins(self, topics):
+    def instantiate_configured_plugins(self, topics, pt_matching='', only=None):
         """Instantiate the plugins"""
         if isinstance(topics, Iterable):
             instances = []
             for topic in topics:
-                instances.extend(
-                    self.__get_instances(topic)
-                )
+                instances.extend(self.__get_instances(
+                    topic,
+                    only=self.__filter_instances(topic, pt_matching) + (only or [])
+                ))
         else:
-            instances = self.__get_instances(topics)
+            instances = self.__get_instances(topics, only=self.__filter_instances(topics, pt_matching))
         return instances
 
-    def __get_instances(self, topic):
+    def __filter_instances(self, topic, pt):
+        """Returns a list of instances names supporting a particular product type"""
+        if topic == 'search':
+            return [
+                system
+                for system, config in self.instances_config.items()
+                if 'products' in config.get(topic, {}) and pt in config.get(topic, {}).get('products')
+            ]
+        return []
+
+    def __get_instances(self, topic, only=None):
         instances = []
         logger.debug('Creating configured *%s* plugin instances', topic.upper())
         PluginBaseClass = self.__get_base_class(topic)
         for instance_name, instance_config in self.instances_config.items():
+            # If only is given, only instantiate this subset of instances
+            if only and isinstance(only, Iterable) and instance_name not in only:
+                continue
             if topic in instance_config:
-                logger.debug('Creating *%s* plugin instance with name *%s*', topic.upper(), instance_name)
-                PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
-                    PluginBaseClass,
-                    instance_config[topic]['plugin']
+                logger.debug("Creating '%s' plugin instance with name '%s'", topic.upper(), instance_name)
+                instance = self.instantiate_plugin_by_config(
+                    topic,
+                    instance_config[topic],
+                    base=PluginBaseClass,
+                    iname=instance_name,
+                    priority=instance_config.get('priority')
                 )
-                instance = PluginClass(instance_config[topic])
-                # Each instance will be identified by its name, independently of the plugin implementation
-                instance.instance_name = instance_name
-                # Update instance priority
-                instance.priority = instance_config.get('priority', instance.priority)
                 instances.append(instance)
             else:
-                logger.debug('Skipping *%s* instance creation for instance *%s*', topic.upper(), instance_name)
+                logger.debug("Skipping '%(top)s' plugin creation for instance '%(ins)s': not an instance of '%(top)s'",
+                             {'top': topic.upper(), 'ins': instance_name})
         return instances
 
     def __get_base_class(self, topic):
@@ -109,12 +122,18 @@ class PluginInstancesManager(object):
             )
         return PluginBaseClass
 
-    def instantiate_plugin_by_config(self, topic_name, topic_config):
-        logger.debug('Creating *%s* plugin instance with config %s', topic_name.upper(), topic_config)
-        PluginBaseClass = self.__get_base_class(topic_name)
+    def instantiate_plugin_by_config(self, topic_name, topic_config, base=None, iname='', priority=None):
+        logger.debug("Creating '%s' plugin instance with config '%s'", topic_name.upper(), topic_config)
+        PluginBaseClass = base or self.__get_base_class(topic_name)
         PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
             PluginBaseClass,
             topic_config['plugin']
         )
-        return PluginClass(topic_config)
+        instance = PluginClass(topic_config)
+        # Each instance will be identified by its name, independently of the plugin implementation
+        instance.instance_name = iname
+        # Update instance priority
+        if priority and priority != instance.priority:
+            instance.priority = priority
+        return instance
 

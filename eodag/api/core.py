@@ -69,24 +69,16 @@ class SatImagesAPI(object):
                                     else:
                                         self.system_config[instance_name]['download'][key] = user_spec
         self.pim = PluginInstancesManager(self.system_config)
-        # Prepare the api to perform its main operations
-        self.search_interfaces = self.__get_searchers()
-        self.download_interfaces = self.__get_downloaders()
-        self.crunchers = self.__get_crunchers()
-        if len(self.search_interfaces) == 1:
-            # If we only have one interface, reduce the list of downloaders and crunchers to have only one instance (the
-            # one corresponding to the unique search interface)
-            self.download_interfaces = self.download_interfaces[:1]
-            self.crunchers = self.crunchers[:1]
+        self.__interfaces_cache = {}
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
 
         The interfaces are required to return a list as a result of their processing, we enforce this requirement here.
         """
+        search_interfaces = self.__get_searchers(product_type)
         results = []
-        # "recursive" search
-        for iface in self.search_interfaces:
+        for idx, iface in enumerate(search_interfaces):
             logger.debug('Using interface for search: %s on instance *%s*', iface.name, iface.instance_name)
             auth = self.__get_authenticator(iface.instance_name)
             try:
@@ -97,6 +89,12 @@ class SatImagesAPI(object):
                         'instead'.format(type(r))
                     )
                 results.extend(r)
+                # Decide if we should go on with the search (if the iface stores the product_type partially)
+                if not iface.config.get('products', {}).get(product_type, {}).get('partial', False):
+                    break
+                if idx == 0:
+                    logger.debug("Detected partial product type '%s' on priviledged instance '%s'. Search continues on "
+                                 "other instances supporting it.", product_type, iface.instance_name)
             except RuntimeError as rte:
                 if 'Unknown product type' in rte.args:
                     logger.debug('Product type %s not known by %s instance', product_type, iface.instance_name)
@@ -107,7 +105,8 @@ class SatImagesAPI(object):
     def crunch(self, results):
         """Consolidate results of a search (prepare for downloading)"""
         crunched_results = []
-        for cruncher in self.crunchers:
+        crunchers = self.__get_crunchers(results)
+        for cruncher in crunchers:
             crunched_results.extend(
                 cruncher.proceed(results)
             )
@@ -128,7 +127,8 @@ class SatImagesAPI(object):
         """Download a single product"""
         # try to download the product from all the download interfaces known (functionality introduced by the necessity
         # to take into account that a product type may be distributed to many instances)
-        for iface in self.download_interfaces:
+        download_interfaces = self.__get_downloaders(product)
+        for iface in download_interfaces:
             logger.debug('Using interface for download : %s on instance *%s*', iface.name, iface.instance_name)
             try:
                 auth = None
@@ -161,35 +161,57 @@ class SatImagesAPI(object):
     def __get_authenticator(self, instance_name):
         if 'auth' in self.system_config[instance_name]:
             logger.debug('Authentication initialisation for instance %s', instance_name)
-            return self.pim.instantiate_plugin_by_config(
-                topic_name='auth',
-                topic_config=self.system_config[instance_name]['auth']
-            )
+            previous = (self.__interfaces_cache.setdefault('auth', {})
+                                               .setdefault(instance_name, []))
+            if not previous:
+                previous.append(self.pim.instantiate_plugin_by_config(
+                    topic_name='auth',
+                    topic_config=self.system_config[instance_name]['auth'],
+                    iname=instance_name,
+                ))
+            logger.debug("Initialized %r Authentication plugin for instance '%s'", previous[0], instance_name)
+            return previous[0]
 
-    def __get_searchers(self):
+    def __get_searchers(self, product_type):
         """Look for a search interface to use, based on the configuration of the api"""
-        logger.debug('Looking for the appropriate Search instance to use')
-        search_plugin_instances = self.pim.instantiate_configured_plugins(topics=('search', 'api'))
-        # The searcher used will be the one with higher priority
-        search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
-        selected_instance = search_plugin_instances[0]
-        for name, prod in selected_instance.config.get('products', {}).items():
-            # If a known product is a subset of its type, we will perform search on all configured instances
-            if prod.get('partial'):
-                logger.debug("Detected partial product type '%s' on instance '%s' => recursive search and download "
-                             "activated", name, selected_instance.instance_name)
-                return search_plugin_instances
-        return [selected_instance]
+        logger.debug('Looking for the appropriate Search instance(s) to use for product type: %s', product_type)
+        previous = (self.__interfaces_cache.setdefault('search', {})
+                                           .setdefault(product_type, []))
+        if not previous:
+            search_plugin_instances = self.pim.instantiate_configured_plugins(
+                topics=('search', 'api'),
+                pt_matching=product_type
+            )
+            # The searcher used will be the one with higher priority
+            search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
 
-    def __get_downloaders(self):
-        logger.debug('Looking for the appropriate Download instance to use')
-        dl_plugin_instances = self.pim.instantiate_configured_plugins(topics=('download', 'api'))
-        dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
-        return dl_plugin_instances
+            # Store the newly instantiated interfaces in the interface cache
+            previous.extend(search_plugin_instances)
+        logger.debug("Found %s Search instance(s) for product type '%s' (ordered by highest priority): %r",
+                     len(previous), product_type, previous)
+        return previous
 
-    def __get_crunchers(self):
+    def __get_downloaders(self, product):
+        """Look for a download interface to use, based on the configuration of the api and the product to download"""
+        logger.debug('Looking for the appropriate Download instance to use for product: %r', product)
+        previous = (self.__interfaces_cache.setdefault('download', {})
+                                           .setdefault(product.producer, []))
+        if not previous:
+            dl_plugin_instances = self.pim.instantiate_configured_plugins(
+                topics=('download', 'api'),
+                only=[product.producer]
+            )
+            dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
+
+            # Store the newly instantiated interfaces in the interface cache
+            previous.extend(dl_plugin_instances)
+        logger.debug('Found %s Download instance(s) for product %r (ordered by highest priority): %s',
+                     len(previous), product, previous)
+        return previous
+
+    def __get_crunchers(self, results):
         """Get a list of plugins to use for preparing search results for download"""
         logger.debug('Getting the list of Crunch plugin instances to use')
-        crunchers = self.pim.instantiate_configured_plugins(topics=('crunch',))
+        crunchers = self.pim.instantiate_configured_plugins(topics=('crunch',), only=[res.producer for res in results])
         crunchers.sort(key=attrgetter('priority'), reverse=True)
         return crunchers
