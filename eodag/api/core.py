@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
@@ -12,6 +10,7 @@ from operator import attrgetter
 import click
 
 from eodag.config import SimpleYamlProxyConfig
+from eodag.api.search_result import SearchResult
 from eodag.plugins.instances_manager import PluginInstancesManager
 from eodag.utils import maybe_generator
 from eodag.utils.exceptions import PluginImplementationError
@@ -104,28 +103,18 @@ class SatImagesAPI(object):
                     logger.debug('Product type %s not known by %s instance', product_type, iface.instance_name)
                 else:
                     raise rte
-        return results
+        return SearchResult(results)
 
-    def crunch(self, results):
-        """Consolidate results of a search (prepare for downloading)"""
-        crunched_results = []
-        crunchers = self.__get_crunchers(results)
-        for cruncher in crunchers:
-            crunched_results.extend(
-                cruncher.proceed(results)
-            )
-        return crunched_results
-
-    def download_all(self, products):
+    def download_all(self, search_result):
         """Download all products of a search"""
-        if products:
-            with click.progressbar(products, fill_char='O', length=len(products), width=0,
+        if search_result:
+            with click.progressbar(search_result, fill_char='O', length=len(search_result), width=0,
                                    label='Downloading products') as bar:
                 for product in bar:
                     for path in self.__download(product):
                         yield path
         else:
-            click.echo('Empty product list, nothing to be downloaded !')
+            click.echo('Empty search result, nothing to be downloaded !')
 
     def __download(self, product):
         """Download a single product"""
@@ -213,9 +202,5 @@ class SatImagesAPI(object):
                      len(previous), product, previous)
         return previous
 
-    def __get_crunchers(self, results):
-        """Get a list of plugins to use for preparing search results for download"""
-        logger.debug('Getting the list of Crunch plugin instances to use')
-        crunchers = self.pim.instantiate_configured_plugins(topics=('crunch',), only=[res.producer for res in results])
-        crunchers.sort(key=attrgetter('priority'), reverse=True)
-        return crunchers
+    def get_cruncher(self, name):
+        return self.pim.instantiate_plugin_by_name('crunch', name)

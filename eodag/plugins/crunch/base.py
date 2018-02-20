@@ -8,9 +8,6 @@ from eodag.plugins.base import PluginTopic
 
 class Crunch(PluginTopic):
 
-    def __init__(self, config):
-        self.config = config
-
     def proceed(self, product_list):
         """Implementation of how the results must be crunched"""
         raise NotImplementedError

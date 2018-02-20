@@ -19,6 +19,11 @@ from eodag.utils.logging import setup_logging
 # disable warning on Python 2
 click.disable_unicode_literals_warning = True
 
+# A list of supported crunchers that the user can choose (see --cruncher option below)
+CRUNCHERS = [
+    'RemoveDoubles',
+]
+
 
 @click.group()
 @click.option('-v', '--verbose', count=True,
@@ -44,6 +49,8 @@ def eodag(ctx, verbose):
               type=click.Path(exists=True))
 @click.option('-p', '--productType',
               help='The product type to search')
+@click.option('--cruncher', type=click.Choice(CRUNCHERS), multiple=True,
+              help='A cruncher to be applied to search results. Repeat option many times to apply many crunchers')
 @click.pass_context
 def go(ctx, **kwargs):
     kwargs['verbose'] = ctx.obj['verbosity']
@@ -68,8 +75,13 @@ def go(ctx, **kwargs):
             print('Give me some work to do. See below for how to do that:', end='\n\n')
             click.echo(go.get_help(ctx))
         sys.exit(0)
-    god = SatImagesAPI(user_conf_file_path=conf_file)
-    for downloaded_file in god.download_all(god.crunch(god.search(producttype, **criteria))):
+    satim_api = SatImagesAPI(user_conf_file_path=conf_file)
+    results = satim_api.search(producttype, **criteria)
+    click.echo("Found {} products with product type '{}': {}".format(len(results), producttype, results))
+    crunchers = set(kwargs.pop('cruncher') or [])
+    for cruncher in map(satim_api.get_cruncher, crunchers):
+        results.crunch(cruncher)
+    for downloaded_file in satim_api.download_all(results):
         if downloaded_file is None:
             click.echo('A file may have been downloaded but we cannot locate it')
         else:

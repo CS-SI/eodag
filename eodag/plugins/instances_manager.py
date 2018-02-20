@@ -141,3 +141,12 @@ class PluginInstancesManager(object):
             instance.priority = priority
         return instance
 
+    def instantiate_plugin_by_name(self, topic, name):
+        """Create and return a plugin instance by its name. This method is intended to be used for 'config-free' plugins
+        (e.g. Crunch plugins). These are plugins that do not need configuration during instantiation
+        """
+        logger.debug("Creating '%s' plugin instance with name '%s' (config-free instance)", topic.upper(), name)
+        PluginBaseClass = self.__get_base_class(topic)
+        PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(PluginBaseClass, name)
+        return PluginClass()
+
