@@ -89,13 +89,14 @@ class SatImagesAPI(object):
                     )
                 results.extend(r)
                 # Decide if we should go on with the search (if the iface stores the product_type partially)
-                if not iface.config.get('products', {}).get(product_type, {}).get('partial', False):
-                    if len(search_interfaces) > 1 and idx == 0 and len(r) == 0:
-                        logger.debug("No result from preferred interface: '%r'. Search continues on other instances "
-                                     "supporting product type: '%r'", iface.instance_name, product_type)
-                        continue
-                    break
                 if idx == 0:
+                    if not iface.config.get('products', {}).get(product_type, {}).get('partial', False):
+                        if len(search_interfaces) > 1 and len(r) == 0:
+                            logger.debug(
+                                "No result from preferred interface: '%r'. Search continues on other instances "
+                                "supporting product type: '%r'", iface.instance_name, product_type)
+                            continue
+                        break
                     logger.debug("Detected partial product type '%s' on priviledged instance '%s'. Search continues on "
                                  "other instances supporting it.", product_type, iface.instance_name)
             except RuntimeError as rte:
@@ -202,5 +203,14 @@ class SatImagesAPI(object):
                      len(previous), product, previous)
         return previous
 
-    def get_cruncher(self, name):
+    def get_cruncher(self, name, **options):
+        if options:
+            plugin_conf = {
+                'plugin': name,
+            }
+            plugin_conf.update({
+                key.replace('-', '_'): val
+                for key, val in options.items()
+            })
+            return self.pim.instantiate_plugin_by_config('crunch', plugin_conf)
         return self.pim.instantiate_plugin_by_name('crunch', name)

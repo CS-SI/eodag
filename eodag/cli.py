@@ -21,7 +21,7 @@ click.disable_unicode_literals_warning = True
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
-    'RemoveDoubles',
+    'RemoveDoubles', 'FilterLatestByName'
 ]
 
 
@@ -51,8 +51,13 @@ def eodag(ctx, verbose):
               help='The product type to search')
 @click.option('--cruncher', type=click.Choice(CRUNCHERS), multiple=True,
               help='A cruncher to be applied to search results. Repeat option many times to apply many crunchers')
+@click.option('--cruncher-args', type=(str,) * 3, multiple=True,
+              help='Named arguments acting as the parameters of a cruncher. '
+                   'Enter it like this: --cruncher-args <CruncherName> <arg-name> <arg-value>. Repeat option many '
+                   'times to give many args to a cruncher')
 @click.pass_context
 def go(ctx, **kwargs):
+    # Process inputs for search
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
     if kwargs['bbox'] != (None,) * 4:
@@ -75,12 +80,26 @@ def go(ctx, **kwargs):
             print('Give me some work to do. See below for how to do that:', end='\n\n')
             click.echo(go.get_help(ctx))
         sys.exit(0)
+
+    # Process inputs for crunch
+    cruncher_names = set(kwargs.pop('cruncher') or [])
+    cruncher_args = kwargs.pop('cruncher_args')
+    cruncher_args_dict = {}
+    if cruncher_args:
+        for cruncher, argname, argval in cruncher_args:
+            cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
+
     satim_api = SatImagesAPI(user_conf_file_path=conf_file)
+
+    # Search
     results = satim_api.search(producttype, **criteria)
     click.echo("Found {} products with product type '{}': {}".format(len(results), producttype, results))
-    crunchers = set(kwargs.pop('cruncher') or [])
-    for cruncher in map(satim_api.get_cruncher, crunchers):
+
+    # Crunch !
+    for cruncher in (satim_api.get_cruncher(cname, **cruncher_args_dict.get(cname, {})) for cname in cruncher_names):
         results.crunch(cruncher)
+
+    # Download
     for downloaded_file in satim_api.download_all(results):
         if downloaded_file is None:
             click.echo('A file may have been downloaded but we cannot locate it')
