@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
@@ -35,7 +33,9 @@ def eodag(ctx, verbose):
     ctx.obj['verbosity'] = verbose
 
 
-@eodag.command(help='Search, crunch and download satellite images')
+@eodag.command(name='search',
+               help='Search satellite images by their product types, and optionally crunch the search results before '
+                    'storing them in a geojson file')
 @click.option('-b', '--bbox', type=(float,) * 4, default=(None,) * 4,
               help='Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this '
                    'order)')
@@ -55,8 +55,12 @@ def eodag(ctx, verbose):
               help='Named arguments acting as the parameters of a cruncher. '
                    'Enter it like this: --cruncher-args <CruncherName> <arg-name> <arg-value>. Repeat option many '
                    'times to give many args to a cruncher')
+@click.option('--storage', type=click.Path(dir_okay=False, writable=True, readable=False),
+              default='search_results.geojson',
+              help='Path to the file where to store search results (.geojson extension will be automatically appended '
+                   'to the filename). DEFAULT: search_results.geojson')
 @click.pass_context
-def go(ctx, **kwargs):
+def search_crunch(ctx, **kwargs):
     # Process inputs for search
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
@@ -76,9 +80,9 @@ def go(ctx, **kwargs):
     if conf_file:
         conf_file = click.format_filename(conf_file)
     if not producttype:
-        with click.Context(go) as ctx:
+        with click.Context(search_crunch) as ctx:
             print('Give me some work to do. See below for how to do that:', end='\n\n')
-            click.echo(go.get_help(ctx))
+            click.echo(search_crunch.get_help(ctx))
         sys.exit(0)
 
     # Process inputs for crunch
@@ -97,14 +101,13 @@ def go(ctx, **kwargs):
 
     # Crunch !
     for cruncher in (satim_api.get_cruncher(cname, **cruncher_args_dict.get(cname, {})) for cname in cruncher_names):
-        results.crunch(cruncher)
+        results = results.crunch(cruncher)
 
-    # Download
-    for downloaded_file in satim_api.download_all(results):
-        if downloaded_file is None:
-            click.echo('A file may have been downloaded but we cannot locate it')
-        else:
-            click.echo('Downloaded {}'.format(downloaded_file))
+    storage_filepath = kwargs.pop('storage')
+    if not storage_filepath.endswith('.geojson'):
+        storage_filepath += '.geojson'
+    result_storage = satim_api.serialize(results, filename=storage_filepath)
+    click.echo("Results stored at '{}'".format(result_storage))
 
 
 @eodag.command(name='list', help='List supported product types')
@@ -142,6 +145,33 @@ def list_pt(ctx, **kwargs):
         except yaml.parser.ParserError as e:
             click.echo('Unable to load user configuration file: {}'.format(e))
             sys.exit(1)
+
+
+@eodag.command(help='Download a list of products from a serialized search result')
+@click.option('--search-results', type=click.Path(exists=True, dir_okay=False),
+              help='Path to a serialized search result')
+@click.option('-f', '--conf', type=click.Path(exists=True),
+              help='File path to the user configuration file with its credentials', )
+@click.pass_context
+def download(ctx, **kwargs):
+    search_result_path = kwargs.pop('search_results')
+    if not search_result_path:
+        with click.Context(download) as ctx:
+            click.echo('Nothing to do (no search results file provided)')
+            click.echo(download.get_help(ctx))
+        sys.exit(0)
+    kwargs['verbose'] = ctx.obj['verbosity']
+    setup_logging(**kwargs)
+    conf_file = kwargs.pop('conf')
+    if conf_file:
+        conf_file = click.format_filename(conf_file)
+        satim_api = SatImagesAPI(user_conf_file_path=conf_file)
+        search_results = satim_api.deserialize(search_result_path)
+        for downloaded_file in satim_api.download_all(search_results):
+            if downloaded_file is None:
+                click.echo('A file may have been downloaded but we cannot locate it')
+            else:
+                click.echo('Downloaded {}'.format(downloaded_file))
 
 
 if __name__ == '__main__':

@@ -8,9 +8,10 @@ import os
 from operator import attrgetter
 
 import click
+import geojson
 
-from eodag.config import SimpleYamlProxyConfig
 from eodag.api.search_result import SearchResult
+from eodag.config import SimpleYamlProxyConfig
 from eodag.plugins.instances_manager import PluginInstancesManager
 from eodag.utils import maybe_generator
 from eodag.utils.exceptions import PluginImplementationError
@@ -116,6 +117,19 @@ class SatImagesAPI(object):
                         yield path
         else:
             click.echo('Empty search result, nothing to be downloaded !')
+
+    @staticmethod
+    def serialize(search_result, filename='search_results.geojson'):
+        """Registers results of a eodag search into a geojson file"""
+        with open(filename, 'w') as fh:
+            geojson.dump(search_result, fh)
+        return filename
+
+    @staticmethod
+    def deserialize(filename):
+        """Loads results of a eodag search from a geojson file"""
+        with open(filename, 'r') as fh:
+            return SearchResult.from_geojson(geojson.load(fh))
 
     def __download(self, product):
         """Download a single product"""
