@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import logging
-try:    #PY3
+
+import shapely.geometry
+
+
+try:  # PY3
     from urllib.parse import urljoin, urlparse
-except ImportError:     #PY2
+except ImportError:  # PY2
     from urlparse import urljoin, urlparse
 
 import requests
@@ -93,30 +95,37 @@ class RestoSearch(Search):
         logger.debug('Making request to %s with params : %s', url, params)
         response = requests.get(url, params=params)
         response.raise_for_status()
-        return self.normalize_results(response.json())
+        return self.normalize_results(response.json(), search_bbox=footprint)
 
-    def normalize_results(self, results):
+    def normalize_results(self, results, search_bbox=None):
         normalized = []
         if results['features']:
             logger.info('Found %s products', len(results['features']))
             logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
-                product = EOProduct(result, self.instance_name)
-                product.id = result['id']
                 if result['properties']['organisationName'] in ('ESA',):
-                    product.location_url_tpl = '{base}' + '/{prodId}.zip'.format(
+                    download_url = '{base}' + '/{prodId}.zip'.format(
                         prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
                     )
-                    product.local_filename = result['properties']['title'] + '.zip'
+                    local_filename = result['properties']['title'] + '.zip'
                 else:
                     if result['properties']['services']['download']['url']:
-                        product.location_url_tpl = result['properties']['services']['download']['url']
+                        download_url = result['properties']['services']['download']['url']
                     else:
-                        product.location_url_tpl = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
+                        download_url = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
                             collection=result['properties']['collection'],
                             feature_id=result['id'],
                         )
-                    product.local_filename = result['id'] + '.zip'
+                    local_filename = result['id'] + '.zip'
+                product = EOProduct(
+                    result,
+                    result['id'],
+                    self.instance_name,
+                    download_url,
+                    local_filename,
+                    shapely.geometry.shape(result['geometry']),
+                    search_bbox=search_bbox
+                )
                 normalized.append(product)
             logger.debug('Normalized products : %s', normalized)
         else:

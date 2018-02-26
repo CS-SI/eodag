@@ -3,8 +3,9 @@
 # All rights reserved
 from __future__ import absolute_import, print_function, unicode_literals
 
-import copy
 import logging
+
+from shapely import geometry
 
 
 logger = logging.getLogger('eodag.api.product')
@@ -17,37 +18,55 @@ class EOProduct(object):
     return a list made up of a list of such instances, providing a uniform object on which the other plugins can work.
     """
 
-    def __init__(self, remote_repr, producer):
+    def __init__(self, remote_repr, id, producer, download_url, local_filename, geom, search_bbox=None, **kwargs):
+        """Initializes an EOProduct.
+
+        remote_repr is assumed to be a geojson
+        """
         self.original_repr = remote_repr
-        self.location_url_tpl = None
-        self.local_filename = None
-        self.id = None
+        self.location_url_tpl = download_url
+        self.local_filename = local_filename
+        self.id = id
         self.producer = producer
+        self.geometry = geom
+        if search_bbox:
+            minx, miny = search_bbox['lonmin'], search_bbox['latmin']
+            maxx, maxy = search_bbox['lonmax'], search_bbox['latmax']
+            requested_geom = geometry.box(*(minx, miny, maxx, maxy))
+            self.search_intersection = geom.intersection(requested_geom)
+        else:
+            self.search_intersection = geom
+        self.properties = {
+            key: value
+            for key, value in kwargs.items()
+        }
 
     def as_dict(self):
         """Builds a representation of EOProduct as a dictionary to enable its geojson serialization"""
-        try:
-            from geojson import Feature
-            Feature(**self.original_repr)
-        except Exception as e:
-            logger.warning('Original representation of %s is not a geojson: %s', self, e)
-            return {'type': 'Feature', 'coordinates': (0.0, 0.0)}
-        else:
-            geojson_repr = {key: value for key, value in self.original_repr.items()}
-            geojson_repr['properties']['eodag_producer'] = self.producer
-            geojson_repr['properties']['eodag_location_url_template'] = self.location_url_tpl
-            geojson_repr['properties']['eodag_local_filename'] = self.local_filename
-            return geojson_repr
+        geojson_repr = {
+            'type': 'Feature',
+            'id': self.id,
+            'geometry': self.geometry,
+            'properties': {
+                'eodag_producer': self.producer,
+                'eodag_download_url': self.location_url_tpl,
+                'eodag_local_name': self.local_filename,
+            }
+        }
+        geojson_repr['properties'].update(self.properties)
+        return geojson_repr
 
     @staticmethod
     def from_geojson(feature):
         """Builds an EOProduct object from its representation as geojson"""
-        orig_repr = copy.deepcopy(feature)
-        obj = EOProduct(orig_repr, orig_repr['properties'].pop('eodag_producer'))
-        obj.location_url_tpl = orig_repr['properties'].pop('eodag_location_url_template')
-        obj.local_filename = orig_repr['properties'].pop('eodag_local_filename')
-        obj.id = orig_repr['properties'].get('eodag_local_filename')
-        return obj
+        return EOProduct(
+            feature,
+            feature['id'],
+            feature['properties']['eodag_producer'],
+            feature['properties']['eodag_download_url'],
+            feature['properties']['eodag_local_name'],
+            feature['geometry']
+        )
 
     # Implementation of geo-interface protocol (See https://gist.github.com/sgillies/2217756)
     __geo_interface__ = property(as_dict)

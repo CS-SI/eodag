@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import re
 
+import pyproj
 from owslib.csw import CatalogueServiceWeb
 from owslib.fes import (
     BBox, PropertyIsEqualTo, PropertyIsGreaterThanOrEqualTo, PropertyIsLessThanOrEqualTo, PropertyIsLike,
 )
 from owslib.ows import ExceptionReport
+from shapely import geometry
 
 from eodag.api.product import EOProduct
 from eodag.plugins.search.base import Search
-from eodag.utils import slugify
+from eodag.utils import DEFAULT_PROJ, slugify
 from eodag.utils.import_system import patch_owslib_requests
 
 
@@ -58,7 +58,7 @@ class CSWSearch(Search):
                         logger.warning('Failed to query %s for product type %s : %s', product_type_search_tag,
                                        product_type, er)
                         continue
-                partial_results = [self.__build_product(record) for record in self.catalog.records.values()]
+                partial_results = [self.__build_product(record, **kwargs) for record in self.catalog.records.values()]
                 logger.info('Found %s results querying %s', len(partial_results), product_type_search_tag)
                 results.extend(partial_results)
         logger.info('Found %s overall results', len(results))
@@ -79,20 +79,38 @@ class CSWSearch(Search):
                 except Exception as e:
                     logger.warning('Initialization of catalog failed due to error: (%s: %s)', type(e), e)
 
-    def __build_product(self, rec):
+    def __build_product(self, rec, **kwargs):
         """Enable search results to be handled by http download plugin"""
-        eop = EOProduct(rec, self.instance_name)
-        eop.id = rec.identifier
+        bbox = rec.bbox_wgs84
+        if not bbox:
+            code = 'EPSG:4326'
+            if rec.bbox.crs.code and rec.bbox.crs.code > 0:
+                code = ':'.join((str(rec.bbox.crs.id), str(rec.bbox.crs.code)))
+            rec_proj = pyproj.Proj(init=code)
+            maxx, maxy = pyproj.transform(rec_proj, DEFAULT_PROJ, rec.bbox.maxx, rec.bbox.maxy)
+            minx, miny = pyproj.transform(rec_proj, DEFAULT_PROJ, rec.bbox.minx, rec.bbox.miny)
+            bbox = (minx, miny, maxx, maxy)
+        geom = geometry.box(*bbox)
+        fp = kwargs.get('footprints')
+        local_filename = slugify(rec.identifier)
+        download_url = ''
         resource_filter = re.compile(self.config[SEARCH_DEF].get('resource_location_filter', ''))
-        for ref in eop.original_repr.references:
+        for ref in rec.references:
             if ref['scheme'] in SUPPORTED_REFERENCE_SCHEMES:
                 if resource_filter.pattern and resource_filter.search(ref['url']):
-                    eop.location_url_tpl = ref['url']
+                    download_url = ref['url']
                 else:
-                    eop.location_url_tpl = ref['url']
-                eop.local_filename = slugify(rec.identifier)
+                    download_url = ref['url']
                 break
-        return eop
+        return EOProduct(
+            rec,
+            rec.identifier,
+            self.instance_name,
+            download_url,
+            local_filename,
+            geom,
+            search_bbox=fp,
+        )
 
     def __convert_query_params(self, product_type_def, product_type, params):
         """Translates eodag search to CSW constraints using owslib constraint classes"""

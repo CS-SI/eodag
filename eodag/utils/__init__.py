@@ -9,6 +9,7 @@ import types
 import unicodedata
 
 import click
+import pyproj
 from requests.auth import AuthBase
 
 
@@ -64,9 +65,9 @@ def slugify(value, allow_unicode=False):
     """
     value = str(value)
     if allow_unicode:
-        value = unicodedata.normalize('NFKC', value)
+        value = unicodedata.normalize('NFKC', value.decode('utf-8'))
     else:
-        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+        value = unicodedata.normalize('NFKD', value.decode('utf-8')).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value).strip().lower()
     return re.sub(r'[-\s]+', '-', value)
 
@@ -87,3 +88,6 @@ def maybe_generator(obj):
             yield elt
     else:
         yield obj
+
+
+DEFAULT_PROJ = pyproj.Proj(init='EPSG:4326')

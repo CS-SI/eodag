@@ -10,6 +10,7 @@ import logging
 import zipfile
 
 import click
+import shapely.wkt
 from sentinelsat import SentinelAPI
 from shapely import geometry
 
@@ -30,10 +31,21 @@ class SentinelsatAPI(Api):
         self.__init_api()
         query_params = self.__convert_query_params(kwargs)
         try:
-            return [
-                EOProduct(original)
-                for original in self.api.query(producttype=product_type, limit=10, **query_params)
-            ]
+            final = []
+            results = self.api.query(producttype=product_type, limit=10, **query_params)
+            if results:
+                append_to_final = final.append
+                for _id, original in results.items():
+                    append_to_final(EOProduct(
+                        original,
+                        _id,
+                        self.instance_name,
+                        original['link'],
+                        original['filename'],
+                        shapely.wkt.loads(original['footprint']),
+                        search_bbox=kwargs.get('footprint'),
+                    ))
+            return final
         except TypeError as e:
             # Sentinelsat api query method raises a TypeError for finding None in the json feed received as a response
             # from the sentinel server, when looking for 'opensearch:totalResults' key. This may be interpreted as the
@@ -45,16 +57,16 @@ class SentinelsatAPI(Api):
     def download(self, product, auth=None):
         self.__init_api()
         if self.config['on_site']:
-            data = self.api.get_product_odata(product.original_repr, full=True)
+            data = self.api.get_product_odata(product.id, full=True)
             logger.info('Product already present on this platform. Identifier: %s', data['Identifier'])
             yield data['Identifier']
         else:
             product_info = self.api.download_all(
-                [product.original_repr],
+                [product.id],
                 directory_path=self.config['outputs_prefix']
             )
             # product.original_repr is the id of the product as returned by the search
-            product_info = product_info[0][product.original_repr]
+            product_info = product_info[0][product.id]
 
             if self.config['extract'] and product_info['path'].endswith('.zip'):
                 logger.info('Extraction activated')

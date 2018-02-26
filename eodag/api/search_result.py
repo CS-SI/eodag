@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 from eodag.api.product import EOProduct
 
 
-class SearchResult:
+class SearchResult(object):
     """An object representing a collection of EOProducts resulting from a search"""
 
     def __init__(self, products):
