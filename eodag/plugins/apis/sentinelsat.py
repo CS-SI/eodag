@@ -43,7 +43,7 @@ class SentinelsatAPI(Api):
                         original['link'],
                         original['filename'],
                         shapely.wkt.loads(original['footprint']),
-                        search_bbox=kwargs.get('footprint'),
+                        kwargs.get('footprint'),
                     ))
             return final
         except TypeError as e:

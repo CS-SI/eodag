@@ -109,7 +109,7 @@ class CSWSearch(Search):
             download_url,
             local_filename,
             geom,
-            search_bbox=fp,
+            fp,
         )
 
     def __convert_query_params(self, product_type_def, product_type, params):

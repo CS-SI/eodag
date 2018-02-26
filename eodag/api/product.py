@@ -18,7 +18,7 @@ class EOProduct(object):
     return a list made up of a list of such instances, providing a uniform object on which the other plugins can work.
     """
 
-    def __init__(self, remote_repr, id, producer, download_url, local_filename, geom, search_bbox=None, **kwargs):
+    def __init__(self, remote_repr, id, producer, download_url, local_filename, geom, search_bbox, **kwargs):
         """Initializes an EOProduct.
 
         remote_repr is assumed to be a geojson
@@ -29,13 +29,12 @@ class EOProduct(object):
         self.id = id
         self.producer = producer
         self.geometry = geom
-        if search_bbox:
-            minx, miny = search_bbox['lonmin'], search_bbox['latmin']
-            maxx, maxy = search_bbox['lonmax'], search_bbox['latmax']
-            requested_geom = geometry.box(*(minx, miny, maxx, maxy))
-            self.search_intersection = geom.intersection(requested_geom)
+        if search_bbox is not None:
+            self.search_extent = geometry.box(
+                *(search_bbox['lonmin'], search_bbox['latmin'], search_bbox['lonmax'], search_bbox['latmax'])
+            )
         else:
-            self.search_intersection = geom
+            self.search_extent = None
         self.properties = {
             key: value
             for key, value in kwargs.items()
@@ -51,6 +50,7 @@ class EOProduct(object):
                 'eodag_producer': self.producer,
                 'eodag_download_url': self.location_url_tpl,
                 'eodag_local_name': self.local_filename,
+                'eodag_search_extent': self.search_extent,
             }
         }
         geojson_repr['properties'].update(self.properties)
@@ -65,7 +65,8 @@ class EOProduct(object):
             feature['properties']['eodag_producer'],
             feature['properties']['eodag_download_url'],
             feature['properties']['eodag_local_name'],
-            feature['geometry']
+            feature['geometry'],
+            feature['properties']['eodag_search_extent']
         )
 
     # Implementation of geo-interface protocol (See https://gist.github.com/sgillies/2217756)

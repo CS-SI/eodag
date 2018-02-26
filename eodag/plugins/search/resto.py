@@ -82,7 +82,7 @@ class RestoSearch(Search):
         if end_date:
             params['completionDate'] = end_date
 
-        footprint = kwargs.pop('footprint')
+        footprint = kwargs.pop('footprint', None)
         if footprint:
             if len(footprint.keys()) == 2:  # a point
                 # footprint will be a dict with {'lat': ..., 'lon': ...} => simply update the param dict
@@ -95,9 +95,9 @@ class RestoSearch(Search):
         logger.debug('Making request to %s with params : %s', url, params)
         response = requests.get(url, params=params)
         response.raise_for_status()
-        return self.normalize_results(response.json(), search_bbox=footprint)
+        return self.normalize_results(response.json(), footprint)
 
-    def normalize_results(self, results, search_bbox=None):
+    def normalize_results(self, results, search_bbox):
         normalized = []
         if results['features']:
             logger.info('Found %s products', len(results['features']))
