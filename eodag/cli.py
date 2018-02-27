@@ -101,7 +101,7 @@ def search_crunch(ctx, **kwargs):
 
     # Crunch !
     for cruncher in (satim_api.get_cruncher(cname, **cruncher_args_dict.get(cname, {})) for cname in cruncher_names):
-        results = results.crunch(cruncher)
+        results = results.crunch(cruncher, **criteria)
 
     storage_filepath = kwargs.pop('storage')
     if not storage_filepath.endswith('.geojson'):

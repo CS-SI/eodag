@@ -14,8 +14,8 @@ class SearchResult(object):
         self.__original = products
         self.__crunch_calls_count = 0
 
-    def crunch(self, cruncher):
-        crunched_results = cruncher.proceed(self.__original)
+    def crunch(self, cruncher, **search_params):
+        crunched_results = cruncher.proceed(self.__original, **search_params)
         self.__final_result.extend(crunched_results)
         self.__crunch_calls_count += 1
         return SearchResult(crunched_results)

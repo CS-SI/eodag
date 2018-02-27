@@ -24,7 +24,7 @@ class FilterLatestByName(Crunch):
             ))
         self.name_pattern = re.compile(name_pattern)
 
-    def proceed(self, product_list):
+    def proceed(self, product_list, **search_params):
         """Filter Search results to get only the latest product, based on the name of the product"""
         logger.debug('Starting products filtering')
         processed = []
