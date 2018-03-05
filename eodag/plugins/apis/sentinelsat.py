@@ -36,14 +36,19 @@ class SentinelsatAPI(Api):
             if results:
                 append_to_final = final.append
                 for _id, original in results.items():
+                    geom = shapely.wkt.loads(original['footprint'])
                     append_to_final(EOProduct(
-                        original,
                         _id,
                         self.instance_name,
                         original['link'],
                         original['filename'],
-                        shapely.wkt.loads(original['footprint']),
+                        geom,
                         kwargs.get('footprint'),
+                        centroid=geom.centroid,
+                        description=original['summary'],
+                        title=original['title'],
+                        productIdentifier=original['identifier'],
+                        startDate=original['ingestionDate']
                     ))
             return final
         except TypeError as e:
@@ -65,7 +70,6 @@ class SentinelsatAPI(Api):
                 [product.id],
                 directory_path=self.config['outputs_prefix']
             )
-            # product.original_repr is the id of the product as returned by the search
             product_info = product_info[0][product.id]
 
             if self.config['extract'] and product_info['path'].endswith('.zip'):

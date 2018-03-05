@@ -17,7 +17,7 @@ except ImportError:  # PY2
 import requests
 from dateutil.parser import parse as dateparse
 
-from eodag.api.product import EOProduct
+from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
 from .base import Search
 
 
@@ -118,13 +118,15 @@ class RestoSearch(Search):
                         )
                     local_filename = result['id'] + '.zip'
                 product = EOProduct(
-                    result,
                     result['id'],
                     self.instance_name,
                     download_url,
                     local_filename,
                     shapely.geometry.shape(result['geometry']),
-                    search_bbox=search_bbox
+                    search_bbox,
+                    # EOPRODUCT_PROPERTIES are based on resto representation of Earth observation products properties
+                    **{prop_key: (result['properties'][prop_key] if prop_key != 'endDate' else result['properties'][
+                        'completionDate']) for prop_key in EOPRODUCT_PROPERTIES}
                 )
                 normalized.append(product)
             logger.debug('Normalized products : %s', normalized)

@@ -103,13 +103,19 @@ class CSWSearch(Search):
                     download_url = ref['url']
                 break
         return EOProduct(
-            rec,
             rec.identifier,
             self.instance_name,
             download_url,
             local_filename,
             geom,
             fp,
+            centroid=geom.centroid,
+            title=rec.title,
+            description=(rec.abstract or ''),
+            productIdentifier=rec.identifier,
+            organisationName=(rec.creator or rec.publisher or ''),
+            keywords=rec.subjects,
+            startDate=rec.date,
         )
 
     def __convert_query_params(self, product_type_def, product_type, params):

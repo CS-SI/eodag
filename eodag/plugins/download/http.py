@@ -90,9 +90,9 @@ class HTTPDownload(Download):
                         yield local_file_path
         else:
             logger.info('Product already present on this platform. Identifier: %s',
-                        product.original_repr['properties']['productIdentifier'])
+                        product.properties['productIdentifier'])
             # Do not download data if we are on site. Instead give back the absolute path to the data
-            yield product.original_repr['properties']['productIdentifier']
+            yield product.properties['productIdentifier']
 
     def __build_download_url(self, product, auth):
         if product.location_url_tpl:
@@ -100,10 +100,8 @@ class HTTPDownload(Download):
                 url = product.location_url_tpl.format(
                     base=self.config.get('base_uri'),
                 )
-                # TODO : This is weak !!!
-                if isinstance(product.original_repr, dict):
-                    if product.original_repr.get('properties', {}).get('organisationName') in ('ESA',):
-                        url += '?token={}'.format(auth.token)
+                if product.properties['organisationName'] in ('ESA',):
+                    url += '?token={}'.format(auth.token)
                 return url
             except Exception as e:
                 raise RuntimeError('Product {} is incompatible with download plugin {}. Got error: {}'.format(
