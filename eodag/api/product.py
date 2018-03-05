@@ -51,7 +51,7 @@ class EOProduct(object):
                     # TODO before finding a good way to handle this, just ignore the error
                     logger.warning('Unable to intersect the requested geometry: %s with the geometry: %s. Cause: %s',
                                    requested_geom, geom, e)
-                    self.search_intersection = geom
+                    self.search_intersection = None
         # If There was no extent requested, store the product geometry as its "intersection" with a fictional search
         # extent
         else:
