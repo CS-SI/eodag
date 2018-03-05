@@ -17,6 +17,7 @@ class FilterLatestByName(Crunch):
     NAME_PATTERN_CONSTRAINT = re.compile(r'\(\?P<tileid>\\d\{6\}\)')
 
     def __init__(self, config):
+        super(FilterLatestByName, self).__init__(config)
         name_pattern = config.pop('name_pattern')
         if not self.NAME_PATTERN_CONSTRAINT.search(name_pattern):
             raise MisconfiguredError('Name pattern should respect the regex: {}'.format(

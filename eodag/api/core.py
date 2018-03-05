@@ -105,6 +105,9 @@ class SatImagesAPI(object):
                     logger.debug('Product type %s not known by %s instance', product_type, iface.instance_name)
                 else:
                     raise rte
+            except Exception as any_other_exception:
+                logger.debug('Error while searching on interface %s: %s.', iface, any_other_exception)
+                logger.debug('Ignoring it')
         return SearchResult(results)
 
     def download_all(self, search_result):
@@ -218,13 +221,11 @@ class SatImagesAPI(object):
         return previous
 
     def get_cruncher(self, name, **options):
-        if options:
-            plugin_conf = {
-                'plugin': name,
-            }
-            plugin_conf.update({
-                key.replace('-', '_'): val
-                for key, val in options.items()
-            })
-            return self.pim.instantiate_plugin_by_config('crunch', plugin_conf)
-        return self.pim.instantiate_plugin_by_name('crunch', name)
+        plugin_conf = {
+            'plugin': name,
+        }
+        plugin_conf.update({
+            key.replace('-', '_'): val
+            for key, val in options.items()
+        })
+        return self.pim.instantiate_plugin_by_config('crunch', plugin_conf)

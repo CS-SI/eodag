@@ -19,7 +19,7 @@ click.disable_unicode_literals_warning = True
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
-    'RemoveDoubles', 'FilterLatestByName'
+    'RemoveDoubles', 'FilterLatestByName', 'FilterLatestIntersect',
 ]
 
 
