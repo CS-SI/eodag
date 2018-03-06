@@ -1,3 +1,6 @@
 nose
 sphinx
 tox
+faker
+mock
+coverage

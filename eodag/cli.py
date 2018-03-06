@@ -83,7 +83,7 @@ def search_crunch(ctx, **kwargs):
         with click.Context(search_crunch) as ctx:
             print('Give me some work to do. See below for how to do that:', end='\n\n')
             click.echo(search_crunch.get_help(ctx))
-        sys.exit(0)
+        sys.exit(-1)
 
     # Process inputs for crunch
     cruncher_names = set(kwargs.pop('cruncher') or [])

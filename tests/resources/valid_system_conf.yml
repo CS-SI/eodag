@@ -1,0 +1,36 @@
+instance-1:
+  priority: 10000
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://www.domain.com'
+    products:
+      PROD-TYPE:
+        product_type: L1C
+        collection: Sentinel-2
+  download:
+    plugin: HTTPDownload
+    on_site: false
+    base_uri: 'https://www.domain.com/api/download'
+  crunch:
+    plugin: RemoveDoubles
+  auth:
+    plugin: TokenAuth
+    auth_uri: 'https://www.domain.com/api/authidentity'
+    token_type: json
+
+instance-2:
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'https://domain.fr/search'
+    products:
+      PROD-TYPE-2:
+        collection: Landsat
+        product_type: LS4
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://www.domain.fr/dowload'
+  crunch:
+    plugin: RemoveDoubles
+  auth:
+    plugin: GenericAuth
+    auth_uri: 'https://www.domain.fr/api/users/connect'
