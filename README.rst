@@ -10,9 +10,9 @@ You can search and download satellite products:
 
     .. code-block:: bash
 
-        eodag go --conf user.conf.yaml --bbox 1 43 2 44 --startDate 2018-01-01 --endDate 2018-01-31 --productType S2-L1C
+        eodag search --conf user.conf.yaml --bbox 1 43 2 44 --startDate 2018-01-01 --endDate 2018-01-31 --productType S2-L1C
         # With the shortcut arguments
-        eodag go -f user.conf.yaml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c 20 -p S2-L1C
+        eodag search -f user.conf.yaml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c 20 -p S2-L1C
 
 * by interacting with the api in your Python scripts:
 
@@ -72,11 +72,35 @@ each system:
 
 Then you can start playing with it:
 
-* To search, crunch and download products:
+* To search for products and crunch the results of the search:
 
     .. code-block:: bash
 
-        eodag go --conf my_conf.yml --bbox 1 43 2 44 --startDate 2018-01-01 --endDate 2018-01-31 --productType S2-L1C
+        eodag search \
+        --conf my_conf.yml \
+        --bbox 1 43 2 44 \
+        --startDate 2018-01-01 --endDate 2018-01-31 \
+        --productType S2-L1C \
+        --cruncher FilterLatestIntersect \
+        --storage my_search.geojson
+
+The request above search for product types `S2-L1C` and will crunch the result using cruncher `FilterLatestIntersect` and storing the overall
+result to `my_search.geojson`.
+
+You can pass arguments to a cruncher on the command line by doing this (example with using `FilterOverlap` cruncher which takes `minimum_overlap` as argument):
+
+    .. code-block:: bash
+
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2-L1C --cruncher FilterOverlap --cruncher-args FilterOverlap minimum_overlap 10
+
+The request above means : "Give me all the products of type `S2-L1C`, use `FilterOverlap` to keep only those products that are contained in the bbox I gave you,
+or whom spatial extent overlaps at least 10% (`minimum_overlap`) of the surface of this bbox"
+
+* To download the result of a previous call to `search`:
+
+    .. code-block:: bash
+
+        eodag download --conf my_conf.yml --search-results my_search.geojson
 
 * To list all available product types and supported systems:
 
@@ -97,24 +121,6 @@ Then you can start playing with it:
         eodag --help
 
 * To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given, the more verbose the tool is
-
-Here is a list of supported arguments and options for `eodag go` command:
-
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
-| -b | -\-bbox       | <FLOAT FLOAT FLOAT FLOAT> | Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this order) |
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
-| -s | -\-startDat   |           TEXT            | Maximum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)                                |
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
-| -e | -\-endDate    |           TEXT            | Minimum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)                                |
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
-| -p | -\-productType|           TEXT            | The product type to search                                                                              |
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
-| -c | -\-maxCloud   |           INT             | Maximum cloud cover percentage needed for the product                                                   |
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
-| -f | -\-conf       |           PATH            | File path to the user configuration file with its credentials                                           |
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
-|    | -\-help       |                           | Show help message and exit.                                                                             |
-+----+---------------+---------------------------+---------------------------------------------------------------------------------------------------------+
 
 
 Supported systems
