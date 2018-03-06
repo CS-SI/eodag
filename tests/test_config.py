@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+from __future__ import unicode_literals
+
 import os
 import sys
+import tempfile
 import unittest
 
 import yaml.parser
@@ -22,6 +25,25 @@ class TestConfig(unittest.TestCase):
         config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
         self.assertIsInstance(config_tested.source, dict)
         self._recursively_assert_unicode(config_tested.source)
+
+    def test_config_dict_like_interface(self):
+        """All config keys should be accessible like in a Python dict"""
+        config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
+        self.assertTrue('instance-1' in config_tested)
+        with self.assertRaises(KeyError):
+            _ = config_tested['NOTFOUND']
+        self.assertIn(config_tested['instance-1'], config_tested.values())
+        self.assertIn(('instance-1', config_tested['instance-1']), config_tested.items())
+        self.assertTrue([key for key in config_tested])
+
+    def test_config_update(self):
+        """Update method should only work with SimpleYamlProxyConfig objects"""
+        config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
+        self.assertRaises(ValueError, config_tested.update, [])
+        tmpfile = tempfile.NamedTemporaryFile(mode='w')
+        yaml.dump({'instance-x': {}}, tmpfile)
+        config_tested.update(config.SimpleYamlProxyConfig(conf_file_path=tmpfile.name))
+        self.assertIn('instance-x', config_tested)
 
     def _recursively_assert_unicode(self, mapping):
         for key, value in mapping.items():

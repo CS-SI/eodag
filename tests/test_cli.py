@@ -5,10 +5,12 @@ from __future__ import unicode_literals
 
 import unittest
 from contextlib import contextmanager
+
+
 try:
-    from unittest import mock   # PY3
+    from unittest import mock  # PY3
 except ImportError:
-    import mock     # PY2
+    import mock  # PY2
 
 import click
 from click.testing import CliRunner
@@ -88,12 +90,30 @@ class TestEodagCli(unittest.TestCase):
                 )
                 self.assertNotEqual(result.exit_code, 0)
 
-    def test_eodag_search_with_bbox_arg(self):
+    def test_eodag_search_bbox_invalid(self):
         """Calling eodag search with -b | --bbox set with less than 4 params should print error message"""
         with self.user_conf() as conf_file:
             result = self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', 'whatever', '-b', 1, 2])
             self.assertIn('Error: -b option requires 4 arguments', result.output)
             self.assertNotEqual(result.exit_code, 0)
+
+    @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
+    def test_eodag_search_bbox_valid(self, SatImagesAPI):
+        """Calling eodag search with --bbox argument valid"""
+        with self.user_conf() as conf_file:
+            product_type = 'whatever'
+            self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', product_type, '-b', 1, 43, 2, 44])
+            api_obj = SatImagesAPI.return_value
+            api_obj.search.assert_called_once_with(product_type, startDate=None, endDate=None, maxCloudCover=None,
+                                                   footprint={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44})
+
+    @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
+    def test_eodag_search_storage_arg(self, SatImagesAPI):
+        """Calling eodag search with specified result filename without .geojson extension"""
+        with self.user_conf() as conf_file:
+            self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', 'whatever', '--storage', 'results'])
+            api_obj = SatImagesAPI.return_value
+            api_obj.serialize.assert_called_with(api_obj.search.return_value, filename='results.geojson')
 
     @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
     def test_eodag_search_with_cruncher(self, SatImagesAPI):
@@ -118,3 +138,11 @@ class TestEodagCli(unittest.TestCase):
                 result.output,
                 '\n'.join(("Found 0 products with product type '{}': {}".format(product_type, search_results),
                            "Results stored at '{!r}'\n".format(api_obj.serialize.return_value))))
+
+            # Call with a cruncher taking arguments
+            cruncher = 'FilterOverlap'
+            self.runner.invoke(eodag, [
+                'search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher,
+                '--cruncher-args', cruncher, 'minimum_overlap', 10
+            ])
+            api_obj.get_cruncher.assert_called_with(cruncher, minimum_overlap=10)
