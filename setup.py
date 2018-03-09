@@ -27,6 +27,7 @@ setup(
     url='https://bitbucket.org/geostorm/eodag',
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
+    package_data={'eodag': ['resources/*', ]},
     install_requires=requirements,
     entry_points='''
         [console_scripts]
