@@ -7,6 +7,7 @@ import datetime
 import logging
 
 import shapely.geometry
+import pytz
 
 
 try:  # PY3
@@ -72,7 +73,15 @@ class RestoSearch(Search):
         if any(isinstance(config_start_date, klass) for klass in (datetime.date, datetime.datetime)):
             config_start_date = config_start_date.isoformat()
         if start_date:
-            if dateparse(start_date) > dateparse(config_start_date):
+
+            # Make config_start_date TZ aware if start_date is TZ aware
+            parsed_start_date = dateparse(start_date)
+            parsed_config_start_date = dateparse(config_start_date)
+            if parsed_start_date.tzinfo:
+                utc = pytz.UTC
+                parsed_config_start_date = utc.localize(parsed_config_start_date)
+
+            if parsed_start_date > parsed_config_start_date:
                 params['startDate'] = start_date
             else:
                 logger.info('The requested start date (%s) is too old, capping it to %s', start_date, config_start_date)
