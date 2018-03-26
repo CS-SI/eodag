@@ -1,5 +1,17 @@
+amazon:
+  priority: 1000000
+  search:
+    plugin: AwsSearch
+    api_endpoint: 'http://finder.eocloud.eu/resto/api/'
+    amazon_dl_endpoint: 'http://sentinel-s2-l1c.s3-website.eu-central-1.amazonaws.com/#tiles'
+    products:
+      S2-L1C:
+        product_type: L1C
+        collection: Sentinel2
+#        partial: true   # This means not all the products of this type are located here
+
 eocloud:
-  priority: 10000
+  priority: 100
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
@@ -23,7 +35,7 @@ eocloud:
       S2-L1C:
         product_type: L1C
         collection: Sentinel2
-        partial: true   # This means not all the products of this type are located here
+        # partial: true   # This means not all the products of this type are located here
       L8-L1T:
         product_type: L1T
         collection: Landsat8
