@@ -1,6 +1,6 @@
 # Only known system configuration can be overridden for their credentials config key under auth config.
 # Unknown keys will simply be ignored, and the corresponding configuration not overridden.
-output_prefix:
+outputs_prefix:
 extract: # true or false
 peps:
     credentials:
@@ -24,6 +24,10 @@ scihub:
         user:
         password:
 geostorm-ce:
+    credentials:
+        username:
+        password:
+USGS:
     credentials:
         username:
         password:
