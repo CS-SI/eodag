@@ -10,3 +10,4 @@ six
 geojson
 pyproj
 pytz
+usgs

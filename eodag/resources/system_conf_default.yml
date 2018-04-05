@@ -1,5 +1,17 @@
-amazon:
-  priority: 1000000
+
+USGS:
+  priority: 100000
+  api:
+    plugin: usgsApi
+    google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
+    products:
+      LC8:
+        product_type: LANDSAT_8_C1
+
+
+
+Amazon WS:
+  priority: 100
   search:
     plugin: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
@@ -8,10 +20,14 @@ amazon:
       S2-L1C:
         product_type: L1C
         collection: Sentinel2
-#        partial: true   # This means not all the products of this type are located here
+  download:
+    plugin: aws_download
+    on_site: false
+    base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
+
 
 eocloud:
-  priority: 100
+  priority: 1000
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
