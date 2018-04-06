@@ -88,7 +88,11 @@ class SatImagesAPI(object):
                         'The query function of a Search plugin must return a list of results, got {} '
                         'instead'.format(type(r))
                     )
-                results.extend(r)
+                # Only keep those eo_products that intersects the search extent (if there was no search extent,
+                # search_intersection contains the geometry of the eo_product)
+                # WARNING: this means an eo_product that has an invalid geometry can still be returned as a search
+                # result if there was no search extent (an intersection will not be tried)
+                results.extend(filter(lambda eo_product: eo_product.search_intersection is not None, r))
                 # Decide if we should go on with the search (if the iface stores the product_type partially)
                 if idx == 0:
                     if not iface.config.get('products', {}).get(product_type, {}).get('partial', False):
