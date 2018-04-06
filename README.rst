@@ -125,12 +125,12 @@ or whom spatial extent overlaps at least 10% (`minimum_overlap`) of the surface 
 How to get Amazon WS access keys
 ----------------------
 
-1°) Create an account on AWS website: https://aws.amazon.com/fr/ (warning: A credit card number must be given because
+* Create an account on AWS website: https://aws.amazon.com/fr/ (warning: A credit card number must be given because
     data become paying after a given amount of downloaded data).
-2°) Once the account is activated go to the identity and access management console: https://console.aws.amazon.com/iam/home#/home
-3°) Click on user, then on your user name and then on security credentials.
-4°) In access keys, click on create access key.
-5°) Add these credentials to the user conf file.
+* Once the account is activated go to the identity and access management console: https://console.aws.amazon.com/iam/home#/home
+* Click on user, then on your user name and then on security credentials.
+* In access keys, click on create access key.
+* Add these credentials to the user conf file.
 
 
 
