@@ -1,6 +1,6 @@
 
 USGS:
-  priority: 100000
+  priority: #100000
   api:
     plugin: usgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
@@ -10,24 +10,27 @@ USGS:
 
 
 
-Amazon WS:
+AmazonWS:
   priority: 100
   search:
     plugin: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
-    amazon_dl_endpoint: 'http://sentinel-s2-l1c.s3-website.eu-central-1.amazonaws.com/#tiles'
+    #amazon_dl_endpoint: 'http://sentinel-s2-l1c.s3-website.eu-central-1.amazonaws.com/#tiles'
     products:
       S2-L1C:
         product_type: L1C
         collection: Sentinel2
+
   download:
     plugin: aws_download
-    on_site: false
-    base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
+    associated_bucket: 'sentinel-s2-l1c'
+
+  auth:
+    plugin: OAuth
 
 
 eocloud:
-  priority: 1000
+  priority: #w1000
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
