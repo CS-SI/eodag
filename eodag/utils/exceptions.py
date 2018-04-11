@@ -20,3 +20,7 @@ class PluginImplementationError(Exception):
 class MisconfiguredError(Exception):
     """An error indicating a Search Plugin that is not well configured"""
 
+
+class AddressNotFound(Exception):
+    """An error indicating the address of a subdataset was not found"""
+

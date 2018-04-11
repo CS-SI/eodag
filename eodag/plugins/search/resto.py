@@ -133,6 +133,9 @@ class RestoSearch(Search):
                     local_filename,
                     shapely.geometry.shape(result['geometry']),
                     search_bbox,
+                    result['properties']['productType'],
+                    result['properties']['platform'],
+                    result['properties']['instrument'],
                     # EOPRODUCT_PROPERTIES are based on resto representation of Earth observation products properties
                     **{prop_key: (result['properties'][prop_key] if prop_key != 'endDate' else result['properties'][
                         'completionDate']) for prop_key in EOPRODUCT_PROPERTIES}

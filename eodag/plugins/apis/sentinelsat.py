@@ -44,6 +44,9 @@ class SentinelsatAPI(Api):
                         original['filename'],
                         geom,
                         kwargs.get('footprint'),
+                        product_type,
+                        original['platform'],       # TODO
+                        original['instrument'],     # TODO
                         centroid=geom.centroid,
                         description=original['summary'],
                         title=original['title'],

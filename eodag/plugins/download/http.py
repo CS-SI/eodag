@@ -85,7 +85,11 @@ class HTTPDownload(Download):
                                                    label='Extracting files from {}'.format(
                                                            local_file_path)) as progressbar:
                                 for fileinfo in progressbar:
-                                    yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                                    yield zfile.extract(
+                                        fileinfo,
+                                        path=os.path.join(
+                                            self.config['outputs_prefix'],
+                                            local_file_path[:local_file_path.index('.zip')]))
                     else:
                         yield local_file_path
         else:

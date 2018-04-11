@@ -12,3 +12,6 @@ pyproj
 pytz
 usgs
 boto3
+numpy
+rasterio
+gdal

@@ -58,7 +58,8 @@ class CSWSearch(Search):
                         logger.warning('Failed to query %s for product type %s : %s', product_type_search_tag,
                                        product_type, er)
                         continue
-                partial_results = [self.__build_product(record, **kwargs) for record in self.catalog.records.values()]
+                partial_results = [
+                    self.__build_product(record, product_type, **kwargs) for record in self.catalog.records.values()]
                 logger.info('Found %s results querying %s', len(partial_results), product_type_search_tag)
                 results.extend(partial_results)
         logger.info('Found %s overall results', len(results))
@@ -79,7 +80,7 @@ class CSWSearch(Search):
                 except Exception as e:
                     logger.warning('Initialization of catalog failed due to error: (%s: %s)', type(e), e)
 
-    def __build_product(self, rec, **kwargs):
+    def __build_product(self, rec, product_type, **kwargs):
         """Enable search results to be handled by http download plugin"""
         bbox = rec.bbox_wgs84
         if not bbox:
@@ -109,6 +110,9 @@ class CSWSearch(Search):
             local_filename,
             geom,
             fp,
+            product_type,
+            None,   # TODO determine the platform
+            None,   # TODO determine the instrument
             centroid=geom.centroid,
             title=rec.title,
             description=(rec.abstract or ''),
