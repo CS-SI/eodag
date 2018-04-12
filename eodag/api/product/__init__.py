@@ -127,8 +127,6 @@ class EOProduct(object):
             feature['geometry'],
             feature['properties']['eodag_search_intersection'],
             feature['properties']['productType'],
-            feature['properties']['platform'],
-            feature['properties']['instrument'],
             **feature['properties']
         )
 
