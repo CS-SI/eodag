@@ -90,7 +90,7 @@ def mutate_dict_in_place(func, mapping):
     nested dicts that may be level-1 values of mapping.
 
     :param func: A function to apply to each value of mapping which is not a dict object
-    :type func: function
+    :type func: func
     :param mapping: A Python dict object
     :type mapping: dict
     :returns: None

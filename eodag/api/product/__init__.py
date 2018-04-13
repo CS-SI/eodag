@@ -28,7 +28,9 @@ class EOProduct(object):
     Every Search plugin instance should build an instance of this class for each of the result of its query method, and
     return a list made up of a list of such instances, providing a uniform object on which the other plugins can work.
     Note that EOProduct stores geometries in WGS84 CRS (EPSG:4326), as it is intended to be transmitted as geojson
-    between applications and geojson spec enforces this (see: https://github.com/geojson/draft-geojson/pull/6)
+    between applications and geojson spec enforces this.
+
+    See: https://github.com/geojson/draft-geojson/pull/6
     """
 
     def __init__(self, id, producer, download_url, local_filename, geom, bbox_or_intersect, product_type, platform,
@@ -74,7 +76,7 @@ class EOProduct(object):
         ]()
 
     def get_subdataset(self, crs, resolution, band, extent):
-        """Retrieves all or part of the raster data abstracted by self.
+        """Retrieves all or part of the raster data abstracted by the :class:`EOProduct`
 
         :param crs: The coordinate reference system in which the dataset should be returned
         :type crs: str
@@ -82,8 +84,7 @@ class EOProduct(object):
         :type resolution: float
         :param band: The band of the dataset to retrieve (e.g.: 'B01')
         :type band: str
-        :param extent: The coordinates on which to zoom as a tuple (min_x, min_y, max_x, max_y) in the given
-                       :param:`crs`
+        :param extent: The coordinates on which to zoom as a tuple (min_x, min_y, max_x, max_y) in the given `crs`
         :type extent: (float, float, float, float)
         :returns: The numeric matrix corresponding to the sub dataset
         :rtype: numpy.ndarray
