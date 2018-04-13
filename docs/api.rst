@@ -24,11 +24,15 @@ Representation Of Earth Observation Products
    :show-inheritance:
    :undoc-members:
 
-.. automodule:: eodag.api.product.drivers
+.. autoclass:: eodag.api.product.drivers.base.DatasetDriver
    :members:
    :show-inheritance:
    :undoc-members:
-   :special-members:
+
+.. autoclass:: eodag.api.product.drivers.sentinel2.Sentinel2
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 
 Representation Of Search Results

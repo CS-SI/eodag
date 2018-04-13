@@ -10,7 +10,7 @@ class DatasetDriver(six.with_metaclass(type)):
         """Retrieve the address of the dataset represented by self.
 
         :param eo_product: The product whom underlying dataset address is to be retrieved
-        :type eo_product: `~eodag.api.product.EOProduct`
+        :type eo_product: :class:`~eodag.api.product.EOProduct`
         :param band: The band to retrieve (e.g: 'B01')
         :type band: str
         :returns: An address for the dataset
