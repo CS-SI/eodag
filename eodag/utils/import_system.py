@@ -12,25 +12,39 @@ from functools import partial
 
 
 def import_all_modules(base_package, depth=1, exclude=()):
-    """Import all modules in base_package, including modules in the sub-packages up to depth and excluding modules in
-    exclude.
+    """Imports all modules in base_package, including modules in the sub-packages up to `depth` and excluding modules in
+    `exclude`.
 
-    Example:
-        base_package
-            __init__.py
-            module1.py
-            subpackage
-                __init__.py
-                subsubpackage
-                    __init__.py
-                    module3.py
-                module2.py
-                excluded.py
-        import_all_modules(base_package, depth=2, exclude=['excluded']) will import 'module1' and 'module2'
-        import_all_modules(base_package) will import 'module1'
-    Note: if package and subpackage have a module of the same name and this name is included in the exclude parameter,
-    the module will be excluded from import for both packages. This is intentionally left as is by now for
-    simplification
+    Example::
+
+        # base_package
+        #    __init__.py
+        #    module1.py
+        #    subpackage
+        #        __init__.py
+        #        subsubpackage
+        #            __init__.py
+        #            module3.py
+        #        module2.py
+        #        excluded.py
+
+        # Import 'module1' and 'module2'
+        import_all_modules(base_package, depth=2, exclude=['excluded'])
+        # Import 'module1'
+        import_all_modules(base_package)
+
+    :param base_package: The package from where we must import all the modules
+    :type base_package: `module`
+    :param depth: (optional) If `base_package` has sub packages, import all the modules recursively up to this level.
+                  Defaults to 1 (limits to the level of `base_package`)
+    :type depth: int
+    :param exclude: (optional) The sub packages and modules to ignore while importing. Empty by default
+    :type exclude: tuple(str, ...)
+
+    .. note::
+        if `package` and `subpackage` have a module of the same name and this name is included in the exclude parameter,
+        the module will be excluded from import for both packages. This is intentionally left as is by now for
+        simplification
     """
     if depth > 1:
         for _, name, ispkg in pkgutil.iter_modules(base_package.__path__):
@@ -47,8 +61,12 @@ def import_all_modules(base_package, depth=1, exclude=()):
 
 @contextmanager
 def patch_owslib_requests(verify=True):
-    """Overrides call to the requests.(request and post) functions by owslib.util.(openURL and http_post) functions,
-    providing some control over how to use these requests functions in owslib.
+    """Overrides call to the :func:`requests.request` and :func:`requests.post` functions by
+    :func:`owslib.util.openURL` and :func:`owslib.util.http_post` functions, providing some control over how to use
+    these functions in `owslib <https://geopython.github.io/OWSLib/>`_.
+
+    :param verify: Whether to verify the use of https or not
+    :type verify: bool
     """
     from owslib.util import requests
     old_request = requests.request

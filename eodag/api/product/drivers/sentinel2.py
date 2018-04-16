@@ -25,15 +25,16 @@ class Sentinel2(DatasetDriver):
         """Compute the address of a subdataset for a Sentinel2 product.
 
         The algorithm is as follows:
-            - First compute the top level metadata file path from the eo_product 'productIdentifier' property, the name
-              of its sensor (e.g.: MSI), and its product type (e.g.: L1C) and open it as a rasterio dataset
+            - First compute the top level metadata file path from the ``eo_product.property['productIdentifier']``, the name
+              of its sensor (e.g.: 'MSI'), and its product type (e.g.: 'L1C') and open it as a `rasterio` dataset
             - Then mimics the shell command ``gdalinfo -sd n /path/metadata.xml`` to get the final address:
                 - iterate through the subdataset addresses ('<DRIVER>:<path>/<mtd>.xml:<spatial-resolution>:<crs>')
                   detected by the rasterio dataset
                 - open only the address for which the extracted spatial resolution maps to a tuple of bands including
                   the band of interest
             - Finally, filter the list of files of the previously opened rasterio dataset, to return the filesystem-like
-              address that matches the band file pattern r'^.+_B01\.jp2$' if band = 'B01'
+              address that matches the band file pattern ``r'^.+_B01\.jp2$'`` if band = 'B01' for example.
+
         See :func:`~eodag.api.product.drivers.base.DatasetDriver.get_dataset_address` to get help on the formal
         parameters.
         """

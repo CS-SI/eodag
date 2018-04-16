@@ -7,7 +7,11 @@ from eodag.api.product import EOProduct
 
 
 class SearchResult(object):
-    """An object representing a collection of EOProducts resulting from a search"""
+    """An object representing a collection of :class:`~eodag.api.product.EOProduct` resulting from a search.
+
+    :param products: A list of products resulting from a search
+    :type products: list(:class:`~eodag.api.product.EOProduct`)
+    """
 
     def __init__(self, products):
         self.__final_result = []
@@ -15,6 +19,14 @@ class SearchResult(object):
         self.__crunch_calls_count = 0
 
     def crunch(self, cruncher, **search_params):
+        """Do some crunching with the underlying EO products.
+
+        :param cruncher: The plugin instance to use to work on the products
+        :type cruncher: subclass of :class:`~eodag.plugins.crunch.base.Crunch`
+        :param dict search_params: The criteria that have been used to produce this result
+        :returns: The result of the application of the crunching method to the EO products
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
         crunched_results = cruncher.proceed(self.__original, **search_params)
         self.__final_result.extend(crunched_results)
         self.__crunch_calls_count += 1
@@ -22,7 +34,13 @@ class SearchResult(object):
 
     @staticmethod
     def from_geojson(feature_collection):
-        """Builds an SearchResult object from its representation as geojson"""
+        """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
+
+        :param feature_collection: A collection representing a search result.
+        :type feature_collection: dict
+        :returns: An eodag representation of a search result
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
         return SearchResult([
             EOProduct.from_geojson(feature)
             for feature in feature_collection['features']
@@ -30,7 +48,10 @@ class SearchResult(object):
 
     @property
     def __geo_interface__(self):
-        """Implements the geo-interface protocol (See https://gist.github.com/sgillies/2217756)"""
+        """Implements the geo-interface protocol.
+
+        See https://gist.github.com/sgillies/2217756
+        """
         return {
             'type': 'FeatureCollection',
             'features': [product.as_dict() for product in (

@@ -7,14 +7,13 @@ import six
 class DatasetDriver(six.with_metaclass(type)):
 
     def get_dataset_address(self, eo_product, band):
-        """Retrieve the address of the dataset represented by self.
+        """Retrieve the address of the dataset represented by `eo_product`.
 
         :param eo_product: The product whom underlying dataset address is to be retrieved
         :type eo_product: :class:`~eodag.api.product.EOProduct`
-        :param band: The band to retrieve (e.g: 'B01')
-        :type band: str
+        :param str band: The band to retrieve (e.g: 'B01')
         :returns: An address for the dataset
-        :rtype: str
-        :raises: AddressNotFound
+        :rtype: str or unicode
+        :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         """
         raise NotImplementedError

@@ -22,7 +22,7 @@ from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
 from .base import Search
 
 
-logger = logging.getLogger('eodag.plugins.search.resto')
+logger = logging.getLogger(b'eodag.plugins.search.resto')
 
 
 class RestoSearch(Search):

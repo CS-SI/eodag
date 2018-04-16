@@ -17,11 +17,17 @@ from eodag.utils import maybe_generator
 from eodag.utils.exceptions import PluginImplementationError
 
 
-logger = logging.getLogger('eodag.core')
+logger = logging.getLogger(b'eodag.core')
 
 
 class SatImagesAPI(object):
-    """An API for downloading a wide variety of geospatial products originating from different types of systems."""
+    """An API for downloading a wide variety of geospatial products originating from different types of systems.
+
+    :param user_conf_file_path: Path to the user configuration file
+    :type user_conf_file_path: str or unicode
+    :param system_conf_file_path: Path to the internal file where systems containing eo products are configured
+    :type system_conf_file_path: str or unicode
+    """
 
     def __init__(self, user_conf_file_path=None, system_conf_file_path=None):
         self.system_config = SimpleYamlProxyConfig(os.path.join(
@@ -74,7 +80,15 @@ class SatImagesAPI(object):
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
 
-        The interfaces are required to return a list as a result of their processing, we enforce this requirement here.
+        :param product_type: The product type to search
+        :type product_type: str or unicode
+        :param dict kwargs: some other criteria that will be used to do the search
+        :returns: A collection of EO products matching the criteria
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+
+        .. note::
+            The search interfaces, which are implemented as plugins, are required to return a list as a result of their
+            processing. This requirement is enforced here.
         """
         search_interfaces = self.__get_searchers(product_type)
         results = []
@@ -115,7 +129,13 @@ class SatImagesAPI(object):
         return SearchResult(results)
 
     def download_all(self, search_result):
-        """Download all products of a search"""
+        """Download all products resulting from a search.
+
+        :param search_result: A collection of EO products resulting from a search
+        :type search_result: :class:`~eodag.api.search_result.SearchResult`
+        :returns: A Generator that yields the absolute path to the downloaded resource
+        :rtype: str or unicode
+        """
         if search_result:
             with click.progressbar(search_result, fill_char='O', length=len(search_result), width=0,
                                    label='Downloading products') as bar:
@@ -127,19 +147,37 @@ class SatImagesAPI(object):
 
     @staticmethod
     def serialize(search_result, filename='search_results.geojson'):
-        """Registers results of a eodag search into a geojson file"""
+        """Registers results of a search into a geojson file.
+
+        :param search_result: A collection of EO products resulting from a search
+        :type search_result: :class:`~eodag.api.search_result.SearchResult`
+        :param filename: The name of the file to generate
+        :type filename: str or unicode
+        :returns: The name of the created file
+        :rtype: str or unicode
+        """
         with open(filename, 'w') as fh:
             geojson.dump(search_result, fh)
         return filename
 
     @staticmethod
     def deserialize(filename):
-        """Loads results of a eodag search from a geojson file"""
+        """Loads results of a search from a geojson file.
+
+        :param filename: A filename containing a search result encoded as a geojson
+        :type filename: str or unicode
+        :returns: The search results encoded in `filename`
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
         with open(filename, 'r') as fh:
             return SearchResult.from_geojson(geojson.load(fh))
 
     def __download(self, product):
-        """Download a single product"""
+        """Download a single product.
+
+        :param product: The EO product to download
+        :type product: :class:`~eodag.api.product.EOProduct`
+        """
         # try to download the product from all the download interfaces known (functionality introduced by the necessity
         # to take into account that a product type may be distributed to many instances)
         download_interfaces = self.__get_downloaders(product)

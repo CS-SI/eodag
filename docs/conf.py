@@ -186,4 +186,6 @@ intersphinx_mapping = {
     'http://rasterio.readthedocs.io/en/latest/': None,
     'http://click.pocoo.org/5/': None,
     'http://docs.python-requests.org/en/master/': None,
+    'https://shapely.readthedocs.io/en/latest/': None,
+    'https://geopython.github.io/OWSLib/': None,
 }

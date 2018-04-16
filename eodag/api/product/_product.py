@@ -15,7 +15,7 @@ from shapely.errors import TopologicalError
 from eodag.api.product.drivers import DRIVERS
 
 
-logger = logging.getLogger('eodag.api.product')
+logger = logging.getLogger(b'eodag.api.product')
 EOPRODUCT_PROPERTIES = (
     'centroid', 'cloudCover', 'description', 'keywords', 'organisationName', 'resolution', 'snowCover', 'startDate',
     'endDate', 'title', 'productIdentifier', 'orbitNumber'
@@ -26,16 +26,41 @@ class EOProduct(object):
     """A wrapper around an Earth Observation Product originating from a search.
 
     Every Search plugin instance should build an instance of this class for each of the result of its query method, and
-    return a list made up of a list of such instances, providing a uniform object on which the other plugins can work.
-    Note that EOProduct stores geometries in WGS84 CRS (EPSG:4326), as it is intended to be transmitted as geojson
-    between applications and geojson spec enforces this.
+    return a :class:`~eodag.api.search_result.SearchResult` made up of a list of such instances, providing a uniform
+    object on which the other plugins can work.
 
-    See: https://github.com/geojson/draft-geojson/pull/6
+    :param id: The product identifier (usually a string-like uid)
+    :type id: undefined
+    :param producer: The system from which the product originates
+    :type producer: str or unicode
+    :param download_url: The location from where the product must be downloaded
+    :type download_url: str or unicode
+    :param local_filename: The name that will be given to the downloaded file (an archive) in the local filesystem
+    :type local_filename: str or unicode
+    :param geom: The geometry representing the geographical footprint of the product
+    :type geom: :class:`shapely.geometry.base.BaseGeometry` (e.g. :class:`shapely.geometry.point.Point`)
+    :param bbox_or_intersect: The extent of a search request, or the intersection of a :class:`~eodag.api.product.EOProduct`
+                              with the extent of a search request (when instantiating a :class:EOProduct from a geojson
+                              file)
+    :type bbox_or_intersect: dict
+    :param product_type: The product type (e.g. L1C)
+    :type product_type: str or unicode
+    :param platform: The name of the satellite that produced the raw data of the product
+    :type platform: str or unicode
+    :param instrument: The name of the sensing instrument embedded in the platform
+    :type instrument: str or unicode
+    :param kwargs: Additional information holding properties of the product
+    :type kwargs: dict
+
+    .. note::
+        EOProduct stores geometries in WGS84 CRS (EPSG:4326), as it is intended to be transmitted as geojson
+        between applications and geojson spec enforces this.
+
+        See: https://github.com/geojson/draft-geojson/pull/6
     """
 
     def __init__(self, id, producer, download_url, local_filename, geom, bbox_or_intersect, product_type, platform,
                  instrument, **kwargs):
-        """Initializes an EOProduct"""
         self.location_url_tpl = download_url
         self.local_filename = local_filename
         self.id = id
@@ -79,11 +104,11 @@ class EOProduct(object):
         """Retrieves all or part of the raster data abstracted by the :class:`EOProduct`
 
         :param crs: The coordinate reference system in which the dataset should be returned
-        :type crs: str
+        :type crs: str or unicode
         :param resolution: The resolution in which the dataset should be returned (given in the unit of the crs)
         :type resolution: float
         :param band: The band of the dataset to retrieve (e.g.: 'B01')
-        :type band: str
+        :type band: str or unicode
         :param extent: The coordinates on which to zoom as a tuple (min_x, min_y, max_x, max_y) in the given `crs`
         :type extent: (float, float, float, float)
         :returns: The numeric matrix corresponding to the sub dataset
@@ -99,7 +124,11 @@ class EOProduct(object):
                 return vrt.read(1, window=vrt.window(*extent), out_shape=out_shape, resampling=Resampling.bilinear)
 
     def as_dict(self):
-        """Builds a representation of EOProduct as a dictionary to enable its geojson serialization"""
+        """Builds a representation of EOProduct as a dictionary to enable its geojson serialization
+
+        :returns: The representation of a :class:`~eodag.api.product.EOProduct` as a Python dict
+        :rtype: dict
+        """
         geojson_repr = {
             'type': 'Feature',
             'id': self.id,
@@ -119,7 +148,13 @@ class EOProduct(object):
 
     @classmethod
     def from_geojson(cls, feature):
-        """Builds an EOProduct object from its representation as geojson"""
+        """Builds an :class:`~eodag.api.product.EOProduct` object from its representation as geojson
+
+        :param feature: The representation of a :class:`~eodag.api.product.EOProduct` as a Python dict
+        :type feature: dict
+        :returns: An instance of :class:`~eodag.api.product.EOProduct`
+        :rtype: :class:`~eodag.api.product.EOProduct`
+        """
         return cls(
             feature['id'],
             feature['properties']['eodag_producer'],
@@ -143,7 +178,7 @@ class EOProduct(object):
         :param raster: The raster data to encode
         :type raster: numpy.ndarray
         :param encoding: The encoding of the export
-        :type encoding: str
+        :type encoding: str or unicode
         :return: The data encoded in the specified encoding
         :rtype: bytes
         """

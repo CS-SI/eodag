@@ -1,15 +1,12 @@
 .. _api:
 
-Developer Interface
-===================
-
 .. module:: eodag
 
 We gather here all the information necessary to work with `eodag` as a Python api.
 
 
 Core
-----
+====
 
 .. autoclass:: eodag.api.core.SatImagesAPI
    :members:
@@ -17,9 +14,9 @@ Core
 
 
 Representation Of Earth Observation Products
---------------------------------------------
+============================================
 
-.. automodule:: eodag.api.product
+.. autoclass:: eodag.api.product._product.EOProduct
    :members:
    :show-inheritance:
    :undoc-members:
@@ -36,12 +33,15 @@ Representation Of Earth Observation Products
 
 
 Representation Of Search Results
---------------------------------
+================================
 
 .. autoclass:: eodag.api.search_result.SearchResult
    :members:
    :undoc-members:
 
+
+Plugins
+=======
 
 Plugin Instances Management
 ---------------------------
@@ -151,9 +151,29 @@ External Apis Plugins
 
 
 Utils
------
+=====
 
 .. automodule:: eodag.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+.. automodule:: eodag.utils.exceptions
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+.. automodule:: eodag.utils.import_system
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+.. automodule:: eodag.utils.known_systems_utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+.. automodule:: eodag.utils.logging
    :members:
    :show-inheritance:
    :undoc-members:
