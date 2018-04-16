@@ -149,10 +149,15 @@ class EOProduct(object):
         """
         # If no encoding return an empty byte
         if not encoding:
+            logger.warning('Trying to encode a raster without specifying an encoding')
             return b''
-        return getattr(self, '__{encoding}'.format(**locals()), None)(raster)
+        strategy = getattr(self, '_{encoding}'.format(**locals()), None)
+        if strategy:
+            return strategy(raster)
+        logger.error('Unknown encoding: %s', encoding)
+        return b''
 
-    def __protobuf(self, raster):
+    def _protobuf(self, raster):
         """Google's Protocol buffers encoding strategy.
 
         :param raster: The raster to encode
@@ -160,3 +165,15 @@ class EOProduct(object):
         :returns: The raster data represented by this subset in protocol buffers encoding
         :rtype: bytes
         """
+        from eodag.api.product.protobuf import eo_product_pb2
+        subdataset = eo_product_pb2.EOProductSubdataset()
+        subdataset.id = self.id
+        subdataset.producer = self.producer
+        subdataset.product_type = self.product_type
+        subdataset.platform = self.sensing_platform
+        subdataset.sensor = self.sensor
+        data = subdataset.data
+        data.array.extend(list(raster.flatten().astype(int)))
+        data.shape.extend(list(raster.shape))
+        data.dtype = raster.dtype.name
+        return subdataset.SerializeToString()
