@@ -104,7 +104,6 @@ class CSWSearch(Search):
                     download_url = ref['url']
                 break
         return EOProduct(
-            rec.identifier,
             self.instance_name,
             download_url,
             local_filename,
@@ -113,6 +112,7 @@ class CSWSearch(Search):
             product_type,
             None,   # TODO determine the platform
             None,   # TODO determine the instrument
+            provider_id=rec.identifier,
             centroid=geom.centroid,
             title=rec.title,
             description=(rec.abstract or ''),

@@ -38,7 +38,6 @@ class SentinelsatAPI(Api):
                 for _id, original in results.items():
                     geom = shapely.wkt.loads(original['footprint'])
                     append_to_final(EOProduct(
-                        _id,
                         self.instance_name,
                         original['link'],
                         original['filename'],
@@ -47,6 +46,7 @@ class SentinelsatAPI(Api):
                         product_type,
                         original['platform'],       # TODO
                         original['instrument'],     # TODO
+                        provider_id=_id,
                         centroid=geom.centroid,
                         description=original['summary'],
                         title=original['title'],

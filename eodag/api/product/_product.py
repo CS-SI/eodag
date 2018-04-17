@@ -4,6 +4,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+from uuid import uuid4
 
 import numpy
 import rasterio
@@ -30,10 +31,8 @@ class EOProduct(object):
     return a :class:`~eodag.api.search_result.SearchResult` made up of a list of such instances, providing a uniform
     object on which the other plugins can work.
 
-    :param id: The product identifier (usually a string-like uid)
-    :type id: undefined
-    :param producer: The system from which the product originates
-    :type producer: str or unicode
+    :param provider: The system from which the product originates
+    :type provider: str or unicode
     :param download_url: The location from where the product must be downloaded
     :type download_url: str or unicode
     :param local_filename: The name that will be given to the downloaded file (an archive) in the local filesystem
@@ -50,22 +49,30 @@ class EOProduct(object):
     :type platform: str or unicode
     :param instrument: The name of the sensing instrument embedded in the platform
     :type instrument: str or unicode
+    :param provider_id: (optional) The product ID as returned by the provider (usually a string-like uid)
+    :type provider_id: undefined
+    :param id: (optional) The ID of the product as defined in this library. This option is intended to be used to allow
+               instantiating a EOProduct from its geojson representation
+    :type id: str or unicode
     :param kwargs: Additional information holding properties of the product
     :type kwargs: dict
 
     .. note::
         EOProduct stores geometries in WGS84 CRS (EPSG:4326), as it is intended to be transmitted as geojson
         between applications and geojson spec enforces this.
+        See: https://github.com/geojson/draft-geojson/pull/6.
 
-        See: https://github.com/geojson/draft-geojson/pull/6
+    .. note::
+        Each time a EOProduct object is created, a random unique id is created  and attached to this object to identify
+        it across the api.
     """
 
-    def __init__(self, id, producer, download_url, local_filename, geom, bbox_or_intersect, product_type, platform,
-                 instrument, **kwargs):
+    def __init__(self, provider, download_url, local_filename, geom, bbox_or_intersect, product_type, platform,
+                 instrument, id=None, provider_id=None, **kwargs):
         self.location_url_tpl = download_url
         self.local_filename = local_filename
-        self.id = id
-        self.producer = producer
+        self.id = id or uuid4()
+        self.provider = provider
         self.geometry = geom
         self.product_type = product_type
         self.sensing_platform = platform
@@ -97,6 +104,8 @@ class EOProduct(object):
         }
         # This allows plugin developers to add their own properties to the EOProduct object
         self.properties.update(kwargs)
+        if provider_id is not None:
+            self.properties['provider_id'] = provider_id
         self.driver = DRIVERS[
             (self.sensing_platform, self.sensor)
         ]()
@@ -135,7 +144,7 @@ class EOProduct(object):
             'id': self.id,
             'geometry': self.geometry,
             'properties': {
-                'eodag_producer': self.producer,
+                'eodag_provider': self.provider,
                 'eodag_download_url': self.location_url_tpl,
                 'eodag_local_name': self.local_filename,
                 'eodag_search_intersection': self.search_intersection,
@@ -157,21 +166,20 @@ class EOProduct(object):
         :rtype: :class:`~eodag.api.product.EOProduct`
         """
         return cls(
-            feature['id'],
             feature['properties']['eodag_producer'],
             feature['properties']['eodag_download_url'],
             feature['properties']['eodag_local_name'],
             feature['geometry'],
             feature['properties']['eodag_search_intersection'],
             feature['properties']['productType'],
-            **feature['properties']
-        )
+            id=feature['id'],
+            **feature['properties'])
 
     # Implementation of geo-interface protocol (See https://gist.github.com/sgillies/2217756)
     __geo_interface__ = property(as_dict)
 
     def __repr__(self):
-        return '{}(id={}, producer={})'.format(self.__class__.__name__, self.id, self.producer)
+        return '{}(id={}, provider={})'.format(self.__class__.__name__, self.id, self.provider)
 
     def encode(self, raster, encoding='protobuf'):
         """Encode the subset to a network-compatible format.
@@ -204,7 +212,7 @@ class EOProduct(object):
         from eodag.api.product.protobuf import eo_product_pb2
         subdataset = eo_product_pb2.EOProductSubdataset()
         subdataset.id = self.id
-        subdataset.producer = self.producer
+        subdataset.producer = self.provider
         subdataset.product_type = self.product_type
         subdataset.platform = self.sensing_platform
         subdataset.sensor = self.sensor

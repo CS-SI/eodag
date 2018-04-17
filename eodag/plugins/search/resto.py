@@ -127,7 +127,6 @@ class RestoSearch(Search):
                         )
                     local_filename = result['id'] + '.zip'
                 product = EOProduct(
-                    result['id'],
                     self.instance_name,
                     download_url,
                     local_filename,
@@ -136,6 +135,7 @@ class RestoSearch(Search):
                     result['properties']['productType'],
                     result['properties']['platform'],
                     result['properties']['instrument'],
+                    provider_id=result['id'],
                     # EOPRODUCT_PROPERTIES are based on resto representation of Earth observation products properties
                     **{prop_key: (result['properties'][prop_key] if prop_key != 'endDate' else result['properties'][
                         'completionDate']) for prop_key in EOPRODUCT_PROPERTIES}
