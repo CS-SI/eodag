@@ -13,7 +13,6 @@ import geojson
 from eodag.api.search_result import SearchResult
 from eodag.config import SimpleYamlProxyConfig
 from eodag.plugins.instances_manager import PluginInstancesManager
-from eodag.utils import maybe_generator
 from eodag.utils.exceptions import PluginImplementationError
 
 
@@ -177,6 +176,10 @@ class SatImagesAPI(object):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product.EOProduct`
+        :returns: The absolute path to the downloaded product in the local filesystem
+        :rtype: str or unicode
+        :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
+        :raises: :class:`RuntimeError`
         """
         # try to download the product from all the download interfaces known (functionality introduced by the necessity
         # to take into account that a product type may be distributed to many instances)
@@ -191,12 +194,12 @@ class SatImagesAPI(object):
                     logger.debug('On site usage detected. Authentication for download skipped !')
                 if auth:
                     auth = auth.authenticate()
-                for local_filename in maybe_generator(iface.download(product, auth=auth)):
-                    if local_filename is None:
+                for local_filepath in product.download(iface, auth):
+                    if local_filepath is None:
                         logger.debug('The download method of a Download plugin should return the absolute path to the '
                                      'downloaded resource or a generator of absolute paths to the downloaded and '
                                      'extracted resource')
-                    yield local_filename
+                    yield local_filepath
             except TypeError as e:
                 # Enforcing the requirement for download plugins to implement a download method with auth kwarg
                 if any("got an unexpected keyword argument 'auth'" in arg for arg in e.args):

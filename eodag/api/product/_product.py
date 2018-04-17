@@ -13,6 +13,7 @@ from shapely import geometry
 from shapely.errors import TopologicalError
 
 from eodag.api.product.drivers import DRIVERS
+from eodag.utils import maybe_generator
 
 
 logger = logging.getLogger(b'eodag.api.product')
@@ -212,3 +213,16 @@ class EOProduct(object):
         data.shape.extend(list(raster.shape))
         data.dtype = raster.dtype.name
         return subdataset.SerializeToString()
+
+    def download(self, downloader, authenticator):
+        """Download the EO product using the provided download plugin and the authenticator if necessary.
+
+        :param downloader: The download plugin to use to download this product
+        :type downloader: :class:`~eodag.plugins.download.base.Download`
+        :param authenticator: The authentication plugin to use if necessary
+        :type authenticator: :class:`~eodag.plugins.authentication.base.Authentication` or None
+        :returns: The absolute path to the downloaded product on the local filesystem
+        :rtype: str or unicode
+        """
+        for local_filepath in maybe_generator(downloader.download(self, auth=authenticator)):
+            yield local_filepath
