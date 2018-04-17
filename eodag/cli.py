@@ -127,7 +127,7 @@ def list_pt(ctx, **kwargs):
 
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
-    with open(os.path.join(os.path.dirname(__file__), 'resources', 'system_conf_default.yml'), 'r') as fh:
+    with open(os.path.join(os.path.dirname(__file__), 'resources', 'providers.yml'), 'r') as fh:
         conf = yaml.load(fh)
         system = kwargs.pop('system')
         try:

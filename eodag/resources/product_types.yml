@@ -1,0 +1,12 @@
+S2MSIL1C:
+  desc: This is a Sentinel 2 data product
+  meta:
+    - key: PRODUCT_START_TIME
+      type: date
+    - key: PRODUCT_STOP_TIME
+      type: date
+  providers:
+    - id: scihub
+      priority: 1
+    - id: eocloud
+      priotity: 0

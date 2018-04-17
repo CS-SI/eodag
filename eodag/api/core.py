@@ -28,40 +28,44 @@ class SatImagesAPI(object):
     :type system_conf_file_path: str or unicode
     """
 
-    def __init__(self, user_conf_file_path=None, system_conf_file_path=None):
-        self.system_config = SimpleYamlProxyConfig(os.path.join(
+    def __init__(self, user_conf_file_path=None, providers_file_path=None):
+        self.providers_config = SimpleYamlProxyConfig(os.path.join(
             os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
-            os.pardir, 'resources', 'system_conf_default.yml'
+            os.pardir, 'resources', 'providers.yml'
         ))
-        if system_conf_file_path is not None:
+        self.product_types_config = SimpleYamlProxyConfig(os.path.join(
+            os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
+            os.pardir, 'resources', 'product_types.yml'
+        ))
+        if providers_file_path is not None:
             # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
             # TODO (continues) : param within an instance configuration
-            self.system_config.update(SimpleYamlProxyConfig(system_conf_file_path))
+            self.providers_config.update(SimpleYamlProxyConfig(providers_file_path))
         if user_conf_file_path:
             self.user_config = SimpleYamlProxyConfig(user_conf_file_path)
 
             # Override system default config with user values for some keys
             for instance_name, instance_config in self.user_config.items():
                 if isinstance(instance_config, dict):
-                    if instance_name in self.system_config:
+                    if instance_name in self.providers_config:
                         if 'credentials' in instance_config:
-                            if 'api' in self.system_config[instance_name]:
-                                self.system_config[instance_name]['api'].update(instance_config)
+                            if 'api' in self.providers_config[instance_name]:
+                                self.providers_config[instance_name]['api'].update(instance_config)
                             else:
-                                auth_conf = self.system_config[instance_name].setdefault('auth', {})
+                                auth_conf = self.providers_config[instance_name].setdefault('auth', {})
                                 auth_conf.update(instance_config)
                         for key in ('outputs_prefix', 'extract'):
                             if key in self.user_config:
                                 user_spec = self.user_config[key]
-                                if 'api' in self.system_config[instance_name]:
-                                    default_dl_option = self.system_config[instance_name]['api'].setdefault(
+                                if 'api' in self.providers_config[instance_name]:
+                                    default_dl_option = self.providers_config[instance_name]['api'].setdefault(
                                         key,
                                         '/data/satellites_images/' if key == 'outputs_prefix' else True
                                     )
                                 else:
-                                    if 'download' in self.system_config[instance_name]:
-                                        default_dl_option = self.system_config[instance_name].get('download',
-                                                                                                  {}).setdefault(
+                                    if 'download' in self.providers_config[instance_name]:
+                                        default_dl_option = self.providers_config[instance_name].get('download',
+                                                                                                     {}).setdefault(
                                             # noqa
                                             key,
                                             '/data/satellites_images/' if key == 'outputs_prefix' else True
@@ -69,12 +73,23 @@ class SatImagesAPI(object):
                                     else:
                                         default_dl_option = user_spec  # allows skipping next if block
                                 if default_dl_option != user_spec:
-                                    if 'api' in self.system_config[instance_name]:
-                                        self.system_config[instance_name]['api'][key] = user_spec
+                                    if 'api' in self.providers_config[instance_name]:
+                                        self.providers_config[instance_name]['api'][key] = user_spec
                                     else:
-                                        self.system_config[instance_name]['download'][key] = user_spec
-        self.pim = PluginInstancesManager(self.system_config)
+                                        self.providers_config[instance_name]['download'][key] = user_spec
+        self.pim = PluginInstancesManager(self.providers_config)
         self.__interfaces_cache = {}
+
+    def list_product_types(self):
+        """Lists supported product types.
+
+        :returns: The list of the product types that can be accessed using eodag.
+        :rtype: list(dict)
+        """
+        return [dict(
+            ID=_id,
+            **value
+        ) for _id, value in self.product_types_config.items()]
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
@@ -215,14 +230,14 @@ class SatImagesAPI(object):
                     raise rte
 
     def __get_authenticator(self, instance_name):
-        if 'auth' in self.system_config[instance_name]:
+        if 'auth' in self.providers_config[instance_name]:
             logger.debug('Authentication initialisation for instance %s', instance_name)
             previous = (self.__interfaces_cache.setdefault('auth', {})
                                                .setdefault(instance_name, []))
             if not previous:
                 previous.append(self.pim.instantiate_plugin_by_config(
                     topic_name='auth',
-                    topic_config=self.system_config[instance_name]['auth'],
+                    topic_config=self.providers_config[instance_name]['auth'],
                     iname=instance_name,
                 ))
             logger.debug("Initialized %r Authentication plugin for instance '%s'", previous[0], instance_name)
