@@ -1,0 +1,66 @@
+/* Copyright 2018 CS Systemes d'Information (CS SI)
+ * All rights reserved
+ */
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+package eodag;
+
+service EOProductTypeService {
+    rpc ListProductTypes (google.protobuf.Empty) returns (stream EOProductTypeSchema) {};
+    rpc SearchProductType (EOProductTypeSearchRequest) returns (stream EOProductTypeSchema) {};
+}
+
+service EOProductService {
+    rpc SearchProduct (EOProductSearchRequest) returns (stream EOProduct) {};
+    rpc DownloadProduct (EOProductDownloadRequest) returns (stream NetCDFBuffer) {};
+}
+
+message EOProductTypeSchema {
+    string id = 1;
+    enum MetadataValueType {
+        DATE = 0;
+        STRING = 1;
+        FLOAT = 2;
+        INTEGER = 3;
+        POLYGON = 4;
+    }
+    message EOProductTypeMetadataSchema {
+        string key = 1;
+        MetadataValueType value_type = 2;
+    }
+
+    repeated EOProductTypeMetadataSchema meta = 2;
+}
+
+message EOProductTypeSearchRequest {
+    string query = 1;
+}
+
+message EOProductSearchRequest {
+    string product_type = 1;
+    string footprint = 2;
+    google.protobuf.Timestamp start = 3;
+    google.protobuf.Timestamp end = 4;
+    string metadata_filter = 5;
+}
+
+message EOProduct {
+    string id = 1;
+
+    message EOProductMetadata {
+        string key = 1;
+        google.protobuf.Any value = 2;
+    }
+}
+
+message EOProductDownloadRequest {
+    string product_id = 2;
+}
+
+message NetCDFBuffer {
+    bytes content = 1;
+}
