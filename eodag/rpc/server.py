@@ -51,11 +51,11 @@ class EOProductTypeService(eodag_pb2_grpc.EOProductTypeServicer):
         """List the product types known by the system"""
         logger.info('New request for available product types: %s', request or '<Empty>')
         logger.debug('Context: %s', context)
-        for pt_id, conf in self.eodag.product_types_config.items():
+        for product_type in self.eodag.list_product_types():
             schema = eodag_pb2.EOProductTypeSchema()
-            schema.id = pt_id
-            schema.description = conf['desc']
-            for metadata in conf['meta']:
+            schema.id = product_type['ID']
+            schema.description = product_type['desc']
+            for metadata in product_type['meta']:
                 meta = schema.meta.add()
                 meta.key = metadata['key']
                 meta.value_type = metadata['type']
