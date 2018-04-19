@@ -266,7 +266,7 @@ class SatImagesAPI(object):
         """Look for a download interface to use, based on the configuration of the api and the product to download"""
         logger.debug('Looking for the appropriate Download instance to use for product: %r', product)
         previous = (self.__interfaces_cache.setdefault('download', {})
-                                           .setdefault(product.producer, []))
+                                           .setdefault(product.provider, []))
         if not previous:
             dl_plugin_instances = self.pim.instantiate_configured_plugins(
                 topics=('download', 'api'),
