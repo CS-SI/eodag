@@ -174,5 +174,20 @@ def download(ctx, **kwargs):
                 click.echo('Downloaded {}'.format(downloaded_file))
 
 
+@eodag.command(help='Start eodag rpc server')
+@click.option('-h', '--host', type=click.STRING, default='localhost',
+              help='Interface where to listen for requests')
+@click.option('-p', '--port', type=click.INT, default=50051,
+              help='The port where to listen for requests',)
+@click.option('-f', '--conf', type=click.Path(exists=True),
+              help='File path to the user configuration file with its credentials',)
+@click.pass_context
+def serve(ctx, host, port, conf):
+    setup_logging(verbose=ctx.obj['verbosity'])
+    from eodag.rpc.server import EODAGRPCServer
+    server = EODAGRPCServer(host, port, conf)
+    server.serve()
+
+
 if __name__ == '__main__':
     eodag(obj={})

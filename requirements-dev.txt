@@ -4,3 +4,4 @@ tox
 faker
 mock
 coverage
+grpcio-tools
