@@ -15,10 +15,10 @@ from eodag.plugins.download.base import Download
 logger = logging.getLogger('eodag.plugins.download.http')
 
 
-class aws_download(Download):
+class AwsDownload(Download):
 
     def __init__(self, config):
-        super(aws_download, self).__init__(config)
+        super(AwsDownload, self).__init__(config)
 
         self.config.setdefault('outputs_prefix', '/tmp')
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
@@ -38,9 +38,7 @@ class aws_download(Download):
         doss = 'EO_product_{}'.format(product.id)
 
         #check if the directory where to store the product already exists of not creates it
-        if os.path.isdir(os.path.join(output_dir, doss)):
-            pass
-        else:
+        if not os.path.isdir(os.path.join(output_dir, doss)):
             os.makedirs(os.path.join(output_dir, doss))
 
             for i in bucket.objects.filter(Prefix=product.location_url_tpl):
@@ -49,10 +47,7 @@ class aws_download(Download):
 
                 if len(dir) > 9:
 
-                    if os.path.isdir(os.path.join(output_dir, doss, dir[-2])):
-                        pass
-
-                    else:
+                    if not os.path.isdir(os.path.join(output_dir, doss, dir[-2])):
                         os.makedirs(os.path.join(output_dir, doss, dir[-2]))
 
                     l = i.key.split('/')
@@ -60,13 +55,10 @@ class aws_download(Download):
                     name = os.path.join(output_dir, doss, dir[-2], suffix)
 
                     #avoid to re download a file which has already been downloaded
-                    if os.path.isfile(name):
-                        pass
-                    else:
+                    if not os.path.isfile(name):
                         bucket.download_file(i.key, name)
 
                 else:
-
                     l = i.key.split('/')
                     suffix = l[-1]
                     name = os.path.join(output_dir, doss, suffix)

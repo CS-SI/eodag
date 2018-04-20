@@ -1,6 +1,6 @@
 # Only known system configuration can be overridden for their credentials config key under auth config.
 # Unknown keys will simply be ignored, and the corresponding configuration not overridden.
-outputs_prefix: 
+outputs_prefix:
 extract: # true or false
 peps:
     credentials:

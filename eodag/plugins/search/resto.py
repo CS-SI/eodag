@@ -37,7 +37,6 @@ class RestoSearch(Search):
         )
 
     def query(self, product_type, **kwargs):
-
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         collection = None
         resto_product_type = None

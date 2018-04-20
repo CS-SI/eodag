@@ -2,7 +2,7 @@
 USGS:
   priority: #100000
   api:
-    plugin: usgsApi
+    plugin: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
     products:
       LC8:
@@ -22,7 +22,7 @@ AmazonWS:
         collection: Sentinel2
 
   download:
-    plugin: aws_download
+    plugin: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
 
   auth:

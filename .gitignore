@@ -93,4 +93,4 @@ ENV/
 */*.user*
 *.user*
 
-.idea
+.idea/*
