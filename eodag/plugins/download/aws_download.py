@@ -61,7 +61,5 @@ class AwsDownload(Download):
                 suffix = l[-1]
                 name = os.path.join(output_dir, doss, suffix)
                 # avoid to re download a file which has already been downloaded
-                if os.path.isfile(name):
-                    pass
-                else:
+                if not os.path.isfile(name):
                     bucket.download_file(i.key, name)
