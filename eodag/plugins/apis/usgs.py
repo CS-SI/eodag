@@ -33,6 +33,7 @@ import os
 
 class UsgsApi(Api):
     USGS_NODE_TYPE = ['EE', 'CWIC', 'HDSS', 'LPCS']
+
     def __init__(self, config):
         super(UsgsApi, self).__init__(config)
 
@@ -54,6 +55,7 @@ class UsgsApi(Api):
         if end_date is None:
             raise ValueError('end_date must be given')
 
+        final = []
         footprint = kwargs.pop('footprint', None)
         if footprint:
             if len(footprint.keys()) == 4:  # a rectangle (or bbox)
@@ -64,10 +66,9 @@ class UsgsApi(Api):
                 ur['longitude'] = footprint['lonmax']
                 ur['latitude'] = footprint['latmax']
 
-                final = []
-                for i in range(0, len(self.USGS_NODE_TYPE)):
+                for node_type in self.USGS_NODE_TYPE:
                     try:
-                        result = api.search(usgs_product_type, self.USGS_NODE_TYPE[i], start_date=start_date,
+                        result = api.search(usgs_product_type, node_type, start_date=start_date,
                                             end_date=end_date,
                                             ll=ll, ur=ur)
                         params = self.get_parameters(result)
@@ -75,14 +76,15 @@ class UsgsApi(Api):
                         for j in range(0, params['products_number']):
                             bbox = (params['ll_long'][j], params['ll_lat'][j], params['ur_long'][j],
                                     params['ur_lat'][j])
-                            url = self.make_google_download_url(params, j)
+                            url = self.make_google_download_url(params['paths'][j], params['rows'][j],
+                                                                params['entity_ids'][j])
                             geom = geometry.box(*bbox)
                             final.append(
                                 EOProduct(params['entity_ids'][j], self.instance_name, url, params['entity_ids'][j],
                                           geom, footprint, startDate=params['startDates'][j]))
                     except Exception:
                         logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type,
-                                     self.USGS_NODE_TYPE[i])
+                                     node_type)
 
         api.logout()
         return final
@@ -102,22 +104,22 @@ class UsgsApi(Api):
 
         return params
 
-    def make_google_download_url(self, params, i):
+    def make_google_download_url(self, path, row, entity):
 
-        if len(str(params['paths'][i])) < 4:
-            iter = ['L8', '0{}'.format(str(params['paths'][i])[1:]), str(params['rows'][i])[1:],
-                    str(params['entity_ids'][i])]
+        if len(str(path)) < 4:
+            iter = ['L8', '0{}'.format(str(path)[1:]), str(row)[1:],
+                    str(entity)]
             extension = '/'.join(j for j in iter) + '.tar.bz'
             url = urljoin(self.config['google_base_url'], extension)
 
-        elif len(str(params['rows'][i])) < 4:
-            iter = ['L8', str(params['paths'][i])[1:], '0{}'.format(str(params['rows'][i])[1:]),
-                    str(params['entity_ids'][i])]
+        elif len(str(row)) < 4:
+            iter = ['L8', str(path)[1:], '0{}'.format(str(row)[1:]),
+                    str(entity)]
             extension = '/'.join(j for j in iter) + '.tar.bz'
             url = urljoin(self.config['google_base_url'], extension)
 
         else:
-            iter = ['L8', str(params['paths'][i])[1:], str(params['rows'][i])[1:], str(params['entity_ids'][i])]
+            iter = ['L8', str(path)[1:], str(row)[1:], str(entity)]
             extension = '/'.join(j for j in iter) + '.tar.bz'
             url = urljoin(self.config['google_base_url'], extension)
         return url
