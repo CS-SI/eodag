@@ -10,3 +10,5 @@ six
 geojson
 pyproj
 pytz
+usgs
+boto3
