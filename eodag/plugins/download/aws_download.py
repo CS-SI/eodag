@@ -27,9 +27,7 @@ class AwsDownload(Download):
 
         #login
         access_key, access_secret = auth
-        boto3.client('s3', aws_access_key_id=access_key,
-                     aws_secret_access_key=access_secret)
-        s3 = boto3.resource('s3')
+        s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=access_secret)
 
         #amazon bucket where to download the data from
         bucket = s3.Bucket(self.config['associated_bucket'])
@@ -41,29 +39,29 @@ class AwsDownload(Download):
         if not os.path.isdir(os.path.join(output_dir, doss)):
             os.makedirs(os.path.join(output_dir, doss))
 
-            for i in bucket.objects.filter(Prefix=product.location_url_tpl):
+        for i in bucket.objects.filter(Prefix=product.location_url_tpl):
 
-                dir = i.key.split('/')
+            dir = i.key.split('/')
 
-                if len(dir) > 9:
+            if len(dir) > 9:
 
-                    if not os.path.isdir(os.path.join(output_dir, doss, dir[-2])):
-                        os.makedirs(os.path.join(output_dir, doss, dir[-2]))
+                if not os.path.isdir(os.path.join(output_dir, doss, dir[-2])):
+                    os.makedirs(os.path.join(output_dir, doss, dir[-2]))
 
-                    l = i.key.split('/')
-                    suffix = l[-1]
-                    name = os.path.join(output_dir, doss, dir[-2], suffix)
+                l = i.key.split('/')
+                suffix = l[-1]
+                name = os.path.join(output_dir, doss, dir[-2], suffix)
 
-                    #avoid to re download a file which has already been downloaded
-                    if not os.path.isfile(name):
-                        bucket.download_file(i.key, name)
+                #avoid to re download a file which has already been downloaded
+                if not os.path.isfile(name):
+                    bucket.download_file(i.key, name)
 
+            else:
+                l = i.key.split('/')
+                suffix = l[-1]
+                name = os.path.join(output_dir, doss, suffix)
+                # avoid to re download a file which has already been downloaded
+                if os.path.isfile(name):
+                    pass
                 else:
-                    l = i.key.split('/')
-                    suffix = l[-1]
-                    name = os.path.join(output_dir, doss, suffix)
-                    # avoid to re download a file which has already been downloaded
-                    if os.path.isfile(name):
-                        pass
-                    else:
-                        bucket.download_file(i.key, name)
+                    bucket.download_file(i.key, name)
