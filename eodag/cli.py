@@ -3,14 +3,13 @@
 # All rights reserved
 from __future__ import absolute_import, print_function, unicode_literals
 
-import os
 import sys
+import textwrap
 
 import click
-import yaml
-import yaml.parser
 
 from eodag.api.core import SatImagesAPI
+from eodag.utils.exceptions import UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
 
@@ -111,40 +110,24 @@ def search_crunch(ctx, **kwargs):
 
 
 @eodag.command(name='list', help='List supported product types')
-@click.option('-s', '--system', help='Name of the system for which we should list available product types')
+@click.option('-p', '--provider', help='List product types supported by this provider')
 @click.pass_context
 def list_pt(ctx, **kwargs):
-    def format_system_pt(sys_conf):
-        return 'product_type={product_type};collection={collection}'.format(**sys_conf)
-
-    def print_list(name, config):
-        if 'search' in config and 'products' in config['search']:
-            click.echo('Product types available for instance {}:'.format(name))
-            for eodag_pt, real_pt in config['search']['products'].items():
-                click.echo('- eodag code: {}\t\tcode on system: {}'.format(
-                    eodag_pt, format_system_pt(real_pt)
-                ))
-
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
-    with open(os.path.join(os.path.dirname(__file__), 'resources', 'providers.yml'), 'r') as fh:
-        conf = yaml.load(fh)
-        system = kwargs.pop('system')
-        try:
-            if system and system not in conf:
-                click.echo('Unsupported system. You may have a typo')
-                click.echo('Available systems: {}'.format(', '.join(conf.keys())))
-                sys.exit(1)
-            for name, config in conf.items():
-                if system:
-                    if name == system:
-                        print_list(name, config)
-                        break
-                else:
-                    print_list(name, config)
-        except yaml.parser.ParserError as e:
-            click.echo('Unable to load user configuration file: {}'.format(e))
-            sys.exit(1)
+    dag = SatImagesAPI()
+    provider = kwargs.pop('provider')
+    text_wrapper = textwrap.TextWrapper()
+    click.echo('Listing available product types:')
+    try:
+        for product_type in dag.list_product_types(provider=provider):
+            text_wrapper.initial_indent = '* {}: '.format(product_type['ID'])
+            text_wrapper.subsequent_indent = ' ' * len(text_wrapper.initial_indent)
+            click.echo(text_wrapper.fill(product_type['desc'] or 'No description'))
+    except UnsupportedProvider:
+        click.echo('Unsupported provider. You may have a typo')
+        click.echo('Available providers: {}'.format(', '.join(dag.available_providers())))
+        sys.exit(1)
 
 
 @eodag.command(help='Download a list of products from a serialized search result')

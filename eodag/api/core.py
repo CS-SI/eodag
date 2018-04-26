@@ -13,7 +13,7 @@ import geojson
 from eodag.api.search_result import SearchResult
 from eodag.config import SimpleYamlProxyConfig
 from eodag.plugins.instances_manager import PluginInstancesManager
-from eodag.utils.exceptions import PluginImplementationError
+from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 
 
 logger = logging.getLogger(b'eodag.core')
@@ -79,16 +79,31 @@ class SatImagesAPI(object):
         self.pim = PluginInstancesManager(self.providers_config)
         self.__interfaces_cache = {}
 
-    def list_product_types(self):
+    def list_product_types(self, provider=None):
         """Lists supported product types.
 
+        :param provider: The name of a provider that must support the product types we are about to list
+        :type provider: str or unicode
         :returns: The list of the product types that can be accessed using eodag.
         :rtype: list(dict)
+        :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
+        if provider is not None:
+            if provider in self.providers_config:
+                provider_supported_products = self.providers_config[provider]['products']
+                return [dict(
+                    ID=code,
+                    **self.product_types_config[code]
+                ) for code in provider_supported_products]
+            raise UnsupportedProvider("The requested provider is not (yet) supported")
         return [dict(
-            ID=_id,
+            ID=code,
             **value
-        ) for _id, value in self.product_types_config.items()]
+        ) for code, value in self.product_types_config.items()]
+
+    def available_providers(self):
+        """Gives the list of the available providers"""
+        return [provider for provider in self.providers_config]
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.

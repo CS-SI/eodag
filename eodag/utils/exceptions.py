@@ -24,3 +24,7 @@ class MisconfiguredError(Exception):
 class AddressNotFound(Exception):
     """An error indicating the address of a subdataset was not found"""
 
+
+class UnsupportedProvider(Exception):
+    """An error indicating that eodag does not support a provider"""
+
