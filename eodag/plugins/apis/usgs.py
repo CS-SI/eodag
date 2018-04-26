@@ -3,42 +3,36 @@
 # All rights reserved
 from __future__ import absolute_import, print_function, unicode_literals
 
-import datetime
 import hashlib
 import logging
+import os
 import zipfile
-
-import shapely.geometry
-import pytz
-import click
-from tqdm import tqdm
 
 try:  # PY3
     from urllib.parse import urljoin, urlparse
 except ImportError:  # PY2
     from urlparse import urljoin, urlparse
 
+import click
 import requests
-from dateutil.parser import parse as dateparse
 from requests import HTTPError
-
-from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
 from shapely import geometry
-import sys
-from usgs import api
+from tqdm import tqdm
+from usgs import CATALOG_NODES, USGSError, api
+
+from eodag.api.product import EOProduct
 from .base import Api
-import logging as logger
-import os
+
+
+logger = logging.getLogger(b'eodag.plugins.apis.usgs')
 
 
 class UsgsApi(Api):
-    USGS_NODE_TYPE = ['EE', 'CWIC', 'HDSS', 'LPCS']
 
     def __init__(self, config):
         super(UsgsApi, self).__init__(config)
 
     def query(self, product_type, **kwargs):
-
         api.login(self.config['credentials']['username'], self.config['credentials']['password'], save=True)
 
         usgs_product_type = None
@@ -59,18 +53,12 @@ class UsgsApi(Api):
         footprint = kwargs.pop('footprint', None)
         if footprint:
             if len(footprint.keys()) == 4:  # a rectangle (or bbox)
-                ll = {}
-                ll['longitude'] = footprint['lonmin']
-                ll['latitude'] = footprint['latmin']
-                ur = {}
-                ur['longitude'] = footprint['lonmax']
-                ur['latitude'] = footprint['latmax']
-
-                for node_type in self.USGS_NODE_TYPE:
+                lower_left = {'longitude': footprint['lonmin'], 'latitude': footprint['latmin']}
+                upper_right = {'longitude': footprint['lonmax'], 'latitude': footprint['latmax']}
+                for node_type in CATALOG_NODES:
                     try:
-                        result = api.search(usgs_product_type, node_type, start_date=start_date,
-                                            end_date=end_date,
-                                            ll=ll, ur=ur)
+                        result = api.search(usgs_product_type, node_type, start_date=start_date, end_date=end_date,
+                                            ll=lower_left, ur=upper_right)
                         params = self.get_parameters(result)
 
                         for j in range(0, params['products_number']):
@@ -79,13 +67,18 @@ class UsgsApi(Api):
                             url = self.make_google_download_url(params['paths'][j], params['rows'][j],
                                                                 params['entity_ids'][j])
                             geom = geometry.box(*bbox)
-                            final.append(
-                                EOProduct(params['entity_ids'][j], self.instance_name, url, params['entity_ids'][j],
-                                          geom, footprint, startDate=params['startDates'][j]))
-                    except Exception:
-                        logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type,
-                                     node_type)
-
+                            final.append(EOProduct(
+                                self.instance_name,
+                                url,
+                                params['entity_ids'][j],
+                                geom,
+                                footprint,
+                                product_type,
+                                provider_id=params['entity_ids'][j],
+                                startDate=params['startDates'][j]))
+                    except USGSError as e:
+                        logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type, node_type)
+                        logger.debug("Skipping error: %s", e)
         api.logout()
         return final
 
@@ -101,23 +94,17 @@ class UsgsApi(Api):
             params.setdefault('ur_long', []).append(hit['upperRightCoordinate']['longitude'])
             params.setdefault('ur_lat', []).append(hit['upperRightCoordinate']['latitude'])
         params['products_number'] = result['data']['totalHits']
-
         return params
 
     def make_google_download_url(self, path, row, entity):
-
         if len(str(path)) < 4:
-            iter = ['L8', '0{}'.format(str(path)[1:]), str(row)[1:],
-                    str(entity)]
+            iter = ['L8', '0{}'.format(str(path)[1:]), str(row)[1:], str(entity)]
             extension = '/'.join(j for j in iter) + '.tar.bz'
             url = urljoin(self.config['google_base_url'], extension)
-
         elif len(str(row)) < 4:
-            iter = ['L8', str(path)[1:], '0{}'.format(str(row)[1:]),
-                    str(entity)]
+            iter = ['L8', str(path)[1:], '0{}'.format(str(row)[1:]), str(entity)]
             extension = '/'.join(j for j in iter) + '.tar.bz'
             url = urljoin(self.config['google_base_url'], extension)
-
         else:
             iter = ['L8', str(path)[1:], str(row)[1:], str(entity)]
             extension = '/'.join(j for j in iter) + '.tar.bz'
@@ -125,7 +112,6 @@ class UsgsApi(Api):
         return url
 
     def download(self, product, auth=None):
-
         url = product.location_url_tpl
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
@@ -178,5 +164,3 @@ class UsgsApi(Api):
                                 yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
                 else:
                     yield local_file_path
-
-

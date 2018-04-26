@@ -17,3 +17,21 @@ class DatasetDriver(six.with_metaclass(type)):
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         """
         raise NotImplementedError
+
+
+class NoDriver(DatasetDriver):
+    """A default driver that does not implement any of the methods it should implement, used as a temporary fail over
+    for all the plugins that don't give the names of the platform and the instrument during instantiation of eoproduct
+    after they receive their search result. This driver is indexed with ``(None, None)`` in
+    :const:`eodag.api.product.drivers.DRIVERS`.
+
+    So, when developing a new :class:`~eodag.plugins.search.base.Search` plugin, if you don't give both ``platform`` and
+    ``instrument`` keyword arguments when creating a new :class:`~eodag.api.product._product.EOProduct` instance in your
+    :meth:`~eodag.plugins.search.base.Search.query` method, you should expect a call to this instance's
+    :meth:`~eodag.api.product._product.EOProduct.get_subdataset` method to fail with a :exc:`NotImplementedError`.
+
+    .. note::
+        Also, if you construct a :class:`~eodag.api.product._product.EOProduct` instance with a platform and instrument
+        names that are not indexed in  :const:`eodag.api.product.drivers.DRIVERS`, you will end up with this instance's
+        driver being :class:`.NoDriver`
+    """

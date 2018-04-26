@@ -110,8 +110,6 @@ class CSWSearch(Search):
             geom,
             fp,
             product_type,
-            None,   # TODO determine the platform
-            None,   # TODO determine the instrument
             provider_id=rec.identifier,
             centroid=geom.centroid,
             title=rec.title,

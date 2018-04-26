@@ -1,33 +1,26 @@
-
 USGS:
-  priority: #100000
+  priority: 0
   api:
     plugin: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
-    products:
-      LC8:
-        product_type: LANDSAT_8_C1
-
-
+  products:
+    L8_LC8:
+      product_type: LANDSAT_8_C1
 
 AmazonWS:
-  priority: 100
+  priority: 0
   search:
     plugin: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
-    #amazon_dl_endpoint: 'http://sentinel-s2-l1c.s3-website.eu-central-1.amazonaws.com/#tiles'
-    products:
-      S2-L1C:
-        product_type: L1C
-        collection: Sentinel2
-
+  products:
+    S2_MSI_L1C:
+      product_type: L1C
+      collection: Sentinel2
   download:
     plugin: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
-
   auth:
     plugin: OAuth
-
 
 eocloud:
   priority: 1

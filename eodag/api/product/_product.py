@@ -67,8 +67,8 @@ class EOProduct(object):
         it across the api.
     """
 
-    def __init__(self, provider, download_url, local_filename, geom, bbox_or_intersect, product_type, platform,
-                 instrument, id=None, provider_id=None, **kwargs):
+    def __init__(self, provider, download_url, local_filename, geom, bbox_or_intersect, product_type, platform=None,
+                 instrument=None, id=None, provider_id=None, **kwargs):
         self.location_url_tpl = download_url
         self.local_filename = local_filename
         self.id = id or uuid4().get_urn()
@@ -106,9 +106,7 @@ class EOProduct(object):
         self.properties.update(kwargs)
         if provider_id is not None:
             self.properties['provider_id'] = provider_id
-        self.driver = DRIVERS[
-            (self.sensing_platform, self.sensor)
-        ]()
+        self.driver = DRIVERS.get((self.sensing_platform, self.sensor), DRIVERS[(None, None)])()
 
     def get_subdataset(self, crs, resolution, band, extent):
         """Retrieves all or part of the raster data abstracted by the :class:`EOProduct`

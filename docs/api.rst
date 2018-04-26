@@ -26,6 +26,11 @@ Representation Of Earth Observation Products
    :show-inheritance:
    :undoc-members:
 
+.. autoclass:: eodag.api.product.drivers.base.NoDriver
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 .. autoclass:: eodag.api.product.drivers.sentinel2.Sentinel2
    :members:
    :show-inheritance:
