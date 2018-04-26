@@ -60,13 +60,12 @@ class SatImagesAPI(object):
                                 if 'api' in self.providers_config[instance_name]:
                                     default_dl_option = self.providers_config[instance_name]['api'].setdefault(
                                         key,
-                                        '/data/satellites_images/' if key == 'outputs_prefix' else True
-                                    )
+                                        '/data/satellites_images/' if key == 'outputs_prefix' else True)
                                 else:
                                     if 'download' in self.providers_config[instance_name]:
-                                        default_dl_option = self.providers_config[instance_name].get('download',
-                                                                                                     {}).setdefault(
-                                            # noqa
+                                        default_dl_option = self.providers_config[instance_name].get(
+                                            'download', {}
+                                        ).setdefault(
                                             key,
                                             '/data/satellites_images/' if key == 'outputs_prefix' else True
                                         )
@@ -251,7 +250,7 @@ class SatImagesAPI(object):
         if not previous:
             search_plugin_instances = self.pim.instantiate_configured_plugins(
                 topics=('search', 'api'),
-                pt_matching=product_type
+                product_type_id=product_type
             )
             # The searcher used will be the one with higher priority
             search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
@@ -270,7 +269,7 @@ class SatImagesAPI(object):
         if not previous:
             dl_plugin_instances = self.pim.instantiate_configured_plugins(
                 topics=('download', 'api'),
-                only=[product.producer]
+                providers=[(product.provider, 1)]
             )
             dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
 

@@ -24,15 +24,20 @@ logger = logging.getLogger(b'eodag.plugins.instances_manager')
 class PluginInstancesManager(object):
     """A manager for the plugins instances.
 
-    The role of this class is to instantiate the plugins according to a configuration, and keep track of them in memory.
-    If the configuration looks like this::
+    The role of instances of this class (normally only one instance exists, created during instantiation of
+    :class:`~eodag.api.core.SatImagesAPI`, and referenced by :attr:`eodag.api.core.SatImagesAPI.pim` - pim stands
+    for plugin instances manager. But nothing is done to enforce this) is to instantiate the plugins according to the
+    providers configuration, and keep track of them in memory. The providers configuration contains information such as
+    the name of the provider, the internet endpoint for accessing it, and the plugins to use to perform defined actions
+    (search, download, authenticate, crunch).
+
+    If the providers configuration looks like this::
 
         conf = {
             'eocloud': {
                 'search': {
                     'plugin': 'RestoSearch',
                     'api_endpoint': ...,
-                    'products': {...},
                     ...
                 },
                 'download': {
@@ -52,8 +57,8 @@ class PluginInstancesManager(object):
     ``Search.get_plugin_by_name(conf['eocloud']['search']['plugin'])``, so that it can create its ``eocloud`` instance
     with ``conf['eocloud']['search']`` configuration.
 
-    :param config: The configuration with all information about the systems supported by the `eodag`
-    :type config: :class:`~eodag.config.SimpleYamlProxyConfig`
+    :param providers_config: The configuration with all information about the providers supported by the `eodag`
+    :type providers_config: :class:`~eodag.config.SimpleYamlProxyConfig`
     """
     supported_topics = {
         'search': Search,
@@ -63,101 +68,44 @@ class PluginInstancesManager(object):
         'api': Api,
     }
 
-    def __init__(self, config):
-        self.instances_config = config
+    def __init__(self, providers_config):
+        self.providers_config = providers_config
         # Load all the plugins. This will make all plugin classes of a particular type to be available in the base
         # plugin class's 'plugins' attribute. For example, by importing module 'plugins.search.resto', the plugin
         # 'RestoSearch' will be available in self.supported_topics['search'].plugins
         import_all_modules(plugins, depth=2, exclude=('base', __name__.split('.')[-1],))
 
-    def instantiate_configured_plugins(self, topics, pt_matching='', only=None):
+    def instantiate_configured_plugins(self, topics, product_type_id='', providers=None):
         """Instantiate all known plugins of particular type.
 
-        :param topics: An iterable of plugin topics (e.g: ``('search', 'download')``)
+        :param topics: An iterable of plugin topics (e.g: ``('search', 'download')``).
         :type topics: :class:`~collections.Iterable(str)`
-        :param pt_matching: (optional) A product type, that will help to filter which instances to create (the ones
-                            which explicitly support the product type as mentioned in the configuration)
-        :type pt_matching: str or unicode
-        :param only: (optional) An iterable of instance names to enable instantiating only these instances (they should
-                     be stilled configured for this to work)
-        :type only: Iterable
-        :returns: A list of instantiated and configured plugins
+        :param product_type_id: (optional) A product type ID, that will help to filter which instances to create (the
+                                ones which explicitly support the product type as can be seen in the providers config).
+        :type product_type_id: str or unicode
+        :param providers: (optional) An iterable of tuples (provider_name, priority) to enable instantiating only these
+                          providers with the given priority (they should be still configured for this to work).
+        :type providers: Iterable(tuple(str, int))
+        :returns: A list of instantiated and configured plugins of the given topics and supporting the given product
+                  type, or only the plugins corresponding to the topics for the providers specified in ``providers``.
         :rtype: list
+        :raises: :class:`AssertionError` if neither ``product_type_id`` nor ``providers`` keyword arguments is given.
         """
+        assert any((product_type_id, providers)), ("You should provide at least one of 'product_type_id' or 'providers'"
+                                                   " parameters")
         if isinstance(topics, Iterable):
             instances = []
             for topic in topics:
-                instances.extend(self.__get_instances(
-                    topic,
-                    only=self.__filter_instances(topic, pt_matching) + (only or [])
-                ))
+                instances.extend(
+                    self.__instantiate(topic, providers=self.__filter_providers(topic, product_type_id, providers)))
         else:
-            instances = self.__get_instances(topics, only=self.__filter_instances(topics, pt_matching))
+            instances = self.__instantiate(topics, providers=self.__filter_providers(topics, product_type_id, providers))
         return instances
-
-    def __filter_instances(self, topic, pt):
-        """Returns a list of instances names supporting a particular product type.
-
-        :param topic: The plugin topic (e.g.: 'search')
-        :type topic: str or unicode
-        :param pt: The product type to be supported by the plugin
-        :type pt: str or unicode
-        :returns: The topic's plugin instances supporting the product type
-        :rtype: list
-
-        .. Notes:
-            1. Only apply to the search topic by now
-            2. CSWSearch are included by default in the list to enable its instances to take over if they are the preferred
-            platforms
-        """
-        if topic == 'search':
-            return [
-                system
-                for system, config in self.instances_config.items()
-                if (('products' in config.get(topic, {}) and pt in config.get(topic, {}).get('products'))
-                    or config.get(topic, {}).get('plugin') == 'CSWSearch')
-            ]
-        return []
-
-    def __get_instances(self, topic, only=None):
-        instances = []
-        logger.debug('Creating configured *%s* plugin instances', topic.upper())
-        PluginBaseClass = self.__get_base_class(topic)
-        for instance_name, instance_config in self.instances_config.items():
-            # If only is given, only instantiate this subset of instances
-            if only and isinstance(only, Iterable) and instance_name not in only:
-                continue
-            if topic in instance_config:
-                logger.debug("Creating '%s' plugin instance with name '%s'", topic.upper(), instance_name)
-                instance = self.instantiate_plugin_by_config(
-                    topic,
-                    instance_config[topic],
-                    base=PluginBaseClass,
-                    iname=instance_name,
-                    priority=instance_config.get('priority')
-                )
-                instances.append(instance)
-            else:
-                logger.debug("Skipping '%(top)s' plugin creation for instance '%(ins)s': not an instance of '%(top)s'",
-                             {'top': topic.upper(), 'ins': instance_name})
-        return instances
-
-    def __get_base_class(self, topic):
-        try:
-            PluginBaseClass = self.supported_topics[topic]
-        except KeyError:
-            raise RuntimeError(
-                "Topic '{}' is not supported by the plugin system. Choose between {}".format(
-                    topic,
-                    ', '.join(self.supported_topics.keys())
-                )
-            )
-        return PluginBaseClass
 
     def instantiate_plugin_by_config(self, topic_name, topic_config, base=None, iname='', priority=None):
         """Creates an instance of a type of plugin based on a configuration suited for this type of plugin.
 
-        :param topic_name: The name of the type of plugin to instantiate (e.g: `'search'`)
+        :param topic_name: The name of the type of plugin to instantiate (e.g: ``'search'``)
         :type topic_name: str or unicode
         :param dict topic_config: A configuration compatible for the type of plugin to instantiate
         :param base: (optional) The python class corresponding to the `topic_name`
@@ -197,4 +145,94 @@ class PluginInstancesManager(object):
         PluginBaseClass = self.__get_base_class(topic)
         PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(PluginBaseClass, name)
         return PluginClass()
+
+    def __get_topics(self, provider):
+        """Returns all the plugin topics configured for a provider.
+
+        Plugin topics are defined as configuration keys of a provider's config which indexes a dict with one
+        ``'plugin'`` key.
+
+        :param provider: The name of the provider
+        :type provider: str or unicode
+        :return: The list of supported plugin topics configured for this provider
+        :rtype: list(str)
+        """
+        provider_config = self.providers_config[provider]
+        return [topic for topic in provider_config if 'plugin' in provider_config[topic]]
+
+    def __filter_providers(self, topic, product_type_id, selected):
+        """Returns a list of providers to be instantiated according to the product type and the topic.
+
+        :param topic: The plugin topic for which the providers should be configured to be selected
+        :type topic: str or unicode
+        :param product_type_id: The ID of the product type to be supported by the selected providers
+        :type product_type_id: str or unicode
+        :param selected: A list of providers that the user wants to instantiate
+        :type selected: list(tuple(str, int))
+        :returns: The providers that support the given product type id and their priorities
+        :rtype: list(tuple(str, int))
+        """
+        if selected is not None:
+            return [(provider, priority) for provider, priority in selected if topic in self.providers_config[provider]]
+        return [
+            # If the priority is not set in the config, the default priority is 0
+            (provider, provider_config.get('priority', 0))
+            for provider, provider_config in self.providers_config.items()
+            if topic in provider_config and product_type_id in provider_config['products']
+        ]
+
+    def __instantiate(self, topic, providers=None):
+        """Instantiate a set of providers' topic plugins.
+
+        :param topic: The plugin topic for which we should instantiate the providers' plugins (e.g. ``'search'``)
+        :type topic: str or unicode
+        :param providers: Restrict instantiation to these providers
+        :type providers: list(tuple(str, int))
+        :return: The instances requested
+        :rtype: list
+        """
+        instances = []
+        PluginBaseClass = self.__get_base_class(topic)
+        if providers is not None:
+            selected_providers = [
+                (name, self.providers_config[name], priority)
+                for name, priority in providers
+            ]
+        else:
+            #  If providers is not given, all providers supporting topic are instantiated with equal priority of 0
+            selected_providers = [
+                (name, provider_config, 0)
+                for name, provider_config in self.providers_config.items()
+                if topic in provider_config
+            ]
+        search_or_api = topic in ('search', 'api')
+        if selected_providers:
+            logger.debug('Creating configured *%s* plugin instances', topic.upper())
+        for provider_name, provider_config, provider_priority in selected_providers:
+            logger.debug("Creating '%s' plugin instance with name '%s'", topic.upper(), provider_name)
+            # Hack to nest 'products' config key under 'search' or 'api' config key of the provider. This is done
+            # to make the mapping between eodag's product type codes and provider's product type codes available to
+            # the Search and Api plugins, considering the way plugins are instantiated (they get config[topic] as
+            # initialisation parameter. See the instantiate_plugin_by_config method)
+            if search_or_api:
+                provider_config[topic].setdefault('products', provider_config['products'])
+            instance = self.instantiate_plugin_by_config(
+                topic,
+                provider_config[topic],
+                base=PluginBaseClass,
+                iname=provider_name,
+                priority=provider_priority
+            )
+            instances.append(instance)
+        return instances
+
+    def __get_base_class(self, topic):
+        try:
+            PluginBaseClass = self.supported_topics[topic]
+        except KeyError:
+            raise RuntimeError(
+                "Topic '{}' is not supported by the plugin system. Choose between {}".format(
+                    topic,
+                    ', '.join(self.supported_topics.keys())))
+        return PluginBaseClass
 

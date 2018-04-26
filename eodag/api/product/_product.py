@@ -19,7 +19,7 @@ from eodag.utils import maybe_generator
 
 logger = logging.getLogger(b'eodag.api.product')
 EOPRODUCT_PROPERTIES = (
-    'centroid', 'cloudCover', 'description', 'keywords', 'organisationName', 'resolution', 'snowCover', 'startDate',
+    'cloudCover', 'description', 'keywords', 'organisationName', 'resolution', 'snowCover', 'startDate',
     'endDate', 'title', 'productIdentifier', 'orbitNumber'
 )
 
@@ -71,7 +71,7 @@ class EOProduct(object):
                  instrument, id=None, provider_id=None, **kwargs):
         self.location_url_tpl = download_url
         self.local_filename = local_filename
-        self.id = id or uuid4()
+        self.id = id or uuid4().get_urn()
         self.provider = provider
         self.geometry = geom
         self.product_type = product_type
@@ -166,7 +166,7 @@ class EOProduct(object):
         :rtype: :class:`~eodag.api.product.EOProduct`
         """
         return cls(
-            feature['properties']['eodag_producer'],
+            feature['properties']['eodag_provider'],
             feature['properties']['eodag_download_url'],
             feature['properties']['eodag_local_name'],
             feature['geometry'],
