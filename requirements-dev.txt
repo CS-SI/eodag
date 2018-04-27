@@ -5,3 +5,6 @@ faker
 mock
 coverage
 grpcio-tools
+numpy
+shapely
+geojson
