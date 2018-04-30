@@ -79,6 +79,40 @@ class SatImagesAPI(object):
         self.pim = PluginInstancesManager(self.providers_config)
         self.__interfaces_cache = {}
 
+    def set_preferred_provider(self, provider):
+        """Set max priority for the given provider.
+
+        >>> dag = SatImagesAPI()    # 'eocloud' is considered the default preferred provider
+        >>> dag.get_preferred_provider()    # This also tests get_preferred_provider method by the way
+        ('eocloud', 1)
+        >>> dag.set_preferred_provider(u'unknown')
+        Traceback (most recent call last):
+            ...
+        UnsupportedProvider: This provider is not recognised by eodag
+        >>> dag.set_preferred_provider(u'USGS')
+        >>> dag.get_preferred_provider()
+        ('USGS', 2)
+
+        :param provider: The name of the provider that should be considered as the preferred provider to be used for
+                         this instance
+        :type provider: str or unicode
+        """
+        if provider not in self.available_providers():
+            raise UnsupportedProvider('This provider is not recognised by eodag')
+        preferred_provider, max_priority = self.get_preferred_provider()
+        if preferred_provider != provider:
+            self.providers_config[provider]['priority'] = max_priority + 1
+
+    def get_preferred_provider(self):
+        """Get the provider currently set as the preferred one for searching products, along with its priority.
+
+        :return: The provider with the maximum priority and its priority
+        :rtype: tuple(str, int)
+        """
+        # Note: if a provider config doesn't have 'priority' key, it is considered to have minimum priority (0)
+        preferred, config = max(self.providers_config.items(), key=lambda (provider, conf): conf.get('priority', 0))
+        return preferred, config.get('priority', 0)
+
     def list_product_types(self, provider=None):
         """Lists supported product types.
 
@@ -303,3 +337,8 @@ class SatImagesAPI(object):
             for key, val in options.items()
         })
         return self.pim.instantiate_plugin_by_config('crunch', plugin_conf)
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
