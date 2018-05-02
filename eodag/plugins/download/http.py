@@ -29,13 +29,12 @@ class HTTPDownload(Download):
         if 'base_uri' not in self.config:
             raise MisconfiguredError('{} plugin require a base_uri configuration key'.format(self.name))
         self.config.setdefault('outputs_prefix', '/tmp')
-        self.config.setdefault('on_site', False)
         self.config.setdefault('extract', True)
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
     def download(self, product, auth=None):
         """Download a product from resto-like platforms"""
-        if not self.config['on_site']:
+        if not product.location_url_tpl.startswith('file://'):
             url = self.__build_download_url(product, auth)
             if not url:
                 logger.debug('Unable to get download url for %s, skipping download', product)
@@ -93,10 +92,10 @@ class HTTPDownload(Download):
                     else:
                         yield local_file_path
         else:
-            logger.info('Product already present on this platform. Identifier: %s',
-                        product.properties['productIdentifier'])
+            path = product.location_url_tpl.replace('file://', '')
+            logger.info('Product already present on this platform. Identifier: %s', path)
             # Do not download data if we are on site. Instead give back the absolute path to the data
-            yield product.properties['productIdentifier']
+            yield path
 
     def __build_download_url(self, product, auth):
         if product.location_url_tpl:

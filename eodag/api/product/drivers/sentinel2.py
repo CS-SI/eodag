@@ -9,7 +9,7 @@ import re
 import rasterio
 
 from eodag.api.product.drivers.base import DatasetDriver
-from eodag.utils.exceptions import AddressNotFound
+from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressScheme
 
 
 class Sentinel2(DatasetDriver):
@@ -38,16 +38,18 @@ class Sentinel2(DatasetDriver):
         See :func:`~eodag.api.product.drivers.base.DatasetDriver.get_dataset_address` to get help on the formal
         parameters.
         """
-        top_level_mtd = os.path.join(
-            eo_product.properties['productIdentifier'],
-            'MTD_{}{}.xml'.format(eo_product.sensor, eo_product.product_type))
-        with rasterio.open(top_level_mtd) as dataset:
-            for address in dataset.subdatasets:
-                spatial_res = address.split(':')[-2]
-                if band in self.SPATIAL_RES_PER_BANDS[spatial_res]:
-                    with rasterio.open(address) as subdataset:
-                        band_file_pattern = re.compile(self.BAND_FILE_PATTERN_TPL.format(band=band))
-                        for filename in filter(lambda f: band_file_pattern.match(f), subdataset.files):
-                            return filename
-        raise AddressNotFound
-
+        product_location_scheme = eo_product.location_url_tpl.split('://')[0]
+        if product_location_scheme == 'file':
+            top_level_mtd = os.path.join(re.sub(r'file://', '', eo_product.location_url_tpl),
+                                         'MTD_{}{}.xml'.format(eo_product.sensor, eo_product.product_type))
+            with rasterio.open(top_level_mtd) as dataset:
+                for address in dataset.subdatasets:
+                    spatial_res = address.split(':')[-2]
+                    if band in self.SPATIAL_RES_PER_BANDS[spatial_res]:
+                        with rasterio.open(address) as subdataset:
+                            band_file_pattern = re.compile(self.BAND_FILE_PATTERN_TPL.format(band=band))
+                            for filename in filter(lambda f: band_file_pattern.match(f), subdataset.files):
+                                return filename
+            raise AddressNotFound
+        raise UnsupportedDatasetAddressScheme('eo product {} is accessible through a location scheme that is not yet '
+                                              'supported by eodag: {}'.format(eo_product, product_location_scheme))

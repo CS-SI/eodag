@@ -96,9 +96,9 @@ eocloud:
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
+    product_location_scheme: 'file'
   download:
     plugin: HTTPDownload
-    on_site: false
     base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
   auth:
     plugin: TokenAuth

@@ -3,11 +3,10 @@
 # All rights reserved
 from __future__ import absolute_import, print_function, unicode_literals
 
-import datetime
 import logging
+import os
 
 import shapely.geometry
-import pytz
 from requests import HTTPError
 
 
@@ -17,7 +16,6 @@ except ImportError:  # PY2
     from urlparse import urljoin, urlparse
 
 import requests
-from dateutil.parser import parse as dateparse
 
 from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
 from .base import Search
@@ -36,17 +34,8 @@ class RestoSearch(Search):
             self.config['api_endpoint'],
             urlparse(self.config['api_endpoint']).path.rstrip('/') + self.SEARCH_PATH
         )
-
-    def map_product_type(self, product_type):
-        """Maps the eodag's specific product type code to Resto specific product type (which is a collection id and a
-        product type id)
-
-        :param product_type: The eodag specific product type code name
-        :return: The corresponding collection and product type ids on this instance of Resto
-        :rtype: tuple(str, str)
-        """
-        mapping = self.config['products'][product_type]
-        return mapping['collection'], mapping['product_type']
+        # What scheme is used to locate the products that will be discovered during search
+        self.product_location_scheme = self.config.get('product_location_scheme', 'https')
 
     def query(self, product_type, **kwargs):
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
@@ -95,26 +84,47 @@ class RestoSearch(Search):
             add_to_results(self.normalize_results(response.json(), footprint))
         return results
 
+    def map_product_type(self, product_type):
+        """Maps the eodag's specific product type code to Resto specific product type (which is a collection id and a
+        product type id)
+
+        :param product_type: The eodag specific product type code name
+        :return: The corresponding collection and product type ids on this instance of Resto
+        :rtype: tuple(str, str)
+        """
+        mapping = self.config['products'][product_type]
+        return mapping['collection'], mapping['product_type']
+
     def normalize_results(self, results, search_bbox):
         normalized = []
         if results['features']:
             logger.info('Found %s products', len(results['features']))
             logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
-                if result['properties']['organisationName'] in ('ESA',):
-                    download_url = '{base}' + '/{prodId}.zip'.format(
-                        prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
-                    )
-                    local_filename = result['properties']['title'] + '.zip'
+                if self.product_location_scheme == 'file':
+                    # TODO: This behaviour maybe very specific to eocloud provider (having the path to the local
+                    # TODO: resource being stored on result['properties']['productIdentifier']). It may therefore need
+                    # TODO: to be better handled in the future
+                    download_url = '{}://{}'.format(
+                        self.product_location_scheme,
+                        result['properties']['productIdentifier'])
+                    local_filename = os.path.basename(download_url)
                 else:
-                    if result['properties']['services']['download']['url']:
-                        download_url = result['properties']['services']['download']['url']
-                    else:
-                        download_url = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
-                            collection=result['properties']['collection'],
-                            feature_id=result['id'],
+                    if result['properties']['organisationName'] in ('ESA',):
+                        # TODO: See the above todo about that productIdentifier thing
+                        download_url = '{base}' + '/{prodId}.zip'.format(
+                            prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
                         )
-                    local_filename = result['id'] + '.zip'
+                        local_filename = result['properties']['title'] + '.zip'
+                    else:
+                        if result['properties']['services']['download']['url']:
+                            download_url = result['properties']['services']['download']['url']
+                        else:
+                            download_url = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
+                                collection=result['properties']['collection'],
+                                feature_id=result['id'],
+                            )
+                        local_filename = result['id'] + '.zip'
                 product = EOProduct(
                     self.instance_name,
                     download_url,

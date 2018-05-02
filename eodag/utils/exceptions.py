@@ -28,3 +28,7 @@ class AddressNotFound(Exception):
 class UnsupportedProvider(Exception):
     """An error indicating that eodag does not support a provider"""
 
+
+class UnsupportedDatasetAddressScheme(Exception):
+    """An error indicating that eodag does not yet support an address scheme for accessing raster subdatasets"""
+

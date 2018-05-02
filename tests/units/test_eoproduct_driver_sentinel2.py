@@ -5,13 +5,12 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-
-import numpy as np
+from contextlib import contextmanager
 
 from shapely import wkt
 
-from eodag.utils.exceptions import AddressNotFound
-from .context import EOProduct, Sentinel2
+from tests import RESOURCES_PATH
+from .context import AddressNotFound, EOProduct, Sentinel2, UnsupportedDatasetAddressScheme
 
 
 class TestEOProductDriverSentinel2(unittest.TestCase):
@@ -45,25 +44,41 @@ class TestEOProductDriverSentinel2(unittest.TestCase):
             platform=self.platform
         )
         self.product.properties['productIdentifier'] = os.path.join(
-            os.path.dirname(__file__),
-            '..', 'resources', 'products', 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'
+            RESOURCES_PATH,
+            'products', 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'
         )
+        self.sentinel2_driver = Sentinel2()
 
     def test_driver_get_local_dataset_address_bad_band(self):
         """Driver must raise AddressNotFound if non existent band is requested"""
-        driver = Sentinel2()
-        band = 'B02'
-        self.assertRaises(AddressNotFound, driver.get_dataset_address, self.product, band)
+        with self.__filesystem_product() as product:
+            driver = Sentinel2()
+            band = 'B02'
+            self.assertRaises(AddressNotFound, driver.get_dataset_address, product, band)
 
     def test_driver_get_local_dataset_address_ok(self):
         """Driver returns a good address for an existing band"""
-        driver = Sentinel2()
+        with self.__filesystem_product() as product:
+            band = 'B01'
+            address = self.sentinel2_driver.get_dataset_address(product, band)
+            self.assertEqual(
+                address,
+                os.path.join(
+                    RESOURCES_PATH, 'products', 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE',
+                    'GRANULE', 'L1C_T31TDH_A013204_20180101T105435', 'IMG_DATA', 'T31TDH_20180101T105441_B01.jp2'
+                ))
+
+    def test_driver_get_remote_dataset_address_fail(self):
+        """Driver must raise UnsupportedDatasetAddressScheme if location scheme is different from 'file://'"""
         band = 'B01'
-        address = driver.get_dataset_address(self.product, band)
-        self.assertEqual(
-            address,
-            os.path.join(
-                os.path.dirname(__file__), '..', 'resources', 'products',
-                'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE', 'GRANULE',
-                'L1C_T31TDH_A013204_20180101T105435', 'IMG_DATA', 'T31TDH_20180101T105441_B01.jp2'
-            ))
+        self.assertRaises(UnsupportedDatasetAddressScheme,
+                          self.sentinel2_driver.get_dataset_address, self.product, band)
+
+    @contextmanager
+    def __filesystem_product(self):
+        original = self.product.location_url_tpl
+        try:
+            self.product.location_url_tpl = 'file://{}'.format(self.product.properties['productIdentifier'])
+            yield self.product
+        finally:
+            self.product.location_url_tpl = original
