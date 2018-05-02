@@ -4,16 +4,16 @@
 from __future__ import unicode_literals
 
 import random
-import unittest
 
 import geojson
 import numpy as np
 from shapely import geometry, wkt
 
+from tests import EODagTestCase
 from .context import DRIVERS, EOProduct, NoDriver, Sentinel2
 
 
-class TestEOProduct(unittest.TestCase):
+class TestEOProduct(EODagTestCase):
     __nominal_search_url_on_eocloud = (
         'https://finder.eocloud.eu/resto/api/collections/Sentinel2/search.json?&maxRecords=10&cloudCover=%5B0%2C20%5D&'
         'processingLevel=LEVELL1C&sortParam=startDate&sortOrder=descending&geometry=POLYGON%28%281.3128662109375002%204'
@@ -21,23 +21,7 @@ class TestEOProduct(unittest.TestCase):
         '5078125002%2043.47684039777894%2C1.3128662109375002%2043.65197548731186%29%29&dataset=ESA-DATASET&page=1')
 
     def setUp(self):
-        self.provider = 'eocloud'
-        self.download_url = ('https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo/Sentinel-2/MSI/'
-                             'L1C/2018/04/06/S2B_MSIL1C_20180406T105029_N0206_R051_T31TCJ_20180406T125448.SAFE.zip')
-        self.local_filename = 'S2B_MSIL1C_20180406T105029_N0206_R051_T31TCJ_20180406T125448.SAFE'
-        # A good valid geometry of a sentinel 2 product around Toulouse
-        self.geometry = wkt.loads('POLYGON((0.495928592903789 44.22596415476343, 1.870237286761489 44.24783068396879, '
-                                  '1.888683014192297 43.25939191053712, 0.536772323136669 43.23826255332707, '
-                                  '0.495928592903789 44.22596415476343))')
-        # The footprint requested
-        self.footprint = {
-            'lonmin': 1.3128662109375002, 'latmin': 43.65197548731186,
-            'lonmax': 1.6754150390625007, 'latmax': 43.699651229671446
-        }
-        self.product_type = 'L1C'
-        self.platform = 'S2B'
-        self.instrument = 'MSI'
-        self.provider_id = '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
+        super(TestEOProduct, self).setUp()
         self.raster = np.arange(25).reshape(5, 5)
 
     def test_eoproduct_id_format(self):
@@ -222,12 +206,12 @@ class TestEOProduct(unittest.TestCase):
         geo_interface = geojson.loads(geojson.dumps(product))
         self.assertDictContainsSubset({
             'type': 'Feature',
-            'geometry': self.__tuples_to_lists(geometry.mapping(self.geometry))
+            'geometry': self._tuples_to_lists(geometry.mapping(self.geometry))
         }, geo_interface)
         self.assertDictContainsSubset({
             'eodag_provider': self.provider, 'eodag_download_url': self.download_url,
             'eodag_local_name': self.local_filename,
-            'eodag_search_intersection': self.__tuples_to_lists(geometry.mapping(product.search_intersection))
+            'eodag_search_intersection': self._tuples_to_lists(geometry.mapping(product.search_intersection))
         }, geo_interface['properties'])
 
     def test_eoproduct_from_geointerface(self):
@@ -244,7 +228,7 @@ class TestEOProduct(unittest.TestCase):
         self.assertSequenceEqual(
             [
                 product.provider, product.location_url_tpl, product.local_filename, product.sensor,
-                self.__tuples_to_lists(geometry.mapping(product.geometry)), product.search_intersection,
+                self._tuples_to_lists(geometry.mapping(product.geometry)), product.search_intersection,
                 product.product_type, product.sensing_platform
             ],
             [
@@ -253,28 +237,3 @@ class TestEOProduct(unittest.TestCase):
                 same_product.sensing_platform
             ]
         )
-
-    @staticmethod
-    def __tuples_to_lists(shapely_mapping):
-        """Transforms all tuples in shapely mapping to lists.
-
-        When doing for example::
-            shapely_mapping = geometry.mapping(geom)
-
-        ``shapely_mapping['coordinates']`` will contain only tuples.
-
-        When doing for example::
-            geojson_load = geojson.loads(geojson.dumps(obj_with_geo_interface))
-
-        ``geojson_load['coordinates']`` will contain only lists.
-
-        Then this helper exists to transform all tuples in  ``shapely_mapping['coordinates']`` to lists in-place, so
-        that ``shapely_mapping['coordinates']`` can be compared to ``geojson_load['coordinates']``
-        """
-        shapely_mapping['coordinates'] = list(shapely_mapping['coordinates'])
-        for i, coords in enumerate(shapely_mapping['coordinates']):
-            shapely_mapping['coordinates'][i] = list(coords)
-            coords = shapely_mapping['coordinates'][i]
-            for j, pair in enumerate(coords):
-                coords[j] = list(pair)
-        return shapely_mapping

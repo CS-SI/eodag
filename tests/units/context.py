@@ -10,5 +10,6 @@ from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.drivers.sentinel2 import Sentinel2
+from eodag.api.search_result import SearchResult
 
 from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressScheme
