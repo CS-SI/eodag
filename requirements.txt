@@ -13,7 +13,7 @@ pytz
 usgs
 boto3
 numpy
-rasterio
+rasterio==1.0a12
 gdal
 protobuf
 grpcio

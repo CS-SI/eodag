@@ -10,7 +10,7 @@ from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import MisconfiguredError
 
 
-logger = logging.getLogger(b'eodag.plugins.crunch.filter_latest')
+logger = logging.getLogger('eodag.plugins.crunch.filter_latest')
 
 
 class FilterLatestByName(Crunch):

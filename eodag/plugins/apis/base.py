@@ -8,7 +8,7 @@ import logging
 from eodag.plugins.base import PluginTopic
 
 
-logger = logging.getLogger(b'eodag.plugins.apis.base')
+logger = logging.getLogger('eodag.plugins.apis.base')
 
 
 class Api(PluginTopic):

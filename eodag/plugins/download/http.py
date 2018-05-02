@@ -19,7 +19,7 @@ from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import MisconfiguredError
 
 
-logger = logging.getLogger(b'eodag.plugins.download.http')
+logger = logging.getLogger('eodag.plugins.download.http')
 
 
 class HTTPDownload(Download):

@@ -18,7 +18,7 @@ from eodag.plugins.search.base import Search
 from eodag.utils.import_system import import_all_modules
 
 
-logger = logging.getLogger(b'eodag.plugins.instances_manager')
+logger = logging.getLogger('eodag.plugins.instances_manager')
 
 
 class PluginInstancesManager(object):

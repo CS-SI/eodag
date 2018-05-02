@@ -24,7 +24,7 @@ from eodag.api.product import EOProduct
 from .base import Api
 
 
-logger = logging.getLogger(b'eodag.plugins.apis.usgs')
+logger = logging.getLogger('eodag.plugins.apis.usgs')
 
 
 class UsgsApi(Api):

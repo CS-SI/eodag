@@ -16,7 +16,7 @@ from eodag.api.product import EOPRODUCT_PROPERTIES, EOProduct
 from eodag.plugins.search.resto import RestoSearch
 
 
-logger = logging.getLogger(b'eodag.plugins.search.aws')
+logger = logging.getLogger('eodag.plugins.search.aws')
 
 
 class AwsSearch(RestoSearch):

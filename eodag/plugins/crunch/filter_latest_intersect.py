@@ -11,7 +11,7 @@ from shapely import geometry
 from eodag.plugins.crunch.base import Crunch
 
 
-logger = logging.getLogger(b'eodag.plugins.crunch.filter_latest')
+logger = logging.getLogger('eodag.plugins.crunch.filter_latest')
 
 
 class FilterLatestIntersect(Crunch):

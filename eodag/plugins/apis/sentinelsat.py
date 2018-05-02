@@ -18,7 +18,7 @@ from eodag.api.product import EOProduct
 from .base import Api
 
 
-logger = logging.getLogger(b'eodag.plugins.apis.sentinelsat')
+logger = logging.getLogger('eodag.plugins.apis.sentinelsat')
 
 
 class SentinelsatAPI(Api):

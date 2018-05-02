@@ -20,7 +20,7 @@ from eodag.utils import DEFAULT_PROJ, slugify
 from eodag.utils.import_system import patch_owslib_requests
 
 
-logger = logging.getLogger(b'eodag.plugins.search.csw')
+logger = logging.getLogger('beodag.plugins.search.csw')
 
 SUPPORTED_REFERENCE_SCHEMES = [
     'WWW:DOWNLOAD-1.0-http--download',

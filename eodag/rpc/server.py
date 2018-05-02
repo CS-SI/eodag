@@ -13,7 +13,7 @@ from eodag import SatImagesAPI
 from eodag.rpc.protocol import eodag_pb2, eodag_pb2_grpc
 
 
-logger = logging.getLogger(b'eodag.rpc.server')
+logger = logging.getLogger('eodag.rpc.server')
 
 
 class EODAGRPCServer(object):
