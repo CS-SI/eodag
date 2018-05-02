@@ -9,7 +9,11 @@ import unittest
 from shapely import wkt
 
 
-RESOURCES_PATH = os.path.join(os.path.dirname(__file__), 'resources')
+jp = os.path.join
+dirn = os.path.dirname
+
+TEST_RESOURCES_PATH = jp(dirn(__file__), 'resources')
+RESOURCES_PATH = jp(dirn(__file__), '..', 'eodag', 'resources')
 
 
 class EODagTestCase(unittest.TestCase):

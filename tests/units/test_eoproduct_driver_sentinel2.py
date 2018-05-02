@@ -4,12 +4,9 @@
 from __future__ import unicode_literals
 
 import os
-import unittest
 from contextlib import contextmanager
 
-from shapely import wkt
-
-from tests import RESOURCES_PATH, EODagTestCase
+from tests import EODagTestCase, TEST_RESOURCES_PATH
 from .context import AddressNotFound, EOProduct, Sentinel2, UnsupportedDatasetAddressScheme
 
 
@@ -28,7 +25,7 @@ class TestEOProductDriverSentinel2(EODagTestCase):
             platform=self.platform
         )
         self.product.properties['productIdentifier'] = os.path.join(
-            RESOURCES_PATH,
+            TEST_RESOURCES_PATH,
             'products', 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'
         )
         self.sentinel2_driver = Sentinel2()
@@ -48,7 +45,8 @@ class TestEOProductDriverSentinel2(EODagTestCase):
             self.assertEqual(
                 address,
                 os.path.join(
-                    RESOURCES_PATH, 'products', 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE',
+                    TEST_RESOURCES_PATH, 'products',
+                    'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE',
                     'GRANULE', 'L1C_T31TDH_A013204_20180101T105435', 'IMG_DATA', 'T31TDH_20180101T105441_B01.jp2'
                 ))
 
