@@ -110,7 +110,8 @@ class SatImagesAPI(object):
         :rtype: tuple(str, int)
         """
         # Note: if a provider config doesn't have 'priority' key, it is considered to have minimum priority (0)
-        preferred, config = max(self.providers_config.items(), key=lambda provider, conf: conf.get('priority', 0))
+        preferred, config = max(((provider, conf) for provider, conf in self.providers_config.items()),
+                                key=lambda item: item[1].get('priority', 0))
         return preferred, config.get('priority', 0)
 
     def list_product_types(self, provider=None):

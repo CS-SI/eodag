@@ -7,7 +7,7 @@ import geojson
 from typing import Iterable
 
 from tests import EODagTestCase
-from .context import SearchResult
+from tests.context import SearchResult
 
 
 class TestSearchResult(EODagTestCase):

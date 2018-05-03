@@ -7,7 +7,7 @@ import os
 from contextlib import contextmanager
 
 from tests import EODagTestCase, TEST_RESOURCES_PATH
-from .context import AddressNotFound, EOProduct, Sentinel2, UnsupportedDatasetAddressScheme
+from tests.context import AddressNotFound, EOProduct, Sentinel2, UnsupportedDatasetAddressScheme
 
 
 class TestEOProductDriverSentinel2(EODagTestCase):

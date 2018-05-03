@@ -10,7 +10,7 @@ import numpy as np
 from shapely import geometry, wkt
 
 from tests import EODagTestCase
-from .context import DRIVERS, EOProduct, NoDriver, Sentinel2
+from tests.context import DRIVERS, EOProduct, NoDriver, Sentinel2
 
 
 class TestEOProduct(EODagTestCase):
