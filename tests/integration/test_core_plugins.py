@@ -324,8 +324,65 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
     def test_core_csw_search(self):
         """"""
 
-    def test_core_aws_search(self):
-        """"""
+    def test_core_aws_search_ok(self):
+        """A search with a product type supported by a provider implementing AwsSearch must succeed"""
+        self.override_properties(provider='mock-provider-6', product_type='MOCK_PRODUCT_TYPE_6')
+        provider_search_url_base = 'http://subdomain6.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
+        comp_date = '2018-05-09'
+        resto_results = {
+            'features': [{
+                'id': 1,
+                'geometry': self.geometry,
+                'properties': {
+                    'productType': 'MOCK6',  # See ../resources/mock_providers.yml
+                    'platform': self.platform,
+                    'instrument': self.instrument,
+                    'completionDate': comp_date,
+                    'collection': 'MockCollection6',
+                    'productIdentifier': '/eodata/1/{}'.format(self.local_filename),
+                    'organisationName': 'ESA',
+                    'title': self.local_filename,
+                    'snowCover': '',
+                    'cloudCover': '',
+                    'description': '',
+                    'keywords': '',
+                    'resolution': '',
+                    'startDate': '',
+                    'orbitNumber': 0,
+                }}]}
+        nominal_params = {
+            'startDate': None,
+            'cloudCover': '[0,20]',     # See RestoSearch.DEFAULT_MAX_CLOUD_COVER
+            'sortOrder': 'descending',
+            'sortParam': 'startDate',
+            'productType': 'MOCK6'
+        }
+
+        requests_http_get_response = self.requests_http_get.return_value
+        requests_http_get_response.raise_for_status = mock.MagicMock()
+        requests_http_get_response.json = mock.MagicMock(return_value=resto_results)
+
+        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        results = dag.search(self.product_type)
+
+        self.assertHttpGetCalledOnceWith(
+            '{}collections/MockCollection6/search.json'.format(provider_search_url_base),
+            expected_params=nominal_params)
+        self.assertEqual(requests_http_get_response.raise_for_status.call_count, 1)
+        self.assertEqual(requests_http_get_response.json.call_count, 1)
+
+        # Check the search result
+        self.assertIsInstance(results, SearchResult)
+        self.assertEqual(len(results), len(resto_results['features']))
+        for result in results:
+            self.assertIsInstance(result, EOProduct)
+            self.assertEqual(result.provider, self.provider)
+            self.assertEqual(result.location_url_tpl, 'tiles/31/T/DH/2018/5/9/0/')
+
+        # Test that when nothing is found, the returned result is empty
+        requests_http_get_response.json = mock.MagicMock(return_value={'features': []})
+        results = dag.search(self.product_type)
+        self.assertEqual(len(results), 0)
 
 
 class TestIntegrationCoreDownloadPlugins(unittest.TestCase):

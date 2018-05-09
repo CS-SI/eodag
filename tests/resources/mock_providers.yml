@@ -51,3 +51,13 @@ mock-provider-5:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain5.domain.eu/resto/api/'
     product_location_scheme: 'file'
+
+mock-provider-6:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_6:
+      product_type: MOCK6
+      collection: MockCollection6
+  search:
+    plugin: AwsSearch
+    api_endpoint: 'http://subdomain6.domain.eu/resto/api/'
