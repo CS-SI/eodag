@@ -8,6 +8,11 @@ import unittest
 
 from shapely import wkt
 
+try:
+    from unittest import mock  # PY3
+except ImportError:
+    import mock  # PY2
+
 
 jp = os.path.join
 dirn = os.path.dirname
@@ -36,6 +41,29 @@ class EODagTestCase(unittest.TestCase):
         self.platform = 'S2A'
         self.instrument = 'MSI'
         self.provider_id = '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
+
+        self.patcher = mock.patch('requests.get', autospec=True)
+        self.requests_http_get = self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+
+    def override_properties(self, **kwargs):
+        """Overrides the properties with the values specified in the input parameters"""
+        self.__dict__.update({
+            prop: new_value
+            for prop, new_value in kwargs.items()
+            if prop in self.__dict__ and new_value != self.__dict__[prop]
+        })
+
+    def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):
+        """Helper method for doing assertions on requests http get method mock"""
+        self.assertEqual(self.requests_http_get.call_count, 1)
+        actual_url = self.requests_http_get.call_args[0][0]
+        self.assertEqual(actual_url, expected_url)
+        if expected_params:
+            actual_params = self.requests_http_get.call_args[1]['params']
+            self.assertDictEqual(actual_params, expected_params)
 
     @staticmethod
     def _tuples_to_lists(shapely_mapping):

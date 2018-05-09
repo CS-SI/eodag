@@ -115,16 +115,16 @@ class RestoSearch(Search):
                         download_url = '{base}' + '/{prodId}.zip'.format(
                             prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
                         )
-                        local_filename = result['properties']['title'] + '.zip'
+                        local_filename = '{}.zip'.format(result['properties']['title'])
                     else:
-                        if result['properties']['services']['download']['url']:
+                        if result['properties'].get('services', {}).get('download', {}).get('url'):
                             download_url = result['properties']['services']['download']['url']
                         else:
                             download_url = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
                                 collection=result['properties']['collection'],
                                 feature_id=result['id'],
                             )
-                        local_filename = result['id'] + '.zip'
+                        local_filename = '{}.zip'.format(result['id'])
                 product = EOProduct(
                     self.instance_name,
                     download_url,

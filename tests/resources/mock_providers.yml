@@ -1,0 +1,53 @@
+mock-provider-1:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE:
+      product_type: MOCK
+      collection: MockCollection
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain.domain.eu/resto/api/'
+
+mock-provider-2:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_2:
+      product_type: MOCK2
+      collection: MockCollection2
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain2.domain.eu/resto/api/'
+    maxCloudCover: 50
+
+mock-provider-3:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_3:
+      product_type: MOCK3
+      collection: MockCollection3
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain3.domain.eu/resto/api/'
+    maxCloudCover: 200
+
+mock-provider-4:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_4:
+      product_type: MOCK4
+      collection: MockCollection4
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain4.domain.eu/resto/api/'
+    maxCloudCover: -1
+
+mock-provider-5:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_5:
+      product_type: MOCK5
+      collection: MockCollection5
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain5.domain.eu/resto/api/'
+    product_location_scheme: 'file'
