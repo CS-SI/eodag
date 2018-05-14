@@ -21,7 +21,7 @@ class Sentinel2(DatasetDriver):
         'TCI': ('TCI',),
     }
 
-    def get_dataset_address(self, eo_product, band):
+    def get_data_address(self, eo_product, band):
         """Compute the address of a subdataset for a Sentinel2 product.
 
         The algorithm is as follows:
@@ -35,7 +35,7 @@ class Sentinel2(DatasetDriver):
             - Finally, filter the list of files of the previously opened rasterio dataset, to return the filesystem-like
               address that matches the band file pattern ``r'^.+_B01\.jp2$'`` if band = 'B01' for example.
 
-        See :func:`~eodag.api.product.drivers.base.DatasetDriver.get_dataset_address` to get help on the formal
+        See :func:`~eodag.api.product.drivers.base.DatasetDriver.get_data_address` to get help on the formal
         parameters.
         """
         product_location_scheme = eo_product.location_url_tpl.split('://')[0]

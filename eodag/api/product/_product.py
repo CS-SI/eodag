@@ -108,7 +108,7 @@ class EOProduct(object):
             self.properties['provider_id'] = provider_id
         self.driver = DRIVERS.get((self.sensing_platform, self.sensor), DRIVERS[(None, None)])()
 
-    def get_subdataset(self, crs, resolution, band, extent):
+    def get_data(self, crs, resolution, band, extent):
         """Retrieves all or part of the raster data abstracted by the :class:`EOProduct`
 
         :param crs: The coordinate reference system in which the dataset should be returned
@@ -122,7 +122,7 @@ class EOProduct(object):
         :returns: The numeric matrix corresponding to the sub dataset
         :rtype: numpy.ndarray
         """
-        dataset_address = self.driver.get_dataset_address(self, band)
+        dataset_address = self.driver.get_data_address(self, band)
         min_x, min_y, max_x, max_y = extent
         height = int((max_y - min_y) / resolution)
         width = int((max_x - min_x) / resolution)

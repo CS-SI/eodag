@@ -35,13 +35,13 @@ class TestEOProductDriverSentinel2(EODagTestCase):
         with self.__filesystem_product() as product:
             driver = Sentinel2()
             band = 'B02'
-            self.assertRaises(AddressNotFound, driver.get_dataset_address, product, band)
+            self.assertRaises(AddressNotFound, driver.get_data_address, product, band)
 
     def test_driver_get_local_dataset_address_ok(self):
         """Driver returns a good address for an existing band"""
         with self.__filesystem_product() as product:
             band = 'B01'
-            address = self.sentinel2_driver.get_dataset_address(product, band)
+            address = self.sentinel2_driver.get_data_address(product, band)
             self.assertEqual(
                 address,
                 os.path.join(
@@ -54,7 +54,7 @@ class TestEOProductDriverSentinel2(EODagTestCase):
         """Driver must raise UnsupportedDatasetAddressScheme if location scheme is different from 'file://'"""
         band = 'B01'
         self.assertRaises(UnsupportedDatasetAddressScheme,
-                          self.sentinel2_driver.get_dataset_address, self.product, band)
+                          self.sentinel2_driver.get_data_address, self.product, band)
 
     @contextmanager
     def __filesystem_product(self):

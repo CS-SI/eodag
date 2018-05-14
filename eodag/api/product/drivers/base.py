@@ -6,7 +6,7 @@ import six
 
 class DatasetDriver(six.with_metaclass(type)):
 
-    def get_dataset_address(self, eo_product, band):
+    def get_data_address(self, eo_product, band):
         """Retrieve the address of the dataset represented by `eo_product`.
 
         :param eo_product: The product whom underlying dataset address is to be retrieved
@@ -29,7 +29,7 @@ class NoDriver(DatasetDriver):
     So, when developing a new :class:`~eodag.plugins.search.base.Search` plugin, if you don't give both ``platform`` and
     ``instrument`` keyword arguments when creating a new :class:`~eodag.api.product._product.EOProduct` instance in your
     :meth:`~eodag.plugins.search.base.Search.query` method, you should expect a call to this instance's
-    :meth:`~eodag.api.product._product.EOProduct.get_subdataset` method to fail with a :exc:`NotImplementedError`.
+    :meth:`~eodag.api.product._product.EOProduct.get_data` method to fail with a :exc:`NotImplementedError`.
 
     .. note::
         Also, if you construct a :class:`~eodag.api.product._product.EOProduct` instance with a platform and instrument
