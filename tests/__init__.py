@@ -4,15 +4,20 @@
 from __future__ import unicode_literals
 
 import os
+import random
 import unittest
+from collections import OrderedDict, namedtuple
+from io import StringIO
 
+from owslib.etree import etree
+from owslib.ows import ExceptionReport
 from shapely import wkt
+
 
 try:
     from unittest import mock  # PY3
 except ImportError:
     import mock  # PY2
-
 
 jp = os.path.join
 dirn = os.path.dirname
@@ -42,11 +47,11 @@ class EODagTestCase(unittest.TestCase):
         self.instrument = 'MSI'
         self.provider_id = '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
 
-        self.patcher = mock.patch('requests.get', autospec=True)
-        self.requests_http_get = self.patcher.start()
+        self.requests_http_get_patcher = mock.patch('requests.get', autospec=True)
+        self.requests_http_get = self.requests_http_get_patcher.start()
 
     def tearDown(self):
-        self.patcher.stop()
+        self.requests_http_get_patcher.stop()
 
     def override_properties(self, **kwargs):
         """Overrides the properties with the values specified in the input parameters"""
@@ -89,3 +94,41 @@ class EODagTestCase(unittest.TestCase):
             for j, pair in enumerate(coords):
                 coords[j] = list(pair)
         return shapely_mapping
+
+    def compute_csw_records(self, mock_catalog, raise_error_for='', *args, **kwargs):
+        if raise_error_for:
+            for constraint in kwargs['constraints']:
+                if constraint.propertyname == raise_error_for:
+                    exception_report = etree.parse(StringIO(
+                        '<?xml version="1.0" encoding="UTF-8"?><ExceptionReport xmlns="http://www.opengis.net/ows/1.1" '
+                        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation='
+                        '"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.0.0" language="en">'
+                        '<Exception exceptionCode="NoApplicableCode"><ExceptionText>Unknown exception</ExceptionText>'
+                        '</Exception></ExceptionReport>'))
+                    raise ExceptionReport(exception_report)
+        bbox_wgs84 = random.choice([
+            None,
+            (self.footprint['lonmin'], self.footprint['latmin'], self.footprint['lonmax'], self.footprint['latmax'])
+        ])
+        Record = namedtuple(
+            'CswRecord',
+            ['identifier', 'title', 'creator', 'publisher', 'abstract', 'subjects', 'date', 'references',
+             'bbox_wgs84', 'bbox'])
+        BBox = namedtuple('BBox', ['minx', 'miny', 'maxx', 'maxy', 'crs'])
+        Crs = namedtuple('Crs', ['code', 'id'])
+        mock_catalog.records = OrderedDict({
+            'id ent ifier': Record(
+                identifier='id ent ifier',
+                title='MyRecord',
+                creator='eodagUnitTests',
+                publisher='eodagUnitTests',
+                abstract='A dumb CSW record for testing purposes',
+                subjects=[],
+                date='',
+                references=[{'scheme': 'WWW:DOWNLOAD-1.0-http--download', 'url': 'http://www.url.eu/dl'}],
+                bbox_wgs84=bbox_wgs84,
+                bbox=BBox(minx=self.footprint['lonmin'], miny=self.footprint['latmin'],
+                          maxx=self.footprint['lonmax'], maxy=self.footprint['latmax'],
+                          crs=Crs(code=4326, id='EPSG')))
+        })
+        return mock.DEFAULT

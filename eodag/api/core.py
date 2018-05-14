@@ -186,8 +186,9 @@ class SatImagesAPI(object):
                     logger.debug('Product type %s not known by %s instance', product_type, iface.instance_name)
                 else:
                     raise rte
-            except Exception as any_other_exception:
-                logger.debug('Error while searching on interface %s: %s.', iface, any_other_exception)
+            except Exception:
+                import traceback as tb
+                logger.debug('Error while searching on interface %s:\n %s.', iface, tb.format_exc())
                 logger.debug('Ignoring it')
         return SearchResult(results)
 

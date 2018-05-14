@@ -54,9 +54,10 @@ class CSWSearch(Search):
                 with patch_owslib_requests(verify=False):
                     try:
                         self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
-                    except ExceptionReport as er:
+                    except ExceptionReport:
+                        import traceback as tb
                         logger.warning('Failed to query %s for product type %s : %s', product_type_search_tag,
-                                       product_type, er)
+                                       product_type, tb.format_exc())
                         continue
                 partial_results = [
                     self.__build_product(record, product_type, **kwargs) for record in self.catalog.records.values()]
@@ -135,7 +136,7 @@ class CSWSearch(Search):
             constraints.append(PropertyIsLike(pt_tag, '%{}%'.format(product_type)))
 
         # footprint
-        fp = params.get('footprints')
+        fp = params.get('footprint')
         if fp:
             constraints.append(BBox([fp['lonmin'], fp['latmin'], fp['lonmax'], fp['latmax']]))
 

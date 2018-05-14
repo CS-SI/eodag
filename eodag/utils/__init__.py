@@ -63,11 +63,14 @@ def slugify(value, allow_unicode=False):
     Remove characters that aren't alphanumerics, underscores, or hyphens.
     Convert to lowercase. Also strip leading and trailing whitespace.
     """
-    value = str(value)
+    try:    # PY2
+        value = unicode(value)
+    except NameError:     # PY3
+        value = str(value)
     if allow_unicode:
-        value = unicodedata.normalize('NFKC', value.decode('utf-8'))
+        value = unicodedata.normalize('NFKC', value)
     else:
-        value = unicodedata.normalize('NFKD', value.decode('utf-8')).encode('ascii', 'ignore').decode('ascii')
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value).strip().lower()
     return re.sub(r'[-\s]+', '-', value)
 

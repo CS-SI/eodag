@@ -1,0 +1,4 @@
+mock-provider-7:
+  credentials:
+    username: "user"
+    password: "pwd"

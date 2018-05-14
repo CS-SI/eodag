@@ -61,3 +61,40 @@ mock-provider-6:
   search:
     plugin: AwsSearch
     api_endpoint: 'http://subdomain6.domain.eu/resto/api/'
+
+mock-provider-7:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_7: {}
+  search:
+    plugin: CSWSearch
+    api_endpoint: 'http://www.catalog.com/rest/catalog/csw/'
+    search_definitions:
+      resource_location_filter: '^https?'
+      pt_tags:
+        - name: 'dc:title'
+        - name: 'dc:subject'
+          matching: exact
+        - name: 'dc:something'
+          matching: prefix
+        - name: 'dc:something_else'
+          matching: postfix
+        - name: 'dc:yet_another_thing'
+          matching: fuzzy
+  auth:
+    plugin: GenericAuth
+
+mock-provider-8:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_8: {}
+  search:
+    plugin: CSWSearch
+    api_endpoint: 'http://www.catalog.com/rest/catalog/csw/'
+    search_definitions:
+      resource_location_filter: '^https?'
+      pt_tags:
+        - name: 'dc:title'
+      date_tags:
+        start: 'apiso:TempExtent_begin'
+        end: 'apiso:TempExtent_end'
