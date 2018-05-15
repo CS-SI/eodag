@@ -4,6 +4,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import os
+import zipfile
 from uuid import uuid4
 
 import numpy
@@ -12,9 +14,11 @@ from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from shapely import geometry
 from shapely.errors import TopologicalError
+from tqdm import tqdm
 
 from eodag.api.product.drivers import DRIVERS
 from eodag.utils import maybe_generator
+from eodag.utils.exceptions import UnsupportedDatasetAddressScheme
 
 
 logger = logging.getLogger('eodag.api.product')
@@ -107,6 +111,8 @@ class EOProduct(object):
         if provider_id is not None:
             self.properties['provider_id'] = provider_id
         self.driver = DRIVERS.get((self.sensing_platform, self.sensor), DRIVERS[(None, None)])()
+        self.downloader = None
+        self.downloader_auth = None
 
     def get_data(self, crs, resolution, band, extent):
         """Retrieves all or part of the raster data abstracted by the :class:`EOProduct`
@@ -119,10 +125,24 @@ class EOProduct(object):
         :type band: str or unicode
         :param extent: The coordinates on which to zoom as a tuple (min_x, min_y, max_x, max_y) in the given `crs`
         :type extent: (float, float, float, float)
-        :returns: The numeric matrix corresponding to the sub dataset
+        :returns: The numeric matrix corresponding to the sub dataset or an empty array if unable to get the data
         :rtype: numpy.ndarray
         """
-        dataset_address = self.driver.get_data_address(self, band)
+        try:
+            dataset_address = self.driver.get_data_address(self, band)
+        except UnsupportedDatasetAddressScheme:
+            logger.warning('Eodag does not support getting data from distant sources by now. Falling back to first '
+                           'downloading the product and then getting the data...')
+            try:
+                self.location_url_tpl = 'file://{}'.format(self.download())
+            except RuntimeError:
+                import traceback
+                logger.warning('Error while trying to download the product:\n %s', traceback.format_exc())
+                logger.warning('There might be no download plugin registered for this EO product. Try performing: '
+                               'product.register_downloader(download_plugin, download_auth_plugin) before trying to '
+                               'call product.get_data(...)')
+                return numpy.empty(0)
+            dataset_address = self.driver.get_data_address(self, band)
         min_x, min_y, max_x, max_y = extent
         height = int((max_y - min_y) / resolution)
         width = int((max_x - min_x) / resolution)
@@ -220,15 +240,45 @@ class EOProduct(object):
         data.dtype = raster.dtype.name
         return subdataset.SerializeToString()
 
-    def download(self, downloader, authenticator):
+    def register_downloader(self, downloader, authenticator):
+        """Give to the product the information needed to download itself.
+
+        :param downloader: The download method that it can use
+        :type downloader: Concrete subclass of :class:`~eodag.plugins.download.base.Download` or
+                          :class:`~eodag.plugins.api.base.Api`
+        :param authenticator: The authentication method needed to perform the download
+        :type authenticator: Concrete subclass of :class:`~eodag.plugins.authentication.base.Authentication`
+        """
+        if not self.downloader or self.downloader != downloader:
+            self.downloader = downloader
+        if not self.downloader_auth or self.downloader_auth != authenticator:
+            self.downloader_auth = authenticator
+
+    def download(self):
         """Download the EO product using the provided download plugin and the authenticator if necessary.
 
-        :param downloader: The download plugin to use to download this product
-        :type downloader: :class:`~eodag.plugins.download.base.Download`
-        :param authenticator: The authentication plugin to use if necessary
-        :type authenticator: :class:`~eodag.plugins.authentication.base.Authentication` or None
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
         """
-        for local_filepath in maybe_generator(downloader.download(self, auth=authenticator)):
-            yield local_filepath
+        if not self.downloader:
+            raise RuntimeError('EO product is unable to download itself due to the lack of a download plugin')
+        # Remove the capability for the downloader to perform extraction if the downloaded product is a zipfile. This
+        # way, the eoproduct is able to control how the it stores itself on the local filesystem
+        old_extraction_config = self.downloader.config['extract']
+        self.downloader.config['extract'] = False
+        # Since we are sure extraction will not be done, we only retrieve the first (and sole) value returned
+        local_filepath = next(maybe_generator(self.downloader.download(self, auth=self.downloader_auth)), None)
+        if local_filepath is None:
+            logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
+                           'have not been returned by the download plugin')
+            return ''
+        fs_location = local_filepath[:local_filepath.index('.zip')]
+        if zipfile.is_zipfile(local_filepath):
+            with zipfile.ZipFile(local_filepath, 'r') as zfile:
+                fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(local_filepath))
+                for fileinfo in fileinfos:
+                    zfile.extract(fileinfo, path=fs_location)
+            self.location_url_tpl = 'file://{}'.format(fs_location)
+        # Restore configuration
+        self.downloader.config['extract'] = old_extraction_config
+        return fs_location

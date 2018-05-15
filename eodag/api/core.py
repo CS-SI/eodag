@@ -13,6 +13,7 @@ import geojson
 from eodag.api.search_result import SearchResult
 from eodag.config import SimpleYamlProxyConfig
 from eodag.plugins.instances_manager import PluginInstancesManager
+from eodag.utils import maybe_generator
 from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 
 
@@ -165,11 +166,18 @@ class SatImagesAPI(object):
                         'The query function of a Search plugin must return a list of results, got {} '
                         'instead'.format(type(r))
                     )
-                # Only keep those eo_products that intersects the search extent (if there was no search extent,
-                # search_intersection contains the geometry of the eo_product)
+                # Filter and attach to each eoproduct in the result the plugin instance capable of downloading it (this
+                # is done to enable the eo_product to download itself doing: eo_product.download())
+                # The filtering is done by keeping only those eo_products that intersects the search extent (if there
+                # was no search extent, search_intersection contains the geometry of the eo_product)
                 # WARNING: this means an eo_product that has an invalid geometry can still be returned as a search
                 # result if there was no search extent (an intersection will not be tried)
-                results.extend(filter(lambda eo_product: eo_product.search_intersection is not None, r))
+                for eo_product in r:
+                    if eo_product.search_intersection is not None:
+                        downloaders = self.__get_downloaders(eo_product)
+                        if downloaders:
+                            eo_product.register_downloader(downloaders[0], auth)
+                        results.append(eo_product)
                 # Decide if we should go on with the search (if the iface stores the product_type partially)
                 if idx == 0:
                     if not iface.config.get('products', {}).get(product_type, {}).get('partial', False):
@@ -259,7 +267,7 @@ class SatImagesAPI(object):
                     logger.debug('On site usage detected. Authentication for download skipped !')
                 if auth:
                     auth = auth.authenticate()
-                for local_filepath in product.download(iface, auth):
+                for local_filepath in maybe_generator(iface.download(product, auth=auth)):
                     if local_filepath is None:
                         logger.debug('The download method of a Download plugin should return the absolute path to the '
                                      'downloaded resource or a generator of absolute paths to the downloaded and '

@@ -16,6 +16,7 @@ class DatasetDriver(six.with_metaclass(type)):
         :returns: An address for the dataset
         :rtype: str or unicode
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
+        :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """
         raise NotImplementedError
 
