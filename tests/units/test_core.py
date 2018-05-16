@@ -61,7 +61,7 @@ class TestCore(unittest.TestCase):
         product_types = self.dag.list_product_types()
         self.assertIsInstance(product_types, list)
         for product_type in product_types:
-            self.assertRightStructure(product_type)
+            self.assertListProductTypesRightStructure(product_type)
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
@@ -69,7 +69,7 @@ class TestCore(unittest.TestCase):
             product_types = self.dag.list_product_types(provider=provider)
             self.assertIsInstance(product_types, list)
             for product_type in product_types:
-                self.assertRightStructure(product_type)
+                self.assertListProductTypesRightStructure(product_type)
                 self.assertIn(provider, self.SUPPORTED_PRODUCT_TYPES[product_type['ID']])
 
     def test_list_product_types_for_unsupported_provider(self):
@@ -77,7 +77,7 @@ class TestCore(unittest.TestCase):
         unsupported_provider = 'a'
         self.assertRaises(UnsupportedProvider, self.dag.list_product_types, provider=unsupported_provider)
 
-    def assertRightStructure(self, structure):
+    def assertListProductTypesRightStructure(self, structure):
         """Helper method to verify that the structure given is a good result of SatImagesAPI.list_product_types"""
         self.assertIsInstance(structure, dict)
         self.assertIn('ID', structure)
