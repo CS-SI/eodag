@@ -8,9 +8,10 @@ import os
 import unittest
 
 import requests
+from shapely import wkt
 
 from tests import EODagTestCase, TEST_RESOURCES_PATH
-from tests.context import EOProduct, SatImagesAPI, SearchResult
+from tests.context import EOProduct, SatImagesAPI, SearchResult, HTTPDownload, RequestsTokenAuth
 
 
 try:
@@ -516,6 +517,88 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         requests_http_get_response.json = mock.MagicMock(return_value={'features': []})
         results = dag.search(self.product_type)
         self.assertEqual(len(results), 0)
+
+    def test_core_search_filtered_and_prepared_for_download(self):
+        """For any search plugin, the result must be filtered and initialized with a downloader and an authenticator"""
+        self.override_properties(provider='mock-provider-9', product_type='MOCK_PRODUCT_TYPE_9')
+        invalid_geom = wkt.loads('POLYGON((10.469970703124998 3.9957805129630373,12.227783203124998 4.740675384778385,'
+                                 '12.095947265625 4.061535597066097,10.491943359375 4.412136788910175,'
+                                 '10.469970703124998 3.9957805129630373))')
+        search_extent = {
+            'lonmin': 10.469970703124998, 'latmin': 3.9957805129630373,
+            'lonmax': 12.227783203124998, 'latmax': 4.740675384778385
+        }
+        resto_results = {
+            'features': [
+                {
+                    'id': 1,
+                    'geometry': invalid_geom,
+                    'properties': {
+                        'productType': 'MOCK9',  # See ../resources/mock_providers.yml
+                        'platform': self.platform,
+                        'instrument': self.instrument,
+                        'completionDate': '',
+                        'collection': 'MockCollection9',  # See ../resources/mock_providers.yml
+                        'productIdentifier': '/eodata/1/{}'.format(self.local_filename),
+                        'organisationName': 'ESA',
+                        'title': '1_{}'.format(self.local_filename),
+                        'snowCover': '',
+                        'cloudCover': '',
+                        'description': '',
+                        'keywords': '',
+                        'resolution': '',
+                        'startDate': '',
+                        'orbitNumber': 0,
+                    },
+                },
+                {
+                    'id': 2,
+                    'geometry': self.geometry,
+                    'properties': {
+                        'productType': 'MOCK9',
+                        'platform': '',
+                        'instrument': '',
+                        'completionDate': '',
+                        'collection': 'MockCollection9',
+                        'productIdentifier': '/eodata/2/{}'.format(self.local_filename),
+                        'organisationName': 'NOT_ESA',  # To see if the url given in 'services' below is used
+                        'title': '2_{}'.format(self.local_filename),
+                        'services': {
+                            'download': {
+                                'url': 'https://subdomain9.domain.eu/download/',
+                            },
+                        },
+                        'snowCover': '',
+                        'cloudCover': '',
+                        'description': '',
+                        'keywords': '',
+                        'resolution': '',
+                        'startDate': '',
+                        'orbitNumber': 0,
+                    },
+                },
+            ],
+        }
+
+        requests_http_get_response = self.requests_http_get.return_value
+        requests_http_get_response.raise_for_status = mock.MagicMock()
+        requests_http_get_response.json = mock.MagicMock(return_value=resto_results)
+
+        requests_http_post_response = self.requests_http_post.return_value
+        requests_http_post_response.raise_for_status = mock.MagicMock()
+        requests_http_post_response.json = mock.MagicMock(return_value={
+            'tokenIdentity': 'd3bd997e78b748edb89390ac04c748dd'})
+
+        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
+                           user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml'))
+        results = dag.search(self.product_type, footprint=search_extent)
+
+        self.assertEqual(len(results), 1)
+        valid_product = next(iter(results))
+        self.assertEqual(valid_product.properties['provider_id'], 2)
+        self.assertIsInstance(valid_product.downloader, HTTPDownload)
+        self.assertEqual(valid_product.downloader.instance_name, valid_product.provider)
+        self.assertIsInstance(valid_product.downloader_auth, RequestsTokenAuth)
 
 
 class TestIntegrationCoreDownloadPlugins(unittest.TestCase):

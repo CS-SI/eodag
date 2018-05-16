@@ -98,3 +98,20 @@ mock-provider-8:
       date_tags:
         start: 'apiso:TempExtent_begin'
         end: 'apiso:TempExtent_end'
+
+mock-provider-9:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_9:
+      product_type: MOCK9
+      collection: MockCollection9
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain9.domain.eu/resto/api/'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+  auth:
+    plugin: TokenAuth
+    auth_uri: 'https://subdomain9.domain.eu/authentication'
+    token_type: json

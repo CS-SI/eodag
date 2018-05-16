@@ -16,6 +16,7 @@ from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.drivers.sentinel2 import Sentinel2
 
 from eodag.plugins.search.base import Search
-from eodag.plugins.search.resto import RestoSearch
+from eodag.plugins.download.http import HTTPDownload
 
+from eodag.utils import RequestsTokenAuth
 from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressScheme, UnsupportedProvider

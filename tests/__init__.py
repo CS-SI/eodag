@@ -48,10 +48,13 @@ class EODagTestCase(unittest.TestCase):
         self.provider_id = '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
 
         self.requests_http_get_patcher = mock.patch('requests.get', autospec=True)
+        self.requests_http_post_patcher = mock.patch('requests.post', autospec=True)
         self.requests_http_get = self.requests_http_get_patcher.start()
+        self.requests_http_post = self.requests_http_post_patcher.start()
 
     def tearDown(self):
         self.requests_http_get_patcher.stop()
+        self.requests_http_post_patcher.stop()
 
     def override_properties(self, **kwargs):
         """Overrides the properties with the values specified in the input parameters"""

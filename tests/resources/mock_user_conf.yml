@@ -2,3 +2,7 @@ mock-provider-7:
   credentials:
     username: "user"
     password: "pwd"
+mock-provider-9:
+  credentials:
+    username: "user"
+    password: "pwd"
