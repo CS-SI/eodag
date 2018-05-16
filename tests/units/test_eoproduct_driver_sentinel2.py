@@ -42,13 +42,7 @@ class TestEOProductDriverSentinel2(EODagTestCase):
         with self.__filesystem_product() as product:
             band = 'B01'
             address = self.sentinel2_driver.get_data_address(product, band)
-            self.assertEqual(
-                address,
-                os.path.join(
-                    TEST_RESOURCES_PATH, 'products',
-                    'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE',
-                    'GRANULE', 'L1C_T31TDH_A013204_20180101T105435', 'IMG_DATA', 'T31TDH_20180101T105441_B01.jp2'
-                ))
+            self.assertEqual(address, self.local_band_file)
 
     def test_driver_get_remote_dataset_address_fail(self):
         """Driver must raise UnsupportedDatasetAddressScheme if location scheme is different from 'file://'"""

@@ -128,20 +128,24 @@ class EOProduct(object):
         :returns: The numeric matrix corresponding to the sub dataset or an empty array if unable to get the data
         :rtype: numpy.ndarray
         """
+        fail_value = numpy.empty(0)
         try:
             dataset_address = self.driver.get_data_address(self, band)
         except UnsupportedDatasetAddressScheme:
             logger.warning('Eodag does not support getting data from distant sources by now. Falling back to first '
                            'downloading the product and then getting the data...')
             try:
-                self.location_url_tpl = 'file://{}'.format(self.download())
+                path_of_downloaded_file = self.download()
             except RuntimeError:
                 import traceback
                 logger.warning('Error while trying to download the product:\n %s', traceback.format_exc())
                 logger.warning('There might be no download plugin registered for this EO product. Try performing: '
                                'product.register_downloader(download_plugin, download_auth_plugin) before trying to '
                                'call product.get_data(...)')
-                return numpy.empty(0)
+                return fail_value
+            if not path_of_downloaded_file:
+                return fail_value
+            self.location_url_tpl = 'file://{}'.format(path_of_downloaded_file)
             dataset_address = self.driver.get_data_address(self, band)
         min_x, min_y, max_x, max_y = extent
         height = int((max_y - min_y) / resolution)

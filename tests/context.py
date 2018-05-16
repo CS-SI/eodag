@@ -15,6 +15,8 @@ from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.drivers.sentinel2 import Sentinel2
 
+from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.plugins.download.http import HTTPDownload
 
