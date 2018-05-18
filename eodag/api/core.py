@@ -176,7 +176,7 @@ class SatImagesAPI(object):
                     if eo_product.search_intersection is not None:
                         downloaders = self.__get_downloaders(eo_product)
                         if downloaders:
-                            eo_product.register_downloader(downloaders[0], auth.authenticate())
+                            eo_product.register_downloader(downloaders[0], auth)
                         results.append(eo_product)
                 # Decide if we should go on with the search (if the iface stores the product_type partially)
                 if idx == 0:

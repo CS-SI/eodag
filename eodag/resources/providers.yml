@@ -198,7 +198,18 @@ peps:
 
 scihub:
   priority: 0
-  products: {}
+  # Queryable products found reading documentation at: https://scihub.copernicus.eu/userguide/3FullTextSearch
+  products:
+    S2_MSI_L1C:
+      product_type: S2MSI1C
+    S1_OCN:
+      product_type: OCN
+    S1_GRD:
+      product_type: GRD
+    S1_SLC:
+      product_type: SLC
+    S1_RAW:
+      product_type: RAW
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://scihub.copernicus.eu/apihub/'

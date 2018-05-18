@@ -271,7 +271,13 @@ class EOProduct(object):
         old_extraction_config = self.downloader.config['extract']
         self.downloader.config['extract'] = False
         # Since we are sure extraction will not be done, we only retrieve the first (and sole) value returned
-        local_filepath = next(maybe_generator(self.downloader.download(self, auth=self.downloader_auth)), None)
+        local_filepath = next(maybe_generator(
+            self.downloader.download(
+                self,
+                auth=self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth,
+            )),
+            None
+        )
         if local_filepath is None:
             logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
                            'have not been returned by the download plugin')

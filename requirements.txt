@@ -14,7 +14,6 @@ usgs
 boto3
 numpy
 rasterio==1.0a12
-gdal
 protobuf
 grpcio
 # To be able to do 'import concurrent.futures' in Python 2.7

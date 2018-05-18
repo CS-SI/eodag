@@ -115,3 +115,12 @@ mock-provider-9:
     plugin: TokenAuth
     auth_uri: 'https://subdomain9.domain.eu/authentication'
     token_type: json
+
+mock-provider-10:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_10:
+      product_type: OCN
+  api:
+    plugin: SentinelsatAPI
+    endpoint: 'https://subdomain10.domain.eu/api/'

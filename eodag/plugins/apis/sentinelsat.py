@@ -32,7 +32,10 @@ class SentinelsatAPI(Api):
         query_params = self.__convert_query_params(kwargs)
         try:
             final = []
-            results = self.api.query(producttype=product_type, limit=10, **query_params)
+            results = self.api.query(
+                producttype=self.config['products'][product_type]['product_type'],
+                limit=10,
+                **query_params)
             if results:
                 append_to_final = final.append
                 for _id, original in results.items():
@@ -44,21 +47,21 @@ class SentinelsatAPI(Api):
                         geom,
                         kwargs.get('footprint'),
                         product_type,
-                        original['platform'],       # TODO
-                        original['instrument'],     # TODO
+                        original['platformname'],
+                        original['instrumentshortname'],
                         provider_id=_id,
-                        centroid=geom.centroid,
                         description=original['summary'],
                         title=original['title'],
                         productIdentifier=original['identifier'],
-                        startDate=original['ingestionDate']
+                        startDate=original['beginposition'].isoformat()
                     ))
             return final
-        except TypeError as e:
+        except TypeError:
+            import traceback as tb
             # Sentinelsat api query method raises a TypeError for finding None in the json feed received as a response
             # from the sentinel server, when looking for 'opensearch:totalResults' key. This may be interpreted as the
             # the api not finding any result from the query. This is what is assumed here.
-            logger.debug('Something went wrong during the query with self.api api: %s', e)
+            logger.debug('Something went wrong during the query with self.api api:\n %s', tb.format_exc())
             logger.info('No results found !')
             return []
 
@@ -88,7 +91,7 @@ class SentinelsatAPI(Api):
                 yield product_info['path']
 
     def __init_api(self):
-        if not self.api or not isinstance(self.api, SentinelAPI):
+        if not self.api:
             logger.debug('Initialising sentinelsat api')
             self.api = SentinelAPI(
                 self.config['credentials']['user'],
