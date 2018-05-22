@@ -12,6 +12,7 @@ from datetime import datetime
 
 import requests
 import shapely
+import usgs
 from shapely import geometry, wkt
 
 from tests import EODagTestCase, TEST_RESOURCES_PATH
@@ -622,15 +623,83 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
     def setUp(self):
         super(TestIntegrationCoreApiPlugins, self).setUp()
         self.sentinelsat_patcher = mock.patch("sentinelsat.SentinelAPI", autospec=True)
+        self.usgs_api_login_patcher = mock.patch('usgs.api.login')
+        self.usgs_api_logout_patcher = mock.patch('usgs.api.logout')
+        self.usgs_api_search_patcher = mock.patch('usgs.api.search')
+
         self.sentinelsatapi_class = self.sentinelsat_patcher.start()
         self.sentinelsatapi = self.sentinelsatapi_class.return_value
+        self.usgs_api_login = self.usgs_api_login_patcher.start()
+        self.usgs_api_logout = self.usgs_api_logout_patcher.start()
+        self.usgs_api_search = self.usgs_api_search_patcher.start()
 
     def tearDown(self):
         super(TestIntegrationCoreApiPlugins, self).tearDown()
         self.sentinelsat_patcher.stop()
+        self.usgs_api_login_patcher.stop()
+        self.usgs_api_logout_patcher.stop()
+        self.usgs_api_search_patcher.stop()
 
-    def test_core_usgs_search(self):
-        """"""
+    def test_core_usgs_search_nominal(self):
+        """Nominal search using usgs api must return results"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "usgs_search_results.json"), "r") as fp:
+            usgs_search_results = json.load(fp)
+
+        def usgs_search_behavior(*args, **kwargs):
+            node_type = args[1]
+            if node_type == usgs.EARTH_EXPLORER_CATALOG_NODE:
+                return usgs_search_results
+            raise usgs.USGSError
+
+        self.usgs_api_search.side_effect = usgs_search_behavior
+        dag = SatImagesAPI(
+            providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
+            user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
+        )
+        self.override_properties(provider='mock-provider-11', product_type='L8_LC8')
+
+        results = dag.search(self.product_type)
+        self.assertEqual(len(results), len(usgs_search_results['data']['results']))
+        self.assertEqual(self.usgs_api_login.call_count, 1)
+        self.usgs_api_login.assert_called_with('user', 'pwd', save=True)
+        self.assertEqual(self.usgs_api_search.call_count, len(usgs.CATALOG_NODES))
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.EARTH_EXPLORER_CATALOG_NODE, start_date=None, end_date=None, ll=None, ur=None)
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.CWIC_LSI_EXPLORER_CATALOG_NODE, start_date=None, end_date=None, ll=None, ur=None)
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.HDDS_EXPLORER_CATALOG_NODE, start_date=None, end_date=None, ll=None, ur=None)
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.CATALOG_NODES[-1], start_date=None, end_date=None, ll=None, ur=None)
+
+        for idx, result in enumerate(results):
+            expected = usgs_search_results['data']['results'][idx]
+            self.assertRegexpMatches(
+                result.location_url_tpl,
+                r'^.+/L8/(\d{3}/){2}.+\.tar\.bz$'
+            )
+            self.assertEqual(result.properties['provider_id'], expected['entityId'])
+            self.assertEqual(result.properties['startDate'], expected['acquisitionDate'])
+
+        # Test searching with footprint as an additional criteria
+        search_kwargs = {'footprint': self.footprint}
+        dag.search(self.product_type, **search_kwargs)
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.EARTH_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
+            ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
+            ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.CWIC_LSI_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
+            ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
+            ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.HDDS_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
+            ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
+            ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
+        self.usgs_api_search.assert_any_call(
+            'LANDSAT_8_C1', usgs.CATALOG_NODES[-1], start_date=None, end_date=None,
+            ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
+            ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
 
     def test_core_usgs_download(self):
         """"""

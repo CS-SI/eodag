@@ -124,3 +124,12 @@ mock-provider-10:
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://subdomain10.domain.eu/api/'
+
+mock-provider-11:
+  priority: 1
+  products:
+    L8_LC8:
+      product_type: LANDSAT_8_C1
+  api:
+    plugin: UsgsApi
+    google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
