@@ -93,6 +93,12 @@ class SatImagesAPI(object):
         >>> dag.set_preferred_provider(u'USGS')
         >>> dag.get_preferred_provider()
         ('USGS', 2)
+        >>> dag.set_preferred_provider(u'eocloud')
+        >>> dag.get_preferred_provider()
+        ('eocloud', 3)
+        >>> dag.set_preferred_provider(u'USGS')
+        >>> dag.get_preferred_provider()
+        ('USGS', 4)
 
         :param provider: The name of the provider that should be considered as the preferred provider to be used for
                          this instance
@@ -102,7 +108,14 @@ class SatImagesAPI(object):
             raise UnsupportedProvider('This provider is not recognised by eodag')
         preferred_provider, max_priority = self.get_preferred_provider()
         if preferred_provider != provider:
-            self.providers_config[provider]['priority'] = max_priority + 1
+            new_priority = max_priority + 1
+            self.providers_config[provider]['priority'] = new_priority
+            # Update the interfaces cache to take into account the fact that the preferred provider has changed
+            if 'search' in self.__interfaces_cache:
+                for search_interfaces in self.__interfaces_cache['search'].values():
+                    for iface in search_interfaces:
+                        if iface.instance_name == provider:
+                            iface.priority = new_priority
 
     def get_preferred_provider(self):
         """Get the provider currently set as the preferred one for searching products, along with its priority.
@@ -317,6 +330,8 @@ class SatImagesAPI(object):
             previous.extend(search_plugin_instances)
         logger.debug("Found %s Search instance(s) for product type '%s' (ordered by highest priority): %r",
                      len(previous), product_type, previous)
+        # Always perform a new sort as the preferred provider might have changed
+        previous.sort(key=attrgetter('priority'), reverse=True)
         return previous
 
     def __get_downloaders(self, product):
