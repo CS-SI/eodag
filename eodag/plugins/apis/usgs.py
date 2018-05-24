@@ -9,12 +9,12 @@ import os
 import re
 import zipfile
 
+
 try:  # PY3
     from urllib.parse import urljoin, urlparse
 except ImportError:  # PY2
     from urlparse import urljoin, urlparse
 
-import click
 import requests
 from requests import HTTPError
 from shapely import geometry
@@ -129,9 +129,8 @@ class UsgsApi(Api):
                     logger.info('Extraction activated')
                     with zipfile.ZipFile(local_file_path, 'r') as zfile:
                         fileinfos = zfile.infolist()
-                        with click.progressbar(fileinfos, fill_char='x', length=len(fileinfos), width=0,
-                                               label='Extracting files from {}'.format(
-                                                   local_file_path)) as progressbar:
+                        with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
+                                local_file_path)) as progressbar:
                             for fileinfo in progressbar:
                                 yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
                 else:

@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import logging
 import os
 import zipfile
 
-import click
 import requests
 from requests import HTTPError
 from tqdm import tqdm
@@ -80,9 +77,8 @@ class HTTPDownload(Download):
                         logger.info('Extraction activated')
                         with zipfile.ZipFile(local_file_path, 'r') as zfile:
                             fileinfos = zfile.infolist()
-                            with click.progressbar(fileinfos, fill_char='x', length=len(fileinfos), width=0,
-                                                   label='Extracting files from {}'.format(
-                                                           local_file_path)) as progressbar:
+                            with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
+                                    local_file_path)) as progressbar:
                                 for fileinfo in progressbar:
                                     yield zfile.extract(
                                         fileinfo,

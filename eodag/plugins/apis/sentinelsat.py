@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import logging
 import zipfile
 
-import click
 import shapely.wkt
 from sentinelsat import SentinelAPI
 from shapely import geometry
+from tqdm import tqdm
 
 from eodag.api.product import EOProduct
 from .base import Api
@@ -82,9 +80,8 @@ class SentinelsatAPI(Api):
                 logger.info('Extraction activated')
                 with zipfile.ZipFile(product_info['path'], 'r') as zfile:
                     fileinfos = zfile.infolist()
-                    with click.progressbar(fileinfos, fill_char='x', length=len(fileinfos), width=0,
-                                           label='Extracting files from {}'.format(
-                                               product_info['path'])) as progressbar:
+                    with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
+                            product_info['path'])) as progressbar:
                         for fileinfo in progressbar:
                             yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
             else:

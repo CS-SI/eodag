@@ -7,8 +7,8 @@ import logging
 import os
 from operator import attrgetter
 
-import click
 import geojson
+from tqdm import tqdm
 
 from eodag.api.search_result import SearchResult
 from eodag.config import SimpleYamlProxyConfig
@@ -209,13 +209,12 @@ class SatImagesAPI(object):
         :rtype: str or unicode
         """
         if search_result:
-            with click.progressbar(search_result, fill_char='O', length=len(search_result), width=0,
-                                   label='Downloading products') as bar:
+            with tqdm(search_result, unit='product', desc='Downloading products') as bar:
                 for product in bar:
                     for path in self.__download(product):
                         yield path
         else:
-            click.echo('Empty search result, nothing to be downloaded !')
+            print('Empty search result, nothing to be downloaded !')
 
     @staticmethod
     def serialize(search_result, filename='search_results.geojson'):
