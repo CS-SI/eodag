@@ -111,6 +111,8 @@ mock-provider-9:
   download:
     plugin: HTTPDownload
     base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
   auth:
     plugin: TokenAuth
     auth_uri: 'https://subdomain9.domain.eu/authentication'

@@ -4,10 +4,14 @@
 from __future__ import unicode_literals
 
 import functools
+import hashlib
 import json
 import os
 import random
+import shutil
+import tempfile
 import unittest
+import zipfile
 from datetime import datetime
 
 import requests
@@ -611,11 +615,205 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
 
 class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
 
-    def test_core_http_download(self):
-        """"""
+    def test_core_http_download_local_product(self):
+        """A local product must not be downloaded and the download plugin must return its local absolute path"""
+        self.product.location_url_tpl = 'file:///absolute/path/to/local/product.zip'
+        for path in self.eodag.download_all(SearchResult([self.product])):
+            self.assertEqual(path, '/absolute/path/to/local/product.zip')
+        self.assertAuthenticationDone()
+        self.assertHttpDownloadNotDone()
+
+    def test_core_http_download_remote_product_no_extract(self):
+        """A remote product must be downloaded as is if extraction config is set to False"""
+        self.eodag.providers_config[self.test_provider]['download']['extract'] = False
+        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.requests_get.return_value = self._requests_get_response()
+
+        for path in self.eodag.download_all(SearchResult([self.product])):
+            self.assertHttpDownloadDone(path)
+        self.assertAuthenticationDone()
+
+    def test_core_http_download_remote_product_extract(self):
+        """A remote product must be downloaded and extracted as is if extraction config is set to True (by default)"""
+        self.eodag.providers_config[self.test_provider]['download']['extract'] = True
+        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.requests_get.return_value = self._requests_get_response()
+
+        for path in self.eodag.download_all(SearchResult([self.product])):
+            self.assertHttpDownloadDone(path, with_extraction=True)
+        self.assertAuthenticationDone()
+
+    def test_core_http_download_remote_no_url(self):
+        """Download must fail on an EOProduct with no download url"""
+        res = list(self.eodag.download_all(SearchResult([self.product])))
+        self.assertEqual(len(res), 0)
+        self.assertAuthenticationDone()
+        self.assertHttpDownloadNotDone()
+
+    def test_core_http_download_remote_already_downloaded(self):
+        """Download must return the path of a product already downloaded"""
+        self.eodag.providers_config[self.test_provider]['download']['extract'] = False
+        self.product.location_url_tpl = '{base}/path/to/product.zip'
+
+        # Simulate a previous download
+        os.mkdir(self.expected_record_dir)
+        open(self.expected_downloaded_path, 'wb').close()
+        open(self.expected_record_file, 'w').close()
+
+        res = list(self.eodag.download_all(SearchResult([self.product])))
+        self.assertEqual(res[0], self.expected_downloaded_path)
+        self.assertAuthenticationDone()
+        self.assertEqual(self.requests_get.call_count, 0)
+
+    @mock.patch('os.remove', autospec=True)
+    def test_core_http_download_remote_recorded_file_absent(self, os_remove):
+        """Download must be performed and record file must be suppressed if actual product is locally absent"""
+        self.eodag.providers_config[self.test_provider]['download']['extract'] = False
+        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.requests_get.return_value = self._requests_get_response()
+        os_remove.side_effect = os.unlink
+
+        # Simulate the presence of the record file
+        os.mkdir(self.expected_record_dir)
+        open(self.expected_record_file, 'w').close()
+
+        for path in self.eodag.download_all(SearchResult([self.product])):
+            os_remove.assert_called_with(self.expected_record_file)
+            self.assertEqual(os_remove.call_count, 1)
+            self.assertAuthenticationDone()
+            self.assertHttpDownloadDone(path)
+
+    def test_core_http_download_remote_httperror(self):
+        """An error during download must fail without stopping the overall download process"""
+        self.eodag.providers_config[self.test_provider]['download']['extract'] = False
+        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.requests_get.return_value = self._requests_get_response()
+
+        def raise_http_error():
+            raise requests.HTTPError
+
+        self.requests_get.return_value.raise_for_status = raise_http_error
+
+        res = list(self.eodag.download_all(SearchResult([self.product])))
+        self.assertEqual(len(res), 0)
+        self.assertAuthenticationDone()
+        self.assertEqual(self.requests_get.call_count, 1)
+        self.assertFalse(os.path.exists(self.expected_record_file))
 
     def test_core_aws_download(self):
         """"""
+
+    def assertAuthenticationDone(self):
+        self.assertEqual(self.requests_post.call_count, 1)
+        data = self.requests_post.call_args[1]['data']
+        self.requests_post.assert_called_with('https://subdomain9.domain.eu/authentication', data=mock.ANY)
+        self.assertDictEqual(data, {'username': 'user', 'password': 'pwd'})
+
+    def assertHttpDownloadDone(self, path, with_extraction=False):
+        if with_extraction:
+            expected_extraction_listing = [
+                x.replace(os.path.join(TEST_RESOURCES_PATH, 'products'), tempfile.gettempdir())
+                for x in self.list_dir(os.path.join(
+                    TEST_RESOURCES_PATH, 'products', self.product.local_filename.split('.zip')[0]))
+            ]
+            self.assertIn(path, expected_extraction_listing)
+        else:
+            self.assertEqual(path, self.expected_downloaded_path)
+            self.assertTrue(zipfile.is_zipfile(path))
+        self.assertEqual(self.requests_get.call_count, 1)
+        self.assertTrue(os.path.exists(self.expected_record_file))
+        with open(self.expected_record_file, 'r') as fh:
+            self.assertEqual(fh.read(), self.expected_dl_url)
+
+    def assertHttpDownloadNotDone(self):
+        self.assertFalse(os.path.exists(self.expected_record_file))
+        self.assertEqual(self.requests_get.call_count, 0)
+
+    def list_dir(self, root_dir, with_files=True):
+        listing = [root_dir]
+        if with_files:
+            children = os.listdir(root_dir)
+        else:
+            children = [x for x in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, x))]
+        for child in children:
+            path = os.path.join(root_dir, child)
+            if os.path.isdir(path):
+                listing.extend(self.list_dir(path, with_files))
+            else:
+                listing.append(path)
+        return listing
+
+    def _requests_get_response(self):
+        class Response(object):
+            """Emulation of a response to requests.get method"""
+
+            def __init__(response):
+                with open(self.local_product_as_archive_path, 'rb') as fh:
+                    response.headers = {'content-length': len(fh.read())}
+
+            def __enter__(response):
+                return response
+
+            def __exit__(response, *args):
+                pass
+
+            @staticmethod
+            def iter_content(**kwargs):
+                with open(self.local_product_as_archive_path, 'rb') as fh:
+                    while True:
+                        chunk = fh.read(kwargs['chunk_size'])
+                        if not chunk:
+                            break
+                        yield chunk
+
+            def raise_for_status(response):
+                pass
+        return Response()
+
+    def setUp(self):
+        self.test_provider = 'mock-provider-9'
+        self.local_product_filename = 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE.zip'
+        self.product = EOProduct.from_geojson({
+            'type': 'Feature',
+            'properties': {
+                'eodag_local_name': self.local_product_filename,
+                'productType': '',  # mandatory for EOProduct initialization but no use in this test
+                'eodag_download_url': '',   # Will be overriden for each test case
+                'eodag_provider': self.test_provider,   # Is necessary for identifying the right download plugin
+                'eodag_search_intersection': {},    # mandatory for EOProduct initialization but no use in this test
+            },
+            'id': '',   # mandatory for EOProduct initialization but no use in this test
+            'geometry': {}  # mandatory for EOProduct initialization but no use in this test
+        })
+        self.eodag = SatImagesAPI(
+            providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
+            user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
+        )
+        self.local_product_as_archive_path = os.path.abspath(
+            os.path.join(TEST_RESOURCES_PATH, 'products', 'as_archive', self.local_product_filename))
+        self.expected_record_dir = os.path.join(tempfile.gettempdir(), '.downloaded')
+        self.expected_downloaded_path = os.path.join(tempfile.gettempdir(), self.product.local_filename)
+
+        self.requests_get_patcher = mock.patch('requests.get', autospec=True)
+        self.requests_post_patcher = mock.patch('requests.post', autospec=True)
+        self.requests_get = self.requests_get_patcher.start()
+        self.requests_post = self.requests_post_patcher.start()
+
+        self.requests_post.return_value.json.return_value = {'tokenIdentity': 'token'}
+
+        self.expected_dl_url = 'https://subdomain9.domain.eu/download/path/to/product.zip'
+        self.expected_record_file = os.path.join(
+            self.expected_record_dir,
+            hashlib.md5(self.expected_dl_url.encode('utf-8')).hexdigest()
+        )
+
+    def tearDown(self):
+        if os.path.exists(self.expected_record_dir):
+            shutil.rmtree(self.expected_record_dir)
+        if os.path.exists(self.expected_downloaded_path):
+            os.unlink(self.expected_downloaded_path)
+        self.requests_get_patcher.stop()
+        self.requests_post_patcher.stop()
 
 
 class TestIntegrationCoreApiPlugins(EODagTestCase):

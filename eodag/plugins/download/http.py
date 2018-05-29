@@ -30,7 +30,7 @@ class HTTPDownload(Download):
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
     def download(self, product, auth=None):
-        """Download a product from resto-like platforms"""
+        """Download a product using HTTP protocol"""
         if not product.location_url_tpl.startswith('file://'):
             url = self.__build_download_url(product, auth)
             if not url:
@@ -58,18 +58,20 @@ class HTTPDownload(Download):
             hook_print = lambda r, *args, **kwargs: print('\n', r.url)
             with requests.get(url, stream=True, auth=auth, hooks={'response': hook_print},
                               params=self.config.get('dl_url_params', {}), verify=False) as stream:
-                stream_size = int(stream.headers.get('content-length', 0))
-                with open(local_file_path, 'wb') as fhandle:
-                    progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
-                    for chunk in stream.iter_content(chunk_size=64 * 1024):
-                        if chunk:
-                            progressbar.update(len(chunk))
-                            fhandle.write(chunk)
                 try:
                     stream.raise_for_status()
-                except HTTPError as e:
-                    logger.error("Error while getting resource : %s", e)
+                except HTTPError:
+                    import traceback as tb
+                    logger.error("Error while getting resource :\n%s", tb.format_exc())
                 else:
+                    stream_size = int(stream.headers.get('content-length', 0))
+                    with open(local_file_path, 'wb') as fhandle:
+                        progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
+                        for chunk in stream.iter_content(chunk_size=64 * 1024):
+                            if chunk:
+                                progressbar.update(len(chunk))
+                                fhandle.write(chunk)
+
                     with open(record_filename, 'w') as fh:
                         fh.write(url)
                     logger.debug('Download recorded in %s', record_filename)
@@ -97,12 +99,13 @@ class HTTPDownload(Download):
         if product.location_url_tpl:
             try:
                 url = product.location_url_tpl.format(
-                    base=self.config.get('base_uri'),
+                    base=self.config.get('base_uri').rstrip('/'),
                 )
                 if product.properties['organisationName'] in ('ESA',):
                     url += '?token={}'.format(auth.token)
                 return url
-            except Exception as e:
-                raise RuntimeError('Product {} is incompatible with download plugin {}. Got error: {}'.format(
-                    product, self.name, e
+            except Exception:
+                import traceback as tb
+                raise RuntimeError('Product {} is incompatible with download plugin {}\n{}'.format(
+                    product, self.name, tb.format_exc()
                 ))
