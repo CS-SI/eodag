@@ -23,7 +23,7 @@ AmazonWS:
     plugin: OAuth
 
 eocloud:
-  priority: 1
+  priority: 0
   products:
     S1_OCN:
       product_type: OCN
@@ -240,5 +240,36 @@ geostorm-ce:
   download:
     plugin: HTTPDownload
     base_uri: ''    # no need for such a thing !
+  auth:
+    plugin: GenericAuth
+
+airbus-ds:
+  priority: 1
+  products:
+    S2_MSI_L1C:
+      product_type: S2MSI1C
+    S1_RAW:
+      product_type: RAW
+    S1_GRD:
+      product_type: GRD
+    S1_SLC:
+      product_type: SLC
+    S1_OCN:
+      product_type: OCN
+    S3_LAN:
+      product_type: SR_2_LAN___
+    S3_SRA:
+      product_type: SR_1_SRA___
+    S3_SRA_BS:
+      product_type: SR_1_SRA_BS
+    S3_SRA_A_BS:
+      product_type: SR_1_SRA_A_
+  search:
+    plugin: ArlasSearch
+    api_endpoint: 'https://testing.dias.datastore.multisat.space/sdk10/lobby/api/v1/services/explore/'
+    arlas_collection: catalog
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://testing.dias.datastore.multisat.space/sdk10//api/v1/services/download/'
   auth:
     plugin: GenericAuth

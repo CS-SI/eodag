@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
+
+import getpass
 
 import requests
 
@@ -28,3 +28,33 @@ def get_eocloud_product_types():
             for sp in p['values']
         ]
         yield collection_name, product_types
+
+
+def get_airbus_ds_dias_product_types():
+    """Get all the collections and product types that are supported by airbus dias provider (an
+    `ARLAS server <http://arlas.io/arlas-tech/current/>`_ implemented with a collection named `catalog`, located at
+    https://testing.dias.datastore.multisat.space/sdk/resolver/api/v1/services/explore/explore/catalog/
+    """
+    base = 'https://testing.dias.datastore.multisat.space/sdk10/lobby/api/v1/services/explore/explore/catalog/_search'
+    query = 'f=identification.collection:like:Sentinel&include=identification.collection,identification.type'
+    url = '?'.join(['{base}', '{query}']).format(**locals())
+    try:
+        user = raw_input('Airbus DIAS user: ')
+    except NameError:
+        user = input('Airbus DIAS user: ')
+    password = getpass.getpass("Airbus DIAS password for user '{}':".format(user))
+    result = requests.get(url, auth=(user, password)).json()
+    if result['nbhits'] < result['totalnb']:
+        rest = requests.get(
+            url + '&from={r[nbhits]}&size={r[totalnb]}'.format(r=result),
+            auth=(user, password)
+        ).json()
+        result['hits'].extend(rest['hits'])
+    aggregated_result = {}
+    for product_identification in (hit['data']['identification'] for hit in result['hits']):
+        aggregated_result.setdefault(
+            product_identification['collection'],
+            set()
+        ).add(product_identification['type'])
+    for collection, product_types in aggregated_result.items():
+        yield collection, product_types

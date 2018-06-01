@@ -7,6 +7,7 @@ import re
 import sys
 import types
 import unicodedata
+from datetime import datetime
 
 import click
 import pyproj
@@ -63,9 +64,9 @@ def slugify(value, allow_unicode=False):
     Remove characters that aren't alphanumerics, underscores, or hyphens.
     Convert to lowercase. Also strip leading and trailing whitespace.
     """
-    try:    # PY2
+    try:  # PY2
         value = unicode(value)
-    except NameError:     # PY3
+    except NameError:  # PY3
         value = str(value)
     if allow_unicode:
         value = unicodedata.normalize('NFKC', value)
@@ -79,9 +80,9 @@ def utf8_everywhere(mapping):
     """Recursively transforms all string found in the dict mapping to UTF-8 if we are on Python 2"""
     mutate_dict_in_place((
         lambda value:
-            value.decode('utf-8')
-            if isinstance(value, str) and sys.version_info.major == 2 and sys.version_info.minor == 7
-            else value),
+        value.decode('utf-8')
+        if isinstance(value, str) and sys.version_info.major == 2 and sys.version_info.minor == 7
+        else value),
         mapping
     )
 
@@ -115,3 +116,21 @@ def maybe_generator(obj):
 
 
 DEFAULT_PROJ = pyproj.Proj(init='EPSG:4326')
+
+
+def get_timestamp(date_time, date_format='%Y-%m-%d'):
+    """Returns the given date_time string formatted with date_format as timestamp, in a PY2/3 compatible way
+
+    :param date_time: the datetime string to return as timestamp
+    :type date_time: str or unicode
+    :param date_format: (optional) the date format in which date_time is given, defaults to '%Y-%m-%d'
+    :type date_format: str or unicode
+    :returns: the timestamp corresponding to the date_time string in seconds
+    :rtype: float
+    """
+    date_time = datetime.strptime(date_time, date_format)
+    try:
+        return date_time.timestamp()
+    except AttributeError:  # There is no timestamp method on datetime objects in Python 2
+        import time
+        return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
