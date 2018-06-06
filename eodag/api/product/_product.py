@@ -12,8 +12,12 @@ import rasterio
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from shapely import geometry
-from shapely.errors import TopologicalError
 from tqdm import tqdm
+
+try:
+    from shapely.errors import TopologicalError
+except ImportError:
+    from shapely.geos import TopologicalError
 
 from eodag.api.product.drivers import DRIVERS
 from eodag.utils import maybe_generator
