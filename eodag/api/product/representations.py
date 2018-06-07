@@ -51,7 +51,8 @@ def properties_from_json(json, mapping):
             properties[metadata] = 'N/A'
         else:
             path = jsonpath.parse(mapping[metadata])
-            properties[metadata] = path.find(json)[0].value
+            match = path.find(json)
+            properties[metadata] = match[0].value if len(match) == 1 else None
     return properties
 
 
@@ -76,5 +77,5 @@ def properties_from_xml(xml_as_text, mapping):
             if len(value) > 1:
                 properties[metadata] = value
             else:
-                properties[metadata] = value[0] if len(value) == 1 else ''
+                properties[metadata] = value[0] if len(value) == 1 else None
     return properties

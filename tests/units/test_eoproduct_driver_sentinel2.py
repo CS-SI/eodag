@@ -17,14 +17,9 @@ class TestEOProductDriverSentinel2(EODagTestCase):
         self.product = EOProduct(
             self.provider,
             self.download_url,
-            self.local_filename,
-            self.geometry,
-            self.footprint,
-            self.product_type,
-            instrument=self.instrument,
-            platform=self.platform
+            self.eoproduct_props
         )
-        self.product.properties['productIdentifier'] = os.path.join(
+        self.product.properties['title'] = os.path.join(
             TEST_RESOURCES_PATH,
             'products', 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'
         )
@@ -54,7 +49,7 @@ class TestEOProductDriverSentinel2(EODagTestCase):
     def __filesystem_product(self):
         original = self.product.location
         try:
-            self.product.location = 'file://{}'.format(self.product.properties['productIdentifier'])
+            self.product.location = 'file://{}'.format(self.product.properties['title'])
             yield self.product
         finally:
             self.product.location = original

@@ -14,6 +14,8 @@ from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
 
+from eodag.api.product.representations import DEFAULT_METADATA_MAPPING
+
 
 try:
     from unittest import mock  # PY3
@@ -57,6 +59,27 @@ class EODagTestCase(unittest.TestCase):
         self.platform = 'S2A'
         self.instrument = 'MSI'
         self.provider_id = '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
+
+        self.eoproduct_props = {
+            'id': '9deb7e78-9341-5530-8fe8-f81fd99c9f0f',
+            'geometry': {
+                "type": "Polygon",
+                "coordinates": [[[0.495928592903789, 44.22596415476343], [1.870237286761489, 44.24783068396879],
+                                 [1.888683014192297, 43.25939191053712], [0.536772323136669, 43.23826255332707],
+                                 [0.495928592903789, 44.22596415476343]]]
+            },
+            'productType': self.product_type,
+            'platform': 'Sentinel-2',
+            'platformSerialIdentifier': self.platform,
+            'instrument': self.instrument,
+            'title': self.local_filename
+        }
+        # Put an empty string as value of properties which are not relevant for the tests
+        self.eoproduct_props.update({
+            key: ''
+            for key in DEFAULT_METADATA_MAPPING
+            if key not in self.eoproduct_props
+        })
 
         self.requests_http_get_patcher = mock.patch('requests.get', autospec=True)
         self.requests_http_post_patcher = mock.patch('requests.post', autospec=True)
@@ -117,7 +140,7 @@ class EODagTestCase(unittest.TestCase):
             for constraint in kwargs['constraints']:
                 if constraint.propertyname == raise_error_for:
                     exception_report = etree.parse(StringIO(
-                        '<?xml version="1.0" encoding="UTF-8"?><ExceptionReport xmlns="http://www.opengis.net/ows/1.1" '
+                        '<ExceptionReport xmlns="http://www.opengis.net/ows/1.1" '
                         'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation='
                         '"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.0.0" language="en">'
                         '<Exception exceptionCode="NoApplicableCode"><ExceptionText>Unknown exception</ExceptionText>'
@@ -130,7 +153,7 @@ class EODagTestCase(unittest.TestCase):
         Record = namedtuple(
             'CswRecord',
             ['identifier', 'title', 'creator', 'publisher', 'abstract', 'subjects', 'date', 'references',
-             'bbox_wgs84', 'bbox'])
+             'bbox_wgs84', 'bbox', 'xml'])
         BBox = namedtuple('BBox', ['minx', 'miny', 'maxx', 'maxy', 'crs'])
         Crs = namedtuple('Crs', ['code', 'id'])
         mock_catalog.records = OrderedDict({
@@ -146,6 +169,30 @@ class EODagTestCase(unittest.TestCase):
                 bbox_wgs84=bbox_wgs84,
                 bbox=BBox(minx=self.footprint['lonmin'], miny=self.footprint['latmin'],
                           maxx=self.footprint['lonmax'], maxy=self.footprint['latmax'],
-                          crs=Crs(code=4326, id='EPSG')))
+                          crs=Crs(code=4326, id='EPSG')),
+                xml="""
+                    <csw:Record xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" 
+                        xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" 
+                        xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml" 
+                        xmlns:ows="http://www.opengis.net/ows" xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <dc:identifier>urn:x-gs:resource:localhost::52</dc:identifier>
+                        <dc:title>S2 mosaic on Madrid</dc:title>
+                        <dc:format/>
+                        <dct:references scheme="WWW:LINK-1.0-http--link">
+                            http://localhost:8000/admin/storm_csw/resource/52/change/
+                        </dct:references>
+                        <dct:modified>2017-05-05 13:02:35.548758+00:00</dct:modified>
+                        <dct:abstract/>
+                        <dc:date>2017-05-05 13:02:35.139807+00:00</dc:date>
+                        <dc:creator> </dc:creator>
+                        <dc:coverage/>
+                        <ows:BoundingBox dimensions="2" crs="EPSG">
+                        <ows:LowerCorner>40.405012373 -3.70433905592</ows:LowerCorner>
+                        <ows:UpperCorner>40.420696583 -3.67011406889</ows:UpperCorner>
+                        </ows:BoundingBox>
+                    </csw:Record>
+                """
+            )
         })
         return mock.DEFAULT

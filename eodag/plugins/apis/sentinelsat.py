@@ -39,7 +39,7 @@ class SentinelsatAPI(Api):
                 append_to_final = final.append
                 for _id, original in results.items():
                     original['footprint'] = shapely.wkt.loads(original['footprint'])
-                    original['beginPosition'] = original['beginPosition'].isoformat()
+                    original['beginposition'] = original['beginposition'].isoformat()
                     append_to_final(EOProduct(
                         self.instance_name,
                         original['link'],

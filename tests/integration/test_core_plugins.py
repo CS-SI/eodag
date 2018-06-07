@@ -3,6 +3,7 @@
 # All rights reserved
 from __future__ import unicode_literals
 
+import copy
 import functools
 import hashlib
 import json
@@ -138,12 +139,9 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         for idx, result in enumerate(results):
             self.assertIsInstance(result, EOProduct)
             self.assertEqual(result.provider, self.provider)
-            self.assertEqual(result.product_type, 'MOCK')  # See ../resources/mock_providers.yml for 'MOCK'
-            self.assertDictContainsSubset(
-                {k: v for k, v in result.properties.items() if k not in ('endDate', 'provider_id')},
-                resto_results['features'][idx]['properties'])
-            self.assertEqual(result.properties['provider_id'], resto_results['features'][idx]['id'])
-            self.assertEqual(result.properties['endDate'],
+            self.assertEqual(result.properties['productType'], 'MOCK')  # See ../resources/mock_providers.yml for 'MOCK'
+            self.assertEqual(result.properties['id'], resto_results['features'][idx]['id'])
+            self.assertEqual(result.properties['completionTimeFromAscendingNode'],
                              resto_results['features'][idx]['properties']['completionDate'])
 
             if idx == 0:
@@ -158,7 +156,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         self.override_properties(product_type='MOCK_PRODUCT_TYPE_5')
         results = dag.search(self.product_type)
         for idx, result in enumerate(results):
-            self.assertEqual(result.location_url_tpl,
+            self.assertEqual(result.location,
                              'file://{}'.format(resto_results['features'][idx]['properties']['productIdentifier']))
 
         # Test that when nothing is found, the returned result is empty
@@ -607,7 +605,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
 
         self.assertEqual(len(results), 1)
         valid_product = next(iter(results))
-        self.assertEqual(valid_product.properties['provider_id'], 2)
+        self.assertEqual(valid_product.properties['id'], 2)
         self.assertIsInstance(valid_product.downloader, Download)
         self.assertEqual(valid_product.downloader.instance_name, valid_product.provider)
         self.assertIsInstance(valid_product.downloader_auth, Authentication)
@@ -714,7 +712,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
             expected_extraction_listing = [
                 x.replace(os.path.join(TEST_RESOURCES_PATH, 'products'), tempfile.gettempdir())
                 for x in self.list_dir(os.path.join(
-                    TEST_RESOURCES_PATH, 'products', self.product.local_filename.split('.zip')[0]))
+                    TEST_RESOURCES_PATH, 'products', self.product.properties['title']))
             ]
             self.assertIn(path, expected_extraction_listing)
         else:
@@ -776,14 +774,18 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.product = EOProduct.from_geojson({
             'type': 'Feature',
             'properties': {
-                'eodag_local_name': self.local_product_filename,
-                'productType': '',  # mandatory for EOProduct initialization but no use in this test
                 'eodag_download_url': '',   # Will be overriden for each test case
                 'eodag_provider': self.test_provider,   # Is necessary for identifying the right download plugin
-                'eodag_search_intersection': {},    # mandatory for EOProduct initialization but no use in this test
+                'eodag_search_intersection': {},
+                'title': 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE',
             },
-            'id': '',   # mandatory for EOProduct initialization but no use in this test
-            'geometry': {}  # mandatory for EOProduct initialization but no use in this test
+            'geometry': {
+                "type": "Polygon",
+                "coordinates": [[[0.495928592903789, 44.22596415476343], [1.870237286761489, 44.24783068396879],
+                                 [1.888683014192297, 43.25939191053712], [0.536772323136669, 43.23826255332707],
+                                 [0.495928592903789, 44.22596415476343]]]
+            },
+            'id': '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
         })
         self.eodag = SatImagesAPI(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
@@ -792,7 +794,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.local_product_as_archive_path = os.path.abspath(
             os.path.join(TEST_RESOURCES_PATH, 'products', 'as_archive', self.local_product_filename))
         self.expected_record_dir = os.path.join(tempfile.gettempdir(), '.downloaded')
-        self.expected_downloaded_path = os.path.join(tempfile.gettempdir(), self.product.local_filename)
+        self.expected_downloaded_path = os.path.join(tempfile.gettempdir(), self.local_product_filename)
 
         self.requests_get_patcher = mock.patch('requests.get', autospec=True)
         self.requests_post_patcher = mock.patch('requests.post', autospec=True)
@@ -873,11 +875,11 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         for idx, result in enumerate(results):
             expected = usgs_search_results['data']['results'][idx]
             self.assertRegexpMatches(
-                result.location_url_tpl,
+                result.location,
                 r'^.+/L8/(\d{3}/){2}.+\.tar\.bz$'
             )
-            self.assertEqual(result.properties['provider_id'], expected['entityId'])
-            self.assertEqual(result.properties['startDate'], expected['acquisitionDate'])
+            self.assertEqual(result.properties['id'], expected['entityId'])
+            self.assertEqual(result.properties['startTimeFromAscendingNode'], expected['acquisitionDate'])
 
         # Test searching with footprint as an additional criteria
         search_kwargs = {'footprint': self.footprint}
@@ -908,7 +910,7 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             sentinelsat_search_results = json.load(fp)
             for props in sentinelsat_search_results.values():
                 props['beginposition'] = datetime.utcnow()
-        self.sentinelsatapi.query.return_value = sentinelsat_search_results
+        self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
         self.override_properties(
             provider='mock-provider-10',
             product_type='MOCK_PRODUCT_TYPE_10',
@@ -932,22 +934,10 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         )
 
         for eo_product in results:
-            self.assertIn('provider_id', eo_product.properties)
-            expected_original = sentinelsat_search_results[eo_product.properties['provider_id']]
-            self.assertEqual(eo_product.location_url_tpl, expected_original['link'])
-            self.assertEqual(eo_product.local_filename, expected_original['filename'])
+            self.assertIn('id', eo_product.properties)
+            expected_original = sentinelsat_search_results[eo_product.properties['id']]
+            self.assertEqual(eo_product.location, expected_original['link'])
             self.assertEqual(eo_product.geometry, shapely.wkt.loads(expected_original['footprint']))
-            self.assertEqual(eo_product.sensing_platform, expected_original['platformname'])
-            self.assertEqual(eo_product.sensor, expected_original['instrumentshortname'])
-            self.assertDictContainsSubset(
-                {
-                    'description': expected_original['summary'],
-                    'startDate': expected_original['beginposition'].isoformat(),
-                    'title': expected_original['title'],
-                    'productIdentifier': expected_original['identifier']
-                },
-                eo_product.properties
-            )
 
         # Check that the sentinelsatapi is only instantiated once per query
         dag.search(self.product_type)
@@ -966,6 +956,8 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             'footprint': self.footprint,
             'maxCloudCover': max_cloud_cover,
         }
+        # Refresh the return value of the query method, because in sentinelsat.py, the returned value is modified
+        self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
         results = dag.search(self.product_type, **search_kwargs)
         self.assertNotEqual(len(results), 0)
         self.sentinelsatapi.query.assert_called_with(

@@ -7,6 +7,27 @@ mock-provider-1:
   search:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain.domain.eu/resto/api/'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
 
 mock-provider-2:
   priority: 1
@@ -18,6 +39,27 @@ mock-provider-2:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain2.domain.eu/resto/api/'
     maxCloudCover: 50
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
 
 mock-provider-3:
   priority: 1
@@ -29,6 +71,27 @@ mock-provider-3:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain3.domain.eu/resto/api/'
     maxCloudCover: 200
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
 
 mock-provider-4:
   priority: 1
@@ -40,6 +103,27 @@ mock-provider-4:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain4.domain.eu/resto/api/'
     maxCloudCover: -1
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
 
 mock-provider-5:
   priority: 1
@@ -51,6 +135,27 @@ mock-provider-5:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain5.domain.eu/resto/api/'
     product_location_scheme: 'file'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
 
 mock-provider-6:
   priority: 1
@@ -61,6 +166,27 @@ mock-provider-6:
   search:
     plugin: AwsSearch
     api_endpoint: 'http://subdomain6.domain.eu/resto/api/'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
 
 mock-provider-7:
   priority: 1
@@ -69,6 +195,11 @@ mock-provider-7:
   search:
     plugin: CSWSearch
     api_endpoint: 'http://www.catalog.com/rest/catalog/csw/'
+    metadata_mapping:
+      id: 'dc:identifier/text()'
+      abstract: 'dct:abstract/text()'
+      startTimeFromAscendingNode: 'dc:date/text()'
+      organisationName: 'dc:creator/text()'
     search_definitions:
       resource_location_filter: '^https?'
       pt_tags:
@@ -91,6 +222,11 @@ mock-provider-8:
   search:
     plugin: CSWSearch
     api_endpoint: 'http://www.catalog.com/rest/catalog/csw/'
+    metadata_mapping:
+      id: 'dc:identifier/text()'
+      abstract: 'dct:abstract/text()'
+      startTimeFromAscendingNode: 'dc:date/text()'
+      organisationName: 'dc:creator/text()'
     search_definitions:
       resource_location_filter: '^https?'
       pt_tags:
@@ -108,6 +244,27 @@ mock-provider-9:
   search:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain9.domain.eu/resto/api/'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
   download:
     plugin: HTTPDownload
     base_uri: 'https://subdomain9.domain.eu/download/'
@@ -126,6 +283,27 @@ mock-provider-10:
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://subdomain10.domain.eu/api/'
+    metadata_mapping:
+      id: '$.uuid'
+      geometry: '$.footprint'
+      productType: '$.producttype'
+      platform: '$.platformname'
+      platformSerialIdentifier: '$.platformidentifier'
+      instrument: '$.instrument'
+      processingLevel: '$.processingLevel'
+      title: '$.title'
+      keyword: '$.keywords'
+      abstract: '$.summary'
+      organisationName: '$.organisationname'
+      orbitNumber: '$.orbitnumber'
+      orbitDirection: '$.orbitdirection'
+      cloudCover: '$.cloudcover'
+      snowCover: '$.snowcover'
+      startTimeFromAscendingNode: '$.beginposition'
+      completionTimeFromAscendingNode: '$.endposition'
+      parentIdentifier: '$.parentidentifier'
+      resolution: '$.resolution'
+      sensorMode: '$.sensoroperationalmode'
 
 mock-provider-11:
   priority: 1
@@ -135,3 +313,11 @@ mock-provider-11:
   api:
     plugin: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
+    metadata_mapping:
+      id: '$.entityId'
+      geometry: '$.geometry'
+      productType: '$.productType'
+      title: '$.displayId'
+      abstract: '$.summary'
+      startTimeFromAscendingNode: '$.startTime'
+      completionTimeFromAscendingNode: '$.endTime'
