@@ -4,10 +4,10 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-import os
 
-import shapely.geometry
 from requests import HTTPError
+
+from eodag.api.product.representations import properties_from_json
 
 
 try:  # PY3
@@ -17,7 +17,7 @@ except ImportError:  # PY2
 
 import requests
 
-from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
+from eodag.api.product import EOProduct
 from .base import Search
 
 
@@ -108,14 +108,12 @@ class RestoSearch(Search):
                     download_url = '{}://{}'.format(
                         self.product_location_scheme,
                         result['properties']['productIdentifier'])
-                    local_filename = os.path.basename(download_url)
                 else:
                     if result['properties']['organisationName'] in ('ESA',):
                         # TODO: See the above todo about that productIdentifier thing
                         download_url = '{base}' + '/{prodId}.zip'.format(
                             prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
                         )
-                        local_filename = '{}.zip'.format(result['properties']['title'])
                     else:
                         if result['properties'].get('services', {}).get('download', {}).get('url'):
                             download_url = result['properties']['services']['download']['url']
@@ -124,20 +122,11 @@ class RestoSearch(Search):
                                 collection=result['properties']['collection'],
                                 feature_id=result['id'],
                             )
-                        local_filename = '{}.zip'.format(result['id'])
                 product = EOProduct(
                     self.instance_name,
                     download_url,
-                    local_filename,
-                    shapely.geometry.shape(result['geometry']),
-                    search_bbox,
-                    result['properties']['productType'],
-                    result['properties']['platform'],
-                    result['properties']['instrument'],
-                    provider_id=result['id'],
-                    # EOPRODUCT_PROPERTIES are based on resto representation of Earth observation products properties
-                    **{prop_key: (result['properties'][prop_key] if prop_key != 'endDate' else result['properties'][
-                        'completionDate']) for prop_key in EOPRODUCT_PROPERTIES}
+                    properties_from_json(result, self.config['metadata_mapping']),
+                    searched_bbox=search_bbox
                 )
                 normalized.append(product)
             logger.debug('Normalized products : %s', normalized)

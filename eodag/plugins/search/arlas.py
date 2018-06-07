@@ -6,9 +6,9 @@ from __future__ import unicode_literals
 import logging
 
 import requests
-import shapely.geometry
 
 from eodag.api.product import EOProduct
+from eodag.api.product.representations import properties_from_json
 from eodag.plugins.search.base import Search
 from eodag.utils import get_timestamp
 
@@ -64,13 +64,8 @@ class ArlasSearch(Search):
                     products.append(EOProduct(
                         self.instance_name,
                         '{base}' + '/{}'.format(feature['properties']['uid']),
-                        '{}.zip'.format(feature['properties']['identification']['externalId']),
-                        shapely.geometry.shape(feature['geometry']),
-                        kwargs['footprint'],
-                        feature['properties']['identification']['type'],
-                        feature['properties']['acquisition']['missionCode'],
-                        feature['properties']['acquisition']['sensorId'],
-                        provider_id=feature['properties']['uid']
+                        properties_from_json(feature, self.config['metadata_mapping']),
+                        searched_bbox=kwargs.get('footprint')
                     ))
         except KeyError as ke:
             if 'features' in ke:

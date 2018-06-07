@@ -31,12 +31,12 @@ class FilterLatestByName(Crunch):
         processed = []
         filtered = []
         for product in product_list:
-            match = self.name_pattern.match(product.local_filename)
+            match = self.name_pattern.match(product.properties['title'])
             if match:
                 tileid = match.group('tileid')
                 if tileid not in processed:
                     logger.debug('Latest product found for tileid=%s: date=%s', tileid,
-                                 product.original_repr['properties']['Published'])
+                                 product.properties['startTimeFromAscendingNode'])
                     filtered.append(product)
                     processed.append(tileid)
                 else:
@@ -44,6 +44,6 @@ class FilterLatestByName(Crunch):
             else:
                 logger.warning('The name of the product %r as returned by the search plugin does not match the name '
                                'pattern expected by the cruncher %s. Name of the product: %s. Name pattern expected: '
-                               '%s', product, self.name, product.local_filename, self.name_pattern)
+                               '%s', product, self.name, product.properties['title'], self.name_pattern)
         logger.debug('Ending products filtering. Filtered products: %r', filtered)
         return filtered

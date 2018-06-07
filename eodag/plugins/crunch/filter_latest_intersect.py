@@ -21,8 +21,11 @@ class FilterLatestIntersect(Crunch):
         logger.debug('Start filtering for latest products')
         if not products:
             return []
-        #TODO: peut crasher si la startdate n'est pas donnée
-        products.sort(key=lambda product: dateutil.parser.parse(product.properties.get('startDate')), reverse=True)
+        # Warning: May crash if startTimeFromAscendingNode is not in the appropriate format
+        products.sort(
+            key=lambda product: dateutil.parser.parse(product.properties.get('startTimeFromAscendingNode')),
+            reverse=True
+        )
         filtered = []
         add_to_filtered = filtered.append
         footprint = search_params.get('footprint')

@@ -5,7 +5,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import zipfile
-from uuid import uuid4
 
 import numpy
 import rasterio
@@ -20,100 +19,55 @@ except ImportError:
     from shapely.geos import TopologicalError
 
 from eodag.api.product.drivers import DRIVERS
+from eodag.api.product.representations import DEFAULT_METADATA_MAPPING, properties_from_json
 from eodag.utils import maybe_generator
 from eodag.utils.exceptions import UnsupportedDatasetAddressScheme
 
 
 logger = logging.getLogger('eodag.api.product')
-EOPRODUCT_PROPERTIES = (
-    'cloudCover', 'description', 'keywords', 'organisationName', 'resolution', 'snowCover', 'startDate',
-    'endDate', 'title', 'productIdentifier', 'orbitNumber'
-)
 
 
 class EOProduct(object):
     """A wrapper around an Earth Observation Product originating from a search.
 
-    Every Search plugin instance should build an instance of this class for each of the result of its query method, and
-    return a :class:`~eodag.api.search_result.SearchResult` made up of a list of such instances, providing a uniform
-    object on which the other plugins can work.
+    Every Search plugin instance must build an instance of this class for each of the result of its query method, and
+    return a list of such instances.
 
-    :param provider: The system from which the product originates
+    :param provider: The provider from which the product originates
     :type provider: str or unicode
-    :param download_url: The location from where the product must be downloaded
+    :param download_url: A uri informing where to go to download the product
     :type download_url: str or unicode
-    :param local_filename: The name that will be given to the downloaded file (an archive) in the local filesystem
-    :type local_filename: str or unicode
-    :param geom: The geometry representing the geographical footprint of the product
-    :type geom: :class:`shapely.geometry.base.BaseGeometry` (e.g. :class:`shapely.geometry.point.Point`)
-    :param bbox_or_intersect: The extent of a search request, or the intersection of a :class:`~eodag.api.product.EOProduct`
-                              with the extent of a search request (when instantiating a :class:EOProduct from a geojson
-                              file)
-    :type bbox_or_intersect: dict
-    :param product_type: The product type (e.g. L1C)
-    :type product_type: str or unicode
-    :param platform: The name of the satellite that produced the raw data of the product
-    :type platform: str or unicode
-    :param instrument: The name of the sensing instrument embedded in the platform
-    :type instrument: str or unicode
-    :param provider_id: (optional) The product ID as returned by the provider (usually a string-like uid)
-    :type provider_id: undefined
-    :param id: (optional) The ID of the product as defined in this library. This option is intended to be used to allow
-               instantiating a EOProduct from its geojson representation
-    :type id: str or unicode
-    :param kwargs: Additional information holding properties of the product
-    :type kwargs: dict
+    :param properties: The metadata of the product
+    :type properties: dict
+    :param searched_bbox: (optional) The extent that was passed as a search constraint, used to attach to the EOProduct
+                           the intersection of its geometry with this extent
+    :type searched_bbox: dict
 
     .. note::
-        EOProduct stores geometries in WGS84 CRS (EPSG:4326), as it is intended to be transmitted as geojson
-        between applications and geojson spec enforces this.
-        See: https://github.com/geojson/draft-geojson/pull/6.
-
-    .. note::
-        Each time a EOProduct object is created, a random unique id is created  and attached to this object to identify
-        it across the api.
+        The geojson spec `enforces <https://github.com/geojson/draft-geojson/pull/6>`_ the expression of geometries as
+        WGS84 CRS (EPSG:4326) coordinates and EOProduct is intended to be transmitted as geojson between applications.
+        Therefore it stores geometries in the before mentioned CRS.
     """
 
-    def __init__(self, provider, download_url, local_filename, geom, bbox_or_intersect, product_type, platform=None,
-                 instrument=None, id=None, provider_id=None, **kwargs):
-        self.location_url_tpl = download_url
-        self.local_filename = local_filename
-        self.id = id or uuid4().urn
+    def __init__(self, provider, download_url, properties, searched_bbox=None):
         self.provider = provider
-        self.geometry = geom
-        self.product_type = product_type
-        self.sensing_platform = platform
-        self.sensor = instrument
-        if bbox_or_intersect:
-            # Handle the case where we initialize EOProduct from a geojson representation of another EOProduct
-            # (bbox_or_intersect is a geometry representing the intersection of the extent covered by the product and
-            # the extent requested in the search)
-            if 'type' in bbox_or_intersect and 'coordinates' in bbox_or_intersect:
-                self.search_intersection = geometry.asShape(bbox_or_intersect)
-            else:
-                minx, miny = bbox_or_intersect['lonmin'], bbox_or_intersect['latmin']
-                maxx, maxy = bbox_or_intersect['lonmax'], bbox_or_intersect['latmax']
-                requested_geom = geometry.box(minx, miny, maxx, maxy)
-                try:
-                    self.search_intersection = geom.intersection(requested_geom)
-                except TopologicalError as e:
-                    # TODO before finding a good way to handle this, just ignore the error
-                    logger.warning('Unable to intersect the requested geometry: %s with the geometry: %s. Cause: %s',
-                                   requested_geom, geom, e)
-                    self.search_intersection = None
-        # If There was no extent requested, store the product geometry as its "intersection" with a fictional search
-        # extent
-        else:
-            self.search_intersection = geom
-        self.properties = {
-            prop_key: kwargs.get(prop_key)
-            for prop_key in EOPRODUCT_PROPERTIES
-        }
-        # This allows plugin developers to add their own properties to the EOProduct object
-        self.properties.update(kwargs)
-        if provider_id is not None:
-            self.properties['provider_id'] = provider_id
-        self.driver = DRIVERS.get((self.sensing_platform, self.sensor), DRIVERS[(None, None)])()
+        self.location = download_url
+        self.properties = properties
+        self.geometry = self.search_intersection = geometry.shape(self.properties['geometry'])
+        if searched_bbox is not None:
+            searched_bbox_as_shape = geometry.box(searched_bbox['lonmin'], searched_bbox['latmin'],
+                                                  searched_bbox['lonmax'], searched_bbox['latmax'])
+            try:
+                self.search_intersection = self.geometry.intersection(searched_bbox_as_shape)
+            except TopologicalError:
+                import traceback as tb
+                logger.warning('Unable to intersect the requested extent: %s with the product geometry: %s. Got:\n',
+                               searched_bbox_as_shape, self.properties['geometry'], tb.format_exc())
+                self.search_intersection = None
+        self.driver = DRIVERS.get(
+            (self.properties['platformSerialIdentifier'], self.properties['instrument']),
+            DRIVERS[(None, None)]
+        )()
         self.downloader = None
         self.downloader_auth = None
 
@@ -148,7 +102,7 @@ class EOProduct(object):
                 return fail_value
             if not path_of_downloaded_file:
                 return fail_value
-            self.location_url_tpl = 'file://{}'.format(path_of_downloaded_file)
+            self.location = 'file://{}'.format(path_of_downloaded_file)
             dataset_address = self.driver.get_data_address(self, band)
         min_x, min_y, max_x, max_y = extent
         height = int((max_y - min_y) / resolution)
@@ -166,19 +120,19 @@ class EOProduct(object):
         """
         geojson_repr = {
             'type': 'Feature',
-            'id': self.id,
             'geometry': self.geometry,
+            'id': self.properties['id'],
             'properties': {
                 'eodag_provider': self.provider,
-                'eodag_download_url': self.location_url_tpl,
-                'eodag_local_name': self.local_filename,
+                'eodag_download_url': self.location,
                 'eodag_search_intersection': self.search_intersection,
-                'productType': self.product_type,
-                'platform': self.sensing_platform,
-                'instrument': self.sensor,
             }
         }
-        geojson_repr['properties'].update(self.properties)
+        geojson_repr['properties'].update({
+            key: value
+            for key, value in self.properties.items()
+            if key not in ('geometry', 'id')
+        })
         return geojson_repr
 
     @classmethod
@@ -190,21 +144,19 @@ class EOProduct(object):
         :returns: An instance of :class:`~eodag.api.product.EOProduct`
         :rtype: :class:`~eodag.api.product.EOProduct`
         """
-        return cls(
+        obj = cls(
             feature['properties']['eodag_provider'],
             feature['properties']['eodag_download_url'],
-            feature['properties']['eodag_local_name'],
-            feature['geometry'],
-            feature['properties']['eodag_search_intersection'],
-            feature['properties']['productType'],
-            id=feature['id'],
-            **feature['properties'])
+            properties_from_json(feature, DEFAULT_METADATA_MAPPING)
+        )
+        obj.search_intersection = feature['properties']['eodag_search_intersection']
+        return obj
 
     # Implementation of geo-interface protocol (See https://gist.github.com/sgillies/2217756)
     __geo_interface__ = property(as_dict)
 
     def __repr__(self):
-        return '{}(id={}, provider={})'.format(self.__class__.__name__, self.id, self.provider)
+        return '{}(id={}, provider={})'.format(self.__class__.__name__, self.properties['id'], self.provider)
 
     def encode(self, raster, encoding='protobuf'):
         """Encode the subset to a network-compatible format.
@@ -236,11 +188,11 @@ class EOProduct(object):
         """
         from eodag.api.product.protobuf import eo_product_pb2
         subdataset = eo_product_pb2.EOProductSubdataset()
-        subdataset.id = self.id
+        subdataset.id = self.properties['id']
         subdataset.producer = self.provider
-        subdataset.product_type = self.product_type
-        subdataset.platform = self.sensing_platform
-        subdataset.sensor = self.sensor
+        subdataset.product_type = self.properties['productType']
+        subdataset.platform = self.properties['platformSerialIdentifier']
+        subdataset.sensor = self.properties['instrument']
         data = subdataset.data
         data.array.extend(list(raster.flatten().astype(int)))
         data.shape.extend(list(raster.shape))
@@ -256,10 +208,8 @@ class EOProduct(object):
         :param authenticator: The authentication method needed to perform the download
         :type authenticator: Concrete subclass of :class:`~eodag.plugins.authentication.base.Authentication`
         """
-        if not self.downloader or self.downloader != downloader:
-            self.downloader = downloader
-        if not self.downloader_auth or self.downloader_auth != authenticator:
-            self.downloader_auth = authenticator
+        self.downloader = downloader
+        self.downloader_auth = authenticator
 
     def download(self):
         """Download the EO product using the provided download plugin and the authenticator if necessary.
@@ -267,7 +217,7 @@ class EOProduct(object):
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
         """
-        if not self.downloader:
+        if self.downloader is None:
             raise RuntimeError('EO product is unable to download itself due to the lack of a download plugin')
         # Remove the capability for the downloader to perform extraction if the downloaded product is a zipfile. This
         # way, the eoproduct is able to control how the it stores itself on the local filesystem
@@ -291,7 +241,7 @@ class EOProduct(object):
                 fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(local_filepath))
                 for fileinfo in fileinfos:
                     zfile.extract(fileinfo, path=fs_location)
-            self.location_url_tpl = 'file://{}'.format(fs_location)
+            self.location = 'file://{}'.format(fs_location)
         # Restore configuration
         self.downloader.config['extract'] = old_extraction_config
         return fs_location

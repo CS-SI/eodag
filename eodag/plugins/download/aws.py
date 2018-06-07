@@ -33,13 +33,13 @@ class AwsDownload(Download):
         bucket = s3.Bucket(self.config['associated_bucket'])
 
         output_dir = str(self.config['outputs_prefix'])
-        doss = 'EO_product_{}'.format(product.id)
+        doss = 'EO_product_{}'.format(product.properties['id'])
 
         #check if the directory where to store the product already exists of not creates it
         if not os.path.isdir(os.path.join(output_dir, doss)):
             os.makedirs(os.path.join(output_dir, doss))
 
-        for i in bucket.objects.filter(Prefix=product.location_url_tpl):
+        for i in bucket.objects.filter(Prefix=product.location):
 
             dir = i.key.split('/')
 

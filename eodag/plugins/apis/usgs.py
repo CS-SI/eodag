@@ -22,6 +22,7 @@ from tqdm import tqdm
 from usgs import CATALOG_NODES, USGSError, api
 
 from eodag.api.product import EOProduct
+from eodag.api.product.representations import properties_from_json
 from .base import Api
 
 
@@ -60,6 +61,11 @@ class UsgsApi(Api):
                     r_lower_left = result['lowerLeftCoordinate']
                     r_upper_right = result['upperRightCoordinate']
                     summary_match = result_summary_pattern.match(result['summary']).groupdict()
+                    result['geometry'] = geometry.box(
+                        r_lower_left['longitude'], r_lower_left['latitude'],
+                        r_upper_right['longitude'], r_upper_right['latitude']
+                    )
+                    result['productType'] = usgs_product_type
                     final.append(EOProduct(
                         self.instance_name,
                         dl_url_pattern.format(
@@ -67,15 +73,9 @@ class UsgsApi(Api):
                             entity=result['entityId'],
                             **summary_match
                         ),
-                        result['entityId'],
-                        geometry.box(
-                            r_lower_left['longitude'], r_lower_left['latitude'],
-                            r_upper_right['longitude'], r_upper_right['latitude']
-                        ),
-                        footprint,
-                        product_type,
-                        provider_id=result['entityId'],
-                        startDate=result['acquisitionDate']))
+                        properties_from_json(result, self.config['metadata_mapping']),
+                        searched_bbox=footprint,
+                    ))
             except USGSError as e:
                 logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type, node_type)
                 logger.debug("Skipping error: %s", e)
@@ -83,13 +83,13 @@ class UsgsApi(Api):
         return final
 
     def download(self, product, auth=None):
-        url = product.location_url_tpl
+        url = product.location
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
             return
         logger.debug('Download url: %s', url)
 
-        filename = product.local_filename
+        filename = product.properties['title'] + '.tar.bz'
         local_file_path = os.path.join(self.config['outputs_prefix'], filename)
         download_records = os.path.join(self.config['outputs_prefix'], '.downloaded')
         if not os.path.exists(download_records):

@@ -3,6 +3,14 @@ USGS:
   api:
     plugin: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
+    metadata_mapping:
+      id: '$.entityId'
+      geometry: '$.geometry'
+      productType: '$.productType'
+      title: '$.displayId'
+      abstract: '$.summary'
+      startTimeFromAscendingNode: '$.startTime'
+      completionTimeFromAscendingNode: '$.endTime'
   products:
     L8_LC8:
       product_type: LANDSAT_8_C1
@@ -12,6 +20,27 @@ AmazonWS:
   search:
     plugin: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
   products:
     S2_MSI_L1C:
       product_type: L1C
@@ -97,6 +126,27 @@ eocloud:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
     product_location_scheme: 'file'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
   download:
     plugin: HTTPDownload
     base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
@@ -123,6 +173,27 @@ theia-landsat:
   search:
     plugin: RestoSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      platform: '$.properties.collection'
+      productType: '$.properties.productType'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
+      productVersion: '$.properties.version'
   download:
     plugin: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
@@ -135,6 +206,26 @@ theia:
   search:
     plugin: RestoSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
+      productVersion: '$.properties.version'
   products:
     S2_REFLECTANCE:
       product_type: REFLECTANCE
@@ -153,6 +244,27 @@ peps:
   search:
     plugin: RestoSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api'
+    metadata_mapping:
+      id: '$.id'
+      geometry: '$.geometry'
+      productType: '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover: '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode: '$.properties.startDate'
+      completionTimeFromAscendingNode: '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
   products:
     S1_OCN:
       product_type: OCN
@@ -213,6 +325,27 @@ scihub:
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://scihub.copernicus.eu/apihub/'
+    metadata_mapping:
+      id: '$.uuid'
+      geometry: '$.footprint'
+      productType: '$.producttype'
+      platform: '$.platformname'
+      platformSerialIdentifier: '$.platformidentifier'
+      instrument: '$.instrument'
+      processingLevel: '$.processingLevel'
+      title: '$.title'
+      keyword: '$.keywords'
+      abstract: '$.summary'
+      organisationName: '$.organisationname'
+      orbitNumber: '$.orbitnumber'
+      orbitDirection: '$.orbitdirection'
+      cloudCover: '$.cloudcover'
+      snowCover: '$.snowcover'
+      startTimeFromAscendingNode: '$.beginposition'
+      completionTimeFromAscendingNode: '$.endposition'
+      parentIdentifier: '$.parentidentifier'
+      resolution: '$.resolution'
+      sensorMode: '$.sensoroperationalmode'
 
 geostorm-ce:
   priority: 0
@@ -220,6 +353,11 @@ geostorm-ce:
   search:
     plugin: CSWSearch
     api_endpoint: 'http://geostorm-ce/rest/catalog/csw/'
+    metadata_mapping:
+      id: 'dc:identifier/text()'
+      abstract: 'dct:abstract/text()'
+      startTimeFromAscendingNode: 'dc:date/text()'
+      organisationName: 'dc:creator/text()'
     search_definitions:
       # A regex that will be parsed to decide which reference to consider as download url
       resource_location_filter: '^https?'   # match the first resource reference that starts with http or https
@@ -268,6 +406,20 @@ airbus-ds:
     plugin: ArlasSearch
     api_endpoint: 'https://testing.dias.datastore.multisat.space/sdk10/lobby/api/v1/services/explore/'
     arlas_collection: catalog
+    metadata_mapping:
+      id: '$.properties.uid'
+      geometry: '$.geometry'
+      productType: '$.properties.identification.type'
+      platform: '$.properties.acquisition.mission'
+      platformSerialIdentifier: '$.properties.acquisition.missionCode'
+      instrument: '$.properties.acquisition.sensorId'
+      processingLevel: '$.properties.production.levelCode'
+      title: '$.properties.identification.externalId'
+      orbitNumber: '$.properties.orbit.number'
+      orbitDirection: '$.properties.orbit.direction'
+      cloudCover: '$.properties.contentDescription.cloudCoverPercentage'
+      startTimeFromAscendingNode: '$.properties.acquisition.beginViewingDate'
+      completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
   download:
     plugin: HTTPDownload
     base_uri: 'https://testing.dias.datastore.multisat.space/sdk10//api/v1/services/download/'

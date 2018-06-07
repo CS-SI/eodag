@@ -353,12 +353,12 @@ class TestEOProduct(EODagTestCase):
         same_product = EOProduct.from_geojson(geojson.loads(geojson.dumps(product)))
         self.assertSequenceEqual(
             [
-                product.provider, product.location_url_tpl, product.local_filename, product.sensor,
+                product.provider, product.location, product.local_filename, product.sensor,
                 self._tuples_to_lists(geometry.mapping(product.geometry)), product.search_intersection,
                 product.product_type, product.sensing_platform
             ],
             [
-                same_product.provider, same_product.location_url_tpl, same_product.local_filename, same_product.sensor,
+                same_product.provider, same_product.location, same_product.local_filename, same_product.sensor,
                 same_product.geometry, same_product.search_intersection, same_product.product_type,
                 same_product.sensing_platform
             ]

@@ -52,9 +52,9 @@ class TestEOProductDriverSentinel2(EODagTestCase):
 
     @contextmanager
     def __filesystem_product(self):
-        original = self.product.location_url_tpl
+        original = self.product.location
         try:
-            self.product.location_url_tpl = 'file://{}'.format(self.product.properties['productIdentifier'])
+            self.product.location = 'file://{}'.format(self.product.properties['productIdentifier'])
             yield self.product
         finally:
-            self.product.location_url_tpl = original
+            self.product.location = original

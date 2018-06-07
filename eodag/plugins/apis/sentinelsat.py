@@ -13,6 +13,7 @@ from shapely import geometry
 from tqdm import tqdm
 
 from eodag.api.product import EOProduct
+from eodag.api.product.representations import properties_from_json
 from .base import Api
 
 
@@ -37,21 +38,13 @@ class SentinelsatAPI(Api):
             if results:
                 append_to_final = final.append
                 for _id, original in results.items():
-                    geom = shapely.wkt.loads(original['footprint'])
+                    original['footprint'] = shapely.wkt.loads(original['footprint'])
+                    original['beginPosition'] = original['beginPosition'].isoformat()
                     append_to_final(EOProduct(
                         self.instance_name,
                         original['link'],
-                        original['filename'],
-                        geom,
-                        kwargs.get('footprint'),
-                        product_type,
-                        original['platformname'],
-                        original['instrumentshortname'],
-                        provider_id=_id,
-                        description=original['summary'],
-                        title=original['title'],
-                        productIdentifier=original['identifier'],
-                        startDate=original['beginposition'].isoformat()
+                        properties_from_json(original, self.config['metadata_mapping']),
+                        searched_bbox=kwargs.get('footprint')
                     ))
             return final
         except TypeError:
@@ -112,5 +105,6 @@ class SentinelsatAPI(Api):
                 if any(isinstance(date, klass) for klass in (datetime.datetime, datetime.date)):
                     return date.strftime('%Y%m%d')
                 return datetime.datetime.strptime(date, '%Y-%m-%d').strftime('%Y%m%d')
+
             query['date'] = (__handle_date(params['startDate']), __handle_date(params['endDate']))
         return query
