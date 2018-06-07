@@ -123,7 +123,7 @@ or whom spatial extent overlaps at least 10% (`minimum_overlap`) of the surface 
 * To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given, the more verbose the tool is
 
 How to get Amazon WS access keys
-----------------------
+--------------------------------
 
 * Create an account on AWS website: https://aws.amazon.com/fr/ (warning: A credit card number must be given because
     data become paying after a given amount of downloaded data).
