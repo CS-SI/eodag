@@ -42,8 +42,12 @@ class HTTPDownload(Download):
             filename = product.properties['title'] + '.zip'
             local_file_path = os.path.join(self.config['outputs_prefix'], filename)
             download_records = os.path.join(self.config['outputs_prefix'], '.downloaded')
-            if not os.path.exists(download_records):
+            try:
                 os.makedirs(download_records)
+            except OSError:
+                import traceback as tb
+                logger.warning('Unable to create record directory. Maybe the it already exists. Got:\n%s',
+                               tb.format_exc())
             url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
             record_filename = os.path.join(download_records, url_hash)
             if os.path.isfile(record_filename) and os.path.isfile(local_file_path):
