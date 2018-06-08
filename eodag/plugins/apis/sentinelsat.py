@@ -61,7 +61,7 @@ class SentinelsatAPI(Api):
         if self.config['on_site']:
             data = self.api.get_product_odata(product.id, full=True)
             logger.info('Product already present on this platform. Identifier: %s', data['Identifier'])
-            yield data['Identifier']
+            return data['Identifier']
         else:
             product_info = self.api.download_all(
                 [product.id],
@@ -76,9 +76,10 @@ class SentinelsatAPI(Api):
                     with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
                             product_info['path'])) as progressbar:
                         for fileinfo in progressbar:
-                            yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                            zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                return product_info['path'][:product_info['path'].index('.zip')]
             else:
-                yield product_info['path']
+                return product_info['path']
 
     def __init_api(self):
         if not self.api:

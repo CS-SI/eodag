@@ -276,7 +276,7 @@ peps:
       product_type: SLC
       collection: S1
     S2_MSI_L1C:
-      collection: S2
+      collection: S2ST
       product_type: S2MSI1C
     S3_EFR:
       product_type: OL_1_EFR___

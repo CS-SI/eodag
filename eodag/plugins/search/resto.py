@@ -4,6 +4,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import re
 
 from requests import HTTPError
 
@@ -67,7 +68,7 @@ class RestoSearch(Search):
                 params['box'] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
         params.update({key: value for key, value in kwargs.items() if value is not None})
 
-        collection, resto_product_type = self.map_product_type(product_type)
+        collection, resto_product_type = self.map_product_type(product_type, params['startDate'])
         logger.debug('Collection found for product type %s: %s', product_type, collection)
         logger.debug('Corresponding Resto product_type found for product type %s: %s', product_type, resto_product_type)
         params['productType'] = resto_product_type
@@ -84,16 +85,27 @@ class RestoSearch(Search):
             add_to_results(self.normalize_results(response.json(), footprint))
         return results
 
-    def map_product_type(self, product_type):
+    def map_product_type(self, product_type, date):
         """Maps the eodag's specific product type code to Resto specific product type (which is a collection id and a
         product type id)
 
         :param product_type: The eodag specific product type code name
+        :type product_type: str or unicode
+        :param date: The date search constraint (used only for peps provider)
+        :type date: str or unicode
         :return: The corresponding collection and product type ids on this instance of Resto
         :rtype: tuple(str, str)
         """
         mapping = self.config['products'][product_type]
-        return mapping['collection'], mapping['product_type']
+        match = re.match(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})', date).groupdict()
+        year, month, day = int(match['year']), int(match['month']), int(match['day'])
+        if self.instance_name == 'peps' and product_type == 'S2_MSI_L1C' and year == 2016 and month <= 12 and day <= 6:
+            # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-/asset_publisher/Ac0d/content/change-of
+            # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
+            collection = 'S2'
+        else:
+            collection = mapping['collection']
+        return collection, mapping['product_type']
 
     def normalize_results(self, results, search_bbox):
         normalized = []

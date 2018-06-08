@@ -61,7 +61,7 @@ class HTTPDownload(Download):
 
             hook_print = lambda r, *args, **kwargs: print('\n', r.url)
             with requests.get(url, stream=True, auth=auth, hooks={'response': hook_print},
-                              params=self.config.get('dl_url_params', {}), verify=False) as stream:
+                              params=self.config.get('dl_url_params', {})) as stream:
                 try:
                     stream.raise_for_status()
                 except HTTPError:

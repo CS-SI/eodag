@@ -24,7 +24,6 @@ class AwsDownload(Download):
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
     def download(self, product, auth=None):
-
         #login
         access_key, access_secret = auth
         s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=access_secret)
@@ -63,3 +62,4 @@ class AwsDownload(Download):
                 # avoid to re download a file which has already been downloaded
                 if not os.path.isfile(name):
                     bucket.download_file(i.key, name)
+        return doss

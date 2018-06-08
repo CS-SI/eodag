@@ -98,9 +98,8 @@ class UsgsApi(Api):
         record_filename = os.path.join(download_records, url_hash)
         if os.path.isfile(record_filename) and os.path.isfile(local_file_path):
             logger.info('Product already downloaded. Retrieve it at %s', local_file_path)
-            yield local_file_path
-            return
-        # Remove the record file if local_file_path is absent (e.g. it was deleted while record wasn't)
+            return local_file_path
+            # Remove the record file if local_file_path is absent (e.g. it was deleted while record wasn't)
         elif os.path.isfile(record_filename):
             logger.debug('Record file found (%s) but not the actual file', record_filename)
             logger.debug('Removing record file : %s', record_filename)
@@ -132,6 +131,7 @@ class UsgsApi(Api):
                         with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
                                 local_file_path)) as progressbar:
                             for fileinfo in progressbar:
-                                yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                                zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                    return local_file_path[:local_file_path.index('.tar.bz')]
                 else:
-                    yield local_file_path
+                    return local_file_path

@@ -327,7 +327,11 @@ class SatImagesAPI(object):
     def _build_download_plugin(self, product):
         """Look for a download plugin to use, based on the configuration of the api and the product to download"""
         logger.debug('Looking for the appropriate Download plugin to use for product: %r', product)
-        plugin = self._build_provider_plugin(product.provider, 'download')
+        if 'download' in self.providers_config[product.provider]:
+            topic = 'download'
+        else:
+            topic = 'api'
+        plugin = self._build_provider_plugin(product.provider, topic)
         logger.debug('Found Download plugin for product %r: %s', product, plugin)
         return plugin
 
