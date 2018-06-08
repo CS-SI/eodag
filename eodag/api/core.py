@@ -168,7 +168,7 @@ class SatImagesAPI(object):
             processing. This requirement is enforced here.
         """
         search_interfaces = self.__get_searchers(product_type)
-        results = []
+        results = SearchResult([])
         for idx, iface in enumerate(search_interfaces):
             logger.debug('Using interface for search: %s on instance *%s*', iface.name, iface.instance_name)
             auth = self.__get_authenticator(iface.instance_name)
@@ -211,7 +211,7 @@ class SatImagesAPI(object):
                 import traceback as tb
                 logger.debug('Error while searching on interface %s:\n %s.', iface, tb.format_exc())
                 logger.debug('Ignoring it')
-        return SearchResult(results)
+        return results
 
     def download_all(self, search_result):
         """Download all products resulting from a search.
