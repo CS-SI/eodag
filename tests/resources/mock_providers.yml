@@ -4,6 +4,7 @@ mock-provider-1:
     MOCK_PRODUCT_TYPE:
       product_type: MOCK
       collection: MockCollection
+
   search:
     plugin: RestoSearch
     api_endpoint: 'http://subdomain.domain.eu/resto/api/'
@@ -28,6 +29,11 @@ mock-provider-1:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
 
 mock-provider-2:
   priority: 1
@@ -60,6 +66,11 @@ mock-provider-2:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
 
 mock-provider-3:
   priority: 1
@@ -92,6 +103,11 @@ mock-provider-3:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
 
 mock-provider-4:
   priority: 1
@@ -124,6 +140,11 @@ mock-provider-4:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
 
 mock-provider-5:
   priority: 1
@@ -156,6 +177,11 @@ mock-provider-5:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
 
 mock-provider-6:
   priority: 1
@@ -187,6 +213,11 @@ mock-provider-6:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
 
 mock-provider-7:
   priority: 1
@@ -212,6 +243,11 @@ mock-provider-7:
           matching: postfix
         - name: 'dc:yet_another_thing'
           matching: fuzzy
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
   auth:
     plugin: GenericAuth
 
@@ -234,6 +270,11 @@ mock-provider-8:
       date_tags:
         start: 'apiso:TempExtent_begin'
         end: 'apiso:TempExtent_end'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
 
 mock-provider-9:
   priority: 1

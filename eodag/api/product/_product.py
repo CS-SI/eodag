@@ -220,17 +220,11 @@ class EOProduct(object):
         if self.downloader is None:
             raise RuntimeError('EO product is unable to download itself due to the lack of a download plugin')
         # Remove the capability for the downloader to perform extraction if the downloaded product is a zipfile. This
-        # way, the eoproduct is able to control how the it stores itself on the local filesystem
+        # way, the eoproduct is able to control how it stores itself on the local filesystem
         old_extraction_config = self.downloader.config['extract']
         self.downloader.config['extract'] = False
-        # Since we are sure extraction will not be done, we only retrieve the first (and sole) value returned
-        local_filepath = next(maybe_generator(
-            self.downloader.download(
-                self,
-                auth=self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth,
-            )),
-            None
-        )
+        auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
+        local_filepath = self.downloader.download(self, auth=auth)
         if local_filepath is None:
             logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
                            'have not been returned by the download plugin')

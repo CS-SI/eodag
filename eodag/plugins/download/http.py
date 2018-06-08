@@ -48,8 +48,7 @@ class HTTPDownload(Download):
             record_filename = os.path.join(download_records, url_hash)
             if os.path.isfile(record_filename) and os.path.isfile(local_file_path):
                 logger.info('Product already downloaded. Retrieve it at %s', local_file_path)
-                yield local_file_path
-                return
+                return local_file_path
             # Remove the record file if local_file_path is absent (e.g. it was deleted while record wasn't)
             elif os.path.isfile(record_filename):
                 logger.debug('Record file found (%s) but not the actual file', record_filename)
@@ -83,18 +82,20 @@ class HTTPDownload(Download):
                             with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
                                     local_file_path)) as progressbar:
                                 for fileinfo in progressbar:
-                                    yield zfile.extract(
+                                    zfile.extract(
                                         fileinfo,
                                         path=os.path.join(
                                             self.config['outputs_prefix'],
-                                            local_file_path[:local_file_path.index('.zip')]))
+                                            local_file_path[:local_file_path.index('.zip')])
+                                    )
+                        return local_file_path[:local_file_path.index('.zip')]
                     else:
-                        yield local_file_path
+                        return local_file_path
         else:
             path = product.location.replace('file://', '')
             logger.info('Product already present on this platform. Identifier: %s', path)
             # Do not download data if we are on site. Instead give back the absolute path to the data
-            yield path
+            return path
 
     def __build_download_url(self, product, auth):
         if product.location:

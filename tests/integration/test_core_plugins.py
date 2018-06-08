@@ -616,8 +616,8 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
     def test_core_http_download_local_product(self):
         """A local product must not be downloaded and the download plugin must return its local absolute path"""
         self.product.location = 'file:///absolute/path/to/local/product.zip'
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            self.assertEqual(path, '/absolute/path/to/local/product.zip')
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(paths[0], '/absolute/path/to/local/product.zip')
         self.assertAuthenticationDone()
         self.assertHttpDownloadNotDone()
 
@@ -627,8 +627,8 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.product.location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            self.assertHttpDownloadDone(path)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertHttpDownloadDone(paths[0])
         self.assertAuthenticationDone()
 
     def test_core_http_download_remote_product_extract(self):
@@ -637,14 +637,15 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.product.location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            self.assertHttpDownloadDone(path, with_extraction=True)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertHttpDownloadDone(paths[0], with_extraction=True)
         self.assertAuthenticationDone()
 
     def test_core_http_download_remote_no_url(self):
         """Download must fail on an EOProduct with no download url"""
-        res = list(self.eodag.download_all(SearchResult([self.product])))
-        self.assertEqual(len(res), 0)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(len(paths), 1)
+        self.assertIsNone(paths[0])
         self.assertAuthenticationDone()
         self.assertHttpDownloadNotDone()
 
@@ -658,8 +659,8 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         open(self.expected_downloaded_path, 'wb').close()
         open(self.expected_record_file, 'w').close()
 
-        res = list(self.eodag.download_all(SearchResult([self.product])))
-        self.assertEqual(res[0], self.expected_downloaded_path)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(paths[0], self.expected_downloaded_path)
         self.assertAuthenticationDone()
         self.assertEqual(self.requests_get.call_count, 0)
 
@@ -675,11 +676,11 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         os.mkdir(self.expected_record_dir)
         open(self.expected_record_file, 'w').close()
 
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            os_remove.assert_called_with(self.expected_record_file)
-            self.assertEqual(os_remove.call_count, 1)
-            self.assertAuthenticationDone()
-            self.assertHttpDownloadDone(path)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        os_remove.assert_called_with(self.expected_record_file)
+        self.assertEqual(os_remove.call_count, 1)
+        self.assertAuthenticationDone()
+        self.assertHttpDownloadDone(paths[0])
 
     def test_core_http_download_remote_httperror(self):
         """An error during download must fail without stopping the overall download process"""
@@ -692,8 +693,9 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
 
         self.requests_get.return_value.raise_for_status = raise_http_error
 
-        res = list(self.eodag.download_all(SearchResult([self.product])))
-        self.assertEqual(len(res), 0)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(len(paths), 1)
+        self.assertIsNone(paths[0])
         self.assertAuthenticationDone()
         self.assertEqual(self.requests_get.call_count, 1)
         self.assertFalse(os.path.exists(self.expected_record_file))
