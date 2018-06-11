@@ -27,7 +27,6 @@ logger = logging.getLogger('eodag.plugins.search.resto')
 
 class RestoSearch(Search):
     SEARCH_PATH = '/collections/{collection}/search.json'
-    DEFAULT_MAX_CLOUD_COVER = 20
 
     def __init__(self, config):
         super(RestoSearch, self).__init__(config)
@@ -42,20 +41,16 @@ class RestoSearch(Search):
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         results = []
         add_to_results = results.extend
-        configured_max_cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
-        cloud_cover = kwargs.pop('maxCloudCover', configured_max_cloud_cover) or configured_max_cloud_cover
-        if not 0 <= cloud_cover <= 100:
-            raise RuntimeError("Invalid cloud cover criterium: '{}'. Should be a percentage (bounded in [0-100])")
-        elif cloud_cover > configured_max_cloud_cover:
-            logger.info('The requested max cloud cover (%s) is too high, capping it to %s', cloud_cover,
-                        self.DEFAULT_MAX_CLOUD_COVER)
-            cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
         params = {
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'startDate': kwargs.pop('startDate', None),
-            'cloudCover': '[0,{}]'.format(cloud_cover),
         }
+        cloud_cover = kwargs.pop('maxCloudCover', None)
+        if cloud_cover is not None:
+            if not 0 <= cloud_cover <= 100:
+                raise RuntimeError("Invalid cloud cover criterium: '{}'. Should be a percentage (bounded in [0-100])")
+            params['cloudCover'] = '[0,{}]'.format(cloud_cover)
         end_date = kwargs.pop('endDate', None)
         if end_date:
             params['completionDate'] = end_date
@@ -66,7 +61,6 @@ class RestoSearch(Search):
                 params.update(footprint)
             elif len(footprint.keys()) == 4:  # a rectangle (or bbox)
                 params['box'] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
-        params.update({key: value for key, value in kwargs.items() if value is not None})
 
         collections, resto_product_type = self.map_product_type(product_type, params['startDate'])
         # len(collections) == 2 If and Only if the product type is S2-L1C, provider is PEPS and there is no search

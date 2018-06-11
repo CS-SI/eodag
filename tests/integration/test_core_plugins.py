@@ -114,7 +114,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         }
         nominal_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',  # See RestoSearch.DEFAULT_MAX_CLOUD_COVER
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK'
@@ -170,7 +169,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         nominal_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',  # See RestoSearch.DEFAULT_MAX_CLOUD_COVER
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK'
@@ -191,38 +189,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         # Assertions showing that the HTTPError was ignored and an empty list was returned as the result
         self.assertIsInstance(results, SearchResult)
         self.assertEqual(len(results), 0)
-
-    def test_core_resto_search_configured_max_cloud_cover_ok(self):
-        """A maxCloudCover config parameter must be the default max cloud cover for a search"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE_2')
-        provider_search_url_base = 'http://subdomain2.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
-        configured_max_cloud_cover = 50  # See ../resources/mock_providers.yml
-        call_params = {
-            'startDate': None,
-            'cloudCover': '[0,{}]'.format(configured_max_cloud_cover),
-            'sortOrder': 'descending',
-            'sortParam': 'startDate',
-            'productType': 'MOCK2'
-        }
-
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        dag.search(self.product_type)
-
-        self.assertHttpGetCalledOnceWith(
-            '{}collections/MockCollection2/search.json'.format(provider_search_url_base),
-            expected_params=call_params)
-
-    def test_core_resto_search_configured_max_cloud_cover_over100_ko(self):
-        """A maxCloudCover config parameter greater than 100 must raise a runtime_error"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE_3')
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        self.assertRaises(RuntimeError, dag.search, self.product_type)
-
-    def test_core_resto_search_configured_max_cloud_cover_below0_ko(self):
-        """A maxCloudCover config parameter lower than 0 must raise a runtime_error"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE_4')
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        self.assertRaises(RuntimeError, dag.search, self.product_type)
 
     def test_core_resto_search_kwargs_cloud_cover_default_ok(self):
         """A search with a cloud cover between 0 and the default max cloud cover must succeed"""
@@ -251,26 +217,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         self.assertRaises(RuntimeError, dag.search, self.product_type, maxCloudCover=101)
         self.assertRaises(RuntimeError, dag.search, self.product_type, maxCloudCover=-1)
 
-    def test_core_resto_search_kwargs_cloud_cover_capped_ok(self):
-        """A search with a cloud cover greater than the default max cloud cover must be capped to default"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        kwargs = {'maxCloudCover': 30}  # RestoSearch.DEFAULT_MAX_CLOUD_COVER is 20
-        provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
-        call_params = {
-            'startDate': None,
-            'cloudCover': '[0,20]',
-            'sortOrder': 'descending',
-            'sortParam': 'startDate',
-            'productType': 'MOCK'
-        }
-
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        dag.search(self.product_type, **kwargs)
-
-        self.assertHttpGetCalledOnceWith(
-            '{}collections/MockCollection/search.json'.format(provider_search_url_base),
-            expected_params=call_params)
-
     def test_core_resto_search_kwargs_end_date_ok(self):
         """A search with an endDate must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
@@ -278,7 +224,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         call_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK',
@@ -300,7 +245,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         call_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK',
@@ -319,7 +263,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         self.requests_http_get.reset_mock()
         call_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK',
@@ -493,7 +436,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         }
         nominal_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',  # See RestoSearch.DEFAULT_MAX_CLOUD_COVER
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK6'
