@@ -26,8 +26,13 @@ class TestEODagEndToEnd(unittest.TestCase):
             # location scheme to use https, enabling actual downloading of the product
             if conf.get('search', {}).get('product_location_scheme', 'https') == 'file':
                 conf['search']['product_location_scheme'] = 'https'
+            # Disable extraction
+            try:    # Case HTTPDownload plugin
+                conf['download']['extract'] = False
+            except KeyError:    # case api plugin
+                conf['api']['extract'] = False
 
-    def execute(self, provider, product_type, start, end, bbox):
+    def execute(self, provider, product_type, start, end, bbox=()):
         """Execute the test on one provider.
 
         - First set the preferred provider as the one given in parameter
@@ -39,21 +44,17 @@ class TestEODagEndToEnd(unittest.TestCase):
         search_criteria = {
             'startDate': start,
             'end_date': end,
-            'footprint': {'lonmin': bbox[0], 'latmin': bbox[1], 'lonmax': bbox[2], 'latmax': bbox[3]},
         }
+        if bbox:
+            search_criteria['footprint'] = {'lonmin': bbox[0], 'latmin': bbox[1], 'lonmax': bbox[2], 'latmax': bbox[3]}
         self.eodag.set_preferred_provider(provider)
         results = self.eodag.search(product_type, **search_criteria)
         one_product = results[0]
         self.assertEqual(one_product.provider, provider)
         path = self.eodag.download(one_product)
         self.assertIsNotNone(path)
-        # The returned path points either to an extracted directory or to the not extracted archive file
-        try:
-            self.assertTrue(os.path.isdir(path))
-            shutil.rmtree(path)
-        except AssertionError:
-            self.assertTrue(os.path.isfile(path))
-            os.unlink(path)
+        self.assertTrue(os.path.isfile(path))
+        os.unlink(path)
 
     def test_end_to_end_search_download_eocloud(self):
         self.execute(
@@ -98,7 +99,6 @@ class TestEODagEndToEnd(unittest.TestCase):
     def test_end_to_end_search_download_scihub(self):
         self.execute(
             'scihub',
-            'S2_MSI_L1C',
+            'S1_GRD',
             '2018-02-01',
-            '2018-02-16',
-            (9.1113159, 2.701635, 14.100952, 5.588651))
+            '2018-02-16')

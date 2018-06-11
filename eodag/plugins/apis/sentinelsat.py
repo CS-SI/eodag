@@ -27,8 +27,8 @@ class SentinelsatAPI(Api):
         self.api = None
 
     def query(self, product_type, **kwargs):
-        self.__init_api()
-        query_params = self.__convert_query_params(kwargs)
+        self._init_api()
+        query_params = self._convert_query_params(kwargs)
         try:
             final = []
             results = self.api.query(
@@ -40,6 +40,7 @@ class SentinelsatAPI(Api):
                 for _id, original in results.items():
                     original['footprint'] = shapely.wkt.loads(original['footprint'])
                     original['beginposition'] = original['beginposition'].isoformat()
+                    original['endposition'] = original['endposition'].isoformat()
                     append_to_final(EOProduct(
                         self.instance_name,
                         original['link'],
@@ -57,17 +58,17 @@ class SentinelsatAPI(Api):
             return []
 
     def download(self, product, auth=None):
-        self.__init_api()
+        self._init_api()
         if self.config['on_site']:
-            data = self.api.get_product_odata(product.id, full=True)
+            data = self.api.get_product_odata(product.properties['id'], full=True)
             logger.info('Product already present on this platform. Identifier: %s', data['Identifier'])
             return data['Identifier']
         else:
             product_info = self.api.download_all(
-                [product.id],
+                [product.properties['id']],
                 directory_path=self.config['outputs_prefix']
             )
-            product_info = product_info[0][product.id]
+            product_info = product_info[0][product.properties['id']]
 
             if self.config['extract'] and product_info['path'].endswith('.zip'):
                 logger.info('Extraction activated')
@@ -81,11 +82,11 @@ class SentinelsatAPI(Api):
             else:
                 return product_info['path']
 
-    def __init_api(self):
+    def _init_api(self):
         if not self.api:
             logger.debug('Initialising sentinelsat api')
             self.api = SentinelAPI(
-                self.config['credentials']['user'],
+                self.config['credentials']['username'],
                 self.config['credentials']['password'],
                 self.config['endpoint']
             )
@@ -93,7 +94,7 @@ class SentinelsatAPI(Api):
             logger.debug('Sentinelsat api already initialized')
 
     @staticmethod
-    def __convert_query_params(params):
+    def _convert_query_params(params):
         query = {}
         if params.get('footprint'):
             footprint = params['footprint']
@@ -102,10 +103,10 @@ class SentinelsatAPI(Api):
         if params.get('maxCloudCover'):
             query['cloudcoverpercentage'] = (0, params['maxCloudCover'])
         if params.get('startDate') and params.get('endDate'):
-            def __handle_date(date):
+            def handle_date(date):
                 if any(isinstance(date, klass) for klass in (datetime.datetime, datetime.date)):
                     return date.strftime('%Y%m%d')
                 return datetime.datetime.strptime(date, '%Y-%m-%d').strftime('%Y%m%d')
 
-            query['date'] = (__handle_date(params['startDate']), __handle_date(params['endDate']))
+            query['date'] = (handle_date(params['startDate']), handle_date(params['endDate']))
         return query
