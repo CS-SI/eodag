@@ -74,6 +74,9 @@ eocloud:
       product_type: L1C
       collection: Sentinel2
       partial: true
+    S2_MSI_L2Ap:
+      product_type: L2A
+      collection: Sentinel2
     L8_L1T:
       product_type: L1T
       collection: Landsat8
