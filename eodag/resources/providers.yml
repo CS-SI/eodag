@@ -422,6 +422,6 @@ airbus-ds:
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
   download:
     plugin: HTTPDownload
-    base_uri: 'https://testing.dias.datastore.multisat.space/sdk10//api/v1/services/download/'
+    base_uri: 'https://testing.dias.datastore.multisat.space/sdk10/lobby/api/v1/services/download/'
   auth:
     plugin: GenericAuth
