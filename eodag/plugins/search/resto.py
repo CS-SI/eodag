@@ -111,7 +111,7 @@ class RestoSearch(Search):
                 else:
                     match = re.match(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})', date).groupdict()
                     year, month, day = int(match['year']), int(match['month']), int(match['day'])
-                    if year == 2016 and month <= 12 and day <= 6:
+                    if year == 2016 and month <= 12 and day <= 5:
                         collection = ('S2',)
                     else:
                         collection = ('S2ST',)
