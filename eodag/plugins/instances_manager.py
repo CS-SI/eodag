@@ -97,9 +97,9 @@ class PluginInstancesManager(object):
             instances = []
             for topic in topics:
                 instances.extend(
-                    self.__instantiate(topic, providers=self.__filter_providers(topic, product_type_id, providers)))
+                    self._instantiate(topic, providers=self._filter_providers(topic, product_type_id, providers)))
         else:
-            instances = self.__instantiate(topics, providers=self.__filter_providers(topics, product_type_id, providers))
+            instances = self._instantiate(topics, providers=self._filter_providers(topics, product_type_id, providers))
         return instances
 
     def instantiate_plugin_by_config(self, topic_name, topic_config, base=None, iname='', priority=None):
@@ -115,8 +115,9 @@ class PluginInstancesManager(object):
         :type priority: int or None
         :returns: An instance of a subclass of `base` or the class corresponding to `topic_name`
         """
-        logger.debug("Creating '%s' plugin instance with config '%s'", topic_name.upper(), topic_config)
-        PluginBaseClass = base or self.__get_base_class(topic_name)
+        logger.debug("Creating '%s' plugin instance with config '%s'", topic_name.upper(),
+                     {key: value for key, value in topic_config.items() if key != 'credentials'})
+        PluginBaseClass = base or self._get_base_class(topic_name)
         PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
             PluginBaseClass,
             topic_config['plugin']
@@ -142,11 +143,11 @@ class PluginInstancesManager(object):
         :returns: An instance of the class corresponding to `name`
         """
         logger.debug("Creating '%s' plugin instance with name '%s' (config-free instance)", topic.upper(), name)
-        PluginBaseClass = self.__get_base_class(topic)
+        PluginBaseClass = self._get_base_class(topic)
         PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(PluginBaseClass, name)
         return PluginClass()
 
-    def __get_topics(self, provider):
+    def _get_topics(self, provider):
         """Returns all the plugin topics configured for a provider.
 
         Plugin topics are defined as configuration keys of a provider's config which indexes a dict with one
@@ -160,7 +161,7 @@ class PluginInstancesManager(object):
         provider_config = self.providers_config[provider]
         return [topic for topic in provider_config if 'plugin' in provider_config[topic]]
 
-    def __filter_providers(self, topic, product_type_id, selected):
+    def _filter_providers(self, topic, product_type_id, selected):
         """Returns a list of providers to be instantiated according to the product type and the topic.
 
         :param topic: The plugin topic for which the providers should be configured to be selected
@@ -181,7 +182,7 @@ class PluginInstancesManager(object):
             if topic in provider_config and product_type_id in provider_config['products']
         ]
 
-    def __instantiate(self, topic, providers=None):
+    def _instantiate(self, topic, providers=None):
         """Instantiate a set of providers' topic plugins.
 
         :param topic: The plugin topic for which we should instantiate the providers' plugins (e.g. ``'search'``)
@@ -192,7 +193,7 @@ class PluginInstancesManager(object):
         :rtype: list
         """
         instances = []
-        PluginBaseClass = self.__get_base_class(topic)
+        PluginBaseClass = self._get_base_class(topic)
         if providers is not None:
             selected_providers = [
                 (name, self.providers_config[name], priority)
@@ -226,7 +227,7 @@ class PluginInstancesManager(object):
             instances.append(instance)
         return instances
 
-    def __get_base_class(self, topic):
+    def _get_base_class(self, topic):
         try:
             PluginBaseClass = self.supported_topics[topic]
         except KeyError:
