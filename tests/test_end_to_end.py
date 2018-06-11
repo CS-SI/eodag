@@ -99,6 +99,7 @@ class TestEODagEndToEnd(unittest.TestCase):
     def test_end_to_end_search_download_scihub(self):
         self.execute(
             'scihub',
-            'S1_GRD',
+            'S2_MSI_L1C',
             '2018-02-01',
-            '2018-02-16')
+            '2018-02-16',
+            (-161.187910, 64.821439, -159.177830, 65.809122))

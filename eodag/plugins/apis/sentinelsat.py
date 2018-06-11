@@ -99,7 +99,7 @@ class SentinelsatAPI(Api):
         if params.get('footprint'):
             footprint = params['footprint']
             box_values = (footprint['lonmin'], footprint['latmin'], footprint['lonmax'], footprint['latmax'])
-            query['footprint'] = geometry.box(*box_values).to_wkt()
+            query['area'] = geometry.box(*box_values).to_wkt()
         if params.get('maxCloudCover'):
             query['cloudcoverpercentage'] = (0, params['maxCloudCover'])
         if params.get('startDate') and params.get('endDate'):
