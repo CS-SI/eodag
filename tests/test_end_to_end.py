@@ -22,6 +22,10 @@ class TestEODagEndToEnd(unittest.TestCase):
         for provider, conf in cls.eodag.providers_config.items():
             for product_type, pt_conf in conf['products'].items():
                 pt_conf['partial'] = False
+            # Force all providers implementing RestoSearch and defining how to retrieve products by specifying the
+            # location scheme to use https, enabling actual downloading of the product
+            if conf.get('search', {}).get('product_location_scheme', 'https') == 'file':
+                conf['search']['product_location_scheme'] = 'https'
 
     def execute(self, provider, product_type, start, end, bbox):
         """Execute the test on one provider.
@@ -42,9 +46,14 @@ class TestEODagEndToEnd(unittest.TestCase):
         one_product = results[0]
         self.assertEqual(one_product.provider, provider)
         path = self.eodag.download(one_product)
-        if path is not None:
-            if os.path.isdir(path):
-                shutil.rmtree(path)
+        self.assertIsNotNone(path)
+        # The returned path points either to an extracted directory or to the not extracted archive file
+        try:
+            self.assertTrue(os.path.isdir(path))
+            shutil.rmtree(path)
+        except AssertionError:
+            self.assertTrue(os.path.isfile(path))
+            os.unlink(path)
 
     def test_end_to_end_search_download_eocloud(self):
         self.execute(

@@ -38,7 +38,7 @@ class RestoSearch(Search):
         # What scheme is used to locate the products that will be discovered during search
         self.product_location_scheme = self.config.get('product_location_scheme', 'https')
 
-    def query(self, product_type, **kwargs):
+    def query(self, product_type, auth=None, **kwargs):
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         results = []
         add_to_results = results.extend
@@ -68,21 +68,25 @@ class RestoSearch(Search):
                 params['box'] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
         params.update({key: value for key, value in kwargs.items() if value is not None})
 
-        collection, resto_product_type = self.map_product_type(product_type, params['startDate'])
-        logger.debug('Collection found for product type %s: %s', product_type, collection)
-        logger.debug('Corresponding Resto product_type found for product type %s: %s', product_type, resto_product_type)
-        params['productType'] = resto_product_type
+        collections, resto_product_type = self.map_product_type(product_type, params['startDate'])
+        # len(collections) == 2 If and Only if the product type is S2-L1C, provider is PEPS and there is no search
+        # constraint on date. Otherwise, it's equal to 1
+        for collection in collections:
+            logger.debug('Collection found for product type %s: %s', product_type, collection)
+            logger.debug('Corresponding Resto product_type found for product type %s: %s',
+                         product_type, resto_product_type)
+            params['productType'] = resto_product_type
 
-        url = self.query_url_tpl.format(collection=collection)
-        logger.debug('Making request to %s with params : %s', url, params)
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-        except HTTPError as e:
-            logger.debug('Skipping error while searching for %s RestoSearch instance product type %s: %s',
-                         self.instance_name, resto_product_type, e)
-        else:
-            add_to_results(self.normalize_results(response.json(), footprint))
+            url = self.query_url_tpl.format(collection=collection)
+            logger.debug('Making request to %s with params : %s', url, params)
+            try:
+                response = requests.get(url, params=params)
+                response.raise_for_status()
+            except HTTPError as e:
+                logger.debug('Skipping error while searching for %s RestoSearch instance product type %s: %s',
+                             self.instance_name, resto_product_type, e)
+            else:
+                add_to_results(self.normalize_results(response.json(), footprint))
         return results
 
     def map_product_type(self, product_type, date):
@@ -94,17 +98,27 @@ class RestoSearch(Search):
         :param date: The date search constraint (used only for peps provider)
         :type date: str or unicode
         :return: The corresponding collection and product type ids on this instance of Resto
-        :rtype: tuple(str, str)
+        :rtype: tuple(tuple, str)
         """
         mapping = self.config['products'][product_type]
-        match = re.match(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})', date).groupdict()
-        year, month, day = int(match['year']), int(match['month']), int(match['day'])
-        if self.instance_name == 'peps' and product_type == 'S2_MSI_L1C' and year == 2016 and month <= 12 and day <= 6:
-            # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-/asset_publisher/Ac0d/content/change-of
-            # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
-            collection = 'S2'
+        # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-/asset_publisher/Ac0d/content/change-of
+        # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
+        if product_type == 'S2_MSI_L1C':
+            if self.instance_name == 'peps':
+                # If there is no criteria on date, we want to query all the collections known for providing L1C products
+                if date is None:
+                    collection = ('S2', 'S2ST')
+                else:
+                    match = re.match(r'(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})', date).groupdict()
+                    year, month, day = int(match['year']), int(match['month']), int(match['day'])
+                    if year == 2016 and month <= 12 and day <= 6:
+                        collection = ('S2',)
+                    else:
+                        collection = ('S2ST',)
+            else:
+                collection = (mapping['collection'],)
         else:
-            collection = mapping['collection']
+            collection = (mapping['collection'],)
         return collection, mapping['product_type']
 
     def normalize_results(self, results, search_bbox):
