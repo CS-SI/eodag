@@ -22,8 +22,12 @@ AmazonWS:
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -34,10 +38,16 @@ AmazonWS:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -131,8 +141,12 @@ eocloud:
     product_location_scheme: 'file'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -143,10 +157,16 @@ eocloud:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -178,9 +198,13 @@ theia-landsat:
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
-      productType: '$.properties.productType'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
       processingLevel: '$.properties.processingLevel'
@@ -189,10 +213,16 @@ theia-landsat:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -211,8 +241,12 @@ theia:
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
       processingLevel: '$.properties.processingLevel'
@@ -221,10 +255,16 @@ theia:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -249,8 +289,12 @@ peps:
     api_endpoint: 'https://peps.cnes.fr/resto/api'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -261,10 +305,16 @@ peps:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -330,7 +380,9 @@ scihub:
     endpoint: 'https://scihub.copernicus.eu/apihub/'
     metadata_mapping:
       id: '$.uuid'
-      geometry: '$.footprint'
+      geometry:
+        - area
+        - '$.footprint'
       productType: '$.producttype'
       platform: '$.platformname'
       platformSerialIdentifier: '$.platformidentifier'
@@ -342,9 +394,13 @@ scihub:
       organisationName: '$.organisationname'
       orbitNumber: '$.orbitnumber'
       orbitDirection: '$.orbitdirection'
-      cloudCover: '$.cloudcover'
+      cloudCover:
+        - cloudcoverpercentage
+        - '$.cloudcover'
       snowCover: '$.snowcover'
-      startTimeFromAscendingNode: '$.beginposition'
+      startTimeFromAscendingNode:
+        - date
+        - '$.beginposition'
       completionTimeFromAscendingNode: '$.endposition'
       parentIdentifier: '$.parentidentifier'
       resolution: '$.resolution'
@@ -411,8 +467,12 @@ airbus-ds:
     arlas_collection: catalog
     metadata_mapping:
       id: '$.properties.uid'
-      geometry: '$.geometry'
-      productType: '$.properties.identification.type'
+      geometry:
+        - gintersect
+        - '$.geometry'
+      productType:
+        - 'identification.type'
+        - '$.properties.identification.type'
       platform: '$.properties.acquisition.mission'
       platformSerialIdentifier: '$.properties.acquisition.missionCode'
       instrument: '$.properties.acquisition.sensorId'
@@ -420,8 +480,12 @@ airbus-ds:
       title: '$.properties.identification.externalId'
       orbitNumber: '$.properties.orbit.number'
       orbitDirection: '$.properties.orbit.direction'
-      cloudCover: '$.properties.contentDescription.cloudCoverPercentage'
-      startTimeFromAscendingNode: '$.properties.acquisition.beginViewingDate'
+      cloudCover:
+        - 'contentDesctiption.cloudCoverPercentage'
+        - '$.properties.contentDescription.cloudCoverPercentage'
+      startTimeFromAscendingNode:
+        - 'acquisition.beginViewingDate'
+        - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
   download:
     plugin: HTTPDownload

@@ -193,11 +193,11 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
     def test_core_resto_search_kwargs_cloud_cover_default_ok(self):
         """A search with a cloud cover between 0 and the default max cloud cover must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        kwargs = {'maxCloudCover': 5}  # RestoSearch.DEFAULT_MAX_CLOUD_COVER is 20
+        kwargs = {'cloudCover': 5}
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         call_params = {
             'startDate': None,
-            'cloudCover': '[0,{maxCloudCover}]'.format(**kwargs),
+            'cloudCover': '[0,{cloudCover}]'.format(**kwargs),
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK'
@@ -214,20 +214,20 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         """A search with a cloud cover greater than 100 or lower than 0 must raise a RuntimeError"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        self.assertRaises(RuntimeError, dag.search, self.product_type, maxCloudCover=101)
-        self.assertRaises(RuntimeError, dag.search, self.product_type, maxCloudCover=-1)
+        self.assertRaises(RuntimeError, dag.search, self.product_type, cloudCover=101)
+        self.assertRaises(RuntimeError, dag.search, self.product_type, cloudCover=-1)
 
     def test_core_resto_search_kwargs_end_date_ok(self):
         """A search with an endDate must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        kwargs = {'endDate': '2018-05-09'}
+        kwargs = {'completionTimeFromAscendingNode': '2018-05-09'}
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         call_params = {
             'startDate': None,
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK',
-            'completionDate': kwargs['endDate']
+            'completionDate': kwargs['completionTimeFromAscendingNode']
         }
 
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
@@ -240,27 +240,8 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
     def test_core_resto_search_kwargs_footprint_ok(self):
         """A search with a footprint must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        # first use case: footprint is a point
-        kwargs = {'footprint': {'lat': self.footprint['latmin'], 'lon': self.footprint['lonmin']}}
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
-        call_params = {
-            'startDate': None,
-            'sortOrder': 'descending',
-            'sortParam': 'startDate',
-            'productType': 'MOCK',
-            'lat': kwargs['footprint']['lat'],
-            'lon': kwargs['footprint']['lon'],
-        }
-
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        dag.search(self.product_type, **kwargs)
-
-        self.assertHttpGetCalledOnceWith(
-            '{}collections/MockCollection/search.json'.format(provider_search_url_base),
-            expected_params=call_params)
-
-        # second use case: footprint is a bbox
-        self.requests_http_get.reset_mock()
         call_params = {
             'startDate': None,
             'sortOrder': 'descending',
@@ -268,7 +249,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
             'productType': 'MOCK',
             'box': '{lonmin},{latmin},{lonmax},{latmax}'.format(**self.footprint)
         }
-        dag.search(self.product_type, **{'footprint': self.footprint})
+        dag.search(self.product_type, **{'geometry': self.footprint})
         self.assertHttpGetCalledOnceWith(
             '{}collections/MockCollection/search.json'.format(provider_search_url_base),
             expected_params=call_params)
@@ -386,7 +367,11 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
                                                        bbox):
         """A search on a provider implementing CSWSearch must correctly interpret date tags and footprint"""
         self.override_properties(provider='mock-provider-8', product_type='MOCK_PRODUCT_TYPE_8')
-        params = {'endDate': '2018-05-09', 'startDate': '2018-05-01', 'footprint': self.footprint}
+        params = {
+            'completionTimeFromAscendingNode': '2018-05-09',
+            'startTimeFromAscendingNode': '2018-05-01',
+            'geometry': self.footprint
+        }
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         mock_catalog = mock_catalogue_web_service.return_value
         mock_catalog.getrecords2.side_effect = functools.partial(self.compute_csw_records, mock_catalog)
@@ -397,8 +382,8 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         self.assertEqual(mock_catalog.getrecords2.call_count, 1)
         self.assertEqual(prop_like.call_count, 1)
         prop_like.assert_any_call('dc:title', '%{}%'.format(self.product_type))
-        prop_ge.assert_called_with('apiso:TempExtent_begin', params['startDate'])
-        prop_le.assert_called_with('apiso:TempExtent_end', params['endDate'])
+        prop_ge.assert_called_with('apiso:TempExtent_begin', params['startTimeFromAscendingNode'])
+        prop_le.assert_called_with('apiso:TempExtent_end', params['completionTimeFromAscendingNode'])
         bbox.assert_called_with([
             self.footprint['lonmin'], self.footprint['latmin'], self.footprint['lonmax'], self.footprint['latmax']])
         mock_catalog.getrecords2.assert_called_with(
@@ -543,7 +528,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
         )
-        results = dag.search(self.product_type, footprint=search_extent)
+        results = dag.search(self.product_type, geometry=search_extent)
 
         self.assertEqual(len(results), 1)
         valid_product = next(iter(results))
@@ -710,6 +695,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
 
             def raise_for_status(response):
                 pass
+
         return Response()
 
     def setUp(self):
@@ -718,8 +704,8 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.product = EOProduct.from_geojson({
             'type': 'Feature',
             'properties': {
-                'eodag_download_url': '',   # Will be overriden for each test case
-                'eodag_provider': self.test_provider,   # Is necessary for identifying the right download plugin
+                'eodag_download_url': '',  # Will be overriden for each test case
+                'eodag_provider': self.test_provider,  # Is necessary for identifying the right download plugin
                 'eodag_search_intersection': {},
                 'title': 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE',
             },
@@ -826,7 +812,7 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             self.assertEqual(result.properties['startTimeFromAscendingNode'], expected['acquisitionDate'])
 
         # Test searching with footprint as an additional criteria
-        search_kwargs = {'footprint': self.footprint}
+        search_kwargs = {'geometry': self.footprint}
         dag.search(self.product_type, **search_kwargs)
         self.usgs_api_search.assert_any_call(
             'LANDSAT_8_C1', usgs.EARTH_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
@@ -854,6 +840,7 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             sentinelsat_search_results = json.load(fp)
             for props in sentinelsat_search_results.values():
                 props['beginposition'] = datetime.utcnow()
+                props['endposition'] = datetime.utcnow()
         self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
         self.override_properties(
             provider='mock-provider-10',
@@ -897,8 +884,8 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         # Test searching only with footprint and maxCloudCover (simple cases of searching with additional criteria)
         max_cloud_cover = random.choice(range(100))
         search_kwargs = {
-            'footprint': self.footprint,
-            'maxCloudCover': max_cloud_cover,
+            'geometry': self.footprint,
+            'cloudCover': max_cloud_cover,
         }
         # Refresh the return value of the query method, because in sentinelsat.py, the returned value is modified
         self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
@@ -907,7 +894,7 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         self.sentinelsatapi.query.assert_called_with(
             producttype='OCN',
             limit=10, **{
-                'footprint': geometry.box(*(
+                'area': geometry.box(*(
                     self.footprint['lonmin'],
                     self.footprint['latmin'],
                     self.footprint['lonmax'],
@@ -920,20 +907,20 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         # Test searching with start and/or end date
         # First case: giving only the start date should not take into account the date search key
         start_date = '2018-01-01'
-        search_kwargs = {'startDate': start_date}
+        search_kwargs = {'startTimeFromAscendingNode': start_date}
         dag.search(self.product_type, **search_kwargs)
         self.sentinelsatapi.query.assert_called_with(
             producttype='OCN',
             limit=10,
-            **{}    # startDate is not interpreted by sentinelsat plugin
+            **{}  # startDate is not interpreted by sentinelsat plugin
         )
         # Second case: start and end dates are given, either in plain string as above or as datetime or date python
         # objects. They should be transform to string date with format '%Y%m%d'
-        search_kwargs['startDate'] = random.choice([
+        search_kwargs['startTimeFromAscendingNode'] = random.choice([
             datetime(2018, 1, 1, 0, 0, 0, 0),
             datetime(2018, 1, 1, 0, 0, 0, 0).date()
         ])
-        search_kwargs['endDate'] = random.choice([
+        search_kwargs['completionTimeFromAscendingNode'] = random.choice([
             datetime(2018, 1, 2, 0, 0, 0, 0),
             datetime(2018, 1, 2, 0, 0, 0, 0).date()
         ])
@@ -944,8 +931,8 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
                 'date': ('20180101', '20180102')
             }
         )
-        search_kwargs['startDate'] = start_date
-        search_kwargs['endDate'] = '2018-01-02'
+        search_kwargs['startTimeFromAscendingNode'] = start_date
+        search_kwargs['completionTimeFromAscendingNode'] = '2018-01-02'
         dag.search(self.product_type, **search_kwargs)
         self.sentinelsatapi.query.assert_called_with(
             producttype='OCN',

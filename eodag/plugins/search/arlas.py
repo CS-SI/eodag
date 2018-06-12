@@ -11,6 +11,7 @@ from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_json
 from eodag.plugins.search.base import Search
 from eodag.utils import get_timestamp
+from eodag.utils.metadata_mapping import get_search_param
 
 
 logger = logging.getLogger('eodag.plugins.search.arlas')
@@ -84,37 +85,41 @@ class ArlasSearch(Search):
         :type options: dict
         :return:
         """
+        product_type_param = get_search_param(self.config['metadata_mapping']['productType'])
+        cloud_cover_param = get_search_param(self.config['metadata_mapping']['cloudCover'])
+        geometry_param = get_search_param(self.config['metadata_mapping']['geometry'])
+        start_date_param = get_search_param(self.config['metadata_mapping']['startTimeFromAscendingNode'])
+
         logger.debug('Building the query string that will be used for search')
-        mandatory_qs = 'f=identification.type:eq:{}'.format(self.config['products'][product_type]['product_type'])
+        mandatory_qs = 'f={}:eq:{}'.format(product_type_param, self.config['products'][product_type]['product_type'])
         optional_qs = ''
 
-        max_cloud_cover = options.get('maxCloudCover')
+        max_cloud_cover = options.get('cloudCover')
         if max_cloud_cover:
             logger.debug('Adding filter for max cloud cover: %s', max_cloud_cover)
-            optional_qs += '&contentDescription.cloudCoverPercentage:range:0,{max}'.format(
-                max=max_cloud_cover)
+            optional_qs += '&{}:range:0,{max}'.format(cloud_cover_param, max=max_cloud_cover)
 
-        footprint = options.get('footprint')
+        footprint = options.get('geometry')
         if footprint:
             logger.debug('Adding filter for footprint: %s', footprint)
-            optional_qs += '&gintersect={lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
+            optional_qs += '&{}={lonmin},{latmin},{lonmax},{latmax}'.format(geometry_param, **footprint)
 
-        start_date = options.get('startDate')
-        end_date = options.get('endDate')
+        start_date = options.get('startTimeFromAscendingNode')
+        end_date = options.get('completionTimeFromAscendingNode')
         if start_date:
             start_timestamp = int(1e3 * get_timestamp(start_date))
             if end_date:
                 logger.debug('Adding filter for sensing date range: %s - %s', start_date, end_date)
                 end_timestamp = int(1e3 * get_timestamp(end_date))
-                optional_qs += '&f=acquisition.beginViewingDate:range:[{min}<{max}]'.format(
-                    min=start_timestamp, max=end_timestamp)
+                optional_qs += '&f={}:range:[{min}<{max}]'.format(
+                    start_date_param, min=start_timestamp, max=end_timestamp)
             else:
                 logger.debug('Adding filter for minimum sensing date: %s', start_date)
-                optional_qs += '&f=acquisition.beginViewingDate:gte:{min}'.format(min=start_timestamp)
+                optional_qs += '&f={}:gte:{min}'.format(start_date_param, min=start_timestamp)
         elif end_date:
             logger.debug('Adding filter for maximum sensing date: %s', end_date)
             end_timestamp = int(1e3 * get_timestamp(end_date))
-            optional_qs += '&f=acquisition.beginViewingDate:lte:{max}'.format(max=end_timestamp)
+            optional_qs += '&f={}:lte:{max}'.format(start_date_param, max=end_timestamp)
 
         return '{}{}'.format(mandatory_qs, optional_qs)
 

@@ -128,12 +128,12 @@ class CSWSearch(Search):
             constraints.append(PropertyIsLike(pt_tag, '%{}%'.format(product_type)))
 
         # footprint
-        fp = params.get('footprint')
+        fp = params.get('geometry')
         if fp:
             constraints.append(BBox([fp['lonmin'], fp['latmin'], fp['lonmax'], fp['latmax']]))
 
         # dates
-        start, end = params.get('startDate'), params.get('endDate')
+        start, end = params.get('startTimeFromAscendingNode'), params.get('completionTimeFromAscendingNode')
         if start:
             constraints.append(PropertyIsGreaterThanOrEqualTo(self.config[SEARCH_DEF][DATE]['start'], start))
         if end:

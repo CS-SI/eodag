@@ -12,7 +12,7 @@ class TestCore(unittest.TestCase):
     SUPPORTED_PRODUCT_TYPES = {
         'S3_RBT': ['eocloud', 'peps'],
         'PLD_REFLECTANCETOA': ['theia-landsat'],
-        'S2_MSI_L2Ap': [],
+        'S2_MSI_L2Ap': ['eocloud'],
         'S3_LAN': ['eocloud', 'peps'],
         'S2_MSI_L1C': ['AmazonWS', 'eocloud', 'peps', 'scihub'],
         'S3_ERR': ['eocloud', 'peps'],

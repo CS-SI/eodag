@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_json
+from eodag.utils.metadata_mapping import get_search_param
 from .base import Api
 
 
@@ -93,20 +94,25 @@ class SentinelsatAPI(Api):
         else:
             logger.debug('Sentinelsat api already initialized')
 
-    @staticmethod
-    def _convert_query_params(params):
+    def _convert_query_params(self, params):
+        area_param = get_search_param(self.config['metadata_mapping']['geometry'])
+        cloud_cover_param = get_search_param(self.config['metadata_mapping']['cloudCover'])
+        start_date_param = get_search_param(self.config['metadata_mapping']['startTimeFromAscendingNode'])
         query = {}
-        if params.get('footprint'):
-            footprint = params['footprint']
+        if params.get('geometry'):
+            footprint = params['geometry']
             box_values = (footprint['lonmin'], footprint['latmin'], footprint['lonmax'], footprint['latmax'])
-            query['area'] = geometry.box(*box_values).to_wkt()
-        if params.get('maxCloudCover'):
-            query['cloudcoverpercentage'] = (0, params['maxCloudCover'])
-        if params.get('startDate') and params.get('endDate'):
+            query[area_param] = geometry.box(*box_values).to_wkt()
+        if params.get('cloudCover'):
+            query[cloud_cover_param] = (0, params['cloudCover'])
+        if params.get('startTimeFromAscendingNode') and params.get('completionTimeFromAscendingNode'):
             def handle_date(date):
                 if any(isinstance(date, klass) for klass in (datetime.datetime, datetime.date)):
                     return date.strftime('%Y%m%d')
                 return datetime.datetime.strptime(date, '%Y-%m-%d').strftime('%Y%m%d')
 
-            query['date'] = (handle_date(params['startDate']), handle_date(params['endDate']))
+            query[start_date_param] = (
+                handle_date(params['startTimeFromAscendingNode']),
+                handle_date(params['completionTimeFromAscendingNode'])
+            )
         return query

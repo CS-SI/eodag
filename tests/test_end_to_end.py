@@ -4,7 +4,6 @@
 from __future__ import unicode_literals
 
 import os
-import shutil
 import unittest
 
 from tests import TEST_RESOURCES_PATH
@@ -27,12 +26,12 @@ class TestEODagEndToEnd(unittest.TestCase):
             if conf.get('search', {}).get('product_location_scheme', 'https') == 'file':
                 conf['search']['product_location_scheme'] = 'https'
             # Disable extraction
-            try:    # Case HTTPDownload plugin
+            try:  # Case HTTPDownload plugin
                 conf['download']['extract'] = False
-            except KeyError:    # case api plugin
+            except KeyError:  # case api plugin
                 conf['api']['extract'] = False
 
-    def execute(self, provider, product_type, start, end, bbox=()):
+    def execute(self, provider, product_type, start, end, bbox):
         """Execute the test on one provider.
 
         - First set the preferred provider as the one given in parameter
@@ -42,11 +41,10 @@ class TestEODagEndToEnd(unittest.TestCase):
         - Delete the downloaded result from the filesystem
         """
         search_criteria = {
-            'startDate': start,
-            'end_date': end,
+            'startTimeFromAscendingNode': start,
+            'completionTimeFromAscendingNode': end,
         }
-        if bbox:
-            search_criteria['footprint'] = {'lonmin': bbox[0], 'latmin': bbox[1], 'lonmax': bbox[2], 'latmax': bbox[3]}
+        search_criteria['geometry'] = {'lonmin': bbox[0], 'latmin': bbox[1], 'lonmax': bbox[2], 'latmax': bbox[3]}
         self.eodag.set_preferred_provider(provider)
         results = self.eodag.search(product_type, **search_criteria)
         one_product = results[0]
@@ -80,19 +78,19 @@ class TestEODagEndToEnd(unittest.TestCase):
             '2018-06-01',
             (0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565))
 
-    def test_end_to_end_search_download_peps_before_20161206(self):
+    def test_end_to_end_search_download_peps_before_20161205(self):
         self.execute(
             'peps',
             'S2_MSI_L1C',
-            '2016-06-06',
+            '2016-06-05',
             '2016-06-16',
             (137.772897, -37.134202, 153.749135, 73.885986))
 
-    def test_end_to_end_search_download_peps_after_20161206(self):
+    def test_end_to_end_search_download_peps_after_20161205(self):
         self.execute(
             'peps',
             'S2_MSI_L1C',
-            '2018-06-06',
+            '2018-06-05',
             '2018-06-16',
             (137.772897, -37.134202, 153.749135, 73.885986))
 

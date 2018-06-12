@@ -34,9 +34,9 @@ class UsgsApi(Api):
     def query(self, product_type, **kwargs):
         api.login(self.config['credentials']['username'], self.config['credentials']['password'], save=True)
         usgs_product_type = self.config['products'][product_type]['product_type']
-        start_date = kwargs.pop('startDate', None)
-        end_date = kwargs.pop('endDate', None)
-        footprint = kwargs.pop('footprint', None)
+        start_date = kwargs.pop('startTimeFromAscendingNode', None)
+        end_date = kwargs.pop('completionTimeFromAscendingNode', None)
+        footprint = kwargs.pop('geometry', None)
 
         # Configuration to generate the download url of search results
         result_summary_pattern = re.compile(

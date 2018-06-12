@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import jsonpath_rw as jsonpath
 from lxml import etree
 
+from eodag.utils.metadata_mapping import get_metadata_path
+
 
 DEFAULT_METADATA_MAPPING = {
     'id': '$.id',
@@ -50,7 +52,7 @@ def properties_from_json(json, mapping):
         if metadata not in mapping:
             properties[metadata] = 'N/A'
         else:
-            path = jsonpath.parse(mapping[metadata])
+            path = jsonpath.parse(get_metadata_path(mapping[metadata]))
             match = path.find(json)
             properties[metadata] = match[0].value if len(match) == 1 else None
     return properties
@@ -73,7 +75,7 @@ def properties_from_xml(xml_as_text, mapping):
         if metadata not in mapping:
             properties[metadata] = 'N/A'
         else:
-            value = root.xpath(mapping[metadata], namespaces=root.nsmap)
+            value = root.xpath(get_metadata_path(mapping[metadata]), namespaces=root.nsmap)
             if len(value) > 1:
                 properties[metadata] = value
             else:

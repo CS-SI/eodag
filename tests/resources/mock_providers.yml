@@ -10,8 +10,12 @@ mock-provider-1:
     api_endpoint: 'http://subdomain.domain.eu/resto/api/'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -22,10 +26,16 @@ mock-provider-1:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -47,8 +57,12 @@ mock-provider-2:
     maxCloudCover: 50
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -59,10 +73,16 @@ mock-provider-2:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -84,8 +104,12 @@ mock-provider-3:
     maxCloudCover: 200
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -96,10 +120,16 @@ mock-provider-3:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -121,8 +151,12 @@ mock-provider-4:
     maxCloudCover: -1
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -133,10 +167,16 @@ mock-provider-4:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -158,8 +198,12 @@ mock-provider-5:
     product_location_scheme: 'file'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -170,10 +214,16 @@ mock-provider-5:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -194,8 +244,12 @@ mock-provider-6:
     api_endpoint: 'http://subdomain6.domain.eu/resto/api/'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -206,10 +260,16 @@ mock-provider-6:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -287,8 +347,12 @@ mock-provider-9:
     api_endpoint: 'http://subdomain9.domain.eu/resto/api/'
     metadata_mapping:
       id: '$.id'
-      geometry: '$.geometry'
-      productType: '$.properties.productType'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
@@ -299,10 +363,16 @@ mock-provider-9:
       organisationName: '$.properties.organisationName'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
-      cloudCover: '$.properties.cloudCover'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode: '$.properties.startDate'
-      completionTimeFromAscendingNode: '$.properties.completionDate'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
@@ -326,7 +396,9 @@ mock-provider-10:
     endpoint: 'https://subdomain10.domain.eu/api/'
     metadata_mapping:
       id: '$.uuid'
-      geometry: '$.footprint'
+      geometry:
+        - area
+        - '$.footprint'
       productType: '$.producttype'
       platform: '$.platformname'
       platformSerialIdentifier: '$.platformidentifier'
@@ -338,9 +410,13 @@ mock-provider-10:
       organisationName: '$.organisationname'
       orbitNumber: '$.orbitnumber'
       orbitDirection: '$.orbitdirection'
-      cloudCover: '$.cloudcover'
+      cloudCover:
+        - cloudcoverpercentage
+        - '$.cloudcover'
       snowCover: '$.snowcover'
-      startTimeFromAscendingNode: '$.beginposition'
+      startTimeFromAscendingNode:
+        - date
+        - '$.beginposition'
       completionTimeFromAscendingNode: '$.endposition'
       parentIdentifier: '$.parentidentifier'
       resolution: '$.resolution'

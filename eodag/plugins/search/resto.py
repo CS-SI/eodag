@@ -9,6 +9,7 @@ import re
 from requests import HTTPError
 
 from eodag.api.product.representations import properties_from_json
+from eodag.utils.metadata_mapping import get_search_param
 
 
 try:  # PY3
@@ -41,35 +42,36 @@ class RestoSearch(Search):
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         results = []
         add_to_results = results.extend
+        start_date_param = get_search_param(self.config['metadata_mapping']['startTimeFromAscendingNode'])
+        end_date_param = get_search_param(self.config['metadata_mapping']['completionTimeFromAscendingNode'])
+        product_type_param = get_search_param(self.config['metadata_mapping']['productType'])
+        cloud_cover_param = get_search_param(self.config['metadata_mapping']['cloudCover'])
+        geometry_param = get_search_param(self.config['metadata_mapping']['geometry'])
         params = {
             'sortOrder': 'descending',
-            'sortParam': 'startDate',
-            'startDate': kwargs.pop('startDate', None),
+            'sortParam': start_date_param,
+            start_date_param: kwargs.pop('startTimeFromAscendingNode', None),
         }
-        cloud_cover = kwargs.pop('maxCloudCover', None)
+        cloud_cover = kwargs.pop('cloudCover', None)
         if cloud_cover is not None:
             if not 0 <= cloud_cover <= 100:
                 raise RuntimeError("Invalid cloud cover criterium: '{}'. Should be a percentage (bounded in [0-100])")
-            params['cloudCover'] = '[0,{}]'.format(cloud_cover)
-        end_date = kwargs.pop('endDate', None)
+            params[cloud_cover_param] = '[0,{}]'.format(cloud_cover)
+        end_date = kwargs.pop('completionTimeFromAscendingNode', None)
         if end_date:
-            params['completionDate'] = end_date
-        footprint = kwargs.pop('footprint', None)
+            params[end_date_param] = end_date
+        footprint = kwargs.pop('geometry', None)
         if footprint:
-            if len(footprint.keys()) == 2:  # a point
-                # footprint will be a dict with {'lat': ..., 'lon': ...} => simply update the param dict
-                params.update(footprint)
-            elif len(footprint.keys()) == 4:  # a rectangle (or bbox)
-                params['box'] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
+            params[geometry_param] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
 
-        collections, resto_product_type = self.map_product_type(product_type, params['startDate'])
+        collections, resto_product_type = self.map_product_type(product_type, params[start_date_param])
         # len(collections) == 2 If and Only if the product type is S2-L1C, provider is PEPS and there is no search
         # constraint on date. Otherwise, it's equal to 1
         for collection in collections:
             logger.debug('Collection found for product type %s: %s', product_type, collection)
             logger.debug('Corresponding Resto product_type found for product type %s: %s',
                          product_type, resto_product_type)
-            params['productType'] = resto_product_type
+            params[product_type_param] = resto_product_type
 
             url = self.query_url_tpl.format(collection=collection)
             logger.debug('Making request to %s with params : %s', url, params)
