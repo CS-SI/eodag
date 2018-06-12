@@ -491,4 +491,6 @@ airbus-ds:
     plugin: HTTPDownload
     base_uri: 'https://testing.dias.datastore.multisat.space/sdk10/lobby/api/v1/services/download/'
   auth:
-    plugin: GenericAuth
+    plugin: HTTPHeaderAuth
+    headers:
+      Authorization: "Apikey {apikey}"
