@@ -48,10 +48,13 @@ class SearchResult(UserList):
             for feature in feature_collection['features']
         ])
 
+    def as_geojson_object(self):
+        return {'type': 'FeatureCollection', 'features': [product.as_dict() for product in self]}
+
     @property
     def __geo_interface__(self):
         """Implements the geo-interface protocol.
 
         See https://gist.github.com/sgillies/2217756
         """
-        return {'type': 'FeatureCollection', 'features': [product.as_dict() for product in self]}
+        return self.as_geojson_object()
