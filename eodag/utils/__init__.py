@@ -12,11 +12,12 @@ from datetime import datetime
 import click
 import pyproj
 from requests.auth import AuthBase
+from six import string_types
 
 
 class RequestsTokenAuth(AuthBase):
     def __init__(self, token):
-        if isinstance(token, str):
+        if isinstance(token, string_types):
             self.token = token
         elif isinstance(token, dict):
             self.token = token.get('tokenIdentity', '')
