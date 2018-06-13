@@ -8,6 +8,8 @@ import os
 import tempfile
 import unittest
 
+from shapely import geometry
+
 from tests import TEST_RESOURCES_PATH
 from tests.context import SatImagesAPI, SearchResult
 
@@ -105,6 +107,9 @@ class TestCoreSearchResults(unittest.TestCase):
             'type': 'FeatureCollection'
         }
         self.search_result = SearchResult.from_geojson(self.geojson_repr)
+        # Ensure that each product in a search result has geometry and search intersection as a shapely geometry
+        for product in self.search_result:
+            product.search_intersection = geometry.shape(product.search_intersection)
 
     def test_core_serialize_search_results(self):
         """The core api must serialize a search results to geojson format into a file named search_results.geojson"""

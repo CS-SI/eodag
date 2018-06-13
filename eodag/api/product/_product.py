@@ -120,12 +120,12 @@ class EOProduct(object):
         """
         geojson_repr = {
             'type': 'Feature',
-            'geometry': self.geometry,
+            'geometry': geometry.mapping(self.geometry),
             'id': self.properties['id'],
             'properties': {
                 'eodag_provider': self.provider,
                 'eodag_download_url': self.location,
-                'eodag_search_intersection': self.search_intersection,
+                'eodag_search_intersection': geometry.mapping(self.search_intersection),
             }
         }
         geojson_repr['properties'].update({
