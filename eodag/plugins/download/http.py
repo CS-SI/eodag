@@ -59,9 +59,7 @@ class HTTPDownload(Download):
                 logger.debug('Removing record file : %s', record_filename)
                 os.remove(record_filename)
 
-            hook_print = lambda r, *args, **kwargs: print('\n', r.url)
-            with requests.get(url, stream=True, auth=auth, hooks={'response': hook_print},
-                              params=self.config.get('dl_url_params', {})) as stream:
+            with requests.get(url, stream=True, auth=auth, params=self.config.get('dl_url_params', {})) as stream:
                 try:
                     stream.raise_for_status()
                 except HTTPError:
