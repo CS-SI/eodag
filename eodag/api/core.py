@@ -217,6 +217,26 @@ class SatImagesAPI(object):
                 logger.debug('Ignoring it')
         return results
 
+    @staticmethod
+    def sort_by_extent(searches):
+        """
+        Combines multiple SearchResults and return a list of SearchResults sorted by extent.
+        :param searches: List of eodag SearchResult
+        :type searches: list
+        :return: list of SearchResults
+        """
+        products_grouped_by_extent = {}
+
+        for search in searches:
+            for product in search:
+                same_geom = products_grouped_by_extent.setdefault(product.geometry.wkb_hex, [])
+                same_geom.append(product)
+
+        return [
+            SearchResult(products_grouped_by_extent[extent_as_wkb_hex])
+            for extent_as_wkb_hex in products_grouped_by_extent
+        ]
+
     def download_all(self, search_result):
         """Download all products resulting from a search.
 
