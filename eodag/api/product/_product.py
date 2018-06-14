@@ -4,6 +4,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import os
 import zipfile
 
 import numpy
@@ -20,7 +21,6 @@ except ImportError:
 
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.representations import DEFAULT_METADATA_MAPPING, properties_from_json
-from eodag.utils import maybe_generator
 from eodag.utils.exceptions import UnsupportedDatasetAddressScheme
 
 
@@ -97,12 +97,11 @@ class EOProduct(object):
                 import traceback
                 logger.warning('Error while trying to download the product:\n %s', traceback.format_exc())
                 logger.warning('There might be no download plugin registered for this EO product. Try performing: '
-                               'product.register_downloader(download_plugin, download_auth_plugin) before trying to '
-                               'call product.get_data(...)')
+                               'product.register_downloader(download_plugin, auth_plugin) before trying to call '
+                               'product.get_data(...)')
                 return fail_value
             if not path_of_downloaded_file:
                 return fail_value
-            self.location = 'file://{}'.format(path_of_downloaded_file)
             dataset_address = self.driver.get_data_address(self, band)
         min_x, min_y, max_x, max_y = extent
         height = int((max_y - min_y) / resolution)
@@ -230,11 +229,13 @@ class EOProduct(object):
                            'have not been returned by the download plugin')
             return ''
         fs_location = local_filepath[:local_filepath.index('.zip')]
-        if zipfile.is_zipfile(local_filepath):
+        if zipfile.is_zipfile(local_filepath) and not os.path.exists(fs_location):
             with zipfile.ZipFile(local_filepath, 'r') as zfile:
                 fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(local_filepath))
                 for fileinfo in fileinfos:
                     zfile.extract(fileinfo, path=fs_location)
+            # After the product has been downloaded, we need to modify its location attribute to reflect that it is now
+            # in the filesystem, so its address can be computed
             self.location = 'file://{}'.format(fs_location)
         # Restore configuration
         self.downloader.config['extract'] = old_extraction_config

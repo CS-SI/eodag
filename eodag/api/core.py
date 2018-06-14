@@ -284,8 +284,12 @@ class SatImagesAPI(object):
                 auth = auth.authenticate()
             product_location = download_plugin.download(product, auth=auth)
             if product_location is None:
-                logger.debug('The download method of a Download plugin should return the absolute path to the '
-                             'downloaded resource')
+                logger.warning('The download method of a Download plugin should return the absolute path to the '
+                               'downloaded resource')
+            else:
+                logger.debug('Product location updated from %s to %s', product.location, product_location)
+                # Update the product location if and only if a path was returned by the download plugin
+                product.location = 'file://{}'.format(product_location)
             return product_location
         except TypeError as e:
             # Enforcing the requirement for download plugins to implement a download method with auth kwarg
