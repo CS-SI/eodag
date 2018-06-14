@@ -138,7 +138,7 @@ eocloud:
   search:
     plugin: RestoSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
-    product_location_scheme: 'file'
+    product_location_scheme: 'http'
     metadata_mapping:
       id: '$.id'
       geometry:
