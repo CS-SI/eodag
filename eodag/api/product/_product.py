@@ -20,7 +20,7 @@ try:
 except ImportError:
     from shapely.geos import TopologicalError
 
-from eodag.api.product.drivers import DRIVERS
+from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.representations import DEFAULT_METADATA_MAPPING, properties_from_json
 from eodag.utils.exceptions import UnsupportedDatasetAddressScheme
 
