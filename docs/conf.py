@@ -122,7 +122,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'satdldoc'
+htmlhelp_basename = 'eodagdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -181,5 +181,11 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'https://docs.python.org/': None,
-    'https://sentinelsat.readthedocs.io/en/stable/index.html': None,
+    'https://sentinelsat.readthedocs.io/en/stable/': None,
+    'http://docs.scipy.org/doc/numpy/': None,
+    'http://rasterio.readthedocs.io/en/latest/': None,
+    'http://click.pocoo.org/5/': None,
+    'http://docs.python-requests.org/en/master/': None,
+    'https://shapely.readthedocs.io/en/latest/': None,
+    'https://geopython.github.io/OWSLib/': None,
 }

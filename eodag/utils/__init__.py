@@ -63,22 +63,46 @@ def slugify(value, allow_unicode=False):
     Remove characters that aren't alphanumerics, underscores, or hyphens.
     Convert to lowercase. Also strip leading and trailing whitespace.
     """
-    value = str(value)
+    try:    # PY2
+        value = unicode(value)
+    except NameError:     # PY3
+        value = str(value)
     if allow_unicode:
-        value = unicodedata.normalize('NFKC', value.decode('utf-8'))
+        value = unicodedata.normalize('NFKC', value)
     else:
-        value = unicodedata.normalize('NFKD', value.decode('utf-8')).encode('ascii', 'ignore').decode('ascii')
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value).strip().lower()
     return re.sub(r'[-\s]+', '-', value)
 
 
 def utf8_everywhere(mapping):
     """Recursively transforms all string found in the dict mapping to UTF-8 if we are on Python 2"""
+    mutate_dict_in_place((
+        lambda value:
+            value.decode('utf-8')
+            if isinstance(value, str) and sys.version_info.major == 2 and sys.version_info.minor == 7
+            else value),
+        mapping
+    )
+
+
+def mutate_dict_in_place(func, mapping):
+    """Apply func to values of mapping.
+
+    The mapping object's values are modified in-place. The function is recursive, allowing to also modify values of
+    nested dicts that may be level-1 values of mapping.
+
+    :param func: A function to apply to each value of mapping which is not a dict object
+    :type func: func
+    :param mapping: A Python dict object
+    :type mapping: dict
+    :returns: None
+    """
     for key, value in mapping.items():
         if isinstance(value, dict):
-            utf8_everywhere(value)
-        elif isinstance(value, str) and sys.version_info.major == 2 and sys.version_info.minor == 7:
-            mapping[key] = value.decode('utf-8')
+            mutate_dict_in_place(func, value)
+        else:
+            mapping[key] = func(value)
 
 
 def maybe_generator(obj):

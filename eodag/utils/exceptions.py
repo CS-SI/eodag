@@ -20,3 +20,15 @@ class PluginImplementationError(Exception):
 class MisconfiguredError(Exception):
     """An error indicating a Search Plugin that is not well configured"""
 
+
+class AddressNotFound(Exception):
+    """An error indicating the address of a subdataset was not found"""
+
+
+class UnsupportedProvider(Exception):
+    """An error indicating that eodag does not support a provider"""
+
+
+class UnsupportedDatasetAddressScheme(Exception):
+    """An error indicating that eodag does not yet support an address scheme for accessing raster subdatasets"""
+

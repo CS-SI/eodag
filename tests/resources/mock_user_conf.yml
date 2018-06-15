@@ -1,0 +1,19 @@
+mock-provider-7:
+  credentials:
+    username: "user"
+    password: "pwd"
+
+mock-provider-9:
+  credentials:
+    username: "user"
+    password: "pwd"
+
+mock-provider-10:
+  credentials:
+    user: "user"
+    password: "pwd"
+
+mock-provider-11:
+  credentials:
+    username: "user"
+    password: "pwd"

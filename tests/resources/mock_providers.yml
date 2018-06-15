@@ -1,0 +1,137 @@
+mock-provider-1:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE:
+      product_type: MOCK
+      collection: MockCollection
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain.domain.eu/resto/api/'
+
+mock-provider-2:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_2:
+      product_type: MOCK2
+      collection: MockCollection2
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain2.domain.eu/resto/api/'
+    maxCloudCover: 50
+
+mock-provider-3:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_3:
+      product_type: MOCK3
+      collection: MockCollection3
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain3.domain.eu/resto/api/'
+    maxCloudCover: 200
+
+mock-provider-4:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_4:
+      product_type: MOCK4
+      collection: MockCollection4
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain4.domain.eu/resto/api/'
+    maxCloudCover: -1
+
+mock-provider-5:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_5:
+      product_type: MOCK5
+      collection: MockCollection5
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain5.domain.eu/resto/api/'
+    product_location_scheme: 'file'
+
+mock-provider-6:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_6:
+      product_type: MOCK6
+      collection: MockCollection6
+  search:
+    plugin: AwsSearch
+    api_endpoint: 'http://subdomain6.domain.eu/resto/api/'
+
+mock-provider-7:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_7: {}
+  search:
+    plugin: CSWSearch
+    api_endpoint: 'http://www.catalog.com/rest/catalog/csw/'
+    search_definitions:
+      resource_location_filter: '^https?'
+      pt_tags:
+        - name: 'dc:title'
+        - name: 'dc:subject'
+          matching: exact
+        - name: 'dc:something'
+          matching: prefix
+        - name: 'dc:something_else'
+          matching: postfix
+        - name: 'dc:yet_another_thing'
+          matching: fuzzy
+  auth:
+    plugin: GenericAuth
+
+mock-provider-8:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_8: {}
+  search:
+    plugin: CSWSearch
+    api_endpoint: 'http://www.catalog.com/rest/catalog/csw/'
+    search_definitions:
+      resource_location_filter: '^https?'
+      pt_tags:
+        - name: 'dc:title'
+      date_tags:
+        start: 'apiso:TempExtent_begin'
+        end: 'apiso:TempExtent_end'
+
+mock-provider-9:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_9:
+      product_type: MOCK9
+      collection: MockCollection9
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'http://subdomain9.domain.eu/resto/api/'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://subdomain9.domain.eu/download/'
+    dl_url_params:
+      param: value
+  auth:
+    plugin: TokenAuth
+    auth_uri: 'https://subdomain9.domain.eu/authentication'
+    token_type: json
+
+mock-provider-10:
+  priority: 1
+  products:
+    MOCK_PRODUCT_TYPE_10:
+      product_type: OCN
+  api:
+    plugin: SentinelsatAPI
+    endpoint: 'https://subdomain10.domain.eu/api/'
+
+mock-provider-11:
+  priority: 1
+  products:
+    L8_LC8:
+      product_type: LANDSAT_8_C1
+  api:
+    plugin: UsgsApi
+    google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'

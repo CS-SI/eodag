@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import logging
 import os
 import zipfile
 
-import click
 import requests
 from requests import HTTPError
 from tqdm import tqdm
@@ -29,13 +26,12 @@ class HTTPDownload(Download):
         if 'base_uri' not in self.config:
             raise MisconfiguredError('{} plugin require a base_uri configuration key'.format(self.name))
         self.config.setdefault('outputs_prefix', '/tmp')
-        self.config.setdefault('on_site', False)
         self.config.setdefault('extract', True)
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
     def download(self, product, auth=None):
-        """Download a product from resto-like platforms"""
-        if not self.config['on_site']:
+        """Download a product using HTTP protocol"""
+        if not product.location_url_tpl.startswith('file://'):
             url = self.__build_download_url(product, auth)
             if not url:
                 logger.debug('Unable to get download url for %s, skipping download', product)
@@ -62,18 +58,20 @@ class HTTPDownload(Download):
             hook_print = lambda r, *args, **kwargs: print('\n', r.url)
             with requests.get(url, stream=True, auth=auth, hooks={'response': hook_print},
                               params=self.config.get('dl_url_params', {}), verify=False) as stream:
-                stream_size = int(stream.headers.get('content-length', 0))
-                with open(local_file_path, 'wb') as fhandle:
-                    progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
-                    for chunk in stream.iter_content(chunk_size=64 * 1024):
-                        if chunk:
-                            progressbar.update(len(chunk))
-                            fhandle.write(chunk)
                 try:
                     stream.raise_for_status()
-                except HTTPError as e:
-                    logger.error("Error while getting resource : %s", e)
+                except HTTPError:
+                    import traceback as tb
+                    logger.error("Error while getting resource :\n%s", tb.format_exc())
                 else:
+                    stream_size = int(stream.headers.get('content-length', 0))
+                    with open(local_file_path, 'wb') as fhandle:
+                        progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
+                        for chunk in stream.iter_content(chunk_size=64 * 1024):
+                            if chunk:
+                                progressbar.update(len(chunk))
+                                fhandle.write(chunk)
+
                     with open(record_filename, 'w') as fh:
                         fh.write(url)
                     logger.debug('Download recorded in %s', record_filename)
@@ -81,29 +79,33 @@ class HTTPDownload(Download):
                         logger.info('Extraction activated')
                         with zipfile.ZipFile(local_file_path, 'r') as zfile:
                             fileinfos = zfile.infolist()
-                            with click.progressbar(fileinfos, fill_char='x', length=len(fileinfos), width=0,
-                                                   label='Extracting files from {}'.format(
-                                                           local_file_path)) as progressbar:
+                            with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
+                                    local_file_path)) as progressbar:
                                 for fileinfo in progressbar:
-                                    yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                                    yield zfile.extract(
+                                        fileinfo,
+                                        path=os.path.join(
+                                            self.config['outputs_prefix'],
+                                            local_file_path[:local_file_path.index('.zip')]))
                     else:
                         yield local_file_path
         else:
-            logger.info('Product already present on this platform. Identifier: %s',
-                        product.properties['productIdentifier'])
+            path = product.location_url_tpl.replace('file://', '')
+            logger.info('Product already present on this platform. Identifier: %s', path)
             # Do not download data if we are on site. Instead give back the absolute path to the data
-            yield product.properties['productIdentifier']
+            yield path
 
     def __build_download_url(self, product, auth):
         if product.location_url_tpl:
             try:
                 url = product.location_url_tpl.format(
-                    base=self.config.get('base_uri'),
+                    base=self.config.get('base_uri').rstrip('/'),
                 )
                 if product.properties['organisationName'] in ('ESA',):
                     url += '?token={}'.format(auth.token)
                 return url
-            except Exception as e:
-                raise RuntimeError('Product {} is incompatible with download plugin {}. Got error: {}'.format(
-                    product, self.name, e
+            except Exception:
+                import traceback as tb
+                raise RuntimeError('Product {} is incompatible with download plugin {}\n{}'.format(
+                    product, self.name, tb.format_exc()
                 ))

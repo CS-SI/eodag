@@ -3,11 +3,11 @@
 # All rights reserved
 from __future__ import absolute_import, print_function, unicode_literals
 
-import datetime
 import logging
+import os
 
 import shapely.geometry
-import pytz
+from requests import HTTPError
 
 
 try:  # PY3
@@ -16,7 +16,6 @@ except ImportError:  # PY2
     from urlparse import urljoin, urlparse
 
 import requests
-from dateutil.parser import parse as dateparse
 
 from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
 from .base import Search
@@ -35,62 +34,30 @@ class RestoSearch(Search):
             self.config['api_endpoint'],
             urlparse(self.config['api_endpoint']).path.rstrip('/') + self.SEARCH_PATH
         )
+        # What scheme is used to locate the products that will be discovered during search
+        self.product_location_scheme = self.config.get('product_location_scheme', 'https')
 
     def query(self, product_type, **kwargs):
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
-        collection = None
-        resto_product_type = None
-        pt_config = self.config['products'].setdefault(product_type, {})
-        if pt_config:
-            collection = pt_config['collection']
-            resto_product_type = pt_config['product_type']
-        if not collection:
-            raise RuntimeError('Unknown product type')
-
-        logger.debug('Collection found for product type %s: %s', product_type, collection)
-        logger.debug('Corresponding Resto product_type found for product type %s: %s', product_type, resto_product_type)
-
-        cloud_cover = kwargs.pop('maxCloudCover', self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER))
-        if not cloud_cover:
-            cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
-        if cloud_cover and not 0 <= cloud_cover <= 100:
+        results = []
+        add_to_results = results.extend
+        configured_max_cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
+        cloud_cover = kwargs.pop('maxCloudCover', configured_max_cloud_cover) or configured_max_cloud_cover
+        if not 0 <= cloud_cover <= 100:
             raise RuntimeError("Invalid cloud cover criterium: '{}'. Should be a percentage (bounded in [0-100])")
-        if cloud_cover > self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER):
+        elif cloud_cover > configured_max_cloud_cover:
             logger.info('The requested max cloud cover (%s) is too high, capping it to %s', cloud_cover,
                         self.DEFAULT_MAX_CLOUD_COVER)
             cloud_cover = self.config.get('maxCloudCover', self.DEFAULT_MAX_CLOUD_COVER)
-
-        product_config = self.config['products'][product_type]
         params = {
             'sortOrder': 'descending',
             'sortParam': 'startDate',
+            'startDate': kwargs.pop('startDate', None),
             'cloudCover': '[0,{}]'.format(cloud_cover),
-            'productType': resto_product_type,
         }
-
-        start_date = kwargs.pop('startDate', None)
-        config_start_date = product_config.get('min_start_date', '1970-01-01')
-        if any(isinstance(config_start_date, klass) for klass in (datetime.date, datetime.datetime)):
-            config_start_date = config_start_date.isoformat()
-        if start_date:
-
-            # Make config_start_date TZ aware if start_date is TZ aware
-            parsed_start_date = dateparse(start_date)
-            parsed_config_start_date = dateparse(config_start_date)
-            if parsed_start_date.tzinfo:
-                utc = pytz.UTC
-                parsed_config_start_date = utc.localize(parsed_config_start_date)
-
-            if parsed_start_date > parsed_config_start_date:
-                params['startDate'] = start_date
-            else:
-                logger.info('The requested start date (%s) is too old, capping it to %s', start_date, config_start_date)
-                params['startDate'] = config_start_date
-
         end_date = kwargs.pop('endDate', None)
         if end_date:
             params['completionDate'] = end_date
-
         footprint = kwargs.pop('footprint', None)
         if footprint:
             if len(footprint.keys()) == 2:  # a point
@@ -98,13 +65,35 @@ class RestoSearch(Search):
                 params.update(footprint)
             elif len(footprint.keys()) == 4:  # a rectangle (or bbox)
                 params['box'] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
-
         params.update({key: value for key, value in kwargs.items() if value is not None})
+
+        collection, resto_product_type = self.map_product_type(product_type)
+        logger.debug('Collection found for product type %s: %s', product_type, collection)
+        logger.debug('Corresponding Resto product_type found for product type %s: %s', product_type, resto_product_type)
+        params['productType'] = resto_product_type
+
         url = self.query_url_tpl.format(collection=collection)
         logger.debug('Making request to %s with params : %s', url, params)
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return self.normalize_results(response.json(), footprint)
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+        except HTTPError as e:
+            logger.debug('Skipping error while searching for %s RestoSearch instance product type %s: %s',
+                         self.instance_name, resto_product_type, e)
+        else:
+            add_to_results(self.normalize_results(response.json(), footprint))
+        return results
+
+    def map_product_type(self, product_type):
+        """Maps the eodag's specific product type code to Resto specific product type (which is a collection id and a
+        product type id)
+
+        :param product_type: The eodag specific product type code name
+        :return: The corresponding collection and product type ids on this instance of Resto
+        :rtype: tuple(str, str)
+        """
+        mapping = self.config['products'][product_type]
+        return mapping['collection'], mapping['product_type']
 
     def normalize_results(self, results, search_bbox):
         normalized = []
@@ -112,27 +101,40 @@ class RestoSearch(Search):
             logger.info('Found %s products', len(results['features']))
             logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
-                if result['properties']['organisationName'] in ('ESA',):
-                    download_url = '{base}' + '/{prodId}.zip'.format(
-                        prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
-                    )
-                    local_filename = result['properties']['title'] + '.zip'
+                if self.product_location_scheme == 'file':
+                    # TODO: This behaviour maybe very specific to eocloud provider (having the path to the local
+                    # TODO: resource being stored on result['properties']['productIdentifier']). It may therefore need
+                    # TODO: to be better handled in the future
+                    download_url = '{}://{}'.format(
+                        self.product_location_scheme,
+                        result['properties']['productIdentifier'])
+                    local_filename = os.path.basename(download_url)
                 else:
-                    if result['properties']['services']['download']['url']:
-                        download_url = result['properties']['services']['download']['url']
-                    else:
-                        download_url = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
-                            collection=result['properties']['collection'],
-                            feature_id=result['id'],
+                    if result['properties']['organisationName'] in ('ESA',):
+                        # TODO: See the above todo about that productIdentifier thing
+                        download_url = '{base}' + '/{prodId}.zip'.format(
+                            prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
                         )
-                    local_filename = result['id'] + '.zip'
+                        local_filename = '{}.zip'.format(result['properties']['title'])
+                    else:
+                        if result['properties'].get('services', {}).get('download', {}).get('url'):
+                            download_url = result['properties']['services']['download']['url']
+                        else:
+                            download_url = '{base}' + '/collections/{collection}/{feature_id}/download'.format(
+                                collection=result['properties']['collection'],
+                                feature_id=result['id'],
+                            )
+                        local_filename = '{}.zip'.format(result['id'])
                 product = EOProduct(
-                    result['id'],
                     self.instance_name,
                     download_url,
                     local_filename,
                     shapely.geometry.shape(result['geometry']),
                     search_bbox,
+                    result['properties']['productType'],
+                    result['properties']['platform'],
+                    result['properties']['instrument'],
+                    provider_id=result['id'],
                     # EOPRODUCT_PROPERTIES are based on resto representation of Earth observation products properties
                     **{prop_key: (result['properties'][prop_key] if prop_key != 'endDate' else result['properties'][
                         'completionDate']) for prop_key in EOPRODUCT_PROPERTIES}

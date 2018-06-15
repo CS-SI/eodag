@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 import logging
 import zipfile
 
-import click
 import shapely.wkt
 from sentinelsat import SentinelAPI
 from shapely import geometry
+from tqdm import tqdm
 
 from eodag.api.product import EOProduct
 from .base import Api
@@ -32,30 +30,36 @@ class SentinelsatAPI(Api):
         query_params = self.__convert_query_params(kwargs)
         try:
             final = []
-            results = self.api.query(producttype=product_type, limit=10, **query_params)
+            results = self.api.query(
+                producttype=self.config['products'][product_type]['product_type'],
+                limit=10,
+                **query_params)
             if results:
                 append_to_final = final.append
                 for _id, original in results.items():
                     geom = shapely.wkt.loads(original['footprint'])
                     append_to_final(EOProduct(
-                        _id,
                         self.instance_name,
                         original['link'],
                         original['filename'],
                         geom,
                         kwargs.get('footprint'),
-                        centroid=geom.centroid,
+                        product_type,
+                        original['platformname'],
+                        original['instrumentshortname'],
+                        provider_id=_id,
                         description=original['summary'],
                         title=original['title'],
                         productIdentifier=original['identifier'],
-                        startDate=original['ingestionDate']
+                        startDate=original['beginposition'].isoformat()
                     ))
             return final
-        except TypeError as e:
+        except TypeError:
+            import traceback as tb
             # Sentinelsat api query method raises a TypeError for finding None in the json feed received as a response
             # from the sentinel server, when looking for 'opensearch:totalResults' key. This may be interpreted as the
             # the api not finding any result from the query. This is what is assumed here.
-            logger.debug('Something went wrong during the query with self.api api: %s', e)
+            logger.debug('Something went wrong during the query with self.api api:\n %s', tb.format_exc())
             logger.info('No results found !')
             return []
 
@@ -76,16 +80,15 @@ class SentinelsatAPI(Api):
                 logger.info('Extraction activated')
                 with zipfile.ZipFile(product_info['path'], 'r') as zfile:
                     fileinfos = zfile.infolist()
-                    with click.progressbar(fileinfos, fill_char='x', length=len(fileinfos), width=0,
-                                           label='Extracting files from {}'.format(
-                                               product_info['path'])) as progressbar:
+                    with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
+                            product_info['path'])) as progressbar:
                         for fileinfo in progressbar:
                             yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
             else:
                 yield product_info['path']
 
     def __init_api(self):
-        if not self.api or not isinstance(self.api, SentinelAPI):
+        if not self.api:
             logger.debug('Initialising sentinelsat api')
             self.api = SentinelAPI(
                 self.config['credentials']['user'],

@@ -20,7 +20,7 @@ from eodag.utils import DEFAULT_PROJ, slugify
 from eodag.utils.import_system import patch_owslib_requests
 
 
-logger = logging.getLogger('eodag.plugins.search.csw')
+logger = logging.getLogger('beodag.plugins.search.csw')
 
 SUPPORTED_REFERENCE_SCHEMES = [
     'WWW:DOWNLOAD-1.0-http--download',
@@ -54,11 +54,13 @@ class CSWSearch(Search):
                 with patch_owslib_requests(verify=False):
                     try:
                         self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
-                    except ExceptionReport as er:
+                    except ExceptionReport:
+                        import traceback as tb
                         logger.warning('Failed to query %s for product type %s : %s', product_type_search_tag,
-                                       product_type, er)
+                                       product_type, tb.format_exc())
                         continue
-                partial_results = [self.__build_product(record, **kwargs) for record in self.catalog.records.values()]
+                partial_results = [
+                    self.__build_product(record, product_type, **kwargs) for record in self.catalog.records.values()]
                 logger.info('Found %s results querying %s', len(partial_results), product_type_search_tag)
                 results.extend(partial_results)
         logger.info('Found %s overall results', len(results))
@@ -79,7 +81,7 @@ class CSWSearch(Search):
                 except Exception as e:
                     logger.warning('Initialization of catalog failed due to error: (%s: %s)', type(e), e)
 
-    def __build_product(self, rec, **kwargs):
+    def __build_product(self, rec, product_type, **kwargs):
         """Enable search results to be handled by http download plugin"""
         bbox = rec.bbox_wgs84
         if not bbox:
@@ -103,12 +105,13 @@ class CSWSearch(Search):
                     download_url = ref['url']
                 break
         return EOProduct(
-            rec.identifier,
             self.instance_name,
             download_url,
             local_filename,
             geom,
             fp,
+            product_type,
+            provider_id=rec.identifier,
             centroid=geom.centroid,
             title=rec.title,
             description=(rec.abstract or ''),
@@ -133,7 +136,7 @@ class CSWSearch(Search):
             constraints.append(PropertyIsLike(pt_tag, '%{}%'.format(product_type)))
 
         # footprint
-        fp = params.get('footprints')
+        fp = params.get('footprint')
         if fp:
             constraints.append(BBox([fp['lonmin'], fp['latmin'], fp['lonmax'], fp['latmax']]))
 

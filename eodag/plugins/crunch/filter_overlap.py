@@ -6,7 +6,11 @@ from __future__ import unicode_literals
 import logging
 
 from shapely import geometry
-from shapely.errors import TopologicalError
+
+try:
+    from shapely.errors import TopologicalError
+except ImportError:
+    from shapely.geos import TopologicalError
 
 from eodag.plugins.crunch.base import Crunch
 

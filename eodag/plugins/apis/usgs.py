@@ -3,15 +3,12 @@
 # All rights reserved
 from __future__ import absolute_import, print_function, unicode_literals
 
-import datetime
 import hashlib
 import logging
+import os
+import re
 import zipfile
 
-import shapely.geometry
-import pytz
-import click
-from tqdm import tqdm
 
 try:  # PY3
     from urllib.parse import urljoin, urlparse
@@ -19,113 +16,73 @@ except ImportError:  # PY2
     from urlparse import urljoin, urlparse
 
 import requests
-from dateutil.parser import parse as dateparse
 from requests import HTTPError
-
-from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
 from shapely import geometry
-import sys
-from usgs import api
+from tqdm import tqdm
+from usgs import CATALOG_NODES, USGSError, api
+
+from eodag.api.product import EOProduct
 from .base import Api
-import logging as logger
-import os
+
+
+logger = logging.getLogger('eodag.plugins.apis.usgs')
 
 
 class UsgsApi(Api):
-    USGS_NODE_TYPE = ['EE', 'CWIC', 'HDSS', 'LPCS']
-
-    def __init__(self, config):
-        super(UsgsApi, self).__init__(config)
 
     def query(self, product_type, **kwargs):
-
         api.login(self.config['credentials']['username'], self.config['credentials']['password'], save=True)
-
-        usgs_product_type = None
-        pt_config = self.config['products'].setdefault(product_type, {})
-        if pt_config:
-            usgs_product_type = pt_config['product_type']
-
+        usgs_product_type = self.config['products'][product_type]['product_type']
         start_date = kwargs.pop('startDate', None)
-        if start_date is None:
-            raise ValueError('Start date must be given')
-
         end_date = kwargs.pop('endDate', None)
+        footprint = kwargs.pop('footprint', None)
 
-        if end_date is None:
-            raise ValueError('end_date must be given')
+        # Configuration to generate the download url of search results
+        result_summary_pattern = re.compile(
+            r'^Entity ID: .+, Acquisition Date: .+, Path: (?P<path>\d+), Row: (?P<row>\d+)$')
+        # See https://pyformat.info/, on section "Padding and aligning strings" to understand {path:0>3} and {row:0>3}.
+        # It roughly means: 'if the string that will be passed as "path" has length < 3, prepend as much "0"s as needed
+        # to reach length 3' and same for "row"
+        dl_url_pattern = '{base_url}/L8/{path:0>3}/{row:0>3}/{entity}.tar.bz'
 
         final = []
-        footprint = kwargs.pop('footprint', None)
-        if footprint:
-            if len(footprint.keys()) == 4:  # a rectangle (or bbox)
-                ll = {}
-                ll['longitude'] = footprint['lonmin']
-                ll['latitude'] = footprint['latmin']
-                ur = {}
-                ur['longitude'] = footprint['lonmax']
-                ur['latitude'] = footprint['latmax']
+        if footprint and len(footprint.keys()) == 4:  # a rectangle (or bbox)
+            lower_left = {'longitude': footprint['lonmin'], 'latitude': footprint['latmin']}
+            upper_right = {'longitude': footprint['lonmax'], 'latitude': footprint['latmax']}
+        else:
+            lower_left, upper_right = None, None
+        for node_type in CATALOG_NODES:
+            try:
+                results = api.search(usgs_product_type, node_type, start_date=start_date, end_date=end_date,
+                                     ll=lower_left, ur=upper_right)
 
-                for node_type in self.USGS_NODE_TYPE:
-                    try:
-                        result = api.search(usgs_product_type, node_type, start_date=start_date,
-                                            end_date=end_date,
-                                            ll=ll, ur=ur)
-                        params = self.get_parameters(result)
-
-                        for j in range(0, params['products_number']):
-                            bbox = (params['ll_long'][j], params['ll_lat'][j], params['ur_long'][j],
-                                    params['ur_lat'][j])
-                            url = self.make_google_download_url(params['paths'][j], params['rows'][j],
-                                                                params['entity_ids'][j])
-                            geom = geometry.box(*bbox)
-                            final.append(
-                                EOProduct(params['entity_ids'][j], self.instance_name, url, params['entity_ids'][j],
-                                          geom, footprint, startDate=params['startDates'][j]))
-                    except Exception:
-                        logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type,
-                                     node_type)
-
+                for result in results['data']['results']:
+                    r_lower_left = result['lowerLeftCoordinate']
+                    r_upper_right = result['upperRightCoordinate']
+                    summary_match = result_summary_pattern.match(result['summary']).groupdict()
+                    final.append(EOProduct(
+                        self.instance_name,
+                        dl_url_pattern.format(
+                            base_url=self.config['google_base_url'].rstrip('/'),
+                            entity=result['entityId'],
+                            **summary_match
+                        ),
+                        result['entityId'],
+                        geometry.box(
+                            r_lower_left['longitude'], r_lower_left['latitude'],
+                            r_upper_right['longitude'], r_upper_right['latitude']
+                        ),
+                        footprint,
+                        product_type,
+                        provider_id=result['entityId'],
+                        startDate=result['acquisitionDate']))
+            except USGSError as e:
+                logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type, node_type)
+                logger.debug("Skipping error: %s", e)
         api.logout()
         return final
 
-    def get_parameters(self, result):
-        params = {}
-        for hit in result['data']['results']:
-            params.setdefault('entity_ids', []).append(hit['entityId'])
-            params.setdefault('paths', []).append(hit['summary'].split(',')[2].split(':')[1])
-            params.setdefault('rows', []).append(hit['summary'].split(',')[3].split(':')[1])
-            params.setdefault('startDates', []).append(hit['acquisitionDate'])
-            params.setdefault('ll_long', []).append(hit['lowerLeftCoordinate']['longitude'])
-            params.setdefault('ll_lat', []).append(hit['lowerLeftCoordinate']['latitude'])
-            params.setdefault('ur_long', []).append(hit['upperRightCoordinate']['longitude'])
-            params.setdefault('ur_lat', []).append(hit['upperRightCoordinate']['latitude'])
-        params['products_number'] = result['data']['totalHits']
-
-        return params
-
-    def make_google_download_url(self, path, row, entity):
-
-        if len(str(path)) < 4:
-            iter = ['L8', '0{}'.format(str(path)[1:]), str(row)[1:],
-                    str(entity)]
-            extension = '/'.join(j for j in iter) + '.tar.bz'
-            url = urljoin(self.config['google_base_url'], extension)
-
-        elif len(str(row)) < 4:
-            iter = ['L8', str(path)[1:], '0{}'.format(str(row)[1:]),
-                    str(entity)]
-            extension = '/'.join(j for j in iter) + '.tar.bz'
-            url = urljoin(self.config['google_base_url'], extension)
-
-        else:
-            iter = ['L8', str(path)[1:], str(row)[1:], str(entity)]
-            extension = '/'.join(j for j in iter) + '.tar.bz'
-            url = urljoin(self.config['google_base_url'], extension)
-        return url
-
     def download(self, product, auth=None):
-
         url = product.location_url_tpl
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
@@ -161,8 +118,9 @@ class UsgsApi(Api):
                         fhandle.write(chunk)
             try:
                 stream.raise_for_status()
-            except HTTPError as e:
-                logger.error("Error while getting resource : %s", e)
+            except HTTPError:
+                import traceback
+                logger.error("Error while getting resource : %s", traceback.format_exc())
             else:
                 with open(record_filename, 'w') as fh:
                     fh.write(url)
@@ -171,12 +129,9 @@ class UsgsApi(Api):
                     logger.info('Extraction activated')
                     with zipfile.ZipFile(local_file_path, 'r') as zfile:
                         fileinfos = zfile.infolist()
-                        with click.progressbar(fileinfos, fill_char='x', length=len(fileinfos), width=0,
-                                               label='Extracting files from {}'.format(
-                                                   local_file_path)) as progressbar:
+                        with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
+                                local_file_path)) as progressbar:
                             for fileinfo in progressbar:
                                 yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
                 else:
                     yield local_file_path
-
-

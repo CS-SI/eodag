@@ -5,17 +5,18 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 
-import shapely.geometry
-
 try:  # PY3
     from urllib.parse import urljoin, urlparse
 except ImportError:  # PY2
     from urlparse import urljoin, urlparse
 
-from eodag.api.product import EOProduct, EOPRODUCT_PROPERTIES
+import shapely.geometry
+
+from eodag.api.product import EOPRODUCT_PROPERTIES, EOProduct
 from eodag.plugins.search.resto import RestoSearch
 
-logger = logging.getLogger('eodag.plugins.search.resto')
+
+logger = logging.getLogger('eodag.plugins.search.aws')
 
 
 class AwsSearch(RestoSearch):
@@ -41,12 +42,15 @@ class AwsSearch(RestoSearch):
                 download_url = '/'.join(i for i in iter) + '/'
 
                 product = EOProduct(
-                    result['id'],
                     self.instance_name,
                     download_url,
                     local_filename,
                     shapely.geometry.shape(result['geometry']),
                     search_bbox,
+                    result['properties']['productType'],
+                    platform=result['properties']['platform'],
+                    instrument=result['properties']['instrument'],
+                    provider_id=result['id'],
                     # EOPRODUCT_PROPERTIES are based on resto representation of Earth observation products properties
                     **{prop_key: (result['properties'][prop_key] if prop_key != 'endDate' else result['properties'][
                         'completionDate']) for prop_key in EOPRODUCT_PROPERTIES}

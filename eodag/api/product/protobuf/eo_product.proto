@@ -1,0 +1,25 @@
+/* Copyright 2018 CS Systemes d'Information (CS SI)
+ * All rights reserved
+ */
+syntax = "proto3";
+
+package eodag;
+
+// a protobuf message for numpy ndarray, inspired from the gist at
+// https://gist.github.com/monkeybutter/b91004077be5d73a478a and comments from
+// https://github.com/google/protobuf/issues/880
+message NDArray {
+    repeated double array = 1 [packed=true];
+    repeated fixed32 shape = 2 [packed=true];
+    string dtype = 3;
+}
+
+message EOProductSubdataset {
+    string id = 1;
+    string producer = 2;
+    string product_type = 3;
+    string platform = 4;
+    string sensor = 5;
+
+    NDArray data = 6;
+}
