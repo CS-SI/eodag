@@ -465,7 +465,7 @@ airbus-ds:
       product_type: SR_1_SRA_A_
   search:
     plugin: ArlasSearch
-    api_endpoint: 'https://testing.dias.datastore.multisat.space/sdk10/lobby/api/v1/services/explore/'
+    api_endpoint: 'https://k8s.qualif.geohub.space/api/v1/services/explore'
     arlas_collection: catalog
     metadata_mapping:
       id: '$.properties.uid'
@@ -491,7 +491,7 @@ airbus-ds:
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
   download:
     plugin: HTTPDownload
-    base_uri: 'https://testing.dias.datastore.multisat.space/sdk10/lobby/api/v1/services/download/'
+    base_uri: 'https://k8s.qualif.geohub.space/api/v1/services/download/'
   auth:
     plugin: HTTPHeaderAuth
     headers:
