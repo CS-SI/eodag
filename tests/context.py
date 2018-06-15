@@ -13,7 +13,7 @@ from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
-from eodag.api.product.drivers.sentinel2 import Sentinel2
+from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download

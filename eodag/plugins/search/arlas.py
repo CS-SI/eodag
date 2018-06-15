@@ -63,6 +63,7 @@ class ArlasSearch(Search):
                 logger.info('Normalizing results')
                 for feature in results['features']:
                     products.append(EOProduct(
+                        product_type,
                         self.instance_name,
                         '{base}' + '/{}'.format(feature['properties']['uid']),
                         properties_from_json(feature, self.config['metadata_mapping']),

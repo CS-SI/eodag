@@ -55,7 +55,7 @@ class EODagTestCase(unittest.TestCase):
             'lonmin': 1.3128662109375002, 'latmin': 43.65197548731186,
             'lonmax': 1.6754150390625007, 'latmax': 43.699651229671446
         }
-        self.product_type = 'L1C'
+        self.product_type = 'S2_MSI_L1C'
         self.platform = 'S2A'
         self.instrument = 'MSI'
         self.provider_id = '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'

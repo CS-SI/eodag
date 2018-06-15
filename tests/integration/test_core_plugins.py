@@ -704,6 +704,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.product = EOProduct.from_geojson({
             'type': 'Feature',
             'properties': {
+                'eodag_product_type': '',
                 'eodag_download_url': '',  # Will be overriden for each test case
                 'eodag_provider': self.test_provider,  # Is necessary for identifying the right download plugin
                 'eodag_search_intersection': {},

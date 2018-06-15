@@ -26,7 +26,7 @@ class AwsSearch(RestoSearch):
         super(AwsSearch, self).__init__(config)
         self.dl_base = config.get('amazon_dl_endpoint')
 
-    def normalize_results(self, results, search_bbox):
+    def normalize_results(self, product_type, results, search_bbox):
         normalized = []
         if results['features']:
             logger.info('Found %s products', len(results['features']))
@@ -41,6 +41,7 @@ class AwsSearch(RestoSearch):
                 download_url = '/'.join(i for i in iter) + '/'
 
                 product = EOProduct(
+                    product_type,
                     self.instance_name,
                     download_url,
                     properties_from_json(result, self.config['metadata_mapping']),

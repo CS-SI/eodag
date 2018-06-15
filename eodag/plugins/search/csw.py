@@ -107,6 +107,7 @@ class CSWSearch(Search):
         properties['geometry'] = geometry.box(*bbox)
         properties['productType'] = product_type
         return EOProduct(
+            product_type,
             self.instance_name,
             download_url,
             properties,

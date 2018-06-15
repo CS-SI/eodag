@@ -67,6 +67,7 @@ class UsgsApi(Api):
                     )
                     result['productType'] = usgs_product_type
                     final.append(EOProduct(
+                        product_type,
                         self.instance_name,
                         dl_url_pattern.format(
                             base_url=self.config['google_base_url'].rstrip('/'),

@@ -38,6 +38,7 @@
         "sensorMode": null,
         "cloudCover": 0,
         "eodag_provider": "peps",
+        "eodag_product_type": "S1_OCN",
         "platform": null,
         "topicCategory": null,
         "snowCover": null,

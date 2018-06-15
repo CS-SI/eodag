@@ -4,12 +4,9 @@
 from __future__ import unicode_literals
 
 from eodag.api.product.drivers.base import NoDriver
-from eodag.api.product.drivers.sentinel2 import Sentinel2
+from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
 
 
 DRIVERS = {
-    ('S2A', 'MSI'): Sentinel2,
-    ('S2B', 'MSI'): Sentinel2,
-    (None, None): NoDriver,  # allows plugins to not give the name of platform and instrument when building an eoproduct
+    'S2_MSI_L1C': Sentinel2L1C(),
 }
-

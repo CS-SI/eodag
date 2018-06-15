@@ -8,11 +8,11 @@ import random
 
 import geojson
 import numpy as np
-from shapely import geometry, wkt
+from shapely import geometry
 
 from tests import EODagTestCase
 from tests.context import (
-    Authentication, DRIVERS, Download, EOProduct, NoDriver, Sentinel2, UnsupportedDatasetAddressScheme,
+    Authentication, Download, EOProduct, NoDriver, Sentinel2L1C, UnsupportedDatasetAddressScheme,
 )
 
 
@@ -28,6 +28,7 @@ class TestEOProduct(EODagTestCase):
         'processingLevel=LEVELL1C&sortParam=startDate&sortOrder=descending&geometry=POLYGON%28%281.3128662109375002%204'
         '3.65197548731186%2C1.6754150390625007%2043.699651229671446%2C1.6204833984375002%2043.48481212891605%2C1.389770'
         '5078125002%2043.47684039777894%2C1.3128662109375002%2043.65197548731186%29%29&dataset=ESA-DATASET&page=1')
+    NOT_ASSOCIATED_PRODUCT_TYPE = 'EODAG_DOES_NOT_SUPPORT_THIS_PRODUCT_TYPE'
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
@@ -36,6 +37,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_search_intersection_geom(self):
         """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -52,6 +54,7 @@ class TestEOProduct(EODagTestCase):
                              [10.469970703124998, 3.9957805129630373]]]
         }
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props,
@@ -62,22 +65,10 @@ class TestEOProduct(EODagTestCase):
         )
         self.assertIsNone(product.search_intersection)
 
-    def test_eoproduct_default_driver_noplatform_noinstrument(self):
-        """EOProduct driver attr must be NoDriver if no platform and instrument names"""
-        self.eoproduct_props['platformSerialIdentifier'] = None
-        self.eoproduct_props['instrument'] = None
+    def test_eoproduct_default_driver_unsupported_product_type(self):
+        """EOProduct driver attr must be NoDriver if its product type is not associated with a eodag dataset driver"""
         product = EOProduct(
-            self.provider,
-            self.download_url,
-            self.eoproduct_props
-        )
-        self.assertIsInstance(product.driver, NoDriver)
-
-    def test_eoproduct_default_driver_unregistered_platform_unregistered_instrument(self):
-        """EOProduct driver attr must be NoDriver if platform and instrument given are not registered in DRIVERS"""
-        self.eoproduct_props['platformSerialIdentifier'] = 'Unregistered_instrument'
-        self.eoproduct_props['instrument'] = 'Unregistered_platform'
-        product = EOProduct(
+            self.NOT_ASSOCIATED_PRODUCT_TYPE,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -86,18 +77,19 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_driver_ok(self):
         """EOProduct driver attr must be the one registered for valid platform and instrument in DRIVERS"""
-        self.eoproduct_props['platformSerialIdentifier'] = random.choice(['S2A', 'S2B'])
-        self.eoproduct_props['instrument'] = 'MSI'
+        product_type = random.choice(['S2_MSI_L1C'])
         product = EOProduct(
+            product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
         )
-        self.assertIsInstance(product.driver, Sentinel2)
+        self.assertIsInstance(product.driver, Sentinel2L1C)
 
     def test_get_data_local_product_ok(self):
         """A call to get_data on a product present in the local filesystem must succeed"""
         product = EOProduct(
+            self.product_type,
             self.provider,
             'file://{}'.format(self.local_product_abspath),  # Download url
             self.eoproduct_props
@@ -115,6 +107,7 @@ class TestEOProduct(EODagTestCase):
     def test_get_data_download_on_unsupported_dataset_address_scheme_error(self):
         """If a product is not on the local filesystem, it must download itself before returning the data"""
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -144,6 +137,7 @@ class TestEOProduct(EODagTestCase):
     def test_get_data_download_on_unsupported_dataset_address_scheme_error_without_downloader(self):
         """If a product is not on filesystem and a downloader isn't registered, get_data must return an empty array"""
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -163,6 +157,7 @@ class TestEOProduct(EODagTestCase):
     def test_get_data_bad_download_on_unsupported_dataset_address_scheme_error(self):
         """If downloader doesn't return the downloaded file path, get_data must return an empty array"""
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -175,7 +170,7 @@ class TestEOProduct(EODagTestCase):
         mock_downloader.download.return_value = None
         mock_authenticator = mock.MagicMock(spec_set=Authentication(config={}))
 
-        product.register_downloader(mock_downloader, mock_authenticator.authenticate())
+        product.register_downloader(mock_downloader, mock_authenticator)
 
         self.assertEqual(product.download(), '')
 
@@ -204,6 +199,7 @@ class TestEOProduct(EODagTestCase):
         """EOProduct encode method must return an empty bytes if encoding is not supported or is None"""
         encoding = random.choice(['not_supported', None])
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -216,6 +212,7 @@ class TestEOProduct(EODagTestCase):
         """Test encode method with protocol buffers encoding"""
         # Explicitly provide encoding
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -229,6 +226,7 @@ class TestEOProduct(EODagTestCase):
         self.eoproduct_props['platformSerialIdentifier'] = None
         self.eoproduct_props['instrument'] = None
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -238,6 +236,7 @@ class TestEOProduct(EODagTestCase):
         self.eoproduct_props['platformSerialIdentifier'] = None
         self.eoproduct_props['instrument'] = 'MSI'
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -247,6 +246,7 @@ class TestEOProduct(EODagTestCase):
         self.eoproduct_props['platformSerialIdentifier'] = 'S2A'
         self.eoproduct_props['instrument'] = None
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -256,6 +256,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_geointerface(self):
         """EOProduct must provide a geo-interface with a set of specific properties"""
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
@@ -267,29 +268,30 @@ class TestEOProduct(EODagTestCase):
         }, geo_interface)
         self.assertDictContainsSubset({
             'eodag_provider': self.provider, 'eodag_download_url': self.download_url,
-            'eodag_search_intersection': self._tuples_to_lists(geometry.mapping(product.search_intersection))
+            'eodag_search_intersection': self._tuples_to_lists(geometry.mapping(product.search_intersection)),
+            'eodag_product_type': self.product_type,
         }, geo_interface['properties'])
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
         product = EOProduct(
+            self.product_type,
             self.provider,
             self.download_url,
             self.eoproduct_props
         )
         same_product = EOProduct.from_geojson(geojson.loads(geojson.dumps(product)))
-        self.maxDiff = None
         self.assertSequenceEqual(
             [
                 product.provider, product.location, product.properties['title'], product.properties['instrument'],
                 self._tuples_to_lists(geometry.mapping(product.geometry)),
-                self._tuples_to_lists(geometry.mapping(product.search_intersection)),
-                product.properties['productType'], product.properties['platformSerialIdentifier']
+                self._tuples_to_lists(geometry.mapping(product.search_intersection)), product.product_type,
+                product.properties['productType'], product.properties['platformSerialIdentifier'],
             ],
             [
                 same_product.provider, same_product.location, same_product.properties['title'],
                 same_product.properties['instrument'], self._tuples_to_lists(geometry.mapping(same_product.geometry)),
-                self._tuples_to_lists(geometry.mapping(same_product.search_intersection)),
-                same_product.properties['productType'], same_product.properties['platformSerialIdentifier']
+                self._tuples_to_lists(geometry.mapping(same_product.search_intersection)), same_product.product_type,
+                same_product.properties['productType'], same_product.properties['platformSerialIdentifier'],
             ]
         )

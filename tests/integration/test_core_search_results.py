@@ -30,6 +30,7 @@ class TestCoreSearchResults(unittest.TestCase):
                     'eodag_download_url': ('https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931c'
                                            'c7b/download'),
                     'eodag_provider': 'peps',
+                    'eodag_product_type': 'S1_OCN',
                     'platformSerialIdentifier': 'S1A',
                     'cloudCover': 0,
                     'title': 'S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3',

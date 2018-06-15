@@ -14,6 +14,7 @@ from rasterio.vrt import WarpedVRT
 from shapely import geometry
 from tqdm import tqdm
 
+
 try:
     from shapely.errors import TopologicalError
 except ImportError:
@@ -33,6 +34,8 @@ class EOProduct(object):
     Every Search plugin instance must build an instance of this class for each of the result of its query method, and
     return a list of such instances.
 
+    :param product_type: The product type of the product as defined in eodag
+    :type product_type: str or unicode
     :param provider: The provider from which the product originates
     :type provider: str or unicode
     :param download_url: A uri informing where to go to download the product
@@ -49,7 +52,8 @@ class EOProduct(object):
         Therefore it stores geometries in the before mentioned CRS.
     """
 
-    def __init__(self, provider, download_url, properties, searched_bbox=None):
+    def __init__(self, product_type, provider, download_url, properties, searched_bbox=None):
+        self.product_type = product_type
         self.provider = provider
         self.location = download_url
         self.properties = properties
@@ -64,10 +68,7 @@ class EOProduct(object):
                 logger.warning('Unable to intersect the requested extent: %s with the product geometry: %s. Got:\n%s',
                                searched_bbox_as_shape, self.properties['geometry'], tb.format_exc())
                 self.search_intersection = None
-        self.driver = DRIVERS.get(
-            (self.properties['platformSerialIdentifier'], self.properties['instrument']),
-            DRIVERS[(None, None)]
-        )()
+        self.driver = DRIVERS.get(self.product_type, NoDriver())
         self.downloader = None
         self.downloader_auth = None
 
@@ -122,6 +123,7 @@ class EOProduct(object):
             'geometry': geometry.mapping(self.geometry),
             'id': self.properties['id'],
             'properties': {
+                'eodag_product_type': self.product_type,
                 'eodag_provider': self.provider,
                 'eodag_download_url': self.location,
                 'eodag_search_intersection': geometry.mapping(self.search_intersection),
@@ -144,6 +146,7 @@ class EOProduct(object):
         :rtype: :class:`~eodag.api.product.EOProduct`
         """
         obj = cls(
+            feature['properties']['eodag_product_type'],
             feature['properties']['eodag_provider'],
             feature['properties']['eodag_download_url'],
             properties_from_json(feature, DEFAULT_METADATA_MAPPING)
@@ -189,7 +192,7 @@ class EOProduct(object):
         subdataset = eo_product_pb2.EOProductSubdataset()
         subdataset.id = self.properties['id']
         subdataset.producer = self.provider
-        subdataset.product_type = self.properties['productType']
+        subdataset.product_type = self.product_type
         subdataset.platform = self.properties['platformSerialIdentifier']
         subdataset.sensor = self.properties['instrument']
         data = subdataset.data

@@ -82,7 +82,7 @@ class RestoSearch(Search):
                 logger.debug('Skipping error while searching for %s RestoSearch instance product type %s: %s',
                              self.instance_name, resto_product_type, e)
             else:
-                add_to_results(self.normalize_results(response.json(), footprint))
+                add_to_results(self.normalize_results(product_type, response.json(), footprint))
         return results
 
     def map_product_type(self, product_type, date):
@@ -117,7 +117,7 @@ class RestoSearch(Search):
             collection = (mapping['collection'],)
         return collection, mapping['product_type']
 
-    def normalize_results(self, results, search_bbox):
+    def normalize_results(self, product_type, results, search_bbox):
         normalized = []
         if results['features']:
             logger.info('Found %s products', len(results['features']))
@@ -145,6 +145,7 @@ class RestoSearch(Search):
                                 feature_id=result['id'],
                             )
                 product = EOProduct(
+                    product_type,
                     self.instance_name,
                     download_url,
                     properties_from_json(result, self.config['metadata_mapping']),

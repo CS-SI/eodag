@@ -12,7 +12,7 @@ from eodag.api.product.drivers.base import DatasetDriver
 from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressScheme
 
 
-class Sentinel2(DatasetDriver):
+class Sentinel2L1C(DatasetDriver):
     BAND_FILE_PATTERN_TPL = r'^.+_{band}\.jp2$'
     SPATIAL_RES_PER_BANDS = {
         '10m': ('B02', 'B03', 'B04', 'B08'),

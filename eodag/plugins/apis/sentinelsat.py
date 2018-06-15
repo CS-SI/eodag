@@ -43,10 +43,11 @@ class SentinelsatAPI(Api):
                     original['beginposition'] = original['beginposition'].isoformat()
                     original['endposition'] = original['endposition'].isoformat()
                     append_to_final(EOProduct(
+                        product_type,
                         self.instance_name,
                         original['link'],
                         properties_from_json(original, self.config['metadata_mapping']),
-                        searched_bbox=kwargs.get('footprint')
+                        searched_bbox=kwargs.get('geometry')
                     ))
             return final
         except TypeError:
