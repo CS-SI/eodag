@@ -12,7 +12,7 @@ from eodag.api.product.drivers.base import DatasetDriver
 from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressScheme
 
 
-class Sentinel2(DatasetDriver):
+class Sentinel2L1C(DatasetDriver):
     BAND_FILE_PATTERN_TPL = r'^.+_{band}\.jp2$'
     SPATIAL_RES_PER_BANDS = {
         '10m': ('B02', 'B03', 'B04', 'B08'),
@@ -38,10 +38,9 @@ class Sentinel2(DatasetDriver):
         See :func:`~eodag.api.product.drivers.base.DatasetDriver.get_data_address` to get help on the formal
         parameters.
         """
-        product_location_scheme = eo_product.location_url_tpl.split('://')[0]
+        product_location_scheme = eo_product.location.split('://')[0]
         if product_location_scheme == 'file':
-            top_level_mtd = os.path.join(re.sub(r'file://', '', eo_product.location_url_tpl),
-                                         'MTD_{}{}.xml'.format(eo_product.sensor, eo_product.product_type))
+            top_level_mtd = os.path.join(re.sub(r'file://', '', eo_product.location), 'MTD_MSIL1C.xml')
             with rasterio.open(top_level_mtd) as dataset:
                 for address in dataset.subdatasets:
                     spatial_res = address.split(':')[-2]

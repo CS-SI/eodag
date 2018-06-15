@@ -3,10 +3,16 @@
 # All rights reserved
 from __future__ import unicode_literals
 
+
+try:  # PY2
+    from UserList import UserList
+except ImportError:  # PY3
+    from collections import UserList
+
 from eodag.api.product import EOProduct
 
 
-class SearchResult(object):
+class SearchResult(UserList):
     """An object representing a collection of :class:`~eodag.api.product.EOProduct` resulting from a search.
 
     :param products: A list of products resulting from a search
@@ -14,9 +20,7 @@ class SearchResult(object):
     """
 
     def __init__(self, products):
-        self.__final_result = []
-        self.__original = products
-        self.__crunch_calls_count = 0
+        super(SearchResult, self).__init__(products)
 
     def crunch(self, cruncher, **search_params):
         """Do some crunching with the underlying EO products.
@@ -27,9 +31,7 @@ class SearchResult(object):
         :returns: The result of the application of the crunching method to the EO products
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
-        crunched_results = cruncher.proceed(self.__original, **search_params)
-        self.__final_result.extend(crunched_results)
-        self.__crunch_calls_count += 1
+        crunched_results = cruncher.proceed(self, **search_params)
         return SearchResult(crunched_results)
 
     @staticmethod
@@ -46,32 +48,13 @@ class SearchResult(object):
             for feature in feature_collection['features']
         ])
 
+    def as_geojson_object(self):
+        return {'type': 'FeatureCollection', 'features': [product.as_dict() for product in self]}
+
     @property
     def __geo_interface__(self):
         """Implements the geo-interface protocol.
 
         See https://gist.github.com/sgillies/2217756
         """
-        return {
-            'type': 'FeatureCollection',
-            'features': [product.as_dict() for product in (
-                self.__final_result if self.__crunch_calls_count > 0 else self.__original
-            )]
-        }
-
-    def __len__(self):
-        return self.__speculate_on_result(len)
-
-    def __nonzero__(self):
-        return self.__speculate_on_result(bool)
-
-    def __iter__(self):
-        return self.__speculate_on_result(iter)
-
-    def __repr__(self):
-        return self.__speculate_on_result(repr)
-
-    def __speculate_on_result(self, func):
-        if self.__crunch_calls_count == 0 and not self.__final_result:
-            return func(self.__original)
-        return func(self.__final_result)
+        return self.as_geojson_object()

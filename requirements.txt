@@ -18,3 +18,5 @@ protobuf
 grpcio
 # To be able to do 'import concurrent.futures' in Python 2.7
 futures
+jsonpath-rw
+lxml

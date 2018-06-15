@@ -84,7 +84,7 @@ class TestEodagCli(unittest.TestCase):
             for max_cloud in (110, -1):
                 result = self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', 'whatever', '-c', max_cloud])
                 self.assertIn(
-                    'Error: Invalid value for "-c" / "--maxCloud": {} is not in the valid range of 0 to 100.'.format(
+                    'Error: Invalid value for "-c" / "--cloudCover": {} is not in the valid range of 0 to 100.'.format(
                         max_cloud),
                     result.output
                 )
@@ -104,8 +104,9 @@ class TestEodagCli(unittest.TestCase):
             product_type = 'whatever'
             self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', product_type, '-b', 1, 43, 2, 44])
             api_obj = SatImagesAPI.return_value
-            api_obj.search.assert_called_once_with(product_type, startDate=None, endDate=None, maxCloudCover=None,
-                                                   footprint={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44})
+            api_obj.search.assert_called_once_with(
+                product_type, startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
+                cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44})
 
     @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
     def test_eodag_search_storage_arg(self, SatImagesAPI):
@@ -121,7 +122,8 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             product_type = 'whatever'
             cruncher = 'RemoveDoubles'
-            criteria = dict(startDate=None, endDate=None, footprint=None, maxCloudCover=None)
+            criteria = dict(startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
+                            geometry=None, cloudCover=None)
             result = self.runner.invoke(eodag, ['search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher])
 
             api_obj = SatImagesAPI.return_value

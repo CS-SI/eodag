@@ -15,6 +15,7 @@ from owslib.ows import ExceptionReport
 from shapely import geometry
 
 from eodag.api.product import EOProduct
+from eodag.api.product.representations import properties_from_xml
 from eodag.plugins.search.base import Search
 from eodag.utils import DEFAULT_PROJ, slugify
 from eodag.utils.import_system import patch_owslib_requests
@@ -92,9 +93,6 @@ class CSWSearch(Search):
             maxx, maxy = pyproj.transform(rec_proj, DEFAULT_PROJ, rec.bbox.maxx, rec.bbox.maxy)
             minx, miny = pyproj.transform(rec_proj, DEFAULT_PROJ, rec.bbox.minx, rec.bbox.miny)
             bbox = (minx, miny, maxx, maxy)
-        geom = geometry.box(*bbox)
-        fp = kwargs.get('footprints')
-        local_filename = slugify(rec.identifier)
         download_url = ''
         resource_filter = re.compile(self.config[SEARCH_DEF].get('resource_location_filter', ''))
         for ref in rec.references:
@@ -104,21 +102,16 @@ class CSWSearch(Search):
                 else:
                     download_url = ref['url']
                 break
+        properties = properties_from_xml(rec.xml, self.config['metadata_mapping'])
+        properties['title'] = slugify(rec.identifier)
+        properties['geometry'] = geometry.box(*bbox)
+        properties['productType'] = product_type
         return EOProduct(
+            product_type,
             self.instance_name,
             download_url,
-            local_filename,
-            geom,
-            fp,
-            product_type,
-            provider_id=rec.identifier,
-            centroid=geom.centroid,
-            title=rec.title,
-            description=(rec.abstract or ''),
-            productIdentifier=rec.identifier,
-            organisationName=(rec.creator or rec.publisher or ''),
-            keywords=rec.subjects,
-            startDate=rec.date,
+            properties,
+            searched_bbox=kwargs.get('footprints'),
         )
 
     def __convert_query_params(self, product_type_def, product_type, params):
@@ -136,12 +129,12 @@ class CSWSearch(Search):
             constraints.append(PropertyIsLike(pt_tag, '%{}%'.format(product_type)))
 
         # footprint
-        fp = params.get('footprint')
+        fp = params.get('geometry')
         if fp:
             constraints.append(BBox([fp['lonmin'], fp['latmin'], fp['lonmax'], fp['latmax']]))
 
         # dates
-        start, end = params.get('startDate'), params.get('endDate')
+        start, end = params.get('startTimeFromAscendingNode'), params.get('completionTimeFromAscendingNode')
         if start:
             constraints.append(PropertyIsGreaterThanOrEqualTo(self.config[SEARCH_DEF][DATE]['start'], start))
         if end:

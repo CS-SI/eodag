@@ -35,14 +35,14 @@ def eodag(ctx, verbose):
 @eodag.command(name='search',
                help='Search satellite images by their product types, and optionally crunch the search results before '
                     'storing them in a geojson file')
-@click.option('-b', '--bbox', type=(float,) * 4, default=(None,) * 4,
+@click.option('-b', '--geometry', type=(float,) * 4, default=(None,) * 4,
               help='Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this '
                    'order)')
-@click.option('-s', '--startDate',
+@click.option('-s', '--startTimeFromAscendingNode',
               help='Maximum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)')
-@click.option('-e', '--endDate',
+@click.option('-e', '--completionTimeFromAscendingNode',
               help='Minimum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)')
-@click.option('-c', '--maxCloud', type=click.IntRange(0, 100),
+@click.option('-c', '--cloudCover', type=click.IntRange(0, 100),
               help='Maximum cloud cover percentage needed for the product')
 @click.option('-f', '--conf', help='File path to the user configuration file with its credentials',
               type=click.Path(exists=True))
@@ -63,16 +63,16 @@ def search_crunch(ctx, **kwargs):
     # Process inputs for search
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
-    if kwargs['bbox'] != (None,) * 4:
-        rect = kwargs.pop('bbox')
+    if kwargs['geometry'] != (None,) * 4:
+        rect = kwargs.pop('geometry')
         footprint = {'lonmin': rect[0], 'latmin': rect[1], 'lonmax': rect[2], 'latmax': rect[3]}
     else:
         footprint = None
     criteria = {
-        'footprint': footprint,
-        'startDate': kwargs.pop('startdate'),
-        'endDate': kwargs.pop('enddate'),
-        'maxCloudCover': kwargs.pop('maxcloud'),
+        'geometry': footprint,
+        'startTimeFromAscendingNode': kwargs.pop('starttimefromascendingnode'),
+        'completionTimeFromAscendingNode': kwargs.pop('completiontimefromascendingnode'),
+        'cloudCover': kwargs.pop('cloudcover'),
     }
     producttype = kwargs.pop('producttype')
     conf_file = kwargs.pop('conf')
@@ -161,9 +161,9 @@ def download(ctx, **kwargs):
 @click.option('-h', '--host', type=click.STRING, default='localhost',
               help='Interface where to listen for requests')
 @click.option('-p', '--port', type=click.INT, default=50051,
-              help='The port where to listen for requests',)
+              help='The port where to listen for requests', )
 @click.option('-f', '--conf', type=click.Path(exists=True),
-              help='File path to the user configuration file with its credentials',)
+              help='File path to the user configuration file with its credentials', )
 @click.pass_context
 def serve(ctx, host, port, conf):
     setup_logging(verbose=ctx.obj['verbosity'])

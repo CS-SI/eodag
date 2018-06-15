@@ -3,6 +3,7 @@
 # All rights reserved
 from __future__ import unicode_literals
 
+import copy
 import functools
 import hashlib
 import json
@@ -113,7 +114,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         }
         nominal_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',  # See RestoSearch.DEFAULT_MAX_CLOUD_COVER
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK'
@@ -138,27 +138,24 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         for idx, result in enumerate(results):
             self.assertIsInstance(result, EOProduct)
             self.assertEqual(result.provider, self.provider)
-            self.assertEqual(result.product_type, 'MOCK')  # See ../resources/mock_providers.yml for 'MOCK'
-            self.assertDictContainsSubset(
-                {k: v for k, v in result.properties.items() if k not in ('endDate', 'provider_id')},
-                resto_results['features'][idx]['properties'])
-            self.assertEqual(result.properties['provider_id'], resto_results['features'][idx]['id'])
-            self.assertEqual(result.properties['endDate'],
+            self.assertEqual(result.properties['productType'], 'MOCK')  # See ../resources/mock_providers.yml for 'MOCK'
+            self.assertEqual(result.properties['id'], resto_results['features'][idx]['id'])
+            self.assertEqual(result.properties['completionTimeFromAscendingNode'],
                              resto_results['features'][idx]['properties']['completionDate'])
 
             if idx == 0:
-                self.assertEqual(result.location_url_tpl,
+                self.assertEqual(result.location,
                                  '{base}/1/S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE.zip')
             if idx == 1:
-                self.assertEqual(result.location_url_tpl, 'http://download.provider1.com/path/')
+                self.assertEqual(result.location, 'http://download.provider1.com/path/')
             if idx == 2:
-                self.assertEqual(result.location_url_tpl, '{base}/collections/MockCollection/3/download')
+                self.assertEqual(result.location, '{base}/collections/MockCollection/3/download')
 
         # Test the use case of defining the product location scheme to 'file'
         self.override_properties(product_type='MOCK_PRODUCT_TYPE_5')
         results = dag.search(self.product_type)
         for idx, result in enumerate(results):
-            self.assertEqual(result.location_url_tpl,
+            self.assertEqual(result.location,
                              'file://{}'.format(resto_results['features'][idx]['properties']['productIdentifier']))
 
         # Test that when nothing is found, the returned result is empty
@@ -172,7 +169,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         nominal_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',  # See RestoSearch.DEFAULT_MAX_CLOUD_COVER
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK'
@@ -194,46 +190,14 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         self.assertIsInstance(results, SearchResult)
         self.assertEqual(len(results), 0)
 
-    def test_core_resto_search_configured_max_cloud_cover_ok(self):
-        """A maxCloudCover config parameter must be the default max cloud cover for a search"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE_2')
-        provider_search_url_base = 'http://subdomain2.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
-        configured_max_cloud_cover = 50  # See ../resources/mock_providers.yml
-        call_params = {
-            'startDate': None,
-            'cloudCover': '[0,{}]'.format(configured_max_cloud_cover),
-            'sortOrder': 'descending',
-            'sortParam': 'startDate',
-            'productType': 'MOCK2'
-        }
-
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        dag.search(self.product_type)
-
-        self.assertHttpGetCalledOnceWith(
-            '{}collections/MockCollection2/search.json'.format(provider_search_url_base),
-            expected_params=call_params)
-
-    def test_core_resto_search_configured_max_cloud_cover_over100_ko(self):
-        """A maxCloudCover config parameter greater than 100 must raise a runtime_error"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE_3')
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        self.assertRaises(RuntimeError, dag.search, self.product_type)
-
-    def test_core_resto_search_configured_max_cloud_cover_below0_ko(self):
-        """A maxCloudCover config parameter lower than 0 must raise a runtime_error"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE_4')
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        self.assertRaises(RuntimeError, dag.search, self.product_type)
-
     def test_core_resto_search_kwargs_cloud_cover_default_ok(self):
         """A search with a cloud cover between 0 and the default max cloud cover must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        kwargs = {'maxCloudCover': 5}  # RestoSearch.DEFAULT_MAX_CLOUD_COVER is 20
+        kwargs = {'cloudCover': 5}
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         call_params = {
             'startDate': None,
-            'cloudCover': '[0,{maxCloudCover}]'.format(**kwargs),
+            'cloudCover': '[0,{cloudCover}]'.format(**kwargs),
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK'
@@ -250,41 +214,20 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         """A search with a cloud cover greater than 100 or lower than 0 must raise a RuntimeError"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        self.assertRaises(RuntimeError, dag.search, self.product_type, maxCloudCover=101)
-        self.assertRaises(RuntimeError, dag.search, self.product_type, maxCloudCover=-1)
-
-    def test_core_resto_search_kwargs_cloud_cover_capped_ok(self):
-        """A search with a cloud cover greater than the default max cloud cover must be capped to default"""
-        self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        kwargs = {'maxCloudCover': 30}  # RestoSearch.DEFAULT_MAX_CLOUD_COVER is 20
-        provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
-        call_params = {
-            'startDate': None,
-            'cloudCover': '[0,20]',
-            'sortOrder': 'descending',
-            'sortParam': 'startDate',
-            'productType': 'MOCK'
-        }
-
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        dag.search(self.product_type, **kwargs)
-
-        self.assertHttpGetCalledOnceWith(
-            '{}collections/MockCollection/search.json'.format(provider_search_url_base),
-            expected_params=call_params)
+        self.assertRaises(RuntimeError, dag.search, self.product_type, cloudCover=101)
+        self.assertRaises(RuntimeError, dag.search, self.product_type, cloudCover=-1)
 
     def test_core_resto_search_kwargs_end_date_ok(self):
         """A search with an endDate must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        kwargs = {'endDate': '2018-05-09'}
+        kwargs = {'completionTimeFromAscendingNode': '2018-05-09'}
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
         call_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK',
-            'completionDate': kwargs['endDate']
+            'completionDate': kwargs['completionTimeFromAscendingNode']
         }
 
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
@@ -297,37 +240,16 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
     def test_core_resto_search_kwargs_footprint_ok(self):
         """A search with a footprint must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        # first use case: footprint is a point
-        kwargs = {'footprint': {'lat': self.footprint['latmin'], 'lon': self.footprint['lonmin']}}
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
-        call_params = {
-            'startDate': None,
-            'cloudCover': '[0,20]',
-            'sortOrder': 'descending',
-            'sortParam': 'startDate',
-            'productType': 'MOCK',
-            'lat': kwargs['footprint']['lat'],
-            'lon': kwargs['footprint']['lon'],
-        }
-
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
-        dag.search(self.product_type, **kwargs)
-
-        self.assertHttpGetCalledOnceWith(
-            '{}collections/MockCollection/search.json'.format(provider_search_url_base),
-            expected_params=call_params)
-
-        # second use case: footprint is a bbox
-        self.requests_http_get.reset_mock()
         call_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK',
             'box': '{lonmin},{latmin},{lonmax},{latmax}'.format(**self.footprint)
         }
-        dag.search(self.product_type, **{'footprint': self.footprint})
+        dag.search(self.product_type, **{'geometry': self.footprint})
         self.assertHttpGetCalledOnceWith(
             '{}collections/MockCollection/search.json'.format(provider_search_url_base),
             expected_params=call_params)
@@ -445,7 +367,11 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
                                                        bbox):
         """A search on a provider implementing CSWSearch must correctly interpret date tags and footprint"""
         self.override_properties(provider='mock-provider-8', product_type='MOCK_PRODUCT_TYPE_8')
-        params = {'endDate': '2018-05-09', 'startDate': '2018-05-01', 'footprint': self.footprint}
+        params = {
+            'completionTimeFromAscendingNode': '2018-05-09',
+            'startTimeFromAscendingNode': '2018-05-01',
+            'geometry': self.footprint
+        }
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         mock_catalog = mock_catalogue_web_service.return_value
         mock_catalog.getrecords2.side_effect = functools.partial(self.compute_csw_records, mock_catalog)
@@ -456,8 +382,8 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         self.assertEqual(mock_catalog.getrecords2.call_count, 1)
         self.assertEqual(prop_like.call_count, 1)
         prop_like.assert_any_call('dc:title', '%{}%'.format(self.product_type))
-        prop_ge.assert_called_with('apiso:TempExtent_begin', params['startDate'])
-        prop_le.assert_called_with('apiso:TempExtent_end', params['endDate'])
+        prop_ge.assert_called_with('apiso:TempExtent_begin', params['startTimeFromAscendingNode'])
+        prop_le.assert_called_with('apiso:TempExtent_end', params['completionTimeFromAscendingNode'])
         bbox.assert_called_with([
             self.footprint['lonmin'], self.footprint['latmin'], self.footprint['lonmax'], self.footprint['latmax']])
         mock_catalog.getrecords2.assert_called_with(
@@ -495,7 +421,6 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         }
         nominal_params = {
             'startDate': None,
-            'cloudCover': '[0,20]',  # See RestoSearch.DEFAULT_MAX_CLOUD_COVER
             'sortOrder': 'descending',
             'sortParam': 'startDate',
             'productType': 'MOCK6'
@@ -520,7 +445,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         for result in results:
             self.assertIsInstance(result, EOProduct)
             self.assertEqual(result.provider, self.provider)
-            self.assertEqual(result.location_url_tpl, 'tiles/31/T/DH/2018/5/9/0/')
+            self.assertEqual(result.location, 'tiles/31/T/DH/2018/5/9/0/')
 
         # Test that when nothing is found, the returned result is empty
         requests_http_get_response.json = mock.MagicMock(return_value={'features': []})
@@ -603,11 +528,11 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
         )
-        results = dag.search(self.product_type, footprint=search_extent)
+        results = dag.search(self.product_type, geometry=search_extent)
 
         self.assertEqual(len(results), 1)
         valid_product = next(iter(results))
-        self.assertEqual(valid_product.properties['provider_id'], 2)
+        self.assertEqual(valid_product.properties['id'], 2)
         self.assertIsInstance(valid_product.downloader, Download)
         self.assertEqual(valid_product.downloader.instance_name, valid_product.provider)
         self.assertIsInstance(valid_product.downloader_auth, Authentication)
@@ -617,51 +542,52 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
 
     def test_core_http_download_local_product(self):
         """A local product must not be downloaded and the download plugin must return its local absolute path"""
-        self.product.location_url_tpl = 'file:///absolute/path/to/local/product.zip'
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            self.assertEqual(path, '/absolute/path/to/local/product.zip')
+        self.product.location = 'file:///absolute/path/to/local/product.zip'
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(paths[0], '/absolute/path/to/local/product.zip')
         self.assertAuthenticationDone()
         self.assertHttpDownloadNotDone()
 
     def test_core_http_download_remote_product_no_extract(self):
         """A remote product must be downloaded as is if extraction config is set to False"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.product.location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            self.assertHttpDownloadDone(path)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertHttpDownloadDone(paths[0])
         self.assertAuthenticationDone()
 
     def test_core_http_download_remote_product_extract(self):
         """A remote product must be downloaded and extracted as is if extraction config is set to True (by default)"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = True
-        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.product.location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            self.assertHttpDownloadDone(path, with_extraction=True)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertHttpDownloadDone(paths[0], with_extraction=True)
         self.assertAuthenticationDone()
 
     def test_core_http_download_remote_no_url(self):
         """Download must fail on an EOProduct with no download url"""
-        res = list(self.eodag.download_all(SearchResult([self.product])))
-        self.assertEqual(len(res), 0)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(len(paths), 1)
+        self.assertIsNone(paths[0])
         self.assertAuthenticationDone()
         self.assertHttpDownloadNotDone()
 
     def test_core_http_download_remote_already_downloaded(self):
         """Download must return the path of a product already downloaded"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.product.location = '{base}/path/to/product.zip'
 
         # Simulate a previous download
         os.mkdir(self.expected_record_dir)
         open(self.expected_downloaded_path, 'wb').close()
         open(self.expected_record_file, 'w').close()
 
-        res = list(self.eodag.download_all(SearchResult([self.product])))
-        self.assertEqual(res[0], self.expected_downloaded_path)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(paths[0], self.expected_downloaded_path)
         self.assertAuthenticationDone()
         self.assertEqual(self.requests_get.call_count, 0)
 
@@ -669,7 +595,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
     def test_core_http_download_remote_recorded_file_absent(self, os_remove):
         """Download must be performed and record file must be suppressed if actual product is locally absent"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.product.location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
         os_remove.side_effect = os.unlink
 
@@ -677,16 +603,16 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         os.mkdir(self.expected_record_dir)
         open(self.expected_record_file, 'w').close()
 
-        for path in self.eodag.download_all(SearchResult([self.product])):
-            os_remove.assert_called_with(self.expected_record_file)
-            self.assertEqual(os_remove.call_count, 1)
-            self.assertAuthenticationDone()
-            self.assertHttpDownloadDone(path)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        os_remove.assert_called_with(self.expected_record_file)
+        self.assertEqual(os_remove.call_count, 1)
+        self.assertAuthenticationDone()
+        self.assertHttpDownloadDone(paths[0])
 
     def test_core_http_download_remote_httperror(self):
         """An error during download must fail without stopping the overall download process"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location_url_tpl = '{base}/path/to/product.zip'
+        self.product.location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
         def raise_http_error():
@@ -694,8 +620,9 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
 
         self.requests_get.return_value.raise_for_status = raise_http_error
 
-        res = list(self.eodag.download_all(SearchResult([self.product])))
-        self.assertEqual(len(res), 0)
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(len(paths), 1)
+        self.assertIsNone(paths[0])
         self.assertAuthenticationDone()
         self.assertEqual(self.requests_get.call_count, 1)
         self.assertFalse(os.path.exists(self.expected_record_file))
@@ -714,7 +641,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
             expected_extraction_listing = [
                 x.replace(os.path.join(TEST_RESOURCES_PATH, 'products'), tempfile.gettempdir())
                 for x in self.list_dir(os.path.join(
-                    TEST_RESOURCES_PATH, 'products', self.product.local_filename.split('.zip')[0]))
+                    TEST_RESOURCES_PATH, 'products', self.product.properties['title']))
             ]
             self.assertIn(path, expected_extraction_listing)
         else:
@@ -768,6 +695,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
 
             def raise_for_status(response):
                 pass
+
         return Response()
 
     def setUp(self):
@@ -776,14 +704,19 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.product = EOProduct.from_geojson({
             'type': 'Feature',
             'properties': {
-                'eodag_local_name': self.local_product_filename,
-                'productType': '',  # mandatory for EOProduct initialization but no use in this test
-                'eodag_download_url': '',   # Will be overriden for each test case
-                'eodag_provider': self.test_provider,   # Is necessary for identifying the right download plugin
-                'eodag_search_intersection': {},    # mandatory for EOProduct initialization but no use in this test
+                'eodag_product_type': '',
+                'eodag_download_url': '',  # Will be overriden for each test case
+                'eodag_provider': self.test_provider,  # Is necessary for identifying the right download plugin
+                'eodag_search_intersection': {},
+                'title': 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE',
             },
-            'id': '',   # mandatory for EOProduct initialization but no use in this test
-            'geometry': {}  # mandatory for EOProduct initialization but no use in this test
+            'geometry': {
+                "type": "Polygon",
+                "coordinates": [[[0.495928592903789, 44.22596415476343], [1.870237286761489, 44.24783068396879],
+                                 [1.888683014192297, 43.25939191053712], [0.536772323136669, 43.23826255332707],
+                                 [0.495928592903789, 44.22596415476343]]]
+            },
+            'id': '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
         })
         self.eodag = SatImagesAPI(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
@@ -792,7 +725,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         self.local_product_as_archive_path = os.path.abspath(
             os.path.join(TEST_RESOURCES_PATH, 'products', 'as_archive', self.local_product_filename))
         self.expected_record_dir = os.path.join(tempfile.gettempdir(), '.downloaded')
-        self.expected_downloaded_path = os.path.join(tempfile.gettempdir(), self.product.local_filename)
+        self.expected_downloaded_path = os.path.join(tempfile.gettempdir(), self.local_product_filename)
 
         self.requests_get_patcher = mock.patch('requests.get', autospec=True)
         self.requests_post_patcher = mock.patch('requests.post', autospec=True)
@@ -873,14 +806,14 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         for idx, result in enumerate(results):
             expected = usgs_search_results['data']['results'][idx]
             self.assertRegexpMatches(
-                result.location_url_tpl,
+                result.location,
                 r'^.+/L8/(\d{3}/){2}.+\.tar\.bz$'
             )
-            self.assertEqual(result.properties['provider_id'], expected['entityId'])
-            self.assertEqual(result.properties['startDate'], expected['acquisitionDate'])
+            self.assertEqual(result.properties['id'], expected['entityId'])
+            self.assertEqual(result.properties['startTimeFromAscendingNode'], expected['acquisitionDate'])
 
         # Test searching with footprint as an additional criteria
-        search_kwargs = {'footprint': self.footprint}
+        search_kwargs = {'geometry': self.footprint}
         dag.search(self.product_type, **search_kwargs)
         self.usgs_api_search.assert_any_call(
             'LANDSAT_8_C1', usgs.EARTH_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
@@ -908,7 +841,8 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             sentinelsat_search_results = json.load(fp)
             for props in sentinelsat_search_results.values():
                 props['beginposition'] = datetime.utcnow()
-        self.sentinelsatapi.query.return_value = sentinelsat_search_results
+                props['endposition'] = datetime.utcnow()
+        self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
         self.override_properties(
             provider='mock-provider-10',
             product_type='MOCK_PRODUCT_TYPE_10',
@@ -932,22 +866,10 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         )
 
         for eo_product in results:
-            self.assertIn('provider_id', eo_product.properties)
-            expected_original = sentinelsat_search_results[eo_product.properties['provider_id']]
-            self.assertEqual(eo_product.location_url_tpl, expected_original['link'])
-            self.assertEqual(eo_product.local_filename, expected_original['filename'])
+            self.assertIn('id', eo_product.properties)
+            expected_original = sentinelsat_search_results[eo_product.properties['id']]
+            self.assertEqual(eo_product.location, expected_original['link'])
             self.assertEqual(eo_product.geometry, shapely.wkt.loads(expected_original['footprint']))
-            self.assertEqual(eo_product.sensing_platform, expected_original['platformname'])
-            self.assertEqual(eo_product.sensor, expected_original['instrumentshortname'])
-            self.assertDictContainsSubset(
-                {
-                    'description': expected_original['summary'],
-                    'startDate': expected_original['beginposition'].isoformat(),
-                    'title': expected_original['title'],
-                    'productIdentifier': expected_original['identifier']
-                },
-                eo_product.properties
-            )
 
         # Check that the sentinelsatapi is only instantiated once per query
         dag.search(self.product_type)
@@ -963,15 +885,17 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         # Test searching only with footprint and maxCloudCover (simple cases of searching with additional criteria)
         max_cloud_cover = random.choice(range(100))
         search_kwargs = {
-            'footprint': self.footprint,
-            'maxCloudCover': max_cloud_cover,
+            'geometry': self.footprint,
+            'cloudCover': max_cloud_cover,
         }
+        # Refresh the return value of the query method, because in sentinelsat.py, the returned value is modified
+        self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
         results = dag.search(self.product_type, **search_kwargs)
         self.assertNotEqual(len(results), 0)
         self.sentinelsatapi.query.assert_called_with(
             producttype='OCN',
             limit=10, **{
-                'footprint': geometry.box(*(
+                'area': geometry.box(*(
                     self.footprint['lonmin'],
                     self.footprint['latmin'],
                     self.footprint['lonmax'],
@@ -984,20 +908,20 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         # Test searching with start and/or end date
         # First case: giving only the start date should not take into account the date search key
         start_date = '2018-01-01'
-        search_kwargs = {'startDate': start_date}
+        search_kwargs = {'startTimeFromAscendingNode': start_date}
         dag.search(self.product_type, **search_kwargs)
         self.sentinelsatapi.query.assert_called_with(
             producttype='OCN',
             limit=10,
-            **{}    # startDate is not interpreted by sentinelsat plugin
+            **{}  # startDate is not interpreted by sentinelsat plugin
         )
         # Second case: start and end dates are given, either in plain string as above or as datetime or date python
         # objects. They should be transform to string date with format '%Y%m%d'
-        search_kwargs['startDate'] = random.choice([
+        search_kwargs['startTimeFromAscendingNode'] = random.choice([
             datetime(2018, 1, 1, 0, 0, 0, 0),
             datetime(2018, 1, 1, 0, 0, 0, 0).date()
         ])
-        search_kwargs['endDate'] = random.choice([
+        search_kwargs['completionTimeFromAscendingNode'] = random.choice([
             datetime(2018, 1, 2, 0, 0, 0, 0),
             datetime(2018, 1, 2, 0, 0, 0, 0).date()
         ])
@@ -1008,8 +932,8 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
                 'date': ('20180101', '20180102')
             }
         )
-        search_kwargs['startDate'] = start_date
-        search_kwargs['endDate'] = '2018-01-02'
+        search_kwargs['startTimeFromAscendingNode'] = start_date
+        search_kwargs['completionTimeFromAscendingNode'] = '2018-01-02'
         dag.search(self.product_type, **search_kwargs)
         self.sentinelsatapi.query.assert_called_with(
             producttype='OCN',

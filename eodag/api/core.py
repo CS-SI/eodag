@@ -13,7 +13,6 @@ from tqdm import tqdm
 from eodag.api.search_result import SearchResult
 from eodag.config import SimpleYamlProxyConfig
 from eodag.plugins.instances_manager import PluginInstancesManager
-from eodag.utils import maybe_generator
 from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 
 
@@ -25,8 +24,8 @@ class SatImagesAPI(object):
 
     :param user_conf_file_path: Path to the user configuration file
     :type user_conf_file_path: str or unicode
-    :param system_conf_file_path: Path to the internal file where systems containing eo products are configured
-    :type system_conf_file_path: str or unicode
+    :param providers_file_path: Path to the internal file where systems containing eo products are configured
+    :type providers_file_path: str or unicode
     """
 
     def __init__(self, user_conf_file_path=None, providers_file_path=None):
@@ -77,8 +76,8 @@ class SatImagesAPI(object):
                                         self.providers_config[instance_name]['api'][key] = user_spec
                                     else:
                                         self.providers_config[instance_name]['download'][key] = user_spec
-        self.pim = PluginInstancesManager(self.providers_config)
-        self.__interfaces_cache = {}
+        self._plugins_manager = PluginInstancesManager(self.providers_config)
+        self._plugins_cache = {}
 
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
@@ -111,8 +110,8 @@ class SatImagesAPI(object):
             new_priority = max_priority + 1
             self.providers_config[provider]['priority'] = new_priority
             # Update the interfaces cache to take into account the fact that the preferred provider has changed
-            if 'search' in self.__interfaces_cache:
-                for search_interfaces in self.__interfaces_cache['search'].values():
+            if 'search' in self._plugins_cache:
+                for search_interfaces in self._plugins_cache['search'].values():
                     for iface in search_interfaces:
                         if iface.instance_name == provider:
                             iface.priority = new_priority
@@ -167,67 +166,93 @@ class SatImagesAPI(object):
             The search interfaces, which are implemented as plugins, are required to return a list as a result of their
             processing. This requirement is enforced here.
         """
-        search_interfaces = self.__get_searchers(product_type)
-        results = []
-        for idx, iface in enumerate(search_interfaces):
-            logger.debug('Using interface for search: %s on instance *%s*', iface.name, iface.instance_name)
-            auth = self.__get_authenticator(iface.instance_name)
+        search_plugins = self._build_search_plugins(product_type)
+        results = SearchResult([])
+        for idx, plugin in enumerate(search_plugins):
+            logger.debug('Using plugin for search: %s on provider: %s', plugin.name, plugin.instance_name)
+            auth = self._build_auth_plugin(plugin.instance_name)
             try:
-                r = iface.query(product_type, auth=auth, **kwargs)
+                r = plugin.query(product_type, auth=auth, **kwargs)
                 if not isinstance(r, list):
                     raise PluginImplementationError(
                         'The query function of a Search plugin must return a list of results, got {} '
-                        'instead'.format(type(r))
-                    )
-                # Filter and attach to each eoproduct in the result the plugin instance capable of downloading it (this
+                        'instead'.format(type(r)))
+                # Filter and attach to each eoproduct in the result the plugin capable of downloading it (this
                 # is done to enable the eo_product to download itself doing: eo_product.download())
                 # The filtering is done by keeping only those eo_products that intersects the search extent (if there
                 # was no search extent, search_intersection contains the geometry of the eo_product)
                 # WARNING: this means an eo_product that has an invalid geometry can still be returned as a search
-                # result if there was no search extent (an intersection will not be tried)
+                # result if there was no search extent (because we will not try to do an intersection)
                 for eo_product in r:
                     if eo_product.search_intersection is not None:
-                        downloaders = self.__get_downloaders(eo_product)
-                        if downloaders:
-                            eo_product.register_downloader(downloaders[0], auth)
+                        if 'download' in self.providers_config[eo_product.provider]:
+                            topic = 'download'
+                        else:
+                            topic = 'api'
+                        eo_product.register_downloader(
+                            self._build_provider_plugin(eo_product.provider, topic),
+                            auth
+                        )
                         results.append(eo_product)
-                # Decide if we should go on with the search (if the iface stores the product_type partially)
-                if idx == 0:
-                    if not iface.config.get('products', {}).get(product_type, {}).get('partial', False):
-                        if len(search_interfaces) > 1 and len(r) == 0:
-                            logger.debug(
-                                "No result from preferred interface: '%r'. Search continues on other instances "
-                                "supporting product type: '%r'", iface.instance_name, product_type)
-                            continue
-                        break
-                    logger.debug("Detected partial product type '%s' on priviledged instance '%s'. Search continues on "
-                                 "other instances supporting it.", product_type, iface.instance_name)
+                # Decide if we should go on with the search using the other search plugins. This happens in 2 cases:
+                # 1. The currently used plugin is the preferred one (the first), and it returned no result
+                # 2. The currently used plugin supports the product_type partially
+                if not plugin.config.get('products', {}).get(product_type, {}).get('partial', False):
+                    if idx == 0 and len(search_plugins) > 1 and len(r) == 0:
+                        logger.debug(
+                            "No result from preferred provider: '%r'. Search continues on other providers "
+                            "supporting the product type: '%r'", plugin.instance_name, product_type)
+                        continue
+                    break
+                logger.debug("Detected partial product type '%s' on priviledged instance '%s'. Search continues on "
+                             "other instances supporting it.", product_type, plugin.instance_name)
             except RuntimeError as rte:
                 if 'Unknown product type' in rte.args:
-                    logger.debug('Product type %s not known by %s instance', product_type, iface.instance_name)
+                    logger.debug('Product type %s not known by %s instance', product_type, plugin.instance_name)
                 else:
                     raise rte
             except Exception:
                 import traceback as tb
-                logger.debug('Error while searching on interface %s:\n %s.', iface, tb.format_exc())
+                logger.debug('Error while searching on interface %s:\n %s.', plugin, tb.format_exc())
                 logger.debug('Ignoring it')
-        return SearchResult(results)
+        return results
+
+    @staticmethod
+    def sort_by_extent(searches):
+        """
+        Combines multiple SearchResults and return a list of SearchResults sorted by extent.
+        :param searches: List of eodag SearchResult
+        :type searches: list
+        :return: list of SearchResults
+        """
+        products_grouped_by_extent = {}
+
+        for search in searches:
+            for product in search:
+                same_geom = products_grouped_by_extent.setdefault(product.geometry.wkb_hex, [])
+                same_geom.append(product)
+
+        return [
+            SearchResult(products_grouped_by_extent[extent_as_wkb_hex])
+            for extent_as_wkb_hex in products_grouped_by_extent
+        ]
 
     def download_all(self, search_result):
         """Download all products resulting from a search.
 
         :param search_result: A collection of EO products resulting from a search
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
-        :returns: A Generator that yields the absolute path to the downloaded resource
-        :rtype: str or unicode
+        :returns: A collection of the absolute paths to the downloaded products
+        :rtype: list
         """
+        paths = []
         if search_result:
             with tqdm(search_result, unit='product', desc='Downloading products') as bar:
                 for product in bar:
-                    for path in self.__download(product):
-                        yield path
+                    paths.append(self.download(product))
         else:
             print('Empty search result, nothing to be downloaded !')
+        return paths
 
     @staticmethod
     def serialize(search_result, filename='search_results.geojson'):
@@ -256,7 +281,7 @@ class SatImagesAPI(object):
         with open(filename, 'r') as fh:
             return SearchResult.from_geojson(geojson.load(fh))
 
-    def __download(self, product):
+    def download(self, product):
         """Download a single product.
 
         :param product: The EO product to download
@@ -266,90 +291,93 @@ class SatImagesAPI(object):
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
-        # try to download the product from all the download interfaces known (functionality introduced by the necessity
-        # to take into account that a product type may be distributed to many instances)
-        download_interfaces = self.__get_downloaders(product)
-        for iface in download_interfaces:
-            logger.debug('Using interface for download : %s on instance *%s*', iface.name, iface.instance_name)
-            try:
-                auth = None
-                if not iface.config.get('on_site', False):
-                    auth = self.__get_authenticator(iface.instance_name)
-                else:
-                    logger.debug('On site usage detected. Authentication for download skipped !')
-                if auth:
-                    auth = auth.authenticate()
-                for local_filepath in maybe_generator(iface.download(product, auth=auth)):
-                    if local_filepath is None:
-                        logger.debug('The download method of a Download plugin should return the absolute path to the '
-                                     'downloaded resource or a generator of absolute paths to the downloaded and '
-                                     'extracted resource')
-                    yield local_filepath
-            except TypeError as e:
-                # Enforcing the requirement for download plugins to implement a download method with auth kwarg
-                if any("got an unexpected keyword argument 'auth'" in arg for arg in e.args):
-                    raise PluginImplementationError(
-                        'The download method of a Download plugin must support auth keyword argument'
-                    )
-                raise e
-            except RuntimeError as rte:
-                # Skip download errors, allowing other downloads to take place anyway
-                if 'is incompatible with download plugin' in rte.args[0]:
-                    logger.warning('Download plugin incompatibility found. Skipping download...')
-                else:
-                    raise rte
+        download_plugin = self._build_download_plugin(product)
+        logger.debug('Using download plugin: %s for provider: %s', download_plugin.name, download_plugin.instance_name)
+        try:
+            auth = None
+            # We need to authenticate only if we are not on the platform where the product lives
+            if not download_plugin.config.get('on_site', False):
+                auth = self._build_auth_plugin(download_plugin.instance_name)
+            else:
+                logger.debug('On site usage detected. Authentication for download skipped !')
+            if auth:
+                auth = auth.authenticate()
+            product_location = download_plugin.download(product, auth=auth)
+            if product_location is None:
+                logger.warning('The download method of a Download plugin should return the absolute path to the '
+                               'downloaded resource')
+            else:
+                logger.debug('Product location updated from %s to %s', product.location, product_location)
+                # Update the product location if and only if a path was returned by the download plugin
+                product.location = 'file://{}'.format(product_location)
+            return product_location
+        except TypeError as e:
+            # Enforcing the requirement for download plugins to implement a download method with auth kwarg
+            if any("got an unexpected keyword argument 'auth'" in arg for arg in e):
+                raise PluginImplementationError('The download method of a Download plugin must support auth keyword '
+                                                'argument')
+            raise e
+        except RuntimeError as rte:
+            # Skip download errors, allowing other downloads to take place anyway
+            if 'is incompatible with download plugin' in rte:
+                logger.warning('Download plugin incompatibility found. Skipping download...')
+            else:
+                raise rte
 
-    def __get_authenticator(self, instance_name):
-        if 'auth' in self.providers_config[instance_name]:
-            logger.debug('Authentication initialisation for instance %s', instance_name)
-            previous = (self.__interfaces_cache.setdefault('auth', {})
-                                               .setdefault(instance_name, []))
-            if not previous:
-                previous.append(self.pim.instantiate_plugin_by_config(
-                    topic_name='auth',
-                    topic_config=self.providers_config[instance_name]['auth'],
-                    iname=instance_name,
-                ))
-            logger.debug("Initialized %r Authentication plugin for instance '%s'", previous[0], instance_name)
-            return previous[0]
+    def _build_auth_plugin(self, provider_name):
+        if 'auth' in self.providers_config[provider_name]:
+            logger.debug('Authentication initialisation for provider: %s', provider_name)
+            plugin = self._build_provider_plugin(provider_name, 'auth')
+            logger.debug("Initialized %r Authentication plugin for provider: '%s'", plugin, provider_name)
+            return plugin
 
-    def __get_searchers(self, product_type):
-        """Look for a search interface to use, based on the configuration of the api"""
+    def _build_search_plugins(self, product_type):
+        """Look for search interfaces to use, based on the configuration of the api"""
         logger.debug('Looking for the appropriate Search instance(s) to use for product type: %s', product_type)
-        previous = (self.__interfaces_cache.setdefault('search', {})
-                                           .setdefault(product_type, []))
+        previous = self._plugins_cache.setdefault('search', {}).setdefault(product_type, [])
         if not previous:
-            search_plugin_instances = self.pim.instantiate_configured_plugins(
+            search_plugins = self._plugins_manager.instantiate_configured_plugins(
                 topics=('search', 'api'),
                 product_type_id=product_type
             )
-            # The searcher used will be the one with higher priority
-            search_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
-
-            # Store the newly instantiated interfaces in the interface cache
-            previous.extend(search_plugin_instances)
+            # Store the newly instantiated plugins in the cache
+            previous.extend(search_plugins)
+        # The searcher used will be the one with highest priority
+        previous.sort(key=attrgetter('priority'), reverse=True)
         logger.debug("Found %s Search instance(s) for product type '%s' (ordered by highest priority): %r",
                      len(previous), product_type, previous)
-        # Always perform a new sort as the preferred provider might have changed
-        previous.sort(key=attrgetter('priority'), reverse=True)
         return previous
 
-    def __get_downloaders(self, product):
-        """Look for a download interface to use, based on the configuration of the api and the product to download"""
-        logger.debug('Looking for the appropriate Download instance to use for product: %r', product)
-        previous = (self.__interfaces_cache.setdefault('download', {})
-                                           .setdefault(product.provider, []))
-        if not previous:
-            dl_plugin_instances = self.pim.instantiate_configured_plugins(
-                topics=('download', 'api'),
-                providers=[(product.provider, 1)]
-            )
-            dl_plugin_instances.sort(key=attrgetter('priority'), reverse=True)
+    def _build_download_plugin(self, product):
+        """Look for a download plugin to use, based on the configuration of the api and the product to download"""
+        logger.debug('Looking for the appropriate Download plugin to use for product: %r', product)
+        if 'download' in self.providers_config[product.provider]:
+            topic = 'download'
+        else:
+            topic = 'api'
+        plugin = self._build_provider_plugin(product.provider, topic)
+        logger.debug('Found Download plugin for product %r: %s', product, plugin)
+        return plugin
 
-            # Store the newly instantiated interfaces in the interface cache
-            previous.extend(dl_plugin_instances)
-        logger.debug('Found %s Download instance(s) for product %r (ordered by highest priority): %s',
-                     len(previous), product, previous)
+    def _build_provider_plugin(self, provider, topic):
+        """Build the plugin of type topic for provider
+
+        :param provider: The provider for which to build topic plugin
+        :type provider: str or unicode
+        :param topic: The type of plugin to build for provider (one of: 'auth', 'search', 'download'). Note that this
+                      method is not intended to be used for 'crunch' plugins, because these are generally not tied to a
+                      specific provider
+        :type topic: str or unicode
+        :returns: The plugin instance corresponding to the topic for the specified provider
+        :rtype: a :class:`~eodag.plugins.base.PluginTopic` subclass's instance
+        """
+        previous = self._plugins_cache.setdefault(topic, {}).setdefault(provider, None)
+        if previous is None:
+            previous = self._plugins_manager.instantiate_plugin_by_config(
+                topic_name=topic,
+                topic_config=self.providers_config[provider][topic],
+                iname=provider,
+            )
         return previous
 
     def get_cruncher(self, name, **options):
@@ -360,9 +388,11 @@ class SatImagesAPI(object):
             key.replace('-', '_'): val
             for key, val in options.items()
         })
-        return self.pim.instantiate_plugin_by_config('crunch', plugin_conf)
+        return self._plugins_manager.instantiate_plugin_by_config('crunch', plugin_conf)
 
 
 if __name__ == '__main__':
     import doctest
+
+
     doctest.testmod()

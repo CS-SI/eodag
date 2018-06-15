@@ -8,6 +8,8 @@ import os
 import tempfile
 import unittest
 
+from shapely import geometry
+
 from tests import TEST_RESOURCES_PATH
 from tests.context import SatImagesAPI, SearchResult
 
@@ -16,25 +18,25 @@ class TestCoreSearchResults(unittest.TestCase):
 
     def setUp(self):
         self.dag = SatImagesAPI()
+        self.maxDiff = None
         self.geojson_repr = {
             'features': [{
                 'properties': {
                     'snowCover': None,
                     'resolution': None,
-                    'eodag_local_name': '578f1768-e66e-5b86-9363-b19f8931cc7b.zip',
-                    'endDate': '2018-02-16T00:12:14.035Z',
-                    'keywords': {},
+                    'completionTimeFromAscendingNode': '2018-02-16T00:12:14.035Z',
+                    'keyword': {},
                     'productType': 'OCN',
                     'eodag_download_url': ('https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931c'
                                            'c7b/download'),
                     'eodag_provider': 'peps',
-                    'platform': 'S1A',
+                    'eodag_product_type': 'S1_OCN',
+                    'platformSerialIdentifier': 'S1A',
                     'cloudCover': 0,
-                    'productIdentifier': 'S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3',
                     'title': 'S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3',
                     'orbitNumber': 20624,
                     'instrument': 'SAR-C SAR',
-                    'description': None,
+                    'abstract': None,
                     'eodag_search_intersection': {
                         'coordinates': [
                             [
@@ -63,10 +65,17 @@ class TestCoreSearchResults(unittest.TestCase):
                         'type': 'Polygon'
                     },
                     'organisationName': None,
-                    'provider_id': '578f1768-e66e-5b86-9363-b19f8931cc7b',
-                    'startDate': '2018-02-15T23:53:22.871Z'
+                    'startTimeFromAscendingNode': '2018-02-15T23:53:22.871Z',
+                    'platform': None,
+                    'sensorType': None,
+                    'processingLevel': None,
+                    'orbitType': None,
+                    'topicCategory': None,
+                    'orbitDirection': None,
+                    'parentIdentifier': None,
+                    'sensorMode': None,
                 },
-                'id': 'urn:uuid:27d256c4-d776-4d25-a9a0-d2a1b25d2d24',
+                'id': '578f1768-e66e-5b86-9363-b19f8931cc7b',
                 'type': 'Feature',
                 'geometry': {
                     'coordinates': [
@@ -99,6 +108,9 @@ class TestCoreSearchResults(unittest.TestCase):
             'type': 'FeatureCollection'
         }
         self.search_result = SearchResult.from_geojson(self.geojson_repr)
+        # Ensure that each product in a search result has geometry and search intersection as a shapely geometry
+        for product in self.search_result:
+            product.search_intersection = geometry.shape(product.search_intersection)
 
     def test_core_serialize_search_results(self):
         """The core api must serialize a search results to geojson format into a file named search_results.geojson"""

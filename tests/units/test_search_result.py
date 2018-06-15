@@ -3,14 +3,20 @@
 # All rights reserved
 from __future__ import unicode_literals
 
-import geojson
-from typing import Iterable
+import unittest
 
-from tests import EODagTestCase
+
+try:
+    from UserList import UserList
+except ImportError:
+    from collections import UserList
+
+import geojson
+
 from tests.context import SearchResult
 
 
-class TestSearchResult(EODagTestCase):
+class TestSearchResult(unittest.TestCase):
 
     def setUp(self):
         super(TestSearchResult, self).setUp()
@@ -21,15 +27,9 @@ class TestSearchResult(EODagTestCase):
         geo_interface = geojson.loads(geojson.dumps(self.search_result))
         self.assertDictContainsSubset({'type': 'FeatureCollection', 'features': []}, geo_interface)
 
-    def test_search_result_list_iterable_like(self):
-        """SearchResult must have a length and be iterable"""
-        self.assertEqual(len(self.search_result), 0)
-        self.assertIsInstance(self.search_result, Iterable)
-
-    def test_search_result_truth_value(self):
-        """SearchResult with empty list must be False and True with non empty list"""
-        self.assertFalse(self.search_result)
-        self.assertTrue(SearchResult(['Mock']))
+    def test_search_result_is_list_like(self):
+        """SearchResult must provide a list interface"""
+        self.assertIsInstance(self.search_result, UserList)
 
     def test_search_result_from_feature_collection(self):
         """SearchResult instances must be build-able from feature collection geojson"""

@@ -22,6 +22,7 @@ from tqdm import tqdm
 from usgs import CATALOG_NODES, USGSError, api
 
 from eodag.api.product import EOProduct
+from eodag.api.product.representations import properties_from_json
 from .base import Api
 
 
@@ -33,9 +34,9 @@ class UsgsApi(Api):
     def query(self, product_type, **kwargs):
         api.login(self.config['credentials']['username'], self.config['credentials']['password'], save=True)
         usgs_product_type = self.config['products'][product_type]['product_type']
-        start_date = kwargs.pop('startDate', None)
-        end_date = kwargs.pop('endDate', None)
-        footprint = kwargs.pop('footprint', None)
+        start_date = kwargs.pop('startTimeFromAscendingNode', None)
+        end_date = kwargs.pop('completionTimeFromAscendingNode', None)
+        footprint = kwargs.pop('geometry', None)
 
         # Configuration to generate the download url of search results
         result_summary_pattern = re.compile(
@@ -60,22 +61,22 @@ class UsgsApi(Api):
                     r_lower_left = result['lowerLeftCoordinate']
                     r_upper_right = result['upperRightCoordinate']
                     summary_match = result_summary_pattern.match(result['summary']).groupdict()
+                    result['geometry'] = geometry.box(
+                        r_lower_left['longitude'], r_lower_left['latitude'],
+                        r_upper_right['longitude'], r_upper_right['latitude']
+                    )
+                    result['productType'] = usgs_product_type
                     final.append(EOProduct(
+                        product_type,
                         self.instance_name,
                         dl_url_pattern.format(
                             base_url=self.config['google_base_url'].rstrip('/'),
                             entity=result['entityId'],
                             **summary_match
                         ),
-                        result['entityId'],
-                        geometry.box(
-                            r_lower_left['longitude'], r_lower_left['latitude'],
-                            r_upper_right['longitude'], r_upper_right['latitude']
-                        ),
-                        footprint,
-                        product_type,
-                        provider_id=result['entityId'],
-                        startDate=result['acquisitionDate']))
+                        properties_from_json(result, self.config['metadata_mapping']),
+                        searched_bbox=footprint,
+                    ))
             except USGSError as e:
                 logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type, node_type)
                 logger.debug("Skipping error: %s", e)
@@ -83,13 +84,13 @@ class UsgsApi(Api):
         return final
 
     def download(self, product, auth=None):
-        url = product.location_url_tpl
+        url = product.location
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
             return
         logger.debug('Download url: %s', url)
 
-        filename = product.local_filename
+        filename = product.properties['title'] + '.tar.bz'
         local_file_path = os.path.join(self.config['outputs_prefix'], filename)
         download_records = os.path.join(self.config['outputs_prefix'], '.downloaded')
         if not os.path.exists(download_records):
@@ -98,9 +99,8 @@ class UsgsApi(Api):
         record_filename = os.path.join(download_records, url_hash)
         if os.path.isfile(record_filename) and os.path.isfile(local_file_path):
             logger.info('Product already downloaded. Retrieve it at %s', local_file_path)
-            yield local_file_path
-            return
-        # Remove the record file if local_file_path is absent (e.g. it was deleted while record wasn't)
+            return local_file_path
+            # Remove the record file if local_file_path is absent (e.g. it was deleted while record wasn't)
         elif os.path.isfile(record_filename):
             logger.debug('Record file found (%s) but not the actual file', record_filename)
             logger.debug('Removing record file : %s', record_filename)
@@ -132,6 +132,7 @@ class UsgsApi(Api):
                         with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
                                 local_file_path)) as progressbar:
                             for fileinfo in progressbar:
-                                yield zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                                zfile.extract(fileinfo, path=self.config['outputs_prefix'])
+                    return local_file_path[:local_file_path.index('.tar.bz')]
                 else:
-                    yield local_file_path
+                    return local_file_path

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
@@ -17,7 +15,12 @@ class GenericAuth(Authentication):
         if not method:
             method = 'basic'
         if method == 'basic':
-            return HTTPBasicAuth(*tuple(self.config['credentials'].values()))
+            return HTTPBasicAuth(
+                self.config['credentials']['username'],
+                self.config['credentials']['password']
+            )
         if method == 'digest':
-            return HTTPDigestAuth(*tuple(self.config['credentials'].values()))
-
+            return HTTPDigestAuth(
+                self.config['credentials']['username'],
+                self.config['credentials']['password']
+            )

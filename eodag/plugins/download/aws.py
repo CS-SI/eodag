@@ -24,42 +24,25 @@ class AwsDownload(Download):
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
     def download(self, product, auth=None):
-
-        #login
         access_key, access_secret = auth
         s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=access_secret)
-
-        #amazon bucket where to download the data from
         bucket = s3.Bucket(self.config['associated_bucket'])
+        product_local_path = os.path.join(
+            self.config['outputs_prefix'],
+            product.properties['title']
+        )
+        if not os.path.isdir(product_local_path):
+            os.makedirs(product_local_path)
 
-        output_dir = str(self.config['outputs_prefix'])
-        doss = 'EO_product_{}'.format(product.id)
-
-        #check if the directory where to store the product already exists of not creates it
-        if not os.path.isdir(os.path.join(output_dir, doss)):
-            os.makedirs(os.path.join(output_dir, doss))
-
-        for i in bucket.objects.filter(Prefix=product.location_url_tpl):
-
-            dir = i.key.split('/')
-
-            if len(dir) > 9:
-
-                if not os.path.isdir(os.path.join(output_dir, doss, dir[-2])):
-                    os.makedirs(os.path.join(output_dir, doss, dir[-2]))
-
-                l = i.key.split('/')
-                suffix = l[-1]
-                name = os.path.join(output_dir, doss, dir[-2], suffix)
-
-                #avoid to re download a file which has already been downloaded
-                if not os.path.isfile(name):
-                    bucket.download_file(i.key, name)
-
+        for product_chunk in bucket.objects.filter(Prefix=product.location):
+            chunck_path_as_list = product_chunk.key.split('/')
+            if len(chunck_path_as_list) > 9:
+                chunk_dir = os.path.join(product_local_path, chunck_path_as_list[-2])
+                if not os.path.isdir(chunk_dir):
+                    os.makedirs(chunk_dir)
+                chunk_file_path = os.path.join(chunk_dir, chunck_path_as_list[-1])
             else:
-                l = i.key.split('/')
-                suffix = l[-1]
-                name = os.path.join(output_dir, doss, suffix)
-                # avoid to re download a file which has already been downloaded
-                if not os.path.isfile(name):
-                    bucket.download_file(i.key, name)
+                chunk_file_path = os.path.join(product_local_path, chunck_path_as_list[-1])
+            if not os.path.isfile(chunk_file_path):
+                bucket.download_file(product_chunk.key, chunk_file_path)
+        return product_local_path
