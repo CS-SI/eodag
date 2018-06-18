@@ -284,6 +284,12 @@ class SatImagesAPI(object):
     def download(self, product):
         """Download a single product.
 
+        .. warning::
+            As a side effect, this method changes the `location` attribute of an :class:`~eodag.api.product.EOProduct`.
+            So be aware that you may not be able to download the product again if you didn't store its remote location
+            somewhere first before downloading it, unless the download failed or the download plugin didn't returned the
+            local path of the downloaded resource
+
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product.EOProduct`
         :returns: The absolute path to the downloaded product in the local filesystem

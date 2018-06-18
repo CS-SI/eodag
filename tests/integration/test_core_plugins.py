@@ -647,6 +647,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
         else:
             self.assertEqual(path, self.expected_downloaded_path)
             self.assertTrue(zipfile.is_zipfile(path))
+        self.assertEqual('file://{}'.format(path), self.product.location)
         self.assertEqual(self.requests_get.call_count, 1)
         self.assertTrue(os.path.exists(self.expected_record_file))
         with open(self.expected_record_file, 'r') as fh:

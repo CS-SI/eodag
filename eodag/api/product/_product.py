@@ -216,6 +216,9 @@ class EOProduct(object):
     def download(self):
         """Download the EO product using the provided download plugin and the authenticator if necessary.
 
+        The actual download of the product occurs only at the first call of this method. A side effect of this method is
+        that it changes the `location` attribute of an EOProduct, from its remote address to the local address.
+
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
         """
@@ -237,9 +240,10 @@ class EOProduct(object):
                 fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(local_filepath))
                 for fileinfo in fileinfos:
                     zfile.extract(fileinfo, path=fs_location)
-            # After the product has been downloaded, we need to modify its location attribute to reflect that it is now
-            # in the filesystem, so its address can be computed
-            self.location = 'file://{}'.format(fs_location)
+        # After the product has been downloaded, we need to modify its location attribute to reflect that it is now
+        # in the filesystem
+        logger.debug('Product location updated from %s to %s', self.location, fs_location)
+        self.location = 'file://{}'.format(fs_location)
         # Restore configuration
         self.downloader.config['extract'] = old_extraction_config
         return fs_location
