@@ -62,7 +62,7 @@ AmazonWS:
     plugin: OAuth
 
 eocloud:
-  priority: 0
+  priority: 1
   products:
     S1_OCN:
       product_type: OCN
@@ -443,7 +443,7 @@ geostorm-ce:
     plugin: GenericAuth
 
 airbus-ds:
-  priority: 1
+  priority: 0
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
