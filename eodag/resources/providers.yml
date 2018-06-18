@@ -492,6 +492,7 @@ airbus-ds:
   download:
     plugin: HTTPDownload
     base_uri: 'https://k8s.qualif.geohub.space/api/v1/services/download/'
+    archive_depth: 2
   auth:
     plugin: HTTPHeaderAuth
     headers:
