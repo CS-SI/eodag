@@ -122,8 +122,9 @@ class TestEOProduct(EODagTestCase):
         product.driver = mock.MagicMock(spec_set=NoDriver())
         product.driver.get_data_address.side_effect = get_data_address
 
-        mock_downloader = mock.MagicMock(spec_set=Download(config={'extract': False}))
+        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
         mock_downloader.download.return_value = self.local_product_as_archive_path
+        mock_downloader.config = {'extract': False, 'archive_depth': 1}
         mock_authenticator = mock.MagicMock(spec_set=Authentication(config={}))
 
         product.register_downloader(mock_downloader, mock_authenticator.authenticate())
