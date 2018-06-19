@@ -1,7 +1,7 @@
 instance-1:
   priority: 10000
   search:
-    plugin: RestoSearch
+    plugin: ArlasSearch
     api_endpoint: 'http://www.domain.com'
     products:
       PROD-TYPE:
@@ -14,7 +14,7 @@ instance-1:
   crunch:
     plugin: RemoveDoubles
   auth:
-    plugin: TokenAuth
+    plugin: Header
     auth_uri: 'https://www.domain.com/api/authidentity'
     token_type: json
 

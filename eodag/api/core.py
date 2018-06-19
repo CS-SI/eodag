@@ -219,11 +219,11 @@ class SatImagesAPI(object):
 
     @staticmethod
     def sort_by_extent(searches):
-        """
-        Combines multiple SearchResults and return a list of SearchResults sorted by extent.
+        """Combines multiple SearchResults and return a list of SearchResults sorted by extent.
+
         :param searches: List of eodag SearchResult
         :type searches: list
-        :return: list of SearchResults
+        :return: list of :class:`~eodag.api.search_result.SearchResult`s
         """
         products_grouped_by_extent = {}
 

@@ -99,7 +99,7 @@ class TestEodagCli(unittest.TestCase):
 
     @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
     def test_eodag_search_bbox_valid(self, SatImagesAPI):
-        """Calling eodag search with --bbox argument valid"""
+        """Calling eodag search with --geometry argument valid"""
         with self.user_conf() as conf_file:
             product_type = 'whatever'
             self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', product_type, '-b', 1, 43, 2, 44])

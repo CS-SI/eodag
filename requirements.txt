@@ -3,15 +3,12 @@ python-dateutil
 PyYAML
 tqdm
 click
-sentinelsat
 shapely
 owslib
 six
 geojson
 pyproj
 pytz
-usgs
-boto3
 numpy
 rasterio==1.0a12
 protobuf

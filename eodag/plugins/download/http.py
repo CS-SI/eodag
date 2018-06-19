@@ -32,7 +32,7 @@ class HTTPDownload(Download):
     def download(self, product, auth=None):
         """Download a product as zip archive using HTTP protocol"""
         if not product.location.startswith('file://'):
-            url = self.__build_download_url(product, auth)
+            url = self.__build_download_url(product)
             if not url:
                 logger.debug('Unable to get download url for %s, skipping download', product)
                 return
@@ -109,14 +109,10 @@ class HTTPDownload(Download):
             # Do not download data if we are on site. Instead give back the absolute path to the data
             return path
 
-    def __build_download_url(self, product, auth):
+    def __build_download_url(self, product):
         if product.location:
             try:
-                url = product.location.format(
-                    base=self.config.get('base_uri').rstrip('/'),
-                )
-                if product.properties['organisationName'] in ('ESA',):
-                    url += '?token={}'.format(auth.token)
+                url = product.location.format(base=self.config.get('base_uri').rstrip('/'))
                 return url
             except Exception:
                 import traceback as tb

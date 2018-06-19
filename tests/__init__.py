@@ -30,15 +30,11 @@ RESOURCES_PATH = jp(dirn(__file__), '..', 'eodag', 'resources')
 
 
 class EODagTestCase(unittest.TestCase):
-    __eocloud_search_url_to_reference_product = (
-        'https://finder.eocloud.eu/resto/api/collections/Sentinel2/search.json?maxRecords=10&productIdentifier=%/eodata'
-        '/Sentinel-2/MSI/L1C/2018/01/01/S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE%&sortParam='
-        'startDate&sortOrder=descending&dataset=ESA-DATASET')
 
     def setUp(self):
         self.provider = 'eocloud'
-        self.download_url = ('https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo/Sentinel-2/MSI/'
-                             'L1C/2018/01/01/S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE.zip')
+        self.download_url = ('https://k8s.qualif.geohub.space/api/v1/services/download/8ff765a2-e089-465d-a48f-'
+                             'cc27008a0962')
         self.local_filename = 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'
         self.local_product_abspath = os.path.abspath(jp(TEST_RESOURCES_PATH, 'products', self.local_filename))
         self.local_product_as_archive_path = os.path.abspath(
@@ -134,65 +130,3 @@ class EODagTestCase(unittest.TestCase):
             for j, pair in enumerate(coords):
                 coords[j] = list(pair)
         return shapely_mapping
-
-    def compute_csw_records(self, mock_catalog, raise_error_for='', *args, **kwargs):
-        if raise_error_for:
-            for constraint in kwargs['constraints']:
-                if constraint.propertyname == raise_error_for:
-                    exception_report = etree.parse(StringIO(
-                        '<ExceptionReport xmlns="http://www.opengis.net/ows/1.1" '
-                        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation='
-                        '"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.0.0" language="en">'
-                        '<Exception exceptionCode="NoApplicableCode"><ExceptionText>Unknown exception</ExceptionText>'
-                        '</Exception></ExceptionReport>'))
-                    raise ExceptionReport(exception_report)
-        bbox_wgs84 = random.choice([
-            None,
-            (self.footprint['lonmin'], self.footprint['latmin'], self.footprint['lonmax'], self.footprint['latmax'])
-        ])
-        Record = namedtuple(
-            'CswRecord',
-            ['identifier', 'title', 'creator', 'publisher', 'abstract', 'subjects', 'date', 'references',
-             'bbox_wgs84', 'bbox', 'xml'])
-        BBox = namedtuple('BBox', ['minx', 'miny', 'maxx', 'maxy', 'crs'])
-        Crs = namedtuple('Crs', ['code', 'id'])
-        mock_catalog.records = OrderedDict({
-            'id ent ifier': Record(
-                identifier='id ent ifier',
-                title='MyRecord',
-                creator='eodagUnitTests',
-                publisher='eodagUnitTests',
-                abstract='A dumb CSW record for testing purposes',
-                subjects=[],
-                date='',
-                references=[{'scheme': 'WWW:DOWNLOAD-1.0-http--download', 'url': 'http://www.url.eu/dl'}],
-                bbox_wgs84=bbox_wgs84,
-                bbox=BBox(minx=self.footprint['lonmin'], miny=self.footprint['latmin'],
-                          maxx=self.footprint['lonmax'], maxy=self.footprint['latmax'],
-                          crs=Crs(code=4326, id='EPSG')),
-                xml="""
-                    <csw:Record xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" 
-                        xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" 
-                        xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml" 
-                        xmlns:ows="http://www.opengis.net/ows" xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                        <dc:identifier>urn:x-gs:resource:localhost::52</dc:identifier>
-                        <dc:title>S2 mosaic on Madrid</dc:title>
-                        <dc:format/>
-                        <dct:references scheme="WWW:LINK-1.0-http--link">
-                            http://localhost:8000/admin/storm_csw/resource/52/change/
-                        </dct:references>
-                        <dct:modified>2017-05-05 13:02:35.548758+00:00</dct:modified>
-                        <dct:abstract/>
-                        <dc:date>2017-05-05 13:02:35.139807+00:00</dc:date>
-                        <dc:creator> </dc:creator>
-                        <dc:coverage/>
-                        <ows:BoundingBox dimensions="2" crs="EPSG">
-                        <ows:LowerCorner>40.405012373 -3.70433905592</ows:LowerCorner>
-                        <ows:UpperCorner>40.420696583 -3.67011406889</ows:UpperCorner>
-                        </ows:BoundingBox>
-                    </csw:Record>
-                """
-            )
-        })
-        return mock.DEFAULT

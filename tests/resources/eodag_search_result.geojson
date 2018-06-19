@@ -37,7 +37,7 @@
         "abstract": null,
         "sensorMode": null,
         "cloudCover": 0,
-        "eodag_provider": "peps",
+        "eodag_provider": "airbus-ds",
         "eodag_product_type": "S1_OCN",
         "platform": null,
         "topicCategory": null,
@@ -77,13 +77,13 @@
         "keyword": {},
         "processingLevel": null,
         "sensorType": null,
-        "eodag_download_url": "https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931cc7b/download",
+        "eodag_download_url": "https://k8s.qualif.geohub.space/api/v1/services/download/8ff765a2-e089-465d-a48f-cc27008a0962",
         "productType": "OCN",
         "orbitNumber": 20624,
         "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",
         "resolution": null
       },
-      "id": "578f1768-e66e-5b86-9363-b19f8931cc7b"
+      "id": "8ff765a2-e089-465d-a48f-cc27008a0962"
     }
   ]
 }

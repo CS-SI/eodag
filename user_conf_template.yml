@@ -1,42 +1,5 @@
-# Only known system configuration can be overridden for their credentials config key under auth config.
-# Unknown keys will simply be ignored, and the corresponding configuration not overridden.
-outputs_prefix:
-extract: # true or false
-peps:
-    credentials:
-        username:
-        password:
-theia:
-    credentials:
-        ident:
-        pass:
-theia-landsat:
-    credentials:
-        ident:
-        pass:
-eocloud:
-    credentials:
-        domainName:
-        userName:
-        userPass:
-scihub:
-    credentials:
-        username:
-        password:
-geostorm-ce:
-    credentials:
-        username:
-        password:
-USGS:
-    credentials:
-        username:
-        password:
-
-AmazonWS:
-    credentials:
-        aws_access_key_id:
-        aws_secret_access_key:
-
+outputs_prefix: # The top level directory where all the products will be downloaded
+extract: # true or false (if true, extraction is done right after the download of a product)
 airbus-ds:
     credentials:
         apikey:

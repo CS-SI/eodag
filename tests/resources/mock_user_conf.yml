@@ -5,8 +5,7 @@ mock-provider-7:
 
 mock-provider-9:
   credentials:
-    username: "user"
-    password: "pwd"
+    apikey: admqskdcompletelyFakejfAGQSPDKqsldoeurpo===
 
 mock-provider-10:
   credentials:

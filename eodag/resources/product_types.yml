@@ -14,100 +14,20 @@ S1_RAW:
   desc: ""
   meta: []
 
-L8_L1T:
-  desc: ""
-  meta: []
-
-L8_L1GT:
-  desc: ""
-  meta: []
-
-L8_LC8:
-  desc: ""
-  meta: []
-
-L7_L1GT:
-  desc: ""
-  meta: []
-
-L7_L1G:
-  desc: ""
-  meta: []
-
-L7_L1T:
-  desc: ""
-  meta: []
-
-L5_L1GT:
-  desc: ""
-  meta: []
-
-L5_L1G:
-  desc: ""
-  meta: []
-
-L5_L1T:
-  desc: ""
-  meta: []
-
-ES_FRS:
-  desc: ""
-  meta: []
-
-S3_EFR:
-  desc: ""
-  meta: []
-
-S3_ERR:
-  desc: ""
-  meta: []
-
-S3_RBT:
-  desc: ""
-  meta: []
-
 S3_SRA:
   desc: ""
   meta: []
 
-S3_WAT:
-  desc: ""
-  meta: []
-
 S3_LAN:
-  desc: LAN (eocloud) or SR_2_LAN___ (peps)
-  meta: []
-
-S3_LST:
   desc: ""
   meta: []
 
-S3_LRR:
-  desc: OL_2_LRR___
+S3_SRA_BS:
+  desc: ""
   meta: []
 
-S3_LFR:
-  desc: OL_2_LFR___
-  meta: []
-
-LS_REFLECTANCE:
-  desc: Landsat
-  meta: []
-
-LS_REFLECTANCETOA:
-  desc: Landsat
-  meta: []
-
-PLD_REFLECTANCE:
-  desc: Pleiades
-  meta: []
-
-PLD_REFLECTANCETOA:
-  desc: Pleiades
-  meta: []
-
-S2_REFLECTANCE:
-  desc: Sentinel2
+S3_SRA_A_BS:
+  desc: ""
   meta: []
 
 S2_MSI_L1C:
@@ -117,7 +37,3 @@ S2_MSI_L1C:
       type: date
     - key: PRODUCT_STOP_TIME
       type: date
-
-S2_MSI_L2Ap:
-  desc: Sentinel 2
-  meta: []

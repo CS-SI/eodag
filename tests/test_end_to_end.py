@@ -80,28 +80,6 @@ class TestEODagEndToEnd(unittest.TestCase):
         # The partially downloaded file should be greater or equal to 1 MB
         self.assertGreaterEqual(os.stat(self.downloaded_file_path).st_size, 2 ** 20)
 
-    def test_end_to_end_search_download_eocloud(self):
-        product = self.execute_search(
-            'eocloud',
-            'S2_MSI_L1C',
-            '2018-02-01',
-            '2018-02-16',
-            (9.1113159, 2.701635, 14.100952, 5.588651)
-        )
-        expected_filename = '{}.zip'.format(product.properties['title'])
-        self.execute_download(product, expected_filename)
-
-    def test_end_to_end_search_download_usgs(self):
-        product = self.execute_search(
-            'USGS',
-            'L8_LC8',
-            '2017-03-01',
-            '2017-03-15',
-            (50, 50, 50.3, 50.3)
-        )
-        expected_filename = '{}.tar.bz'.format(product.properties['title'])
-        self.execute_download(product, expected_filename)
-
     def test_end_to_end_search_download_airbus(self):
         product = self.execute_search(
             'airbus-ds',
@@ -111,40 +89,4 @@ class TestEODagEndToEnd(unittest.TestCase):
             (0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565)
         )
         expected_filename = '{}.zip'.format(product.properties['title'])
-        self.execute_download(product, expected_filename)
-
-    @unittest.skip('Download of S2_MSI_L1C Products on peps provider before 2016/12/05 is known to be asynchronous and '
-                   'this feature is not present in eodag at the moment')
-    def test_end_to_end_search_download_peps_before_20161205(self):
-        product = self.execute_search(
-            'peps',
-            'S2_MSI_L1C',
-            '2016-06-05',
-            '2016-06-16',
-            (137.772897, -37.134202, 153.749135, 73.885986)
-        )
-        expected_filename = '{}.zip'.format(product.properties['title'])
-        self.execute_download(product, expected_filename)
-
-    def test_end_to_end_search_download_peps_after_20161205(self):
-        product = self.execute_search(
-            'peps',
-            'S2_MSI_L1C',
-            '2018-06-05',
-            '2018-06-16',
-            (137.772897, -37.134202, 153.749135, 73.885986)
-        )
-        expected_filename = '{}.zip'.format(product.properties['title'])
-        self.execute_download(product, expected_filename)
-
-    def test_end_to_end_search_download_scihub(self):
-        product = self.execute_search(
-            'scihub',
-            'S2_MSI_L1C',
-            '2018-02-01',
-            '2018-02-16',
-            (-161.187910, 64.821439, -159.177830, 65.809122)
-        )
-        # Scihub api manage incomplete downloads by adding '.incomplete' to a file that hasn't been fully downloaded yet
-        expected_filename = '{}.zip.incomplete'.format(product.properties['title'])
         self.execute_download(product, expected_filename)

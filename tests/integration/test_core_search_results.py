@@ -18,7 +18,6 @@ class TestCoreSearchResults(unittest.TestCase):
 
     def setUp(self):
         self.dag = SatImagesAPI()
-        self.maxDiff = None
         self.geojson_repr = {
             'features': [{
                 'properties': {
@@ -27,9 +26,9 @@ class TestCoreSearchResults(unittest.TestCase):
                     'completionTimeFromAscendingNode': '2018-02-16T00:12:14.035Z',
                     'keyword': {},
                     'productType': 'OCN',
-                    'eodag_download_url': ('https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931c'
-                                           'c7b/download'),
-                    'eodag_provider': 'peps',
+                    'eodag_download_url': ('https://k8s.qualif.geohub.space/api/v1/services/download/8ff765a2-e089-465d'
+                                           '-a48f-cc27008a0962'),
+                    'eodag_provider': 'airbus-ds',
                     'eodag_product_type': 'S1_OCN',
                     'platformSerialIdentifier': 'S1A',
                     'cloudCover': 0,
@@ -75,7 +74,7 @@ class TestCoreSearchResults(unittest.TestCase):
                     'parentIdentifier': None,
                     'sensorMode': None,
                 },
-                'id': '578f1768-e66e-5b86-9363-b19f8931cc7b',
+                'id': '8ff765a2-e089-465d-a48f-cc27008a0962',
                 'type': 'Feature',
                 'geometry': {
                     'coordinates': [

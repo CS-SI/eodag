@@ -10,46 +10,18 @@ from tests.context import SatImagesAPI, UnsupportedProvider
 
 class TestCore(unittest.TestCase):
     SUPPORTED_PRODUCT_TYPES = {
-        'S3_RBT': ['eocloud', 'peps'],
-        'PLD_REFLECTANCETOA': ['theia-landsat'],
-        'S2_MSI_L2Ap': ['eocloud', 'scihub'],
-        'S3_LAN': ['eocloud', 'peps'],
-        'S2_MSI_L1C': ['AmazonWS', 'eocloud', 'peps', 'scihub'],
-        'S3_ERR': ['eocloud', 'peps'],
-        'L7_L1G': ['eocloud'],
-        'S1_SLC': ['eocloud', 'peps', 'scihub'],
-        'ES_FRS': ['eocloud'],
-        'S3_SRA': ['eocloud'],
-        'S3_WAT': ['eocloud'],
-        'S3_LFR': ['peps'],
-        'L5_L1GT': ['eocloud'],
-        'S3_LST': ['peps', 'eocloud'],
-        'L5_L1T': ['eocloud'],
-        'LS_REFLECTANCE': ['theia-landsat'],
-        'S1_RAW': ['eocloud', 'scihub'],
-        'S1_GRD': ['peps', 'eocloud', 'scihub'],
-        'S1_OCN': ['peps', 'eocloud', 'scihub'],
-        'L8_L1T': ['eocloud'],
-        'S3_EFR': ['peps', 'eocloud'],
-        'L8_LC8': ['USGS'],
-        'L7_L1T': ['eocloud'],
-        'S2_REFLECTANCE': ['theia'],
-        'S3_LRR': ['peps'],
-        'PLD_REFLECTANCE': ['theia-landsat'],
-        'L5_L1G': ['eocloud'],
-        'L8_L1GT': ['eocloud'],
-        'LS_REFLECTANCETOA': ['theia-landsat'],
-        'L7_L1GT': ['eocloud'],
+        'S3_LAN': ['airbus-ds'],
+        'S2_MSI_L1C': ['airbus-ds'],
+        'S1_SLC': ['airbus-ds'],
+        'S3_SRA': ['airbus-ds'],
+        'S1_RAW': ['airbus-ds'],
+        'S1_GRD': ['airbus-ds'],
+        'S1_OCN': ['airbus-ds'],
+        'S3_SRA_BS': ['airbus-ds'],
+        'S3_SRA_A_BS': ['airbus-ds'],
     }
     SUPPORTED_PROVIDERS = [
-        'eocloud',
-        'peps',
-        'AmazonWS',
-        'USGS',
-        'theia',
-        'theia-landsat',
-        'scihub',
-        'geostorm-ce'
+        'airbus-ds'
     ]
 
     def setUp(self):

@@ -343,48 +343,39 @@ mock-provider-9:
       product_type: MOCK9
       collection: MockCollection9
   search:
-    plugin: RestoSearch
+    plugin: ArlasSearch
     api_endpoint: 'http://subdomain9.domain.eu/resto/api/'
     metadata_mapping:
-      id: '$.id'
+      id: '$.properties.uid'
       geometry:
-        - box
+        - gintersect
         - '$.geometry'
       productType:
-        - productType
-        - '$.properties.productType'
-      platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
-      instrument: '$.properties.instrument'
-      processingLevel: '$.properties.processingLevel'
-      title: '$.properties.title'
-      keyword: '$.properties.keywords'
-      abstract: '$.properties.description'
-      organisationName: '$.properties.organisationName'
-      orbitNumber: '$.properties.orbitNumber'
-      orbitDirection: '$.properties.orbitDirection'
+        - 'identification.type'
+        - '$.properties.identification.type'
+      platform: '$.properties.acquisition.mission'
+      platformSerialIdentifier: '$.properties.acquisition.missionCode'
+      instrument: '$.properties.acquisition.sensorId'
+      processingLevel: '$.properties.production.levelCode'
+      title: '$.properties.identification.externalId'
+      orbitNumber: '$.properties.orbit.number'
+      orbitDirection: '$.properties.orbit.direction'
       cloudCover:
-        - cloudCover
-        - '$.properties.cloudCover'
-      snowCover: '$.properties.snowCover'
+        - 'contentDesctiption.cloudCoverPercentage'
+        - '$.properties.contentDescription.cloudCoverPercentage'
       startTimeFromAscendingNode:
-        - startDate
-        - '$.properties.startDate'
-      completionTimeFromAscendingNode:
-        - completionDate
-        - '$.properties.completionDate'
-      parentIdentifier: '$.properties.parentIdentifier'
-      resolution: '$.properties.resolution'
-      sensorMode: '$.properties.sensorMode'
+        - 'acquisition.beginViewingDate'
+        - '$.properties.acquisition.beginViewingDate'
+      completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
   download:
     plugin: HTTPDownload
     base_uri: 'https://subdomain9.domain.eu/download/'
     dl_url_params:
       param: value
   auth:
-    plugin: TokenAuth
-    auth_uri: 'https://subdomain9.domain.eu/authentication'
-    token_type: json
+    plugin: HTTPHeaderAuth
+    headers:
+      Authorization: "Apikey {apikey}"
 
 mock-provider-10:
   priority: 1

@@ -13,7 +13,7 @@ import yaml.parser
 from .context import config
 
 
-VALID_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'resources', 'valid_system_conf.yml')
+VALID_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'resources', 'mock_providers.yml')
 INVALID_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'resources', 'invalid_system_conf.yml')
 
 
@@ -29,11 +29,11 @@ class TestConfig(unittest.TestCase):
     def test_config_dict_like_interface(self):
         """All config keys should be accessible like in a Python dict"""
         config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
-        self.assertTrue('instance-1' in config_tested)
+        self.assertTrue('mock-provider-9' in config_tested)
         with self.assertRaises(KeyError):
             _ = config_tested['NOTFOUND']
-        self.assertIn(config_tested['instance-1'], config_tested.values())
-        self.assertIn(('instance-1', config_tested['instance-1']), config_tested.items())
+        self.assertIn(config_tested['mock-provider-9'], config_tested.values())
+        self.assertIn(('mock-provider-9', config_tested['mock-provider-9']), config_tested.items())
         self.assertTrue([key for key in config_tested])
 
     def test_config_update(self):
