@@ -240,6 +240,15 @@ class EOProduct(object):
                 fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(local_filepath))
                 for fileinfo in fileinfos:
                     zfile.extract(fileinfo, path=fs_location)
+            # Handle depth levels in the product archive. For example, if the downloaded archive was
+            # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
+            # location will be /top_level/product_base_dir.
+            # WARNING: A strong assumption is made here: there is only one subdirectory per level
+            archive_depth = self.downloader.config.get('archive_depth', 1)
+            count = 1
+            while count < archive_depth:
+                fs_location = os.path.join(fs_location, os.listdir(fs_location)[0])
+                count += 1
         # After the product has been downloaded, we need to modify its location attribute to reflect that it is now
         # in the filesystem
         logger.debug('Product location updated from %s to %s', self.location, fs_location)
