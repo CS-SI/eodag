@@ -229,22 +229,24 @@ class EOProduct(object):
         old_extraction_config = self.downloader.config['extract']
         self.downloader.config['extract'] = False
         auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
-        local_filepath = self.downloader.download(self, auth=auth)
-        if local_filepath is None:
+        fs_location = self.downloader.download(self, auth=auth)
+        if fs_location is None:
             logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
                            'have not been returned by the download plugin')
             return ''
-        fs_location = local_filepath[:local_filepath.index('.zip')]
-        if zipfile.is_zipfile(local_filepath) and not os.path.exists(fs_location):
-            with zipfile.ZipFile(local_filepath, 'r') as zfile:
-                fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(local_filepath))
-                for fileinfo in fileinfos:
-                    zfile.extract(fileinfo, path=fs_location)
+        if zipfile.is_zipfile(fs_location):
+            # Unzip only if it was not done before
+            if not os.path.exists(fs_location[:fs_location.index('.zip')]):
+                with zipfile.ZipFile(fs_location, 'r') as zfile:
+                    fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(fs_location))
+                    for fileinfo in fileinfos:
+                        zfile.extract(fileinfo, path=fs_location[:fs_location.index('.zip')])
             # Handle depth levels in the product archive. For example, if the downloaded archive was
             # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
             # location will be /top_level/product_base_dir.
             # WARNING: A strong assumption is made here: there is only one subdirectory per level
             archive_depth = self.downloader.config.get('archive_depth', 1)
+            fs_location = fs_location[:fs_location.index('.zip')]
             count = 1
             while count < archive_depth:
                 fs_location = os.path.join(fs_location, os.listdir(fs_location)[0])
