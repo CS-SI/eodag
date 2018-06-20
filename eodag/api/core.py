@@ -212,7 +212,9 @@ class SatImagesAPI(object):
 
         for search in searches:
             for product in search:
-                same_geom = products_grouped_by_extent.setdefault(product.geometry.wkb_hex, [])
+                same_geom = products_grouped_by_extent.setdefault(
+                    ''.join([str(round(p, 2)) for p in product.geometry.bounds]), []
+                )
                 same_geom.append(product)
 
         return [
