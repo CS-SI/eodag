@@ -82,23 +82,6 @@ class SatImagesAPI(object):
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
 
-        >>> dag = SatImagesAPI()    # 'eocloud' is considered the default preferred provider
-        >>> dag.get_preferred_provider()    # This also tests get_preferred_provider method by the way
-        ('eocloud', 1)
-        >>> dag.set_preferred_provider(u'unknown')
-        Traceback (most recent call last):
-            ...
-        UnsupportedProvider: This provider is not recognised by eodag
-        >>> dag.set_preferred_provider(u'USGS')
-        >>> dag.get_preferred_provider()
-        ('USGS', 2)
-        >>> dag.set_preferred_provider(u'eocloud')
-        >>> dag.get_preferred_provider()
-        ('eocloud', 3)
-        >>> dag.set_preferred_provider(u'USGS')
-        >>> dag.get_preferred_provider()
-        ('USGS', 4)
-
         :param provider: The name of the provider that should be considered as the preferred provider to be used for
                          this instance
         :type provider: str or unicode
@@ -395,10 +378,3 @@ class SatImagesAPI(object):
             for key, val in options.items()
         })
         return self._plugins_manager.instantiate_plugin_by_config('crunch', plugin_conf)
-
-
-if __name__ == '__main__':
-    import doctest
-
-
-    doctest.testmod()
