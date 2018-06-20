@@ -25,18 +25,17 @@ class PluginInstancesManager(object):
     """A manager for the plugins instances.
 
     The role of instances of this class (normally only one instance exists, created during instantiation of
-    :class:`~eodag.api.core.SatImagesAPI`, and referenced by :attr:`eodag.api.core.SatImagesAPI.pim` - pim stands
-    for plugin instances manager. But nothing is done to enforce this) is to instantiate the plugins according to the
-    providers configuration, and keep track of them in memory. The providers configuration contains information such as
-    the name of the provider, the internet endpoint for accessing it, and the plugins to use to perform defined actions
-    (search, download, authenticate, crunch).
+    :class:`~eodag.api.core.SatImagesAPI`. But nothing is done to enforce this) is to instantiate the plugins according
+    to the providers configuration, and keep track of them in memory. The providers configuration contains information
+    such as the name of the provider, the internet endpoint for accessing it, and the plugins to use to perform defined
+    actions (search, download, authenticate, crunch).
 
     If the providers configuration looks like this::
 
         conf = {
-            'eocloud': {
+            'airbus-ds': {
                 'search': {
-                    'plugin': 'RestoSearch',
+                    'plugin': 'ArlasSearch',
                     'api_endpoint': ...,
                     ...
                 },
@@ -53,9 +52,9 @@ class PluginInstancesManager(object):
         }
 
     the manager will ask to the :class:`~eodag.plugins.search.base.Search` class to give it back the
-    :class:`~eodag.plugins.search.resto.RestoSearch` plugin class by calling
-    ``Search.get_plugin_by_name(conf['eocloud']['search']['plugin'])``, so that it can create its ``eocloud`` instance
-    with ``conf['eocloud']['search']`` configuration.
+    :class:`~eodag.plugins.search.arlas.ArlasSearch` plugin class by calling
+    ``Search.get_plugin_by_name(conf['airbus-ds']['search']['plugin'])``, so that it can create its ``airbus-ds``
+    instance with ``conf['airbus-ds']['search']`` configuration.
 
     :param providers_config: The configuration with all information about the providers supported by the `eodag`
     :type providers_config: :class:`~eodag.config.SimpleYamlProxyConfig`
@@ -71,8 +70,8 @@ class PluginInstancesManager(object):
     def __init__(self, providers_config):
         self.providers_config = providers_config
         # Load all the plugins. This will make all plugin classes of a particular type to be available in the base
-        # plugin class's 'plugins' attribute. For example, by importing module 'plugins.search.resto', the plugin
-        # 'RestoSearch' will be available in self.supported_topics['search'].plugins
+        # plugin class's 'plugins' attribute. For example, by importing module 'plugins.search.arlas', the plugin
+        # 'ArlasSearch' will be available in self.supported_topics['search'].plugins
         import_all_modules(plugins, depth=2, exclude=('base', __name__.split('.')[-1],))
 
     def instantiate_configured_plugins(self, topics, product_type_id='', providers=None):
