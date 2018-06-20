@@ -62,7 +62,7 @@ The plugin machinery is managed by one instance of :class:`~eodag.plugins.instan
 Plugin Types
 -------------
 
-EODAG currently advertises 5 types of plugins: *Search*, *Download*, *Crunch* and *Authentication* and *Api*.
+EODAG currently advertises 4 types of plugins: *Search*, *Download*, *Crunch* and *Authentication*.
 
 .. autoclass:: eodag.plugins.base.PluginTopic
    :show-inheritance:
@@ -84,25 +84,9 @@ EODAG currently advertises 5 types of plugins: *Search*, *Download*, *Crunch* an
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.apis.base.Api
-   :show-inheritance:
-   :undoc-members:
-
 
 Search Plugins
 --------------
-
-.. autoclass:: eodag.plugins.search.csw.CSWSearch
-   :show-inheritance:
-   :undoc-members:
-
-.. autoclass:: eodag.plugins.search.resto.RestoSearch
-   :show-inheritance:
-   :undoc-members:
-
-.. autoclass:: eodag.plugins.search.aws.AwsSearch
-   :show-inheritance:
-   :undoc-members:
 
 .. autoclass:: eodag.plugins.search.arlas.ArlasSearch
    :show-inheritance:
@@ -113,10 +97,6 @@ Download Plugins
 ----------------
 
 .. autoclass:: eodag.plugins.download.http.HTTPDownload
-   :show-inheritance:
-   :undoc-members:
-
-.. autoclass:: eodag.plugins.download.aws.AwsDownload
    :show-inheritance:
    :undoc-members:
 
@@ -149,22 +129,6 @@ Authentication Plugins
    :undoc-members:
 
 .. autoclass:: eodag.plugins.authentication.header.HTTPHeaderAuth
-   :show-inheritance:
-   :undoc-members:
-
-.. autoclass:: eodag.plugins.authentication.oauth.OAuth
-   :show-inheritance:
-   :undoc-members:
-
-
-External Apis Plugins
----------------------
-
-.. autoclass:: eodag.plugins.apis.sentinelsat.SentinelsatAPI
-   :show-inheritance:
-   :undoc-members:
-
-.. autoclass:: eodag.plugins.apis.usgs.UsgsApi
    :show-inheritance:
    :undoc-members:
 
