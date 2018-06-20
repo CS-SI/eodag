@@ -223,25 +223,21 @@ class SatImagesAPI(object):
 
         :param searches: List of eodag SearchResult
         :type searches: list
-        :return: list of SearchResults
+        :return: list of :class:`~eodag.api.search_result.SearchResult`s
         """
-        products_list = list()
-        extents = list()
+        products_grouped_by_extent = {}
 
         for search in searches:
             for product in search:
-                if product.geometry not in extents:
-                    extents.append(product.geometry)
-                    new_extent_list = list()
-                    new_extent_list.append(product)
-                    products_list.append(new_extent_list)
+                same_geom = products_grouped_by_extent.setdefault(
+                    ''.join([str(round(p, 2)) for p in product.geometry.bounds]), []
+                )
+                same_geom.append(product)
 
-                elif product.geometry in extents:
-                    for extent_list in products_list:
-                        if product.geometry == extent_list[0].geometry:
-                            extent_list.append(product)
-
-        return [SearchResult(sorted_list) for sorted_list in products_list]
+        return [
+            SearchResult(products_grouped_by_extent[extent_as_wkb_hex])
+            for extent_as_wkb_hex in products_grouped_by_extent
+        ]
 
     def download_all(self, search_result):
         """Download all products resulting from a search.
