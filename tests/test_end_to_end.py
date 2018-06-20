@@ -22,10 +22,6 @@ class TestEODagEndToEnd(unittest.TestCase):
         for provider, conf in cls.eodag.providers_config.items():
             for product_type, pt_conf in conf['products'].items():
                 pt_conf['partial'] = False
-            # Force all providers implementing RestoSearch and defining how to retrieve products by specifying the
-            # location scheme to use https, enabling actual downloading of the product
-            if conf.get('search', {}).get('product_location_scheme', 'https') == 'file':
-                conf['search']['product_location_scheme'] = 'https'
             # Disable extraction
             try:  # Case HTTPDownload plugin
                 conf['download']['extract'] = False
