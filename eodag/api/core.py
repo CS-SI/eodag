@@ -225,17 +225,23 @@ class SatImagesAPI(object):
         :type searches: list
         :return: list of SearchResults
         """
-        products_grouped_by_extent = {}
+        products_list = list()
+        extents = list()
 
         for search in searches:
             for product in search:
-                same_geom = products_grouped_by_extent.setdefault(product.geometry.wkb_hex, [])
-                same_geom.append(product)
+                if product.geometry not in extents:
+                    extents.append(product.geometry)
+                    new_extent_list = list()
+                    new_extent_list.append(product)
+                    products_list.append(new_extent_list)
 
-        return [
-            SearchResult(products_grouped_by_extent[extent_as_wkb_hex])
-            for extent_as_wkb_hex in products_grouped_by_extent
-        ]
+                elif product.geometry in extents:
+                    for extent_list in products_list:
+                        if product.geometry == extent_list[0].geometry:
+                            extent_list.append(product)
+
+        return [SearchResult(sorted_list) for sorted_list in products_list]
 
     def download_all(self, search_result):
         """Download all products resulting from a search.
