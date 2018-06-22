@@ -170,6 +170,7 @@ eocloud:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+      icon: '$.properties.quicklook'
   download:
     plugin: HTTPDownload
     base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'

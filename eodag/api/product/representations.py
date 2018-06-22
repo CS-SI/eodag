@@ -33,6 +33,7 @@ DEFAULT_METADATA_MAPPING = {
     'parentIdentifier': '$.properties.parentIdentifier',
     'resolution': '$.properties.resolution',
     'sensorMode': '$.properties.sensorMode',
+    'icon': '$.properties.icon',
 }
 
 
