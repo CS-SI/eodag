@@ -51,6 +51,7 @@ AmazonWS:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+      icon: '$.properties.quicklook'
   products:
     S2_MSI_L1C:
       product_type: L1C
@@ -495,6 +496,7 @@ airbus-ds:
         - 'acquisition.beginViewingDate'
         - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
+      icon: '$.properties.state.resources.quicklook'
   download:
     plugin: HTTPDownload
     base_uri: 'https://k8s.qualif.geohub.space/api/v1/services/download/'
