@@ -188,4 +188,5 @@ intersphinx_mapping = {
     'http://docs.python-requests.org/en/master/': None,
     'https://shapely.readthedocs.io/en/latest/': None,
     'https://geopython.github.io/OWSLib/': None,
+    'https://xarray.pydata.org/en/stable/': None,
 }

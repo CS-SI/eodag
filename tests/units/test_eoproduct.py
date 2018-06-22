@@ -9,6 +9,7 @@ import random
 import geojson
 import numpy as np
 from shapely import geometry
+import xarray as xr
 
 from tests import EODagTestCase
 from tests.context import (
@@ -32,7 +33,7 @@ class TestEOProduct(EODagTestCase):
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
-        self.raster = np.arange(25).reshape(5, 5)
+        self.raster = xr.DataArray(np.arange(25).reshape(5, 5))
 
     def test_eoproduct_search_intersection_geom(self):
         """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""
@@ -101,8 +102,8 @@ class TestEOProduct(EODagTestCase):
 
         self.assertEqual(product.driver.get_data_address.call_count, 1)
         product.driver.get_data_address.assert_called_with(product, band)
-        self.assertIsInstance(data, np.ndarray)
-        self.assertNotEqual(data.size, 0)
+        self.assertIsInstance(data, xr.DataArray)
+        self.assertNotEqual(data.values.size, 0)
 
     def test_get_data_download_on_unsupported_dataset_address_scheme_error(self):
         """If a product is not on the local filesystem, it must download itself before returning the data"""
@@ -132,8 +133,8 @@ class TestEOProduct(EODagTestCase):
 
         self.assertEqual(product.driver.get_data_address.call_count, 2)
         product.driver.get_data_address.assert_called_with(product, band)
-        self.assertIsInstance(data, np.ndarray)
-        self.assertNotEqual(data.size, 0)
+        self.assertIsInstance(data, xr.DataArray)
+        self.assertNotEqual(data.values.size, 0)
 
     def test_get_data_download_on_unsupported_dataset_address_scheme_error_without_downloader(self):
         """If a product is not on filesystem and a downloader isn't registered, get_data must return an empty array"""
@@ -152,8 +153,8 @@ class TestEOProduct(EODagTestCase):
         data = self.execute_get_data(product)
 
         self.assertEqual(product.driver.get_data_address.call_count, 1)
-        self.assertIsInstance(data, np.ndarray)
-        self.assertEqual(data.size, 0)
+        self.assertIsInstance(data, xr.DataArray)
+        self.assertEqual(data.values.size, 0)
 
     def test_get_data_bad_download_on_unsupported_dataset_address_scheme_error(self):
         """If downloader doesn't return the downloaded file path, get_data must return an empty array"""
@@ -179,8 +180,8 @@ class TestEOProduct(EODagTestCase):
 
         self.assertEqual(product.driver.get_data_address.call_count, 1)
         product.driver.get_data_address.assert_called_with(product, band)
-        self.assertIsInstance(data, np.ndarray)
-        self.assertEqual(data.size, 0)
+        self.assertIsInstance(data, xr.DataArray)
+        self.assertEqual(data.values.size, 0)
 
     @staticmethod
     def execute_get_data(product, crs=None, resolution=None, band=None, extent=None, give_back=()):

@@ -13,6 +13,7 @@ from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from shapely import geometry
 from tqdm import tqdm
+import xarray as xr
 
 
 try:
@@ -84,9 +85,9 @@ class EOProduct(object):
         :param extent: The coordinates on which to zoom as a tuple (min_x, min_y, max_x, max_y) in the given `crs`
         :type extent: (float, float, float, float)
         :returns: The numeric matrix corresponding to the sub dataset or an empty array if unable to get the data
-        :rtype: numpy.ndarray
+        :rtype: xarray.DataArray
         """
-        fail_value = numpy.empty(0)
+        fail_value = xr.DataArray(numpy.empty(0))
         try:
             dataset_address = self.driver.get_data_address(self, band)
         except UnsupportedDatasetAddressScheme:
@@ -110,7 +111,8 @@ class EOProduct(object):
         out_shape = (width, height)
         with rasterio.open(dataset_address) as src:
             with WarpedVRT(src, dst_crs=crs, resampling=Resampling.bilinear) as vrt:
-                return vrt.read(1, window=vrt.window(*extent), out_shape=out_shape, resampling=Resampling.bilinear)
+                array = vrt.read(1, window=vrt.window(*extent), out_shape=out_shape, resampling=Resampling.bilinear)
+                return xr.DataArray(array)
 
     def as_dict(self):
         """Builds a representation of EOProduct as a dictionary to enable its geojson serialization
@@ -184,7 +186,7 @@ class EOProduct(object):
         """Google's Protocol buffers encoding strategy.
 
         :param raster: The raster to encode
-        :type raster: numpy.ndarray
+        :type raster: xarray.DataArray
         :returns: The raster data represented by this subset in protocol buffers encoding
         :rtype: bytes
         """
@@ -196,9 +198,9 @@ class EOProduct(object):
         subdataset.platform = self.properties['platformSerialIdentifier']
         subdataset.sensor = self.properties['instrument']
         data = subdataset.data
-        data.array.extend(list(raster.flatten().astype(int)))
-        data.shape.extend(list(raster.shape))
-        data.dtype = raster.dtype.name
+        data.array.extend(list(raster.values.flatten().astype(int)))
+        data.shape.extend(list(raster.values.shape))
+        data.dtype = raster.values.dtype.name
         return subdataset.SerializeToString()
 
     def register_downloader(self, downloader, authenticator):
