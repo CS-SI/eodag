@@ -11,6 +11,7 @@ USGS:
       abstract: '$.summary'
       startTimeFromAscendingNode: '$.startTime'
       completionTimeFromAscendingNode: '$.endTime'
+      icon: '$.browseUrl'
   products:
     L8_LC8:
       product_type: LANDSAT_8_C1
