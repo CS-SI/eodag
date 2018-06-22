@@ -55,6 +55,7 @@ AmazonWS:
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
+      partial: true
   download:
     plugin: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
@@ -228,6 +229,7 @@ theia-landsat:
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
+      icon: '$.properties.quicklook'
   download:
     plugin: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
@@ -270,6 +272,7 @@ theia:
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
+      icon: '$.properties.quicklook'
   products:
     S2_REFLECTANCE:
       product_type: REFLECTANCE
@@ -319,6 +322,7 @@ peps:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+      icon: '$.properties.quicklook'
   products:
     S1_OCN:
       product_type: OCN
@@ -448,6 +452,7 @@ airbus-ds:
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
+      partial: true
     S1_RAW:
       product_type: RAW
     S1_GRD:
