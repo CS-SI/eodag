@@ -272,7 +272,8 @@ class EOProduct(object):
 
         if not os.path.isdir(local_dir_path):
             os.makedirs(local_dir_path)
-        local_file_path = os.path.join(local_dir_path, self.properties['id'] + '.jpeg')
+        local_file_path = os.path.join(local_dir_path, self.properties['id'] + '.' +
+                                       self.properties['quicklook'].split('.')[-1])
 
         if not os.path.isfile(local_file_path):
             with requests.get(self.properties['quicklook'], stream=True, auth=auth) as stream:
