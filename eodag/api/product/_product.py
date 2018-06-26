@@ -293,6 +293,7 @@ class EOProduct(object):
                                     if chunk:
                                         progressbar.update(len(chunk))
                                         fhandle.write(chunk)
+                            logger.info('Download recorded in %s', local_dir_path)
         except TypeError:
             logging.debug("quicklook must be different than None")
 
