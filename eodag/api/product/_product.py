@@ -262,8 +262,11 @@ class EOProduct(object):
         self.downloader.config['extract'] = old_extraction_config
         return fs_location
 
-    def get_quicklook(self):
+    def get_quicklook(self, filename=None):
         """Downloads the quicklook of a given EOProduct if it exists"""
+        if not (filename is None or isinstance(filename, str) or isinstance(filename, unicode)):
+            raise TypeError('filename must be a string or set to None')
+
         try:
             if self.provider == 'scihub':
                 auth = tuple(self.downloader.config['credentials'].values())
@@ -274,8 +277,12 @@ class EOProduct(object):
 
             if not os.path.isdir(local_dir_path):
                 os.makedirs(local_dir_path)
-            local_file_path = os.path.join(local_dir_path, self.properties['id'] + '.' +
-                                           self.properties['quicklook'].split('.')[-1])
+
+            if filename is None:
+                local_file_path = os.path.join(local_dir_path, self.properties['id'] + '.' +
+                                               self.properties['quicklook'].split('.')[-1])
+            else:
+                local_file_path = os.path.join(local_dir_path, filename)
 
             if not os.path.isfile(local_file_path):
                 with requests.get(self.properties['quicklook'], stream=True, auth=auth) as stream:

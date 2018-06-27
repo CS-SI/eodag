@@ -148,3 +148,19 @@ class TestEODagEndToEnd(unittest.TestCase):
         # Scihub api manage incomplete downloads by adding '.incomplete' to a file that hasn't been fully downloaded yet
         expected_filename = '{}.zip.incomplete'.format(product.properties['title'])
         self.execute_download(product, expected_filename)
+
+    def test_get_quiclook_peps(self):
+        product = self.execute_search('peps', 'S2_MSI_L1C', '2014-03-01', '2017-03-15', (50, 50, 50.3, 50.3))
+        product.get_quicklook('peps_quicklook')
+
+        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'peps_quicklook')
+        self.assertIn('peps_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
+
+    def test_get_quiclook_scihub(self):
+        product = self.execute_search('scihub', 'S2_MSI_L1C', '2014-03-01', '2017-03-15', (50, 50, 50.3, 50.3))
+        product.get_quicklook('scihub_quicklook')
+
+        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'scihub_quicklook')
+        self.assertIn('scihub_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
