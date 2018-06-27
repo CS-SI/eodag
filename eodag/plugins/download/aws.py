@@ -23,7 +23,7 @@ class AwsDownload(Download):
         self.config.setdefault('outputs_prefix', '/tmp')
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
-    def download(self, product, auth=None):
+    def download(self, product, auth=None, progress_callback=None):
         access_key, access_secret = auth
         s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=access_secret)
         bucket = s3.Bucket(self.config['associated_bucket'])
