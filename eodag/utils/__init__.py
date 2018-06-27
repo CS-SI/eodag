@@ -13,6 +13,7 @@ import click
 import pyproj
 from requests.auth import AuthBase
 from six import string_types
+from tqdm import tqdm
 
 
 class RequestsTokenAuth(AuthBase):
@@ -135,3 +136,13 @@ def get_timestamp(date_time, date_format='%Y-%m-%d'):
     except AttributeError:  # There is no timestamp method on datetime objects in Python 2
         import time
         return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
+
+class ProgressCallback(object):
+    """Instantiate a progress bar callback"""
+    def __init__(self):
+        self.pb = None
+
+    def __call__(self, current_size, max):
+        if self.pb is None:
+            self.pb = tqdm(total=max, unit='KB', unit_scale=True)
+        self.pb.update(current_size)
