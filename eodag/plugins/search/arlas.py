@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 
 import logging
-
+import os
 import requests
 
 from eodag.api.product import EOProduct
@@ -62,11 +62,17 @@ class ArlasSearch(Search):
             if results['features']:
                 logger.info('Normalizing results')
                 for feature in results['features']:
+                    if feature[u'properties'][u'state'][u'resources'][u'quicklook'] == True:
+                        quicklook = self.build_quicklook_url()
+                    else:
+                        quicklook = None
+                    properties = properties_from_json(feature, self.config['metadata_mapping'])
+                    properties['quicklook'] = quicklook
                     products.append(EOProduct(
                         product_type,
                         self.instance_name,
                         '{base}' + '/{}'.format(feature['properties']['uid']),
-                        properties_from_json(feature, self.config['metadata_mapping']),
+                        properties,
                         searched_bbox=kwargs.get('footprint')
                     ))
         except KeyError as ke:
@@ -150,3 +156,7 @@ class ArlasSearch(Search):
                            tb.format_exc())
             return -1
         return response.json()['totalnb']
+
+    def build_quicklook_url(self):
+        """Build the quicklook download url"""
+        return os.path.join(self.config['quicklook_endpoint'], self.properties.uid)

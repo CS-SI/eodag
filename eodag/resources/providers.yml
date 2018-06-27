@@ -476,6 +476,7 @@ airbus-ds:
   search:
     plugin: ArlasSearch
     api_endpoint: 'https://k8s.qualif.geohub.space/api/v1/services/explore'
+    quicklook_endpoint: 'https://k8s.qualif.geohub.space/api/v1/services/quicklook'
     arlas_collection: catalog
     metadata_mapping:
       id: '$.properties.uid'
@@ -499,7 +500,6 @@ airbus-ds:
         - 'acquisition.beginViewingDate'
         - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
-      quicklook: '$.properties.state.resources.quicklook'
   download:
     plugin: HTTPDownload
     base_uri: 'https://k8s.qualif.geohub.space/api/v1/services/download/'
