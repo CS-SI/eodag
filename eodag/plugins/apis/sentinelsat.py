@@ -59,7 +59,7 @@ class SentinelsatAPI(Api):
             logger.info('No results found !')
             return []
 
-    def download(self, product, auth=None):
+    def download(self, product, auth=None, progress_callback=None):
         self._init_api()
         if self.config['on_site']:
             data = self.api.get_product_odata(product.properties['id'], full=True)
