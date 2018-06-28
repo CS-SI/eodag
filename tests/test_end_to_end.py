@@ -209,5 +209,3 @@ class TestEODagEndToEnd(unittest.TestCase):
         self.assertIn('airbus_ds_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'],
                                                                      'quicklooks')))
         self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
-
-
