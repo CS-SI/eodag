@@ -29,7 +29,7 @@ class HTTPDownload(Download):
         self.config.setdefault('extract', True)
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
-    def download(self, product, progress_callback=None, auth=None):
+    def download(self, product, auth=None, progress_callback=None):
         """Download a product as zip archive using HTTP protocol"""
         if not product.location.startswith('file://'):
             url = self.__build_download_url(product, auth)
