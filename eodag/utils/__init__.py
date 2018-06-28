@@ -137,6 +137,7 @@ def get_timestamp(date_time, date_format='%Y-%m-%d'):
         import time
         return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
 
+
 class ProgressCallback(object):
     """Instantiate a progress bar callback"""
     def __init__(self):
