@@ -9,12 +9,12 @@ import zipfile
 
 import numpy
 import rasterio
+import requests
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from shapely import geometry
 from tqdm import tqdm
-
-
+from requests import HTTPError
 try:
     from shapely.errors import TopologicalError
 except ImportError:
@@ -23,8 +23,7 @@ except ImportError:
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.representations import DEFAULT_METADATA_MAPPING, properties_from_json
 from eodag.utils.exceptions import UnsupportedDatasetAddressScheme
-import requests
-from requests import HTTPError
+
 
 
 
@@ -263,43 +262,41 @@ class EOProduct(object):
         return fs_location
 
     def get_quicklook(self, filename=None):
-        """Downloads the quicklook of a given EOProduct if it exists"""
-        if not (filename is None or isinstance(filename, str) or isinstance(filename, unicode)):
-            raise TypeError('filename must be a string or set to None')
+        """Downloads the quicklook of a given EOProduct if it exists
 
-        try:
-            if self.provider == 'scihub':
-                auth = tuple(self.downloader.config['credentials'].values())
-            else:
-                auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
+        :param filename: Name of the file to be downloaded
+        :type filename: class:`str` or `class:`unicode`
+        """
 
-            local_dir_path = os.path.join(self.downloader.config[u'outputs_prefix'], "quicklooks")
+        if self.provider == 'scihub':
+            auth = tuple(self.downloader.config['credentials'].values())
+        else:
+            auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
 
-            if not os.path.isdir(local_dir_path):
-                os.makedirs(local_dir_path)
+        local_dir_path = os.path.join(self.downloader.config[u'outputs_prefix'], 'quicklooks')
 
-            if filename is None:
-                local_file_path = os.path.join(local_dir_path, self.properties['id'] + '.' +
-                                               self.properties['quicklook'].split('.')[-1])
-            else:
-                local_file_path = os.path.join(local_dir_path, filename)
+        if not os.path.isdir(local_dir_path):
+            os.makedirs(local_dir_path)
 
-            if not os.path.isfile(local_file_path):
-                with requests.get(self.properties['quicklook'], stream=True, auth=auth) as stream:
-                    try:
-                        stream.raise_for_status()
-                    except HTTPError:
-                        import traceback as tb
-                        logger.error("Error while getting resource :\n%s", tb.format_exc())
-                    else:
-                        stream_size = int(stream.headers.get('content-length', 0))
-                        with open(local_file_path, 'wb') as fhandle:
-                            progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
-                            for chunk in stream.iter_content(chunk_size=64 * 1024):
-                                if chunk:
-                                    progressbar.update(len(chunk))
-                                    fhandle.write(chunk)
-                        logger.info('Download recorded in %s', local_dir_path)
-        except TypeError:
-            logging.debug("quicklook must be different than None")
+        if filename is None:
+            local_file_path = os.path.join(local_dir_path, self.properties['id'] + '.' +
+                                           self.properties['quicklook'].split('.')[-1])
+        else:
+            local_file_path = os.path.join(local_dir_path, filename)
 
+        if not os.path.isfile(local_file_path):
+            with requests.get(self.properties['quicklook'], stream=True, auth=auth) as stream:
+                try:
+                    stream.raise_for_status()
+                except HTTPError:
+                    import traceback as tb
+                    logger.error("Error while getting resource :\n%s", tb.format_exc())
+                else:
+                    stream_size = int(stream.headers.get('content-length', 0))
+                    with open(local_file_path, 'wb') as fhandle:
+                        progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
+                        for chunk in stream.iter_content(chunk_size=64 * 1024):
+                            if chunk:
+                                progressbar.update(len(chunk))
+                                fhandle.write(chunk)
+                    logger.info('Download recorded in %s', local_dir_path)
