@@ -64,6 +64,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         """Download the product in a child process, avoiding to perform the entire download, then do some checks and
         delete the downloaded result from the filesystem.
         """
+        from eodag.utils.logging import setup_logging
+        setup_logging(verbose=3)
         dl_process = multiprocessing.Process(target=self.eodag.download, args=(product,))
         dl_process.start()
         try:
@@ -164,3 +166,23 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'scihub_quicklook')
         self.assertIn('scihub_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
         self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
+
+    def test_get_quicklook_theia(self):
+        product = self.execute_search('theia', 'S2_REFLECTANCE', '2018-06-15', '2018-06-29', (-1, 45, 1, 47))
+        product.get_quicklook('theia_quicklook')
+
+        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'theia_quicklook')
+        self.assertIn('theia_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
+
+    def test_get_quicklook_theia_landsat(self):
+        product = self.execute_search('theia-landsat', 'LS_REFLECTANCE', '2017-03-15', '2017-04-15', (-2, 41, 0, 43))
+        product.get_quicklook('theia_landsat_quicklook')
+
+        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'theia_landsat_quicklook')
+        self.assertIn('theia_landsat_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
+
+    @unittest.expectedFailure
+    def method(self):
+        pass
