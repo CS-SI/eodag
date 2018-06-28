@@ -253,7 +253,7 @@ class SatImagesAPI(object):
         if search_result:
             with tqdm(search_result, unit='product', desc='Downloading products') as bar:
                 for product in bar:
-                    paths.append(self.download(product), progress_callback=progress_callback)
+                    paths.append(self.download(product, progress_callback=progress_callback))
         else:
             print('Empty search result, nothing to be downloaded !')
         return paths

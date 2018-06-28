@@ -150,7 +150,7 @@ def download(ctx, **kwargs):
         conf_file = click.format_filename(conf_file)
         satim_api = SatImagesAPI(user_conf_file_path=conf_file)
         search_results = satim_api.deserialize(search_result_path)
-        for downloaded_file in satim_api.download_all(search_results, progress_callback=None):
+        for downloaded_file in satim_api.download_all(search_results):
             if downloaded_file is None:
                 click.echo('A file may have been downloaded but we cannot locate it')
             else:
