@@ -63,7 +63,7 @@ class ArlasSearch(Search):
                 logger.info('Normalizing results')
                 for feature in results['features']:
                     if feature[u'properties'][u'state'][u'resources'][u'quicklook'] == True:
-                        quicklook = self.build_quicklook_url()
+                        quicklook = self.build_quicklook_url(feature)
                     else:
                         quicklook = None
                     properties = properties_from_json(feature, self.config['metadata_mapping'])
@@ -157,6 +157,6 @@ class ArlasSearch(Search):
             return -1
         return response.json()['totalnb']
 
-    def build_quicklook_url(self):
+    def build_quicklook_url(self, product):
         """Build the quicklook download url"""
-        return os.path.join(self.config['quicklook_endpoint'], self.properties.uid)
+        return os.path.join(self.config['quicklook_endpoint'], product['properties']['uid'])
