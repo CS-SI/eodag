@@ -13,8 +13,8 @@ from tqdm import tqdm
 from eodag.api.search_result import SearchResult
 from eodag.config import SimpleYamlProxyConfig
 from eodag.plugins.instances_manager import PluginInstancesManager
-from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 from eodag.utils import ProgressCallback
+from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 
 logger = logging.getLogger('eodag.core')
 
@@ -27,7 +27,6 @@ class SatImagesAPI(object):
     :param providers_file_path: Path to the internal file where systems containing eo products are configured
     :type providers_file_path: str or unicode
     """
-
 
     def __init__(self, user_conf_file_path=None, providers_file_path=None):
         self.providers_config = SimpleYamlProxyConfig(os.path.join(
@@ -409,6 +408,5 @@ class SatImagesAPI(object):
 
 if __name__ == '__main__':
     import doctest
-
 
     doctest.testmod()
