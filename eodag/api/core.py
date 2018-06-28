@@ -28,6 +28,7 @@ class SatImagesAPI(object):
     :type providers_file_path: str or unicode
     """
 
+
     def __init__(self, user_conf_file_path=None, providers_file_path=None):
         self.providers_config = SimpleYamlProxyConfig(os.path.join(
             os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
