@@ -156,7 +156,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         product.get_quicklook('peps_quicklook')
 
         expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'peps_quicklook')
-        self.assertIn('peps_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        self.assertIn('peps_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'],
+                                                                'quicklooks')))
         self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
 
     def test_get_quiclook_scihub(self):
@@ -164,7 +165,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         product.get_quicklook('scihub_quicklook')
 
         expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'scihub_quicklook')
-        self.assertIn('scihub_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        self.assertIn('scihub_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'],
+                                                                  'quicklooks')))
         self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
 
     def test_get_quicklook_theia(self):
@@ -172,17 +174,40 @@ class TestEODagEndToEnd(unittest.TestCase):
         product.get_quicklook('theia_quicklook')
 
         expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'theia_quicklook')
-        self.assertIn('theia_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        self.assertIn('theia_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'],
+                                                                 'quicklooks')))
         self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
 
     def test_get_quicklook_theia_landsat(self):
         product = self.execute_search('theia-landsat', 'LS_REFLECTANCE', '2017-03-15', '2017-04-15', (-2, 41, 0, 43))
         product.get_quicklook('theia_landsat_quicklook')
 
-        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks', 'theia_landsat_quicklook')
-        self.assertIn('theia_landsat_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')))
+        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks',
+                                         'theia_landsat_quicklook')
+        self.assertIn('theia_landsat_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'],
+                                                                         'quicklooks')))
         self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
 
     @unittest.expectedFailure
-    def method(self):
-        pass
+    def test_get_quicklook_eocloud(self):
+        product = self.execute_search('eocloud', 'S2_MSI_L1C', '2014-03-01', '2017-03-15', (50, 50, 50.3, 50.3))
+        product.get_quicklook('theia_landsat_quicklook')
+
+        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks',
+                                         'theia_landsat_quicklook')
+        self.assertIn('theia_landsat_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'],
+                                                                         'quicklooks')))
+        self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
+
+    @unittest.expectedFailure
+    def test_get_quicklook_aibus_ds(self):
+        product = self.execute_search('airbus-ds', 'S3_SRA_A_BS', '2014-03-01', '2017-03-15', (50, 50, 50.3, 50.3))
+        product.get_quicklook('airbus_ds_quicklook')
+
+        expected_filename = os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks',
+                                         'airbus_ds_quicklook')
+        self.assertIn('airbus_ds_quicklook', os.listdir(os.path.join(self.eodag.user_config['outputs_prefix'],
+                                                                     'quicklooks')))
+        self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
+
+
