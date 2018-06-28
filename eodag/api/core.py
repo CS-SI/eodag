@@ -242,6 +242,9 @@ class SatImagesAPI(object):
     def download_all(self, search_result, progress_callback=None):
         """Download all products resulting from a search.
 
+        progress_callback must be a method or a callable object which takes two parameters: current size and max size.
+        It must instantiate a progress bar and update it as the download progresses.
+
         :param search_result: A collection of EO products resulting from a search
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
         :param progress_callback: progress bar
