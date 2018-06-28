@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import logging
 import os
+
 import requests
 
 from eodag.api.product import EOProduct
@@ -62,7 +63,7 @@ class ArlasSearch(Search):
             if results['features']:
                 logger.info('Normalizing results')
                 for feature in results['features']:
-                    if feature[u'properties'][u'state'][u'resources'][u'quicklook'] == True:
+                    if feature['properties']['state']['resources']['quicklook'] == True:
                         quicklook = self.build_quicklook_url(feature)
                     else:
                         quicklook = None
