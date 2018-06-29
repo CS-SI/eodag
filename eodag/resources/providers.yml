@@ -508,3 +508,83 @@ airbus-ds:
     plugin: HTTPHeaderAuth
     headers:
       Authorization: "Apikey {apikey}"
+
+asf:
+  priority: 0
+  products:
+    ALOS:
+      product_type: ALOS
+    A3:
+      product_type: A3
+    AIRSAR:
+      product_type: AIRSAR
+    AS:
+      product_type: AS
+    ERS-1:
+      product_type: ERS-1
+    E1:
+      product_type: E1
+    ERS-2:
+      product_type: ERS-2
+    E2:
+      product_type: E2
+    JERS-1:
+      product_type: JERS-1
+    J1:
+      product_type: J1
+    RADARSAT-1:
+      product_type: RADARSAT-1
+    R1:
+      product_type: R1
+    SEASAT:
+      product_type: SEASAT
+    SS:
+      product_type: SS
+    Sentinel-1A:
+      product_type: Sentinel-1A
+    SA:
+      product_type: SA
+    Sentinel-1B:
+      product_type: Sentinel-1B
+    SB:
+      product_type: SB
+    SMAP:
+      product_type: SMAP
+    SP:
+      product_type: SP
+    UAVSAR:
+      product_type: UAVSAR
+    UA:
+      product_type: UA
+  search:
+    plugin: AsfSearch
+    api_endpoint: 'https://api.daac.asf.alaska.edu/services/search/param?keyword=value'
+    metadata_mapping:
+      id: '$.product_file_id'
+      geometry:
+        - area
+        - '$.stringFootprint'
+      productType: '$.missionName'
+      platform: '$.platform'
+      instrument: '$.instrument'
+      processingLevel: '$.processingLevel'
+      title: '$.productName'
+      orbitNumber: '$.absoluteOrbit'
+      orbitDirection: '$.flightDirection'
+      cloudCover:
+        - cloudcoverpercentage
+        - '$.cloudcover'
+      snowCover: '$.snowcover'
+      startTimeFromAscendingNode:
+        - date
+        - '$.startTime'
+      completionTimeFromAscendingNode: '$.stopTime'
+      sensorMode: '$.sensor'
+      quicklook: '$.thumbnailUrl'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://urs.earthdata.nasa.gov/home'
+    archive_depth: 2
+  auth:
+    plugin: TokenAuth
+    auth_uri: 'https://urs.earthdata.nasa.gov/home'

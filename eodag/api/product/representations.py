@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 
 import jsonpath_rw as jsonpath
+from shapely.wkt import loads
 from lxml import etree
 
 from eodag.utils.metadata_mapping import get_metadata_path
@@ -55,6 +56,8 @@ def properties_from_json(json, mapping):
         else:
             path = jsonpath.parse(get_metadata_path(mapping[metadata]))
             match = path.find(json)
+            if metadata == 'geometry' and (isinstance(match[0].value, str) or isinstance(match[0].value, unicode)):
+                match[0].value = loads(match[0].value)
             properties[metadata] = match[0].value if len(match) == 1 else None
     return properties
 
