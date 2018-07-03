@@ -56,11 +56,13 @@ class AsfSearch(Search):
         if footprint:
             params['bbox'] = '{lonmin},{latmin},{lonmax},{latmax}'.format(**footprint)
 
-        resto_product_type = self.config['products'][product_type]['product_type']
+        product_type_query = self.config['products'][product_type]['product_type']
+        if 'level' in self.config['products'][product_type].keys():
+            params['processingLevel'] = self.config['products'][product_type]['level']
         # len(collections) == 2 If and Only if the product type is S2-L1C, provider is PEPS and there is no search
         # constraint on date. Otherwise, it's equal to 1
 
-        params['platform'] = resto_product_type
+        params['platform'] = product_type_query
 
         url = self.config['api_endpoint']
         logger.debug('Making request to %s with params : %s', url, params)
@@ -69,7 +71,7 @@ class AsfSearch(Search):
             response.raise_for_status()
         except HTTPError as e:
             logger.debug('Skipping error while searching for %s RestoSearch instance product type %s: %s',
-                         self.instance_name, resto_product_type, e)
+                         self.instance_name, product_type, e)
         else:
             add_to_results(self.normalize_results(product_type, response.json(), footprint))
         return results

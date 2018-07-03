@@ -65,7 +65,7 @@ AmazonWS:
     plugin: OAuth
 
 eocloud:
-  priority: 1
+  priority:
   products:
     S1_OCN:
       product_type: OCN
@@ -510,7 +510,7 @@ airbus-ds:
       Authorization: "Apikey {apikey}"
 
 asf:
-  priority: 0
+  priority: 1
   products:
     ALOS_L1.0:
       product_type: ALOS
@@ -620,7 +620,7 @@ asf:
     SS:
       product_type: SS
     S1_OCN:
-      product_type: Sentinel-1A, Sentinel-1B
+      product_type: Sentinel-1A,Sentinel-1B
       level: OCN
       partial: true
     S1_GRD:
@@ -632,7 +632,7 @@ asf:
       level: SLC
       partial: true
     S1_RAW:
-      product_type: Sentinel-1A, Sentinel-1B
+      product_type: Sentinel-1A,Sentinel-1B
       level: RAW
       partial: true
     SA:
