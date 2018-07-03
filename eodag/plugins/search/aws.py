@@ -37,8 +37,8 @@ class AwsSearch(RestoSearch):
                 month = str(int(result['properties']['completionDate'][5:7]))
                 day = str(int(result['properties']['completionDate'][8:10]))
 
-                iter = ['tiles', ref[1:3], ref[3], ref[4:6], str(year), str(month), str(day), str(0)]
-                download_url = '/'.join(i for i in iter) + '/'
+                download_url = ('{proto}://tiles/{ref[1]}{ref[2]}/{ref[3]}/{ref[4]}{ref[5]}/{year}/'
+                                '{month}/{day}/0/').format(proto=self.config['product_location_scheme'], **locals())
 
                 product = EOProduct(
                     product_type,

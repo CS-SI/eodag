@@ -9,11 +9,11 @@ import zipfile
 
 import numpy
 import rasterio
+import xarray as xr
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from shapely import geometry
 from tqdm import tqdm
-import xarray as xr
 
 
 try:

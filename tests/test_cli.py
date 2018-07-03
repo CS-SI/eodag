@@ -6,18 +6,13 @@ from __future__ import unicode_literals
 import unittest
 from contextlib import contextmanager
 
-
-try:
-    from unittest import mock  # PY3
-except ImportError:
-    import mock  # PY2
-
 import click
 from click.testing import CliRunner
 from faker import Faker
 
 from tests.utils import no_blanks
 from tests.context import eodag, search_crunch
+from tests.utils import mock
 
 
 class TestEodagCli(unittest.TestCase):

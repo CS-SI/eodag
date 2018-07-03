@@ -3,6 +3,12 @@
 # All rights reserved
 from __future__ import unicode_literals
 
+# All tests files should import mock from this place
+try:
+    from unittest import mock  # PY3
+except ImportError:
+    import mock  # PY2
+
 
 def no_blanks(string):
     """Removes all the blanks in string

@@ -223,7 +223,7 @@ class SatImagesAPI(object):
 
         :param searches: List of eodag SearchResult
         :type searches: list
-        :return: list of :class:`~eodag.api.search_result.SearchResult`s
+        :return: list of :class:`~eodag.api.search_result.SearchResult`
         """
         products_grouped_by_extent = {}
 

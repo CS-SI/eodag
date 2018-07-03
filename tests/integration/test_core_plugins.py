@@ -22,12 +22,7 @@ from shapely import geometry, wkt
 
 from tests import EODagTestCase, TEST_RESOURCES_PATH
 from tests.context import Authentication, Download, EOProduct, SatImagesAPI, SearchResult
-
-
-try:
-    from unittest import mock  # PY3
-except ImportError:
-    import mock  # PY2
+from tests.utils import mock
 
 
 class TestIntegrationCoreSearchPlugins(EODagTestCase):

@@ -34,7 +34,12 @@ class AwsDownload(Download):
         if not os.path.isdir(product_local_path):
             os.makedirs(product_local_path)
 
-        for product_chunk in bucket.objects.filter(Prefix=product.location):
+        # When the product originates from aws search, the location starts with s3://. We remove it before trying to
+        # download the product
+        prefix = product.location[5:]
+        if not product.location.startswith('s3://'):
+            prefix = product.location
+        for product_chunk in bucket.objects.filter(Prefix=prefix):
             chunck_path_as_list = product_chunk.key.split('/')
             if len(chunck_path_as_list) > 9:
                 chunk_dir = os.path.join(product_local_path, chunck_path_as_list[-2])

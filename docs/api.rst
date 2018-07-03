@@ -9,6 +9,7 @@ Core
 ====
 
 .. autoclass:: eodag.api.core.SatImagesAPI
+   :members:
    :undoc-members:
 
 

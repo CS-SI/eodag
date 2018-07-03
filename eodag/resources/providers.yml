@@ -20,6 +20,7 @@ AmazonWS:
   search:
     plugin: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
+    product_location_scheme: 's3'
     metadata_mapping:
       id: '$.id'
       geometry:
