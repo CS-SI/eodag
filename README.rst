@@ -140,4 +140,11 @@ Note on how to get Amazon Web Services access keys
 * Once the account is activated go to the identity and access management console: https://console.aws.amazon.com/iam/home#/home
 * Click on user, then on your user name and then on security credentials.
 * In access keys, click on create access key.
-* Add these credentials to the user conf file.
+* Add these credentials to the user conf file in AmazonWS.
+
+Note on how to get Alaska Satellite Facility access keys
+--------------------------------------------------------
+
+* Create an account on EARTHDATA website: https://urs.earthdata.nasa.gov/home
+* Validate the account using the confirmation mail.
+* Add your credentials to the user conf file in asf.
