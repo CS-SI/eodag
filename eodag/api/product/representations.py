@@ -56,6 +56,7 @@ def properties_from_json(json, mapping):
         else:
             path = jsonpath.parse(get_metadata_path(mapping[metadata]))
             match = path.find(json)
+            # if geometry is not a geometry but a string, change it into a real geometry object
             if metadata == 'geometry' and (isinstance(match[0].value, str) or isinstance(match[0].value, unicode)):
                 match[0].value = loads(match[0].value)
             properties[metadata] = match[0].value if len(match) == 1 else None
