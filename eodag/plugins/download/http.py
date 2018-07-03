@@ -39,7 +39,10 @@ class HTTPDownload(Download):
             logger.debug('Download url: %s', url)
 
             # Strong asumption made here: all products downloaded will be zip archives
-            filename = product.properties['title'] + '.zip'
+            if product.location.endswith('jpg'):
+                filename = product.properties['title'] + '.jpg'
+            else:
+                filename = product.properties['title'] + '.zip'
             local_file_path = os.path.join(self.config['outputs_prefix'], filename)
             download_records = os.path.join(self.config['outputs_prefix'], '.downloaded')
             try:
@@ -60,24 +63,47 @@ class HTTPDownload(Download):
                 os.remove(record_filename)
 
             with requests.get(url, stream=True, auth=auth, params=self.config.get('dl_url_params', {})) as stream:
-                try:
-                    stream.raise_for_status()
-                except HTTPError:
-                    import traceback as tb
-                    logger.error("Error while getting resource :\n%s", tb.format_exc())
+                if len(stream.history) != 0 and stream.history[0].status_code == 302:
+                    with requests.get(stream.url.split('&app_type')[0], stream=True, auth=auth,
+                                      params=self.config.get('dl_url_params', {})) as stream:
+                        try:
+                            stream.raise_for_status()
+                        except HTTPError:
+                            import traceback as tb
+                            logger.error("Error while getting resource :\n%s", tb.format_exc())
+                        else:
+                            stream_size = int(stream.headers.get('content-length', 0))
+                            with open(local_file_path, 'wb') as fhandle:
+
+                                for chunk in stream.iter_content(chunk_size=64 * 1024):
+                                    if chunk:
+                                        progress_callback(len(chunk), stream_size)
+                                        fhandle.write(chunk)
+
+                            with open(record_filename, 'w') as fh:
+                                fh.write(url)
+                            logger.debug('Download recorded in %s', record_filename)
+                            return self.__finalize(local_file_path)
                 else:
-                    stream_size = int(stream.headers.get('content-length', 0))
-                    with open(local_file_path, 'wb') as fhandle:
+                    try:
+                        stream.raise_for_status()
+                    except HTTPError:
+                        import traceback as tb
+                        logger.error("Error while getting resource :\n%s", tb.format_exc())
+                    else:
+                        stream_size = int(stream.headers.get('content-length', 0))
+                        with open(local_file_path, 'wb') as fhandle:
 
-                        for chunk in stream.iter_content(chunk_size=64 * 1024):
-                            if chunk:
-                                progress_callback(len(chunk), stream_size)
-                                fhandle.write(chunk)
+                            for chunk in stream.iter_content(chunk_size=64 * 1024):
+                                if chunk:
+                                    progress_callback(len(chunk), stream_size)
+                                    fhandle.write(chunk)
 
-                    with open(record_filename, 'w') as fh:
-                        fh.write(url)
-                    logger.debug('Download recorded in %s', record_filename)
-                    return self.__finalize(local_file_path)
+                        with open(record_filename, 'w') as fh:
+                            fh.write(url)
+                        logger.debug('Download recorded in %s', record_filename)
+                        return self.__finalize(local_file_path)
+
         else:
             path = product.location.replace('file://', '')
             logger.info('Product already present on this platform. Identifier: %s', path)
