@@ -188,7 +188,7 @@ class TestEODagEndToEnd(unittest.TestCase):
                                                                          'quicklooks')))
         self.assertGreaterEqual(os.stat(expected_filename).st_size, 2 ** 5)
 
-    @unittest.expectedFailure
+
     def test_get_quicklook_eocloud(self):
         product = self.execute_search('eocloud', 'S2_MSI_L1C', '2014-03-01', '2017-03-15', (50, 50, 50.3, 50.3))
         product.get_quicklook('theia_landsat_quicklook')

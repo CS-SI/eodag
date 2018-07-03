@@ -267,12 +267,15 @@ class EOProduct(object):
         self.downloader.config['extract'] = old_extraction_config
         return fs_location
 
-    def get_quicklook(self, filename=None):
+    def get_quicklook(self, filename=None, progress_callback=None):
         """Downloads the quicklook of a given EOProduct if it exists
 
         :param filename: Name of the file to be downloaded
         :type filename: class:`str` or `class:`unicode`
         """
+        if progress_callback is None:
+            progress_callback = ProgressCallback()
+
         if self.properties['quicklook'] is not None:
             if self.provider == 'scihub':
                 auth = tuple(self.downloader.config['credentials'].values())
@@ -300,9 +303,8 @@ class EOProduct(object):
                     else:
                         stream_size = int(stream.headers.get('content-length', 0))
                         with open(local_file_path, 'wb') as fhandle:
-                            progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
                             for chunk in stream.iter_content(chunk_size=64 * 1024):
                                 if chunk:
-                                    progressbar.update(len(chunk))
+                                    progress_callback(len(chunk), stream_size)
                                     fhandle.write(chunk)
                         logger.info('Download recorded in %s', local_dir_path)
