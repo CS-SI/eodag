@@ -512,48 +512,207 @@ airbus-ds:
 asf:
   priority: 0
   products:
-    ALOS:
+    ALOS_L1.0:
       product_type: ALOS
+      level: L1.0
+    ALOS_L1.1:
+      product_type: ALOS
+      level: L1.1
+    ALOS_L1.5:
+      product_type: ALOS
+      level: L1.5
+    ALOS_RTC_LOW_RES:
+      product_type: ALOS
+      level: RTC_LOW_RES
+    ALOS_RTC_HI_RES:
+      product_type: ALOS
+      level: RTC_HI_RES
+    ALOS_BROWSE:
+      product_type: ALOS
+      level: BROWSE
     A3:
       product_type: A3
-    AIRSAR:
+    AIRSAR_3FP:
       product_type: AIRSAR
+      level: 3FP
+    AIRSAR_ATI:
+      product_type: AIRSAR
+      level: ATI
+    AIRSAR_XTILTIF:
+      product_type: AIRSAR
+      level: XTILTIF
+    AIRSAR_PTIF:
+      product_type: AIRSAR
+      level: PTIF
+    AIRSAR_CTIF:
+      product_type: AIRSAR
+      level: CTIF
+    AIRSAR_PSTOKES:
+      product_type: AIRSAR
+      level: PSTOKES
+    AIRSAR_BROWSE:
+      product_type: AIRSAR
+      level: BROWSE
+    AIRSAR_ATI:
+      product_type: AIRSAR
+      level: DEM
+    AIRSAR_CSTOKES:
+      product_type: AIRSAR
+      level: CSTOKES
+    AIRSAR_JPG:
+      product_type: AIRSAR
+      level: JPG
+    AIRSAR_LSTOKES:
+      product_type: AIRSAR
+      level: LSTOKES
     AS:
       product_type: AS
-    ERS-1:
+    ERS-1_L0:
       product_type: ERS-1
+      level: L0
+    ERS-1_L1:
+      product_type: ERS-1
+      level: L1
+    ERS-1_BROWSE:
+      product_type: ERS-1
+      level: BROWSE
     E1:
       product_type: E1
-    ERS-2:
+    ERS-2_L0:
       product_type: ERS-2
+      level: L0
+    ERS-2_L1:
+      product_type: ERS-2
+      level: L1
+    ERS-2_BROWSE:
+      product_type: ERS-2
+      level: BROWSE
     E2:
       product_type: E2
-    JERS-1:
+    JERS-1_L0:
       product_type: JERS-1
+      level: L0
+    JERS-1_L1:
+      product_type: JERS-1
+      level: L1
+    JERS-1_BROWSE:
+      product_type: JERS-1
+      level: BROWSE
     J1:
       product_type: J1
-    RADARSAT-1:
+    RADARSAT-1_L0:
       product_type: RADARSAT-1
+      level: L0
+    RADARSAT-1_L1:
+      product_type: RADARSAT-1
+      level: L1
+    RADARSAT-1_BROWSE:
+      product_type: RADARSAT-1
+      level: BROWSE
     R1:
       product_type: R1
-    SEASAT:
+    SEASAT_L1:
       product_type: SEASAT
+      level: L1
+    SEASAT_BROWSE:
+      product_type: SEASAT
+      level: BROWSE
     SS:
       product_type: SS
-    Sentinel-1A:
-      product_type: Sentinel-1A
+    S1_OCN:
+      product_type: Sentinel-1A, Sentinel-1B
+      level: OCN
+      partial: true
+    S1_GRD:
+      product_type: Sentinel-1A, Sentinel-1B
+      level: GRD
+      partial: true
+    S1_SLC:
+      product_type: Sentinel-1A, Sentinel-1B
+      level: SLC
+      partial: true
+    S1_RAW:
+      product_type: Sentinel-1A, Sentinel-1B
+      level: RAW
+      partial: true
     SA:
       product_type: SA
-    Sentinel-1B:
-      product_type: Sentinel-1B
     SB:
       product_type: SB
-    SMAP:
+    SMAP_L1A_Radar_RO_QA:
       product_type: SMAP
+      level: L1A_Radar_RO_QA
+    SMAP_L1B_S0_LoRes_HDF5:
+      product_type: SMAP
+      level: L1B_S0_LoRes_HDF5
+    SMAP_L1B_S0_LoRes_QA:
+      product_type: SMAP
+      level: L1B_S0_LoRes_QA
+    SMAP_L1B_S0_LoRes_ISO_XML:
+      product_type: SMAP
+      level: L1B_S0_LoRes_ISO_XML
+    SMAP_L1A_Radar_QA:
+      product_type: SMAP
+      level: L1A_Radar_QA
+    SMAP_L1A_Radar_RO_ISO_XML:
+      product_type: SMAP
+      level: L1A_Radar_RO_ISO_XML
+    SMAP_L1C_S0_HiRes_ISO_XML:
+      product_type: SMAP
+      level: L1C_S0_HiRes_ISO_XML
+    SMAP_L1C_S0_HiRes_QA:
+      product_type: SMAP
+      level: L1C_S0_HiRes_QA
+    SMAP_L1C_S0_HiRes_HDF5:
+      product_type: SMAP
+      level: L1C_S0_HiRes_HDF5
+    SMAP_L1A_Radar_HDF5:
+      product_type: SMAP
+      level: L1A_Radar_HDF5
     SP:
       product_type: SP
-    UAVSAR:
+    UAVSAR_KMZ:
       product_type: UAVSAR
+      level: KMZ
+    UAVSAR_PROJECTED:
+      product_type: UAVSAR
+      level: PROJECTED
+    UAVSAR_PAULI:
+      product_type: UAVSAR
+      level: PAULI
+    UAVSAR_PROJECTED_ML5X5:
+      product_type: UAVSAR
+      level: PROJECTED_ML5X5
+    UAVSAR_STOKES:
+      product_type: UAVSAR
+      level: STOKES
+    UAVSAR_AMPLITUDE:
+      product_type: UAVSAR
+      level: AMPLITUDE
+    UAVSAR_BROWSE:
+      product_type: UAVSAR
+      level: BROWSE
+    UAVSAR_COMPLEX:
+      product_type: UAVSAR
+      level: COMPLEX
+    UAVSAR_DEM_TIFF:
+      product_type: UAVSAR
+      level: DEM_TIFF
+    UAVSAR_PROJECTED_ML3X3:
+      product_type: UAVSAR
+      level: PROJECTED_ML3X3
+    UAVSAR_METADATA:
+      product_type: UAVSAR
+      level: METADATA
+    UAVSAR_AMPLITUDE_GRD:
+      product_type: UAVSAR
+      level: AMPLITUDE_GRD
+    UAVSAR_INTERFEROMETRY:
+      product_type: UAVSAR
+      level: INTERFEROMETRY
+    UAVSAR_INTERFEROMETRY_GRD:
+      product_type: UAVSAR
+      level: INTERFEROMETRY_GRD
     UA:
       product_type: UA
   search:
@@ -580,11 +739,10 @@ asf:
         - '$.startTime'
       completionTimeFromAscendingNode: '$.stopTime'
       sensorMode: '$.sensor'
-      quicklook: '$.thumbnailUrl'
+      quicklook: '$.browse'
   download:
     plugin: HTTPDownload
-    base_uri: 'https://urs.earthdata.nasa.gov/home'
+    base_uri: ''
     archive_depth: 2
   auth:
-    plugin: TokenAuth
-    auth_uri: 'https://urs.earthdata.nasa.gov/home'
+    plugin: GenericAuth

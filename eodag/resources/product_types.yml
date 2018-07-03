@@ -121,3 +121,267 @@ S2_MSI_L1C:
 S2_MSI_L2Ap:
   desc: Sentinel 2
   meta: []
+
+ALOS_L1.0:
+  desc: ""
+  meta: []
+
+ALOS_L1.1:
+  desc: ""
+  meta: []
+
+ALOS_L1.5:
+   desc: ""
+  meta: []
+
+ALOS_RTC_LOW_RES:
+  desc: ""
+  meta: []
+
+ALOS_RTC_HI_RES:
+  desc: ""
+  meta: []
+
+ALOS_BROWSE:
+  desc: ""
+  meta: []
+
+A3:
+  desc: ""
+  meta: []
+
+AIRSAR_3FP:
+  desc: ""
+  meta: []
+
+AIRSAR_ATI:
+  desc: ""
+  meta: []
+
+AIRSAR_XTILTIF:
+  desc: ""
+  meta: []
+
+AIRSAR_PTIF:
+  desc: ""
+  meta: []
+
+AIRSAR_CTIF:
+  desc: ""
+  meta: []
+
+AIRSAR_PSTOKES:
+  desc: ""
+  meta: []
+
+AIRSAR_BROWSE:
+  desc: ""
+  meta: []
+
+AIRSAR_ATI:
+  desc: ""
+  meta: []
+
+AIRSAR_CSTOKES:
+  desc: ""
+  meta: []
+
+AIRSAR_JPG:
+  desc: ""
+  meta: []
+
+AIRSAR_LSTOKES:
+  desc: ""
+  meta: []
+
+AS:
+  desc: ""
+  meta: []
+
+ERS-1_L0:
+  desc: ""
+  meta: []
+
+ERS-1_L1:
+  desc: ""
+  meta: []
+
+ERS-1_BROWSE:
+  desc: ""
+  meta: []
+
+E1:
+  desc: ""
+  meta: []
+
+ERS-2_L0:
+  desc: ""
+  meta: []
+
+ERS-2_L1:
+  desc: ""
+  meta: []
+
+ERS-2_BROWSE:
+  desc: ""
+  meta: []
+
+E2:
+  desc: ""
+  meta: []
+
+JERS-1_L0:
+  desc: ""
+  meta: []
+
+JERS-1_L1:
+  desc: ""
+  meta: []
+
+JERS-1_BROWSE:
+  desc: ""
+  meta: []
+
+J1:
+  desc: ""
+  meta: []
+
+RADARSAT-1_L0:
+  desc: ""
+  meta: []
+
+RADARSAT-1_L1:
+  desc: ""
+  meta: []
+
+RADARSAT-1_BROWSE:
+  desc: ""
+  meta: []
+
+R1:
+  desc: ""
+  meta: []
+
+SEASAT_L1:
+  desc: ""
+  meta: []
+
+SEASAT_BROWSE:
+  desc: ""
+  meta: []
+
+SS:
+  desc: ""
+  meta: []
+
+SA:
+  desc: ""
+  meta: []
+
+SB:
+  desc: ""
+  meta: []
+
+SMAP_L1A_Radar_RO_QA:
+  desc: ""
+  meta: []
+
+SMAP_L1B_S0_LoRes_HDF5:
+  desc: ""
+  meta: []
+
+SMAP_L1B_S0_LoRes_QA:
+  desc: ""
+  meta: []
+
+SMAP_L1B_S0_LoRes_ISO_XML:
+  desc: ""
+  meta: []
+
+SMAP_L1A_Radar_QA:
+  desc: ""
+  meta: []
+
+SMAP_L1A_Radar_RO_ISO_XML:
+  desc: ""
+  meta: []
+
+SMAP_L1C_S0_HiRes_ISO_XML:
+  desc: ""
+  meta: []
+
+SMAP_L1C_S0_HiRes_QA:
+  desc: ""
+  meta: []
+
+SMAP_L1C_S0_HiRes_HDF5:
+  desc: ""
+  meta: []
+
+SMAP_L1A_Radar_HDF5:
+  desc: ""
+  meta: []
+
+SP:
+  desc: ""
+  meta: []
+
+UAVSAR_KMZ:
+  desc: ""
+  meta: []
+
+UAVSAR_PROJECTED:
+  desc: ""
+  meta: []
+
+UAVSAR_PAULI:
+  desc: ""
+  meta: []
+
+UAVSAR_PROJECTED_ML5X5:
+  desc: ""
+  meta: []
+
+UAVSAR_STOKES:
+  desc: ""
+  meta: []
+
+UAVSAR_AMPLITUDE:
+  desc: ""
+  meta: []
+
+UAVSAR_BROWSE:
+  desc: ""
+  meta: []
+
+UAVSAR_COMPLEX:
+  desc: ""
+  meta: []
+
+UAVSAR_DEM_TIFF:
+  desc: ""
+  meta: []
+
+UAVSAR_PROJECTED_ML3X3:
+  desc: ""
+  meta: []
+
+UAVSAR_METADATA:
+  desc: ""
+  meta: []
+
+UAVSAR_AMPLITUDE_GRD:
+  desc: ""
+  meta: []
+
+UAVSAR_INTERFEROMETRY:
+  desc: ""
+  meta: []
+
+UAVSAR_INTERFEROMETRY_GRD:
+  desc: ""
+  meta: []
+
+UA:
+  desc: ""
+  meta: []
