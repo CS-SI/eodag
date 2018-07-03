@@ -15,6 +15,9 @@ from rasterio.vrt import WarpedVRT
 from shapely import geometry
 from tqdm import tqdm
 from requests import HTTPError
+
+from eodag.utils import ProgressCallback
+
 try:
     from shapely.errors import TopologicalError
 except ImportError:
@@ -215,7 +218,7 @@ class EOProduct(object):
         self.downloader = downloader
         self.downloader_auth = authenticator
 
-    def download(self):
+    def download(self, progress_callback=None):
         """Download the EO product using the provided download plugin and the authenticator if necessary.
 
         The actual download of the product occurs only at the first call of this method. A side effect of this method is
@@ -224,6 +227,9 @@ class EOProduct(object):
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
         """
+        if progress_callback is None:
+            progress_callback = ProgressCallback()
+
         if self.downloader is None:
             raise RuntimeError('EO product is unable to download itself due to the lack of a download plugin')
         # Remove the capability for the downloader to perform extraction if the downloaded product is a zipfile. This
@@ -231,7 +237,7 @@ class EOProduct(object):
         old_extraction_config = self.downloader.config['extract']
         self.downloader.config['extract'] = False
         auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
-        fs_location = self.downloader.download(self, auth=auth)
+        fs_location = self.downloader.download(self, auth=auth, progress_callback=progress_callback)
         if fs_location is None:
             logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
                            'have not been returned by the download plugin')
