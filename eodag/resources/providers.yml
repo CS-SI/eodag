@@ -620,12 +620,12 @@ asf:
     SS:
       product_type: SS
     S1_OCN:
-      product_type: Sentinel-1A,Sentinel-1B
+      product_type: Sentinel-1A, Sentinel-1B
       level: OCN
       partial: true
     S1_GRD:
       product_type: Sentinel-1A, Sentinel-1B
-      level: GRD
+      level: METADATA GRD, GRD_HS, GRD_HD, GRD_MS, GRD_MD, GRD_FS, GRD_FD
       partial: true
     S1_SLC:
       product_type: Sentinel-1A, Sentinel-1B
