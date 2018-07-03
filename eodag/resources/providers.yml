@@ -625,15 +625,15 @@ asf:
       partial: true
     S1_GRD:
       product_type: Sentinel-1A, Sentinel-1B
-      level: METADATA GRD, GRD_HS, GRD_HD, GRD_MS, GRD_MD, GRD_FS, GRD_FD
-      partial: false
+      level: GRD_HS, GRD_HD, GRD_MS, GRD_MD, GRD_FS, GRD_FD
+      partial: true
     S1_SLC:
       product_type: Sentinel-1A, Sentinel-1B
-      level: SLC, METADATA_SLC
+      level: SLC
       partial: true
     S1_RAW:
       product_type: Sentinel-1A, Sentinel-1B
-      level: RAW, METADATA_RAW
+      level: RAW
       partial: true
     SA:
       product_type: SA
