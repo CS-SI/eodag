@@ -42,7 +42,6 @@ class AsfSearch(Search):
         params = {
             'start': kwargs.pop('startTimeFromAscendingNode', None),
             'output': 'json',
-            'maxResults': '2',
         }
         cloud_cover = kwargs.pop('cloudCover', None)
         if cloud_cover is not None:
