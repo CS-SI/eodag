@@ -65,7 +65,7 @@ AmazonWS:
     plugin: OAuth
 
 eocloud:
-  priority:
+  priority: 0
   products:
     S1_OCN:
       product_type: OCN
@@ -625,8 +625,8 @@ asf:
       partial: true
     S1_GRD:
       product_type: Sentinel-1A, Sentinel-1B
-      level: GRD_HS, GRD_HD, GRD_MS, GRD_MD, GRD_FS, GRD_FD
-      partial: true
+      level: GRD_HS, GRD_HD, GRD_MS, GRD_MD, GRD_FS, GRD_FD # asf makes the difference between the different resolution
+      partial: true                                         # of GRD unlike the other providers
     S1_SLC:
       product_type: Sentinel-1A, Sentinel-1B
       level: SLC
