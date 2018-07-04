@@ -35,6 +35,15 @@ class AsfSearch(Search):
 
 
     def query(self, product_type, auth=None, **kwargs):
+        """Query method on Alaska Satellite Facility
+
+        :param product_type: The eodag specific product type code name
+        :type product_type: str or unicode
+        :param auth: Authentication mode for the download plugin
+        :type auth: authentication class
+        :return: The search result
+        :rtype: list
+        """
         logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         results = []
         add_to_results = results.extend
