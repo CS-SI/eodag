@@ -71,7 +71,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         try:
             # It is assumed that after 5 seconds, we should have already get at least 1 Megabytes of data from provider
             # Consider changing this to fit a lower internet bandwidth
-            dl_process.join(timeout=5)
+            dl_process.join(timeout=15)
             if dl_process.is_alive():  # The process has timed out
                 dl_process.terminate()
         except KeyboardInterrupt:
@@ -149,6 +149,18 @@ class TestEODagEndToEnd(unittest.TestCase):
         )
         # Scihub api manage incomplete downloads by adding '.incomplete' to a file that hasn't been fully downloaded yet
         expected_filename = '{}.zip.incomplete'.format(product.properties['title'])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_asf(self):
+        product = self.execute_search(
+            'asf',
+            'A3',
+            '2007-12-12',
+            '2007-12-13',
+            (-155, 61, -149, 66)
+        )
+
+        expected_filename = '{}.zip'.format(product.properties['title'])
         self.execute_download(product, expected_filename)
 
     def test_get_quiclook_peps(self):
