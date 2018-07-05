@@ -65,7 +65,7 @@ AmazonWS:
     plugin: OAuth
 
 eocloud:
-  priority: 0
+  priority: 1
   products:
     S1_OCN:
       product_type: OCN
@@ -86,7 +86,7 @@ eocloud:
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
-      partial: true
+      partial: false
     S2_MSI_L2Ap:
       product_type: L2A
       collection: Sentinel2
@@ -560,6 +560,76 @@ Finnish:
       resolution: '$.resolution'
       sensorMode: '$.sensoroperationalmode'
       quicklook: '$.link_icon'
+
+SEDAS:
+  priority: 0
+  products:
+    S1_OCN:
+      product_type: OCN
+      collection: S1
+      partial: true
+    S1_GRD:
+      product_type: GRD
+      collection: S1
+      partial: true
+    S1_SLC:
+      product_type: SLC
+      collection: S1
+      partial: true
+    S1_RAW:
+      product_type: RAW
+      collection: S1
+      partial: true
+    S2_MSI_L1C:
+      product_type: S2MSIL1C
+      collection: S2
+      partial: true
+    S2_MSI_L2Ap:
+      product_type: S2MSI2Ap
+      collection: S2
+  search:
+    plugin: RestoSearch
+    api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0//api/'
+    product_location_scheme: 'http'
+    metadata_mapping:
+      id: '$.id'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
+      quicklook: '$.properties.quicklook'
+  download:
+    plugin: HTTPDownload
+    base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
+  auth:
+    plugin: TokenAuth
+    auth_uri: 'https://geobrowser.satapps.org/sedas/LoginService'
+    token_type: json
 
 geostorm-ce:
   priority: 0
