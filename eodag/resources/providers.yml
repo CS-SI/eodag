@@ -583,7 +583,7 @@ EUMETSAT:
       partial: true
     S3_SRA_BS:
       product_type: SR_1_SRA_BS
-      partial: false
+      partial: true
     S3_SRA_A_BS:
       product_type: SR_1_SRA_A_
       partial: true
@@ -648,6 +648,42 @@ SEDAS:
     S2_MSI_L2Ap:
       product_type: S2MSI2Ap
       collection: S2
+    S3_EFR:
+      product_type: OL_1_EFR___
+      collection: S3
+      partial: true
+    S3_ERR:
+      product_type: OL_1_ERR___
+      collection: S3
+      partial: true
+    S3_RBT:
+      product_type: SL_1_RBT___
+      collection: S3
+      partial: true
+    S3_SRA:
+      product_type: SR_1_SRA___
+      collection: S3
+      partial: true
+    S3_SRA_BS:
+      product_type: SR_1_SRA_BS
+      collection: S3
+      partial: true
+    S3_SRA_A_BS:
+      product_type: SR_1_SRA_A_
+      collection: S3
+      partial: true
+    S3_WAT:
+      product_type: SR_2_WAT___
+      collection: S3
+      partial: true
+    S3_LAN:
+      product_type: SR_2_LAN___
+      collection: S3
+      partial: true
+    S3_LST:
+      product_type: SL_2_LST___
+      collection: S3
+      partial: true
   search:
     plugin: RestoSearch
     api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0//api/'
