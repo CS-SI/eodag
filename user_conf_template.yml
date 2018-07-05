@@ -46,3 +46,23 @@ asf:
     credentials:
         username: 
         password:
+
+NBS:
+    credentials:
+        username:
+        password:
+
+CopernicusScientificDataHub:
+    credentials:
+        username:
+        password:
+
+Finnish:
+    credentials:
+        username:
+        password:
+
+SEDAS:
+    credentials:
+        username:
+        password:
