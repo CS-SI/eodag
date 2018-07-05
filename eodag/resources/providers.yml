@@ -65,7 +65,7 @@ AmazonWS:
     plugin: OAuth
 
 eocloud:
-  priority: 1
+  priority: 0
   products:
     S1_OCN:
       product_type: OCN
@@ -120,18 +120,23 @@ eocloud:
     S3_EFR:
       product_type: EFR
       collection: Sentinel3
+      partial: true
     S3_ERR:
       product_type: ERR
       collection: Sentinel3
+      partial: true
     S3_RBT:
       product_type: RBT
       collection: Sentinel3
+      partial: true
     S3_SRA:
       product_type: SRA
       collection: Sentinel3
+      partial: true
     S3_WAT:
       product_type: WAT
       collection: Sentinel3
+      partial: true
     S3_LAN:
       product_type: LAN
       collection: Sentinel3
@@ -532,6 +537,62 @@ Finnish:
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://finhub.nsdc.fmi.fi/#/home'
+    metadata_mapping:
+      id: '$.uuid'
+      geometry:
+        - area
+        - '$.footprint'
+      productType: '$.producttype'
+      platform: '$.platformname'
+      platformSerialIdentifier: '$.platformidentifier'
+      instrument: '$.instrument'
+      processingLevel: '$.processingLevel'
+      title: '$.title'
+      keyword: '$.keywords'
+      abstract: '$.summary'
+      organisationName: '$.organisationname'
+      orbitNumber: '$.orbitnumber'
+      orbitDirection: '$.orbitdirection'
+      cloudCover:
+        - cloudcoverpercentage
+        - '$.cloudcover'
+      snowCover: '$.snowcover'
+      startTimeFromAscendingNode:
+        - date
+        - '$.beginposition'
+      completionTimeFromAscendingNode: '$.endposition'
+      parentIdentifier: '$.parentidentifier'
+      resolution: '$.resolution'
+      sensorMode: '$.sensoroperationalmode'
+      quicklook: '$.link_icon'
+
+EUMETSAT:
+  priority: 1
+  products:
+    S3_EFR:
+      product_type: OL_1_EFR___
+      partial: true
+    S3_ERR:
+      product_type: OL_1_ERR___
+      partial: true
+    S3_RBT:
+      product_type: SL_1_RBT___
+      partial: true
+    S3_SRA:
+      product_type: SR_1_SRA___
+      partial: true
+    S3_SRA_BS:
+      product_type: SR_1_SRA_BS
+      partial: false
+    S3_SRA_A_BS:
+      product_type: SR_1_SRA_A_
+      partial: true
+    S3_WAT:
+      product_type: SR_2_WAT___
+      partial: true
+  api:
+    plugin: SentinelsatAPI
+    endpoint: 'https://coda.eumetsat.int/#/home'
     metadata_mapping:
       id: '$.uuid'
       geometry:
