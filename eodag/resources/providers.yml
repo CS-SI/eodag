@@ -423,7 +423,7 @@ scihub:
       quicklook: '$.link_icon'
 
 IPSentinel: # Portuguese Copernicus Hub
-  priority: 1
+  priority: 0
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
@@ -596,6 +596,71 @@ Finnish: # Finnish Copernicus hub
   api:
     plugin: SentinelsatAPI
     endpoint: 'https://finhub.nsdc.fmi.fi/#/home'
+    metadata_mapping:
+      id: '$.uuid'
+      geometry:
+        - area
+        - '$.footprint'
+      productType: '$.producttype'
+      platform: '$.platformname'
+      platformSerialIdentifier: '$.platformidentifier'
+      instrument: '$.instrument'
+      processingLevel: '$.processingLevel'
+      title: '$.title'
+      keyword: '$.keywords'
+      abstract: '$.summary'
+      organisationName: '$.organisationname'
+      orbitNumber: '$.orbitnumber'
+      orbitDirection: '$.orbitdirection'
+      cloudCover:
+        - cloudcoverpercentage
+        - '$.cloudcover'
+      snowCover: '$.snowcover'
+      startTimeFromAscendingNode:
+        - date
+        - '$.beginposition'
+      completionTimeFromAscendingNode: '$.endposition'
+      parentIdentifier: '$.parentidentifier'
+      resolution: '$.resolution'
+      sensorMode: '$.sensoroperationalmode'
+      quicklook: '$.link_icon'
+
+BelgiumCopernicus: # Belgian Copernicus hub
+  priority: 0
+  products:
+    S2_MSI_L1C:
+      product_type: S2MSI1C
+      partial: true
+    S2_MSI_L2Ap:
+      product_type: S2MSI2Ap
+      partial: true
+    S1_OCN:
+      product_type: OCN
+      partial: true
+    S1_GRD:
+      product_type: GRD
+      partial: true
+    S1_SLC:
+      product_type: SLC
+      partial: true
+    S1_RAW:
+      product_type: RAW
+      partial: true
+    S3_SRA:
+      product_type: SR_1_SRA___
+      partial: true
+    S3_SRA_BS:
+      product_type: SR_1_SRA_BS
+      partial: true
+    S3_SRA_A_BS:
+      product_type: SR_1_SRA_A_
+      partial: true
+    S3_LAN:
+      product_type: SR_2_LAN___
+      partial: true
+  api:
+    plugin: SentinelsatAPI
+    endpoint: 'https://sentinels.space.noa.gr/dhus/#/home'
     metadata_mapping:
       id: '$.uuid'
       geometry:
