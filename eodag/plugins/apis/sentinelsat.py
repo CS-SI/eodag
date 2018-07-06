@@ -11,6 +11,8 @@ import shapely.wkt
 from sentinelsat import SentinelAPI
 from shapely import geometry
 from tqdm import tqdm
+from sentinelsat.sentinel import requests
+from functools import partial
 
 from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_json
@@ -94,6 +96,8 @@ class SentinelsatAPI(Api):
             )
         else:
             logger.debug('Sentinelsat api already initialized')
+        if self.config['verify'] is False:
+            requests.Session.post = partial(requests.Session().post, verify=False)
 
     def _convert_query_params(self, params):
         area_param = get_search_param(self.config['metadata_mapping']['geometry'])
