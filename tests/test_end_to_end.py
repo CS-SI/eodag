@@ -178,6 +178,19 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = '{}.zip.incomplete'.format(product.properties['title'])
         self.execute_download(product, expected_filename)
 
+    def test_end_to_end_search_download_EUMETSAT(self):
+        product = self.execute_search(
+            'EUMETSAT',
+            'S3_EFR',
+            '2018-05-01',
+            '2018-05-31',
+            (32, 65, 35, 69)
+        )
+        # IPSentinel api manage incomplete downloads by adding '.incomplete' to a file that hasn't been fully downloaded
+        #  yet
+        expected_filename = '{}.zip.incomplete'.format(product.properties['title'])
+        self.execute_download(product, expected_filename)
+
     def test_end_to_end_search_download_IPSentinel(self):
         product = self.execute_search(
             'IPSentinel',
