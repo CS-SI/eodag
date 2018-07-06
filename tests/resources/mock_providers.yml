@@ -291,6 +291,7 @@ mock-provider-6:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+    product_location_scheme: 's3'
   download:
     plugin: HTTPDownload
     base_uri: 'https://subdomain9.domain.eu/download/'

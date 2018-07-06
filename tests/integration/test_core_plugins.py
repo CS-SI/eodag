@@ -454,7 +454,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         for result in results:
             self.assertIsInstance(result, EOProduct)
             self.assertEqual(result.provider, self.provider)
-            self.assertEqual(result.location, 'tiles/31/T/DH/2018/5/9/0/')
+            self.assertEqual(result.location, 's3://tiles/31/T/DH/2018/5/9/0/')
 
         # Test that when nothing is found, the returned result is empty
         requests_http_get_response.json = mock.MagicMock(return_value={'features': []})
