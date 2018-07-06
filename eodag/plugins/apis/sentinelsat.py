@@ -97,7 +97,7 @@ class SentinelsatAPI(Api):
         else:
             logger.debug('Sentinelsat api already initialized')
         # Do not check certificate if verify is set to False (useful for IPSentinel)
-        if self.config['verify'] is False:
+        if 'verify' in self.config.keys() and self.config['verify'] is False:
             requests.Session.post = partial(requests.Session().post, verify=False)
             requests.Session.get = partial(requests.Session().get, verify=False)
 
