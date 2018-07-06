@@ -99,6 +99,7 @@ class SentinelsatAPI(Api):
         # Do not check certificate if verify is set to False (useful for IPSentinel)
         if self.config['verify'] is False:
             requests.Session.post = partial(requests.Session().post, verify=False)
+            requests.Session.get = partial(requests.Session().get, verify=False)
 
     def _convert_query_params(self, params):
         area_param = get_search_param(self.config['metadata_mapping']['geometry'])
