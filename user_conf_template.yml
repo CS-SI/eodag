@@ -76,3 +76,8 @@ EUMETSAT:
     credentials:
         username:
         password:
+
+GreekCopernicus:
+    credentials:
+        username:
+        password:

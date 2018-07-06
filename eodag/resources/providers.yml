@@ -625,7 +625,7 @@ Finnish: # Finnish Copernicus hub
       sensorMode: '$.sensoroperationalmode'
       quicklook: '$.link_icon'
 
-BelgiumCopernicus: # Belgian Copernicus hub
+GreekCopernicus: # Greek Copernicus hub
   priority: 0
   products:
     S2_MSI_L1C:

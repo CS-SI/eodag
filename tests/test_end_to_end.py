@@ -178,9 +178,9 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = '{}.zip.incomplete'.format(product.properties['title'])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_BelgiumCopernicus(self):
+    def test_end_to_end_search_download_GreekCopernicus(self):
         product = self.execute_search(
-            'BelgiumCopernicus',
+            'GreekCopernicus',
             'S2_MSI_L1C',
             '2018-06-01',
             '2018-07-01',
