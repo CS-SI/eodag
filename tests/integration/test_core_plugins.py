@@ -763,7 +763,7 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
 
     def setUp(self):
         super(TestIntegrationCoreApiPlugins, self).setUp()
-        self.sentinelsat_patcher = mock.patch("sentinelsat.SentinelAPI", autospec=True)
+        self.sentinelsat_patcher = mock.patch("eodag.plugins.apis.sentinelsat.SentinelAPI", autospec=True)
         self.usgs_api_login_patcher = mock.patch('usgs.api.login')
         self.usgs_api_logout_patcher = mock.patch('usgs.api.logout')
         self.usgs_api_search_patcher = mock.patch('usgs.api.search')

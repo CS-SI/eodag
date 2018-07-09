@@ -1,5 +1,7 @@
 include README.rst
 include LICENSE
+include NOTICE
 include requirements.txt
 include docs/*.rst
 include eodag/resources/*
+include user_conf_template.yml

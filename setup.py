@@ -18,34 +18,85 @@
 import os
 from setuptools import setup, find_packages
 
-from eodag import __version__
-
 BASEDIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
+
+metadata = {}
+with open(os.path.join(BASEDIR, 'eodag', '__meta__.py'), 'r') as f:
+    exec(f.read(), metadata)
 
 with open(os.path.join(BASEDIR, 'README.rst'), 'r') as f:
     readme = f.read()
 
-with open(os.path.join(BASEDIR, 'LICENSE'), 'r') as f:
-    license = f.read()
-
-with open(os.path.join(BASEDIR, 'requirements.txt'), 'r') as f:
-    requirements = f.readlines()
-
 setup(
-    name='eodag',
-    version=__version__,
-    description='A library and cli for downloading satellites images',
+    name=metadata['__title__'],
+    version=metadata['__version__'],
+    description=metadata['__description__'],
     long_description=readme,
-    author="CS Systemes d'Information (CS SI)",
-    author_email='adrien.oyono@c-s.fr',
-    url='https://bitbucket.org/geostorm/eodag',
-    license=license,
+    author=metadata['__author__'],
+    author_email=metadata['__author_email__'],
+    url=metadata['__url__'],
+    license=metadata['__license__'],
     packages=find_packages(exclude=('tests', 'docs')),
-    package_data={'eodag': ['resources/*', ]},
-    install_requires=requirements,
+    package_data={'': ['LICENSE', 'NOTICE', '*.proto']},
+    package_dir={'eodag': 'eodag'},
+    include_package_data=True,
+    install_requires=[
+        'click',
+        'requests',
+        'python-dateutil',
+        'PyYAML',
+        'tqdm',
+        'sentinelsat',
+        'shapely',
+        'owslib',
+        'six',
+        'geojson',
+        'pyproj',
+        'usgs',
+        'boto3',
+        'numpy',
+        'rasterio==1.0a12',
+        'protobuf',
+        'grpcio',
+        # To be able to do 'import concurrent.futures' in Python 2.7
+        "futures; python_version < '3.5'",
+        'jsonpath-rw',
+        'lxml',
+        'xarray',
+    ],
+    extras_require={
+        'dev': [
+            'sphinx',
+            'nose',
+            'tox',
+            'faker',
+            'mock; python_version < "3.5" ',
+            'coverage',
+            'moto',
+        ],
+    },
     entry_points='''
         [console_scripts]
         eodag=eodag.cli:eodag
     ''',
+    project_urls={
+        "Bug Tracker": "https://www.github.com/CS-SI/EODAG",
+        "Documentation": "",
+        "Source Code": "https://www.github.com/CS-SI/EODAG",
+    },
+    classifiers=(
+        'Development Status :: 1 - Planning',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'Natural Language :: English',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Topic :: Scientific/Engineering :: GIS',
+    ),
 )
 

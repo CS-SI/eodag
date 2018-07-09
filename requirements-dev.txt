@@ -1,8 +1,2 @@
--r requirements.txt
-nose
-sphinx
-tox
-faker
-mock
-coverage
-moto
+python-dateutil<2.7.0,>=2.1 # requirement for moto
+-e .[dev]

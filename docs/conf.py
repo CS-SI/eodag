@@ -21,7 +21,11 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-from eodag import __version__
+
+BASEDIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.realpath(__file__))))
+metadata = {}
+with open(os.path.join(BASEDIR, 'eodag', '__meta__.py'), 'r') as f:
+    exec(f.read(), metadata)
 
 
 # -- General configuration ------------------------------------------------
@@ -56,16 +60,16 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'eodag'
-copyright = '2018, CS Systemes d\'Information (CSSI)'
-author = 'Adrien Oyono'
+project = metadata['__title__']
+copyright = metadata['__copyright__']
+author = metadata['__author__']
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = __version__
+version = metadata['__version__']
 # The full version, including alpha/beta/rc tags.
 release = version
 

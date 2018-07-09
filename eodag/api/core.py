@@ -96,13 +96,16 @@ class SatImagesAPI(object):
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
 
+        >>> import eodag.utils.exceptions
         >>> dag = SatImagesAPI()    # 'eocloud' is considered the default preferred provider
         >>> dag.get_preferred_provider()    # This also tests get_preferred_provider method by the way
         ('eocloud', 1)
-        >>> dag.set_preferred_provider(u'unknown')
-        Traceback (most recent call last):
-            ...
-        UnsupportedProvider: This provider is not recognised by eodag
+        >>> # For the following lines, see http://python3porting.com/problems.html#handling-expected-exceptions
+        >>> try:
+        ...     dag.set_preferred_provider(u'unknown')
+        ...     raise AssertionError(u'UnsupportedProvider exception was not raised as expected')
+        ... except eodag.utils.exceptions.UnsupportedProvider:
+        ...     pass
         >>> dag.set_preferred_provider(u'USGS')
         >>> dag.get_preferred_provider()
         ('USGS', 2)
