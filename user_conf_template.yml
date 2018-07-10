@@ -81,3 +81,8 @@ GreekCopernicus:
     credentials:
         username:
         password:
+
+Code_DE:
+    credentials:
+        username:
+        password:

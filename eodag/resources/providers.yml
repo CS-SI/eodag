@@ -1181,3 +1181,29 @@ asf:
     archive_depth: 2
   auth:
     plugin: GenericAuth
+
+Code_DE:
+  priority: 1
+  products:
+    S1_GRD:
+      product_type: EOP:CODE-DE:S1_SAR_L1_GRD
+      partial: false
+  search:
+    plugin: Code_DESearch
+    api_endpoint: 'https://catalog.code-de.org/opensearch/description.xml'
+    metadata_mapping:
+      id: '//dc_identifier/text()'
+      geometry:
+        - area
+        - '//polygon/text()'
+      productType: '//missionName/text()'
+      startTimeFromAscendingNode:
+        - date
+        - '//published/text()'
+      completionTimeFromAscendingNode: '//updated/text()'
+  download:
+    plugin: HTTPDownload
+    base_uri: ''
+    archive_depth: 2
+  auth:
+    plugin: GenericAuth
