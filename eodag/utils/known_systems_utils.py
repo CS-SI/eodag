@@ -1,33 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2018 CS Systemes d'Information (CS SI)
-# All rights reserved
+# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import getpass
 
 import requests
-
-
-def get_eocloud_product_types():
-    """Function based on analysis of source code of https://finder.eocloud.eu/www/.
-
-    The endpoint is called on page load to get a list of supported collections that helps create search
-    fields. We assume if a collection has an empty list of supported product types, it means the collection
-    only have one product type, and this product type is manually guessed by doing a search on the UI with
-    this collection as the unique criteria (by time of first writing of this function, this may be true for
-    Sentinel2 and Envisat collections). Note that even if the list of product types is not empty, there may
-    be more supported product types. This way of finding the eocloud product types is not standard !
-    """
-    url = 'https://finder.eocloud.eu/www/eox_attributes.json'
-    eox_attributes = requests.get(url).json()
-    for coll_props in eox_attributes['collections']:
-        collection_name = coll_props['id']
-        product_types = [
-            sp['id']
-            for p in coll_props['properties'] if p['id'] == 'productType'
-            for sp in p['values']
-        ]
-        yield collection_name, product_types
 
 
 def get_airbus_ds_dias_product_types():

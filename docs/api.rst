@@ -2,18 +2,19 @@
 
 .. module:: eodag
 
-EODAG Python API documentation.
-
+Python API
+==========
 
 Core
-====
+----
 
 .. autoclass:: eodag.api.core.SatImagesAPI
+   :members:
    :undoc-members:
 
 
 Representation Of Earth Observation Products
-============================================
+--------------------------------------------
 
 .. autoclass:: eodag.api.product._product.EOProduct
    :members:
@@ -35,7 +36,7 @@ Representation Of Earth Observation Products
 
 
 Representation Of Search Results
-================================
+--------------------------------
 
 .. autoclass:: eodag.api.search_result.SearchResult
    :members:
@@ -43,7 +44,7 @@ Representation Of Search Results
 
 
 Plugins
-=======
+-------
 
 EODAG uses a two-level plugin system. *Plugin topics* are abstract interfaces for a specific functionality of EODAG
 like *Search* or *Download*. EODAG providers are implementations of at least one plugin topic. The more plugin topics
@@ -160,17 +161,13 @@ Authentication Plugins
 External Apis Plugins
 ---------------------
 
-.. autoclass:: eodag.plugins.apis.sentinelsat.SentinelsatAPI
-   :show-inheritance:
-   :undoc-members:
-
 .. autoclass:: eodag.plugins.apis.usgs.UsgsApi
    :show-inheritance:
    :undoc-members:
 
 
 Utils
-=====
+-----
 
 .. automodule:: eodag.utils
    :members:
@@ -193,6 +190,11 @@ Utils
    :undoc-members:
 
 .. automodule:: eodag.utils.logging
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+.. automodule:: eodag.utils.metadata_mapping
    :members:
    :show-inheritance:
    :undoc-members:

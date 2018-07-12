@@ -1,0 +1,60 @@
+EODAG
+Copyright 2018 CS Systèmes d'Information
+
+This product includes software developed by
+CS Systèmes d'Information (http://www.c-s.fr/)
+
+================================================================
+The Apache 2.0 License
+================================================================
+
+The following components are provided under the  Apache 2.0 License  (https://opensource.org/licenses/Apache-2.0). See project link for details.
+
+https://github.com/requests/requests
+https://github.com/dateutil/dateutil
+https://github.com/boto/boto3
+https://grpc.io/
+https://github.com/kennknowles/python-jsonpath-rw
+https://github.com/pydata/xarray
+
+================================================================
+The MIT License
+================================================================
+
+The following components are provided under the  MIT License  (http://www.opensource.org/licenses/mit-license.php). See project link for details.
+
+https://pyyaml.org/wiki/PyYAML
+https://github.com/tqdm/tqdm
+https://github.com/benjaminp/six
+https://github.com/jswhit/pyproj
+https://github.com/kapadia/usgs
+https://github.com/jupyter-widgets/ipyleaflet
+
+
+================================================================
+The BSD-3-Clause Licence
+================================================================
+
+The following components are provided under the  BSD-3-Clause License  (https://opensource.org/licenses/BSD-3-Clause). See project link for details.
+
+https://github.com/pallets/click
+https://github.com/dateutil/dateutil
+https://github.com/Toblerity/Shapely
+geopython.github.io/OWSLib/
+https://github.com/frewsxcv/python-geojson
+http://www.numpy.org/
+https://github.com/mapbox/rasterio
+https://github.com/google/protobuf
+https://github.com/lxml/lxml
+https://github.com/jupyter-widgets/ipywidgets
+https://github.com/jupyter/jupyter
+
+
+================================================================
+The Python-2.0 License
+================================================================
+
+The following components are provided under the  Python-2.0 License  (https://opensource.org/licenses/Python-2.0). See project link for details.
+
+https://github.com/agronholm/pythonfutures
+https://github.com/matplotlib/

@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2018 CS Systemes d'Information (CS SI)
-# All rights reserved
+# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
@@ -82,19 +96,22 @@ class SatImagesAPI(object):
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
 
-        >>> dag = SatImagesAPI()    # 'eocloud' is considered the default preferred provider
+        >>> import eodag.utils.exceptions
+        >>> dag = SatImagesAPI()
         >>> dag.get_preferred_provider()    # This also tests get_preferred_provider method by the way
-        ('eocloud', 1)
-        >>> dag.set_preferred_provider(u'unknown')
-        Traceback (most recent call last):
-            ...
-        UnsupportedProvider: This provider is not recognised by eodag
+        ('airbus-ds', 1)
+        >>> # For the following lines, see http://python3porting.com/problems.html#handling-expected-exceptions
+        >>> try:
+        ...     dag.set_preferred_provider(u'unknown')
+        ...     raise AssertionError(u'UnsupportedProvider exception was not raised as expected')
+        ... except eodag.utils.exceptions.UnsupportedProvider:
+        ...     pass
         >>> dag.set_preferred_provider(u'USGS')
         >>> dag.get_preferred_provider()
         ('USGS', 2)
-        >>> dag.set_preferred_provider(u'eocloud')
+        >>> dag.set_preferred_provider(u'theia')
         >>> dag.get_preferred_provider()
-        ('eocloud', 3)
+        ('theia', 3)
         >>> dag.set_preferred_provider(u'USGS')
         >>> dag.get_preferred_provider()
         ('USGS', 4)
@@ -223,7 +240,7 @@ class SatImagesAPI(object):
 
         :param searches: List of eodag SearchResult
         :type searches: list
-        :return: list of :class:`~eodag.api.search_result.SearchResult`s
+        :return: list of :class:`~eodag.api.search_result.SearchResult`
         """
         products_grouped_by_extent = {}
 

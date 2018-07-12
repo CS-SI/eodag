@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2018 CS Systemes d'Information (CS SI)
-# All rights reserved
+# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
@@ -37,8 +51,8 @@ class AwsSearch(RestoSearch):
                 month = str(int(result['properties']['completionDate'][5:7]))
                 day = str(int(result['properties']['completionDate'][8:10]))
 
-                iter = ['tiles', ref[1:3], ref[3], ref[4:6], str(year), str(month), str(day), str(0)]
-                download_url = '/'.join(i for i in iter) + '/'
+                download_url = ('{proto}://tiles/{ref[1]}{ref[2]}/{ref[3]}/{ref[4]}{ref[5]}/{year}/'
+                                '{month}/{day}/0/').format(proto=self.config['product_location_scheme'], **locals())
 
                 product = EOProduct(
                     product_type,

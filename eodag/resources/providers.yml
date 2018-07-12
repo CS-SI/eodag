@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 USGS:
   priority: 0
   api:
@@ -20,6 +38,7 @@ AmazonWS:
   search:
     plugin: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
+    product_location_scheme: 's3'
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -60,123 +79,6 @@ AmazonWS:
     associated_bucket: 'sentinel-s2-l1c'
   auth:
     plugin: OAuth
-
-eocloud:
-  priority: 1
-  products:
-    S1_OCN:
-      product_type: OCN
-      collection: Sentinel1
-      partial: true
-    S1_GRD:
-      product_type: GRD
-      collection: Sentinel1
-      partial: true
-    S1_SLC:
-      product_type: SLC
-      collection: Sentinel1
-      partial: true
-    S1_RAW:
-      product_type: RAW
-      collection: Sentinel1
-      partial: true
-    S2_MSI_L1C:
-      product_type: L1C
-      collection: Sentinel2
-      partial: true
-    S2_MSI_L2Ap:
-      product_type: L2A
-      collection: Sentinel2
-    L8_L1T:
-      product_type: L1T
-      collection: Landsat8
-    L8_L1GT:
-      product_type: L1GT
-      collection: Landsat8
-    L7_L1G:
-      product_type: L1G
-      collection: Landsat7
-    L7_L1T:
-      product_type: L1T
-      collection: Landsat7
-    L7_L1GT:
-      product_type: L1GT
-      collection: Landsat7
-    L5_L1G:
-      product_type: L1G
-      collection: Landsat5
-    L5_L1GT:
-      product_type: L1GT
-      collection: Landsat5
-    L5_L1T:
-      product_type: L1T
-      collection: Landsat5
-    ES_FRS:
-      product_type: FRS
-      collection: Envisat
-    S3_EFR:
-      product_type: EFR
-      collection: Sentinel3
-    S3_ERR:
-      product_type: ERR
-      collection: Sentinel3
-    S3_RBT:
-      product_type: RBT
-      collection: Sentinel3
-    S3_SRA:
-      product_type: SRA
-      collection: Sentinel3
-    S3_WAT:
-      product_type: WAT
-      collection: Sentinel3
-    S3_LAN:
-      product_type: LAN
-      collection: Sentinel3
-    S3_LST:
-      product_type: LST
-      collection: Sentinel3
-  search:
-    plugin: RestoSearch
-    api_endpoint: 'http://finder.eocloud.eu/resto/api/'
-    product_location_scheme: 'http'
-    metadata_mapping:
-      id: '$.id'
-      geometry:
-        - box
-        - '$.geometry'
-      productType:
-        - productType
-        - '$.properties.productType'
-      platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
-      instrument: '$.properties.instrument'
-      processingLevel: '$.properties.processingLevel'
-      title: '$.properties.title'
-      keyword: '$.properties.keywords'
-      abstract: '$.properties.description'
-      organisationName: '$.properties.organisationName'
-      orbitNumber: '$.properties.orbitNumber'
-      orbitDirection: '$.properties.orbitDirection'
-      cloudCover:
-        - cloudCover
-        - '$.properties.cloudCover'
-      snowCover: '$.properties.snowCover'
-      startTimeFromAscendingNode:
-        - startDate
-        - '$.properties.startDate'
-      completionTimeFromAscendingNode:
-        - completionDate
-        - '$.properties.completionDate'
-      parentIdentifier: '$.properties.parentIdentifier'
-      resolution: '$.properties.resolution'
-      sensorMode: '$.properties.sensorMode'
-  download:
-    plugin: HTTPDownload
-    base_uri: 'https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo'
-  auth:
-    plugin: TokenAuth
-    auth_uri: 'https://finder.eocloud.eu/resto/api/authidentity'
-    token_type: json
 
 theia-landsat:
   priority: 0
@@ -361,89 +263,8 @@ peps:
     plugin: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 
-scihub:
-  priority: 0
-  # Queryable products found reading documentation at: https://scihub.copernicus.eu/userguide/3FullTextSearch
-  products:
-    S2_MSI_L1C:
-      product_type: S2MSI1C
-    S2_MSI_L2Ap:
-      product_type: S2MSI2Ap
-    S1_OCN:
-      product_type: OCN
-    S1_GRD:
-      product_type: GRD
-    S1_SLC:
-      product_type: SLC
-    S1_RAW:
-      product_type: RAW
-  api:
-    plugin: SentinelsatAPI
-    endpoint: 'https://scihub.copernicus.eu/apihub/'
-    metadata_mapping:
-      id: '$.uuid'
-      geometry:
-        - area
-        - '$.footprint'
-      productType: '$.producttype'
-      platform: '$.platformname'
-      platformSerialIdentifier: '$.platformidentifier'
-      instrument: '$.instrument'
-      processingLevel: '$.processingLevel'
-      title: '$.title'
-      keyword: '$.keywords'
-      abstract: '$.summary'
-      organisationName: '$.organisationname'
-      orbitNumber: '$.orbitnumber'
-      orbitDirection: '$.orbitdirection'
-      cloudCover:
-        - cloudcoverpercentage
-        - '$.cloudcover'
-      snowCover: '$.snowcover'
-      startTimeFromAscendingNode:
-        - date
-        - '$.beginposition'
-      completionTimeFromAscendingNode: '$.endposition'
-      parentIdentifier: '$.parentidentifier'
-      resolution: '$.resolution'
-      sensorMode: '$.sensoroperationalmode'
-
-geostorm-ce:
-  priority: 0
-  products: {}
-  search:
-    plugin: CSWSearch
-    api_endpoint: 'http://geostorm-ce/rest/catalog/csw/'
-    metadata_mapping:
-      id: 'dc:identifier/text()'
-      abstract: 'dct:abstract/text()'
-      startTimeFromAscendingNode: 'dc:date/text()'
-      organisationName: 'dc:creator/text()'
-    search_definitions:
-      # A regex that will be parsed to decide which reference to consider as download url
-      resource_location_filter: '^https?'   # match the first resource reference that starts with http or https
-      pt_tags:
-        # name can be any xml tag of the catalogue that can be queryable (WARNING: the verification of query-ability is not done)
-        # matching can be one of:
-          # exact: exact match of the query (e.g. L1C)
-          # prefix: fuzzy match with the query as a prefix (e.g. L1C*)
-          # postfix: fuzzy match with the query as a suffix (e.g. *L1C)
-          # fuzzy: pre- and post-fix fuzzy match (e.g. *L1C*)
-          # if nothing is given, fuzzy matching is assumed
-        - name: 'dc:title'
-        - name: 'dc:subject'
-          matching: exact
-      date_tags:
-        start: 'apiso:TempExtent_begin'
-        end: 'apiso:TempExtent_end'
-  download:
-    plugin: HTTPDownload
-    base_uri: ''    # no need for such a thing !
-  auth:
-    plugin: GenericAuth
-
 airbus-ds:
-  priority: 0
+  priority: 1
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C

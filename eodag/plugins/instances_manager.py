@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2018 CS Systemes d'Information (CS SI)
-# All rights reserved
+# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -34,7 +48,7 @@ class PluginInstancesManager(object):
     If the providers configuration looks like this::
 
         conf = {
-            'eocloud': {
+            'theia': {
                 'search': {
                     'plugin': 'RestoSearch',
                     'api_endpoint': ...,
@@ -54,8 +68,8 @@ class PluginInstancesManager(object):
 
     the manager will ask to the :class:`~eodag.plugins.search.base.Search` class to give it back the
     :class:`~eodag.plugins.search.resto.RestoSearch` plugin class by calling
-    ``Search.get_plugin_by_name(conf['eocloud']['search']['plugin'])``, so that it can create its ``eocloud`` instance
-    with ``conf['eocloud']['search']`` configuration.
+    ``Search.get_plugin_by_name(conf['theia']['search']['plugin'])``, so that it can create its ``theia`` instance
+    with ``conf['theia']['search']`` configuration.
 
     :param providers_config: The configuration with all information about the providers supported by the `eodag`
     :type providers_config: :class:`~eodag.config.SimpleYamlProxyConfig`

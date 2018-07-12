@@ -8,15 +8,10 @@ Welcome to eodag's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-
-API documentation
------------------
-
-.. toctree::
-   :maxdepth: 2
-
+   intro
+   install
+   use
    api
 
 

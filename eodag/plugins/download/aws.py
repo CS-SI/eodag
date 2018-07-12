@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2018 CS Systemes d'Information (CS SI)
-# All rights reserved
+# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -34,7 +48,12 @@ class AwsDownload(Download):
         if not os.path.isdir(product_local_path):
             os.makedirs(product_local_path)
 
-        for product_chunk in bucket.objects.filter(Prefix=product.location):
+        # When the product originates from aws search, the location starts with s3://. We remove it before trying to
+        # download the product
+        prefix = product.location[5:]
+        if not product.location.startswith('s3://'):
+            prefix = product.location
+        for product_chunk in bucket.objects.filter(Prefix=prefix):
             chunck_path_as_list = product_chunk.key.split('/')
             if len(chunck_path_as_list) > 9:
                 chunk_dir = os.path.join(product_local_path, chunck_path_as_list[-2])

@@ -1,10 +1,2 @@
-nose
-sphinx
-tox
-faker
-mock
-coverage
-grpcio-tools
-numpy
-shapely
-geojson
+python-dateutil<2.7.0,>=2.1 # requirement for moto
+-e .[dev]

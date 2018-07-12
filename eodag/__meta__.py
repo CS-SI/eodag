@@ -15,16 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
-
-from eodag.plugins.base import PluginTopic
+from __future__ import unicode_literals
 
 
-class Crunch(PluginTopic):
-
-    def __init__(self, config):
-        self.config = config
-
-    def proceed(self, product_list, **search_params):
-        """Implementation of how the results must be crunched"""
-        raise NotImplementedError
+__title__ = 'eodag'
+__description__ = 'Earth Observation Data Access Gateway'
+__version__ = '0.1.0'
+__author__ = "CS Systemes d'Information (CSSI)"
+__author_email__ = 'adrien.oyono@c-s.fr'
+__url__ = 'https://bitbucket.org/geostorm/eodag'
+__license__ = 'Apache 2.0'
+__copyright__ = "Copyright 2018, CS Systemes d'Information, http://www.c-s.fr"
