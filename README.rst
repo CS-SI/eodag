@@ -2,14 +2,13 @@ eodag
 =====
 
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
-crunching and downloading remote sensed images (mainly from satellite systems).
+crunching and downloading remote sensed images (mainly from satellite images providers).
 
 You can search and download satellite products:
 
 * through the embedded cli:
 
     .. code-block:: bash
-
         eodag search --conf user.conf.yaml \
                      --geometry 1 43 2 44 \
                      --startTimeFromAscendingNode 2018-01-01 \
@@ -22,7 +21,6 @@ You can search and download satellite products:
 * by interacting with the api in your Python code:
 
     .. code-block:: python
-
         from eodag import SatImagesAPI
 
         dag = SatImagesAPI(user_conf_file_path='/path/to/user/conf.yaml')
@@ -55,11 +53,10 @@ Installation
 ============
 
 .. code-block:: bash
-
     USER=<allowed-user>
     git clone https://${USER}@bitbucket.org/geostorm/eodag.git
     # Then open `eodag/eodag/resources/providers.yml` and set the highest `priority` number to the preferred provider
-    # (default is eocloud). This only means all search will begin on that provider.
+    # (default is airbus-ds). This only means all search will begin on that provider.
     python -m pip install eodag
 
 Usage
@@ -72,7 +69,6 @@ Create a configuration file from the template provided with the repository, fill
 each provider:
 
     .. code-block:: bash
-
         cp eodag/user_conf_template.yml my_conf.yml
 
 Then you can start playing with it:
@@ -80,7 +76,6 @@ Then you can start playing with it:
 * To search for products and crunch the results of the search:
 
     .. code-block:: bash
-
         eodag search \
         --conf my_conf.yml \
         --geometry 1 43 2 44 \
@@ -96,7 +91,6 @@ You can pass arguments to a cruncher on the command line by doing this (example 
 which takes `minimum_overlap` as argument):
 
     .. code-block:: bash
-
         eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10
@@ -108,25 +102,21 @@ of this bbox"
 * To download the result of a previous call to `search`:
 
     .. code-block:: bash
-
         eodag download --conf my_conf.yml --search-results my_search.geojson
 
 * To list all available product types and supported providers:
 
     .. code-block:: bash
-
         eodag list
 
 * To list available product types on a specified supported provider:
 
     .. code-block:: bash
-
-        eodag list -s eocloud
+        eodag list -s airbus-ds
 
 * To see all the available options and commands:
 
     .. code-block:: bash
-
         eodag --help
 
 * To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given (up to 3), the more
