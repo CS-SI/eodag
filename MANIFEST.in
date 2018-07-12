@@ -1,7 +1,6 @@
-include README.rst
-include LICENSE
-include NOTICE
-include requirements.txt
-include docs/*.rst
-include eodag/resources/*
-include user_conf_template.yml
+include README.rst LICENSE NOTICE requirements.txt user_conf_template.yml
+recursive-include docs *.rst
+graft eodag/resources
+recursive-include eodag *.proto
+recursive-include examples *.ipynb
+prune tests

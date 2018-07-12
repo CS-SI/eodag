@@ -180,7 +180,7 @@ class EOProduct(object):
         """Encode the subset to a network-compatible format.
 
         :param raster: The raster data to encode
-        :type raster: numpy.ndarray
+        :type raster: xarray.DataArray
         :param encoding: The encoding of the export
         :type encoding: str or unicode
         :return: The data encoded in the specified encoding
