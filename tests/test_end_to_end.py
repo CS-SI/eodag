@@ -94,17 +94,6 @@ class TestEODagEndToEnd(unittest.TestCase):
         # The partially downloaded file should be greater or equal to 1 MB
         self.assertGreaterEqual(os.stat(self.downloaded_file_path).st_size, 2 ** 20)
 
-    def test_end_to_end_search_download_eocloud(self):
-        product = self.execute_search(
-            'eocloud',
-            'S2_MSI_L1C',
-            '2018-02-01',
-            '2018-02-16',
-            (9.1113159, 2.701635, 14.100952, 5.588651)
-        )
-        expected_filename = '{}.zip'.format(product.properties['title'])
-        self.execute_download(product, expected_filename)
-
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(
             'USGS',
@@ -149,16 +138,4 @@ class TestEODagEndToEnd(unittest.TestCase):
             (137.772897, -37.134202, 153.749135, 73.885986)
         )
         expected_filename = '{}.zip'.format(product.properties['title'])
-        self.execute_download(product, expected_filename)
-
-    def test_end_to_end_search_download_scihub(self):
-        product = self.execute_search(
-            'scihub',
-            'S2_MSI_L1C',
-            '2018-02-01',
-            '2018-02-16',
-            (-161.187910, 64.821439, -159.177830, 65.809122)
-        )
-        # Scihub api manage incomplete downloads by adding '.incomplete' to a file that hasn't been fully downloaded yet
-        expected_filename = '{}.zip.incomplete'.format(product.properties['title'])
         self.execute_download(product, expected_filename)

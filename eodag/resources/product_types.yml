@@ -93,7 +93,7 @@ S3_WAT:
   meta: []
 
 S3_LAN:
-  desc: LAN (eocloud) or SR_2_LAN___ (peps)
+  desc: LAN or SR_2_LAN___ (peps)
   meta: []
 
 S3_LST:
@@ -138,4 +138,12 @@ S2_MSI_L1C:
 
 S2_MSI_L2Ap:
   desc: Sentinel 2
+  meta: []
+
+S3_SRA_BS:
+  desc: ""
+  meta: []
+
+S3_SRA_A_BS:
+  desc: ""
   meta: []

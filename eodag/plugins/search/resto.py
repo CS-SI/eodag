@@ -138,9 +138,6 @@ class RestoSearch(Search):
             logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
                 if self.product_location_scheme == 'file':
-                    # TODO: This behaviour maybe very specific to eocloud provider (having the path to the local
-                    # TODO: resource being stored on result['properties']['productIdentifier']). It may therefore need
-                    # TODO: to be better handled in the future
                     download_url = '{}://{}'.format(
                         self.product_location_scheme,
                         result['properties']['productIdentifier'])

@@ -161,10 +161,6 @@ Authentication Plugins
 External Apis Plugins
 ---------------------
 
-.. autoclass:: eodag.plugins.apis.sentinelsat.SentinelsatAPI
-   :show-inheritance:
-   :undoc-members:
-
 .. autoclass:: eodag.plugins.apis.usgs.UsgsApi
    :show-inheritance:
    :undoc-members:
@@ -194,6 +190,11 @@ Utils
    :undoc-members:
 
 .. automodule:: eodag.utils.logging
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+.. automodule:: eodag.utils.metadata_mapping
    :members:
    :show-inheritance:
    :undoc-members:

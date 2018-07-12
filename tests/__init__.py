@@ -44,15 +44,11 @@ RESOURCES_PATH = jp(dirn(__file__), '..', 'eodag', 'resources')
 
 
 class EODagTestCase(unittest.TestCase):
-    __eocloud_search_url_to_reference_product = (
-        'https://finder.eocloud.eu/resto/api/collections/Sentinel2/search.json?maxRecords=10&productIdentifier=%/eodata'
-        '/Sentinel-2/MSI/L1C/2018/01/01/S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE%&sortParam='
-        'startDate&sortOrder=descending&dataset=ESA-DATASET')
 
     def setUp(self):
-        self.provider = 'eocloud'
-        self.download_url = ('https://static.eocloud.eu/v1/AUTH_8f07679eeb0a43b19b33669a4c888c45/eorepo/Sentinel-2/MSI/'
-                             'L1C/2018/01/01/S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE.zip')
+        self.provider = 'airbus-ds'
+        self.download_url = ('https://k8s.qualif.geohub.space/api/v1/services/download/8ff765a2-e089-465d-a48f-'
+                             'cc27008a0962')
         self.local_filename = 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'
         self.local_product_abspath = os.path.abspath(jp(TEST_RESOURCES_PATH, 'products', self.local_filename))
         self.local_product_as_archive_path = os.path.abspath(

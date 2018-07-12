@@ -763,20 +763,16 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
 
     def setUp(self):
         super(TestIntegrationCoreApiPlugins, self).setUp()
-        self.sentinelsat_patcher = mock.patch("eodag.plugins.apis.sentinelsat.SentinelAPI", autospec=True)
         self.usgs_api_login_patcher = mock.patch('usgs.api.login')
         self.usgs_api_logout_patcher = mock.patch('usgs.api.logout')
         self.usgs_api_search_patcher = mock.patch('usgs.api.search')
 
-        self.sentinelsatapi_class = self.sentinelsat_patcher.start()
-        self.sentinelsatapi = self.sentinelsatapi_class.return_value
         self.usgs_api_login = self.usgs_api_login_patcher.start()
         self.usgs_api_logout = self.usgs_api_logout_patcher.start()
         self.usgs_api_search = self.usgs_api_search_patcher.start()
 
     def tearDown(self):
         super(TestIntegrationCoreApiPlugins, self).tearDown()
-        self.sentinelsat_patcher.stop()
         self.usgs_api_login_patcher.stop()
         self.usgs_api_logout_patcher.stop()
         self.usgs_api_search_patcher.stop()
@@ -843,114 +839,4 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
 
     def test_core_usgs_download(self):
-        """"""
-
-    def test_core_sentinelsat_search_nominal(self):
-        """Nominal search using sentinelsatapi must return results"""
-        with open(os.path.join(TEST_RESOURCES_PATH, "sentinelsat_search_results.json"), "r") as fp:
-            sentinelsat_search_results = json.load(fp)
-            for props in sentinelsat_search_results.values():
-                props['beginposition'] = datetime.utcnow()
-                props['endposition'] = datetime.utcnow()
-        self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
-        self.override_properties(
-            provider='mock-provider-10',
-            product_type='MOCK_PRODUCT_TYPE_10',
-            platform='Sentinel-1',
-            instrument='SAR-C SAR'
-        )
-        dag = SatImagesAPI(
-            providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
-            user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
-        )
-        results = dag.search(self.product_type)
-
-        self.assertEqual(len(results), len(sentinelsat_search_results.keys()))
-        self.assertEqual(self.sentinelsatapi_class.call_count, 1)
-        self.sentinelsatapi_class.assert_called_with('user', 'pwd', 'https://subdomain10.domain.eu/api/')
-        self.assertEqual(self.sentinelsatapi.query.call_count, 1)
-        self.sentinelsatapi.query.assert_called_with(
-            producttype='OCN',
-            limit=10,
-            **{}
-        )
-
-        for eo_product in results:
-            self.assertIn('id', eo_product.properties)
-            expected_original = sentinelsat_search_results[eo_product.properties['id']]
-            self.assertEqual(eo_product.location, expected_original['link'])
-            self.assertEqual(eo_product.geometry, shapely.wkt.loads(expected_original['footprint']))
-
-        # Check that the sentinelsatapi is only instantiated once per query
-        dag.search(self.product_type)
-        self.assertEqual(self.sentinelsatapi_class.call_count, 1)
-        # And that the same instance is used for subsequent calls
-        self.assertEqual(self.sentinelsatapi.query.call_count, 2)
-        self.sentinelsatapi.query.assert_called_with(
-            producttype='OCN',
-            limit=10,
-            **{}
-        )
-
-        # Test searching only with footprint and maxCloudCover (simple cases of searching with additional criteria)
-        max_cloud_cover = random.choice(range(100))
-        search_kwargs = {
-            'geometry': self.footprint,
-            'cloudCover': max_cloud_cover,
-        }
-        # Refresh the return value of the query method, because in sentinelsat.py, the returned value is modified
-        self.sentinelsatapi.query.return_value = copy.deepcopy(sentinelsat_search_results)
-        results = dag.search(self.product_type, **search_kwargs)
-        self.assertNotEqual(len(results), 0)
-        self.sentinelsatapi.query.assert_called_with(
-            producttype='OCN',
-            limit=10, **{
-                'area': geometry.box(*(
-                    self.footprint['lonmin'],
-                    self.footprint['latmin'],
-                    self.footprint['lonmax'],
-                    self.footprint['latmax']
-                )).to_wkt(),
-                'cloudcoverpercentage': (0, max_cloud_cover),
-            }
-        )
-
-        # Test searching with start and/or end date
-        # First case: giving only the start date should not take into account the date search key
-        start_date = '2018-01-01'
-        search_kwargs = {'startTimeFromAscendingNode': start_date}
-        dag.search(self.product_type, **search_kwargs)
-        self.sentinelsatapi.query.assert_called_with(
-            producttype='OCN',
-            limit=10,
-            **{}  # startDate is not interpreted by sentinelsat plugin
-        )
-        # Second case: start and end dates are given, either in plain string as above or as datetime or date python
-        # objects. They should be transform to string date with format '%Y%m%d'
-        search_kwargs['startTimeFromAscendingNode'] = random.choice([
-            datetime(2018, 1, 1, 0, 0, 0, 0),
-            datetime(2018, 1, 1, 0, 0, 0, 0).date()
-        ])
-        search_kwargs['completionTimeFromAscendingNode'] = random.choice([
-            datetime(2018, 1, 2, 0, 0, 0, 0),
-            datetime(2018, 1, 2, 0, 0, 0, 0).date()
-        ])
-        dag.search(self.product_type, **search_kwargs)
-        self.sentinelsatapi.query.assert_called_with(
-            producttype='OCN',
-            limit=10, **{
-                'date': ('20180101', '20180102')
-            }
-        )
-        search_kwargs['startTimeFromAscendingNode'] = start_date
-        search_kwargs['completionTimeFromAscendingNode'] = '2018-01-02'
-        dag.search(self.product_type, **search_kwargs)
-        self.sentinelsatapi.query.assert_called_with(
-            producttype='OCN',
-            limit=10, **{
-                'date': ('20180101', '20180102')
-            }
-        )
-
-    def test_core_sentinelsat_download(self):
         """"""

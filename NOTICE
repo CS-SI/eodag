@@ -28,6 +28,7 @@ https://github.com/tqdm/tqdm
 https://github.com/benjaminp/six
 https://github.com/jswhit/pyproj
 https://github.com/kapadia/usgs
+https://github.com/jupyter-widgets/ipyleaflet
 
 
 ================================================================
@@ -45,30 +46,15 @@ http://www.numpy.org/
 https://github.com/mapbox/rasterio
 https://github.com/google/protobuf
 https://github.com/lxml/lxml
-
-
-================================================================
-The MPL 2.0 License
-================================================================
-
-The following components are provided under the  ISC License  (https://opensource.org/licenses/MPL-2.0). See project link for details.
-
-https://github.com/tqdm/tqdm
-
-
-================================================================
-The GPL-3.0 License
-================================================================
-
-The following components are provided under the  ISC License  (https://opensource.org/licenses/GPL-3.0). See project link for details.
-
-https://github.com/sentinelsat/sentinelsat
+https://github.com/jupyter-widgets/ipywidgets
+https://github.com/jupyter/jupyter
 
 
 ================================================================
 The Python-2.0 License
 ================================================================
 
-The following components are provided under the  ISC License  (https://opensource.org/licenses/Python-2.0). See project link for details.
+The following components are provided under the  Python-2.0 License  (https://opensource.org/licenses/Python-2.0). See project link for details.
 
 https://github.com/agronholm/pythonfutures
+https://github.com/matplotlib/

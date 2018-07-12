@@ -38,11 +38,6 @@ except ImportError:
 
 
 class TestEOProduct(EODagTestCase):
-    __nominal_search_url_on_eocloud = (
-        'https://finder.eocloud.eu/resto/api/collections/Sentinel2/search.json?&maxRecords=10&cloudCover=%5B0%2C20%5D&'
-        'processingLevel=LEVELL1C&sortParam=startDate&sortOrder=descending&geometry=POLYGON%28%281.3128662109375002%204'
-        '3.65197548731186%2C1.6754150390625007%2043.699651229671446%2C1.6204833984375002%2043.48481212891605%2C1.389770'
-        '5078125002%2043.47684039777894%2C1.3128662109375002%2043.65197548731186%29%29&dataset=ESA-DATASET&page=1')
     NOT_ASSOCIATED_PRODUCT_TYPE = 'EODAG_DOES_NOT_SUPPORT_THIS_PRODUCT_TYPE'
 
     def setUp(self):

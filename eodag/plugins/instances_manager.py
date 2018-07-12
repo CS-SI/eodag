@@ -48,7 +48,7 @@ class PluginInstancesManager(object):
     If the providers configuration looks like this::
 
         conf = {
-            'eocloud': {
+            'theia': {
                 'search': {
                     'plugin': 'RestoSearch',
                     'api_endpoint': ...,
@@ -68,8 +68,8 @@ class PluginInstancesManager(object):
 
     the manager will ask to the :class:`~eodag.plugins.search.base.Search` class to give it back the
     :class:`~eodag.plugins.search.resto.RestoSearch` plugin class by calling
-    ``Search.get_plugin_by_name(conf['eocloud']['search']['plugin'])``, so that it can create its ``eocloud`` instance
-    with ``conf['eocloud']['search']`` configuration.
+    ``Search.get_plugin_by_name(conf['theia']['search']['plugin'])``, so that it can create its ``theia`` instance
+    with ``conf['theia']['search']`` configuration.
 
     :param providers_config: The configuration with all information about the providers supported by the `eodag`
     :type providers_config: :class:`~eodag.config.SimpleYamlProxyConfig`
