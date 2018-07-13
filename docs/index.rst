@@ -7,12 +7,13 @@ Welcome to eodag's documentation!
 =================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    intro
    install
    use
    api
+   contribute
 
 
 Indices and tables

@@ -3,10 +3,15 @@
 Installation
 ============
 
+EODAG is really simple to get installed on your platform:
+
 .. code-block:: bash
 
-    USER=<allowed-user>
-    git clone https://${USER}@bitbucket.org/geostorm/eodag.git
-    # Then open `eodag/eodag/resources/providers.yml` and set the highest `priority` number to the preferred provider
-    # (default is airbus-ds). This only means all search will begin on that provider.
     python -m pip install eodag
+
+There are some tutorials on how to use eodag as a library. These tutorials are jupyter notebooks, and need
+extra dependancies installation. To install them, type this on the command line:
+
+.. code-block:: bash
+
+    python -m pip install eodag[tutorials]

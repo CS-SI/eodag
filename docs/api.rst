@@ -1,6 +1,6 @@
 .. _api:
 
-.. module:: eodag
+.. module:: eodag.api.core
 
 Python API
 ==========
@@ -12,14 +12,23 @@ Core
    :members:
    :undoc-members:
 
+.. module:: eodag.api.product
 
 Representation Of Earth Observation Products
 --------------------------------------------
+
+The EOProduct object
+^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: eodag.api.product._product.EOProduct
    :members:
    :show-inheritance:
    :undoc-members:
+
+.. module:: eodag.api.product.drivers
+
+Data access drivers
+^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: eodag.api.product.drivers.base.DatasetDriver
    :members:
@@ -34,6 +43,7 @@ Representation Of Earth Observation Products
    :show-inheritance:
    :undoc-members:
 
+.. module:: eodag.api.search_result
 
 Representation Of Search Results
 --------------------------------
@@ -42,6 +52,7 @@ Representation Of Search Results
    :members:
    :undoc-members:
 
+.. module:: eodag.plugins
 
 Plugins
 -------
@@ -51,7 +62,7 @@ like *Search* or *Download*. EODAG providers are implementations of at least one
 are implemented by a provider, the more functionality of eodag are available for this provider.
 
 Plugin Management
----------------------------
+^^^^^^^^^^^^^^^^^
 
 The plugin machinery is managed by one instance of :class:`~eodag.plugins.instances_manager.PluginInstancesManager`.
 
@@ -61,9 +72,9 @@ The plugin machinery is managed by one instance of :class:`~eodag.plugins.instan
 
 
 Plugin Types
--------------
+^^^^^^^^^^^^
 
-EODAG currently advertises 5 types of plugins: *Search*, *Download*, *Crunch* and *Authentication* and *Api*.
+EODAG currently advertises 5 types of plugins: *Search*, *Download*, *Crunch*, *Authentication* and *Api*.
 
 .. autoclass:: eodag.plugins.base.PluginTopic
    :show-inheritance:
@@ -89,9 +100,10 @@ EODAG currently advertises 5 types of plugins: *Search*, *Download*, *Crunch* an
    :show-inheritance:
    :undoc-members:
 
+.. module:: eodag.plugins.search
 
 Search Plugins
---------------
+^^^^^^^^^^^^^^
 
 .. autoclass:: eodag.plugins.search.csw.CSWSearch
    :show-inheritance:
@@ -109,9 +121,10 @@ Search Plugins
    :show-inheritance:
    :undoc-members:
 
+.. module:: eodag.plugins.download
 
 Download Plugins
-----------------
+^^^^^^^^^^^^^^^^
 
 .. autoclass:: eodag.plugins.download.http.HTTPDownload
    :show-inheritance:
@@ -121,9 +134,10 @@ Download Plugins
    :show-inheritance:
    :undoc-members:
 
+.. module:: eodag.plugins.crunch
 
 Crunch Plugins
---------------
+^^^^^^^^^^^^^^
 
 .. autoclass:: eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect
    :show-inheritance:
@@ -137,9 +151,10 @@ Crunch Plugins
    :show-inheritance:
    :undoc-members:
 
+.. module:: eodag.plugins.authentication
 
 Authentication Plugins
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: eodag.plugins.authentication.generic.GenericAuth
    :show-inheritance:
@@ -157,9 +172,10 @@ Authentication Plugins
    :show-inheritance:
    :undoc-members:
 
+.. module:: eodag.plugins.apis
 
 External Apis Plugins
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: eodag.plugins.apis.usgs.UsgsApi
    :show-inheritance:

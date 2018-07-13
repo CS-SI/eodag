@@ -90,7 +90,7 @@ setup(
     ''',
     project_urls={
         "Bug Tracker": "https://www.github.com/CS-SI/EODAG",
-        "Documentation": "",
+        "Documentation": "https://eodag.readthedocs.io/en/latest/",
         "Source Code": "https://www.github.com/CS-SI/EODAG",
     },
     classifiers=(

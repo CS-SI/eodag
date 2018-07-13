@@ -42,13 +42,17 @@ You can search and download satellite products:
             print('Downloaded : {}'.format(path))
 
 
-There are 2 ways for adding support for a new provider :
+.. note::
 
-* By configuring existing plugins: a provider is an instance of already implemented plugins (search, download) =>
-  this only involves knowing how to write ``yaml`` documents (see `<eodag/resources/providers.yml>`_ for examples of how
-  to configure a provider)
+        For developers, there are 2 ways for adding support for a new provider:
 
-* By developing new plugins (most of the time it will be search plugins) and configuring instances of these plugins
-  (see the ``plugins`` directory to see some examples of plugins).
+        * By configuring existing plugins: a provider is an instance of already implemented plugins (search, download) =>
+          this only involves knowing how to write ``yaml`` documents (see `<eodag/resources/providers.yml>`_ for examples of how
+          to configure a provider)
 
-Read `the documentation <https://bitbucket.org/geostorm/eodag>`_ for more insights.
+        * By developing new plugins (most of the time it will be search plugins) and configuring instances of these plugins
+          (see the ``plugins`` directory to see some examples of plugins).
+
+        At the moment, you are only able to do this from source (clone the repo, do your modification, then install your version of eodag).
+        In the future, it will be easier to integrate new provider configurations, to plug-in new search/download/crunch implementations,
+        and to configure the order of preference of providers for search.

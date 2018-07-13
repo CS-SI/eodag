@@ -43,7 +43,6 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
-    'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode'
 ]
 
@@ -103,7 +102,18 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    'logo': 'logo_cs.png',
+    'github_user': 'CS-SI',
+    'github_repo': 'EODAG',
+    'logo_name': True,
+    'github_button': True,
+    'travis_button': True,
+    'codecov_button': True,
+    'show_related': True,
+    'fixed_sidebar': True,
+    'show_powered_by': False,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -117,10 +127,14 @@ html_static_path = ['_static']
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {
     '**': [
+        'about.html',
+        'navigation.html',
         'relations.html',  # needs 'show_related': True theme option to display
         'searchbox.html',
     ]
 }
+
+html_show_sourcelink = False
 
 
 # -- Options for HTMLHelp output ------------------------------------------
