@@ -1,14 +1,19 @@
-EODAG
-Copyright 2018 CS Systèmes d'Information
+Earth Observation Data Access Gateway (EODAG) Copyright 2018 CS Systèmes d'Information
 
-This product includes software developed by
-CS Systèmes d'Information (http://www.c-s.fr/)
+This software is distributed under the Apache Software License (ASL) v2.0, see LICENSE
+file or http://www.apache.org/licenses/LICENSE-2.0 for details.
+
+
+This software includes code from many other open source projects. See below for details
+about the license of each project.
+
 
 ================================================================
 The Apache 2.0 License
 ================================================================
 
-The following components are provided under the  Apache 2.0 License  (https://opensource.org/licenses/Apache-2.0). See project link for details.
+The following components are provided under the  Apache 2.0 License  (https://opensource.org/licenses/Apache-2.0).
+See project link for details.
 
 https://github.com/requests/requests
 https://github.com/dateutil/dateutil
@@ -21,7 +26,8 @@ https://github.com/pydata/xarray
 The MIT License
 ================================================================
 
-The following components are provided under the  MIT License  (http://www.opensource.org/licenses/mit-license.php). See project link for details.
+The following components are provided under the  MIT License  (http://www.opensource.org/licenses/mit-license.php).
+See project link for details.
 
 https://pyyaml.org/wiki/PyYAML
 https://github.com/tqdm/tqdm
@@ -35,7 +41,8 @@ https://github.com/jupyter-widgets/ipyleaflet
 The BSD-3-Clause Licence
 ================================================================
 
-The following components are provided under the  BSD-3-Clause License  (https://opensource.org/licenses/BSD-3-Clause). See project link for details.
+The following components are provided under the  BSD-3-Clause License  (https://opensource.org/licenses/BSD-3-Clause).
+See project link for details.
 
 https://github.com/pallets/click
 https://github.com/dateutil/dateutil
@@ -54,7 +61,8 @@ https://github.com/jupyter/jupyter
 The Python-2.0 License
 ================================================================
 
-The following components are provided under the  Python-2.0 License  (https://opensource.org/licenses/Python-2.0). See project link for details.
+The following components are provided under the  Python-2.0 License  (https://opensource.org/licenses/Python-2.0).
+See project link for details.
 
 https://github.com/agronholm/pythonfutures
 https://github.com/matplotlib/
