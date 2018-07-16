@@ -104,12 +104,7 @@ html_theme = 'alabaster'
 #
 html_theme_options = {
     'logo': 'logo_cs.png',
-    'github_user': 'CS-SI',
-    'github_repo': 'EODAG',
     'logo_name': True,
-    'github_button': True,
-    'travis_button': True,
-    'codecov_button': True,
     'show_related': True,
     'fixed_sidebar': True,
     'show_powered_by': False,
