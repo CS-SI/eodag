@@ -18,10 +18,10 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-import os
 from operator import attrgetter
 
 import geojson
+from pkg_resources import resource_filename
 from tqdm import tqdm
 
 from eodag.api.search_result import SearchResult
@@ -43,14 +43,8 @@ class SatImagesAPI(object):
     """
 
     def __init__(self, user_conf_file_path=None, providers_file_path=None):
-        self.providers_config = SimpleYamlProxyConfig(os.path.join(
-            os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
-            os.pardir, 'resources', 'providers.yml'
-        ))
-        self.product_types_config = SimpleYamlProxyConfig(os.path.join(
-            os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
-            os.pardir, 'resources', 'product_types.yml'
-        ))
+        self.providers_config = SimpleYamlProxyConfig(resource_filename('eodag', 'resources/providers.yml'))
+        self.product_types_config = SimpleYamlProxyConfig(resource_filename('eodag', 'resources/product_types.yml'))
         if providers_file_path is not None:
             # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
             # TODO (continues) : param within an instance configuration
@@ -414,10 +408,3 @@ class SatImagesAPI(object):
             for key, val in options.items()
         })
         return self._plugins_manager.instantiate_plugin_by_config('crunch', plugin_conf)
-
-
-if __name__ == '__main__':
-    import doctest
-
-
-    doctest.testmod()
