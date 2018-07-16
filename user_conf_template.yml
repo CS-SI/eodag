@@ -32,29 +32,14 @@ theia-landsat:
     credentials:
         ident:
         pass:
-eocloud:
-    credentials:
-        domainName:
-        userName:
-        userPass:
-scihub:
-    credentials:
-        username:
-        password:
-geostorm-ce:
-    credentials:
-        username:
-        password:
 USGS:
     credentials:
         username:
         password:
-
 AmazonWS:
     credentials:
         aws_access_key_id:
         aws_secret_access_key:
-
 airbus-ds:
     credentials:
         apikey:

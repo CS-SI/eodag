@@ -8,9 +8,7 @@ crunching and downloading remote sensed images (mainly from satellite images pro
 
 You can search and download satellite products:
 
-* through the embedded cli:
-
-    .. code-block:: bash
+* through the embedded cli::
 
         eodag search --conf user.conf.yaml \
                      --geometry 1 43 2 44 \
@@ -56,3 +54,15 @@ You can search and download satellite products:
         At the moment, you are only able to do this from source (clone the repo, do your modification, then install your version of eodag).
         In the future, it will be easier to integrate new provider configurations, to plug-in new search/download/crunch implementations,
         and to configure the order of preference of providers for search.
+
+Available providers
+-------------------
+
+There are currently 6 available providers implemented on eodag:
+
+* **airbus-ds**: Airbus DS catalog for the copernicus program
+* **usgs**: U.S geological survey catalog for Landsat products
+* **AmazonWS**: Amazon public bucket for Sentinel 2 products
+* **theia-landsat**: French National Space Agency (CNES) catalog for Pleiades and Landsat products
+* **theia**: French National Space Agency (CNES) catalog for Sentinel 2 products
+* **peps**: French National Space Agency (CNES) catalog for Copernicus products (Sentinel 1, 2, 3)

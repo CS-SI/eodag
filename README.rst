@@ -6,9 +6,7 @@ crunching and downloading remote sensed images (mainly from satellite images pro
 
 You can search and download satellite products:
 
-* through the embedded cli:
-
-    .. code-block:: bash
+* through the embedded cli::
 
         eodag search --conf user.conf.yaml \
                      --geometry 1 43 2 44 \
@@ -59,9 +57,7 @@ Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more ins
 Installation
 ============
 
-EODAG is on `PyPI <https://pypi.org/project/eodag/>`_
-
-.. code-block:: bash
+EODAG is on `PyPI <https://pypi.org/project/eodag/>`_::
 
     python -m pip install eodag
 
@@ -72,17 +68,13 @@ Command line interface
 ----------------------
 
 Create a configuration file from the template provided with the repository, filling in your credentials as expected by
-each provider:
-
-    .. code-block:: bash
+each provider::
 
         cp eodag/user_conf_template.yml my_conf.yml
 
 Then you can start playing with it:
 
-* To search for products and crunch the results of the search:
-
-    .. code-block:: bash
+* To search for products and crunch the results of the search::
 
         eodag search \
         --conf my_conf.yml \
@@ -96,9 +88,7 @@ The request above search for product types `S2_MSI_L1C` and will crunch the resu
 and storing the overall result to `my_search.geojson`.
 
 You can pass arguments to a cruncher on the command line by doing this (example with using `FilterOverlap` cruncher
-which takes `minimum_overlap` as argument):
-
-    .. code-block:: bash
+which takes `minimum_overlap` as argument)::
 
         eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
                      --cruncher FilterOverlap \
@@ -108,27 +98,19 @@ The request above means : "Give me all the products of type `S2_MSI_L1C`, use `F
 that are contained in the bbox I gave you, or whom spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
 of this bbox"
 
-* To download the result of a previous call to `search`:
-
-    .. code-block:: bash
+* To download the result of a previous call to `search`::
 
         eodag download --conf my_conf.yml --search-results my_search.geojson
 
-* To list all available product types and supported providers:
-
-    .. code-block:: bash
+* To list all available product types and supported providers::
 
         eodag list
 
-* To list available product types on a specified supported provider:
-
-    .. code-block:: bash
+* To list available product types on a specified supported provider::
 
         eodag list -s airbus-ds
 
-* To see all the available options and commands:
-
-    .. code-block:: bash
+* To see all the available options and commands::
 
         eodag --help
 
@@ -149,29 +131,21 @@ Note on how to get Amazon Web Services access keys
 Contribute
 ==========
 
-If you intend to contribute to eodag source code:
+If you intend to contribute to eodag source code::
 
-.. code-block:: bash
-
-    git clone https://www.github.com/CS-SI/EODAG
-    cd EODAG
+    git clone https://bitbucket.org/geostorm/eodag.git
+    cd eodag
     python -m pip intall -e .[dev,tutorials]
 
-To run the default test suite (which excludes end-to-end tests):
-
-.. code-block:: bash
+To run the default test suite (which excludes end-to-end tests)::
 
     tox
 
-To only run end-to-end test:
-
-.. code-block:: bash
+To only run end-to-end test::
 
     tox -- tests.test_end_to_end
 
-To run the entire tests (units, integraton and end-to-end):
-
-.. code-block:: bash
+To run the entire tests (units, integraton and end-to-end)::
 
     tox -- tests eodag
 

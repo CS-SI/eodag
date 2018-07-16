@@ -7,8 +7,8 @@ If you intend to contribute to eodag source code:
 
 .. code-block:: bash
 
-    git clone https://www.github.com/CS-SI/EODAG
-    cd EODAG
+    git clone https://bitbucket.org/geostorm/eodag.git
+    cd eodag
     python -m pip intall -e .[dev,tutorials]
 
 To run the default test suite (which excludes end-to-end tests):
