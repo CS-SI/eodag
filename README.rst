@@ -135,7 +135,7 @@ If you intend to contribute to eodag source code::
 
     git clone https://bitbucket.org/geostorm/eodag.git
     cd eodag
-    python -m pip intall -e .[dev,tutorials]
+    python -m pip intall -r requirements-dev.txt
 
 To run the default test suite (which excludes end-to-end tests)::
 
