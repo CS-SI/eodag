@@ -56,6 +56,10 @@ https://github.com/lxml/lxml
 https://github.com/jupyter-widgets/ipywidgets
 https://github.com/jupyter/jupyter
 
+The function slugify, located at eodag/utils/__init__.py is a modified version of the function with the same name from
+the Django Project, licensed under the BSD-3-Clause Licence. Follow project link below for more information:
+https://github.com/django/django/
+
 
 ================================================================
 The Python-2.0 License
