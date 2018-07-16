@@ -39,9 +39,6 @@ setup(
     packages=find_packages(),
     package_data={'': ['LICENSE', 'NOTICE']},
     include_package_data=True,
-    data_files=[
-        (os.path.expanduser('~/.config/eodag'), ['user_conf_template.yml']),
-    ],
     install_requires=[
         'click',
         'requests',
@@ -108,4 +105,3 @@ setup(
         'Topic :: Scientific/Engineering :: GIS',
     ),
 )
-
