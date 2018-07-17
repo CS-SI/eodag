@@ -36,7 +36,7 @@ setup(
     author_email=metadata['__author_email__'],
     url=metadata['__url__'],
     license=metadata['__license__'],
-    packages=find_packages(),
+    packages=find_packages(exclude=('*.tests', '*.tests.*', 'tests.*', 'tests')),
     package_data={'': ['LICENSE', 'NOTICE']},
     include_package_data=True,
     install_requires=[
@@ -86,9 +86,9 @@ setup(
         eodag=eodag.cli:eodag
     ''',
     project_urls={
-        "Bug Tracker": "https://www.github.com/CS-SI/EODAG",
+        "Bug Tracker": "https://bitbucket.org/geostorm/eodag/issues/",
         "Documentation": "https://eodag.readthedocs.io/en/latest/",
-        "Source Code": "https://www.github.com/CS-SI/EODAG",
+        "Source Code": "https://bitbucket.org/geostorm/eodag",
     },
     classifiers=(
         'Development Status :: 1 - Planning',
