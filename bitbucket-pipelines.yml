@@ -1,11 +1,22 @@
-image: python:3.5.1
+image: python:3
 pipelines:
   default:
     - step:
         caches:
           - pip
         script:
+          - pip install setuptools
           - pip install -r requirements-dev.txt
           - tox
-          - python setup.py sdist bdist_wheel
-          - twine upload dist/*
+  branches:
+    master:
+      - step:
+          caches:
+            - pip
+          script:
+            - pip install setuptools
+            - pip install -r requirements-dev.txt
+            - tox
+            - python setup.py sdist bdist_wheel
+            - twine upload dist/*
+ 
