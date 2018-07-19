@@ -1,22 +1,23 @@
-image: python:3
+image: python:3.5-jessie
 pipelines:
   default:
     - step:
-        caches:
-          - pip
         script:
+          - add-apt-repository ppa:ubuntugis/ppa
+          - apt-get update
+          - apt-get install gdal-bin libgdal-dev
           - pip install --upgrade pip
-          - pip install --only-binary shapely -r requirements-dev.txt
+          - pip install -r requirements-dev.txt
           - tox
   branches:
     master:
       - step:
-          caches:
-            - pip
           script:
+            - add-apt-repository ppa:ubuntugis/ppa
+            - apt-get update
+            - apt-get install gdal-bin libgdal-dev
             - pip install --upgrade pip
-            - pip install --only-binary shapely -r requirements-dev.txt
+            - pip install -r requirements-dev.txt
             - tox
             - python setup.py sdist bdist_wheel
             - twine upload dist/*
- 
