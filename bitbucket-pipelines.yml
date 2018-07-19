@@ -4,27 +4,34 @@ pipelines:
     - step:
         script:
           - pip install -r requirements-dev.txt
-          - tox
+          - tox -e py35
     - step:
         image: python:2.7.15-jessie
         script:
+          # Ensures we are using the latest version of pip
           - pip install -U pip
           - pip install -r requirements-dev.txt
-          - tox
+          - tox -e py27
   branches:
     master:
       - step:
           script:
             - pip install -r requirements-dev.txt
-            - tox
+            # run all the tests (units, integration and end-to-end)
+            - tox -e py35 -- tests eodag
       - step:
           image: python:2.7.15-jessie
           script:
+            # Ensures we are using the latest version of pip
             - pip install -U pip
             - pip install -r requirements-dev.txt
-            - tox
+            # run all the tests (units, integration and end-to-end)
+            - tox -e py27 -- tests eodag
       - step:
           script:
             - pip install -r requirements-dev.txt
+            # build the docs
+            - tox -e py
+            # Upload the distribution to PyPI
             - python setup.py sdist bdist_wheel
             - twine upload dist/*
