@@ -1,8 +1,9 @@
-image: python:3.5-jessie
+image: python:3.5.5-jessie
 pipelines:
   default:
     - step:
         script:
+          - apt-get install software-properties-common
           - add-apt-repository ppa:ubuntugis/ppa
           - apt-get update
           - apt-get install gdal-bin libgdal-dev
@@ -13,6 +14,7 @@ pipelines:
     master:
       - step:
           script:
+            - apt-get install software-properties-common
             - add-apt-repository ppa:ubuntugis/ppa
             - apt-get update
             - apt-get install gdal-bin libgdal-dev
