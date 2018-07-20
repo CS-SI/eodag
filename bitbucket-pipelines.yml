@@ -2,11 +2,15 @@ image: python:3.5.5-jessie
 pipelines:
   default:
     - step:
+        caches:
+          - pip
         script:
           - pip install -r requirements-dev.txt
           - tox -e py35
     - step:
         image: python:2.7.15-jessie
+        caches:
+          - pip
         script:
           # Ensures we are using the latest version of pip
           - pip install -U pip
@@ -15,21 +19,28 @@ pipelines:
   branches:
     master:
       - step:
+          caches:
+            - pip
           script:
             - pip install -r requirements-dev.txt
             - tox -e py35
       - step:
           image: python:2.7.15-jessie
+          caches:
+            - pip
           script:
             # Ensures we are using the latest version of pip
             - pip install -U pip
             - pip install -r requirements-dev.txt
             - tox -e py27
       - step:
+          caches:
+            - pip
           script:
             - pip install -r requirements-dev.txt
-            # build the docs
+            # Build the docs
             - tox -e py
-            # Upload the distribution to PyPI
+            # Build the distribution
             - python setup.py sdist bdist_wheel
-            - twine upload dist/*
+            # Upload the distribution to PyPI if version changes
+            - if [ $LATEST_VERSION != $(pip show 'eodag' | grep Version | cut -d' ' -f2) ];then twine upload dist/*;fi
