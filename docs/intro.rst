@@ -45,8 +45,7 @@ You can search and download satellite products:
         For developers, there are 2 ways for adding support for a new provider:
 
         * By configuring existing plugins: a provider is an instance of already implemented plugins (search, download) =>
-          this only involves knowing how to write ``yaml`` documents (see `<eodag/resources/providers.yml>`_ for examples of how
-          to configure a provider)
+          this only involves knowing how to write ``yaml`` documents.
 
         * By developing new plugins (most of the time it will be search plugins) and configuring instances of these plugins
           (see the ``plugins`` directory to see some examples of plugins).

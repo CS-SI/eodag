@@ -81,10 +81,35 @@ setup(
             'matplotlib',
         ],
     },
-    entry_points='''
-        [console_scripts]
-        eodag=eodag.cli:eodag
-    ''',
+    entry_points={
+        'console_scripts': [
+            'eodag = eodag.cli:eodag'
+        ],
+        'eodag.plugins.api': [
+            'usgs = eodag.plugins.apis.usgs:UsgsApi',
+        ],
+        'eodag.plugins.auth': [
+            'generic = eodag.plugins.authentication.generic:GenericAuth',
+            'header = eodag.plugins.authentication.header:HTTPHeaderAuth',
+            'oauth = eodag.plugins.authentication.oauth:OAuth',
+            'token = eodag.plugins.authentication.token:TokenAuth',
+        ],
+        'eodag.plugins.crunch': [
+            'filter_latest_intersect = eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect',
+            'filter_latest_tpl_name = eodag.plugins.crunch.filter_latest_tpl_name:FilterLatestByName',
+            'filter_overlap = eodag.plugins.crunch.filter_overlap:FilterOverlap',
+        ],
+        'eodag.plugins.download': [
+            'aws = eodag.plugins.download.aws:AwsDownload',
+            'http = eodag.plugins.download.http:HTTPDownload',
+        ],
+        'eodag.plugins.search': [
+            'arlas = eodag.plugins.search.arlas:ArlasSearch',
+            'aws = eodag.plugins.search.aws:AwsSearch',
+            'csw = eodag.plugins.search.csw:CSWSearch',
+            'resto = eodag.plugins.search.resto:RestoSearch',
+        ],
+    },
     project_urls={
         "Bug Tracker": "https://bitbucket.org/geostorm/eodag/issues/",
         "Documentation": "https://eodag.readthedocs.io/en/latest/",

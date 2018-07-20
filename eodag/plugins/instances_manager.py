@@ -15,21 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 from collections import Iterable
 
-from eodag import plugins
+import pkg_resources
+
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import GeoProductDownloaderPluginMount
-from eodag.plugins.download.base import Download
 from eodag.plugins.crunch.base import Crunch
+from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils.import_system import import_all_modules
 
 
 logger = logging.getLogger('eodag.plugins.instances_manager')
@@ -85,9 +83,15 @@ class PluginInstancesManager(object):
     def __init__(self, providers_config):
         self.providers_config = providers_config
         # Load all the plugins. This will make all plugin classes of a particular type to be available in the base
-        # plugin class's 'plugins' attribute. For example, by importing module 'plugins.search.resto', the plugin
+        # plugin class's 'plugins' attribute. For example, by importing module 'eodag.plugins.search.resto', the plugin
         # 'RestoSearch' will be available in self.supported_topics['search'].plugins
-        import_all_modules(plugins, depth=2, exclude=('base', __name__.split('.')[-1],))
+        for topic in self.supported_topics:
+            # This way of discovering plugins means that anyone can create eodag plugins as a separate python package
+            # (though it must require eodag), and have it discovered as long as they declare an entry point of the type
+            # 'eodag.plugins.search' for example in its setup script. See the setup script of eodag for an example of
+            # how to do this.
+            for entry_point in pkg_resources.iter_entry_points('eodag.plugins.{}'.format(topic)):
+                entry_point.load()
 
     def instantiate_configured_plugins(self, topics, product_type_id='', providers=None):
         """Instantiate all known plugins of particular type.
@@ -250,4 +254,3 @@ class PluginInstancesManager(object):
                     topic,
                     ', '.join(self.supported_topics.keys())))
         return PluginBaseClass
-

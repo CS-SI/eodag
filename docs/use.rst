@@ -3,7 +3,8 @@
 Command line interface
 ======================
 
-Create a configuration file containing your credentials for each provider. Here is the layout of this configuration file:
+Create a configuration file containing your credentials for each provider.  You can download
+:download:`this template <../user_conf_template.yml>`, which has the following layout:
 
 .. code-block:: yaml
 
@@ -32,6 +33,11 @@ Create a configuration file containing your credentials for each provider. Here 
     airbus-ds:
         credentials:
             apikey:
+
+.. warning::
+
+    This file contains login information in clear text. Make sure you correctly configure access rules to it. It should
+    be read/write-able only by the current user of eodag.
 
 Then you can start playing with it:
 
@@ -69,7 +75,7 @@ of this bbox"
 
 * To list available product types on a specified supported provider::
 
-        eodag list -s airbus-ds
+        eodag list -p airbus-ds
 
 * To see all the available options and commands::
 
