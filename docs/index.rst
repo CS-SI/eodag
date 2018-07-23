@@ -10,6 +10,7 @@ Welcome to eodag's documentation!
    :maxdepth: 3
 
    intro
+   tutos
    install
    use
    api
