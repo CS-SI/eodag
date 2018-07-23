@@ -2,54 +2,25 @@ eodag
 =====
 
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
-crunching and downloading remote sensed images (mainly from satellite images providers).
+aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
+data provider. The EODAG SDK is structured around three functions:
 
-You can search and download satellite products:
+    * List product types: list of supported products and their description
 
-* through the embedded cli::
+    * Search products (by product type) : searches products according to the search criteria provided
 
-        eodag search --conf user.conf.yaml \
-                     --geometry 1 43 2 44 \
-                     --startTimeFromAscendingNode 2018-01-01 \
-                     --completionTimeFromAscendingNode 2018-01-31 \
-                     --cloudCover 20 \
-                     --productType S2_MSI_L1C
-        # With the shortcut arguments
-        eodag search -f user.conf.yaml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c 20 -p S2-L1C
+    * Download products : download product “as is"
 
-* by interacting with the api in your Python code:
+EODAG is developed in Python. It is structured according to a modular plugin architecture, easily extensible and able to
+integrate new data providers. Three types of plugins compose the tool:
 
-    .. code-block:: python
+    * Catalog search plugins, responsible for searching data (OpenSearch, CSW, ...), building paths, retrieving quicklook,
+      combining results
 
-        from eodag import SatImagesAPI
+    * Download plugins, allowing to download and retrieve data locally (via FTP, HTTP, ..), always with the same directory
+      organization
 
-        dag = SatImagesAPI(user_conf_file_path='/path/to/user/conf.yaml')
-        product_type = 'S2_MSI_L1C'
-        footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
-        start, end = '2018-01-01', '2018-01-31'
-        search_results = dag.search(
-            product_type,
-            geometry=footprint,
-            startTimeFromAscendingNode=start,
-            completionTimeFromAscendingNode=end,
-        )
-        product_paths = dag.download_all(search_results)
-        for path in product_paths:
-            print('Downloaded : {}'.format(path))
-
-.. note::
-
-        For developers, there are 2 ways for adding support for a new provider:
-
-        * By configuring existing plugins: a provider is an instance of already implemented plugins (search, download) =>
-          this only involves knowing how to write ``yaml`` documents.
-
-        * By developing new plugins (most of the time it will be search plugins) and configuring instances of these plugins
-          (see the ``plugins`` directory to see some examples of plugins).
-
-        At the moment, you are only able to do this from source (clone the repo, do your modification, then install your version of eodag).
-        In the future, it will be easier to integrate new provider configurations, to plug-in new search/download/crunch implementations,
-        and to configure the order of preference of providers for search.
+    * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
@@ -77,8 +48,10 @@ Then you can start playing with it:
         eodag search \
         --conf my_conf.yml \
         --geometry 1 43 2 44 \
-        --startTimeFromAscendingNode 2018-01-01 --completionTimeFromAscendingNode 2018-01-31 \
-        --productType S2_MSI_L1C \
+        --startTimeFromAscendingNode 2018-01-01 \
+        --completionTimeFromAscendingNode 2018-01-31 \
+        --cloudCover 20 \
+        --productType S2_MSI_L1C
         --cruncher FilterLatestIntersect \
         --storage my_search.geojson
 
@@ -115,15 +88,29 @@ of this bbox"
 * To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given (up to 3), the more
   verbose the tool is.
 
-Note on how to get Amazon Web Services access keys
---------------------------------------------------
 
-* Create an account on AWS website: https://aws.amazon.com/fr/ (warning: A credit card number must be given because data
-  become paying after a given amount of downloaded data).
-* Once the account is activated go to the identity and access management console: https://console.aws.amazon.com/iam/home#/home
-* Click on user, then on your user name and then on security credentials.
-* In access keys, click on create access key.
-* Add these credentials to the user conf file.
+Python API
+----------
+
+Example usage for interacting with the api in your Python code:
+
+.. code-block:: python
+
+    from eodag import SatImagesAPI
+
+    dag = SatImagesAPI(user_conf_file_path='/path/to/user/conf.yaml')
+    product_type = 'S2_MSI_L1C'
+    footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
+    start, end = '2018-01-01', '2018-01-31'
+    search_results = dag.search(
+        product_type,
+        geometry=footprint,
+        startTimeFromAscendingNode=start,
+        completionTimeFromAscendingNode=end,
+    )
+    product_paths = dag.download_all(search_results)
+    for path in product_paths:
+        print('Downloaded : {}'.format(path))
 
 
 Contribute
