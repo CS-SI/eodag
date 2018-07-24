@@ -47,6 +47,7 @@ DEFAULT_METADATA_MAPPING = {
     'parentIdentifier': '$.properties.parentIdentifier',
     'resolution': '$.properties.resolution',
     'sensorMode': '$.properties.sensorMode',
+    'quicklook': '$.properties.quicklook',
 }
 
 

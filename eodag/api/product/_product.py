@@ -23,9 +23,11 @@ import zipfile
 
 import numpy
 import rasterio
+import requests
 import xarray as xr
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
+from requests import HTTPError
 from shapely import geometry
 from tqdm import tqdm
 
@@ -275,3 +277,45 @@ class EOProduct(object):
         # Restore configuration
         self.downloader.config['extract'] = old_extraction_config
         return fs_location
+
+    def get_quicklook(self, filename=None):
+        """Download the quick look image of a given EOProduct from its provider if it exists.
+
+        :param filename: (optional) the name to give to the downloaded quicklook.
+        :type filename: str (Python 3) or unicode (Python 2)
+        :returns: The absolute path of the downloaded quicklook
+        :rtype: str (Python 3) or unicode (Python 2)
+        """
+        if self.properties['quicklook'] is None:
+            logger.warning('Missing information to retrieve quicklook for EO product: %s', self.properties['id'])
+            return ''
+
+        quicklooks_base_dir = os.path.join(self.downloader.config['outputs_prefix'], "quicklooks")
+        if not os.path.isdir(quicklooks_base_dir):
+            os.makedirs(quicklooks_base_dir)
+        quicklook_file = os.path.join(
+            quicklooks_base_dir,
+            filename
+            if filename is not None
+            else self.properties['id']
+        )
+
+        if not os.path.isfile(quicklook_file):
+            auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else None
+            with requests.get(self.properties['quicklook'], stream=True, auth=auth) as stream:
+                try:
+                    stream.raise_for_status()
+                except HTTPError:
+                    import traceback as tb
+                    logger.error("Error while getting resource :\n%s", tb.format_exc())
+                    return ''
+                else:
+                    stream_size = int(stream.headers.get('content-length', 0))
+                    with open(quicklook_file, 'wb') as fhandle:
+                        progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
+                        for chunk in stream.iter_content(chunk_size=64 * 1024):
+                            if chunk:
+                                progressbar.update(len(chunk))
+                                fhandle.write(chunk)
+                    logger.info('Download recorded in %s', quicklook_file)
+        return quicklook_file

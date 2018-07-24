@@ -29,6 +29,7 @@ USGS:
       abstract: '$.summary'
       startTimeFromAscendingNode: '$.startTime'
       completionTimeFromAscendingNode: '$.endTime'
+      quicklook: '$.browserUrl'
   products:
     L8_LC8:
       product_type: LANDSAT_8_C1
@@ -70,6 +71,7 @@ AmazonWS:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+      quicklook: '$.properties.quicklook'
   products:
     S2_MSI_L1C:
       product_type: L1C
@@ -129,6 +131,7 @@ theia-landsat:
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
+      quicklook: '$.properties.quicklook'
   download:
     plugin: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
@@ -171,6 +174,7 @@ theia:
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
+      quicklook: '$.properties.quicklook'
   products:
     S2_REFLECTANCE:
       product_type: REFLECTANCE
@@ -220,6 +224,7 @@ peps:
       parentIdentifier: '$.properties.parentIdentifier'
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
+      quicklook: '$.properties.quicklook'
   products:
     S1_OCN:
       product_type: OCN
@@ -287,6 +292,7 @@ airbus-ds:
   search:
     plugin: ArlasSearch
     api_endpoint: 'https://k8s.qualif.geohub.space/api/v1/services/explore'
+    quicklook_endpoint: 'https://k8s.qualif.geohub.space/api/v1/services/quicklook'
     arlas_collection: catalog
     metadata_mapping:
       id: '$.properties.uid'
@@ -310,6 +316,7 @@ airbus-ds:
         - 'acquisition.beginViewingDate'
         - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
+      quicklook: '$.properties.state.resources.quicklook'
   download:
     plugin: HTTPDownload
     base_uri: 'https://k8s.qualif.geohub.space/api/v1/services/download/'

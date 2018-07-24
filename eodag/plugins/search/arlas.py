@@ -76,11 +76,21 @@ class ArlasSearch(Search):
             if results['features']:
                 logger.info('Normalizing results')
                 for feature in results['features']:
+                    properties = properties_from_json(feature, self.config['metadata_mapping'])
+                    # In a provider config using this plugin, quicklook maps to a property which
+                    # gives information whether the product has a quicklook or not. Based on this
+                    # info, we can build the quicklook url
+                    properties['quicklook'] = (
+                        '{}/{}'.format(self.config['quicklook_endpoint'], properties['id'])
+                        if properties['quicklook']
+                        else
+                        None
+                    )
                     products.append(EOProduct(
                         product_type,
                         self.instance_name,
-                        '{base}' + '/{}'.format(feature['properties']['uid']),
-                        properties_from_json(feature, self.config['metadata_mapping']),
+                        '{base}' + '/{}'.format(properties['id']),
+                        properties,
                         searched_bbox=kwargs.get('footprint')
                     ))
         except KeyError as ke:

@@ -81,7 +81,8 @@
         "productType": "OCN",
         "orbitNumber": 20624,
         "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",
-        "resolution": null
+        "resolution": null,
+        "quicklook": null
       },
       "id": "578f1768-e66e-5b86-9363-b19f8931cc7b"
     }

@@ -139,3 +139,18 @@ class TestEODagEndToEnd(unittest.TestCase):
         )
         expected_filename = '{}.zip'.format(product.properties['title'])
         self.execute_download(product, expected_filename)
+
+    def test_get_quiclook_peps(self):
+        product = self.execute_search('peps', 'S2_MSI_L1C', '2014-03-01', '2017-03-15', (50, 50, 50.3, 50.3))
+        quicklook_file_path = product.get_quicklook(filename='peps_quicklook')
+
+        self.assertNotEqual(quicklook_file_path, '')
+        self.assertEqual(os.path.basename(quicklook_file_path), 'peps_quicklook')
+        self.assertEqual(
+            os.path.dirname(quicklook_file_path),
+            os.path.join(self.eodag.user_config['outputs_prefix'], 'quicklooks')
+        )
+        self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2 ** 5)
+
+        # Teardown
+        os.remove(quicklook_file_path)

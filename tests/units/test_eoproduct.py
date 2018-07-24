@@ -17,13 +17,17 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import io
 import itertools
+import os
 import random
+import tempfile
 
 import geojson
 import numpy as np
-from shapely import geometry
+import requests
 import xarray as xr
+from shapely import geometry
 
 from tests import EODagTestCase
 from tests.context import (
@@ -306,3 +310,139 @@ class TestEOProduct(EODagTestCase):
                 same_product.properties['productType'], same_product.properties['platformSerialIdentifier'],
             ]
         )
+
+    def test_eoproduct_get_quicklook_no_quicklook_url(self):
+        """EOProduct.get_quicklook must return an empty string if no quicklook property"""
+        product = EOProduct(
+            self.product_type,
+            self.provider,
+            self.download_url,
+            self.eoproduct_props
+        )
+        product.properties['quicklook'] = None
+
+        quicklook_file_path = product.get_quicklook()
+        self.assertEqual(quicklook_file_path, '')
+
+    def test_eoproduct_get_quicklook_http_error(self):
+        """EOProduct.get_quicklook must return an empty string if there was an error during retrieval"""
+        product = EOProduct(
+            self.product_type,
+            self.provider,
+            self.download_url,
+            self.eoproduct_props
+        )
+        product.properties['quicklook'] = 'https://fake.url.to/quicklook'
+
+        self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = requests.HTTPError
+        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
+        mock_downloader.config = {'outputs_prefix': tempfile.gettempdir()}
+        product.register_downloader(mock_downloader, None)
+
+        quicklook_file_path = product.get_quicklook()
+        self.requests_http_get.assert_called_with(
+            'https://fake.url.to/quicklook',
+            stream=True,
+            auth=None
+        )
+        self.assertEqual(quicklook_file_path, '')
+
+    def test_eoproduct_get_quicklook_ok(self):
+        """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""
+        product = EOProduct(
+            self.product_type,
+            self.provider,
+            self.download_url,
+            self.eoproduct_props
+        )
+        product.properties['quicklook'] = 'https://fake.url.to/quicklook'
+
+        self.requests_http_get.return_value = self._quicklook_response()
+        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
+        mock_downloader.config = {'outputs_prefix': tempfile.gettempdir()}
+        product.register_downloader(mock_downloader, None)
+
+        quicklook_file_path = product.get_quicklook()
+        self.requests_http_get.assert_called_with(
+            'https://fake.url.to/quicklook',
+            stream=True,
+            auth=None
+        )
+        self.assertEqual(os.path.basename(quicklook_file_path), product.properties['id'])
+        self.assertEqual(
+            os.path.dirname(quicklook_file_path),
+            os.path.join(tempfile.gettempdir(), 'quicklooks')
+        )
+        os.remove(quicklook_file_path)
+
+        # Test the same thing as above but with an explicit name given to the downloaded File
+        quicklook_file_path = product.get_quicklook(filename='the_quicklook.png')
+        self.requests_http_get.assert_called_with(
+            'https://fake.url.to/quicklook',
+            stream=True,
+            auth=None
+        )
+        self.assertEqual(self.requests_http_get.call_count, 2)
+        self.assertEqual(os.path.basename(quicklook_file_path), 'the_quicklook.png')
+        self.assertEqual(
+            os.path.dirname(quicklook_file_path),
+            os.path.join(tempfile.gettempdir(), 'quicklooks')
+        )
+        os.remove(quicklook_file_path)
+
+        # Overall teardown
+        os.rmdir(os.path.dirname(quicklook_file_path))
+
+    def test_eoproduct_get_quicklook_ok_existing(self):
+        """EOProduct.get_quicklook must return the path to an already downloaded quicklook"""
+        quicklook_dir = os.path.join(tempfile.gettempdir(), 'quicklooks')
+        quicklook_basename = 'the_quicklook.png'
+        existing_quicklook_file_path = os.path.join(quicklook_dir, quicklook_basename)
+        if not os.path.exists(quicklook_dir):
+            os.mkdir(quicklook_dir)
+        with open(existing_quicklook_file_path, 'wb') as fh:
+            fh.write(b'content')
+        product = EOProduct(
+            self.product_type,
+            self.provider,
+            self.download_url,
+            self.eoproduct_props
+        )
+        product.properties['quicklook'] = 'https://fake.url.to/quicklook'
+        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
+        mock_downloader.config = {'outputs_prefix': tempfile.gettempdir()}
+        product.register_downloader(mock_downloader, None)
+
+        quicklook_file_path = product.get_quicklook(filename=quicklook_basename)
+        self.assertEqual(self.requests_http_get.call_count, 0)
+        self.assertEqual(quicklook_file_path, existing_quicklook_file_path)
+        os.remove(existing_quicklook_file_path)
+        os.rmdir(quicklook_dir)
+
+    @staticmethod
+    def _quicklook_response():
+        class Response(object):
+            """Emulation of a response to requests.get method for a quicklook"""
+
+            def __init__(response):
+                response.headers = {'content-length': 2 ** 5}
+
+            def __enter__(response):
+                return response
+
+            def __exit__(response, *args):
+                pass
+
+            @staticmethod
+            def iter_content(**kwargs):
+                with io.BytesIO(b'a' * 2 ** 5) as fh:
+                    while True:
+                        chunk = fh.read(kwargs['chunk_size'])
+                        if not chunk:
+                            break
+                        yield chunk
+
+            def raise_for_status(response):
+                pass
+
+        return Response()

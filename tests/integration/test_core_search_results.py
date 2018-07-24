@@ -88,6 +88,7 @@ class TestCoreSearchResults(unittest.TestCase):
                     'orbitDirection': None,
                     'parentIdentifier': None,
                     'sensorMode': None,
+                    'quicklook': None,
                 },
                 'id': '578f1768-e66e-5b86-9363-b19f8931cc7b',
                 'type': 'Feature',
