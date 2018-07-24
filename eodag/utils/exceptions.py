@@ -19,6 +19,7 @@
 
 class ValidationError(Exception):
     """Error validating data"""
+
     def __init__(self, message):
         self.message = message
 
@@ -45,4 +46,3 @@ class UnsupportedProvider(Exception):
 
 class UnsupportedDatasetAddressScheme(Exception):
     """An error indicating that eodag does not yet support an address scheme for accessing raster subdatasets"""
-

@@ -17,22 +17,18 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
-import copy
 import functools
 import hashlib
 import json
 import os
-import random
 import shutil
 import tempfile
 import unittest
 import zipfile
-from datetime import datetime
 
 import requests
-import shapely
 import usgs
-from shapely import geometry, wkt
+from shapely import wkt
 
 from tests import EODagTestCase, TEST_RESOURCES_PATH
 from tests.context import Authentication, Download, EOProduct, SatImagesAPI, SearchResult
@@ -147,7 +143,8 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         for idx, result in enumerate(results):
             self.assertIsInstance(result, EOProduct)
             self.assertEqual(result.provider, self.provider)
-            self.assertEqual(result.properties['productType'], 'MOCK')  # See ../resources/mock_providers.yml for 'MOCK'
+            self.assertEqual(result.properties['productType'],
+                             'MOCK')  # See ../resources/mock_providers.yml for 'MOCK'
             self.assertEqual(result.properties['id'], resto_results['features'][idx]['id'])
             self.assertEqual(result.properties['completionTimeFromAscendingNode'],
                              resto_results['features'][idx]['properties']['completionDate'])
@@ -334,7 +331,8 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
 
     @mock.patch('eodag.plugins.search.csw.CatalogueServiceWeb', autospec=True)
     def test_core_csw_search_catalog_init_error_ok(self, mock_catalogue_web_service):
-        """A search on a provider implementing CSWSearch must return no result if error during catalog initialisation"""
+        """A search on a provider implementing CSWSearch must return no result if error during catalog
+        initialisation"""
         self.override_properties(provider='mock-provider-8', product_type='MOCK_PRODUCT_TYPE_8')
         default_version = '2.0.2'
         dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
@@ -351,7 +349,8 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
 
     @mock.patch('eodag.plugins.search.csw.CatalogueServiceWeb', autospec=True)
     def test_core_csw_search_get_records_error_ok(self, mock_catalogue_web_service):
-        """A search on a provider implementing CSWSearch must return result even though getrecords fails on some tags"""
+        """A search on a provider implementing CSWSearch must return result even though getrecords fails on some
+        tags"""
         self.override_properties(provider='mock-provider-7', product_type='MOCK_PRODUCT_TYPE_7')
         dag = SatImagesAPI(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),

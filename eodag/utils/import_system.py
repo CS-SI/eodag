@@ -26,7 +26,7 @@ from functools import partial
 
 
 def import_all_modules(base_package, depth=1, exclude=()):
-    """Imports all modules in base_package, including modules in the sub-packages up to `depth` and excluding modules in
+    """Import all modules in base_package, including modules in the sub-packages up to `depth` and excluding modules in
     `exclude`.
 
     Example::
@@ -56,9 +56,9 @@ def import_all_modules(base_package, depth=1, exclude=()):
     :type exclude: tuple(str, ...)
 
     .. note::
-        if `package` and `subpackage` have a module of the same name and this name is included in the exclude parameter,
-        the module will be excluded from import for both packages. This is intentionally left as is by now for
-        simplification
+        if `package` and `subpackage` have a module of the same name and this name is included in the exclude
+        parameter, the module will be excluded from import for both packages. This is intentionally left as is by
+        now for simplification
     """
     if depth > 1:
         for _, name, ispkg in pkgutil.iter_modules(base_package.__path__):

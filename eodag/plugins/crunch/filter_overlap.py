@@ -43,7 +43,8 @@ class FilterOverlap(Crunch):
         if not footprint:
             return products
         minimum_overlap = float(self.config.get('minimum_overlap', '0'))
-        search_extent = geometry.box(footprint['lonmin'], footprint['latmin'], footprint['lonmax'], footprint['latmax'])
+        search_extent = geometry.box(footprint['lonmin'], footprint['latmin'],
+                                     footprint['lonmax'], footprint['latmax'])
         logger.debug('Initial requested extent area: %s', search_extent.area)
         for product in products:
             logger.debug('Uncovered extent area: %s', search_extent.area)
@@ -67,10 +68,10 @@ class FilterOverlap(Crunch):
                     intersection = search_extent.intersection(product_geometry)
             ipos = (intersection.area / search_extent.area) * 100
             ipop = (intersection.area / product_geometry.area) * 100
-            logger.debug('Intersection of product extent and search extent covers %f percent of the search extent area',
-                         ipos)
-            logger.debug(
-                'Intersection of product extent and search extent covers %f percent of the product extent area', ipop)
+            logger.debug('Intersection of product extent and search extent covers %f percent of the search extent '
+                         'area', ipos)
+            logger.debug('Intersection of product extent and search extent covers %f percent of the product extent '
+                         'area', ipop)
             if any((search_extent.contains(product.geometry), ipos >= minimum_overlap, ipop >= minimum_overlap)):
                 logger.debug('Product %r overlaps the search extent. Adding it to filtered results', product)
                 add_to_filtered(product)

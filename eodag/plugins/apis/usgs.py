@@ -23,12 +23,6 @@ import os
 import re
 import zipfile
 
-
-try:  # PY3
-    from urllib.parse import urljoin, urlparse
-except ImportError:  # PY2
-    from urlparse import urljoin, urlparse
-
 import requests
 from requests import HTTPError
 from shapely import geometry
@@ -120,9 +114,8 @@ class UsgsApi(Api):
             logger.debug('Removing record file : %s', record_filename)
             os.remove(record_filename)
 
-        hook_print = lambda r, *args, **kwargs: print('\n', r.url)
-        with requests.get(url, stream=True, auth=auth, hooks={'response': hook_print},
-                          params=self.config.get('dl_url_params', {}), verify=False) as stream:
+        with requests.get(url, stream=True, auth=auth, params=self.config.get('dl_url_params', {}), verify=False,
+                          hooks={'response': lambda r, *args, **kwargs: print('\n', r.url)}) as stream:
             stream_size = int(stream.headers.get('content-length', 0))
             with open(local_file_path, 'wb') as fhandle:
                 progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
@@ -143,8 +136,8 @@ class UsgsApi(Api):
                     logger.info('Extraction activated')
                     with zipfile.ZipFile(local_file_path, 'r') as zfile:
                         fileinfos = zfile.infolist()
-                        with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
-                                local_file_path)) as progressbar:
+                        with tqdm(fileinfos, unit='file',
+                                  desc='Extracting files from {}'.format(local_file_path)) as progressbar:
                             for fileinfo in progressbar:
                                 zfile.extract(fileinfo, path=self.config['outputs_prefix'])
                     return local_file_path[:local_file_path.index('.tar.bz')]

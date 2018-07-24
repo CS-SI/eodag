@@ -22,6 +22,12 @@ pipelines:
           caches:
             - pip
           script:
+            - pip install tox
+            - tox -e flake8
+      - step:
+          caches:
+            - pip
+          script:
             - pip install -r requirements-dev.txt
             - tox -e py35
       - step:
@@ -39,7 +45,7 @@ pipelines:
           script:
             - pip install -r requirements-dev.txt
             # Build the docs
-            - tox -e py
+            - tox -e docs
             # Build the distribution
             - python setup.py sdist bdist_wheel
             # Upload the distribution to PyPI if version changes

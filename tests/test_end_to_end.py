@@ -116,8 +116,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = '{}.zip'.format(product.properties['title'])
         self.execute_download(product, expected_filename)
 
-    @unittest.skip('Download of S2_MSI_L1C Products on peps provider before 2016/12/05 is known to be asynchronous and '
-                   'this feature is not present in eodag at the moment')
+    @unittest.skip('Download of S2_MSI_L1C Products on peps provider before 2016/12/05 is known to be asynchronous '
+                   'and this feature is not present in eodag at the moment')
     def test_end_to_end_search_download_peps_before_20161205(self):
         product = self.execute_search(
             'peps',

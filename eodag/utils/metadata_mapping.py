@@ -41,11 +41,11 @@ def get_metadata_path(map_value):
 
     Then the metadata `id` is not queryable for this provider meanwhile `productType` is queryable. The first value of
     the `metadata_mapping.productType` is how the eodag search parameter `productType` is interpreted in the
-    :class:`~eodag.plugins.search.base.Search` plugin implemented by `provider`, and is used when eodag delegates search
-    process to the corresponding plugin.
+    :class:`~eodag.plugins.search.base.Search` plugin implemented by `provider`, and is used when eodag delegates
+    search process to the corresponding plugin.
 
-    :param map_value: The value originating from the definition of `metadata_mapping` in the provider search config. For
-        example, it is the list `['productType', '$.properties.productType']` with the sample above
+    :param map_value: The value originating from the definition of `metadata_mapping` in the provider search config.
+        For example, it is the list `['productType', '$.properties.productType']` with the sample above
     :type map_value: str (Python 3) or unicode (Python 2) or list(str or unicode)
     :return: The value of the path to the metadata value in the provider search result
     :rtype: str (Python 3) or unicode (Python 2)

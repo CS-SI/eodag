@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
-from eodag.api.product.drivers.base import NoDriver
+from eodag.api.product.drivers.base import NoDriver     # noqa
 from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
 
 

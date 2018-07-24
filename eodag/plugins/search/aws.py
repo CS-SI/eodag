@@ -19,15 +19,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 
-from eodag.api.product.representations import properties_from_json
-
-
-try:  # PY3
-    from urllib.parse import urljoin, urlparse
-except ImportError:  # PY2
-    from urlparse import urljoin, urlparse
-
 from eodag.api.product import EOProduct
+from eodag.api.product.representations import properties_from_json
 from eodag.plugins.search.resto import RestoSearch
 
 

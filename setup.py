@@ -73,6 +73,7 @@ setup(
             'moto',
             'twine',
             'wheel',
+            'flake8',
         ],
         'tutorials': [
             'jupyter',

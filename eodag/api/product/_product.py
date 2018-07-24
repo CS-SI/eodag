@@ -232,8 +232,8 @@ class EOProduct(object):
     def download(self):
         """Download the EO product using the provided download plugin and the authenticator if necessary.
 
-        The actual download of the product occurs only at the first call of this method. A side effect of this method is
-        that it changes the `location` attribute of an EOProduct, from its remote address to the local address.
+        The actual download of the product occurs only at the first call of this method. A side effect of this method
+        is that it changes the `location` attribute of an EOProduct, from its remote address to the local address.
 
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
@@ -254,7 +254,8 @@ class EOProduct(object):
             # Unzip only if it was not done before
             if not os.path.exists(fs_location[:fs_location.index('.zip')]):
                 with zipfile.ZipFile(fs_location, 'r') as zfile:
-                    fileinfos = tqdm(zfile.infolist(), unit='file', desc='Extracting files from {}'.format(fs_location))
+                    fileinfos = tqdm(zfile.infolist(), unit='file',
+                                     desc='Extracting files from {}'.format(fs_location))
                     for fileinfo in fileinfos:
                         zfile.extract(fileinfo, path=fs_location[:fs_location.index('.zip')])
             # Handle depth levels in the product archive. For example, if the downloaded archive was

@@ -18,10 +18,10 @@
 from __future__ import unicode_literals
 
 # All tests files should import mock from this place
-try:
-    from unittest import mock  # PY3
-except ImportError:
-    import mock  # PY2
+try:    # PY3
+    from unittest import mock   # noqa
+except ImportError:    # PY2
+    import mock     # noqa
 
 
 def no_blanks(string):

@@ -109,8 +109,8 @@ class PluginInstancesManager(object):
         :rtype: list
         :raises: :class:`AssertionError` if neither ``product_type_id`` nor ``providers`` keyword arguments is given.
         """
-        assert any((product_type_id, providers)), ("You should provide at least one of 'product_type_id' or 'providers'"
-                                                   " parameters")
+        assert any((product_type_id, providers)), ("You should provide at least one of 'product_type_id' or "
+                                                   "'providers' parameters")
         if isinstance(topics, Iterable):
             instances = []
             for topic in topics:
@@ -192,7 +192,11 @@ class PluginInstancesManager(object):
         :rtype: list(tuple(str, int))
         """
         if selected is not None:
-            return [(provider, priority) for provider, priority in selected if topic in self.providers_config[provider]]
+            return [
+                (provider, priority)
+                for provider, priority in selected
+                if topic in self.providers_config[provider]
+            ]
         return [
             # If the priority is not set in the config, the default priority is 0
             (provider, provider_config.get('priority', 0))

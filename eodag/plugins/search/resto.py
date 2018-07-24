@@ -20,20 +20,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import re
 
+import requests
 from requests import HTTPError
 
-from eodag.api.product.representations import properties_from_json
-from eodag.utils.metadata_mapping import get_search_param
-
-
-try:  # PY3
-    from urllib.parse import urljoin, urlparse
-except ImportError:  # PY2
-    from urlparse import urljoin, urlparse
-
-import requests
-
 from eodag.api.product import EOProduct
+from eodag.api.product.representations import properties_from_json
+from eodag.utils import urljoin, urlparse
+from eodag.utils.metadata_mapping import get_search_param
 from .base import Search
 
 
@@ -115,7 +108,8 @@ class RestoSearch(Search):
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         if product_type == 'S2_MSI_L1C':
             if self.instance_name == 'peps':
-                # If there is no criteria on date, we want to query all the collections known for providing L1C products
+                # If there is no criteria on date, we want to query all the collections known for providing L1C
+                # products
                 if date is None:
                     collection = ('S2', 'S2ST')
                 else:

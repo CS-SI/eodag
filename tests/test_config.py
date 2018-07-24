@@ -45,7 +45,7 @@ class TestConfig(unittest.TestCase):
         config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
         self.assertTrue('instance-1' in config_tested)
         with self.assertRaises(KeyError):
-            _ = config_tested['NOTFOUND']
+            _ = config_tested['NOTFOUND']   # noqa
         self.assertIn(config_tested['instance-1'], config_tested.values())
         self.assertIn(('instance-1', config_tested['instance-1']), config_tested.items())
         self.assertTrue([key for key in config_tested])
@@ -63,8 +63,8 @@ class TestConfig(unittest.TestCase):
         for key, value in mapping.items():
             if isinstance(value, dict):
                 self._recursively_assert_unicode(value)
-            elif isinstance(value, basestring):
-                self.assertIsInstance(value, unicode)
+            elif isinstance(value, basestring):         # noqa
+                self.assertIsInstance(value, unicode)   # noqa
 
     def test_invalid_config_file_raises_error(self):
         """An invalid yaml config file should raise an error"""

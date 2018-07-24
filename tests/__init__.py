@@ -181,10 +181,10 @@ class EODagTestCase(unittest.TestCase):
                           maxx=self.footprint['lonmax'], maxy=self.footprint['latmax'],
                           crs=Crs(code=4326, id='EPSG')),
                 xml="""
-                    <csw:Record xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" 
-                        xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" 
-                        xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml" 
-                        xmlns:ows="http://www.opengis.net/ows" xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                    <csw:Record xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+                        xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/"
+                        xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml"
+                        xmlns:ows="http://www.opengis.net/ows" xmlns:xs="http://www.w3.org/2001/XMLSchema"
                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                         <dc:identifier>urn:x-gs:resource:localhost::52</dc:identifier>
                         <dc:title>S2 mosaic on Madrid</dc:title>

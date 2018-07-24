@@ -28,6 +28,12 @@ import pyproj
 from requests.auth import AuthBase
 from six import string_types
 
+# All modules using these should import them from utils package
+try:  # PY3
+    from urllib.parse import urljoin, urlparse      # noqa
+except ImportError:  # PY2
+    from urlparse import urljoin, urlparse          # noqa
+
 
 class RequestsTokenAuth(AuthBase):
     def __init__(self, token):
