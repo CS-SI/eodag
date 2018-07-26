@@ -20,7 +20,7 @@ from __future__ import unicode_literals
 
 __title__ = 'eodag'
 __description__ = 'Earth Observation Data Access Gateway'
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 __author__ = "CS Systemes d'Information (CSSI)"
 __author_email__ = 'admin@geostorm.eu'
 __url__ = 'https://bitbucket.org/geostorm/eodag'

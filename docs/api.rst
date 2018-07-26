@@ -271,7 +271,7 @@ add this:
       entry_points={
          ...
          'eodag.plugins.api': [
-            'your-plugin = your_package.your_module:SampleApiPlugin'
+            'SampleApiPlugin = your_package.your_module:SampleApiPlugin'
          ],
          ...
       },
@@ -279,10 +279,13 @@ add this:
    )
 
 See `This <https://packaging.python.org/guides/creating-and-discovering-plugins/#using-package-metadata>`_ to better
-understand this concept. In `eodag`, the name you give to your plugin in the `setup.py` script's entry point does'nt matter.
-What matters is that the entry point must be a class deriving from one of the 5 plugin topics supported. Be particularly
-careful with consistency between the entry point name and the super class of you plugin class. Here is a list of entry
-point names and the plugin topic to which they map:
+understand this concept. In `eodag`, the name you give to your plugin in the
+`setup.py` script's entry point does'nt matter, but we prefer it to be the
+same as the class name of the plugin. What matters is that the entry point
+must be a class deriving from one of the 5 plugin topics supported. Be
+particularly careful with consistency between the entry point name and the
+super class of you plugin class. Here is a list of entry point names and the
+plugin topic to which they map:
 
 * 'eodag.plugins.api'      : :class:`~eodag.plugins.apis.base.Api`
 * 'eodag.plugins.auth'     : :class:`~eodag.plugins.auth.Authentication`

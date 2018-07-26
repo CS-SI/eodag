@@ -91,7 +91,13 @@ class PluginInstancesManager(object):
             # 'eodag.plugins.search' for example in its setup script. See the setup script of eodag for an example of
             # how to do this.
             for entry_point in pkg_resources.iter_entry_points('eodag.plugins.{}'.format(topic)):
-                entry_point.load()
+                try:
+                    entry_point.load()
+                except ImportError:
+                    import traceback as tb
+                    logger.warning('Unable to load plugin: %s.', entry_point.name)
+                    logger.warning('Reason:\n%s', tb.format_exc())
+                    logger.warning('Check that the plugin module (%s) is importable', entry_point.module_name)
 
     def instantiate_configured_plugins(self, topics, product_type_id='', providers=None):
         """Instantiate all known plugins of particular type.
