@@ -13,7 +13,8 @@ pipelines:
           name: Build and Deploy to PyPI
           script:
             # Upload the distribution to PyPI if version changes
-            - if [ $(./get_pypi_latest_version.sh) != $(python setup.py --version) ]
+            - |
+              if [ $(./get_pypi_latest_version.sh) != $(python setup.py --version) ]
               then
                 # Check that the long description may be well rendered on PyPI
                 python setup.py --long-description | rst2hml > output.html
