@@ -17,7 +17,7 @@ pipelines:
             - |
               if [ $(./get_pypi_latest_version.sh) != $(python setup.py --version) ]
               then
-                # Check that the long description may be well rendered on PyPI
+                # Check that the long description is ready to be published on PyPI without errors
                 python setup.py --long-description | rst2html.py > /dev/null 2>error.log
                 if [ ! "$(cat error.log)" ]
                 then
@@ -27,9 +27,11 @@ pipelines:
                 else
                   echo "Long description is incompatible with PyPI reST renderer. Check README.rst"
                   cat error.log
+                  exit 1
                 fi
               else
-                echo "Current version is the latest version uploaded to PyPI ==> SKIP"
+                echo "Current version is the latest version uploaded to PyPI"
+                exit 1
               fi
   branches:
     master:
