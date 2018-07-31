@@ -37,7 +37,7 @@ Usage
 Command line interface
 ----------------------
 
-Create a configuration file from the :download:`template <user_conf_template.yml>` provided with the repository, filling
+Create a configuration file from the template `user_conf_template.yml` provided with the repository, filling
 in your credentials as expected by each provider (note that this configuration file is required by now. However, this
 will change in the future).
 
