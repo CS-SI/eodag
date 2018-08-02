@@ -15,7 +15,7 @@ pipelines:
             # Install sphinx to have rst2html.py utility available
             - python -m pip install sphinx
             - |
-              if [ $(./get_pypi_latest_version.sh) != $(python setup.py --version) ]
+              if [ "$(./get_pypi_latest_version.sh)" != "$(python setup.py --version)" ]
               then
                 # Check that the long description is ready to be published on PyPI without errors
                 python setup.py --long-description | rst2html.py > /dev/null 2>error.log

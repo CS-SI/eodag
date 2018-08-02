@@ -91,7 +91,7 @@ class UsgsApi(Api):
         api.logout()
         return final
 
-    def download(self, product, auth=None):
+    def download(self, product, auth=None, progress_callback=None):
         url = product.location
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
@@ -118,11 +118,10 @@ class UsgsApi(Api):
                           hooks={'response': lambda r, *args, **kwargs: print('\n', r.url)}) as stream:
             stream_size = int(stream.headers.get('content-length', 0))
             with open(local_file_path, 'wb') as fhandle:
-                progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
                 for chunk in stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
-                        progressbar.update(len(chunk))
                         fhandle.write(chunk)
+                        progress_callback(len(chunk), stream_size)
             try:
                 stream.raise_for_status()
             except HTTPError:

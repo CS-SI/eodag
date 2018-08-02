@@ -43,7 +43,7 @@ class HTTPDownload(Download):
         self.config.setdefault('extract', True)
         logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
 
-    def download(self, product, auth=None):
+    def download(self, product, auth=None, progress_callback=None):
         """Download a product as zip archive using HTTP protocol"""
         if not product.location.startswith('file://'):
             url = self.__build_download_url(product, auth)
@@ -82,11 +82,10 @@ class HTTPDownload(Download):
                 else:
                     stream_size = int(stream.headers.get('content-length', 0))
                     with open(local_file_path, 'wb') as fhandle:
-                        progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
                         for chunk in stream.iter_content(chunk_size=64 * 1024):
                             if chunk:
-                                progressbar.update(len(chunk))
                                 fhandle.write(chunk)
+                                progress_callback(len(chunk), stream_size)
 
                     with open(record_filename, 'w') as fh:
                         fh.write(url)

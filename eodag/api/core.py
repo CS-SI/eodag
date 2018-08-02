@@ -27,6 +27,7 @@ from tqdm import tqdm
 from eodag.api.search_result import SearchResult
 from eodag.config import SimpleYamlProxyConfig
 from eodag.plugins.instances_manager import PluginInstancesManager
+from eodag.utils import ProgressCallback
 from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 
 
@@ -250,11 +251,17 @@ class SatImagesAPI(object):
             for extent_as_wkb_hex in products_grouped_by_extent
         ]
 
-    def download_all(self, search_result):
+    def download_all(self, search_result, progress_callback=None):
         """Download all products resulting from a search.
 
         :param search_result: A collection of EO products resulting from a search
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: A collection of the absolute paths to the downloaded products
         :rtype: list
         """
@@ -262,7 +269,7 @@ class SatImagesAPI(object):
         if search_result:
             with tqdm(search_result, unit='product', desc='Downloading products') as bar:
                 for product in bar:
-                    paths.append(self.download(product))
+                    paths.append(self.download(product, progress_callback=progress_callback))
         else:
             print('Empty search result, nothing to be downloaded !')
         return paths
@@ -294,7 +301,7 @@ class SatImagesAPI(object):
         with open(filename, 'r') as fh:
             return SearchResult.from_geojson(geojson.load(fh))
 
-    def download(self, product):
+    def download(self, product, progress_callback=None):
         """Download a single product.
 
         .. warning::
@@ -305,11 +312,20 @@ class SatImagesAPI(object):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product.EOProduct`
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str or unicode
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
+        if progress_callback is None:
+            progress_callback = ProgressCallback()
+
         download_plugin = self._build_download_plugin(product)
         logger.debug('Using download plugin: %s for provider: %s', download_plugin.name, download_plugin.instance_name)
         try:
@@ -321,7 +337,7 @@ class SatImagesAPI(object):
                 logger.debug('On site usage detected. Authentication for download skipped !')
             if auth:
                 auth = auth.authenticate()
-            product_location = download_plugin.download(product, auth=auth)
+            product_location = download_plugin.download(product, auth=auth, progress_callback=progress_callback)
             if product_location is None:
                 logger.warning('The download method of a Download plugin should return the absolute path to the '
                                'downloaded resource')

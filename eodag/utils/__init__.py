@@ -27,12 +27,14 @@ import click
 import pyproj
 from requests.auth import AuthBase
 from six import string_types
+from tqdm import tqdm
+
 
 # All modules using these should import them from utils package
 try:  # PY3
-    from urllib.parse import urljoin, urlparse      # noqa
+    from urllib.parse import urljoin, urlparse  # noqa
 except ImportError:  # PY2
-    from urlparse import urljoin, urlparse          # noqa
+    from urlparse import urljoin, urlparse  # noqa
 
 
 class RequestsTokenAuth(AuthBase):
@@ -60,8 +62,7 @@ class FloatRange(click.types.FloatParamType):
 
     def convert(self, value, param, ctx):
         rv = click.types.FloatParamType.convert(self, value, param, ctx)
-        if self.min is not None and rv < self.min or \
-                self.max is not None and rv > self.max:
+        if self.min is not None and rv < self.min or self.max is not None and rv > self.max:
             if self.min is None:
                 self.fail('%s is bigger than the maximum valid value '
                           '%s.' % (rv, self.max), param, ctx)
@@ -155,3 +156,22 @@ def get_timestamp(date_time, date_format='%Y-%m-%d'):
     except AttributeError:  # There is no timestamp method on datetime objects in Python 2
         import time
         return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
+
+
+class ProgressCallback(object):
+    """A callable used to render progress to users for long running processes"""
+
+    def __init__(self):
+        self.pb = None
+
+    def __call__(self, current_size, max_size):
+        """Update the progress bar.
+
+        :param current_size: amount of data already processed
+        :type current_size: int
+        :param max_size: maximum amount of data to be processed
+        :type max_size: int
+        """
+        if self.pb is None:
+            self.pb = tqdm(total=max_size, unit='KB', unit_scale=True)
+        self.pb.update(current_size)

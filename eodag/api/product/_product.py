@@ -31,6 +31,8 @@ from requests import HTTPError
 from shapely import geometry
 from tqdm import tqdm
 
+from eodag.utils import ProgressCallback
+
 
 try:
     from shapely.errors import TopologicalError
@@ -231,15 +233,24 @@ class EOProduct(object):
         self.downloader = downloader
         self.downloader_auth = authenticator
 
-    def download(self):
+    def download(self, progress_callback=None):
         """Download the EO product using the provided download plugin and the authenticator if necessary.
 
         The actual download of the product occurs only at the first call of this method. A side effect of this method
         is that it changes the `location` attribute of an EOProduct, from its remote address to the local address.
 
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
         """
+        if progress_callback is None:
+            progress_callback = ProgressCallback()
+
         if self.downloader is None:
             raise RuntimeError('EO product is unable to download itself due to the lack of a download plugin')
         # Remove the capability for the downloader to perform extraction if the downloaded product is a zipfile. This
@@ -247,7 +258,7 @@ class EOProduct(object):
         old_extraction_config = self.downloader.config['extract']
         self.downloader.config['extract'] = False
         auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
-        fs_location = self.downloader.download(self, auth=auth)
+        fs_location = self.downloader.download(self, auth=auth, progress_callback=progress_callback)
         if fs_location is None:
             logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
                            'have not been returned by the download plugin')
@@ -278,14 +289,23 @@ class EOProduct(object):
         self.downloader.config['extract'] = old_extraction_config
         return fs_location
 
-    def get_quicklook(self, filename=None):
+    def get_quicklook(self, filename=None, progress_callback=None):
         """Download the quick look image of a given EOProduct from its provider if it exists.
 
         :param filename: (optional) the name to give to the downloaded quicklook.
         :type filename: str (Python 3) or unicode (Python 2)
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
         :rtype: str (Python 3) or unicode (Python 2)
         """
+        if progress_callback is None:
+            progress_callback = ProgressCallback()
+
         if self.properties['quicklook'] is None:
             logger.warning('Missing information to retrieve quicklook for EO product: %s', self.properties['id'])
             return ''
@@ -312,10 +332,9 @@ class EOProduct(object):
                 else:
                     stream_size = int(stream.headers.get('content-length', 0))
                     with open(quicklook_file, 'wb') as fhandle:
-                        progressbar = tqdm(total=stream_size, unit='KB', unit_scale=True)
                         for chunk in stream.iter_content(chunk_size=64 * 1024):
                             if chunk:
-                                progressbar.update(len(chunk))
                                 fhandle.write(chunk)
+                                progress_callback(len(chunk), stream_size)
                     logger.info('Download recorded in %s', quicklook_file)
         return quicklook_file

@@ -26,5 +26,5 @@ class Download(PluginTopic):
         self.config = config
         self.authenticate = bool(self.config.setdefault('authenticate', False))
 
-    def download(self, product, auth=None):
+    def download(self, product, auth=None, progress_callback=None):
         raise NotImplementedError('A Download plugin must implement a method named download')
