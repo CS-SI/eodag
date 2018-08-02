@@ -13,7 +13,7 @@ pipelines:
           name: Build and Deploy to PyPI
           script:
             # Install sphinx to have rst2html.py utility available
-            - python -m pip install sphinx
+            - python -m pip install sphinx twine
             - |
               if [ "$(./get_pypi_latest_version.sh)" != "$(python setup.py --version)" ]
               then
