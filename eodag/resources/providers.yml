@@ -97,6 +97,9 @@ theia-landsat:
     PLD_REFLECTANCETOA:
       collection: Pleiades
       product_type: REFLECTANCETOA
+    PLD_BUNDLE:
+      collection: Pleiades
+      product_type: Bundle (Pan, XS)
   search:
     plugin: RestoSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
