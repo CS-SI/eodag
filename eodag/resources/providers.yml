@@ -179,7 +179,7 @@ theia:
       productVersion: '$.properties.version'
       quicklook: '$.properties.quicklook'
   products:
-    S2_REFLECTANCE:
+    S2_MSI_L2A:
       product_type: REFLECTANCE
       collection: SENTINEL2
   download:
@@ -229,34 +229,35 @@ peps:
       sensorMode: '$.properties.sensorMode'
       quicklook: '$.properties.quicklook'
   products:
-    S1_OCN:
+    S1_SAR_OCN:
       product_type: OCN
       collection: S1
-    S1_GRD:
+    S1_SAR_GRD:
       product_type: GRD
       collection: S1
-    S1_SLC:
+    S1_SAR_SLC:
       product_type: SLC
       collection: S1
     S2_MSI_L1C:
       collection: S2ST
       product_type: S2MSI1C
+      partial: true   # Peps only provide L1C products for Sentinel-2A platform
     S3_EFR:
       product_type: OL_1_EFR___
       collection: S3
     S3_ERR:
       product_type: OL_1_ERR___
       collection: S3
-    S3_LFR:
+    S3_OLCI_L2LFR:
       product_type: OL_2_LFR___
       collection: S3
-    S3_LRR:
+    S3_OLCI_L2LRR:
       product_type: OL_2_LRR___
       collection: S3
-    S3_RBT:
+    S3_SLSTR_L1RBT:
       product_type: SL_1_RBT___
       collection: S3
-    S3_LST:
+    S3_SLSTR_L2LST:
       product_type: SL_2_LST___
       collection: S3
     S3_LAN:
@@ -276,14 +277,19 @@ airbus-ds:
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
-    S1_RAW:
+      partial: true
+    S1_SAR_RAW:
       product_type: RAW
-    S1_GRD:
+      partial: true
+    S1_SAR_GRD:
       product_type: GRD
-    S1_SLC:
+      partial: true
+    S1_SAR_SLC:
       product_type: SLC
-    S1_OCN:
+      partial: true
+    S1_SAR_OCN:
       product_type: OCN
+      partial: true
     S3_LAN:
       product_type: SR_2_LAN___
     S3_SRA:

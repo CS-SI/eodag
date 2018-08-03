@@ -135,7 +135,7 @@ def list_pt(ctx, **kwargs):
     click.echo('Listing available product types:')
     try:
         for product_type in dag.list_product_types(provider=provider):
-            text_wrapper.initial_indent = '* {}: '.format(product_type['ID'])
+            text_wrapper.initial_indent = '\n* {}: '.format(product_type['ID'])
             text_wrapper.subsequent_indent = ' ' * len(text_wrapper.initial_indent)
             click.echo(text_wrapper.fill(product_type['desc'] or 'No description'))
     except UnsupportedProvider:
