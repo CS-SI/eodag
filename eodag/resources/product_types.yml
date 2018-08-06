@@ -124,6 +124,10 @@ PLD_REFLECTANCETOA:
   desc: Pleiades
   meta: []
 
+PLD_BUNDLE:
+  desc: Pleiades
+  meta: []
+
 S2_REFLECTANCE:
   desc: Sentinel2
   meta: []
