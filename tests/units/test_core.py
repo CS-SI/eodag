@@ -26,6 +26,7 @@ class TestCore(unittest.TestCase):
     SUPPORTED_PRODUCT_TYPES = {
         'S3_SLSTR_L1RBT': ['peps'],
         'PLD_REFLECTANCETOA': ['theia-landsat'],
+        'PLD_BUNDLE': ['theia-landsat'],
         'S2_MSI_L2A': ['theia'],
         'S3_LAN': ['peps', 'airbus-ds'],
         'S2_MSI_L1C': ['AmazonWS', 'peps', 'airbus-ds'],
