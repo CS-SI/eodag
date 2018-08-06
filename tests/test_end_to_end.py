@@ -97,7 +97,7 @@ class TestEODagEndToEnd(unittest.TestCase):
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(
             'USGS',
-            'L8_LC8',
+            'L8_OLI_TIRS_C1L1',
             '2017-03-01',
             '2017-03-15',
             (50, 50, 50.3, 50.3)

@@ -27,7 +27,7 @@ import requests
 from requests import HTTPError
 from shapely import geometry
 from tqdm import tqdm
-from usgs import CATALOG_NODES, USGSError, api
+from usgs import USGSError, api
 
 from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_json
@@ -41,7 +41,8 @@ class UsgsApi(Api):
 
     def query(self, product_type, **kwargs):
         api.login(self.config['credentials']['username'], self.config['credentials']['password'], save=True)
-        usgs_product_type = self.config['products'][product_type]['product_type']
+        usgs_dataset = self.config['products'][product_type]['dataset']
+        usgs_catalog_node = self.config['products'][product_type]['catalog_node']
         start_date = kwargs.pop('startTimeFromAscendingNode', None)
         end_date = kwargs.pop('completionTimeFromAscendingNode', None)
         footprint = kwargs.pop('geometry', None)
@@ -60,34 +61,33 @@ class UsgsApi(Api):
             upper_right = {'longitude': footprint['lonmax'], 'latitude': footprint['latmax']}
         else:
             lower_left, upper_right = None, None
-        for node_type in CATALOG_NODES:
-            try:
-                results = api.search(usgs_product_type, node_type, start_date=start_date, end_date=end_date,
-                                     ll=lower_left, ur=upper_right)
+        try:
+            results = api.search(usgs_dataset, usgs_catalog_node, start_date=start_date, end_date=end_date,
+                                 ll=lower_left, ur=upper_right)
 
-                for result in results['data']['results']:
-                    r_lower_left = result['lowerLeftCoordinate']
-                    r_upper_right = result['upperRightCoordinate']
-                    summary_match = result_summary_pattern.match(result['summary']).groupdict()
-                    result['geometry'] = geometry.box(
-                        r_lower_left['longitude'], r_lower_left['latitude'],
-                        r_upper_right['longitude'], r_upper_right['latitude']
-                    )
-                    result['productType'] = usgs_product_type
-                    final.append(EOProduct(
-                        product_type,
-                        self.instance_name,
-                        dl_url_pattern.format(
-                            base_url=self.config['google_base_url'].rstrip('/'),
-                            entity=result['entityId'],
-                            **summary_match
-                        ),
-                        properties_from_json(result, self.config['metadata_mapping']),
-                        searched_bbox=footprint,
-                    ))
-            except USGSError as e:
-                logger.debug('Product type %s does not exist on catalogue %s', usgs_product_type, node_type)
-                logger.debug("Skipping error: %s", e)
+            for result in results['data']['results']:
+                r_lower_left = result['lowerLeftCoordinate']
+                r_upper_right = result['upperRightCoordinate']
+                summary_match = result_summary_pattern.match(result['summary']).groupdict()
+                result['geometry'] = geometry.box(
+                    r_lower_left['longitude'], r_lower_left['latitude'],
+                    r_upper_right['longitude'], r_upper_right['latitude']
+                )
+                result['productType'] = usgs_dataset
+                final.append(EOProduct(
+                    product_type,
+                    self.instance_name,
+                    dl_url_pattern.format(
+                        base_url=self.config['google_base_url'].rstrip('/'),
+                        entity=result['entityId'],
+                        **summary_match
+                    ),
+                    properties_from_json(result, self.config['metadata_mapping']),
+                    searched_bbox=footprint,
+                ))
+        except USGSError as e:
+            logger.debug('Product type %s does not exist on catalogue %s', usgs_dataset, usgs_catalog_node)
+            logger.debug("Skipping error: %s", e)
         api.logout()
         return final
 

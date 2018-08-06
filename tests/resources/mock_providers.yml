@@ -405,47 +405,12 @@ mock-provider-9:
     auth_uri: 'https://subdomain9.domain.eu/authentication'
     token_type: json
 
-mock-provider-10:
-  priority: 1
-  products:
-    MOCK_PRODUCT_TYPE_10:
-      product_type: OCN
-  api:
-    plugin: SentinelsatAPI
-    endpoint: 'https://subdomain10.domain.eu/api/'
-    metadata_mapping:
-      id: '$.uuid'
-      geometry:
-        - area
-        - '$.footprint'
-      productType: '$.producttype'
-      platform: '$.platformname'
-      platformSerialIdentifier: '$.platformidentifier'
-      instrument: '$.instrument'
-      processingLevel: '$.processingLevel'
-      title: '$.title'
-      keyword: '$.keywords'
-      abstract: '$.summary'
-      organisationName: '$.organisationname'
-      orbitNumber: '$.orbitnumber'
-      orbitDirection: '$.orbitdirection'
-      cloudCover:
-        - cloudcoverpercentage
-        - '$.cloudcover'
-      snowCover: '$.snowcover'
-      startTimeFromAscendingNode:
-        - date
-        - '$.beginposition'
-      completionTimeFromAscendingNode: '$.endposition'
-      parentIdentifier: '$.parentidentifier'
-      resolution: '$.resolution'
-      sensorMode: '$.sensoroperationalmode'
-
 mock-provider-11:
   priority: 1
   products:
-    L8_LC8:
-      product_type: LANDSAT_8_C1
+    L8_OLI_TIRS_C1L1:
+      dataset: LANDSAT_8_C1
+      catalog_node: EE
   api:
     plugin: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'

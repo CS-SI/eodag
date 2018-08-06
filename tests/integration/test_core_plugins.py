@@ -792,21 +792,15 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
         )
-        self.override_properties(provider='mock-provider-11', product_type='L8_LC8')
+        self.override_properties(provider='mock-provider-11', product_type='L8_OLI_TIRS_C1L1')
 
         results = dag.search(self.product_type)
         self.assertEqual(len(results), len(usgs_search_results['data']['results']))
         self.assertEqual(self.usgs_api_login.call_count, 1)
         self.usgs_api_login.assert_called_with('user', 'pwd', save=True)
-        self.assertEqual(self.usgs_api_search.call_count, len(usgs.CATALOG_NODES))
-        self.usgs_api_search.assert_any_call(
+        self.assertEqual(self.usgs_api_search.call_count, 1)
+        self.usgs_api_search.assert_called_with(
             'LANDSAT_8_C1', usgs.EARTH_EXPLORER_CATALOG_NODE, start_date=None, end_date=None, ll=None, ur=None)
-        self.usgs_api_search.assert_any_call(
-            'LANDSAT_8_C1', usgs.CWIC_LSI_EXPLORER_CATALOG_NODE, start_date=None, end_date=None, ll=None, ur=None)
-        self.usgs_api_search.assert_any_call(
-            'LANDSAT_8_C1', usgs.HDDS_EXPLORER_CATALOG_NODE, start_date=None, end_date=None, ll=None, ur=None)
-        self.usgs_api_search.assert_any_call(
-            'LANDSAT_8_C1', usgs.CATALOG_NODES[-1], start_date=None, end_date=None, ll=None, ur=None)
 
         for idx, result in enumerate(results):
             expected = usgs_search_results['data']['results'][idx]
@@ -820,20 +814,8 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
         # Test searching with footprint as an additional criteria
         search_kwargs = {'geometry': self.footprint}
         dag.search(self.product_type, **search_kwargs)
-        self.usgs_api_search.assert_any_call(
+        self.usgs_api_search.assert_called_with(
             'LANDSAT_8_C1', usgs.EARTH_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
-            ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
-            ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
-        self.usgs_api_search.assert_any_call(
-            'LANDSAT_8_C1', usgs.CWIC_LSI_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
-            ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
-            ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
-        self.usgs_api_search.assert_any_call(
-            'LANDSAT_8_C1', usgs.HDDS_EXPLORER_CATALOG_NODE, start_date=None, end_date=None,
-            ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
-            ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
-        self.usgs_api_search.assert_any_call(
-            'LANDSAT_8_C1', usgs.CATALOG_NODES[-1], start_date=None, end_date=None,
             ll={'longitude': self.footprint['lonmin'], 'latitude': self.footprint['latmin']},
             ur={'longitude': self.footprint['lonmax'], 'latitude': self.footprint['latmax']})
 

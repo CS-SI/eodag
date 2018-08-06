@@ -47,7 +47,7 @@ class TestCore(unittest.TestCase):
         'S3_SRA_BS': ['airbus-ds'],
         'S3_SRA_A_BS': ['airbus-ds'],
         'S3_EFR': ['peps'],
-        'L8_LC8': ['USGS'],
+        'L8_OLI_TIRS_C1L1': ['USGS'],
         'L7_L1T': [],
         'S3_OLCI_L2LRR': ['peps'],
         'PLD_REFLECTANCE': ['theia-landsat'],

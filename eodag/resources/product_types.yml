@@ -66,8 +66,10 @@ L8_L1GT:
   desc: ""
   meta: []
 
-L8_LC8:
-  desc: ""
+L8_OLI_TIRS_C1L1:
+  desc: |
+    Landsat 8 Operational Land Imager and Thermal Infrared Sensor Collection 1 Level-1 products
+    Details at https://landsat.usgs.gov/sites/default/files/documents/LSDS-1656_Landsat_Level-1_Product_Collection_Definition.pdf
   meta: []
 
 L7_L1GT:

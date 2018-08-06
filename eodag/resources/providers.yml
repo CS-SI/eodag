@@ -31,8 +31,9 @@ USGS:
       completionTimeFromAscendingNode: '$.endTime'
       quicklook: '$.browserUrl'
   products:
-    L8_LC8:
-      product_type: LANDSAT_8_C1
+    L8_OLI_TIRS_C1L1:
+      dataset: LANDSAT_8_C1
+      catalog_node: EE  # Possible values: CWIC, EE, HDDS, LPCS
 
 AmazonWS:
   priority: 0
