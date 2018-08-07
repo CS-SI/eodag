@@ -26,7 +26,6 @@ from datetime import datetime
 import click
 import pyproj
 from requests.auth import AuthBase
-from six import string_types
 from tqdm import tqdm
 
 
@@ -38,16 +37,21 @@ except ImportError:  # PY2
 
 
 class RequestsTokenAuth(AuthBase):
-    def __init__(self, token):
-        if isinstance(token, string_types):
-            self.token = token
-        elif isinstance(token, dict):
-            self.token = token.get('tokenIdentity', '')
-        self.bearer_str = "Bearer {}".format(self.token)
+    token = ''
 
     def __call__(self, req):
-        req.headers['Authorization'] = self.bearer_str
+        req.headers['Authorization'] = "Bearer {}".format(self.token)
         return req
+
+
+class RequestsDictTokenAuth(RequestsTokenAuth):
+    def __init__(self, token_obj, token_key):
+        self.token = token_obj[token_key]
+
+
+class RequestsTextTokenAuth(RequestsTokenAuth):
+    def __init__(self, token):
+        self.token = token
 
 
 class FloatRange(click.types.FloatParamType):

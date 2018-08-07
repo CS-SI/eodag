@@ -21,7 +21,7 @@ import requests
 from requests import HTTPError
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils import RequestsTokenAuth
+from eodag.utils import RequestsDictTokenAuth, RequestsTextTokenAuth
 
 
 class TokenAuth(Authentication):
@@ -38,7 +38,5 @@ class TokenAuth(Authentication):
             raise e
         else:
             if self.config.get('token_type', 'text') == 'json':
-                token = response.json()
-            else:
-                token = response.text
-            return RequestsTokenAuth(token)
+                return RequestsDictTokenAuth(response.json(), self.config['token_key'])
+            return RequestsTextTokenAuth(response.text)
