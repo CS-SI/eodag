@@ -404,6 +404,7 @@ mock-provider-9:
     plugin: TokenAuth
     auth_uri: 'https://subdomain9.domain.eu/authentication'
     token_type: json
+    token_key: tokenIdentity
 
 mock-provider-11:
   priority: 1

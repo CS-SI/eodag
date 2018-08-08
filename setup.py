@@ -94,6 +94,7 @@ setup(
             'HTTPHeaderAuth = eodag.plugins.authentication.header:HTTPHeaderAuth',
             'OAuth = eodag.plugins.authentication.oauth:OAuth',
             'TokenAuth = eodag.plugins.authentication.token:TokenAuth',
+            'OIDCAuthorizationCodeFlowAuth = eodag.plugins.authentication.openid_connect:OIDCAuthorizationCodeFlowAuth',    # noqa
         ],
         'eodag.plugins.crunch': [
             'FilterLatestIntersect = eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect',

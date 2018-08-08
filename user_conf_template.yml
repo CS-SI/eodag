@@ -30,8 +30,8 @@ theia:
         pass:
 theia-landsat:
     credentials:
-        ident:
-        pass:
+        username:
+        password:
 USGS:
     credentials:
         username:

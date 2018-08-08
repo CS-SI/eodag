@@ -225,6 +225,10 @@ Authentication Plugins
    :show-inheritance:
    :undoc-members:
 
+.. autoclass:: eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth
+   :show-inheritance:
+   :undoc-members:
+
 .. module:: eodag.plugins.apis
 
 External Apis Plugins

@@ -46,3 +46,7 @@ class UnsupportedProvider(Exception):
 
 class UnsupportedDatasetAddressScheme(Exception):
     """An error indicating that eodag does not yet support an address scheme for accessing raster subdatasets"""
+
+
+class AuthenticationError(Exception):
+    """An error indicating that an authentication plugin did not succeeded authenticating a user"""

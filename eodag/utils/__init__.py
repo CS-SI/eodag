@@ -22,6 +22,7 @@ import sys
 import types
 import unicodedata
 from datetime import datetime
+from itertools import repeat, starmap
 
 import click
 import pyproj
@@ -31,9 +32,14 @@ from tqdm import tqdm
 
 # All modules using these should import them from utils package
 try:  # PY3
-    from urllib.parse import urljoin, urlparse  # noqa
+    from urllib.parse import urljoin, urlparse, parse_qs, urlunparse  # noqa
 except ImportError:  # PY2
-    from urlparse import urljoin, urlparse  # noqa
+    from urlparse import urljoin, urlparse, parse_qs, urlunparse  # noqa
+
+try:    # PY3
+    from urllib.parse import urlencode  # noqa
+except ImportError:     # PY2
+    from urllib import urlencode    # noqa
 
 
 class RequestsTokenAuth(AuthBase):
@@ -179,3 +185,8 @@ class ProgressCallback(object):
         if self.pb is None:
             self.pb = tqdm(total=max_size, unit='KB', unit_scale=True)
         self.pb.update(current_size)
+
+
+def repeatfunc(func, n, *args):
+    """Call `func` `n` times with `args`"""
+    return starmap(func, repeat(args, n))

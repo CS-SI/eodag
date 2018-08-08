@@ -138,10 +138,20 @@ theia-landsat:
       quicklook: '$.properties.quicklook'
   download:
     plugin: HTTPDownload
-    base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
+    base_uri: 'https://theia-landsat.cnes.fr/resto'
   auth:
-    plugin: TokenAuth
-    auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
+    plugin: OIDCAuthorizationCodeFlowAuth
+    authorization_uri: 'https://sso.theia-land.fr/oauth2/authorize'
+    redirect_uri: 'https://theia-landsat.cnes.fr/rocket/'
+    authentication_uri: 'https://sso.theia-land.fr/commonauth'
+    token_uri: 'https://theia-landsat.cnes.fr/resto/api/auth/theia'
+    client_id: 'ZYhcLtyuDM0f2BMH1bIF1Fc2neQa'
+    token_exchange_params:
+      redirect_uri: redirectUri
+      client_id: clientId
+    token_exchange_post_data_method: json   # One of json, data, params
+    token_provision: qs # One of qs or header. If qs, token_qs_key is mandatory
+    token_qs_key: '_bearer'
 
 theia:
   priority: 0

@@ -15,6 +15,7 @@ Welcome to eodag's documentation!
    use
    api
    contribute
+   changelog
 
 
 Indices and tables
