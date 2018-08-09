@@ -277,6 +277,7 @@ peps:
   download:
     plugin: HTTPDownload
     base_uri: 'https://peps.cnes.fr/resto'
+    archive_depth: 2
     dl_url_params:
       issuerId: peps
   auth:

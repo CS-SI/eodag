@@ -1,0 +1,3 @@
+-r requirements-tutorials.txt
+-e .[docs]
+git+https://github.com/vidartf/nbsphinx-link

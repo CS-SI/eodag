@@ -64,7 +64,6 @@ setup(
     ],
     extras_require={
         'dev': [
-            'sphinx',
             'nose',
             'tox',
             'faker',
@@ -81,6 +80,10 @@ setup(
             'ipywidgets',
             'matplotlib',
         ],
+        'docs': [
+            'sphinx',
+            'nbsphinx',
+        ]
     },
     entry_points={
         'console_scripts': [
