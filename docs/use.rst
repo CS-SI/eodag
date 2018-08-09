@@ -20,8 +20,8 @@ Create a configuration file containing your credentials for each provider.  You 
             pass:
     theia-landsat:
         credentials:
-            ident:
-            pass:
+            username:
+            password:
     USGS:
         credentials:
             username:

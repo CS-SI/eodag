@@ -31,7 +31,7 @@ import usgs
 from shapely import wkt
 
 from tests import EODagTestCase, TEST_RESOURCES_PATH
-from tests.context import Authentication, Download, EOProduct, SatImagesAPI, SearchResult
+from tests.context import Authentication, Download, EOProduct, EODataAccessGateway, SearchResult
 from tests.utils import mock
 
 
@@ -128,7 +128,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         requests_http_get_response.raise_for_status = mock.MagicMock()
         requests_http_get_response.json = mock.MagicMock(return_value=resto_results)
 
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         results = dag.search(self.product_type)
 
         self.assertHttpGetCalledOnceWith(
@@ -183,7 +183,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         requests_http_get_response = self.requests_http_get.return_value
         requests_http_get_response.raise_for_status = mock.MagicMock(side_effect=requests.HTTPError)
 
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         # requests.get will return a response that will raise an requests.HTTPError when raise_for_status is called
         results = dag.search(self.product_type)
 
@@ -209,7 +209,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
             'productType': 'MOCK'
         }
 
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         dag.search(self.product_type, **kwargs)
 
         self.assertHttpGetCalledOnceWith(
@@ -219,7 +219,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
     def test_core_resto_search_kwargs_cloud_cover_outbounds_ko(self):
         """A search with a cloud cover greater than 100 or lower than 0 must raise a RuntimeError"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         self.assertRaises(RuntimeError, dag.search, self.product_type, cloudCover=101)
         self.assertRaises(RuntimeError, dag.search, self.product_type, cloudCover=-1)
 
@@ -236,7 +236,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
             'completionDate': kwargs['completionTimeFromAscendingNode']
         }
 
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         dag.search(self.product_type, **kwargs)
 
         self.assertHttpGetCalledOnceWith(
@@ -247,7 +247,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         """A search with a footprint must succeed"""
         self.override_properties(product_type='MOCK_PRODUCT_TYPE')
         provider_search_url_base = 'http://subdomain.domain.eu/resto/api/'  # See ../resources/mock_providers.yml
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         call_params = {
             'startDate': None,
             'sortOrder': 'descending',
@@ -267,7 +267,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         """A search on a provider implementing CSWSearch with auth requirement and default csw version must succeed"""
         self.override_properties(provider='mock-provider-7', product_type='MOCK_PRODUCT_TYPE_7')
         default_version = '2.0.2'
-        dag = SatImagesAPI(
+        dag = EODataAccessGateway(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml'))
         mock_catalog = mock_catalogue_web_service.return_value
@@ -305,7 +305,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         """A search on a provider implementing CSWSearch without auth and default csw version must succeed"""
         self.override_properties(provider='mock-provider-8', product_type='MOCK_PRODUCT_TYPE_8')
         default_version = '2.0.2'
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         mock_catalog = mock_catalogue_web_service.return_value
 
         mock_catalog.getrecords2.side_effect = functools.partial(self.compute_csw_records, mock_catalog)
@@ -335,7 +335,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         initialisation"""
         self.override_properties(provider='mock-provider-8', product_type='MOCK_PRODUCT_TYPE_8')
         default_version = '2.0.2'
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         mock_catalogue_web_service.side_effect = Exception
         mock_catalog = mock_catalogue_web_service.return_value
         results = dag.search(self.product_type)
@@ -352,7 +352,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         """A search on a provider implementing CSWSearch must return result even though getrecords fails on some
         tags"""
         self.override_properties(provider='mock-provider-7', product_type='MOCK_PRODUCT_TYPE_7')
-        dag = SatImagesAPI(
+        dag = EODataAccessGateway(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml'))
         mock_catalog = mock_catalogue_web_service.return_value
@@ -380,7 +380,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
             'startTimeFromAscendingNode': '2018-05-01',
             'geometry': self.footprint
         }
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         mock_catalog = mock_catalogue_web_service.return_value
         mock_catalog.getrecords2.side_effect = functools.partial(self.compute_csw_records, mock_catalog)
 
@@ -438,7 +438,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
         requests_http_get_response.raise_for_status = mock.MagicMock()
         requests_http_get_response.json = mock.MagicMock(return_value=resto_results)
 
-        dag = SatImagesAPI(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
+        dag = EODataAccessGateway(providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'))
         results = dag.search(self.product_type)
 
         self.assertHttpGetCalledOnceWith(
@@ -532,7 +532,7 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
             'tokenIdentity': 'd3bd997e78b748edb89390ac04c748dd'
         })
 
-        dag = SatImagesAPI(
+        dag = EODataAccessGateway(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
         )
@@ -727,7 +727,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
             },
             'id': '9deb7e78-9341-5530-8fe8-f81fd99c9f0f'
         })
-        self.eodag = SatImagesAPI(
+        self.eodag = EODataAccessGateway(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
         )
@@ -788,7 +788,7 @@ class TestIntegrationCoreApiPlugins(EODagTestCase):
             raise usgs.USGSError
 
         self.usgs_api_search.side_effect = usgs_search_behavior
-        dag = SatImagesAPI(
+        dag = EODataAccessGateway(
             providers_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_providers.yml'),
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'mock_user_conf.yml')
         )

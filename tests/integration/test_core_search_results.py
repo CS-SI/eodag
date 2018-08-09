@@ -25,13 +25,13 @@ import unittest
 from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH
-from tests.context import SatImagesAPI, SearchResult
+from tests.context import EODataAccessGateway, SearchResult
 
 
 class TestCoreSearchResults(unittest.TestCase):
 
     def setUp(self):
-        self.dag = SatImagesAPI()
+        self.dag = EODataAccessGateway()
         self.maxDiff = None
         self.geojson_repr = {
             'features': [{

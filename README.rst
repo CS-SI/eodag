@@ -96,9 +96,9 @@ Example usage for interacting with the api in your Python code:
 
 .. code-block:: python
 
-    from eodag import SatImagesAPI
+    from eodag import EODataAccessGateway
 
-    dag = SatImagesAPI(user_conf_file_path='/path/to/user/conf.yaml')
+    dag = EODataAccessGateway(user_conf_file_path='/path/to/user/conf.yaml')
     product_type = 'S2_MSI_L1C'
     footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
     start, end = '2018-01-01', '2018-01-31'

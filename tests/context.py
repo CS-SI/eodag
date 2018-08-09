@@ -21,7 +21,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from eodag import api, config
-from eodag import SatImagesAPI
+from eodag import EODataAccessGateway
 from eodag.cli import eodag, list_pt, search_crunch, download
 from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult

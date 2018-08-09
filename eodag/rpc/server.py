@@ -23,7 +23,7 @@ import time
 import grpc
 from concurrent.futures import ThreadPoolExecutor
 
-from eodag import SatImagesAPI
+from eodag import EODataAccessGateway
 from eodag.rpc.protocol import eodag_pb2, eodag_pb2_grpc
 
 
@@ -35,7 +35,7 @@ class EODAGRPCServer(object):
 
     def __init__(self, host, port, user_conf):
         logger.info('Initializing eodag rpc server')
-        eodag = SatImagesAPI(user_conf_file_path=user_conf)
+        eodag = EODataAccessGateway(user_conf_file_path=user_conf)
         self.eo_product_type_iface = EOProductTypeService(eodag)
         self.eo_product_iface = EOProductService(eodag)
         self.address = '{}:{}'.format(host, port)

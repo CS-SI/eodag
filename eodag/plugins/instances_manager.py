@@ -37,11 +37,11 @@ class PluginInstancesManager(object):
     """A manager for the plugins instances.
 
     The role of instances of this class (normally only one instance exists, created during instantiation of
-    :class:`~eodag.api.core.SatImagesAPI`, and referenced by :attr:`eodag.api.core.SatImagesAPI.pim` - pim stands
-    for plugin instances manager. But nothing is done to enforce this) is to instantiate the plugins according to the
-    providers configuration, and keep track of them in memory. The providers configuration contains information such as
-    the name of the provider, the internet endpoint for accessing it, and the plugins to use to perform defined actions
-    (search, download, authenticate, crunch).
+    :class:`~eodag.api.core.EODataAccessGateway`, and referenced by :attr:`eodag.api.core.EODataAccessGateway.pim` -
+    pim stands for plugin instances manager. But nothing is done to enforce this) is to instantiate the plugins
+    according to the providers configuration, and keep track of them in memory. The providers configuration contains
+    information such as the name of the provider, the internet endpoint for accessing it, and the plugins to use to
+    perform defined actions (search, download, authenticate, crunch).
 
     If the providers configuration looks like this::
 

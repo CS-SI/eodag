@@ -22,7 +22,7 @@ import textwrap
 
 import click
 
-from eodag.api.core import SatImagesAPI
+from eodag.api.core import EODataAccessGateway
 from eodag.utils.exceptions import UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -106,7 +106,7 @@ def search_crunch(ctx, **kwargs):
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
 
-    satim_api = SatImagesAPI(user_conf_file_path=conf_file)
+    satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
 
     # Search
     results = satim_api.search(producttype, **criteria)
@@ -129,7 +129,7 @@ def search_crunch(ctx, **kwargs):
 def list_pt(ctx, **kwargs):
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
-    dag = SatImagesAPI()
+    dag = EODataAccessGateway()
     provider = kwargs.pop('provider')
     text_wrapper = textwrap.TextWrapper()
     click.echo('Listing available product types:')
@@ -162,7 +162,7 @@ def download(ctx, **kwargs):
     conf_file = kwargs.pop('conf')
     if conf_file:
         conf_file = click.format_filename(conf_file)
-        satim_api = SatImagesAPI(user_conf_file_path=conf_file)
+        satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
         search_results = satim_api.deserialize(search_result_path)
         for downloaded_file in satim_api.download_all(search_results):
             if downloaded_file is None:

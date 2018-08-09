@@ -34,7 +34,7 @@ from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvide
 logger = logging.getLogger('eodag.core')
 
 
-class SatImagesAPI(object):
+class EODataAccessGateway(object):
     """An API for downloading a wide variety of geospatial products originating from different types of systems.
 
     :param user_conf_file_path: Path to the user configuration file
@@ -92,9 +92,9 @@ class SatImagesAPI(object):
         """Set max priority for the given provider.
 
         >>> import eodag.utils.exceptions
-        >>> dag = SatImagesAPI()
+        >>> dag = EODataAccessGateway()
         >>> dag.get_preferred_provider()    # This also tests get_preferred_provider method by the way
-        ('airbus-ds', 1)
+        ('peps', 1)
         >>> # For the following lines, see http://python3porting.com/problems.html#handling-expected-exceptions
         >>> try:
         ...     dag.set_preferred_provider(u'unknown')

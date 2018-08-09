@@ -8,7 +8,7 @@ Python API
 Core
 ----
 
-.. autoclass:: eodag.api.core.SatImagesAPI
+.. autoclass:: eodag.api.core.EODataAccessGateway
    :members:
    :undoc-members:
 

@@ -203,7 +203,7 @@ theia:
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
 
 peps:
-  priority: 0
+  priority: 1
   search:
     plugin: RestoSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api'
@@ -252,7 +252,7 @@ peps:
     S2_MSI_L1C:
       collection: S2ST
       product_type: S2MSI1C
-      partial: true   # Peps only provide L1C products for Sentinel-2A platform
+      partial: false   # Peps only provide L1C products for Sentinel-2A platform
     S3_EFR:
       product_type: OL_1_EFR___
       collection: S3
@@ -284,7 +284,7 @@ peps:
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 
 airbus-ds:
-  priority: 1
+  priority: 0
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C

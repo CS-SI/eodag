@@ -106,7 +106,7 @@ class TestEodagCli(unittest.TestCase):
             self.assertIn('Error: -b option requires 4 arguments', result.output)
             self.assertNotEqual(result.exit_code, 0)
 
-    @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
+    @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_bbox_valid(self, SatImagesAPI):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
@@ -117,7 +117,7 @@ class TestEodagCli(unittest.TestCase):
                 product_type, startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
                 cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44})
 
-    @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
+    @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_storage_arg(self, SatImagesAPI):
         """Calling eodag search with specified result filename without .geojson extension"""
         with self.user_conf() as conf_file:
@@ -125,7 +125,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = SatImagesAPI.return_value
             api_obj.serialize.assert_called_with(api_obj.search.return_value, filename='results.geojson')
 
-    @mock.patch('eodag.cli.SatImagesAPI', autospec=True)
+    @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_with_cruncher(self, SatImagesAPI):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""
         with self.user_conf() as conf_file:

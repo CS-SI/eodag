@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-from tests.context import SatImagesAPI, UnsupportedProvider
+from tests.context import EODataAccessGateway, UnsupportedProvider
 
 
 class TestCore(unittest.TestCase):
@@ -68,7 +68,7 @@ class TestCore(unittest.TestCase):
 
     def setUp(self):
         super(TestCore, self).setUp()
-        self.dag = SatImagesAPI()
+        self.dag = EODataAccessGateway()
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""
@@ -102,7 +102,9 @@ class TestCore(unittest.TestCase):
         self.assertRaises(UnsupportedProvider, self.dag.list_product_types, provider=unsupported_provider)
 
     def assertListProductTypesRightStructure(self, structure):
-        """Helper method to verify that the structure given is a good result of SatImagesAPI.list_product_types"""
+        """Helper method to verify that the structure given is a good result of
+        EODataAccessGateway.list_product_types
+        """
         self.assertIsInstance(structure, dict)
         self.assertIn('ID', structure)
         self.assertIn('desc', structure)

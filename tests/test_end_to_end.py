@@ -22,7 +22,7 @@ import os
 import unittest
 
 from tests import TEST_RESOURCES_PATH
-from tests.context import SatImagesAPI
+from tests.context import EODataAccessGateway
 
 
 class TestEODagEndToEnd(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestEODagEndToEnd(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.eodag = SatImagesAPI(user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'user_conf.yml'))
+        cls.eodag = EODataAccessGateway(user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, 'user_conf.yml'))
         # Ensure that we will be able to make search requests on only one provider, by setting partial to False by
         # default for all the supported product types of all the providers
         for provider, conf in cls.eodag.providers_config.items():
