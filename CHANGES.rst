@@ -1,6 +1,17 @@
 Release history
 ---------------
 
+0.6.0 (2018-08-09)
+++++++++++++++++++
+
+- Add support of a new product type: PLD_BUNDLE provided by theia-landsat
+- Create a new authentication plugin to perform headless OpenID connect authorisation
+  code flow
+- Refactor the class name of the core api (from SatImagesAPI to EODataAccessGateway)
+- Set peps platform as the default provider
+- Set product archive depth for peps provider to 2 (after extracting a product from peps,
+  the product is nested one level inside a top level directory where it was extracted)
+
 0.5.0 (2018-08-02)
 ++++++++++++++++++
 
