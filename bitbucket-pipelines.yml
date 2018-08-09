@@ -4,8 +4,11 @@ pipelines:
     - step:
         name: Check Code Style and Build Docs
         script:
-          - python -m pip install flake8 sphinx
+          - python -m pip install flake8
           - flake8 .
+          - apt-get install pandoc
+          - python -m pip install -r requirements-docs.txt
+          - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
           - (cd docs && /usr/bin/make html)
   tags:
     v*:
@@ -38,11 +41,14 @@ pipelines:
       - step:
           name: Unit tests for Py35
           script:
-            - python -m pip install -r requirements-dev.txt
+            - python -m pip install flake8
             - flake8 .
-            - (cd docs && /usr/bin/make html)
-            - mkdir -p test-reports
+            - apt-get install pandoc
+            - python -m pip install -r requirements-docs.txt
             - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
+            - (cd docs && /usr/bin/make html)
+            - python -m pip install -r requirements-dev.txt
+            - mkdir -p test-reports
             - |
               nosetests -v --cover-package=eodag\
                            --with-xunit --xunit-file test-reports/eodag_test_report_py35.xml\
@@ -56,9 +62,9 @@ pipelines:
           name: Unit tests for Py27
           image: python:2.7.15-jessie
           script:
+            - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
             - python -m pip install -r requirements-dev.txt
             - mkdir -p test-reports
-            - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
             - |
               nosetests -v --cover-package=eodag\
                            --with-xunit --xunit-file test-reports/eodag_test_report_py27.xml\
