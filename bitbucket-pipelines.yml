@@ -6,7 +6,8 @@ pipelines:
         script:
           - python -m pip install flake8
           - flake8 .
-          - apt-get install pandoc
+          - apt-get update
+          - apt-get install -y pandoc
           - python -m pip install -r requirements-docs.txt
           - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
           - (cd docs && /usr/bin/make html)
@@ -43,7 +44,8 @@ pipelines:
           script:
             - python -m pip install flake8
             - flake8 .
-            - apt-get install pandoc
+            - apt-get update
+            - apt-get install -y pandoc
             - python -m pip install -r requirements-docs.txt
             - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
             - (cd docs && /usr/bin/make html)
