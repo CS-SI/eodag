@@ -28,6 +28,15 @@ with open(os.path.join(BASEDIR, 'eodag', '__meta__.py'), 'r') as f:
     exec(f.read(), metadata)
 
 
+# Setup to enable widgets rendering of the integrated jupyter notebooks
+# Inspired by: https://github.com/jupyter-widgets/ipyleaflet/blob/master/docs/source/conf.py
+# This is a workaround for versions of sphinx < 1.8 (still in beta development)
+# In Sphinx 1.8.0+ this method is dropped and usage of html_js_files option is preferred
+def setup(app):
+    app.add_javascript("https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js")
+    app.add_javascript("https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js")
+
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -192,9 +201,6 @@ texinfo_documents = [
      author, 'eodag', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {

@@ -53,9 +53,10 @@ class HTTPDownload(Download):
             logger.debug('Download url: %s', url)
 
             # Strong asumption made here: all products downloaded will be zip archives
+            prefix = os.path.abspath(self.config['outputs_prefix'])
             filename = product.properties['title'] + '.zip'
-            local_file_path = os.path.join(self.config['outputs_prefix'], filename)
-            download_records = os.path.join(self.config['outputs_prefix'], '.downloaded')
+            local_file_path = os.path.join(prefix, filename)
+            download_records = os.path.join(prefix, '.downloaded')
             try:
                 os.makedirs(download_records)
             except OSError as exc:
@@ -125,7 +126,7 @@ class HTTPDownload(Download):
                 with zipfile.ZipFile(local_file_path, 'r') as zfile:
                     fileinfos = zfile.infolist()
                     with tqdm(fileinfos, unit='file', desc='Extracting files from {}'.format(
-                            local_file_path)) as progressbar:
+                            os.path.basename(local_file_path))) as progressbar:
                         for fileinfo in progressbar:
                             zfile.extract(
                                 fileinfo,
