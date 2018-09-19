@@ -118,9 +118,13 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
     def authenticate_user(self, authorization_response):
         login_document = etree.HTML(authorization_response.text)
         login_form = login_document.xpath('//form[@id="loginForm"]')[0]
-        login_data = self.config['credentials']
-        login_data['sessionDataKey'] = login_form.xpath('//input[@name="sessionDataKey"]')[0].attrib['value']
-        return self.session.post(self.config['authentication_uri'], data=login_data)
+        try:
+            login_data = self.config['credentials']
+            login_data['sessionDataKey'] = login_form.xpath('//input[@name="sessionDataKey"]')[0].attrib['value']
+            return self.session.post(self.config['authentication_uri'], data=login_data)
+        except KeyError as err:
+            if 'credentials' in err:
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
 
     def grant_user_consent(self, authentication_response):
         user_consent_document = etree.HTML(authentication_response.text)

@@ -20,6 +20,7 @@ from __future__ import unicode_literals
 import requests.auth
 
 from eodag.plugins.authentication import Authentication
+from eodag.utils.exceptions import MisconfiguredError
 
 
 class HTTPHeaderAuth(Authentication):
@@ -55,11 +56,15 @@ class HTTPHeaderAuth(Authentication):
     Expect an undefined behaviour if you use empty braces in header value strings.
     """
     def authenticate(self):
-        headers = {
-            header: value.format(**self.config['credentials'])
-            for header, value in self.config['headers'].items()
-        }
-        return HeaderAuth(headers)
+        try:
+            headers = {
+                header: value.format(**self.config['credentials'])
+                for header, value in self.config['headers'].items()
+            }
+            return HeaderAuth(headers)
+        except KeyError as err:
+            if 'credentials' in err:
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
 
 
 class HeaderAuth(requests.auth.AuthBase):

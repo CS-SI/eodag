@@ -18,6 +18,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from eodag.plugins.authentication.base import Authentication
+from eodag.utils.exceptions import MisconfiguredError
 
 
 class OAuth(Authentication):
@@ -28,6 +29,10 @@ class OAuth(Authentication):
         self.secret_key = None
 
     def authenticate(self):
-        self.access_key = self.config['credentials']['aws_access_key_id']
-        self.secret_key = self.config['credentials']['aws_secret_access_key']
-        return self.access_key, self.secret_key
+        try:
+            self.access_key = self.config['credentials']['aws_access_key_id']
+            self.secret_key = self.config['credentials']['aws_secret_access_key']
+            return self.access_key, self.secret_key
+        except KeyError as err:
+            if 'credentials' in err:
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
