@@ -81,7 +81,8 @@ setup(
             'matplotlib',
         ],
         'docs': [
-            'sphinx == 1.7.6',
+            'sphinx == 1.8.0',
+            'nbsphinx-link == 1.1.1'
         ]
     },
     entry_points={
