@@ -51,7 +51,7 @@ setup(
         'geojson',
         'pyproj',
         'usgs',
-        'boto3',
+        'boto3 == 1.7.64',
         'numpy',
         'rasterio==1.0a12',
         'protobuf',
@@ -81,8 +81,7 @@ setup(
             'matplotlib',
         ],
         'docs': [
-            'sphinx',
-            'nbsphinx',
+            'sphinx == 1.7.6',
         ]
     },
     entry_points={

@@ -548,7 +548,8 @@ class TestIntegrationCoreSearchPlugins(EODagTestCase):
 
 class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
 
-    def test_core_http_download_local_product(self):
+    @mock.patch('os.path.isfile', returnvalue=True)
+    def test_core_http_download_local_product(self, _):
         """A local product must not be downloaded and the download plugin must return its local absolute path"""
         self.product.location = 'file:///absolute/path/to/local/product.zip'
         paths = self.eodag.download_all(SearchResult([self.product]))
@@ -559,7 +560,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
     def test_core_http_download_remote_product_no_extract(self):
         """A remote product must be downloaded as is if extraction config is set to False"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location = '{base}/path/to/product.zip'
+        self.product.remote_location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
         paths = self.eodag.download_all(SearchResult([self.product]))
@@ -569,11 +570,26 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
     def test_core_http_download_remote_product_extract(self):
         """A remote product must be downloaded and extracted as is if extraction config is set to True (by default)"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = True
-        self.product.location = '{base}/path/to/product.zip'
+        self.product.remote_location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
         paths = self.eodag.download_all(SearchResult([self.product]))
         self.assertHttpDownloadDone(paths[0], with_extraction=True)
+        self.assertAuthenticationDone()
+
+    @mock.patch('zipfile.is_zipfile', return_value=False)
+    def test_core_http_download_remote_product_not_zipfile(self, _):
+        """A remote product must be downloaded and not extracted if it is not a zip file"""
+        self.product.remote_location = '{base}/path/to/product.zip'
+        self.requests_get.return_value = self._requests_get_response()
+
+        paths = self.eodag.download_all(SearchResult([self.product]))
+        self.assertEqual(paths[0], self.expected_downloaded_path[:self.expected_downloaded_path.index('.zip')])
+        self.assertEqual('file://{}'.format(paths[0]), self.product.location)
+        self.assertEqual(self.requests_get.call_count, 1)
+        self.assertTrue(os.path.exists(self.expected_record_file))
+        with open(self.expected_record_file, 'r') as fh:
+            self.assertEqual(fh.read(), self.expected_dl_url)
         self.assertAuthenticationDone()
 
     def test_core_http_download_remote_no_url(self):
@@ -587,7 +603,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
     def test_core_http_download_remote_already_downloaded(self):
         """Download must return the path of a product already downloaded"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location = '{base}/path/to/product.zip'
+        self.product.remote_location = '{base}/path/to/product.zip'
 
         # Simulate a previous download
         os.mkdir(self.expected_record_dir)
@@ -603,7 +619,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
     def test_core_http_download_remote_recorded_file_absent(self, os_remove):
         """Download must be performed and record file must be suppressed if actual product is locally absent"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location = '{base}/path/to/product.zip'
+        self.product.remote_location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
         os_remove.side_effect = os.unlink
 
@@ -620,7 +636,7 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
     def test_core_http_download_remote_httperror(self):
         """An error during download must fail without stopping the overall download process"""
         self.eodag.providers_config[self.test_provider]['download']['extract'] = False
-        self.product.location = '{base}/path/to/product.zip'
+        self.product.remote_location = '{base}/path/to/product.zip'
         self.requests_get.return_value = self._requests_get_response()
 
         def raise_http_error():
@@ -754,6 +770,12 @@ class TestIntegrationCoreDownloadPlugins(unittest.TestCase):
             shutil.rmtree(self.expected_record_dir)
         if os.path.exists(self.expected_downloaded_path):
             os.unlink(self.expected_downloaded_path)
+        extracted_path = self.expected_downloaded_path[:self.expected_downloaded_path.index('.zip')]
+        if os.path.exists(extracted_path):
+            if os.path.isdir(extracted_path):
+                shutil.rmtree(extracted_path)
+            else:
+                os.remove(extracted_path)
         self.requests_get_patcher.stop()
         self.requests_post_patcher.stop()
 

@@ -52,6 +52,10 @@ class EOProduct(object):
 
     Every Search plugin instance must build an instance of this class for each of the result of its query method, and
     return a list of such instances.
+    A EOProduct has a `location` attribute that initially points to its remote location, but is later changed to point
+    to its path on the filesystem when the product has been downloaded. It also has a `remote_location` that always
+    points to the remote location, so that the product can be downloaded at anytime if it is deleted from the
+    filesystem.
 
     :param product_type: The product type of the product as defined in eodag
     :type product_type: str or unicode
@@ -74,7 +78,7 @@ class EOProduct(object):
     def __init__(self, product_type, provider, download_url, properties, searched_bbox=None):
         self.product_type = product_type
         self.provider = provider
-        self.location = download_url
+        self.location = self.remote_location = download_url
         self.properties = properties
         self.geometry = self.search_intersection = geometry.shape(self.properties['geometry'])
         if searched_bbox is not None:

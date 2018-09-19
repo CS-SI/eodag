@@ -27,7 +27,7 @@ from itertools import repeat, starmap
 import click
 import pyproj
 from requests.auth import AuthBase
-from tqdm import tqdm
+from tqdm import tqdm, tqdm_notebook
 
 
 # All modules using these should import them from utils package
@@ -184,6 +184,14 @@ class ProgressCallback(object):
         """
         if self.pb is None:
             self.pb = tqdm(total=max_size, unit='KB', unit_scale=True)
+        self.pb.update(current_size)
+
+
+class NotebookProgressCallback(ProgressCallback):
+
+    def __call__(self, current_size, max_size):
+        if self.pb is None:
+            self.pb = tqdm_notebook(total=max_size, unit='KB', unit_scale=True)
         self.pb.update(current_size)
 
 
