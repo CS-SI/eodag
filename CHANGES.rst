@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+0.6.1 (2018-09-19)
+++++++++++++++++++
+
+- Enhance error message for missing credentials
+- Enable EOProduct to remember its remote address for subsequent downloads
+
 0.6.0 (2018-08-09)
 ++++++++++++++++++
 
