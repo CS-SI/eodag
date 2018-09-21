@@ -59,7 +59,10 @@ class ArlasSearch(Search):
         )
 
         logger.info('Making search request at: %s', search_url)
-        response = requests.get(search_url, auth=auth)
+        if self.instance_name == 'airbus-ds':
+            response = requests.get(search_url)
+        else:
+            response = requests.get(search_url, auth=auth)
         try:
             logger.info('Checking response')
             response.raise_for_status()
