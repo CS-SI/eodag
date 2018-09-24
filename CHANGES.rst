@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+0.6.2 (2018-09-24)
+++++++++++++++++++
+
+- Updates catalog url for airbus-ds provider
+- Removes authentication for airbus-ds provider on catalog search
+
 0.6.1 (2018-09-19)
 ++++++++++++++++++
 
