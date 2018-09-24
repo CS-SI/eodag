@@ -312,7 +312,7 @@ airbus-ds:
       product_type: SR_1_SRA_A_
   search:
     plugin: ArlasSearch
-    api_endpoint: ' https://sobloo.eu/api/v1/services/explore'
+    api_endpoint: 'https://sobloo.eu/api/v1/services/explore'
     quicklook_endpoint: 'https://sobloo.eu/api/v1/services/quicklook'
     arlas_collection: catalog
     metadata_mapping:
