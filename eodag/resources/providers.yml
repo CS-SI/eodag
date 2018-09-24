@@ -312,8 +312,8 @@ airbus-ds:
       product_type: SR_1_SRA_A_
   search:
     plugin: ArlasSearch
-    api_endpoint: 'https://k8s.qualif.geohub.space/api/v1/services/explore'
-    quicklook_endpoint: 'https://k8s.qualif.geohub.space/api/v1/services/quicklook'
+    api_endpoint: 'https://sobloo.eu/api/v1/services/explore'
+    quicklook_endpoint: 'https://sobloo.eu/api/v1/services/quicklook'
     arlas_collection: catalog
     metadata_mapping:
       id: '$.properties.uid'
@@ -340,7 +340,7 @@ airbus-ds:
       quicklook: '$.properties.state.resources.quicklook'
   download:
     plugin: HTTPDownload
-    base_uri: 'https://k8s.qualif.geohub.space/api/v1/services/download/'
+    base_uri: 'https://sobloo.eu/api/v1/services/download/'
     archive_depth: 2
   auth:
     plugin: HTTPHeaderAuth

@@ -29,12 +29,17 @@ Available providers
 
 There are currently 6 available providers implemented on eodag:
 
-* **airbus-ds**: Airbus DS catalog for the copernicus program
-* **usgs**: U.S geological survey catalog for Landsat products
-* **AmazonWS**: Amazon public bucket for Sentinel 2 products
-* **theia-landsat**: French National Space Agency (CNES) catalog for Pleiades and Landsat products
-* **theia**: French National Space Agency (CNES) catalog for Sentinel 2 products
-* **peps**: French National Space Agency (CNES) catalog for Copernicus products (Sentinel 1, 2, 3)
+* `airbus-ds <https://sobloo.eu/>`_: Airbus DS catalog for the copernicus program
+
+* `USGS <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products (create an account on https://ers.cr.usgs.gov/register/)
+
+* `AmazonWS <http://sentinel-pds.s3-website.eu-central-1.amazonaws.com/>`_: Amazon public bucket for Sentinel 2 products
+
+* `theia-landsat <https://theia-landsat.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Pleiades and Landsat products
+
+* `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) catalog for Sentinel 2 products
+
+* `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Copernicus (Sentinel 1, 2, 3) products
 
 .. note::
 
