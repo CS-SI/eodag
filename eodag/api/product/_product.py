@@ -272,7 +272,7 @@ class EOProduct(object):
             if not os.path.exists(fs_location[:fs_location.index('.zip')]):
                 with zipfile.ZipFile(fs_location, 'r') as zfile:
                     fileinfos = tqdm(zfile.infolist(), unit='file',
-                                     desc='Extracting files from {}'.format(fs_location))
+                                     desc='Extracting files from {}'.format(os.path.basename(fs_location)))
                     for fileinfo in fileinfos:
                         zfile.extract(fileinfo, path=fs_location[:fs_location.index('.zip')])
             # Handle depth levels in the product archive. For example, if the downloaded archive was
