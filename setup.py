@@ -53,7 +53,7 @@ setup(
         'usgs',
         'boto3 == 1.7.64',
         'numpy',
-        'rasterio==1.0a12',
+        'rasterio',
         'protobuf',
         'grpcio',
         # To be able to do 'import concurrent.futures' in Python 2.7

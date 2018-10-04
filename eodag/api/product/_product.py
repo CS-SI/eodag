@@ -132,7 +132,7 @@ class EOProduct(object):
         width = int((max_x - min_x) / resolution)
         out_shape = (width, height)
         with rasterio.open(dataset_address) as src:
-            with WarpedVRT(src, dst_crs=crs, resampling=Resampling.bilinear) as vrt:
+            with WarpedVRT(src, crs=crs, resampling=Resampling.bilinear) as vrt:
                 array = vrt.read(1, window=vrt.window(*extent), out_shape=out_shape, resampling=Resampling.bilinear)
                 return xr.DataArray(array)
 

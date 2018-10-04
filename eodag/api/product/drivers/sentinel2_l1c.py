@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 
 import os
 import re
+import warnings
 
 import boto3
 import rasterio
@@ -57,15 +58,18 @@ class Sentinel2L1C(DatasetDriver):
         product_location_scheme = eo_product.location.split('://')[0]
         if product_location_scheme == 'file':
             top_level_mtd = os.path.join(re.sub(r'file://', '', eo_product.location), 'MTD_MSIL1C.xml')
-            with rasterio.open(top_level_mtd) as dataset:
-                for address in dataset.subdatasets:
-                    spatial_res = address.split(':')[-2]
-                    if band in self.SPATIAL_RES_PER_BANDS[spatial_res]:
-                        with rasterio.open(address) as subdataset:
-                            band_file_pattern = re.compile(self.BAND_FILE_PATTERN_TPL.format(band=band))
-                            for filename in filter(lambda f: band_file_pattern.match(f), subdataset.files):
-                                return filename
-            raise AddressNotFound
+            # Ignore the NotGeoreferencedWarning thrown by rasterio
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=UserWarning, message='Dataset has no geotransform set')
+                with rasterio.open(top_level_mtd) as dataset:
+                    for address in dataset.subdatasets:
+                        spatial_res = address.split(':')[-2]
+                        if band in self.SPATIAL_RES_PER_BANDS[spatial_res]:
+                            with rasterio.open(address) as subdataset:
+                                band_file_pattern = re.compile(self.BAND_FILE_PATTERN_TPL.format(band=band))
+                                for filename in filter(lambda f: band_file_pattern.match(f), subdataset.files):
+                                    return filename
+                raise AddressNotFound
         if product_location_scheme == 's3':
             access_key, access_secret = eo_product.downloader_auth.authenticate()
             s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=access_secret)

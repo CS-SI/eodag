@@ -35,7 +35,7 @@ from eodag.utils import DEFAULT_PROJ, slugify
 from eodag.utils.import_system import patch_owslib_requests
 
 
-logger = logging.getLogger('beodag.plugins.search.csw')
+logger = logging.getLogger('eodag.plugins.search.csw')
 
 SUPPORTED_REFERENCE_SCHEMES = [
     'WWW:DOWNLOAD-1.0-http--download',
@@ -104,8 +104,9 @@ class CSWSearch(Search):
             if rec.bbox.crs.code and rec.bbox.crs.code > 0:
                 code = ':'.join((str(rec.bbox.crs.id), str(rec.bbox.crs.code)))
             rec_proj = pyproj.Proj(init=code)
-            maxx, maxy = pyproj.transform(rec_proj, DEFAULT_PROJ, rec.bbox.maxx, rec.bbox.maxy)
-            minx, miny = pyproj.transform(rec_proj, DEFAULT_PROJ, rec.bbox.minx, rec.bbox.miny)
+            default_proj_as_pyproj = pyproj.Proj(DEFAULT_PROJ)
+            maxx, maxy = pyproj.transform(rec_proj, default_proj_as_pyproj, rec.bbox.maxx, rec.bbox.maxy)
+            minx, miny = pyproj.transform(rec_proj, default_proj_as_pyproj, rec.bbox.minx, rec.bbox.miny)
             bbox = (minx, miny, maxx, maxy)
         download_url = ''
         resource_filter = re.compile(self.config[SEARCH_DEF].get('resource_location_filter', ''))

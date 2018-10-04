@@ -33,4 +33,5 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 
+from eodag.utils import DEFAULT_PROJ
 from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressScheme, UnsupportedProvider

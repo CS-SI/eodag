@@ -172,8 +172,5 @@ class ArlasSearch(Search):
         try:
             response.raise_for_status()
         except requests.HTTPError:
-            import traceback as tb
-            logger.warning('Unable to determine the number of products satisfying the criteria. Got error:\n%s',
-                           tb.format_exc())
             return -1
         return response.json()['totalnb']

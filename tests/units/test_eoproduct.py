@@ -31,7 +31,7 @@ from shapely import geometry
 
 from tests import EODagTestCase
 from tests.context import (
-    Authentication, Download, EOProduct, NoDriver, Sentinel2L1C, UnsupportedDatasetAddressScheme,
+    Authentication, DEFAULT_PROJ, Download, EOProduct, NoDriver, Sentinel2L1C, UnsupportedDatasetAddressScheme,
 )
 
 
@@ -200,7 +200,7 @@ class TestEOProduct(EODagTestCase):
     def execute_get_data(product, crs=None, resolution=None, band=None, extent=None, give_back=()):
         """Call the get_data method of given product with given parameters, then return the computed data and the
         parameters passed in whom names are in give_back for further assertions in the calling test method"""
-        crs = crs or 'EPSG:4326'
+        crs = crs or DEFAULT_PROJ
         resolution = resolution or 0.0006
         band = band or 'B01'
         extent = extent or (2.1, 42.8, 2.2, 42.9)

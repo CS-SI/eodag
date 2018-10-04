@@ -25,7 +25,7 @@ from datetime import datetime
 from itertools import repeat, starmap
 
 import click
-import pyproj
+from rasterio.crs import CRS
 from requests.auth import AuthBase
 from tqdm import tqdm, tqdm_notebook
 
@@ -36,10 +36,10 @@ try:  # PY3
 except ImportError:  # PY2
     from urlparse import urljoin, urlparse, parse_qs, urlunparse  # noqa
 
-try:    # PY3
+try:  # PY3
     from urllib.parse import urlencode  # noqa
-except ImportError:     # PY2
-    from urllib import urlencode    # noqa
+except ImportError:  # PY2
+    from urllib import urlencode  # noqa
 
 
 class RequestsTokenAuth(AuthBase):
@@ -147,7 +147,7 @@ def maybe_generator(obj):
         yield obj
 
 
-DEFAULT_PROJ = pyproj.Proj(init='EPSG:4326')
+DEFAULT_PROJ = CRS.from_epsg(4326)
 
 
 def get_timestamp(date_time, date_format='%Y-%m-%d'):
