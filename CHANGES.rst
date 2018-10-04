@@ -1,6 +1,13 @@
 Release history
 ---------------
 
+0.6.3 (2018-09-24)
+++++++++++++++++++
+
+- Silences rasterio's NotGeoreferencedWarning warning when sentinel2_l1c driver tries to determine the address of a
+  requested band on the disk
+- Changes the `DEFAULT_PROJ` constant in `eodag.utils` from a `pyproj.Proj` instance to `rasterio.crs.CRS` instance
+
 0.6.2 (2018-09-24)
 ++++++++++++++++++
 
