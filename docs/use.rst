@@ -3,41 +3,7 @@
 Command line interface
 ======================
 
-Create a configuration file containing your credentials for each provider.  You can download
-:download:`this template <../user_conf_template.yml>`, which has the following layout:
-
-.. code-block:: yaml
-
-    outputs_prefix: # The path of the root directory for all your downloads
-    extract:    # whether to extract products downloaded as archives (true or false)
-    peps:
-        credentials:
-            username:
-            password:
-    theia:
-        credentials:
-            ident:
-            pass:
-    theia-landsat:
-        credentials:
-            username:
-            password:
-    USGS:
-        credentials:
-            username:
-            password:
-    AmazonWS:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-    airbus-ds:
-        credentials:
-            apikey:
-
-.. warning::
-
-    This file contains login information in clear text. Make sure you correctly configure access rules to it. It should
-    be read/write-able only by the current user of eodag.
+Make sure you correctly followed instructions on :ref:`user-config-file`.
 
 Then you can start playing with it:
 
@@ -83,14 +49,3 @@ of this bbox"
 
 * To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given (up to 3), the more
   verbose the tool is.
-
-.. note::
-
-    How to get Amazon Web Services access keys ?
-
-    * Create an account on AWS website: https://aws.amazon.com/fr/ (warning: A credit card number must be given because data
-      become paying after a given amount of downloaded data).
-    * Once the account is activated go to the identity and access management console: https://console.aws.amazon.com/iam/home#/home
-    * Click on user, then on your user name and then on security credentials.
-    * In access keys, click on create access key.
-    * Add these credentials to the user conf file.

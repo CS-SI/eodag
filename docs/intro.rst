@@ -31,7 +31,7 @@ There are currently 6 available providers implemented on eodag:
 
 * `airbus-ds <https://sobloo.eu/>`_: Airbus DS catalog for the copernicus program
 
-* `USGS <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products (create an account on https://ers.cr.usgs.gov/register/)
+* `USGS <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
 
 * `AmazonWS <http://sentinel-pds.s3-website.eu-central-1.amazonaws.com/>`_: Amazon public bucket for Sentinel 2 products
 
@@ -54,3 +54,66 @@ There are currently 6 available providers implemented on eodag:
     At the moment, you are only able to do this from source (clone the repo, do your modification, then install your version of eodag).
     In the future, it will be easier to integrate new provider configurations, to plug-in new search/download/crunch implementations,
     and to configure the order of preference of providers for search.
+
+.. _user-config-file:
+
+How to configure authentication for available providers
+-------------------------------------------------------
+
+Create a configuration file containing your credentials for each provider.  You can download
+:download:`this template <../user_conf_template.yml>`, which has the following layout:
+
+.. code-block:: yaml
+
+    outputs_prefix: # The path of the root directory for all your downloads
+    extract:    # whether to extract products downloaded as archives (true or false)
+    peps:
+        credentials:
+            username:
+            password:
+    theia:
+        credentials:
+            ident:
+            pass:
+    theia-landsat:
+        credentials:
+            username:
+            password:
+    USGS:
+        credentials:
+            username:
+            password:
+    AmazonWS:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+    airbus-ds:
+        credentials:
+            apikey:
+
+.. warning::
+
+    This file contains login information in clear text. Make sure you correctly configure access rules to it. It should
+    be read/write-able only by the current user of eodag.
+
+Fill this configuration file with the credentials you obtained from each
+provider.
+
+For USGS, create an account here: https://ers.cr.usgs.gov/register/
+
+For theia-landsat and theia, you only need to register once here: https://sso.theia-land.fr/theia/register/register.xhtml
+
+For peps, create an account here: https://peps.cnes.fr/rocket/#/register
+
+For AmazonWS:
+
+    * Create an account on AWS website: https://aws.amazon.com/fr/ (warning:
+      A credit card number must be given because fees apply after a given
+      amount of downloaded data).
+    * Once the account is activated go to the identity and access management console: https://console.aws.amazon.com/iam/home#/home
+    * Click on user, then on your user name and then on security credentials.
+    * In access keys, click on create access key.
+    * Add these credentials to the user conf file.
+
+For airbus-ds, create an account here for an api key: https://auth.sobloo.eu/auth/realms/IDP/protocol/openid-connect/auth?client_id=dias&redirect_uri=https%3A%2F%2Fsobloo.eu%2Fsites%2Fall%2Fthemes%2Fdias%2Ftemplates%2Fsso%2Fpopup-signin.html&response_type=id_token%20token&scope=openid&state=176305cc793f40fda565e2260b851d4c&nonce=234b2d571bb4447db8d3385f565255f7&display=popup
+
