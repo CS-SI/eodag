@@ -3,26 +3,41 @@
 Introduction
 ============
 
-EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
-aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
-data provider. The EODAG SDK is structured around three functions:
+Nowadays, we observe a rise in publicly accessible Earth Observation (EO) data.
+Together with it, there is more and more EO data providers, each potentially having
+a different data access policy. This difference is visible at various levels:
+in the data discovery (CSW, OpenSearch more or less custom, etc.), in the
+product access (object storage, downloads, direct file system access, etc.), in
+the storage structure and in the authentication mechanisms (OAUTH, JWT, basic
+auth,...). All these different technologies add a knowledge overhead on a user
+(end-user or application developer) wishing to take advantage of these
+data. EODAG was designed to solve this problem.
+
+EODAG (Earth Observation Data Access Gateway) is a command line tool and a
+plugin-oriented Python framework for searching, aggregating results and
+downloading remote sensed images while offering a unified API for data access
+regardless of the data provider. The EODAG SDK is structured around three
+functions:
 
     * List product types: list of supported products and their description
 
-    * Search products (by product type) : searches products according to the search criteria provided
+    * Search products (by product type) : searches products according to the
+      search criteria provided
 
     * Download products : download product “as is"
 
-EODAG is developed in Python. It is structured according to a modular plugin architecture, easily extensible and able to
-integrate new data providers. Three types of plugins compose the tool:
+EODAG is developed in Python. It is structured according to a modular plugin
+architecture, easily extensible and able to integrate new data providers. Three
+types of plugins compose the tool:
 
-    * Catalog search plugins, responsible for searching data (OpenSearch, CSW, ...), building paths, retrieving quicklook,
-      combining results
+    * Catalog search plugins, responsible for searching data (OpenSearch, CSW, ...),
+      building paths, retrieving quicklook, combining results
 
-    * Download plugins, allowing to download and retrieve data locally (via FTP, HTTP, ..), always with the same directory
-      organization
+    * Download plugins, allowing to download and retrieve data locally (via FTP, HTTP, ..),
+      always with the same directory organization
 
-    * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
+    * Authentication plugins, which are used to authenticate the user on the
+      external services used (JSON Token, Basic Auth, OAUTH, ...).
 
 Available providers
 -------------------
@@ -45,15 +60,14 @@ There are currently 6 available providers implemented on eodag:
 
     For developers, there are 2 ways for adding support for a new provider:
 
-    * By configuring existing plugins: a provider is an instance of already implemented plugins (search, download) =>
-      this only involves knowing how to write ``yaml`` documents.
+    * By configuring existing plugins: a provider is an instance of already
+      implemented plugins (search, download) => this only involves knowing how
+      to write ``yaml`` documents.
 
-    * By developing new plugins (most of the time it will be search plugins) and configuring instances of these plugins
-      (see the ``plugins`` directory to see some examples of plugins).
+    * By developing new plugins (most of the time it will be search plugins)
+      and configuring instances of these plugins.
 
-    At the moment, you are only able to do this from source (clone the repo, do your modification, then install your version of eodag).
-    In the future, it will be easier to integrate new provider configurations, to plug-in new search/download/crunch implementations,
-    and to configure the order of preference of providers for search.
+    See :ref:`creating_plugins` for more details on how to extend eodag.
 
 .. _user-config-file:
 
@@ -93,8 +107,9 @@ Create a configuration file containing your credentials for each provider.  You 
 
 .. warning::
 
-    This file contains login information in clear text. Make sure you correctly configure access rules to it. It should
-    be read/write-able only by the current user of eodag.
+    This file contains login information in clear text. Make sure you correctly
+    configure access rules to it. It should be read/write-able only by the
+    current user of eodag.
 
 Fill this configuration file with the credentials you obtained from each
 provider.
