@@ -6,6 +6,11 @@
 Welcome to eodag's documentation!
 =================================
 
+The brand new Earth Observation Data Access Gateway:
+https://bitbucket.org/geostorm/eodag
+
+-------------------------------------------------------------------------------
+
 .. toctree::
    :maxdepth: 3
 
