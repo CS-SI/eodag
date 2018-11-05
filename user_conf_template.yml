@@ -16,30 +16,81 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Only known system configuration can be overridden for their credentials config key under auth config.
-# Unknown keys will simply be ignored, and the corresponding configuration not overridden.
-outputs_prefix:
-extract: # true or false
+outputs_prefix: # where to store downloaded products for every providers.
+                # The value in each provider config takes precedence.
+extract: # whether to extract for every providers (true or false).
+         # The value in each provider config takes precedence.
 peps:
-    credentials:
-        username:
-        password:
+    priority:
+    search:
+        product_location_scheme:  # one of http, https, file, ftp. This parameter
+                                  # tells where the products that will be searched
+                                  # through this provider (e.g. "file" means that
+                                  # the product is available on the local filesystem)
+    download:
+        extract:
+        outputs_prefix:
+        dl_url_params:  # additional parameters to pass over to the download url
+                        # as an url parameter
+    auth:
+        credentials:
+            username:
+            password:
 theia:
-    credentials:
-        ident:
-        pass:
+    priority:
+    search:
+        product_location_scheme:
+    download:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+    auth:
+        credentials:
+            ident:
+            pass:
 theia-landsat:
-    credentials:
-        username:
-        password:
+    priority:
+    search:
+        product_location_scheme:
+    download:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+    auth:
+        credentials:
+            username:
+            password:
 USGS:
-    credentials:
-        username:
-        password:
+    priority:
+    api:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+        product_location_scheme:
+        credentials:
+            username:
+            password:
 AmazonWS:
-    credentials:
-        aws_access_key_id:
-        aws_secret_access_key:
+    priority:
+    search:
+        product_location_scheme:
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+    download:
+        extract:
+        outputs_prefix:
+        associated_bucket:
 airbus-ds:
-    credentials:
-        apikey:
+    priority:
+    search:
+        arlas_collection:
+        product_location_scheme:
+    download:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+    auth:
+        credentials:
+            apikey:

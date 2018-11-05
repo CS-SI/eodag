@@ -15,11 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-USGS:
+---
+!provider
+  name: USGS
   priority: 0
-  api:
-    plugin: UsgsApi
+  api: !plugin
+    name: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
     metadata_mapping:
       id: '$.entityId'
@@ -35,10 +36,12 @@ USGS:
       dataset: LANDSAT_8_C1
       catalog_node: EE  # Possible values: CWIC, EE, HDDS, LPCS
 
-AmazonWS:
+---
+!provider
+  name: AmazonWS
   priority: 0
-  search:
-    plugin: AwsSearch
+  search: !plugin
+    name: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
     product_location_scheme: 's3'
     metadata_mapping:
@@ -77,13 +80,15 @@ AmazonWS:
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
-  download:
-    plugin: AwsDownload
+  download: !plugin
+    name: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
-  auth:
-    plugin: OAuth
+  auth: !plugin
+    name: OAuth
 
-theia-landsat:
+---
+!provider
+  name: theia-landsat
   priority: 0
   products:
     LS_REFLECTANCE:
@@ -101,8 +106,8 @@ theia-landsat:
     PLD_BUNDLE:
       collection: Pleiades
       product_type: Bundle (Pan, XS)
-  search:
-    plugin: RestoSearch
+  search: !plugin
+    name: RestoSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
     metadata_mapping:
       id: '$.id'
@@ -136,11 +141,11 @@ theia-landsat:
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
       quicklook: '$.properties.quicklook'
-  download:
-    plugin: HTTPDownload
+  download: !plugin
+    name: HTTPDownload
     base_uri: 'https://theia-landsat.cnes.fr/resto'
-  auth:
-    plugin: OIDCAuthorizationCodeFlowAuth
+  auth: !plugin
+    name: OIDCAuthorizationCodeFlowAuth
     authorization_uri: 'https://sso.theia-land.fr/oauth2/authorize'
     redirect_uri: 'https://theia-landsat.cnes.fr/rocket/'
     authentication_uri: 'https://sso.theia-land.fr/commonauth'
@@ -153,10 +158,12 @@ theia-landsat:
     token_provision: qs # One of qs or header. If qs, token_qs_key is mandatory
     token_qs_key: '_bearer'
 
-theia:
+---
+!provider
+  name: theia
   priority: 0
-  search:
-    plugin: RestoSearch
+  search: !plugin
+    name: RestoSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api'
     metadata_mapping:
       id: '$.id'
@@ -193,19 +200,21 @@ theia:
     S2_MSI_L2A:
       product_type: REFLECTANCE
       collection: SENTINEL2
-  download:
-    plugin: HTTPDownload
+  download: !plugin
+    name: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
     dl_url_params:
       issuerId: theia
-  auth:
-    plugin: TokenAuth
+  auth: !plugin
+    name: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
 
-peps:
+---
+!provider
+  name: peps
   priority: 1
-  search:
-    plugin: RestoSearch
+  search: !plugin
+    name: RestoSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api'
     metadata_mapping:
       id: '$.id'
@@ -274,17 +283,19 @@ peps:
     S3_LAN:
       product_type: SR_2_LAN___
       collection: S3
-  download:
-    plugin: HTTPDownload
+  download: !plugin
+    name: HTTPDownload
     base_uri: 'https://peps.cnes.fr/resto'
     archive_depth: 2
     dl_url_params:
       issuerId: peps
-  auth:
-    plugin: GenericAuth
+  auth: !plugin
+    name: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 
-airbus-ds:
+---
+!provider
+  name: airbus-ds
   priority: 0
   products:
     S2_MSI_L1C:
@@ -310,8 +321,8 @@ airbus-ds:
       product_type: SR_1_SRA_BS
     S3_SRA_A_BS:
       product_type: SR_1_SRA_A_
-  search:
-    plugin: ArlasSearch
+  search: !plugin
+    name: ArlasSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/explore'
     quicklook_endpoint: 'https://sobloo.eu/api/v1/services/quicklook'
     arlas_collection: catalog
@@ -338,11 +349,11 @@ airbus-ds:
         - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
       quicklook: '$.properties.state.resources.quicklook'
-  download:
-    plugin: HTTPDownload
+  download: !plugin
+    name: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download/'
     archive_depth: 2
-  auth:
-    plugin: HTTPHeaderAuth
+  auth: !plugin
+    name: HTTPHeaderAuth
     headers:
       Authorization: "Apikey {apikey}"
