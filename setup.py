@@ -61,6 +61,7 @@ setup(
         'jsonpath-rw',
         'lxml',
         'xarray',
+        'unidecode == 1.0.22',
     ],
     extras_require={
         'dev': [

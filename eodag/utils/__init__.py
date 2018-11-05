@@ -18,6 +18,7 @@
 from __future__ import unicode_literals
 
 import re
+import string
 import sys
 import types
 import unicodedata
@@ -28,6 +29,7 @@ import click
 from rasterio.crs import CRS
 from requests.auth import AuthBase
 from tqdm import tqdm, tqdm_notebook
+from unidecode import unidecode
 
 
 # All modules using these should import them from utils package
@@ -117,6 +119,29 @@ def utf8_everywhere(mapping):
         else value),
         mapping
     )
+
+
+def sanitize(value):
+    """Sanitize string to be used as a name of a directory.
+    >>> sanitize('productName')
+    'productName'
+    >>> sanitize('name with multiple  spaces')
+    'name_with_multiple_spaces'
+    >>> sanitize('âtre fête île alcôve bûche çà génèse où Noël ovoïde capharnaüm')
+    'atre_fete_ile_alcove_buche_ca_genese_ou_Noel_ovoide_capharnaum'
+    >>> sanitize('replace,ponctuation:;signs!?byunderscorekeeping-hyphen.dot_and_underscore')
+    'replace_ponctuation_signs_byunderscorekeeping-hyphen.dot_and_underscore'
+    """
+    # remove accents
+    rv = unidecode(value)
+    # replace punctuation signs and spaces by underscore
+    ## keep hyphen, dot and underscore from punctuation
+    tobereplaced = re.sub('[-_.]', '', string.punctuation)
+    ## add spaces to be removed
+    tobereplaced += '\s'
+
+    rv = re.sub('[' + tobereplaced + ']+', '_', rv)
+    return str(rv)
 
 
 def mutate_dict_in_place(func, mapping):
