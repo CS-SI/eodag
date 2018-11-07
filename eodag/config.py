@@ -15,19 +15,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
 import tempfile
 
 import yaml
-import yaml.parser
 import yaml.constructor
+import yaml.parser
+from pkg_resources import resource_filename
 
-from eodag.utils import utf8_everywhere
+from eodag.utils import merge_mappings, utf8_everywhere
 
 
 logger = logging.getLogger('eodag.config')
@@ -97,51 +96,22 @@ class ProviderConfig(yaml.YAMLObject):
         self.products = products or {}
         self.download = download
         self.auth = auth
-        # self.outputs_prefix = tempfile.gettempdir()
-        # self.extract = True
         # each additional parameter becomes an attribute of the instance
         for key, value in kwargs:
             setattr(self, key, value)
 
-    def override_from_file(self, file_path):
-        """Override the configuration parameters from a file
+    def update(self, mapping):
+        """Update the configuration parameters with values from `mapping`
 
-        :param file_path: The path to the configuration file to load
-        :type file_path: str or unicode
+        :param dict mapping: The mapping from which to override configuration parameters
         """
-        with open(file_path, 'r') as fd:
-            try:
-                conf_from_file = yaml.safe_load(fd)
-                utf8_everywhere(conf_from_file)
-                build_env_from_mapping(conf_from_file)
-                self.override_from_env()
-            except yaml.constructor.Constructor:
-                import traceback
-                logger.error("Could not load the config file. Please provide a standard yaml config file. "
-                             "Got error:\n%s", traceback.format_exc())
-
-    def override_from_env(self):
-        """Override the configuration parameters from environment variables"""
-        plugin_params = {'api', 'search', 'download', 'auth'}
-        # First override all params at provider-level
-        for param_name in set(self.__dict__.keys()).difference(plugin_params):
-            default_value = getattr(self, param_name)
-            if isinstance(default_value, dict):
-                update_mapping_inplace_from_env_var(
-                    'EODAG__{}__{}'.format(self.name.upper(), param_name.upper()),
-                    default_value
-                )
-            else:
-                env_var_name = 'EODAG__{}__{}'.format(self.name.upper(), param_name.upper())
-                setattr(self, param_name, os.environ.get(env_var_name, default_value))
-
-        # Then override plugins configurations
-        for param_name in plugin_params:
-            default_value = getattr(self, param_name, None)
-            if default_value is not None:
-                default_value.override_from_env(
-                    'EODAG__{}__{}'.format(self.name.upper(), param_name.upper())
-                )
+        merge_mappings(self.__dict__, {
+            key: value for key, value in mapping.items() if key not in ('name', 'api', 'search', 'download', 'auth')
+        })
+        for key in ('api', 'search', 'download', 'auth'):
+            current_value = getattr(self, key, None)
+            if current_value is not None:
+                current_value.update(mapping.get(key, {}))
 
 
 class PluginConfig(yaml.YAMLObject):
@@ -156,88 +126,109 @@ class PluginConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = '!plugin'
 
-    def __init__(self, name, metadata_mapping=None, **free_params):
+    def __init__(self, name, **free_params):
         self.name = name
-        self.metadata_mapping = metadata_mapping or {}
         for key, value in free_params:
             setattr(self, key, value)
 
-    def override_from_env(self, prefix):
-        """Override configuration from environment variable whose name begin with `prefix`
+    def update(self, mapping):
+        """Update the configuration parameters with values from `mapping`
 
-        :param prefix: The prefix of the env var to look for
-        :type prefix: str or unicode
+        :param dict mapping: The mapping from which to override configuration parameters
         """
-        for attr, value in self.__dict__.items():
-            if attr not in ('name', 'metadata_mapping'):
-                if isinstance(value, list):
-                    continue
-                env_var = prefix + '__{}'.format(attr.upper())
-                if isinstance(value, dict):
-                    update_mapping_inplace_from_env_var(
-                        env_var,
-                        value
-                    )
-                else:
-                    override = os.environ.get(env_var, getattr(self, attr, None))
-                    if attr == 'extract':
-                        override = bool(override)
-                    setattr(self, attr, override)
+        merge_mappings(self.__dict__, mapping)
 
 
-def update_mapping_inplace_from_env_var(prefix, mapping, max_depth=3):
-    """Recursively update a mapping in place from environment variables that start with `prefix`.
+def load_default_config():
+    """Build the providers configuration into a dictionnary
 
-    :param prefix: The prefix with which the environment variable starts
-    :type prefix: str or unicode
-    :param dict mapping: The mapping to update
-    :param max_depth: (optional) The maximum recursion depth allowed
+    :returns: The default provider's configuration
+    :rtype: dict
     """
-    env_var_pattern = prefix + '__{}'
-    scalars = set(
-        key for key, value in mapping.items()
-        if not isinstance(value, dict) and not isinstance(value, list)
-    )
-    # First override scalars
-    for key in scalars:
-        env_var = env_var_pattern.format(key.upper())
-        mapping[key] = os.environ.get(env_var, mapping[key])
-
-    nested = set(mapping.keys()).difference(scalars)
-    while max_depth >= 0:
-        max_depth -= 1
-        # Override nested dicts (we don't support lists)
-        for key in nested:
-            if isinstance(mapping[key], list):
-                continue
-            env_var = env_var_pattern.format(key)
-            if env_var in os.environ:
-                update_mapping_inplace_from_env_var(env_var, mapping[key], max_depth=max_depth)
+    config = {}
+    with open(resource_filename('eodag', 'resources/providers.yml'), 'r') as fh:
+        try:
+            # Providers configs are stored in this file as separated yaml documents
+            # Load all of it
+            providers_configs = yaml.load_all(fh)
+        except yaml.parser.ParserError as e:
+            logger.error('Unable to load configuration')
+            raise e
+        for provider_config in providers_configs:
+            # For all providers, set the default outputs_prefix of its download plugin as tempdir in a portable way
+            for param_name in ('download', 'api'):
+                if param_name in vars(provider_config):
+                    param_value = getattr(provider_config, param_name)
+                    param_value.outputs_prefix = tempfile.gettempdir()
+            config[provider_config.name] = provider_config
+        return config
 
 
-def build_env_from_mapping(mapping, prefix='EODAG__'):
-    """Build environment variables from a given mapping with their names starting with `prefix`.
+def override_config_from_file(config, file_path):
+    """Override a configuration with the values in a file
 
-    This function recursively populates `os.environ` with variable whose names start with the `prefix` and the other
-    parts of the name come from the `mapping`. For example, a mapping {"var1": {"var2": 1, "var3": 2}} will generate
-    EODAG__VAR1__VAR2 and EODAG_VAR1__VAR3 environment variables with values 1 and 2 respectively.
-
-    :param dict mapping: The mapping to be expanded as environment variables
-    :param prefix: (Optional) The prefix of the environment variables names
-    :type prefix: str or unicode
+    :param dict config: An eodag providers configuration dictionary
+    :param file_path: The path to the file from where the new values will be read
+    :type file_path: str or unicode
     """
-    try:
-        key, value = mapping.popitem()
-        if not isinstance(value, list):
-            env_var = prefix + key.replace('-', '_').upper()
-            if isinstance(value, dict):
-                build_env_from_mapping(value, prefix=(env_var + '__'))
-            else:
-                # Populate the env
-                if isinstance(value, bool):
-                    os.environ[env_var] = 'true' if value else 'false'
-                else:
-                    os.environ[env_var] = value
-        build_env_from_mapping(mapping, prefix)
-    except KeyError:
-        return
+    with open(os.path.abspath(os.path.realpath(file_path)), 'r') as fh:
+        try:
+            config_in_file = yaml.safe_load(fh)
+            utf8_everywhere(config_in_file)
+        except yaml.parser.ParserError as e:
+            logger.error('Unable to load user configuration file')
+            raise e
+    override_config_from_mapping(config, config_in_file)
+
+
+def override_config_from_env(config):
+    """Override a configuration with environment variables values
+
+    :param dict config: An eodag providers configuration dictionary
+    """
+    def build_mapping_from_env(env_var, env_value, mapping):
+        """Recursively build a dictionary from an environment variable.
+
+        The environment variable must respect the pattern: KEY1__KEY2__[...]__KEYN. It will be transformed to::
+
+            {
+                "key1": {
+                    "key2": {
+                        {...}
+                    }
+                }
+            }
+
+        :param env_var: The environment variable to be transformed into a dictionary
+        :type env_var: str or unicode
+        :param env_value: The value from environment variable
+        :type env_value: str or unicode
+        :param dict mapping: The mapping in which the value will be created
+        """
+        parts = env_var.split('__')
+        if len(parts) == 1:
+            mapping[parts[0]] = env_value
+        else:
+            mapping[parts[0]] = {}
+            build_mapping_from_env(
+                '__'.join(parts[1:]),
+                env_value,
+                mapping[parts[0]]
+            )
+
+    mapping_from_env = {}
+    for env_var in os.environ:
+        if env_var.startswith('EODAG__'):
+            build_mapping_from_env(env_var[len('EODAG__'):].lower(), os.environ[env_var], mapping_from_env)
+
+    override_config_from_mapping(config, mapping_from_env)
+
+
+def override_config_from_mapping(config, mapping):
+    """Override a configuration with the values in a mapping
+
+    :param dict config: An eodag providers configuration dictionary
+    :param dict mapping: The mapping containing the values to be overriden
+    """
+    for provider, new_conf in mapping.items():
+        config.setdefault(provider, ProviderConfig(provider)).update(new_conf)

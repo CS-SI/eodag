@@ -15,11 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-outputs_prefix: # where to store downloaded products for every providers.
-                # The value in each provider config takes precedence.
-extract: # whether to extract for every providers (true or false).
-         # The value in each provider config takes precedence.
 peps:
     priority:
     search:
@@ -28,10 +23,9 @@ peps:
                                   # through this provider (e.g. "file" means that
                                   # the product is available on the local filesystem)
     download:
-        extract:
-        outputs_prefix:
-        dl_url_params:  # additional parameters to pass over to the download url
-                        # as an url parameter
+        extract:  # whether to extract the downloaded products (true or false).
+        outputs_prefix: # where to store downloaded products.
+        dl_url_params:  # additional parameters to pass over to the download url as an url parameter
     auth:
         credentials:
             username:

@@ -297,6 +297,15 @@ plugin topic to which they map:
 * 'eodag.plugins.download' : :class:`~eodag.plugins.download.Download`
 * 'eodag.plugins.search'   : :class:`~eodag.plugins.search.base.Search`
 
+
+Providers configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: eodag.config
+   :members:
+   :undoc-members:
+
+
 Utils
 -----
 

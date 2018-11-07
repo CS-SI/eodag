@@ -138,6 +138,44 @@ def mutate_dict_in_place(func, mapping):
             mapping[key] = func(value)
 
 
+def merge_mappings(mapping1, mapping2):
+    """Merge two mappings with string keys, values from `mapping2` overriding values from `mapping1`.
+
+    Do its best to detect the key in `mapping1` to override. For example, let's say we have::
+
+        mapping2 = {"keya": "new"}
+        mapping1 = {"keyA": "obsolete"}
+
+    Then::
+
+        merge_mappings(mapping1, mapping2) ==> {"keyA": "new"}
+
+    If mapping2 has a key that cannot be detected in mapping1, this new key is added to mapping1 as is.
+
+    :param dict mapping1: The mapping containing values to be overridden
+    :param dict mapping2: The mapping containing values that will override the first mapping
+    """
+    # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
+    m1_keys_lowercase = {key.lower(): key for key in mapping1}
+    for key, value in mapping2.items():
+        if isinstance(value, dict):
+            try:
+                merge_mappings(mapping1[key], value)
+            except KeyError:
+                # If the key from mapping2 is not in mapping1, it is either key is the lowercased form of the
+                # corresponding key in mapping1 or because key is a new key to be added in mapping1
+                current_value = mapping1.setdefault(m1_keys_lowercase.get(key, key), {})
+                if not current_value:
+                    current_value.update(value)
+                else:
+                    merge_mappings(current_value, value)
+        else:
+            # Even for "scalar" values (a.k.a not nested structures), first check if the key from mapping1 is not the
+            # lowercase version of a key in mapping2. Otherwise, create the key in mapping1. This is the meaning of
+            # m1_keys_lowercase.get(key, key)
+            mapping1[m1_keys_lowercase.get(key, key)] = value
+
+
 def maybe_generator(obj):
     """Generator function that get an arbitrary object and generate values from it if the object is a generator."""
     if isinstance(obj, types.GeneratorType):
