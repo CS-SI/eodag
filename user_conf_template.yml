@@ -64,7 +64,7 @@ USGS:
         credentials:
             username:
             password:
-AmazonWS:
+aws_s3_sentinel2_l1c:
     priority:
     search:
         product_location_scheme:
@@ -76,7 +76,7 @@ AmazonWS:
         extract:
         outputs_prefix:
         associated_bucket:
-airbus-ds:
+sobloo:
     priority:
     search:
         arlas_collection:

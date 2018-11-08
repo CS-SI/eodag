@@ -1,0 +1,19 @@
+usgs:
+  priority: 5
+  api:
+    extract: False
+    credentials:
+      username: usr
+      password: pwd
+
+aws_s3_sentinel2_l1c:
+  search:
+    product_location_scheme: 'file'
+  auth:
+    credentials:
+      aws_access_key_id: access-key-id
+      aws_secret_access_key: secret-access-key
+
+peps:
+  download:
+    outputs_prefix: /data

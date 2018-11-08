@@ -17,10 +17,10 @@
 # limitations under the License.
 ---
 !provider
-  name: USGS
+  name: usgs
   priority: 0
   api: !plugin
-    name: UsgsApi
+    type: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
     metadata_mapping:
       id: '$.entityId'
@@ -39,10 +39,10 @@
 
 ---
 !provider
-  name: AmazonWS
+  name: aws_s3_sentinel2_l1c
   priority: 0
   search: !plugin
-    name: AwsSearch
+    type: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/'
     product_location_scheme: 's3'
     metadata_mapping:
@@ -82,10 +82,10 @@
       product_type: L1C
       collection: Sentinel2
   download: !plugin
-    name: AwsDownload
+    type: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
   auth: !plugin
-    name: OAuth
+    type: OAuth
 
 ---
 !provider
@@ -108,7 +108,7 @@
       collection: Pleiades
       product_type: Bundle (Pan, XS)
   search: !plugin
-    name: RestoSearch
+    type: RestoSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
     product_location_scheme: https
     metadata_mapping:
@@ -144,11 +144,11 @@
       productVersion: '$.properties.version'
       quicklook: '$.properties.quicklook'
   download: !plugin
-    name: HTTPDownload
+    type: HTTPDownload
     base_uri: 'https://theia-landsat.cnes.fr/resto'
     extract: true
   auth: !plugin
-    name: OIDCAuthorizationCodeFlowAuth
+    type: OIDCAuthorizationCodeFlowAuth
     authorization_uri: 'https://sso.theia-land.fr/oauth2/authorize'
     redirect_uri: 'https://theia-landsat.cnes.fr/rocket/'
     authentication_uri: 'https://sso.theia-land.fr/commonauth'
@@ -166,7 +166,7 @@
   name: theia
   priority: 0
   search: !plugin
-    name: RestoSearch
+    type: RestoSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api'
     product_location_scheme: https
     metadata_mapping:
@@ -205,13 +205,13 @@
       product_type: REFLECTANCE
       collection: SENTINEL2
   download: !plugin
-    name: HTTPDownload
+    type: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
     extract: true
     dl_url_params:
       issuerId: theia
   auth: !plugin
-    name: TokenAuth
+    type: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
 
 ---
@@ -219,7 +219,7 @@
   name: peps
   priority: 1
   search: !plugin
-    name: RestoSearch
+    type: RestoSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api'
     product_location_scheme: https
     metadata_mapping:
@@ -290,19 +290,19 @@
       product_type: SR_2_LAN___
       collection: S3
   download: !plugin
-    name: HTTPDownload
+    type: HTTPDownload
     base_uri: 'https://peps.cnes.fr/resto'
     extract: true
     archive_depth: 2
     dl_url_params:
       issuerId: peps
   auth: !plugin
-    name: GenericAuth
+    type: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 
 ---
 !provider
-  name: airbus-ds
+  name: sobloo
   priority: 0
   products:
     S2_MSI_L1C:
@@ -329,7 +329,7 @@
     S3_SRA_A_BS:
       product_type: SR_1_SRA_A_
   search: !plugin
-    name: ArlasSearch
+    type: ArlasSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/explore'
     quicklook_endpoint: 'https://sobloo.eu/api/v1/services/quicklook'
     arlas_collection: catalog
@@ -357,11 +357,11 @@
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
       quicklook: '$.properties.state.resources.quicklook'
   download: !plugin
-    name: HTTPDownload
+    type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download/'
     archive_depth: 2
     extract: true
   auth: !plugin
-    name: HTTPHeaderAuth
+    type: HTTPHeaderAuth
     headers:
       Authorization: "Apikey {apikey}"

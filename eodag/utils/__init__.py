@@ -25,6 +25,7 @@ from datetime import datetime
 from itertools import repeat, starmap
 
 import click
+import six
 from rasterio.crs import CRS
 from requests.auth import AuthBase
 from tqdm import tqdm, tqdm_notebook
@@ -173,7 +174,20 @@ def merge_mappings(mapping1, mapping2):
             # Even for "scalar" values (a.k.a not nested structures), first check if the key from mapping1 is not the
             # lowercase version of a key in mapping2. Otherwise, create the key in mapping1. This is the meaning of
             # m1_keys_lowercase.get(key, key)
-            mapping1[m1_keys_lowercase.get(key, key)] = value
+            current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
+            if current_value is not None and isinstance(value, six.string_types):
+                current_value_type = type(current_value)
+                # Bool is a type with special meaning in Python, thus the special case
+                if current_value_type is bool:
+                    if value.capitalize() not in ('True', 'False'):
+                        raise ValueError('Only true or false strings (case insensitive) are allowed for booleans')
+                    # Get the real Python value of the boolean. e.g: value='tRuE' => eval(value.capitalize())=True.
+                    # str.capitalize() transforms the first character of the string to capital and lowercases the rest
+                    mapping1[m1_keys_lowercase[key]] = eval(value.capitalize())
+                else:
+                    mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+            else:
+                mapping1[key] = value
 
 
 def maybe_generator(obj):

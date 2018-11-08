@@ -46,7 +46,7 @@ RESOURCES_PATH = jp(dirn(__file__), '..', 'eodag', 'resources')
 class EODagTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.provider = 'airbus-ds'
+        self.provider = 'sobloo'
         self.download_url = ('https://k8s.qualif.geohub.space/api/v1/services/download/8ff765a2-e089-465d-a48f-'
                              'cc27008a0962')
         self.local_filename = 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'

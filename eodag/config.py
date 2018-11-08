@@ -26,7 +26,8 @@ import yaml.constructor
 import yaml.parser
 from pkg_resources import resource_filename
 
-from eodag.utils import merge_mappings, utf8_everywhere
+from eodag.utils import merge_mappings, utf8_everywhere, slugify
+from eodag.utils.exceptions import ValidationError
 
 
 logger = logging.getLogger('eodag.config')
@@ -89,7 +90,14 @@ class ProviderConfig(yaml.YAMLObject):
     yaml_tag = '!provider'
 
     def __init__(self, name, priority=0, api=None, search=None, products=None, download=None, auth=None, **kwargs):
-        self.name = name.replace('-', '_')
+        if all(param is None for param in (api, search, download, auth)):
+            raise ValidationError('A provider must implement at least one plugin')
+        if api is not None and any(topic is not None for topic in (search, download, auth)):
+            raise ValidationError(
+                'Cannot create a provider implementing api and any of search, download or auth '
+                'plugins at the same time'
+            )
+        self.name = slugify(name).replace('-', '_')
         self.priority = priority
         self.api = api
         self.search = search
@@ -99,6 +107,21 @@ class ProviderConfig(yaml.YAMLObject):
         # each additional parameter becomes an attribute of the instance
         for key, value in kwargs:
             setattr(self, key, value)
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        node_keys = tuple(node_key.value for node_key, _ in node.value)
+        if 'name' not in node_keys:
+            raise ValidationError('Provider config must have name key')
+        if not any(k in node_keys for k in ('api', 'search', 'download', 'auth')):
+            raise ValidationError('A provider must implement at least one plugin')
+        if 'api' in node_keys and any(k in node_keys for k in ('search', 'download', 'auth')):
+            raise ValidationError('A provider implementing an Api plugin must not implement any other type of plugin')
+        for node_key, node_value in node.value:
+            if node_key.value == 'name':
+                node_value.value = slugify(node_value.value).replace('-', '_')
+                break
+        return loader.construct_yaml_object(node, cls)
 
     def update(self, mapping):
         """Update the configuration parameters with values from `mapping`
@@ -126,10 +149,17 @@ class PluginConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = '!plugin'
 
-    def __init__(self, name, **free_params):
-        self.name = name
+    def __init__(self, plugin_type, **free_params):
+        self.type = plugin_type
         for key, value in free_params:
             setattr(self, key, value)
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        node_keys = (node_key.value for node_key, _ in node.value)
+        if 'type' not in node_keys:
+            raise ValidationError('A Plugin config must specify the Plugin it configures')
+        return loader.construct_yaml_object(node, cls)
 
     def update(self, mapping):
         """Update the configuration parameters with values from `mapping`
@@ -160,6 +190,8 @@ def load_default_config():
                 if param_name in vars(provider_config):
                     param_value = getattr(provider_config, param_name)
                     param_value.outputs_prefix = tempfile.gettempdir()
+            # Set default priority to 0
+            provider_config.__dict__.setdefault('priority', 0)
             config[provider_config.name] = provider_config
         return config
 
@@ -209,11 +241,11 @@ def override_config_from_env(config):
         if len(parts) == 1:
             mapping[parts[0]] = env_value
         else:
-            mapping[parts[0]] = {}
+            new_map = mapping.setdefault(parts[0], {})
             build_mapping_from_env(
                 '__'.join(parts[1:]),
                 env_value,
-                mapping[parts[0]]
+                new_map
             )
 
     mapping_from_env = {}
@@ -231,4 +263,4 @@ def override_config_from_mapping(config, mapping):
     :param dict mapping: The mapping containing the values to be overriden
     """
     for provider, new_conf in mapping.items():
-        config.setdefault(provider, ProviderConfig(provider)).update(new_conf)
+        config.setdefault(provider, ProviderConfig(provider, **new_conf)).update(new_conf)

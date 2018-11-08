@@ -18,54 +18,238 @@
 from __future__ import unicode_literals
 
 import os
-import sys
 import tempfile
 import unittest
 
 import yaml.parser
+from six import StringIO
 
-from .context import config
-
-
-VALID_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'resources', 'valid_system_conf.yml')
-INVALID_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'resources', 'invalid_system_conf.yml')
+from .context import ValidationError, config
 
 
-class TestConfig(unittest.TestCase):
+class TestProviderConfig(unittest.TestCase):
 
-    @unittest.skipIf(sys.version_info.major > 2, 'No need to test unicode in Python 3')
-    def test_valid_config_file_ok(self):
-        """All strings in the configuration should be unicode"""
-        config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
-        self.assertIsInstance(config_tested.source, dict)
-        self._recursively_assert_unicode(config_tested.source)
+    def test_provider_config_name(self):
+        """Name config parameter must be slugified"""
+        unslugified_provider_name = 'some $provider-name. Really ugly'
+        slugified_provider_name = 'some_provider_name_really_ugly'
 
-    def test_config_dict_like_interface(self):
-        """All config keys should be accessible like in a Python dict"""
-        config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
-        self.assertTrue('instance-1' in config_tested)
-        with self.assertRaises(KeyError):
-            _ = config_tested['NOTFOUND']   # noqa
-        self.assertIn(config_tested['instance-1'], config_tested.values())
-        self.assertIn(('instance-1', config_tested['instance-1']), config_tested.items())
-        self.assertTrue([key for key in config_tested])
+        # Must be true for manually constructed provider config
+        provider_config = config.ProviderConfig(unslugified_provider_name, search=config.PluginConfig('MyPluginClass'))
+        self.assertEqual(provider_config.name, slugified_provider_name)
 
-    def test_config_update(self):
-        """Update method should only work with SimpleYamlProxyConfig objects"""
-        config_tested = config.SimpleYamlProxyConfig(VALID_CONFIG_PATH)
-        self.assertRaises(ValueError, config_tested.update, [])
-        tmpfile = tempfile.NamedTemporaryFile(mode='w')
-        yaml.dump({'instance-x': {}}, tmpfile)
-        config_tested.update(config.SimpleYamlProxyConfig(conf_file_path=tmpfile.name))
-        self.assertIn('instance-x', config_tested)
+        # Must be true for provider constructed through yaml stream
+        stream = StringIO(
+            '''!provider
+            name: {}
+            api: !plugin
+                type: MyPluginClass
+            products:
+                EODAG_PRODUCT_TYPE: provider_product_type
+            '''.format(unslugified_provider_name)
+        )
+        provider_config = yaml.load(stream)
+        self.assertEqual(provider_config.name, slugified_provider_name)
 
-    def _recursively_assert_unicode(self, mapping):
-        for key, value in mapping.items():
-            if isinstance(value, dict):
-                self._recursively_assert_unicode(value)
-            elif isinstance(value, basestring):         # noqa
-                self.assertIsInstance(value, unicode)   # noqa
+    def test_provider_config_valid(self):
+        """Provider config must be valid"""
+        # Not defining any plugin at all
+        invalid_stream = StringIO('''!provider\nname: my_provider''')
+        self.assertRaises(ValidationError, yaml.load, invalid_stream)
 
-    def test_invalid_config_file_raises_error(self):
-        """An invalid yaml config file should raise an error"""
-        self.assertRaises(yaml.parser.ParserError, config.SimpleYamlProxyConfig, INVALID_CONFIG_PATH)
+        # Not defining a class for a plugin
+        invalid_stream = StringIO(
+            '''!provider
+                name: my_provider
+                search: !plugin
+                    param: value
+            ''')
+        self.assertRaises(ValidationError, yaml.load, invalid_stream)
+
+        # Not giving a name to the provider
+        invalid_stream = StringIO(
+            '''!provider
+                api: !plugin
+                    type: MyPluginClass
+            ''')
+        self.assertRaises(ValidationError, yaml.load, invalid_stream)
+
+        # Specifying an api plugin and a search or download or auth plugin at the same type
+        invalid_stream1 = StringIO(
+            '''!provider
+                api: !plugin
+                    type: MyPluginClass
+                search: !plugin
+                    type: MyPluginClass2
+            ''')
+        invalid_stream2 = StringIO(
+            '''!provider
+                api: !plugin
+                    type: MyPluginClass
+                download: !plugin
+                    type: MyPluginClass3
+            ''')
+        invalid_stream3 = StringIO(
+            '''!provider
+                api: !plugin
+                    type: MyPluginClass
+                auth: !plugin
+                    type: MyPluginClass4
+            ''')
+        self.assertRaises(ValidationError, yaml.load, invalid_stream1)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream2)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream3)
+
+    def test_provider_config_update(self):
+        """A provider config must be update-able with a dict"""
+        valid_stream = StringIO(
+            '''!provider
+                name: provider
+                provider_param: val
+                api: !plugin
+                    type: MyPluginClass
+                    plugin_param1: value1
+                    pluginParam2: value2
+        ''')
+        provider_config = yaml.load(valid_stream)
+        overrides = {
+            'provider_param': 'new val',
+            'api': {
+                'pluginparam2': 'newVal',
+                'newParam': 'val'
+            }
+        }
+        provider_config.update(overrides)
+        self.assertEqual(provider_config.provider_param, 'new val')
+        self.assertEqual(provider_config.api.pluginParam2, 'newVal')
+        self.assertTrue(hasattr(provider_config.api, 'newParam'))
+        self.assertEqual(provider_config.api.newParam, 'val')
+
+
+class TestPluginConfig(unittest.TestCase):
+
+    def test_plugin_config_valid(self):
+        """A plugin config must specify a valid plugin type"""
+        # A stream configuring a plugin without specifying the "type" key
+        invalid_stream = StringIO(
+            '''!plugin
+                    param: value
+        ''')
+        self.assertRaises(ValidationError, yaml.load, invalid_stream)
+
+        valid_stream = StringIO(
+            '''!plugin
+                    type: MySearchPlugin
+                    param1: value
+        ''')
+        self.assertIsInstance(yaml.load(valid_stream), config.PluginConfig)
+
+    def test_plugin_config_update(self):
+        """A plugin config must be update-able by a dict"""
+        valid_stream = StringIO(
+            '''!plugin
+                    type: MyPluginClass
+                    plugin_param1: value1
+                    pluginParam2:
+                        sub_param1: v1
+                        subParam_2: v2
+        ''')
+        plugin_config = yaml.load(valid_stream)
+        overrides = {
+            'type': 'MyOtherPlugin',
+            'new_plugin_param': 'a value',
+            'pluginparam2': {
+                'sub_param1': 'new_val1'
+            }
+        }
+        plugin_config.update(overrides)
+        self.assertEqual(plugin_config.type, 'MyOtherPlugin')
+        self.assertEqual(plugin_config.pluginParam2['sub_param1'], 'new_val1')
+        self.assertTrue(hasattr(plugin_config, 'new_plugin_param'))
+        self.assertEqual(plugin_config.new_plugin_param, 'a value')
+
+
+class TestConfigFunctions(unittest.TestCase):
+
+    def test_load_default_config(self):
+        """Default config must be successfully loaded"""
+        conf = config.load_default_config()
+        self.assertIsInstance(conf, dict)
+        for key, value in conf.items():
+            # keys of the default conf dict are the names of the provider
+            self.assertEqual(key, value.name)
+            # providers implementing download or api store their downloaded products in tempdir by default
+            download_plugin = getattr(value, 'download', getattr(value, 'api', None))
+            if download_plugin is not None:
+                self.assertEqual(download_plugin.outputs_prefix, tempfile.gettempdir())
+            # priority is set to 0 unless you are 'peps' provider
+            if key == 'peps':
+                self.assertEqual(value.priority, 1)
+            else:
+                self.assertEqual(value.priority, 0)
+
+    def test_override_config_from_file(self):
+        """Default configuration must be overridden from a conf file"""
+        default_config = config.load_default_config()
+        file_path_override = os.path.join(os.path.dirname(__file__), 'resources', 'file_config_override.yml')
+        # Content of file_config_override.yml
+        # usgs:
+        #   priority: 5
+        #   api:
+        #       extract: False
+        #       credentials:
+        #           username: usr
+        #           password: pwd
+        #
+        # aws_s3_sentinel2_l1c:
+        #   search:
+        #       product_location_scheme: file
+        #   auth:
+        #       credentials:
+        #           aws_access_key_id: access-key-id
+        #           aws_secret_access_key: secret-access-key
+        #
+        # peps:
+        #   download:
+        #       outputs_prefix: /data
+        config.override_config_from_file(default_config, file_path_override)
+        usgs_conf = default_config['usgs']
+        self.assertEqual(usgs_conf.priority, 5)
+        self.assertEqual(usgs_conf.api.extract, False)
+        self.assertEqual(usgs_conf.api.credentials['username'], 'usr')
+        self.assertEqual(usgs_conf.api.credentials['password'], 'pwd')
+
+        aws_conf = default_config['aws_s3_sentinel2_l1c']
+        self.assertEqual(aws_conf.search.product_location_scheme, 'file')
+        self.assertEqual(aws_conf.auth.credentials['aws_access_key_id'], 'access-key-id')
+        self.assertEqual(aws_conf.auth.credentials['aws_secret_access_key'], 'secret-access-key')
+
+        peps_conf = default_config['peps']
+        self.assertEqual(peps_conf.download.outputs_prefix, '/data')
+
+    def test_override_config_from_env(self):
+        """Default configuration must be overridden by environment variables"""
+        default_config = config.load_default_config()
+        os.environ['EODAG__USGS__PRIORITY'] = '5'
+        os.environ['EODAG__USGS__API__EXTRACT'] = 'false'
+        os.environ['EODAG__USGS__API__CREDENTIALS__USERNAME'] = 'usr'
+        os.environ['EODAG__USGS__API__CREDENTIALS__PASSWORD'] = 'pwd'
+        os.environ['EODAG__AWS_S3_SENTINEL2_L1C__SEARCH__PRODUCT_LOCATION_SCHEME'] = 'file'
+        os.environ['EODAG__AWS_S3_SENTINEL2_L1C__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID'] = 'access-key-id'
+        os.environ['EODAG__AWS_S3_SENTINEL2_L1C__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY'] = 'secret-access-key'
+        os.environ['EODAG__PEPS__DOWNLOAD__OUTPUTS_PREFIX'] = '/data'
+
+        config.override_config_from_env(default_config)
+        usgs_conf = default_config['usgs']
+        self.assertEqual(usgs_conf.priority, 5)
+        self.assertEqual(usgs_conf.api.extract, False)
+        self.assertEqual(usgs_conf.api.credentials['username'], 'usr')
+        self.assertEqual(usgs_conf.api.credentials['password'], 'pwd')
+
+        aws_conf = default_config['aws_s3_sentinel2_l1c']
+        self.assertEqual(aws_conf.search.product_location_scheme, 'file')
+        self.assertEqual(aws_conf.auth.credentials['aws_access_key_id'], 'access-key-id')
+        self.assertEqual(aws_conf.auth.credentials['aws_secret_access_key'], 'secret-access-key')
+
+        peps_conf = default_config['peps']
+        self.assertEqual(peps_conf.download.outputs_prefix, '/data')

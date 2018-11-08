@@ -44,11 +44,11 @@ Available providers
 
 There are currently 6 available providers implemented on eodag:
 
-* `airbus-ds <https://sobloo.eu/>`_: Airbus DS catalog for the copernicus program
+* `sobloo <https://sobloo.eu/>`_: Airbus DS catalog for the copernicus program
 
-* `USGS <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
+* `usgs <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
 
-* `AmazonWS <http://sentinel-pds.s3-website.eu-central-1.amazonaws.com/>`_: Amazon public bucket for Sentinel 2 products
+* `aws_s3_sentinel2_l1c <http://sentinel-pds.s3-website.eu-central-1.amazonaws.com/>`_: Amazon public bucket for Sentinel 2 products
 
 * `theia-landsat <https://theia-landsat.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Pleiades and Landsat products
 
@@ -93,15 +93,15 @@ Create a configuration file containing your credentials for each provider.  You 
         credentials:
             username:
             password:
-    USGS:
+    usgs:
         credentials:
             username:
             password:
-    AmazonWS:
+    aws_s3_sentinel2_l1c:
         credentials:
             aws_access_key_id:
             aws_secret_access_key:
-    airbus-ds:
+    sobloo:
         credentials:
             apikey:
 
@@ -114,13 +114,13 @@ Create a configuration file containing your credentials for each provider.  You 
 Fill this configuration file with the credentials you obtained from each
 provider.
 
-For USGS, create an account here: https://ers.cr.usgs.gov/register/
+For usgs, create an account here: https://ers.cr.usgs.gov/register/
 
 For theia-landsat and theia, you only need to register once here: https://sso.theia-land.fr/theia/register/register.xhtml
 
 For peps, create an account here: https://peps.cnes.fr/rocket/#/register
 
-For AmazonWS:
+For aws_s3_sentinel2_l1c:
 
     * Create an account on AWS website: https://aws.amazon.com/fr/ (warning:
       A credit card number must be given because fees apply after a given
@@ -130,5 +130,5 @@ For AmazonWS:
     * In access keys, click on create access key.
     * Add these credentials to the user conf file.
 
-For airbus-ds, create an account here for an api key: https://auth.sobloo.eu/auth/realms/IDP/protocol/openid-connect/auth?client_id=dias&redirect_uri=https%3A%2F%2Fsobloo.eu%2Fsites%2Fall%2Fthemes%2Fdias%2Ftemplates%2Fsso%2Fpopup-signin.html&response_type=id_token%20token&scope=openid&state=176305cc793f40fda565e2260b851d4c&nonce=234b2d571bb4447db8d3385f565255f7&display=popup
+For sobloo, create an account here for an api key: https://auth.sobloo.eu/auth/realms/IDP/protocol/openid-connect/auth?client_id=dias&redirect_uri=https%3A%2F%2Fsobloo.eu%2Fsites%2Fall%2Fthemes%2Fdias%2Ftemplates%2Fsso%2Fpopup-signin.html&response_type=id_token%20token&scope=openid&state=176305cc793f40fda565e2260b851d4c&nonce=234b2d571bb4447db8d3385f565255f7&display=popup
 
