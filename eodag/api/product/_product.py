@@ -251,47 +251,21 @@ class EOProduct(object):
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
+        :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
+        :raises: :class:`RuntimeError`
         """
         if progress_callback is None:
             progress_callback = ProgressCallback()
-
         if self.downloader is None:
-            raise RuntimeError('EO product is unable to download itself due to the lack of a download plugin')
-        # Remove the capability for the downloader to perform extraction if the downloaded product is a zipfile. This
-        # way, the eoproduct is able to control how it stores itself on the local filesystem
-        old_extraction_config = self.downloader.config['extract']
-        self.downloader.config['extract'] = False
+            raise RuntimeError('EO product is unable to download itself due to lacking of a download plugin')
+
         auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
         fs_location = self.downloader.download(self, auth=auth, progress_callback=progress_callback)
-        if fs_location is None:
-            logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
-                           'have not been returned by the download plugin')
-            return ''
-        if zipfile.is_zipfile(fs_location):
-            # Unzip only if it was not done before
-            if not os.path.exists(fs_location[:fs_location.index('.zip')]):
-                with zipfile.ZipFile(fs_location, 'r') as zfile:
-                    fileinfos = tqdm(zfile.infolist(), unit='file',
-                                     desc='Extracting files from {}'.format(os.path.basename(fs_location)))
-                    for fileinfo in fileinfos:
-                        zfile.extract(fileinfo, path=fs_location[:fs_location.index('.zip')])
-            # Handle depth levels in the product archive. For example, if the downloaded archive was
-            # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
-            # location will be /top_level/product_base_dir.
-            # WARNING: A strong assumption is made here: there is only one subdirectory per level
-            archive_depth = self.downloader.config.get('archive_depth', 1)
-            fs_location = fs_location[:fs_location.index('.zip')]
-            count = 1
-            while count < archive_depth:
-                fs_location = os.path.join(fs_location, os.listdir(fs_location)[0])
-                count += 1
-        # After the product has been downloaded, we need to modify its location attribute to reflect that it is now
-        # in the filesystem
-        logger.debug('Product location updated from %s to %s', self.location, fs_location)
         self.location = 'file://{}'.format(fs_location)
-        # Restore configuration
-        self.downloader.config['extract'] = old_extraction_config
-        return fs_location
+        logger.debug("Product location updated from '%s' to '%s'", self.remote_location, self.location)
+        logger.info("Remote location of the product is still available through its 'remote_location' property: %s",
+                    self.remote_location)
+        return self.location
 
     def get_quicklook(self, filename=None, progress_callback=None):
         """Download the quick look image of a given EOProduct from its provider if it exists.
@@ -314,7 +288,7 @@ class EOProduct(object):
             logger.warning('Missing information to retrieve quicklook for EO product: %s', self.properties['id'])
             return ''
 
-        quicklooks_base_dir = os.path.join(self.downloader.config['outputs_prefix'], "quicklooks")
+        quicklooks_base_dir = os.path.join(self.downloader.config.outputs_prefix, "quicklooks")
         if not os.path.isdir(quicklooks_base_dir):
             os.makedirs(quicklooks_base_dir)
         quicklook_file = os.path.join(

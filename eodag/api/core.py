@@ -25,7 +25,10 @@ from pkg_resources import resource_filename
 from tqdm import tqdm
 
 from eodag.api.search_result import SearchResult
-from eodag.config import SimpleYamlProxyConfig
+from eodag.config import (
+    SimpleYamlProxyConfig, load_default_config, override_config_from_file,
+    override_config_from_env,
+)
 from eodag.plugins.instances_manager import PluginInstancesManager
 from eodag.utils import ProgressCallback
 from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
@@ -43,50 +46,17 @@ class EODataAccessGateway(object):
     :type providers_file_path: str or unicode
     """
 
-    def __init__(self, user_conf_file_path=None, providers_file_path=None):
-        self.providers_config = SimpleYamlProxyConfig(resource_filename('eodag', 'resources/providers.yml'))
+    def __init__(self, user_conf_file_path=None):
         self.product_types_config = SimpleYamlProxyConfig(resource_filename('eodag', 'resources/product_types.yml'))
-        if providers_file_path is not None:
-            # TODO : the update method is very rudimentary by now => this doesn't work if we are trying to override a
-            # TODO (continues) : param within an instance configuration
-            self.providers_config.update(SimpleYamlProxyConfig(providers_file_path))
-        if user_conf_file_path:
-            self.user_config = SimpleYamlProxyConfig(user_conf_file_path)
+        self.providers_config = load_default_config()
 
-            # Override system default config with user values for some keys
-            for instance_name, instance_config in self.user_config.items():
-                if isinstance(instance_config, dict):
-                    if instance_name in self.providers_config:
-                        if 'credentials' in instance_config:
-                            if 'api' in self.providers_config[instance_name]:
-                                self.providers_config[instance_name]['api'].update(instance_config)
-                            else:
-                                auth_conf = self.providers_config[instance_name].setdefault('auth', {})
-                                auth_conf.update(instance_config)
-                        for key in ('outputs_prefix', 'extract'):
-                            if key in self.user_config:
-                                user_spec = self.user_config[key]
-                                if 'api' in self.providers_config[instance_name]:
-                                    default_dl_option = self.providers_config[instance_name]['api'].setdefault(
-                                        key,
-                                        '/data/satellites_images/' if key == 'outputs_prefix' else True)
-                                else:
-                                    if 'download' in self.providers_config[instance_name]:
-                                        default_dl_option = self.providers_config[instance_name].get(
-                                            'download', {}
-                                        ).setdefault(
-                                            key,
-                                            '/data/satellites_images/' if key == 'outputs_prefix' else True
-                                        )
-                                    else:
-                                        default_dl_option = user_spec  # allows skipping next if block
-                                if default_dl_option != user_spec:
-                                    if 'api' in self.providers_config[instance_name]:
-                                        self.providers_config[instance_name]['api'][key] = user_spec
-                                    else:
-                                        self.providers_config[instance_name]['download'][key] = user_spec
+        # First level override: From a user configuration file
+        override_config_from_file(self.providers_config, user_conf_file_path)
+
+        # Second level override: From environment variables
+        override_config_from_env(self.providers_config)
+
         self._plugins_manager = PluginInstancesManager(self.providers_config)
-        self._plugins_cache = {}
 
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
@@ -101,15 +71,15 @@ class EODataAccessGateway(object):
         ...     raise AssertionError(u'UnsupportedProvider exception was not raised as expected')
         ... except eodag.utils.exceptions.UnsupportedProvider:
         ...     pass
-        >>> dag.set_preferred_provider(u'USGS')
+        >>> dag.set_preferred_provider(u'usgs')
         >>> dag.get_preferred_provider()
-        ('USGS', 2)
+        ('usgs', 2)
         >>> dag.set_preferred_provider(u'theia')
         >>> dag.get_preferred_provider()
         ('theia', 3)
-        >>> dag.set_preferred_provider(u'USGS')
+        >>> dag.set_preferred_provider(u'usgs')
         >>> dag.get_preferred_provider()
-        ('USGS', 4)
+        ('usgs', 4)
 
         :param provider: The name of the provider that should be considered as the preferred provider to be used for
                          this instance
@@ -120,7 +90,7 @@ class EODataAccessGateway(object):
         preferred_provider, max_priority = self.get_preferred_provider()
         if preferred_provider != provider:
             new_priority = max_priority + 1
-            self.providers_config[provider]['priority'] = new_priority
+            self._plugins_manager.set_priority(provider, new_priority)
             # Update the interfaces cache to take into account the fact that the preferred provider has changed
             if 'search' in self._plugins_cache:
                 for search_interfaces in self._plugins_cache['search'].values():
@@ -134,10 +104,9 @@ class EODataAccessGateway(object):
         :return: The provider with the maximum priority and its priority
         :rtype: tuple(str, int)
         """
-        # Note: if a provider config doesn't have 'priority' key, it is considered to have minimum priority (0)
-        preferred, config = max(((provider, conf) for provider, conf in self.providers_config.items()),
-                                key=lambda item: item[1].get('priority', 0))
-        return preferred, config.get('priority', 0)
+        preferred, priority = max(((provider, conf.priority) for provider, conf in self.providers_config.items()),
+                                  key=lambda item: item[1])
+        return preferred, priority
 
     def list_product_types(self, provider=None):
         """Lists supported product types.
@@ -163,7 +132,7 @@ class EODataAccessGateway(object):
 
     def available_providers(self):
         """Gives the list of the available providers"""
-        return [provider for provider in self.providers_config]
+        return tuple(self.providers_config.keys())
 
     def search(self, product_type, **kwargs):
         """Look for products matching criteria in known systems.
@@ -178,53 +147,49 @@ class EODataAccessGateway(object):
             The search interfaces, which are implemented as plugins, are required to return a list as a result of their
             processing. This requirement is enforced here.
         """
-        search_plugins = self._build_search_plugins(product_type)
         results = SearchResult([])
-        for idx, plugin in enumerate(search_plugins):
-            logger.debug('Using plugin for search: %s on provider: %s', plugin.name, plugin.instance_name)
-            auth = self._build_auth_plugin(plugin.instance_name)
+        for plugin in self._plugins_manager.get_search_plugins(product_type):
+            logger.info("Searching product type '%s' on provider: %s", product_type, plugin.provider)
+            logger.debug('Using plugin class for search: %s', plugin.__class__.__name__)
+            auth = self._plugins_manager.get_auth_plugin(product_type, plugin.provider)
             try:
-                r = plugin.query(product_type, auth=auth, **kwargs)
-                if not isinstance(r, list):
+                res = plugin.query(product_type, auth=auth, **kwargs)
+                logger.info("Found %s result(s) on provider '%s'", len(res), plugin.provider)
+                if not isinstance(res, list):
                     raise PluginImplementationError(
                         'The query function of a Search plugin must return a list of results, got {} '
-                        'instead'.format(type(r)))
+                        'instead'.format(type(res)))
                 # Filter and attach to each eoproduct in the result the plugin capable of downloading it (this
                 # is done to enable the eo_product to download itself doing: eo_product.download())
-                # The filtering is done by keeping only those eo_products that intersects the search extent (if there
+                # The filtering is done by keeping only those eo_products that intersects the search extent (if
+                # there
                 # was no search extent, search_intersection contains the geometry of the eo_product)
                 # WARNING: this means an eo_product that has an invalid geometry can still be returned as a search
                 # result if there was no search extent (because we will not try to do an intersection)
-                for eo_product in r:
+                for eo_product in res:
                     if eo_product.search_intersection is not None:
-                        if 'download' in self.providers_config[eo_product.provider]:
-                            topic = 'download'
-                        else:
-                            topic = 'api'
-                        eo_product.register_downloader(
-                            self._build_provider_plugin(eo_product.provider, topic),
-                            auth
-                        )
+                        download_plugin = self._plugins_manager.get_download_plugin(eo_product)
+                        eo_product.register_downloader(download_plugin, auth)
                         results.append(eo_product)
-                # Decide if we should go on with the search using the other search plugins. This happens in 2 cases:
+                # Decide if we should go on with the search using the other search plugins. This happens in
+                # 2 cases:
                 # 1. The currently used plugin is the preferred one (the first), and it returned no result
                 # 2. The currently used plugin supports the product_type partially
-                if not plugin.config.get('products', {}).get(product_type, {}).get('partial', False):
-                    if idx == 0 and len(search_plugins) > 1 and len(r) == 0:
-                        logger.debug(
-                            "No result from preferred provider: '%r'. Search continues on other providers "
-                            "supporting the product type: '%r'", plugin.instance_name, product_type)
+                if not plugin.config.products[product_type].get('partial_support', False):
+                    if plugin.provider == self.get_preferred_provider()[0] and len(res) == 0:
+                        logger.info(
+                            "No result from preferred provider: '%s'. Search continues on other providers "
+                            "supporting the product type: '%s'", plugin.provider, product_type)
                         continue
                     break
-                logger.debug("Detected partial product type '%s' on priviledged instance '%s'. Search continues on "
-                             "other instances supporting it.", product_type, plugin.instance_name)
-            except RuntimeError as rte:
-                if 'Unknown product type' in rte.args:
-                    logger.debug('Product type %s not known by %s instance', product_type, plugin.instance_name)
-                else:
-                    raise rte
+                logger.info(
+                    "Detected partial support for product type '%s' on preferred provider '%s'. Search continues on "
+                    "other providers supporting it.", product_type, plugin.provider)
             except Exception:
                 import traceback as tb
+                logger.info("No result from provider '%s' due to an error during search. Raise verbosity of log "
+                            "messages for details", plugin.provider)
+                logger.info('Search continues on other providers supporting the product type')
                 logger.debug('Error while searching on interface %s:\n %s.', plugin, tb.format_exc())
                 logger.debug('Ignoring it')
         return results
@@ -267,11 +232,12 @@ class EODataAccessGateway(object):
         """
         paths = []
         if search_result:
+            logger.info('Downloading %s products', len(search_result))
             with tqdm(search_result, unit='product', desc='Downloading products') as bar:
                 for product in bar:
                     paths.append(self.download(product, progress_callback=progress_callback))
         else:
-            print('Empty search result, nothing to be downloaded !')
+            logger.info('Empty search result, nothing to be downloaded !')
         return paths
 
     @staticmethod
@@ -304,11 +270,20 @@ class EODataAccessGateway(object):
     def download(self, product, progress_callback=None):
         """Download a single product.
 
+        This is an alias to the method of the same name on :class:`~eodag.api.product.EOProduct`, but it performs some
+        additional checks like verifying that a downloader and authenticator are registered for the product before
+        trying to download it. If EODAG is installed on a machine that can see the product as local, no download is
+        tried and the location of the product is immediately returned instead.
+
         .. warning::
-            As a side effect, this method changes the `location` attribute of an :class:`~eodag.api.product.EOProduct`.
-            So be aware that you may not be able to download the product again if you didn't store its remote location
-            somewhere first before downloading it, unless the download failed or the download plugin didn't returned
-            the local path of the downloaded resource
+
+            Be careful to adequately configure your eodag install so that it can see local products. This means that
+            if you install it on a machine that can see products from specific providers as local, you must override
+            the '<provider>.search.product_location_scheme' config parameter through either the environment variable
+            'EODAG__<PROVIDER>__SEARCH__PRODUCT_LOCATION_SCHEME' (notice the double underscore, they are equivalent to
+            the dots in '<provider>.search.product_location_scheme') or through your user configuration file. Set this
+            parameter to 'file' (other network location schemes emulating the local 'file' scheme may be supported in
+            the future).
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product.EOProduct`
@@ -323,101 +298,22 @@ class EODataAccessGateway(object):
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
-        if progress_callback is None:
-            progress_callback = ProgressCallback()
-
-        download_plugin = self._build_download_plugin(product)
-        logger.debug('Using download plugin: %s for provider: %s', download_plugin.name, download_plugin.instance_name)
-        try:
-            auth = None
-            # We need to authenticate only if we are not on the platform where the product lives
-            if not download_plugin.config.get('on_site', False):
-                auth = self._build_auth_plugin(download_plugin.instance_name)
-            else:
-                logger.debug('On site usage detected. Authentication for download skipped !')
-            if auth:
-                auth = auth.authenticate()
-            product_location = download_plugin.download(product, auth=auth, progress_callback=progress_callback)
-            if product_location is None:
-                logger.warning('The download method of a Download plugin should return the absolute path to the '
-                               'downloaded resource')
-            else:
-                logger.debug('Product location updated from %s to %s', product.location, product_location)
-                # Update the product location if and only if a path was returned by the download plugin
-                product.location = 'file://{}'.format(product_location)
-            return product_location
-        except TypeError as e:
-            # Enforcing the requirement for download plugins to implement a download method with auth kwarg
-            if any("got an unexpected keyword argument 'auth'" in arg for arg in e):
-                raise PluginImplementationError('The download method of a Download plugin must support auth keyword '
-                                                'argument')
-            raise e
-        except RuntimeError as rte:
-            # Skip download errors, allowing other downloads to take place anyway
-            if 'is incompatible with download plugin' in rte:
-                logger.warning('Download plugin incompatibility found. Skipping download...')
-            else:
-                raise rte
-
-    def _build_auth_plugin(self, provider_name):
-        if 'auth' in self.providers_config[provider_name]:
-            logger.debug('Authentication initialisation for provider: %s', provider_name)
-            plugin = self._build_provider_plugin(provider_name, 'auth')
-            logger.debug("Initialized %r Authentication plugin for provider: '%s'", plugin, provider_name)
-            return plugin
-
-    def _build_search_plugins(self, product_type):
-        """Look for search interfaces to use, based on the configuration of the api"""
-        logger.debug('Looking for the appropriate Search instance(s) to use for product type: %s', product_type)
-        previous = self._plugins_cache.setdefault('search', {}).setdefault(product_type, [])
-        if not previous:
-            search_plugins = self._plugins_manager.instantiate_configured_plugins(
-                topics=('search', 'api'),
-                product_type_id=product_type
+        if product.location.startswith('file'):
+            logger.info('Local product detected. Download skipped')
+            return product.location
+        if product.downloader is None:
+            auth = product.downloader_auth
+            if auth is None:
+                auth = self._plugins_manager.get_auth_plugin(product.product_type, product.provider)
+            product.register_downloader(
+                self._plugins_manager.get_download_plugin(product),
+                auth
             )
-            # Store the newly instantiated plugins in the cache
-            previous.extend(search_plugins)
-        # The searcher used will be the one with highest priority
-        previous.sort(key=attrgetter('priority'), reverse=True)
-        logger.debug("Found %s Search instance(s) for product type '%s' (ordered by highest priority): %r",
-                     len(previous), product_type, previous)
-        return previous
-
-    def _build_download_plugin(self, product):
-        """Look for a download plugin to use, based on the configuration of the api and the product to download"""
-        logger.debug('Looking for the appropriate Download plugin to use for product: %r', product)
-        if 'download' in self.providers_config[product.provider]:
-            topic = 'download'
-        else:
-            topic = 'api'
-        plugin = self._build_provider_plugin(product.provider, topic)
-        logger.debug('Found Download plugin for product %r: %s', product, plugin)
-        return plugin
-
-    def _build_provider_plugin(self, provider, topic):
-        """Build the plugin of type topic for provider
-
-        :param provider: The provider for which to build topic plugin
-        :type provider: str or unicode
-        :param topic: The type of plugin to build for provider (one of: 'auth', 'search', 'download'). Note that this
-                      method is not intended to be used for 'crunch' plugins, because these are generally not tied to a
-                      specific provider
-        :type topic: str or unicode
-        :returns: The plugin instance corresponding to the topic for the specified provider
-        :rtype: a :class:`~eodag.plugins.base.PluginTopic` subclass's instance
-        """
-        previous = self._plugins_cache.setdefault(topic, {}).setdefault(provider, None)
-        if previous is None:
-            previous = self._plugins_manager.instantiate_plugin_by_config(
-                topic_name=topic,
-                topic_config=self.providers_config[provider][topic],
-                iname=provider,
-            )
-        return previous
+        return product.download(progress_callback=progress_callback)
 
     def get_cruncher(self, name, **options):
         plugin_conf = {
-            'plugin': name,
+            'name': name,
         }
         plugin_conf.update({
             key.replace('-', '_'): val

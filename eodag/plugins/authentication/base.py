@@ -22,8 +22,5 @@ from eodag.plugins.base import PluginTopic
 
 class Authentication(PluginTopic):
 
-    def __init__(self, config):
-        self.config = config
-
     def authenticate(self):
         raise NotImplementedError

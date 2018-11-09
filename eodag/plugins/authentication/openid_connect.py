@@ -83,21 +83,21 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
     SCOPE = 'openid'
     RESPONSE_TYPE = 'code'
 
-    def __init__(self, config):
-        super(OIDCAuthorizationCodeFlowAuth, self).__init__(config)
+    def __init__(self, provider, config):
+        super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
         self.session = requests.Session()
 
     def authenticate(self):
         state = self.compute_state()
         params = {
-            'client_id': self.config['client_id'],
+            'client_id': self.config.client_id,
             'response_type': self.RESPONSE_TYPE,
             'scope': self.SCOPE,
             'state': state,
-            'redirect_uri': self.config['redirect_uri'],
+            'redirect_uri': self.config.redirect_uri,
         }
         authentication_response = self.authenticate_user(self.session.get(
-            self.config['authorization_uri'],
+            self.config.authorization_uri,
             params=params
         ))
         user_consent_response = self.grant_user_consent(authentication_response)
@@ -108,23 +108,23 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             raise AuthenticationError(
                 'Something went wrong while trying to get authorization token:\n{}'.format(tb.format_exc())
             )
-        if self.config['token_provision'] not in ('qs', 'headers'):
+        if self.config.token_provision not in ('qs', 'headers'):
             raise MisconfiguredError('Provider config parameter "token_provision" must be one of "qs" or "headers"')
-        if self.config['token_provision'] == 'qs' and not self.config.get('token_qs_key', ''):
+        if self.config.token_provision == 'qs' and not self.config.get('token_qs_key', ''):
             raise MisconfiguredError('Provider config parameter "token_provision" with value "qs" must have '
                                      '"token_qs_key" config parameter as well')
-        return CodeAuthorizedAuth(token, self.config['token_provision'], key=self.config.get('token_qs_key'))
+        return CodeAuthorizedAuth(token, self.config.token_provision, key=self.config.get('token_qs_key'))
 
     def authenticate_user(self, authorization_response):
         login_document = etree.HTML(authorization_response.text)
         login_form = login_document.xpath('//form[@id="loginForm"]')[0]
         try:
-            login_data = self.config['credentials']
+            login_data = self.config.credentials
             login_data['sessionDataKey'] = login_form.xpath('//input[@name="sessionDataKey"]')[0].attrib['value']
-            return self.session.post(self.config['authentication_uri'], data=login_data)
+            return self.session.post(self.config.authentication_uri, data=login_data)
         except KeyError as err:
             if 'credentials' in err:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)
 
     def grant_user_consent(self, authentication_response):
         user_consent_document = etree.HTML(authentication_response.text)
@@ -135,7 +135,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 '//input[@name="sessionDataKeyConsent"]'
             )[0].attrib['value']
         }
-        return self.session.post(self.config['authorization_uri'], data=user_consent_data)
+        return self.session.post(self.config.authorization_uri, data=user_consent_data)
 
     def exchange_code_for_token(self, authorized_url, state):
         qs = parse_qs(urlparse(authorized_url).query)
@@ -144,17 +144,17 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 'The state received in the authorized url does not match initially computed state')
         code = qs['code'][0]
         token_exchange_data = {
-            'redirect_uri': self.config['redirect_uri'],
-            'client_id': self.config['client_id'],
+            'redirect_uri': self.config.redirect_uri,
+            'client_id': self.config.client_id,
             'code': code,
             'state': state,
         }
-        custom_token_exchange_params = self.config['token_exchange_params']
+        custom_token_exchange_params = self.config.token_exchange_params
         if custom_token_exchange_params:
             token_exchange_data[custom_token_exchange_params['redirect_uri']] = token_exchange_data.pop('redirect_uri')
             token_exchange_data[custom_token_exchange_params['client_id']] = token_exchange_data.pop('client_id')
-        post_request_kwargs = {self.config['token_exchange_post_data_method']: token_exchange_data}
-        r = self.session.post(self.config['token_uri'], **post_request_kwargs)
+        post_request_kwargs = {self.config.token_exchange_post_data_method: token_exchange_data}
+        r = self.session.post(self.config.token_uri, **post_request_kwargs)
         return r.json()['token']
 
     @staticmethod

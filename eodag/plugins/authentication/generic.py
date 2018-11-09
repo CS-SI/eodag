@@ -26,20 +26,20 @@ from eodag.utils.exceptions import MisconfiguredError
 class GenericAuth(Authentication):
 
     def authenticate(self):
-        method = self.config.get('method')
+        method = getattr(self.config, 'method', None)
         try:
             if not method:
                 method = 'basic'
             if method == 'basic':
                 return HTTPBasicAuth(
-                    self.config['credentials']['username'],
-                    self.config['credentials']['password']
+                    self.config.credentials['username'],
+                    self.config.credentials['password']
                 )
             if method == 'digest':
                 return HTTPDigestAuth(
-                    self.config['credentials']['username'],
-                    self.config['credentials']['password']
+                    self.config.credentials['username'],
+                    self.config.credentials['password']
                 )
-        except KeyError as err:
+        except AttributeError as err:
             if 'credentials' in err:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)

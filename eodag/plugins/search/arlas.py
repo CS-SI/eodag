@@ -36,7 +36,6 @@ class ArlasSearch(Search):
     COUNT_ENDPOINT_TPL = '/explore/{arlas_collection}/_count'
 
     def query(self, product_type, auth=None, **kwargs):
-        logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         query_string = self.build_query_string(product_type, kwargs)
         if auth:
             auth = auth.authenticate()
@@ -53,46 +52,48 @@ class ArlasSearch(Search):
             query_string += '&size={}'.format(total_hits)
 
         search_url = '{base}{path}?{qs}'.format(
-            base=self.config['api_endpoint'].rstrip('/'),
-            path=self.SEARCH_ENDPOINT_TPL.format(**self.config),
+            base=self.config.api_endpoint.rstrip('/'),
+            path=self.SEARCH_ENDPOINT_TPL.format(arlas_collection=self.config.arlas_collection),
             qs=query_string
         )
 
         logger.info('Making search request at: %s', search_url)
-        if self.instance_name == 'airbus-ds':
+        if self.provider == 'sobloo':
             response = requests.get(search_url)
         else:
             response = requests.get(search_url, auth=auth)
         try:
-            logger.info('Checking response')
+            logger.debug('Checking response')
             response.raise_for_status()
-            logger.info('Search requests successful. HTTP status code: %s', response.status_code)
+            logger.debug('Search requests successful. HTTP status code: %s', response.status_code)
         except requests.HTTPError:
             import traceback as tb
             logger.warning('Failed to query arlas server at %s. Got error:\n%s',
-                           self.config['api_endpoint'], tb.format_exc())
+                           self.config.api_endpoint, tb.format_exc())
             return []
 
         results = response.json()
         products = []
         try:
             if results['features']:
-                logger.info('Normalizing results')
+                logger.debug('Normalizing results')
                 for feature in results['features']:
-                    properties = properties_from_json(feature, self.config['metadata_mapping'])
+                    properties = properties_from_json(feature, self.config.metadata_mapping)
                     # In a provider config using this plugin, quicklook maps to a property which
                     # gives information whether the product has a quicklook or not. Based on this
                     # info, we can build the quicklook url
                     properties['quicklook'] = (
-                        '{}/{}'.format(self.config['quicklook_endpoint'], properties['id'])
+                        '{}/{}'.format(self.config.quicklook_endpoint, properties['id'])
                         if properties['quicklook']
                         else
                         None
                     )
                     products.append(EOProduct(
                         product_type,
-                        self.instance_name,
-                        '{base}' + '/{}'.format(properties['id']),
+                        self.provider,
+                        'file:///{}'.format(properties['id'])
+                        if self.config.product_location_scheme == 'file'
+                        else '{base}' + '/{}'.format(properties['id']),
                         properties,
                         searched_bbox=kwargs.get('footprint')
                     ))
@@ -101,7 +102,7 @@ class ArlasSearch(Search):
                 logger.warning('Invalid geojson returned: %s, assuming no results', results)
                 return []
             raise ke
-        logger.info('Search on Arlas server %s succeeded. Results: %s', self.config['api_endpoint'], products)
+        logger.info('Search on Arlas server %s succeeded. Results: %s', self.config.api_endpoint, products)
         return products
 
     def build_query_string(self, product_type, options):
@@ -113,13 +114,13 @@ class ArlasSearch(Search):
         :type options: dict
         :return:
         """
-        product_type_param = get_search_param(self.config['metadata_mapping']['productType'])
-        cloud_cover_param = get_search_param(self.config['metadata_mapping']['cloudCover'])
-        geometry_param = get_search_param(self.config['metadata_mapping']['geometry'])
-        start_date_param = get_search_param(self.config['metadata_mapping']['startTimeFromAscendingNode'])
+        product_type_param = get_search_param(self.config.metadata_mapping['productType'])
+        cloud_cover_param = get_search_param(self.config.metadata_mapping['cloudCover'])
+        geometry_param = get_search_param(self.config.metadata_mapping['geometry'])
+        start_date_param = get_search_param(self.config.metadata_mapping['startTimeFromAscendingNode'])
 
         logger.debug('Building the query string that will be used for search')
-        mandatory_qs = 'f={}:eq:{}'.format(product_type_param, self.config['products'][product_type]['product_type'])
+        mandatory_qs = 'f={}:eq:{}'.format(product_type_param, self.config.products[product_type]['product_type'])
         optional_qs = ''
 
         max_cloud_cover = options.get('cloudCover')
@@ -163,8 +164,8 @@ class ArlasSearch(Search):
         logger.info('Looking for the number of products satisfying the search criteria')
         response = requests.get(
             '{base}{path}?{qs}'.format(
-                base=self.config['api_endpoint'],
-                path=self.COUNT_ENDPOINT_TPL.format(**self.config),
+                base=self.config.api_endpoint,
+                path=self.COUNT_ENDPOINT_TPL.format(arlas_collection=self.config.arlas_collection),
                 qs=query_string
             ),
             auth=auth

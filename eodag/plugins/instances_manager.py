@@ -19,6 +19,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 from collections import Iterable
+from operator import attrgetter
 
 import pkg_resources
 
@@ -66,11 +67,11 @@ class PluginInstancesManager(object):
 
     the manager will ask to the :class:`~eodag.plugins.search.base.Search` class to give it back the
     :class:`~eodag.plugins.search.resto.RestoSearch` plugin class by calling
-    ``Search.get_plugin_by_name(conf['theia']['search']['plugin'])``, so that it can create its ``theia`` instance
+    ``Search.get_plugin_by_class_name(conf['theia']['search']['plugin'])``, so that it can create its ``theia`` instance
     with ``conf['theia']['search']`` configuration.
 
     :param providers_config: The configuration with all information about the providers supported by the `eodag`
-    :type providers_config: :class:`~eodag.config.SimpleYamlProxyConfig`
+    :type providers_config: dict
     """
     supported_topics = {
         'search': Search,
@@ -98,6 +99,65 @@ class PluginInstancesManager(object):
                     logger.warning('Unable to load plugin: %s.', entry_point.name)
                     logger.warning('Reason:\n%s', tb.format_exc())
                     logger.warning('Check that the plugin module (%s) is importable', entry_point.module_name)
+        self.product_type_to_provider_config_map = {}
+        for provider_config in providers_config.values():
+            for product_type in provider_config.products:
+                product_type_providers = self.product_type_to_provider_config_map.setdefault(product_type, [])
+                product_type_providers.append(provider_config)
+                product_type_providers.sort(key=attrgetter('priority'), reverse=True)
+
+    def get_search_plugins(self, product_type):
+        for config in self.product_type_to_provider_config_map[product_type]:
+            try:
+                config.search.products = config.products
+                config.search.priority = config.priority
+                plugin = self._build_plugin(config.name, config.search, Search)
+                plugin.provider = config.name
+                yield plugin
+            except AttributeError:
+                config.api.products = config.products
+                config.api.priority = config.priority
+                plugin = self._build_plugin(config.name, config.api, Api)
+                plugin.provider = config.name
+                yield plugin
+
+    def get_download_plugin(self, product):
+        for plugin_conf in self.product_type_to_provider_config_map[product.product_type]:
+            if plugin_conf.name == product.provider:
+                try:
+                    plugin_conf.download.priority = plugin_conf.priority
+                    plugin = self._build_plugin(product.provider, plugin_conf.download, Download)
+                    plugin.provider = plugin_conf.name
+                    return plugin
+                except AttributeError:
+                    plugin_conf.api.priority = plugin_conf.priority
+                    plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
+                    plugin.provider = plugin_conf.name
+                    return plugin
+
+    def get_auth_plugin(self, product_type, provider):
+        for plugin_conf in self.product_type_to_provider_config_map[product_type]:
+            if plugin_conf.name == provider:
+                try:
+                    plugin_conf.auth.priority = plugin_conf.priority
+                    plugin = self._build_plugin(provider, plugin_conf.auth, Authentication)
+                    plugin.provider = provider
+                    return plugin
+                except AttributeError:
+                    # We guess the plugin being built is of type Api, therefore no need for an Auth plugin.
+                    return None
+
+    def set_priority(self, provider, priority):
+        pass
+
+    @staticmethod
+    def _build_plugin(provider, plugin_conf, topic_class):
+        plugin_class = GeoProductDownloaderPluginMount.get_plugin_by_class_name(
+            topic_class,
+            plugin_conf.type
+        )
+        plugin = plugin_class(provider, plugin_conf)
+        return plugin
 
     def instantiate_configured_plugins(self, topics, product_type_id='', providers=None):
         """Instantiate all known plugins of particular type.
@@ -115,8 +175,6 @@ class PluginInstancesManager(object):
         :rtype: list
         :raises: :class:`AssertionError` if neither ``product_type_id`` nor ``providers`` keyword arguments is given.
         """
-        assert any((product_type_id, providers)), ("You should provide at least one of 'product_type_id' or "
-                                                   "'providers' parameters")
         if isinstance(topics, Iterable):
             instances = []
             for topic in topics:
@@ -142,7 +200,7 @@ class PluginInstancesManager(object):
         logger.debug("Creating '%s' plugin instance with config '%s'", topic_name.upper(),
                      {key: value for key, value in topic_config.items() if key != 'credentials'})
         PluginBaseClass = base or self._get_base_class(topic_name)
-        PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(
+        PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_class_name(
             PluginBaseClass,
             topic_config['plugin']
         )
@@ -168,7 +226,7 @@ class PluginInstancesManager(object):
         """
         logger.debug("Creating '%s' plugin instance with name '%s' (config-free instance)", topic.upper(), name)
         PluginBaseClass = self._get_base_class(topic)
-        PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_name(PluginBaseClass, name)
+        PluginClass = GeoProductDownloaderPluginMount.get_plugin_by_class_name(PluginBaseClass, name)
         return PluginClass()
 
     def _get_topics(self, provider):

@@ -31,8 +31,8 @@ class TokenAuth(Authentication):
         # First get the token
         try:
             response = requests.post(
-                self.config['auth_uri'],
-                data=self.config['credentials']
+                self.config.auth_uri,
+                data=self.config.credentials
             )
             try:
                 response.raise_for_status()
@@ -40,8 +40,8 @@ class TokenAuth(Authentication):
                 raise e
             else:
                 if self.config.get('token_type', 'text') == 'json':
-                    return RequestsDictTokenAuth(response.json(), self.config['token_key'])
+                    return RequestsDictTokenAuth(response.json(), self.config.token_key)
                 return RequestsTextTokenAuth(response.text)
-        except KeyError as err:
+        except AttributeError as err:
             if 'credentials' in err:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)

@@ -58,13 +58,13 @@ class HTTPHeaderAuth(Authentication):
     def authenticate(self):
         try:
             headers = {
-                header: value.format(**self.config['credentials'])
-                for header, value in self.config['headers'].items()
+                header: value.format(**self.config.credentials)
+                for header, value in self.config.headers.items()
             }
             return HeaderAuth(headers)
-        except KeyError as err:
+        except AttributeError as err:
             if 'credentials' in err:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)
 
 
 class HeaderAuth(requests.auth.AuthBase):

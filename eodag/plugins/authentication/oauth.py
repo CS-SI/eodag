@@ -23,16 +23,16 @@ from eodag.utils.exceptions import MisconfiguredError
 
 class OAuth(Authentication):
 
-    def __init__(self, config):
-        super(OAuth, self).__init__(config)
+    def __init__(self, provider, config):
+        super(OAuth, self).__init__(provider, config)
         self.access_key = None
         self.secret_key = None
 
     def authenticate(self):
         try:
-            self.access_key = self.config['credentials']['aws_access_key_id']
-            self.secret_key = self.config['credentials']['aws_secret_access_key']
+            self.access_key = self.config.credentials['aws_access_key_id']
+            self.secret_key = self.config.credentials['aws_secret_access_key']
             return self.access_key, self.secret_key
-        except KeyError as err:
+        except AttributeError as err:
             if 'credentials' in err:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)

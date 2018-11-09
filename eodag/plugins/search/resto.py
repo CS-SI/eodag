@@ -36,24 +36,23 @@ logger = logging.getLogger('eodag.plugins.search.resto')
 class RestoSearch(Search):
     SEARCH_PATH = '/collections/{collection}/search.json'
 
-    def __init__(self, config):
-        super(RestoSearch, self).__init__(config)
+    def __init__(self, provider, config):
+        super(RestoSearch, self).__init__(provider, config)
         self.query_url_tpl = urljoin(
-            self.config['api_endpoint'],
-            urlparse(self.config['api_endpoint']).path.rstrip('/') + self.SEARCH_PATH
+            self.config.api_endpoint,
+            urlparse(self.config.api_endpoint).path.rstrip('/') + self.SEARCH_PATH
         )
         # What scheme is used to locate the products that will be discovered during search
-        self.product_location_scheme = self.config.get('product_location_scheme', 'https')
+        self.product_location_scheme = getattr(self.config, 'product_location_scheme', 'https')
 
     def query(self, product_type, auth=None, **kwargs):
-        logger.info('New search for product type : *%s* on %s interface', product_type, self.name)
         results = []
         add_to_results = results.extend
-        start_date_param = get_search_param(self.config['metadata_mapping']['startTimeFromAscendingNode'])
-        end_date_param = get_search_param(self.config['metadata_mapping']['completionTimeFromAscendingNode'])
-        product_type_param = get_search_param(self.config['metadata_mapping']['productType'])
-        cloud_cover_param = get_search_param(self.config['metadata_mapping']['cloudCover'])
-        geometry_param = get_search_param(self.config['metadata_mapping']['geometry'])
+        start_date_param = get_search_param(self.config.metadata_mapping['startTimeFromAscendingNode'])
+        end_date_param = get_search_param(self.config.metadata_mapping['completionTimeFromAscendingNode'])
+        product_type_param = get_search_param(self.config.metadata_mapping['productType'])
+        cloud_cover_param = get_search_param(self.config.metadata_mapping['cloudCover'])
+        geometry_param = get_search_param(self.config.metadata_mapping['geometry'])
         params = {
             'sortOrder': 'descending',
             'sortParam': start_date_param,
@@ -81,13 +80,14 @@ class RestoSearch(Search):
             params[product_type_param] = resto_product_type
 
             url = self.query_url_tpl.format(collection=collection)
-            logger.debug('Making request to %s with params : %s', url, params)
+            logger.info('Making request to %s with params : %s', url, params)
             try:
                 response = requests.get(url, params=params)
                 response.raise_for_status()
-            except HTTPError as e:
-                logger.debug('Skipping error while searching for %s RestoSearch instance product type %s: %s',
-                             self.instance_name, resto_product_type, e)
+            except HTTPError:
+                import traceback as tb
+                logger.debug('Skipping error while searching for %s RestoSearch instance product type %s:\n%s',
+                             self.provider, resto_product_type, tb.format_exc())
             else:
                 add_to_results(self.normalize_results(product_type, response.json(), footprint))
         return results
@@ -103,11 +103,11 @@ class RestoSearch(Search):
         :return: The corresponding collection and product type ids on this instance of Resto
         :rtype: tuple(tuple, str)
         """
-        mapping = self.config['products'][product_type]
+        mapping = self.config.products[product_type]
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-/asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         if product_type == 'S2_MSI_L1C':
-            if self.instance_name == 'peps':
+            if self.provider == 'peps':
                 # If there is no criteria on date, we want to query all the collections known for providing L1C
                 # products
                 if date is None:
@@ -128,7 +128,6 @@ class RestoSearch(Search):
     def normalize_results(self, product_type, results, search_bbox):
         normalized = []
         if results['features']:
-            logger.info('Found %s products', len(results['features']))
             logger.debug('Adapting plugin results to eodag product representation')
             for result in results['features']:
                 if self.product_location_scheme == 'file':
@@ -151,13 +150,11 @@ class RestoSearch(Search):
                             )
                 product = EOProduct(
                     product_type,
-                    self.instance_name,
+                    self.provider,
                     download_url,
-                    properties_from_json(result, self.config['metadata_mapping']),
+                    properties_from_json(result, self.config.metadata_mapping),
                     searched_bbox=search_bbox
                 )
                 normalized.append(product)
             logger.debug('Normalized products : %s', normalized)
-        else:
-            logger.info('Nothing found !')
         return normalized
