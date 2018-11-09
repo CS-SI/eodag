@@ -42,7 +42,7 @@ theia:
         credentials:
             ident:
             pass:
-theia-landsat:
+theia_landsat:
     priority:
     search:
         product_location_scheme:
@@ -54,7 +54,7 @@ theia-landsat:
         credentials:
             username:
             password:
-USGS:
+usgs:
     priority:
     api:
         extract:

@@ -89,7 +89,7 @@
 
 ---
 !provider
-  name: theia-landsat
+  name: theia_landsat
   priority: 0
   products:
     LS_REFLECTANCE:

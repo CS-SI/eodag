@@ -89,39 +89,33 @@ class ProviderConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = '!provider'
 
-    def __init__(self, name, priority=0, api=None, search=None, products=None, download=None, auth=None, **kwargs):
-        if all(param is None for param in (api, search, download, auth)):
-            raise ValidationError('A provider must implement at least one plugin')
-        if api is not None and any(topic is not None for topic in (search, download, auth)):
-            raise ValidationError(
-                'Cannot create a provider implementing api and any of search, download or auth '
-                'plugins at the same time'
-            )
-        self.name = slugify(name).replace('-', '_')
-        self.priority = priority
-        self.api = api
-        self.search = search
-        self.products = products or {}
-        self.download = download
-        self.auth = auth
-        # each additional parameter becomes an attribute of the instance
-        for key, value in kwargs:
-            setattr(self, key, value)
-
     @classmethod
     def from_yaml(cls, loader, node):
-        node_keys = tuple(node_key.value for node_key, _ in node.value)
-        if 'name' not in node_keys:
-            raise ValidationError('Provider config must have name key')
-        if not any(k in node_keys for k in ('api', 'search', 'download', 'auth')):
-            raise ValidationError('A provider must implement at least one plugin')
-        if 'api' in node_keys and any(k in node_keys for k in ('search', 'download', 'auth')):
-            raise ValidationError('A provider implementing an Api plugin must not implement any other type of plugin')
+        cls.validate(tuple(node_key.value for node_key, _ in node.value))
         for node_key, node_value in node.value:
             if node_key.value == 'name':
                 node_value.value = slugify(node_value.value).replace('-', '_')
                 break
         return loader.construct_yaml_object(node, cls)
+
+    @classmethod
+    def from_mapping(cls, mapping):
+        cls.validate(mapping)
+        for key in ('api', 'search', 'download', 'auth'):
+            if key in mapping:
+                mapping[key] = PluginConfig.from_mapping(mapping[key])
+        c = cls()
+        c.__dict__.update(mapping)
+        return c
+
+    @staticmethod
+    def validate(config_keys):
+        if 'name' not in config_keys:
+            raise ValidationError('Provider config must have name key')
+        if not any(k in config_keys for k in ('api', 'search', 'download', 'auth')):
+            raise ValidationError('A provider must implement at least one plugin')
+        if 'api' in config_keys and any(k in config_keys for k in ('search', 'download', 'auth')):
+            raise ValidationError('A provider implementing an Api plugin must not implement any other type of plugin')
 
     def update(self, mapping):
         """Update the configuration parameters with values from `mapping`
@@ -149,17 +143,21 @@ class PluginConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = '!plugin'
 
-    def __init__(self, plugin_type, **free_params):
-        self.type = plugin_type
-        for key, value in free_params:
-            setattr(self, key, value)
-
     @classmethod
     def from_yaml(cls, loader, node):
-        node_keys = (node_key.value for node_key, _ in node.value)
-        if 'type' not in node_keys:
-            raise ValidationError('A Plugin config must specify the Plugin it configures')
+        cls.validate(tuple(node_key.value for node_key, _ in node.value))
         return loader.construct_yaml_object(node, cls)
+
+    @classmethod
+    def from_mapping(cls, mapping):
+        c = cls()
+        c.__dict__.update(mapping)
+        return c
+
+    @staticmethod
+    def validate(config_keys):
+        if 'type' not in config_keys:
+            raise ValidationError('A Plugin config must specify the Plugin it configures')
 
     def update(self, mapping):
         """Update the configuration parameters with values from `mapping`
@@ -263,4 +261,8 @@ def override_config_from_mapping(config, mapping):
     :param dict mapping: The mapping containing the values to be overriden
     """
     for provider, new_conf in mapping.items():
-        config.setdefault(provider, ProviderConfig(provider, **new_conf)).update(new_conf)
+        old_conf = config.get(provider)
+        if old_conf is not None:
+            old_conf.update(new_conf)
+        else:
+            mapping[provider] = ProviderConfig.from_mapping(new_conf)

@@ -50,7 +50,7 @@ There are currently 6 available providers implemented on eodag:
 
 * `aws_s3_sentinel2_l1c <http://sentinel-pds.s3-website.eu-central-1.amazonaws.com/>`_: Amazon public bucket for Sentinel 2 products
 
-* `theia-landsat <https://theia-landsat.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Pleiades and Landsat products
+* `theia_landsat <https://theia-landsat.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Pleiades and Landsat products
 
 * `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) catalog for Sentinel 2 products
 
@@ -89,7 +89,7 @@ Create a configuration file containing your credentials for each provider.  You 
         credentials:
             ident:
             pass:
-    theia-landsat:
+    theia_landsat:
         credentials:
             username:
             password:
@@ -116,7 +116,7 @@ provider.
 
 For usgs, create an account here: https://ers.cr.usgs.gov/register/
 
-For theia-landsat and theia, you only need to register once here: https://sso.theia-land.fr/theia/register/register.xhtml
+For theia_landsat and theia, you only need to register once here: https://sso.theia-land.fr/theia/register/register.xhtml
 
 For peps, create an account here: https://peps.cnes.fr/rocket/#/register
 
