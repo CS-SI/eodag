@@ -18,7 +18,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-from operator import attrgetter
 
 import geojson
 from pkg_resources import resource_filename
@@ -26,11 +25,9 @@ from tqdm import tqdm
 
 from eodag.api.search_result import SearchResult
 from eodag.config import (
-    SimpleYamlProxyConfig, load_default_config, override_config_from_file,
-    override_config_from_env,
+    SimpleYamlProxyConfig, load_default_config, override_config_from_env, override_config_from_file,
 )
-from eodag.plugins.instances_manager import PluginInstancesManager
-from eodag.utils import ProgressCallback
+from eodag.plugins.manager import PluginManager
 from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 
 
@@ -56,7 +53,7 @@ class EODataAccessGateway(object):
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
 
-        self._plugins_manager = PluginInstancesManager(self.providers_config)
+        self._plugins_manager = PluginManager(self.providers_config)
 
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
@@ -91,12 +88,6 @@ class EODataAccessGateway(object):
         if preferred_provider != provider:
             new_priority = max_priority + 1
             self._plugins_manager.set_priority(provider, new_priority)
-            # Update the interfaces cache to take into account the fact that the preferred provider has changed
-            if 'search' in self._plugins_cache:
-                for search_interfaces in self._plugins_cache['search'].values():
-                    for iface in search_interfaces:
-                        if iface.instance_name == provider:
-                            iface.priority = new_priority
 
     def get_preferred_provider(self):
         """Get the provider currently set as the preferred one for searching products, along with its priority.
@@ -319,4 +310,4 @@ class EODataAccessGateway(object):
             key.replace('-', '_'): val
             for key, val in options.items()
         })
-        return self._plugins_manager.instantiate_plugin_by_config('crunch', plugin_conf)
+        return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
