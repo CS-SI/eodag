@@ -112,7 +112,7 @@ class HTTPDownload(Download):
 
     def __build_download_url(self, product, auth):
         url = product.remote_location.format(base=self.config.base_uri.rstrip('/'))
-        if product.properties['organisationName'] in ('ESA',):
+        if product.provider == 'theia':
             url += '?token={}'.format(auth.token)
         return url
 

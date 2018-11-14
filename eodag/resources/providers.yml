@@ -149,6 +149,15 @@
     extract: true
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
+    login_form_xpath: '//form[@id="loginForm"]'
+    authentication_uri_source: 'config'
+    additional_login_form_data:
+      sessionDataKey:  'xpath(//input[@name="sessionDataKey"]/@value)'
+    user_consent_needed: True
+    user_consent_form_xpath: '//form[@id="profile"]'
+    user_consent_form_data:
+      consent: 'approve'
+      sessionDataKeyConsent: 'xpath(//input[@name="sessionDataKeyConsent"]/@value)'
     authorization_uri: 'https://sso.theia-land.fr/oauth2/authorize'
     redirect_uri: 'https://theia-landsat.cnes.fr/rocket/'
     authentication_uri: 'https://sso.theia-land.fr/commonauth'
@@ -157,9 +166,10 @@
     token_exchange_params:
       redirect_uri: redirectUri
       client_id: clientId
-    token_exchange_post_data_method: json   # One of json, data, params
-    token_provision: qs # One of qs or header. If qs, token_qs_key is mandatory
+    token_exchange_post_data_method: json
+    token_provision: qs
     token_qs_key: '_bearer'
+    token_key: 'token'
 
 ---
 !provider
@@ -365,3 +375,65 @@
     type: HTTPHeaderAuth
     headers:
       Authorization: "Apikey {apikey}"
+
+---
+!provider
+  name: creodias
+  priority: 0
+  search: !plugin
+    type: RestoSearch
+    api_endpoint: 'https://finder.creodias.eu/resto/api/'
+    product_location_scheme: 'https'
+    metadata_mapping:
+      id: '$.id'
+      geometry:
+        - box
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover:
+        - cloudCover
+        - '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
+      quicklook: '$.properties.thumbnail'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://zipper.creodias.eu/download/'
+    extract: true
+  auth: !plugin
+    type: OIDCAuthorizationCodeFlowAuth
+    login_form_xpath: '//form[@id="kc-form-login"]'
+    authentication_uri_source: 'login-form'
+    user_consent_needed: False
+    authorization_uri: 'https://auth.creodias.eu/auth/realms/dias/protocol/openid-connect/auth'
+    redirect_uri: 'https://finder.creodias.eu/www'
+    token_uri: 'https://auth.creodias.eu/auth/realms/dias/protocol/openid-connect/token'
+    client_id: 'CLOUDFERRO_PARTNERS'
+    client_secret: 'dc0aca03-2dc6-4798-a5de-fc5aeb6c8ee1'
+    token_exchange_post_data_method: data
+    token_provision: header
+    token_key: "id_token"
+  products:
+    S2_MSI_L1C:
+      product_type: L1C
+      collection: Sentinel2
