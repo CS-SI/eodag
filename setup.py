@@ -98,6 +98,7 @@ setup(
             'OAuth = eodag.plugins.authentication.oauth:OAuth',
             'TokenAuth = eodag.plugins.authentication.token:TokenAuth',
             'OIDCAuthorizationCodeFlowAuth = eodag.plugins.authentication.openid_connect:OIDCAuthorizationCodeFlowAuth',    # noqa
+            'KeycloakOIDCPasswordAuth = eodag.plugins.authentication.keycloak:KeycloakOIDCPasswordAuth',
         ],
         'eodag.plugins.crunch': [
             'FilterLatestIntersect = eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect',

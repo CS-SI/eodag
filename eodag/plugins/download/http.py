@@ -56,7 +56,7 @@ class HTTPDownload(Download):
                 # Do not download data if we are on site. Instead give back the absolute path to the data
                 return fs_path
 
-        url = self.__build_download_url(product, auth)
+        url = product.remote_location.format(base=self.config.base_uri.rstrip('/'))
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
             return
@@ -109,12 +109,6 @@ class HTTPDownload(Download):
                     shutil.move(fs_path, new_fs_path)
                     return new_fs_path
                 return self.__finalize(fs_path)
-
-    def __build_download_url(self, product, auth):
-        url = product.remote_location.format(base=self.config.base_uri.rstrip('/'))
-        if product.provider == 'theia':
-            url += '?token={}'.format(auth.token)
-        return url
 
     def __finalize(self, fs_path):
         """Finalize the download process.

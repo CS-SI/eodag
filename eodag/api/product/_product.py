@@ -19,7 +19,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
-import zipfile
 
 import numpy
 import rasterio
@@ -29,7 +28,6 @@ from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from requests import HTTPError
 from shapely import geometry
-from tqdm import tqdm
 
 from eodag.utils import ProgressCallback
 

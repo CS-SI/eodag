@@ -421,19 +421,38 @@
     base_uri: 'https://zipper.creodias.eu/download/'
     extract: true
   auth: !plugin
-    type: OIDCAuthorizationCodeFlowAuth
-    login_form_xpath: '//form[@id="kc-form-login"]'
-    authentication_uri_source: 'login-form'
-    user_consent_needed: False
-    authorization_uri: 'https://auth.creodias.eu/auth/realms/dias/protocol/openid-connect/auth'
-    redirect_uri: 'https://finder.creodias.eu/www'
-    token_uri: 'https://auth.creodias.eu/auth/realms/dias/protocol/openid-connect/token'
+    type: KeycloakOIDCPasswordAuth
+    auth_base_uri: 'https://auth.creodias.eu/auth'
+    realm: 'dias'
     client_id: 'CLOUDFERRO_PARTNERS'
     client_secret: 'dc0aca03-2dc6-4798-a5de-fc5aeb6c8ee1'
-    token_exchange_post_data_method: data
-    token_provision: header
-    token_key: "id_token"
+    token_provision: qs
+    token_qs_key: 'token'
   products:
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
+    S1_SAR_RAW:
+      product_type: RAW
+      collection: Sentinel1
+    S1_SAR_GRD:
+      product_type: GRD
+      collection: Sentinel1
+    S1_SAR_SLC:
+      product_type: SLC
+      collection: Sentinel1
+    S1_SAR_OCN:
+      product_type: OCN
+      collection: Sentinel1
+    S3_LAN:
+      product_type: SR_2_LAN___
+      collection: Sentinel3
+    S3_SRA:
+      product_type: SR_1_SRA___
+      collection: Sentinel3
+    S3_SRA_BS:
+      product_type: SR_1_SRA_BS
+      collection: Sentinel3
+    S3_SRA_A_BS:
+      product_type: SR_1_SRA_A_
+      collection: Sentinel3

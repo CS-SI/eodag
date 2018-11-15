@@ -135,8 +135,7 @@ class RestoSearch(Search):
                         self.product_location_scheme,
                         result['properties']['productIdentifier'])
                 else:
-                    if result['properties']['organisationName'] in ('ESA',):
-                        # TODO: See the above todo about that productIdentifier thing
+                    if self.provider == 'eocloud':
                         download_url = '{base}' + '/{prodId}.zip'.format(
                             prodId=result['properties']['productIdentifier'].replace('/eodata/', '')
                         )

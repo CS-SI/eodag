@@ -44,21 +44,28 @@ except ImportError:  # PY2
 
 
 class RequestsTokenAuth(AuthBase):
-    token = ''
 
-    def __call__(self, req):
-        req.headers['Authorization'] = "Bearer {}".format(self.token)
-        return req
-
-
-class RequestsDictTokenAuth(RequestsTokenAuth):
-    def __init__(self, token_obj, token_key):
-        self.token = token_obj[token_key]
-
-
-class RequestsTextTokenAuth(RequestsTokenAuth):
-    def __init__(self, token):
+    def __init__(self, token, where, qs_key=None):
         self.token = token
+        self.where = where
+        self.qs_key = qs_key
+
+    def __call__(self, request):
+        if self.where == 'qs':
+            parts = urlparse(request.url)
+            qs = parse_qs(parts.query)
+            qs[self.qs_key] = self.token
+            request.url = urlunparse((
+                parts.scheme,
+                parts.netloc,
+                parts.path,
+                parts.params,
+                urlencode(qs),
+                parts.fragment
+            ))
+        elif self.where == 'header':
+            request.headers['Authorization'] = "Bearer {}".format(self.token)
+        return request
 
 
 class FloatRange(click.types.FloatParamType):
