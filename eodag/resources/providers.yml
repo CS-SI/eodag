@@ -432,6 +432,9 @@
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
+    S2_MSI_L2A:
+      product_type: L2A
+      collection: Sentinel2
     S1_SAR_RAW:
       product_type: RAW
       collection: Sentinel1
@@ -445,14 +448,35 @@
       product_type: OCN
       collection: Sentinel1
     S3_LAN:
-      product_type: SR_2_LAN___
+      product_type: LAN
       collection: Sentinel3
     S3_SRA:
-      product_type: SR_1_SRA___
+      product_type: SRA
       collection: Sentinel3
     S3_SRA_BS:
-      product_type: SR_1_SRA_BS
+      product_type: SRA_BS
       collection: Sentinel3
     S3_SRA_A_BS:
-      product_type: SR_1_SRA_A_
+      product_type: SRA_A
+      collection: Sentinel3
+    S3_EFR:
+      product_type: EFR
+      collection: Sentinel3
+    S3_ERR:
+      product_type: ERR
+      collection: Sentinel3
+    S3_WAT:
+      product_type: WAT
+      collection: Sentinel3
+    S3_SLSTR_L2LST:
+      product_type: LST
+      collection: Sentinel3
+    S3_OLCI_L2LRR:
+      product_type: LRR
+      collection: Sentinel3
+    S3_OLCI_L2LFR:
+      product_type: LFR
+      collection: Sentinel3
+    S3_SLSTR_L1RBT:
+      product_type: RBT
       collection: Sentinel3
