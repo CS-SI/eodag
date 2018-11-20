@@ -59,4 +59,3 @@ class KeycloakOIDCPasswordAuth(Authentication):
             self.config.token_provision,
             key=getattr(self.config, 'token_qs_key', None)
         )
-
