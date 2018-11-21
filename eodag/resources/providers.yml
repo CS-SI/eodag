@@ -480,3 +480,77 @@
     S3_SLSTR_L1RBT:
       product_type: RBT
       collection: Sentinel3
+
+---
+!provider
+  name: mundi_s1
+  priority: 0
+  search: !plugin
+    type: CSWSearch
+    api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/Sentinel1/csw'
+    metadata_mapping:
+      id: 'dc:identifier/text()'
+      productType: 'DIAS:productType/text()'
+      geometry: 'DIAS:footprint/text()'
+      processingLevel: 'DIAS:productLevel/text()'
+      title: 'dc:title/text()'
+      abstract: 'dct:abstract/text()'
+      orbitNumber: 'DIAS:acquisitionOrbitNumber/text()'
+      orbitDirection: 'DIAS:orbitDirection/text()'
+      startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
+      completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
+      resolution: 'DIAS:resolution/text()'
+      sensorMode: 'DIAS:sensorMode/text()'
+      quicklook: 'DIAS:quicklookURI/text()'
+    search_definition:
+      product_type_tags:
+        - name: 'DIAS:productType' # any xml tag of the catalogue that can be queryable
+          matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
+      date_tags:
+        start: 'DIAS:sensingStartDate'
+        end: 'DIAS:sensingStopDate'
+  download: !plugin
+    type: HTTPDownload
+  auth: !plugin
+    type: GenericAuth
+  products:
+    S1_SAR_RAW: RAW
+    S1_SAR_GRD: GRD
+    S1_SAR_SLC: SLC
+    S1_SAR_OCN: OCN
+
+---
+!provider
+  name: mundi_s2
+  priority: 0
+  search: !plugin
+    type: CSWSearch
+    api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/Sentinel2/csw'
+    metadata_mapping:
+      id: 'dc:identifier/text()'
+      productType: 'DIAS:productType/text()'
+      geometry: 'DIAS:footprint/text()'
+      processingLevel: 'DIAS:productLevel/text()'
+      title: 'dc:title/text()'
+      abstract: 'dct:abstract/text()'
+      orbitNumber: 'DIAS:acquisitionOrbitNumber/text()'
+      orbitDirection: 'DIAS:orbitDirection/text()'
+      startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
+      completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
+      resolution: 'DIAS:resolution/text()'
+      sensorMode: 'DIAS:sensorMode/text()'
+      quicklook: 'DIAS:quicklookURI/text()'
+    search_definition:
+      product_type_tags:
+        - name: 'DIAS:productType' # any xml tag of the catalogue that can be queryable
+          matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
+      date_tags:
+        start: 'DIAS:sensingStartDate'
+        end: 'DIAS:sensingStopDate'
+  download: !plugin
+    type: HTTPDownload
+  auth: !plugin
+    type: GenericAuth
+  products:
+    S2_MSI_L1C: L1C
+    S2_MSI_L2A: L2A

@@ -27,6 +27,7 @@ from owslib.fes import (
 )
 from owslib.ows import ExceptionReport
 from shapely import geometry
+from shapely import wkt
 
 from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_xml
@@ -41,32 +42,25 @@ SUPPORTED_REFERENCE_SCHEMES = [
     'WWW:DOWNLOAD-1.0-http--download',
 ]
 
-# Configuration keys
-SEARCH_DEF = 'search_definitions'
-PRODUCT_TYPE = 'pt_tags'
-DATE = 'date_tags'
-
 
 class CSWSearch(Search):
 
-    def __init__(self, config):
-        super(CSWSearch, self).__init__(config)
+    def __init__(self, provider, config):
+        super(CSWSearch, self).__init__(provider, config)
         self.catalog = None
 
-    def query(self, product_type, **kwargs):
-        logger.info('New search for product type : %s on %s interface', product_type, self.name)
-        auth = kwargs.pop('auth', None)
+    def query(self, product_type, auth=None, **kwargs):
         if auth is not None:
-            self.__init_catalog(**auth.config['credentials'])
+            self.__init_catalog(**getattr(auth.config, 'credentials', {}))
         else:
             self.__init_catalog()
         results = []
         if self.catalog:
-            for product_type_def in self.config[SEARCH_DEF][PRODUCT_TYPE]:
+            for product_type_def in self.config.search_definition['product_type_tags']:
                 product_type_search_tag = product_type_def['name']
-                logger.debug('Querying %s for product type %s', product_type_search_tag, product_type)
-                constraints = self.__convert_query_params(product_type_def, product_type, kwargs)
-                with patch_owslib_requests(verify=False):
+                logger.debug('Querying <%s> tag for product type %s', product_type_search_tag, product_type)
+                constraints = self.__convert_query_params(product_type_def, self.config.products[product_type], kwargs)
+                with patch_owslib_requests(verify=True):
                     try:
                         self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)
                     except ExceptionReport:
@@ -84,12 +78,14 @@ class CSWSearch(Search):
     def __init_catalog(self, username=None, password=None):
         """Initializes a catalogue by performing a GetCapabilities request on the url"""
         if not self.catalog:
-            logger.debug('Initialising CSW catalog at %s', self.config['api_endpoint'])
-            with patch_owslib_requests(verify=False):
+            api_endpoint = self.config.api_endpoint
+            version = getattr(self.config, 'version', '2.0.2')
+            logger.debug('Initialising CSW catalog at %s', api_endpoint)
+            with patch_owslib_requests(verify=True):
                 try:
                     self.catalog = CatalogueServiceWeb(
-                        self.config['api_endpoint'],
-                        version=self.config.get('version', '2.0.2'),
+                        api_endpoint,
+                        version=version,
                         username=username,
                         password=password
                     )
@@ -98,18 +94,8 @@ class CSWSearch(Search):
 
     def __build_product(self, rec, product_type, **kwargs):
         """Enable search results to be handled by http download plugin"""
-        bbox = rec.bbox_wgs84
-        if not bbox:
-            code = 'EPSG:4326'
-            if rec.bbox.crs.code and rec.bbox.crs.code > 0:
-                code = ':'.join((str(rec.bbox.crs.id), str(rec.bbox.crs.code)))
-            rec_proj = pyproj.Proj(init=code)
-            default_proj_as_pyproj = pyproj.Proj(DEFAULT_PROJ)
-            maxx, maxy = pyproj.transform(rec_proj, default_proj_as_pyproj, rec.bbox.maxx, rec.bbox.maxy)
-            minx, miny = pyproj.transform(rec_proj, default_proj_as_pyproj, rec.bbox.minx, rec.bbox.miny)
-            bbox = (minx, miny, maxx, maxy)
         download_url = ''
-        resource_filter = re.compile(self.config[SEARCH_DEF].get('resource_location_filter', ''))
+        resource_filter = re.compile(self.config.search_definition.get('resource_location_filter', ''))
         for ref in rec.references:
             if ref['scheme'] in SUPPORTED_REFERENCE_SCHEMES:
                 if resource_filter.pattern and resource_filter.search(ref['url']):
@@ -117,13 +103,25 @@ class CSWSearch(Search):
                 else:
                     download_url = ref['url']
                 break
-        properties = properties_from_xml(rec.xml, self.config['metadata_mapping'])
-        properties['title'] = slugify(rec.identifier)
-        properties['geometry'] = geometry.box(*bbox)
-        properties['productType'] = product_type
+        properties = properties_from_xml(rec.xml, self.config.metadata_mapping)
+        if not properties['geometry']:
+            bbox = rec.bbox_wgs84
+            if not bbox:
+                code = 'EPSG:4326'
+                if rec.bbox.crs and rec.bbox.crs.code and rec.bbox.crs.code > 0:
+                    code = ':'.join((str(rec.bbox.crs.id), str(rec.bbox.crs.code)))
+                rec_proj = pyproj.Proj(init=code)
+                default_proj_as_pyproj = pyproj.Proj(DEFAULT_PROJ)
+                maxx, maxy = pyproj.transform(rec_proj, default_proj_as_pyproj, rec.bbox.maxx, rec.bbox.maxy)
+                minx, miny = pyproj.transform(rec_proj, default_proj_as_pyproj, rec.bbox.minx, rec.bbox.miny)
+                bbox = (minx, miny, maxx, maxy)
+            properties['geometry'] = geometry.box(*bbox)
+        # Ensure the geometry property is shapely-compatible (the geometry is assumed to be a wkt)
+        else:
+            properties['geometry'] = wkt.loads(properties['geometry'])
         return EOProduct(
             product_type,
-            self.instance_name,
+            self.provider,
             download_url,
             properties,
             searched_bbox=kwargs.get('footprints'),
@@ -151,7 +149,9 @@ class CSWSearch(Search):
         # dates
         start, end = params.get('startTimeFromAscendingNode'), params.get('completionTimeFromAscendingNode')
         if start:
-            constraints.append(PropertyIsGreaterThanOrEqualTo(self.config[SEARCH_DEF][DATE]['start'], start))
+            constraints.append(PropertyIsGreaterThanOrEqualTo(
+                self.config.search_definition['date_tags']['start'], start))
         if end:
-            constraints.append(PropertyIsLessThanOrEqualTo(self.config[SEARCH_DEF][DATE]['end'], end))
+            constraints.append(PropertyIsLessThanOrEqualTo(
+                self.config.search_definition['date_tags']['end'], end))
         return [constraints] if len(constraints) > 1 else constraints
