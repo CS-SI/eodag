@@ -554,3 +554,40 @@
   products:
     S2_MSI_L1C: L1C
     S2_MSI_L2A: L2A
+
+---
+!provider
+  name: wekeo
+  priority: 0
+  search: !plugin
+    type: CSWSearch
+    api_endpoint: 'https://www.wekeo.eu/elastic-csw/service'
+    metadata_mapping:
+      id: 'dc:identifier/text()'
+      productType: 'dct:alternative/text()'
+      title: 'dc:title/text()'
+      abstract: 'dct:abstract/text()'
+      quicklook: 'https://www.wekeo.eu/sites/default/files/quicklooks/{productType}.jpg'
+      keyword: 'dc:subject[text()]'
+    search_definition:
+      product_type_tags:
+        - name: 'dc:identifier' # any xml tag of the catalogue that can be queryable
+          matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
+  download: !plugin
+    type: HTTPDownload
+  auth: !plugin
+    type: GenericAuth
+  products:
+    S1_SAR_GRD: EO:ESA:DAT:SENTINEL-1:L1_GRD
+    S1_SAR_SLC: EO:ESA:DAT:SENTINEL-1:L1_SLC
+    S2_MSI_L1C: EO:ESA:DAT:SENTINEL-2:MSI1C
+    S3_LAN: EO:ESA:DAT:SENTINEL-3:SR_2_LAN___
+    S3_SRA: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
+    S3_SRA_BS: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS___
+    S3_EFR: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
+    S3_ERR: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
+    S3_WAT: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
+    S3_SLSTR_L2LST: EO:ESA:DAT:SENTINEL-3:SL_2_LST___
+    S3_OLCI_L2LRR: EO:ESA:DAT:SENTINEL-3:OL_2_LRR___
+    S3_OLCI_L2LFR: EO:ESA:DAT:SENTINEL-3:OL_2_LFR___
+    S3_SLSTR_L1RBT: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___

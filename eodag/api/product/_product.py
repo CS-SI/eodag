@@ -19,6 +19,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
+import re
 
 import numpy
 import rasterio
@@ -279,12 +280,26 @@ class EOProduct(object):
         :returns: The absolute path of the downloaded quicklook
         :rtype: str (Python 3) or unicode (Python 2)
         """
+        def format_quicklook_address():
+            """If the quicklook address is a Python format string, resolve the formatting with the properties of
+            the product.
+            """
+            fstrmatch = re.match(r'.*{.+}*.*', self.properties['quicklook'])
+            if fstrmatch:
+                self.properties['quicklook'].format({
+                    prop_key: prop_val
+                    for prop_key, prop_val in self.properties.items()
+                    if prop_key != 'quicklook'
+                })
+
         if progress_callback is None:
             progress_callback = ProgressCallback()
 
         if self.properties['quicklook'] is None:
             logger.warning('Missing information to retrieve quicklook for EO product: %s', self.properties['id'])
             return ''
+
+        format_quicklook_address()
 
         quicklooks_base_dir = os.path.join(self.downloader.config.outputs_prefix, "quicklooks")
         if not os.path.isdir(quicklooks_base_dir):

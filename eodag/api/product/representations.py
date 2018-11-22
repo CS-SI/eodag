@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 
 import jsonpath_rw as jsonpath
 from lxml import etree
+from lxml.etree import XPathEvalError
 
 from eodag.utils.metadata_mapping import get_metadata_path
 
@@ -67,9 +68,14 @@ def properties_from_json(json, mapping):
         if metadata not in mapping:
             properties[metadata] = 'N/A'
         else:
-            path = jsonpath.parse(get_metadata_path(mapping[metadata]))
-            match = path.find(json)
-            properties[metadata] = match[0].value if len(match) == 1 else None
+            try:
+                path = jsonpath.parse(get_metadata_path(mapping[metadata]))
+            except Exception:   # jsonpath_rw does not provider a proper exception
+                # Assume the mapping is to be passed as is
+                properties[metadata] = get_metadata_path(mapping[metadata])
+            else:
+                match = path.find(json)
+                properties[metadata] = match[0].value if len(match) == 1 else None
     return properties
 
 
@@ -90,9 +96,13 @@ def properties_from_xml(xml_as_text, mapping):
         if metadata not in mapping:
             properties[metadata] = 'N/A'
         else:
-            value = root.xpath(get_metadata_path(mapping[metadata]), namespaces=root.nsmap)
-            if len(value) > 1:
-                properties[metadata] = value
-            else:
-                properties[metadata] = value[0] if len(value) == 1 else None
+            try:
+                value = root.xpath(get_metadata_path(mapping[metadata]), namespaces=root.nsmap)
+                if len(value) > 1:
+                    properties[metadata] = value
+                else:
+                    properties[metadata] = value[0] if len(value) == 1 else None
+            except XPathEvalError:
+                # Assume the mapping provided should be passed AS IS
+                properties[metadata] = get_metadata_path(mapping[metadata])
     return properties

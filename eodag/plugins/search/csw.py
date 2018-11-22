@@ -148,10 +148,10 @@ class CSWSearch(Search):
 
         # dates
         start, end = params.get('startTimeFromAscendingNode'), params.get('completionTimeFromAscendingNode')
-        if start:
+        if start and 'date_tags' in self.config.search_definition:
             constraints.append(PropertyIsGreaterThanOrEqualTo(
                 self.config.search_definition['date_tags']['start'], start))
-        if end:
+        if end and 'date_tags' in self.config.search_definition:
             constraints.append(PropertyIsLessThanOrEqualTo(
                 self.config.search_definition['date_tags']['end'], end))
         return [constraints] if len(constraints) > 1 else constraints
