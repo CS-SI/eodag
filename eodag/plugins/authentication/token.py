@@ -39,11 +39,11 @@ class TokenAuth(Authentication):
             except HTTPError as e:
                 raise e
             else:
-                if self.config.get('token_type', 'text') == 'json':
+                if getattr(self.config, 'token_type', 'text') == 'json':
                     token = response.json()[self.config.token_key]
                 else:
                     token = response.text
                 return RequestsTokenAuth(token, 'header')
         except AttributeError as err:
-            if 'credentials' in err:
+            if 'credentials' in err.args:
                 raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)

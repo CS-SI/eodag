@@ -43,12 +43,11 @@
   priority: 0
   search: !plugin
     type: AwsSearch
-    api_endpoint: 'http://finder.eocloud.eu/resto/api/'
-    product_location_scheme: 's3'
+    api_endpoint: 'http://finder.eocloud.eu/resto/api/collections/{collection}/search.json'
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -64,7 +63,7 @@
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -81,6 +80,7 @@
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
+      partial_support: true
   download: !plugin
     type: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
@@ -109,12 +109,12 @@
       product_type: Bundle (Pan, XS)
   search: !plugin
     type: RestoSearch
-    api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
+    api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/collections/{collection}/search.json'
     product_location_scheme: https
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -129,7 +129,7 @@
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -143,6 +143,7 @@
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
       quicklook: '$.properties.quicklook'
+      downloadLink: '$.properties.services.download.url'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://theia-landsat.cnes.fr/resto'
@@ -177,12 +178,12 @@
   priority: 0
   search: !plugin
     type: RestoSearch
-    api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api'
+    api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
     product_location_scheme: https
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -196,7 +197,7 @@
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -210,6 +211,7 @@
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
       quicklook: '$.properties.quicklook'
+      downloadLink: '$.properties.services.download.url'
   products:
     S2_MSI_L2A:
       product_type: REFLECTANCE
@@ -230,12 +232,12 @@
   priority: 1
   search: !plugin
     type: RestoSearch
-    api_endpoint: 'https://peps.cnes.fr/resto/api'
+    api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
     product_location_scheme: https
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -251,7 +253,7 @@
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -264,6 +266,7 @@
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       quicklook: '$.properties.quicklook'
+      downloadLink: '$.properties.services.download.url'
   products:
     S1_SAR_OCN:
       product_type: OCN
@@ -277,7 +280,7 @@
     S2_MSI_L1C:
       collection: S2ST
       product_type: S2MSI1C
-      partial: false   # Peps only provide L1C products for Sentinel-2A platform
+      partial_support: true   # Peps only provide L1C products for Sentinel-2A platform
     S3_EFR:
       product_type: OL_1_EFR___
       collection: S3
@@ -317,19 +320,19 @@
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
-      partial: true
+      partial_support: true
     S1_SAR_RAW:
       product_type: RAW
-      partial: true
+      partial_support: true
     S1_SAR_GRD:
       product_type: GRD
-      partial: true
+      partial_support: true
     S1_SAR_SLC:
       product_type: SLC
-      partial: true
+      partial_support: true
     S1_SAR_OCN:
       product_type: OCN
-      partial: true
+      partial_support: true
     S3_LAN:
       product_type: SR_2_LAN___
     S3_SRA:
@@ -340,16 +343,17 @@
       product_type: SR_1_SRA_A_
   search: !plugin
     type: ArlasSearch
-    api_endpoint: 'https://sobloo.eu/api/v1/services/explore'
+    api_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_geosearch'
     quicklook_endpoint: 'https://sobloo.eu/api/v1/services/quicklook'
-    arlas_collection: catalog
+    collection: catalog
+    result_type: 'json'
     metadata_mapping:
       id: '$.properties.uid'
       geometry:
-        - gintersect
+        - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
-        - 'identification.type'
+        - 'f=identification.type:eq:{productType}'
         - '$.properties.identification.type'
       platform: '$.properties.acquisition.mission'
       platformSerialIdentifier: '$.properties.acquisition.missionCode'
@@ -359,13 +363,14 @@
       orbitNumber: '$.properties.orbit.number'
       orbitDirection: '$.properties.orbit.direction'
       cloudCover:
-        - 'contentDesctiption.cloudCoverPercentage'
+        - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       startTimeFromAscendingNode:
         - 'acquisition.beginViewingDate'
         - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
       quicklook: '$.properties.state.resources.quicklook'
+      downloadLink: 'https://%(base_uri)s/{id}'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download/'
@@ -382,12 +387,12 @@
   priority: 0
   search: !plugin
     type: RestoSearch
-    api_endpoint: 'https://finder.creodias.eu/resto/api/'
+    api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
     product_location_scheme: 'https'
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -403,7 +408,7 @@
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -416,6 +421,7 @@
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       quicklook: '$.properties.thumbnail'
+      downloadLink: '$.properties.services.download.url'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
@@ -432,9 +438,11 @@
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
+      partial_support: true
     S2_MSI_L2A:
       product_type: L2A
       collection: Sentinel2
+      partial_support: true
     S1_SAR_RAW:
       product_type: RAW
       collection: Sentinel1
@@ -514,10 +522,14 @@
   auth: !plugin
     type: GenericAuth
   products:
-    S1_SAR_RAW: RAW
-    S1_SAR_GRD: GRD
-    S1_SAR_SLC: SLC
-    S1_SAR_OCN: OCN
+    S1_SAR_RAW:
+      product_type: RAW
+    S1_SAR_GRD:
+      product_type: GRD
+    S1_SAR_SLC:
+      product_type: SLC
+    S1_SAR_OCN:
+      product_type: OCN
 
 ---
 !provider
@@ -543,7 +555,7 @@
     search_definition:
       product_type_tags:
         - name: 'DIAS:productType' # any xml tag of the catalogue that can be queryable
-          matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
+          matching: fuzzy # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
       date_tags:
         start: 'DIAS:sensingStartDate'
         end: 'DIAS:sensingStopDate'
@@ -552,8 +564,11 @@
   auth: !plugin
     type: GenericAuth
   products:
-    S2_MSI_L1C: L1C
-    S2_MSI_L2A: L2A
+    S2_MSI_L1C:
+      product_type: L1C
+      partial_support: true
+    S2_MSI_L2A:
+      product_type: L2A
 
 ---
 !provider
@@ -578,16 +593,29 @@
   auth: !plugin
     type: GenericAuth
   products:
-    S1_SAR_GRD: EO:ESA:DAT:SENTINEL-1:L1_GRD
-    S1_SAR_SLC: EO:ESA:DAT:SENTINEL-1:L1_SLC
-    S2_MSI_L1C: EO:ESA:DAT:SENTINEL-2:MSI1C
-    S3_LAN: EO:ESA:DAT:SENTINEL-3:SR_2_LAN___
-    S3_SRA: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
-    S3_SRA_BS: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS___
-    S3_EFR: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
-    S3_ERR: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
-    S3_WAT: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
-    S3_SLSTR_L2LST: EO:ESA:DAT:SENTINEL-3:SL_2_LST___
-    S3_OLCI_L2LRR: EO:ESA:DAT:SENTINEL-3:OL_2_LRR___
-    S3_OLCI_L2LFR: EO:ESA:DAT:SENTINEL-3:OL_2_LFR___
-    S3_SLSTR_L1RBT: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
+    S1_SAR_GRD:
+      product_type: "EO:ESA:DAT:SENTINEL-1:L1_GRD"
+    S1_SAR_SLC:
+      product_type: "EO:ESA:DAT:SENTINEL-1:L1_SLC"
+    S2_MSI_L1C:
+      product_type: "EO:ESA:DAT:SENTINEL-2:MSI1C"
+    S3_LAN:
+      product_type: "EO:ESA:DAT:SENTINEL-3:SR_2_LAN___"
+    S3_SRA:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"
+    S3_SRA_BS:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS___"
+    S3_EFR:
+      product_type: "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"
+    S3_ERR:
+      product_type: "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"
+    S3_WAT:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"
+    S3_SLSTR_L2LST:
+      product_type: "EO:ESA:DAT:SENTINEL-3:SL_2_LST___"
+    S3_OLCI_L2LRR:
+      product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LRR___"
+    S3_OLCI_L2LFR:
+      product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LFR___"
+    S3_SLSTR_L1RBT:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"

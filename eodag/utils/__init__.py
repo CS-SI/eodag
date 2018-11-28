@@ -17,12 +17,14 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import functools
 import re
 import sys
 import types
 import unicodedata
 from datetime import datetime
 from itertools import repeat, starmap
+from string import Formatter
 
 import click
 import six
@@ -225,6 +227,39 @@ def get_timestamp(date_time, date_format='%Y-%m-%d'):
     except AttributeError:  # There is no timestamp method on datetime objects in Python 2
         import time
         return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
+
+
+def format_search_param(search_param, *args, **kwargs):
+
+    class SearchParamFormatter(Formatter):
+        CONVERSION_FUNC_REGEX = re.compile(r'^(?P<field_name>.+)(?P<sep>\$)(?P<converter>[^()]+)(\((?P<args>.+)?\))?$')
+
+        def __init__(self):
+            self.custom_converter = None
+
+        def get_field(self, field_name, args, kwargs):
+            conversion_func_spec = self.CONVERSION_FUNC_REGEX.match(field_name)
+            # Register a custom converter if any for later use (see convert_field)
+            # This is done because we don't have the value associated to field_name at this stage
+            if conversion_func_spec:
+                field_name = conversion_func_spec.groupdict()['field_name']
+                converter = conversion_func_spec.groupdict()['converter']
+                # We want an empty list if there is no arguments for proper "unpacking" in the functools.partial call
+                func_args = [elt for elt in (conversion_func_spec.groupdict()['args'] or '').split(',') if elt]
+                self.custom_converter = functools.partial(getattr(self, 'convert_{}'.format(converter)), *func_args)
+            return super(SearchParamFormatter, self).get_field(field_name, args, kwargs)
+
+        def convert_field(self, value, conversion):
+            # Do custom conversion if any (see get_field)
+            if self.custom_converter is not None:
+                return self.custom_converter(value)
+            return super(SearchParamFormatter, self).convert_field(value, conversion)
+
+        @staticmethod
+        def convert_timestamp(value):
+            return int(1e3 * get_timestamp(value))
+
+    return SearchParamFormatter().vformat(search_param, args, kwargs)
 
 
 class ProgressCallback(object):

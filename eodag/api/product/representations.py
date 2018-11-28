@@ -17,6 +17,8 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import re
+
 import jsonpath_rw as jsonpath
 from lxml import etree
 from lxml.etree import XPathEvalError
@@ -24,31 +26,93 @@ from lxml.etree import XPathEvalError
 from eodag.utils.metadata_mapping import get_metadata_path
 
 
+# Keys taken from http://docs.opengeospatial.org/is/13-026r8/13-026r8.html
+# For a metadata to be queryable, The way to query it must be specified in the provider metadata_mapping configuration
+# parameter. It will be automatically detected as queryable by eodag when this is done
 DEFAULT_METADATA_MAPPING = {
-    'id': '$.id',
-    'geometry': '$.geometry',
+    # OpenSearch Parameters for Collection Search (Table 3)
     'productType': '$.properties.productType',
+    'doi': '',
     'platform': '$.properties.platform',
     'platformSerialIdentifier': '$.properties.platformSerialIdentifier',
     'instrument': '$.properties.instrument',
     'sensorType': '$.properties.sensorType',
+    'compositeType': '',
     'processingLevel': '$.properties.processingLevel',
     'orbitType': '$.properties.orbitType',
+    'spectralRange': '',
+    'wavelengths': '',
+    'hasSecurityConstraints': '',
+    'dissemination': '',
+
+    # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
     'title': '$.properties.title',
     'topicCategory': '$.properties.topicCategory',
     'keyword': '$.properties.keyword',
     'abstract': '$.properties.abstract',
+    'resolution': '$.properties.resolution',
     'organisationName': '$.properties.organisationName',
+    'organisationRole': '',
+    'publicationDate': '',
+    'lineage': '',
+    'useLimitation': '',
+    'accessConstraint': '',
+    'otherConstraint': '',
+    'classification': '',
+    'language': '',
+    'specification': '',
+
+    # OpenSearch Parameters for Product Search (Table 5)
+    'parentIdentifier': '$.properties.parentIdentifier',
+    'productionStatus': '',
+    'acquisitionType': '',
     'orbitNumber': '$.properties.orbitNumber',
     'orbitDirection': '$.properties.orbitDirection',
+    'track': '',
+    'frame': '',
+    'swathIdentifier': '',
     'cloudCover': '$.properties.cloudCover',
     'snowCover': '$.properties.snowCover',
+    'lowestLocation': '',
+    'highestLocation': '',
+    'productVersion': '',
+    'productQualityStatus': '',
+    'productQualityDegradationTag': '',
+    'processorName': '',
+    'processingCenter': '',
+    'creationDate': '',
+    'modificationDate': '',
+    'processingDate': '',
+    'sensorMode': '$.properties.sensorMode',
+    'archivingCenter': '',
+    'processingMode': '',
+
+    # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+    'availabilityTime': '',
+    'acquisitionStation': '',
+    'acquisitionSubType': '',
     'startTimeFromAscendingNode': '$.properties.startTimeFromAscendingNode',
     'completionTimeFromAscendingNode': '$.properties.completionTimeFromAscendingNode',
-    'parentIdentifier': '$.properties.parentIdentifier',
-    'resolution': '$.properties.resolution',
-    'sensorMode': '$.properties.sensorMode',
+    'illuminationAzimuthAngle': '',
+    'illuminationZenithAngle': '',
+    'illuminationElevationAngle': '',
+    'polarizationMode': '',
+    'polarisationChannels': '',
+    'antennaLookDirection': '',
+    'minimumIncidenceAngle': '',
+    'maximumIncidenceAngle': '',
+    'dopplerFrequency': '',
+    'incidenceAngleVariation': '',
+
+    # Custom parameters (not defined in the base document referenced above)
+    'id': '$.id',
+    # The geographic extent of the product
+    'geometry': '$.geometry',
+    # The url of the quicklook
     'quicklook': '$.properties.quicklook',
+    # The url to download the product "as is" (literal or as a template to be completed either after the search result
+    # is obtained from the provider or during the eodag download phase)
+    'downloadLink': '$.properties.downloadLink'
 }
 
 
@@ -64,18 +128,28 @@ def properties_from_json(json, mapping):
     :rtype: dict
     """
     properties = {}
+    templates = {}
     for metadata in DEFAULT_METADATA_MAPPING:
         if metadata not in mapping:
             properties[metadata] = 'N/A'
         else:
             try:
                 path = jsonpath.parse(get_metadata_path(mapping[metadata]))
-            except Exception:   # jsonpath_rw does not provider a proper exception
-                # Assume the mapping is to be passed as is
-                properties[metadata] = get_metadata_path(mapping[metadata])
+            except Exception:   # jsonpath_rw does not provide a proper exception
+                # Assume the mapping is to be passed as is, in which case we readily register it, or is a template, in
+                # which case we register it for later formatting resolution using previously successfully resolved
+                # properties
+                text = get_metadata_path(mapping[metadata])
+                if re.search(r'({[^{}]+})+', text):
+                    templates[metadata] = text
+                else:
+                    properties[metadata] = text
             else:
                 match = path.find(json)
                 properties[metadata] = match[0].value if len(match) == 1 else None
+    # Resolve templates
+    for metadata, template in templates.items():
+        properties[metadata] = template.format(**properties)
     return properties
 
 
@@ -91,6 +165,7 @@ def properties_from_xml(xml_as_text, mapping):
     :rtype: dict
     """
     properties = {}
+    templates = {}
     root = etree.XML(xml_as_text)
     for metadata in DEFAULT_METADATA_MAPPING:
         if metadata not in mapping:
@@ -103,6 +178,15 @@ def properties_from_xml(xml_as_text, mapping):
                 else:
                     properties[metadata] = value[0] if len(value) == 1 else None
             except XPathEvalError:
-                # Assume the mapping provided should be passed AS IS
-                properties[metadata] = get_metadata_path(mapping[metadata])
+                # Assume the mapping is to be passed as is, in which case we readily register it, or is a template, in
+                # which case we register it for later formatting resolution using previously successfully resolved
+                # properties
+                text = get_metadata_path(mapping[metadata])
+                if re.search(r'({[^{}]+})+', text):
+                    templates[metadata] = text
+                else:
+                    properties[metadata] = text
+    # Resolve templates
+    for metadata, template in templates.items():
+        properties[metadata] = template.format(**properties)
     return properties

@@ -55,5 +55,5 @@ class PluginTopic(six.with_metaclass(EODAGPluginMount)):
 
     def __repr__(self):
         return '{}(provider={}, priority={}, topic={})'.format(
-            self.__class__.__name__, self.provider, self.config.priority, self.__class__.mro()[1].__name__
+            self.__class__.__name__, self.provider, self.config.priority, self.__class__.mro()[-3].__name__
         )

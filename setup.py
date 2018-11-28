@@ -110,10 +110,11 @@ setup(
             'HTTPDownload = eodag.plugins.download.http:HTTPDownload',
         ],
         'eodag.plugins.search': [
-            'ArlasSearch = eodag.plugins.search.arlas:ArlasSearch',
-            'AwsSearch = eodag.plugins.search.aws:AwsSearch',
+            'ArlasSearch = eodag.plugins.search.qssearch:ArlasSearch',
+            'AwsSearch = eodag.plugins.search.qssearch:AwsSearch',
             'CSWSearch = eodag.plugins.search.csw:CSWSearch',
-            'RestoSearch = eodag.plugins.search.resto:RestoSearch',
+            'RestoSearch = eodag.plugins.search.qssearch:RestoSearch',
+            'QueryStringSearch = eodag.plugins.search.qssearch:QueryStringSearch',
         ],
     },
     project_urls={

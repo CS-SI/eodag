@@ -56,10 +56,11 @@ class CSWSearch(Search):
             self.__init_catalog()
         results = []
         if self.catalog:
+            provider_product_type = self.config.products[product_type]['product_type']
             for product_type_def in self.config.search_definition['product_type_tags']:
                 product_type_search_tag = product_type_def['name']
-                logger.debug('Querying <%s> tag for product type %s', product_type_search_tag, product_type)
-                constraints = self.__convert_query_params(product_type_def, self.config.products[product_type], kwargs)
+                logger.debug('Querying <%s> tag for product type %s', product_type_search_tag, provider_product_type)
+                constraints = self.__convert_query_params(product_type_def, provider_product_type, kwargs)
                 with patch_owslib_requests(verify=True):
                     try:
                         self.catalog.getrecords2(constraints=constraints, esn='full', maxrecords=10)

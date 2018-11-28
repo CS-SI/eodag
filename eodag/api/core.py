@@ -174,7 +174,7 @@ class EODataAccessGateway(object):
                         continue
                     break
                 logger.info(
-                    "Detected partial support for product type '%s' on preferred provider '%s'. Search continues on "
+                    "Detected partial support for product type '%s' on provider '%s'. Search continues on "
                     "other providers supporting it.", product_type, plugin.provider)
             except Exception:
                 import traceback as tb
@@ -226,7 +226,12 @@ class EODataAccessGateway(object):
             logger.info('Downloading %s products', len(search_result))
             with tqdm(search_result, unit='product', desc='Downloading products') as bar:
                 for product in bar:
-                    paths.append(self.download(product, progress_callback=progress_callback))
+                    try:
+                        paths.append(self.download(product, progress_callback=progress_callback))
+                    except Exception:
+                        import traceback as tb
+                        logger.warning('A problem occurred during download of product: %s. Skipping it', product)
+                        logger.debug('\n%s', tb.format_exc())
         else:
             logger.info('Empty search result, nothing to be downloaded !')
         return paths

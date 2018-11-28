@@ -55,18 +55,12 @@ class EOProduct(object):
     to its path on the filesystem when the product has been downloaded. It also has a `remote_location` that always
     points to the remote location, so that the product can be downloaded at anytime if it is deleted from the
     filesystem.
+    An EOProduct instance also has a reference to the search parameters that led to its creation.
 
-    :param product_type: The product type of the product as defined in eodag
-    :type product_type: str or unicode
     :param provider: The provider from which the product originates
     :type provider: str or unicode
-    :param download_url: A uri informing where to go to download the product
-    :type download_url: str or unicode
     :param properties: The metadata of the product
     :type properties: dict
-    :param searched_bbox: (optional) The extent that was passed as a search constraint, used to attach to the EOProduct
-                           the intersection of its geometry with this extent
-    :type searched_bbox: dict
 
     .. note::
         The geojson spec `enforces <https://github.com/geojson/draft-geojson/pull/6>`_ the expression of geometries as
@@ -74,13 +68,16 @@ class EOProduct(object):
         Therefore it stores geometries in the before mentioned CRS.
     """
 
-    def __init__(self, product_type, provider, download_url, properties, searched_bbox=None):
-        self.product_type = product_type
+    def __init__(self, provider, properties, *args, **kwargs):
         self.provider = provider
-        self.location = self.remote_location = download_url
+        self.product_type = kwargs.get('productType') or args[0]
+        self.location = self.remote_location = properties.get('downloadLink', '')
         self.properties = properties
         self.geometry = self.search_intersection = geometry.shape(self.properties['geometry'])
-        if searched_bbox is not None:
+        self.search_args = args
+        self.search_kwargs = kwargs
+        if self.search_kwargs.get('geometry') is not None:
+            searched_bbox = self.search_kwargs['geometry']
             searched_bbox_as_shape = geometry.box(searched_bbox['lonmin'], searched_bbox['latmin'],
                                                   searched_bbox['lonmax'], searched_bbox['latmax'])
             try:
@@ -169,10 +166,9 @@ class EOProduct(object):
         :rtype: :class:`~eodag.api.product.EOProduct`
         """
         obj = cls(
-            feature['properties']['eodag_product_type'],
             feature['properties']['eodag_provider'],
-            feature['properties']['eodag_download_url'],
-            properties_from_json(feature, DEFAULT_METADATA_MAPPING)
+            properties_from_json(feature, DEFAULT_METADATA_MAPPING),
+            productType=feature['properties']['eodag_product_type']
         )
         obj.search_intersection = feature['properties']['eodag_search_intersection']
         return obj
