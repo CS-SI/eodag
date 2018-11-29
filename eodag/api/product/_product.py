@@ -24,11 +24,12 @@ import re
 import numpy
 import rasterio
 import requests
+import six
 import xarray as xr
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from requests import HTTPError
-from shapely import geometry
+from shapely import geometry, wkb, wkt
 
 from eodag.utils import ProgressCallback
 
@@ -73,7 +74,15 @@ class EOProduct(object):
         self.product_type = kwargs.get('productType') or args[0]
         self.location = self.remote_location = properties.get('downloadLink', '')
         self.properties = properties
-        self.geometry = self.search_intersection = geometry.shape(self.properties['geometry'])
+        product_geometry = self.properties['geometry']
+        # Best effort to understand provider specific geometry (the default is to assume an object implementing the
+        # Geo Interface: see https://gist.github.com/2217756)
+        if isinstance(product_geometry, six.string_types):
+            try:
+                product_geometry = wkt.loads(product_geometry)
+            except Exception:
+                product_geometry = wkb.loads(product_geometry)
+        self.geometry = self.search_intersection = geometry.shape(product_geometry)
         self.search_args = args
         self.search_kwargs = kwargs
         if self.search_kwargs.get('geometry') is not None:
@@ -278,6 +287,7 @@ class EOProduct(object):
         :returns: The absolute path of the downloaded quicklook
         :rtype: str (Python 3) or unicode (Python 2)
         """
+
         def format_quicklook_address():
             """If the quicklook address is a Python format string, resolve the formatting with the properties of
             the product.
@@ -310,6 +320,13 @@ class EOProduct(object):
         )
 
         if not os.path.isfile(quicklook_file):
+            # VERY SPECIAL CASE (introduced by the onda provider): first check if it is a byte string, in which case
+            # we just write the content into the quicklook_file and return it
+            if isinstance(self.properties['quicklook'], bytes):
+                with open(quicklook_file, 'wb') as fd:
+                    fd.write(self.properties['quicklook'])
+                return quicklook_file
+
             auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else None
             with requests.get(self.properties['quicklook'], stream=True, auth=auth) as stream:
                 try:

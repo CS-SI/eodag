@@ -30,6 +30,7 @@ import click
 import six
 from rasterio.crs import CRS
 from requests.auth import AuthBase
+from shapely import geometry
 from tqdm import tqdm, tqdm_notebook
 
 
@@ -230,7 +231,6 @@ def get_timestamp(date_time, date_format='%Y-%m-%d'):
 
 
 def format_search_param(search_param, *args, **kwargs):
-
     class SearchParamFormatter(Formatter):
         CONVERSION_FUNC_REGEX = re.compile(r'^(?P<field_name>.+)(?P<sep>\$)(?P<converter>[^()]+)(\((?P<args>.+)?\))?$')
 
@@ -258,6 +258,12 @@ def format_search_param(search_param, *args, **kwargs):
         @staticmethod
         def convert_timestamp(value):
             return int(1e3 * get_timestamp(value))
+
+        @staticmethod
+        def convert_to_wkt(value):
+            return geometry.box(*[
+                float(v) for v in '{lonmin} {latmin} {lonmax} {latmax}'.format(**value).split()
+            ]).to_wkt()
 
     return SearchParamFormatter().vformat(search_param, args, kwargs)
 

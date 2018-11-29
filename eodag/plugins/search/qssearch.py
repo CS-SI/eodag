@@ -47,7 +47,7 @@ class QueryStringSearch(Search):
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         qs = self.build_query_string(
             product_type,
-            provider_product_type,
+            productType=provider_product_type,
             *args,
             **{k: v for k, v in kwargs.items() if k != 'auth'}
         )
@@ -64,15 +64,18 @@ class QueryStringSearch(Search):
         # queryables dictionary)
         for search_param, query in kwargs.items():
             try:
-                if query is not None:
-                    queryable = queryables[search_param]
-                    if self.COMPLEX_QS_REGEX.match(queryable):
-                        qs_participants.append(format_search_param(queryable, *args, **kwargs))
-                    else:
-                        qs_participants.append('{}={}'.format(queryable, query))
+                queryable = queryables[search_param]
+                self.add_to_qs_participants(qs_participants, queryable, query, args, kwargs)
             except KeyError:
                 continue
         return '&'.join(qs_participants)
+
+    def add_to_qs_participants(self, qs_participants, query, queryable, args, kwargs):
+        if query is not None:
+            if self.COMPLEX_QS_REGEX.match(queryable):
+                qs_participants.append(format_search_param(queryable, *args, **kwargs))
+            else:
+                qs_participants.append('{}={}'.format(queryable, query))
 
     def get_queryables(self):
         logger.debug('Retrieving queryable metadata from metadata_mapping')
@@ -233,3 +236,55 @@ class AwsSearch(RestoSearch):
                 **kwargs
             ))
         return normalized
+
+
+class ODataV4Search(QueryStringSearch):
+
+    def build_query_string(self, *args, **kwargs):
+        logger.debug('Building the query string that will be used for search')
+        queryables = self.get_queryables()
+        qs_participants = []
+        for search_param, query in kwargs.items():
+            try:
+                queryable = queryables[search_param]
+                self.add_to_qs_participants(qs_participants, query, queryable, args, kwargs)
+            except KeyError:
+                continue
+        return '$search="{}"&$format={}'.format(' AND '.join(qs_participants), self.config.result_type)
+
+    def do_request(self, search_url, *args, **kwargs):
+        """Do a two step search, as the metadata are not given into the search result.
+
+        .. warning::
+            This plugin is still very specific to the ONDA provider. Be careful to generalize
+            it if needed when the chance to do so arrives
+        """
+        final_result = []
+        # Query the products entity set for basic metadata about the product
+        entity_set_response = super(ODataV4Search, self).do_request(search_url, *args, **kwargs)
+        if isinstance(entity_set_response, dict):
+            for entity in entity_set_response['value']:
+                if entity['downloadable']:
+                    entity_metadata = {
+                        'quicklook': entity['quicklook'],
+                        'id': entity['id'],
+                        'footprint': entity['footprint'],
+                    }
+                    metadata_url = self.get_metadata_search_url(entity)
+                    try:
+                        response = requests.get(metadata_url)
+                        response.raise_for_status()
+                    except requests.HTTPError:
+                        logger.exception('Skipping error while searching for %s %s instance:', self.provider,
+                                         self.__class__.__name__)
+                    else:
+                        entity_metadata.update({
+                            item['id']: item['value']
+                            for item in response.json()['value']
+                        })
+                        final_result.append(entity_metadata)
+        return final_result
+
+    def get_metadata_search_url(self, entity):
+        """Build the metadata link for the given entity"""
+        return '{}({})/Metadata'.format(self.config.api_endpoint.rstrip('/'), entity['id'])

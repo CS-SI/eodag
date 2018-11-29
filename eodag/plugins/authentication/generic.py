@@ -41,5 +41,5 @@ class GenericAuth(Authentication):
                     self.config.credentials['password']
                 )
         except AttributeError as err:
-            if 'credentials' in err:
+            if 'credentials' in err.args:
                 raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)

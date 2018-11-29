@@ -619,3 +619,83 @@
       product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LFR___"
     S3_SLSTR_L1RBT:
       product_type: "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"
+
+---
+!provider
+  name: onda
+  priority: 0
+  search: !plugin
+    type: ODataV4Search
+    api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    metadata_mapping:
+      id: '$.id'
+      geometry:
+        - 'footprint:"Intersects({geometry$to_wkt})"'
+        - '$.footprint'
+      productType:
+        - "productType:{productType}"
+        - '$.productType'
+      platform: '$.platformName'
+      platformSerialIdentifier: '$.platformSerialIdentifier'
+      instrument: '$.instrumentName'
+      processingLevel: '$.processingLevel'
+      title: '$.filename'
+      orbitNumber: '$.orbitNumber'
+      orbitDirection: '$.orbitDirection'
+      cloudCover:
+        - 'cloudCoverPercentage:[0 TO {cloudCover}]'
+        - '$.cloudCoverPercentage'
+      startTimeFromAscendingNode:
+        - 'beginPosition:[{startTimeFromAscendingNode}Z TO *]'
+        - '$.beginPosition'
+      completionTimeFromAscendingNode:
+        - 'endPosition:[* TO {completionTimeFromAscendingNode}Z]'
+        - '$.endPosition'
+      sensorMode: '$.sensorOperationalMode'
+      quicklook: '$.quicklook'
+      downloadLink: '%(base_uri)s({id})/$value'
+  products:
+    S1_SAR_OCN:
+      product_type: '*OCN*'
+    S1_SAR_GRD:
+      product_type: '*GRD*'
+    S1_SAR_SLC:
+      product_type: '*SLC*'
+    S1_SAR_RAW:
+      product_type: '*RAW*'
+    S2_MSI_L1C:
+      product_type: S2MSI1C
+    S2_MSI_L2A:
+      product_type: S2MSI2A
+    S3_EFR:
+      product_type: OL_1_EFR___
+    S3_ERR:
+      product_type: OL_1_ERR___
+    S3_OLCI_L2LFR:
+      product_type: OL_2_LFR___
+    S3_OLCI_L2LRR:
+      product_type: OL_2_LRR___
+    S3_SLSTR_L1RBT:
+      product_type: SL_1_RBT___
+    S3_SLSTR_L2LST:
+      product_type: SL_2_LST___
+    S3_LAN:
+      product_type: SR_2_LAN___
+    S3_SRA:
+      product_type: SR_1_SRA_A_
+    S3_SRA_BS:
+      product_type: SR_1_SRA_BS
+    S3_SRA_A_BS:
+      product_type: SR_1_SRA___
+    S3_WAT:
+      product_type: SR_2_WAT___
+    L8_L1GT:
+      product_type: L1GT
+    L8_L1T:
+      product_type: L1T
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    extract: true
+  auth: !plugin
+    type: GenericAuth
