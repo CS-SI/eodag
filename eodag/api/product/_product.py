@@ -255,6 +255,8 @@ class EOProduct(object):
             raise RuntimeError('EO product is unable to download itself due to lacking of a download plugin')
 
         auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
+        # resolve remote location if needed with downloader configuration
+        self.remote_location = self.remote_location % vars(self.downloader.config)
         fs_location = self.downloader.download(self, auth=auth, progress_callback=progress_callback)
         self.location = 'file://{}'.format(fs_location)
         logger.debug("Product location updated from '%s' to '%s'", self.remote_location, self.location)

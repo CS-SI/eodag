@@ -373,7 +373,7 @@
       downloadLink: '%(base_uri)s/{id}'
   download: !plugin
     type: HTTPDownload
-    base_uri: 'https://sobloo.eu/api/v1/services/download/'
+    base_uri: 'https://sobloo.eu/api/v1/services/download'
     archive_depth: 2
     extract: true
   auth: !plugin

@@ -56,7 +56,7 @@ class HTTPDownload(Download):
                 # Do not download data if we are on site. Instead give back the absolute path to the data
                 return fs_path
 
-        url = product.remote_location % {'base_uri': self.config.base_uri.rstrip('/')}
+        url = product.remote_location
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
             return
