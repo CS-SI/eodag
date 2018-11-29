@@ -53,8 +53,10 @@ def eodag(ctx, verbose):
               help='Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this '
                    'order)')
 @click.option('-s', '--startTimeFromAscendingNode',
+              type=click.DateTime(),
               help='Maximum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)')
 @click.option('-e', '--completionTimeFromAscendingNode',
+              type=click.DateTime(),
               help='Minimum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)')
 @click.option('-c', '--cloudCover', type=click.IntRange(0, 100),
               help='Maximum cloud cover percentage needed for the product')
@@ -82,13 +84,13 @@ def search_crunch(ctx, **kwargs):
         footprint = {'lonmin': rect[0], 'latmin': rect[1], 'lonmax': rect[2], 'latmax': rect[3]}
     else:
         footprint = None
+    producttype = kwargs.pop('producttype')
     criteria = {
         'geometry': footprint,
-        'startTimeFromAscendingNode': kwargs.pop('starttimefromascendingnode'),
-        'completionTimeFromAscendingNode': kwargs.pop('completiontimefromascendingnode'),
+        'startTimeFromAscendingNode': kwargs.pop('starttimefromascendingnode').isoformat(),
+        'completionTimeFromAscendingNode': kwargs.pop('completiontimefromascendingnode').isoformat(),
         'cloudCover': kwargs.pop('cloudcover'),
     }
-    producttype = kwargs.pop('producttype')
     conf_file = kwargs.pop('conf')
     if conf_file:
         conf_file = click.format_filename(conf_file)
