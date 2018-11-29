@@ -370,7 +370,7 @@
         - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
       quicklook: '$.properties.state.resources.quicklook'
-      downloadLink: 'https://%(base_uri)s/{id}'
+      downloadLink: '%(base_uri)s/{id}'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download/'
