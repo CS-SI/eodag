@@ -501,7 +501,6 @@
     result_entry: '//ns:entry'
     literal_search_params:
       format: atom
-      onlineStatus: ONLINE
       relation: intersects
     free_text_search_param: 'q'
     free_text_search_operations:
@@ -532,12 +531,12 @@
       snowCover: 'eo:snowCover/text()'
       startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
       completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
-      quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
-      downloadLink: '%(base_uri)s/{id}'
+      quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
+      downloadLink: 'ns:link[@rel="enclosure"]/@href'
   download: !plugin
-    type: HTTPDownload
+    type: AwsDownload
   auth: !plugin
-    type: GenericAuth
+    type: OAuth
   products:
     S1_SAR_RAW:
       product_type: RAW

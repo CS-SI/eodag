@@ -69,6 +69,19 @@ class QueryStringSearch(Search):
                 self.add_to_qs_participants(qs_participants, query, queryable, args, kwargs)
             except KeyError:
                 continue
+
+        # Now get all the literal search params (i.e params to be passed "as is" in the search request)
+        # ignore additional_params if it isn't a dictionary
+        literal_search_params = getattr(self.config, 'literal_search_params', {})
+        if not isinstance(literal_search_params, dict):
+            literal_search_params = {}
+
+        # Now add formatted free text search parameters (this is for cases where a complex query through a free text
+        # search parameter is available for the provider and needed for the consumer)
+        literal_search_params.update(self.format_free_text_search(**kwargs))
+        qs_participants.extend('{}={}'.format(param, value) for param, value in literal_search_params.items())
+
+        # Build the final query string
         return '&'.join(qs_participants)
 
     def add_to_qs_participants(self, qs_participants, query, queryable, args, kwargs):
@@ -77,6 +90,28 @@ class QueryStringSearch(Search):
                 qs_participants.append(format_search_param(queryable, *args, **kwargs))
             else:
                 qs_participants.append('{}={}'.format(queryable, query))
+
+    def format_free_text_search(self, **kwargs):
+        """Build the free text search parameter"""
+        free_text_search_param = getattr(self.config, 'free_text_search_param', '')
+        if not free_text_search_param:
+            return {}
+        formatted_query = []
+        for operator, operands in self.config.free_text_search_operations.items():
+            # The Operator string is the operator surrounded with spaces
+            operator_string = ' {} '.format(operator)
+            # Build the operation string by joining the formatted operands together using the operation string
+            operation_string = operator_string.join(
+                format_search_param(operand, **kwargs)
+                for operand in operands
+            )
+            # Finally wrap the operation string in parentheses and add it to the list of queries
+            formatted_query.append('({})'.format(operation_string))
+        # Return the formatted queries joined together using a default 'AND' operator and wrap the overall operation
+        # in parentheses
+        return {
+            free_text_search_param: '({})'.format(' AND '.join(formatted_query))
+        }
 
     def get_queryables(self):
         logger.debug('Retrieving queryable metadata from metadata_mapping')
@@ -103,13 +138,6 @@ class QueryStringSearch(Search):
         ]
 
     def do_request(self, search_url, *args, **kwargs):
-        literal_search_params = getattr(self.config, 'literal_search_params', {})
-        # ignore additional_params if it isn't a dictionary
-        if not isinstance(literal_search_params, dict):
-            literal_search_params = {}
-        literal_search_params.update(self.format_free_text_search(**kwargs))
-        search_url += '&{}'.format(
-            '&'.join('{}={}'.format(param, value) for param, value in literal_search_params.items()))
         try:
             logger.info('Sending search request: %s', search_url)
             response = requests.get(search_url)
@@ -129,28 +157,6 @@ class QueryStringSearch(Search):
             else:
                 for entry in response.json()[self.config.results_entry]:
                     yield entry
-
-    def format_free_text_search(self, **kwargs):
-        """Build the free text search parameter"""
-        free_text_search_param = getattr(self.config, 'free_text_search_param', '')
-        if not free_text_search_param:
-            return {}
-        formatted_query = []
-        for operator, operands in self.config.free_text_search_operations.items():
-            # The Operator string is the operator surrounded with spaces
-            operator_string = ' {} '.format(operator)
-            # Build the operation string by joining the formatted operands together using the operation string
-            operation_string = operator_string.join(
-                operand.format(**kwargs)
-                for operand in operands
-            )
-            # Finally wrap the operation string in parentheses and add it to the list of queries
-            formatted_query.append('({})'.format(operation_string))
-        # Return the formatted queries joined together using a default 'AND' operator and wrap the overall operation
-        # in parentheses
-        return {
-            free_text_search_param: '({})'.format(' AND '.join(formatted_query))
-        }
 
 
 class RestoSearch(QueryStringSearch):
