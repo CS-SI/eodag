@@ -21,6 +21,7 @@ import logging
 import re
 
 import requests
+from lxml import etree
 
 from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_json, properties_from_xml
@@ -33,7 +34,7 @@ logger = logging.getLogger('eodag.plugins.search.qssearch')
 
 
 class QueryStringSearch(Search):
-    COMPLEX_QS_REGEX = re.compile(r'^(.+=)?([^=]*)({.+})+([^=]*)$')
+    COMPLEX_QS_REGEX = re.compile(r'^(.+=)?([^=]*)({.+})+([^=&]*)$')
     extract_properties = {
         'xml': properties_from_xml,
         'json': properties_from_json
@@ -41,7 +42,7 @@ class QueryStringSearch(Search):
 
     def __init__(self, provider, config):
         super(QueryStringSearch, self).__init__(provider, config)
-        self.config.result_type = 'json'
+        self.config.__dict__.setdefault('result_type', 'json')
 
     def query(self, product_type, *args, **kwargs):
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
@@ -65,7 +66,7 @@ class QueryStringSearch(Search):
         for search_param, query in kwargs.items():
             try:
                 queryable = queryables[search_param]
-                self.add_to_qs_participants(qs_participants, queryable, query, args, kwargs)
+                self.add_to_qs_participants(qs_participants, query, queryable, args, kwargs)
             except KeyError:
                 continue
         return '&'.join(qs_participants)
@@ -102,6 +103,13 @@ class QueryStringSearch(Search):
         ]
 
     def do_request(self, search_url, *args, **kwargs):
+        literal_search_params = getattr(self.config, 'literal_search_params', {})
+        # ignore additional_params if it isn't a dictionary
+        if not isinstance(literal_search_params, dict):
+            literal_search_params = {}
+        literal_search_params.update(self.format_free_text_search(**kwargs))
+        search_url += '&{}'.format(
+            '&'.join('{}={}'.format(param, value) for param, value in literal_search_params.items()))
         try:
             logger.info('Sending search request: %s', search_url)
             response = requests.get(search_url)
@@ -109,9 +117,40 @@ class QueryStringSearch(Search):
         except requests.HTTPError:
             logger.exception('Skipping error while searching for %s %s instance:', self.provider,
                              self.__class__.__name__)
+            raise StopIteration
         else:
-            return response.json()
-        return []
+            if self.config.result_type == 'xml':
+                root_node = etree.fromstring(response.content)
+                for entry in root_node.xpath(
+                    self.config.result_entry,
+                    namespaces={k or 'ns': v for k, v in root_node.nsmap.items()}
+                ):
+                    yield etree.tostring(entry)
+            else:
+                for entry in response.json()[self.config.results_entry]:
+                    yield entry
+
+    def format_free_text_search(self, **kwargs):
+        """Build the free text search parameter"""
+        free_text_search_param = getattr(self.config, 'free_text_search_param', '')
+        if not free_text_search_param:
+            return {}
+        formatted_query = []
+        for operator, operands in self.config.free_text_search_operations.items():
+            # The Operator string is the operator surrounded with spaces
+            operator_string = ' {} '.format(operator)
+            # Build the operation string by joining the formatted operands together using the operation string
+            operation_string = operator_string.join(
+                operand.format(**kwargs)
+                for operand in operands
+            )
+            # Finally wrap the operation string in parentheses and add it to the list of queries
+            formatted_query.append('({})'.format(operation_string))
+        # Return the formatted queries joined together using a default 'AND' operator and wrap the overall operation
+        # in parentheses
+        return {
+            free_text_search_param: '({})'.format(' AND '.join(formatted_query))
+        }
 
 
 class RestoSearch(QueryStringSearch):
@@ -124,12 +163,11 @@ class RestoSearch(QueryStringSearch):
         for collection in collections:
             logger.debug('Collection found for product type %s: %s', args[0], collection)
             logger.debug('Corresponding Resto product_type found for product type %s: %s', args[0], args[1])
-            json_response = super(RestoSearch, self).do_request(
+            for result in super(RestoSearch, self).do_request(
                 search_url.format(collection=collection),
                 *args, **kwargs
-            )
-            if isinstance(json_response, dict):
-                results.extend(json_response['features'])
+            ):
+                results.append(result)
         return results
 
     def get_collections(self, *args, **kwargs):
@@ -159,55 +197,6 @@ class RestoSearch(QueryStringSearch):
                 collection = self.config.products[product_type]['collection']
             collections = (collection,)
         return collections
-
-
-class ArlasSearch(RestoSearch):
-
-    def build_query_string(self, *args, **kwargs):
-        qs_participants = ['{}'.format(super(ArlasSearch, self).build_query_string(*args, **kwargs)).lstrip('&')]
-        queryables = self.get_queryables()
-        start_date = kwargs.pop('startTimeFromAscendingNode', None)
-        end_date = kwargs.pop('completionTimeFromAscendingNode', None)
-        if start_date:
-            if end_date:
-                logger.debug('Adding filter for sensing date range: %s - %s', start_date, end_date)
-                qs_participants.append(format_search_param(
-                    'f=%(startTimeFromAscendingNode)s:range:[{min$timestamp}<{max$timestamp}]' % queryables,
-                    min=start_date, max=end_date
-                ))
-            else:
-                logger.debug('Adding filter for minimum sensing date: %s', start_date)
-                qs_participants.append(format_search_param(
-                    'f=%(startTimeFromAscendingNode)s:gte:{min$timestamp}' % queryables,
-                    min=start_date
-                ))
-        elif end_date:
-            logger.debug('Adding filter for maximum sensing date: %s', end_date)
-            qs_participants.append(format_search_param(
-                'f=%(startTimeFromAscendingNode)s:lte:{max$timestamp}' % queryables,
-                max=end_date
-            ))
-        return '&'.join(qs_participants)
-
-    def normalize_results(self, results, *args, **kwargs):
-        logger.debug('Adapting plugin results to eodag product representation')
-        normalized = []
-        for result in results:
-            properties = QueryStringSearch.extract_properties[self.config.result_type](
-                result, self.config.metadata_mapping
-            )
-            if properties['quicklook']:
-                properties['quicklook'] = '{}/{}'.format(self.config.quicklook_endpoint, properties['id'])
-            normalized.append(
-                EOProduct(
-                    self.provider,
-                    QueryStringSearch.extract_properties[self.config.result_type](result,
-                                                                                  self.config.metadata_mapping),
-                    *args,
-                    **kwargs
-                )
-            )
-        return normalized
 
 
 class AwsSearch(RestoSearch):

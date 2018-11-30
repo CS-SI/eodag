@@ -342,9 +342,8 @@
     S3_SRA_A_BS:
       product_type: SR_1_SRA_A_
   search: !plugin
-    type: ArlasSearch
+    type: RestoSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_geosearch'
-    quicklook_endpoint: 'https://sobloo.eu/api/v1/services/quicklook'
     collection: catalog
     result_type: 'json'
     metadata_mapping:
@@ -366,10 +365,12 @@
         - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       startTimeFromAscendingNode:
-        - 'acquisition.beginViewingDate'
+        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode$timestamp}'
         - '$.properties.acquisition.beginViewingDate'
-      completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
-      quicklook: '$.properties.state.resources.quicklook'
+      completionTimeFromAscendingNode:
+        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode$timestamp}'
+        - '$.properties.acquisition.endViewingDate'
+      quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
       downloadLink: '%(base_uri)s/{id}'
   download: !plugin
     type: HTTPDownload
@@ -491,32 +492,48 @@
 
 ---
 !provider
-  name: mundi_s1
+  name: mundi
   priority: 0
   search: !plugin
-    type: CSWSearch
-    api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/Sentinel1/csw'
+    type: RestoSearch
+    api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/{collection}/opensearch'
+    result_type: 'xml'
+    result_entry: '//ns:entry'
+    literal_search_params:
+      format: atom
+      onlineStatus: ONLINE
+      relation: intersects
+    free_text_search_param: 'q'
+    free_text_search_operations:
+      AND:
+        - 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+        - 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
     metadata_mapping:
-      id: 'dc:identifier/text()'
-      productType: 'DIAS:productType/text()'
-      geometry: 'DIAS:footprint/text()'
-      processingLevel: 'DIAS:productLevel/text()'
-      title: 'dc:title/text()'
-      abstract: 'dct:abstract/text()'
-      orbitNumber: 'DIAS:acquisitionOrbitNumber/text()'
-      orbitDirection: 'DIAS:orbitDirection/text()'
+      id: 'ns:id/text()'
+      abstract: 'ns:summary/text()'
+      platform: 'eo:platform/text()'
+      instrument: 'eo:instrument/text()'
+      sensorType: 'eo:sensorType/text()'
+      processingLevel: 'eo:processingLevel/text()'
+      topicCategory: 'ns:category/text()'
+      publicationDate: 'ns:published/text()'
+      useLimitation: 'DIAS:productConfidentialityLevel/text()'
+      resolution: 'eo:resolution/text()'
+      geometry:
+        - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'georss:box/text()'
+      productType:
+        - 'productType'
+        - 'eo:productType/text()'
+      title: 'eo:title/text()'
+      orbitNumber: 'eo:orbitNumber/text()'
+      orbitDirection: 'eo:orbitDirection/text()'
+      cloudCover: 'eo:cloudCover/text()'
+      snowCover: 'eo:snowCover/text()'
       startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
       completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
-      resolution: 'DIAS:resolution/text()'
-      sensorMode: 'DIAS:sensorMode/text()'
-      quicklook: 'DIAS:quicklookURI/text()'
-    search_definition:
-      product_type_tags:
-        - name: 'DIAS:productType' # any xml tag of the catalogue that can be queryable
-          matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
-      date_tags:
-        start: 'DIAS:sensingStartDate'
-        end: 'DIAS:sensingStopDate'
+      quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
+      downloadLink: '%(base_uri)s/{id}'
   download: !plugin
     type: HTTPDownload
   auth: !plugin
@@ -524,51 +541,22 @@
   products:
     S1_SAR_RAW:
       product_type: RAW
+      collection: Sentinel1
     S1_SAR_GRD:
       product_type: GRD
+      collection: Sentinel1
     S1_SAR_SLC:
       product_type: SLC
+      collection: Sentinel1
     S1_SAR_OCN:
       product_type: OCN
-
----
-!provider
-  name: mundi_s2
-  priority: 0
-  search: !plugin
-    type: CSWSearch
-    api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/Sentinel2/csw'
-    metadata_mapping:
-      id: 'dc:identifier/text()'
-      productType: 'DIAS:productType/text()'
-      geometry: 'DIAS:footprint/text()'
-      processingLevel: 'DIAS:productLevel/text()'
-      title: 'dc:title/text()'
-      abstract: 'dct:abstract/text()'
-      orbitNumber: 'DIAS:acquisitionOrbitNumber/text()'
-      orbitDirection: 'DIAS:orbitDirection/text()'
-      startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
-      completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
-      resolution: 'DIAS:resolution/text()'
-      sensorMode: 'DIAS:sensorMode/text()'
-      quicklook: 'DIAS:quicklookURI/text()'
-    search_definition:
-      product_type_tags:
-        - name: 'DIAS:productType' # any xml tag of the catalogue that can be queryable
-          matching: fuzzy # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
-      date_tags:
-        start: 'DIAS:sensingStartDate'
-        end: 'DIAS:sensingStopDate'
-  download: !plugin
-    type: HTTPDownload
-  auth: !plugin
-    type: GenericAuth
-  products:
+      collection: Sentinel1
     S2_MSI_L1C:
-      product_type: L1C
-      partial_support: true
+      product_type: IMAGE
+      collection: Sentinel2
     S2_MSI_L2A:
-      product_type: L2A
+      product_type: S2MSI2Ap
+      collection: Sentinel2
 
 ---
 !provider

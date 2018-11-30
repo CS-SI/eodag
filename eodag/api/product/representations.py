@@ -153,7 +153,7 @@ def properties_from_json(json, mapping):
     return properties
 
 
-def properties_from_xml(xml_as_text, mapping):
+def properties_from_xml(xml_as_text, mapping, empty_ns_prefix='ns'):
     """Extract properties from a provider xml result.
 
     :param xml_as_text: the representation of a provider result as xml
@@ -161,6 +161,11 @@ def properties_from_xml(xml_as_text, mapping):
     :param mapping: a mapping between :class:`~eodag.api.product.EOProduct`'s metadata keys and the location of the
                     values of these properties in the xml representation, expressed as a
                     `xpath <https://www.w3schools.com/xml/xml_xpath.asp>`_
+    :param empty_ns_prefix: the name to give to the default namespace of `xml_as_text`. This is a technical workaround
+                            for the limitation of lxml not supporting empty namespace prefix (default: ns). The xpath
+                            in `mapping` must use this value to be able to correctly reach empty-namespace prefixed
+                            elements
+    :type empty_ns_prefix: str or unicode
     :return: the metadata of the :class:`~eodag.api.product.EOProduct`
     :rtype: dict
     """
@@ -172,7 +177,12 @@ def properties_from_xml(xml_as_text, mapping):
             properties[metadata] = 'N/A'
         else:
             try:
-                value = root.xpath(get_metadata_path(mapping[metadata]), namespaces=root.nsmap)
+                value = root.xpath(
+                    get_metadata_path(mapping[metadata]),
+                    namespaces={
+                        k or empty_ns_prefix: v for k, v in root.nsmap.items()
+                    }
+                )
                 if len(value) > 1:
                     properties[metadata] = value
                 else:
