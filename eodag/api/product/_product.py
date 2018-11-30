@@ -29,7 +29,7 @@ import xarray as xr
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from requests import HTTPError
-from shapely import geometry, wkb, wkt
+from shapely import geometry, geos, wkb, wkt
 
 from eodag.utils import ProgressCallback
 
@@ -80,8 +80,18 @@ class EOProduct(object):
         if isinstance(product_geometry, six.string_types):
             try:
                 product_geometry = wkt.loads(product_geometry)
-            except Exception:
-                product_geometry = wkb.loads(product_geometry)
+            except geos.WKTReadingError:
+                try:
+                    product_geometry = wkb.loads(product_geometry)
+                # Also catching TypeError because product_geometry can be a unicode string and not a bytes string
+                except (geos.WKBReadingError, TypeError):
+                    # Let's try 'latmin lonmin latmax lonmax'
+                    coords = [float(coord) for coord in product_geometry.split(' ')]
+                    if len(coords) == 4:
+                        product_geometry = geometry.box(coords[1], coords[0], coords[3], coords[2])
+                    else:
+                        # Giv up!
+                        raise
         self.geometry = self.search_intersection = geometry.shape(product_geometry)
         self.search_args = args
         self.search_kwargs = kwargs
