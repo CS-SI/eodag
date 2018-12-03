@@ -212,12 +212,12 @@ def maybe_generator(obj):
 DEFAULT_PROJ = CRS.from_epsg(4326)
 
 
-def get_timestamp(date_time, date_format='%Y-%m-%d'):
+def get_timestamp(date_time, date_format='%Y-%m-%dT%H:%M:%S'):
     """Returns the given date_time string formatted with date_format as timestamp, in a PY2/3 compatible way
 
     :param date_time: the datetime string to return as timestamp
     :type date_time: str or unicode
-    :param date_format: (optional) the date format in which date_time is given, defaults to '%Y-%m-%d'
+    :param date_format: (optional) the date format in which date_time is given, defaults to '%Y-%m-%dT%H:%M:%S'
     :type date_format: str or unicode
     :returns: the timestamp corresponding to the date_time string in seconds
     :rtype: float

@@ -161,6 +161,10 @@ class QueryStringSearch(Search):
 
 class RestoSearch(QueryStringSearch):
 
+    def __init__(self, provider, config):
+        super(RestoSearch, self).__init__(provider, config)
+        self.config.results_entry = 'features'
+
     def do_request(self, search_url, *args, **kwargs):
         collections = self.get_collections(*args, **kwargs)
         results = []

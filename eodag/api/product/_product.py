@@ -41,7 +41,7 @@ except ImportError:
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.representations import DEFAULT_METADATA_MAPPING, properties_from_json
-from eodag.utils.exceptions import UnsupportedDatasetAddressScheme
+from eodag.utils.exceptions import UnsupportedDatasetAddressScheme, DownloadError
 
 
 logger = logging.getLogger('eodag.api.product')
@@ -277,6 +277,8 @@ class EOProduct(object):
         # resolve remote location if needed with downloader configuration
         self.remote_location = self.remote_location % vars(self.downloader.config)
         fs_location = self.downloader.download(self, auth=auth, progress_callback=progress_callback)
+        if fs_location is None:
+            raise DownloadError("Invalid file location returned by download process: '{}'".format(fs_location))
         self.location = 'file://{}'.format(fs_location)
         logger.debug("Product location updated from '%s' to '%s'", self.remote_location, self.location)
         logger.info("Remote location of the product is still available through its 'remote_location' property: %s",
