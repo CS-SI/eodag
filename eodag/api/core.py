@@ -48,7 +48,8 @@ class EODataAccessGateway(object):
         self.providers_config = load_default_config()
 
         # First level override: From a user configuration file
-        override_config_from_file(self.providers_config, user_conf_file_path)
+        if user_conf_file_path:
+            override_config_from_file(self.providers_config, user_conf_file_path)
 
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
@@ -110,7 +111,7 @@ class EODataAccessGateway(object):
         """
         if provider is not None:
             if provider in self.providers_config:
-                provider_supported_products = self.providers_config[provider]['products']
+                provider_supported_products = self.providers_config[provider].products
                 return [dict(
                     ID=code,
                     **self.product_types_config[code]
