@@ -34,11 +34,6 @@ class TestProviderConfig(unittest.TestCase):
         unslugified_provider_name = 'some $provider-name. Really ugly'
         slugified_provider_name = 'some_provider_name_really_ugly'
 
-        # Must be true for manually constructed provider config
-        provider_config = config.ProviderConfig(unslugified_provider_name, search=config.PluginConfig('MyPluginClass'))
-        self.assertEqual(provider_config.name, slugified_provider_name)
-
-        # Must be true for provider constructed through yaml stream
         stream = StringIO(
             '''!provider
             name: {}
