@@ -110,9 +110,7 @@ setup(
             'HTTPDownload = eodag.plugins.download.http:HTTPDownload',
         ],
         'eodag.plugins.search': [
-            'AwsSearch = eodag.plugins.search.qssearch:AwsSearch',
             'CSWSearch = eodag.plugins.search.csw:CSWSearch',
-            'RestoSearch = eodag.plugins.search.qssearch:RestoSearch',
             'QueryStringSearch = eodag.plugins.search.qssearch:QueryStringSearch',
         ],
     },
