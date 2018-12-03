@@ -132,7 +132,7 @@ class EOProduct(object):
                            'downloading the product and then getting the data...')
             try:
                 path_of_downloaded_file = self.download()
-            except RuntimeError:
+            except (RuntimeError, DownloadError):
                 import traceback
                 logger.warning('Error while trying to download the product:\n %s', traceback.format_exc())
                 logger.warning('There might be no download plugin registered for this EO product. Try performing: '

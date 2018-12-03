@@ -82,7 +82,8 @@ class EODagTestCase(unittest.TestCase):
             'platform': 'Sentinel-2',
             'platformSerialIdentifier': self.platform,
             'instrument': self.instrument,
-            'title': self.local_filename
+            'title': self.local_filename,
+            'downloadLink': self.download_url,
         }
         # Put an empty string as value of properties which are not relevant for the tests
         self.eoproduct_props.update({

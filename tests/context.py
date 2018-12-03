@@ -35,5 +35,5 @@ from eodag.plugins.search.base import Search
 
 from eodag.utils import DEFAULT_PROJ
 from eodag.utils.exceptions import (
-    AddressNotFound, UnsupportedDatasetAddressScheme, UnsupportedProvider, ValidationError
+    AddressNotFound, UnsupportedDatasetAddressScheme, UnsupportedProvider, ValidationError, DownloadError
 )
