@@ -260,28 +260,26 @@ class ODataV4Search(QueryStringSearch):
         """
         final_result = []
         # Query the products entity set for basic metadata about the product
-        entity_set_response = super(ODataV4Search, self).do_request(search_url, *args, **kwargs)
-        if isinstance(entity_set_response, dict):
-            for entity in entity_set_response['value']:
-                if entity['downloadable']:
-                    entity_metadata = {
-                        'quicklook': entity['quicklook'],
-                        'id': entity['id'],
-                        'footprint': entity['footprint'],
-                    }
-                    metadata_url = self.get_metadata_search_url(entity)
-                    try:
-                        response = requests.get(metadata_url)
-                        response.raise_for_status()
-                    except requests.HTTPError:
-                        logger.exception('Skipping error while searching for %s %s instance:', self.provider,
-                                         self.__class__.__name__)
-                    else:
-                        entity_metadata.update({
-                            item['id']: item['value']
-                            for item in response.json()['value']
-                        })
-                        final_result.append(entity_metadata)
+        for entity in super(ODataV4Search, self).do_request(search_url, *args, **kwargs):
+            if entity['downloadable']:
+                entity_metadata = {
+                    'quicklook': entity['quicklook'],
+                    'id': entity['id'],
+                    'footprint': entity['footprint'],
+                }
+                metadata_url = self.get_metadata_search_url(entity)
+                try:
+                    response = requests.get(metadata_url)
+                    response.raise_for_status()
+                except requests.HTTPError:
+                    logger.exception('Skipping error while searching for %s %s instance:', self.provider,
+                                     self.__class__.__name__)
+                else:
+                    entity_metadata.update({
+                        item['id']: item['value']
+                        for item in response.json()['value']
+                    })
+                    final_result.append(entity_metadata)
         return final_result
 
     def get_metadata_search_url(self, entity):

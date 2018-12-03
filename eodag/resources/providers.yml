@@ -614,6 +614,7 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    results_entry: 'value'
     metadata_mapping:
       id: '$.id'
       geometry:
