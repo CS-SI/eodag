@@ -41,8 +41,8 @@ class TestCoreSearchResults(unittest.TestCase):
                     'completionTimeFromAscendingNode': '2018-02-16T00:12:14.035Z',
                     'keyword': {},
                     'productType': 'OCN',
-                    'eodag_download_url': ('https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363'
-                                           '-b19f8931cc7b/download'),
+                    'downloadLink': ('https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363'
+                                     '-b19f8931cc7b/download'),
                     'eodag_provider': 'peps',
                     'eodag_product_type': 'S1_OCN',
                     'platformSerialIdentifier': 'S1A',
@@ -128,20 +128,15 @@ class TestCoreSearchResults(unittest.TestCase):
             product.search_intersection = geometry.shape(product.search_intersection)
 
     def test_core_serialize_search_results(self):
-        """The core api must serialize a search results to geojson format into a file named search_results.geojson"""
+        """The core api must serialize a search results to geojson"""
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            # Serialization when the destination file is specified => goes to the specified file
             path = self.dag.serialize(self.search_result, filename=f.name)
             self.assertEqual(path, f.name)
+            # Serialization when the destination is not specified => goes to 'search_results.geojson' in the cur dir
+            self.assertEqual(self.dag.serialize(self.search_result), 'search_results.geojson')
         with open(path, 'r') as f:
-            self.assertDictEqual(json.load(f), self.geojson_repr)
-        os.unlink(path)
-
-    def test_core_serialize_search_results_filename_kwarg(self):
-        """The core api must serialize a search results to geojson format into specified file"""
-        path = self.dag.serialize(self.search_result)
-        self.assertEqual(path, 'search_results.geojson')
-        with open(path, 'r') as f:
-            self.assertDictEqual(json.load(f), self.geojson_repr)
+            self.make_assertions(f)
         os.unlink(path)
 
     def test_core_deserialize_search_results(self):
@@ -150,4 +145,20 @@ class TestCoreSearchResults(unittest.TestCase):
         search_result = self.dag.deserialize(search_results_geojson_path)
         self.assertIsInstance(search_result, SearchResult)
         with open(search_results_geojson_path, 'r') as f:
-            self.assertDictEqual(json.load(f), self.geojson_repr)
+            self.make_assertions(f)
+
+    def make_assertions(self, f):
+        d = json.load(f)
+        self.assertEqual(d['type'], self.geojson_repr['type'])
+        self.assertEqual(len(d['features']), len(self.geojson_repr['features']))
+        feature = d['features'][0]
+        self.assertEqual(feature['id'], self.geojson_repr['features'][0]['id'])
+        self.assertEqual(feature['type'], self.geojson_repr['features'][0]['type'])
+        self.assertDictEqual(feature['geometry'], self.geojson_repr['features'][0]['geometry'])
+        for key, value in self.geojson_repr['features'][0]['properties'].items():
+            if isinstance(value, dict):
+                self.assertDictEqual(value, feature['properties'][key])
+            elif isinstance(value, list):
+                self.assertListEqual(value, feature['properties'][key])
+            else:
+                self.assertEqual(value, feature['properties'][key])

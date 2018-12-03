@@ -164,7 +164,6 @@ class EOProduct(object):
             'properties': {
                 'eodag_product_type': self.product_type,
                 'eodag_provider': self.provider,
-                'eodag_download_url': self.location,
                 'eodag_search_intersection': geometry.mapping(self.search_intersection),
             }
         }
