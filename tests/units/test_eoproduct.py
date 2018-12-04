@@ -31,7 +31,8 @@ from shapely import geometry
 
 from tests import EODagTestCase
 from tests.context import (
-    Authentication, DEFAULT_PROJ, Download, DownloadError, EOProduct, NoDriver, Sentinel2L1C, UnsupportedDatasetAddressScheme, config,
+    Authentication, DEFAULT_PROJ, Download, DownloadError, EOProduct, NoDriver, Sentinel2L1C,
+    UnsupportedDatasetAddressScheme, config,
 )
 
 
@@ -133,7 +134,8 @@ class TestEOProduct(EODagTestCase):
 
         mock_downloader = mock.MagicMock(
             spec_set=Download(provider=self.provider, config=config.PluginConfig.from_mapping({
-                'extract': False, 'archive_depth': 1}))
+                'extract': False, 'archive_depth': 1
+            }))
         )
         mock_downloader.download.return_value = self.local_product_as_archive_path
         # mock_downloader.config = {'extract': False, 'archive_depth': 1}
@@ -278,7 +280,7 @@ class TestEOProduct(EODagTestCase):
             'geometry': self._tuples_to_lists(geometry.mapping(self.geometry))
         }, geo_interface)
         self.assertDictContainsSubset({
-            'eodag_provider': self.provider, 'eodag_download_url': self.download_url,
+            'eodag_provider': self.provider,
             'eodag_search_intersection': self._tuples_to_lists(geometry.mapping(product.search_intersection)),
             'eodag_product_type': self.product_type,
         }, geo_interface['properties'])

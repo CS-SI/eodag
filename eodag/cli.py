@@ -77,6 +77,13 @@ def eodag(ctx, verbose):
 @click.pass_context
 def search_crunch(ctx, **kwargs):
     # Process inputs for search
+    producttype = kwargs.pop('producttype')
+    if not producttype:
+        with click.Context(search_crunch) as ctx:
+            print('Give me some work to do. See below for how to do that:', end='\n\n')
+            click.echo(search_crunch.get_help(ctx))
+        sys.exit(-1)
+
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
     if kwargs['geometry'] != (None,) * 4:
@@ -84,21 +91,21 @@ def search_crunch(ctx, **kwargs):
         footprint = {'lonmin': rect[0], 'latmin': rect[1], 'lonmax': rect[2], 'latmax': rect[3]}
     else:
         footprint = None
-    producttype = kwargs.pop('producttype')
+    start_date = kwargs.pop('starttimefromascendingnode')
+    stop_date = kwargs.pop('completiontimefromascendingnode')
     criteria = {
         'geometry': footprint,
-        'startTimeFromAscendingNode': kwargs.pop('starttimefromascendingnode').isoformat(),
-        'completionTimeFromAscendingNode': kwargs.pop('completiontimefromascendingnode').isoformat(),
+        'startTimeFromAscendingNode': None,
+        'completionTimeFromAscendingNode': None,
         'cloudCover': kwargs.pop('cloudcover'),
     }
+    if start_date:
+        criteria['startTimeFromAscendingNode'] = start_date.isoformat()
+    if stop_date:
+        criteria['completionTimeFromAscendingNode'] = stop_date.isoformat()
     conf_file = kwargs.pop('conf')
     if conf_file:
         conf_file = click.format_filename(conf_file)
-    if not producttype:
-        with click.Context(search_crunch) as ctx:
-            print('Give me some work to do. See below for how to do that:', end='\n\n')
-            click.echo(search_crunch.get_help(ctx))
-        sys.exit(-1)
 
     # Process inputs for crunch
     cruncher_names = set(kwargs.pop('cruncher') or [])
