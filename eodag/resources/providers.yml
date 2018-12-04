@@ -110,7 +110,6 @@
   search: !plugin
     type: RestoSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/collections/{collection}/search.json'
-    product_location_scheme: https
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -179,7 +178,6 @@
   search: !plugin
     type: RestoSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
-    product_location_scheme: https
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -233,7 +231,6 @@
   search: !plugin
     type: RestoSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
-    product_location_scheme: https
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -389,7 +386,6 @@
   search: !plugin
     type: RestoSearch
     api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
-    product_location_scheme: 'https'
     metadata_mapping:
       id: '$.id'
       geometry:

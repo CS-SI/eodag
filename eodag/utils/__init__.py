@@ -231,6 +231,21 @@ def get_timestamp(date_time, date_format='%Y-%m-%dT%H:%M:%S'):
 
 
 def format_search_param(search_param, *args, **kwargs):
+    """Format a string of form {<field_name>$<conversion_function>}
+
+    The currently understood converters are::
+        - timestamp: converts a date string to a timestamp
+        - to_wkt: converts a geometry to its well known text representation
+
+    :param search_param: The string to be formatted
+    :type search_param: str or unicode
+    :param args: (optional) Additional arguments to use in the formatting process
+    :type args: tuple
+    :param kwargs: (optional) Additional named-arguments to use in the formatting process
+    :type kwargs: dict
+    :returns: The formatted string
+    :rtype: str or unicode
+    """
     class SearchParamFormatter(Formatter):
         CONVERSION_FUNC_REGEX = re.compile(r'^(?P<field_name>.+)(?P<sep>\$)(?P<converter>[^()]+)(\((?P<args>.+)?\))?$')
 

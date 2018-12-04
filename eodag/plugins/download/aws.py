@@ -27,7 +27,7 @@ import boto3
 from eodag.plugins.download.base import Download
 from eodag.utils import urlparse
 
-logger = logging.getLogger('eodag.plugins.download.http')
+logger = logging.getLogger('eodag.plugins.download.aws')
 
 
 class AwsDownload(Download):

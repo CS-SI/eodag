@@ -34,6 +34,42 @@ logger = logging.getLogger('eodag.plugins.search.qssearch')
 
 
 class QueryStringSearch(Search):
+    """A plugin that helps implementing any kind of search protocol that relies on query strings (e.g: opensearch).
+
+    The available configuration parameters for this kind of plugin are::
+        - result_type: (optional) One of "json" or "xml", depending on the representation of the provider's search
+                       results. The default is "json"
+        - results_entry: (mandatory) The name of the key in the provider search result that gives access to the
+                         result entries
+        - api_endpoint: (mandatory) The endpoint of the provider's search interface
+        - literal_search_param: (optional) A mapping of (search_param => search_value) pairs giving search parameters
+                                to be passed as is in the search url
+        - free_text_search_param: (optional) The name of a search parameter that will have the value obtained from the
+                                  application of the operations configured in the free_text_search_operations below
+        - free_text_search_operations: (optional) A mapping of (operation => list of operands), that defines all the
+                                       free text search operations to be applied to form the value of the
+                                       free_text_search_param above. The operands are joined together using the
+                                       operator.
+
+    The search plugins of this kind can detect when a metadata mapping is "query-able", and get the semantics of how
+    to format the query string parameter that enables to make a query on the corresponding metadata. To make a
+    metadata query-able, just configure it in the metadata mapping to be a list of 2 items, the first one being the
+    specification of the query string search formatting. The later is a string following the specification of Python
+    string formatting, with a special behaviour added to it. For example, an entry in the metadata mapping of this
+    kind::
+        completionTimeFromAscendingNode:
+            - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode$timestamp}'
+            - '$.properties.acquisition.endViewingDate'
+    means that the search url will have a query string parameter named "f" with a value of
+    "acquisition.endViewingDate:lte:1543922280.0" if the search was done with a value of
+    `completionTimeFromAscendingNode` being `2018-12-04T12:18:00`. What happened is that
+    `{completionTimeFromAscendingNode$timestamp}` was replaced with the timestamp of the value of
+    `completionTimeFromAscendingNode`. This example shows all there is to know about the semantics of the query string
+    formatting introduced by this plugin: any eodag search parameter can be referenced in the query string
+    with an additional optional conversion function that is separated from it by a `$` (see
+    :func:`~eodag.utils.format_search_param` for further details on the available converters). Note that for the values
+    in the `free_text_search_operations` configuration parameter follow the same rule.
+    """
     COMPLEX_QS_REGEX = re.compile(r'^(.+=)?([^=]*)({.+})+([^=&]*)$')
     extract_properties = {
         'xml': properties_from_xml,
@@ -58,6 +94,7 @@ class QueryStringSearch(Search):
         return eo_products
 
     def build_query_string(self, *args, **kwargs):
+        """Build The query string using the search parameters"""
         logger.debug('Building the query string that will be used for search')
         queryables = self.get_queryables()
         qs_participants = []
@@ -92,7 +129,7 @@ class QueryStringSearch(Search):
                 qs_participants.append('{}={}'.format(queryable, query))
 
     def format_free_text_search(self, **kwargs):
-        """Build the free text search parameter"""
+        """Build the free text search parameter using the search parameters"""
         free_text_search_param = getattr(self.config, 'free_text_search_param', '')
         if not free_text_search_param:
             return {}
@@ -114,6 +151,7 @@ class QueryStringSearch(Search):
         }
 
     def get_queryables(self):
+        """Retrieve the metadata mappings that are query-able"""
         logger.debug('Retrieving queryable metadata from metadata_mapping')
         return {
             key: get_search_param(val)
@@ -122,10 +160,12 @@ class QueryStringSearch(Search):
         }
 
     def map_product_type(self, product_type, *args, **kwargs):
+        """Map the eodag product type to the provider product type"""
         logger.debug('Mapping eodag product type to provider product type')
         return self.config.products[product_type]['product_type']
 
     def normalize_results(self, results, *args, **kwargs):
+        """Build EOProducts from provider results"""
         logger.debug('Adapting plugin results to eodag product representation')
         return [
             EOProduct(
@@ -138,6 +178,7 @@ class QueryStringSearch(Search):
         ]
 
     def do_request(self, search_url, *args, **kwargs):
+        """Perform the actual search request"""
         try:
             logger.info('Sending search request: %s', search_url)
             response = requests.get(search_url)
@@ -150,7 +191,7 @@ class QueryStringSearch(Search):
             if self.config.result_type == 'xml':
                 root_node = etree.fromstring(response.content)
                 for entry in root_node.xpath(
-                    self.config.result_entry,
+                    self.config.results_entry,
                     namespaces={k or 'ns': v for k, v in root_node.nsmap.items()}
                 ):
                     yield etree.tostring(entry)
@@ -160,6 +201,7 @@ class QueryStringSearch(Search):
 
 
 class RestoSearch(QueryStringSearch):
+    """A specialisation of a QueryStringSearch that adds the notion of a collection to the api_endpoint parameter"""
 
     def __init__(self, provider, config):
         super(RestoSearch, self).__init__(provider, config)
@@ -181,6 +223,7 @@ class RestoSearch(QueryStringSearch):
         return results
 
     def get_collections(self, *args, **kwargs):
+        """Get the collection to which the product belongs"""
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-/asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         if self.provider == 'peps':
@@ -210,6 +253,7 @@ class RestoSearch(QueryStringSearch):
 
 
 class AwsSearch(RestoSearch):
+    """A specialisation of RestoSearch that modifies the way the EOProducts are built from the search results"""
 
     def normalize_results(self, results, *args, **kwargs):
         normalized = []
@@ -238,6 +282,7 @@ class AwsSearch(RestoSearch):
 
 
 class ODataV4Search(QueryStringSearch):
+    """A specialisation of a QueryStringSearch that does a two step search to retrieve all products metadata"""
 
     def build_query_string(self, *args, **kwargs):
         logger.debug('Building the query string that will be used for search')
@@ -252,12 +297,9 @@ class ODataV4Search(QueryStringSearch):
         return '$search="{}"&$format={}'.format(' AND '.join(qs_participants), self.config.result_type)
 
     def do_request(self, search_url, *args, **kwargs):
-        """Do a two step search, as the metadata are not given into the search result.
-
-        .. warning::
-            This plugin is still very specific to the ONDA provider. Be careful to generalize
-            it if needed when the chance to do so arrives
-        """
+        """Do a two step search, as the metadata are not given into the search result"""
+        # TODO: This plugin is still very specific to the ONDA provider. Be careful to generalize
+        #       it if needed when the chance to do so arrives
         final_result = []
         # Query the products entity set for basic metadata about the product
         for entity in super(ODataV4Search, self).do_request(search_url, *args, **kwargs):

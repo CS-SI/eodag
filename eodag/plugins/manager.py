@@ -73,6 +73,13 @@ class PluginManager(object):
         self._built_plugins_cache = {}
 
     def get_search_plugins(self, product_type):
+        """Build and return all the search plugins supporting the given product type, ordered by highest priority.
+
+        :param product_type: The product type that the constructed plugins must support
+        :type product_type: str or unicode
+        :returns: All the plugins supporting the product type, one by one (a generator object)
+        :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
+        """
         for config in self.product_type_to_provider_config_map[product_type]:
             try:
                 config.search.products = config.products
@@ -86,6 +93,14 @@ class PluginManager(object):
                 yield plugin
 
     def get_download_plugin(self, product):
+        """Build and return the download plugin capable of downloading the given product.
+
+
+        :param product: The product to get a download plugin for
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :returns: The download plugin capable of downloading the product
+        :rtype: :class:`~eodag.plugins.download.Download`
+        """
         for plugin_conf in self.product_type_to_provider_config_map[product.product_type]:
             if plugin_conf.name == product.provider:
                 try:
@@ -98,6 +113,15 @@ class PluginManager(object):
                     return plugin
 
     def get_auth_plugin(self, product_type, provider):
+        """Build and return the authentication plugin for the given product_type and provider
+
+        :param product_type: The product type for which to get the authentication plugin
+        :type product_type: str or unicode
+        :param provider: The provider for which to get the authentication plugin
+        :type provider: str or unicode
+        :returns: The Authentication plugin for the provider
+        :rtype: :class:`~eodag.plugins.authentication.Authentication`
+        """
         for plugin_conf in self.product_type_to_provider_config_map[product_type]:
             if plugin_conf.name == provider:
                 try:
@@ -112,6 +136,13 @@ class PluginManager(object):
         return None
 
     def set_priority(self, provider, priority):
+        """Set the priority of the given provider
+
+        :param provider: The provider which is assigned the priority
+        :type provider: str or unicode
+        :param priority: The priority to assign to the provider
+        :type priority: int
+        """
         # Update the priority in the configurations so that it is taken into account when a plugin of this provider is
         # latterly built
         for product_type, provider_configs in self.product_type_to_provider_config_map.items():
@@ -126,12 +157,24 @@ class PluginManager(object):
                 self._built_plugins_cache[(provider, topic_class)].priority = priority
 
     def _build_plugin(self, provider, plugin_conf, topic_class):
+        """Build the plugin of the given topic with the given plugin configuration and registered as the given provider
+
+        :param provider: The provider for which to build the plugin
+        :type provider: str or unicode
+        :param plugin_conf: The configuration of the plugin to be built
+        :type plugin_conf: :class:`~eodag.config.PluginConfig`
+        :param topic_class: The type of plugin to build
+        :type topic_class: :class:`~eodag.plugin.base.PluginTopic`
+        :returns: The built plugin
+        :rtype: :class:`~eodag.plugin.search.Search` or :class:`~eodag.plugin.download.Download` or
+                :class:`~eodag.plugin.authentication.Authentication` or :class:`~eodag.plugin.crunch.Crunch`
+        """
         cached_instance = self._built_plugins_cache.setdefault((provider, topic_class.__name__), None)
         if cached_instance is not None:
             return cached_instance
         plugin_class = EODAGPluginMount.get_plugin_by_class_name(
             topic_class,
-            plugin_conf.type
+            getattr(plugin_conf, 'type')
         )
         plugin = plugin_class(provider, plugin_conf)
         self._built_plugins_cache[(provider, topic_class.__name__)] = plugin

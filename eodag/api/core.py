@@ -39,8 +39,6 @@ class EODataAccessGateway(object):
 
     :param user_conf_file_path: Path to the user configuration file
     :type user_conf_file_path: str or unicode
-    :param providers_file_path: Path to the internal file where systems containing eo products are configured
-    :type providers_file_path: str or unicode
     """
 
     def __init__(self, user_conf_file_path=None):
@@ -127,7 +125,18 @@ class EODataAccessGateway(object):
         return tuple(self.providers_config.keys())
 
     def search(self, product_type, **kwargs):
-        """Look for products matching criteria in known systems.
+        """Look for products matching criteria in known providers.
+
+        The default behaviour is to look for products in the provider with the highest priority. If the search gives
+        no results, or if the provider is known to support only a partial collection of the searched product type, the
+        search then continues on the other providers supporting the requested product type, ordered by highest
+        priority. These priorities are configurable through user configuration file or individual environment variable.
+
+        .. note::
+            From the behaviour described here, it is possible to make the search to continue on other providers by
+            setting the `partial_support` configuration parameter to `true` for the corresponding product type in the
+            configuration of the provider with the highest priority, like for example with an environment variable like
+            EODAG__SOBLOO__PRODUCTS__S2_MSI_L1C__PARTIAL_SUPPORT=true
 
         :param product_type: The product type to search
         :type product_type: str or unicode
@@ -269,18 +278,13 @@ class EODataAccessGateway(object):
 
         This is an alias to the method of the same name on :class:`~eodag.api.product.EOProduct`, but it performs some
         additional checks like verifying that a downloader and authenticator are registered for the product before
-        trying to download it. If EODAG is installed on a machine that can see the product as local, no download is
-        tried and the location of the product is immediately returned instead.
-
-        .. warning::
-
-            Be careful to adequately configure your eodag install so that it can see local products. This means that
-            if you install it on a machine that can see products from specific providers as local, you must override
-            the '<provider>.search.product_location_scheme' config parameter through either the environment variable
-            'EODAG__<PROVIDER>__SEARCH__PRODUCT_LOCATION_SCHEME' (notice the double underscore, they are equivalent to
-            the dots in '<provider>.search.product_location_scheme') or through your user configuration file. Set this
-            parameter to 'file' (other network location schemes emulating the local 'file' scheme may be supported in
-            the future).
+        trying to download it. If the metadata mapping for `downloadLink` is set to something that can be interpreted
+        as a link on a local filesystem, the download is skipped (by now, only a link starting with `file://` is
+        supported). Therefore, any user that knows how to extract product location from product metadata on a provider
+        can override the `downloadLink` metadata mapping in the right way. For example, using the environment variable:
+        EODAG__SOBLOO__SEARCH__METADATA_MAPPING__DOWNLOADLINK="file:///{id}" will lead to all `EOProduct`s originating
+        from the provider `sobloo` to have their `downloadLink` metadata point to something like: "file:///12345-678",
+        making this method immediately return the later string without trying to download the product.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product.EOProduct`
