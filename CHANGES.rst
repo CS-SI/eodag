@@ -1,6 +1,17 @@
 Release history
 ---------------
 
+0.7.0 (2018-12-04)
+++++++++++++++++++
+
+- Creates Creodias, Mundi, Onda and Wekeo drivers
+- Every provider configuration parameter is now overridable by the user configuration
+- Provider configuration is now overridable by environment variables following the pattern:
+  EODAG__<PROVIDER>__<CONFIG_PARAMETER> (special prefix + double underscore between configuration keys + configuration
+  parameters uppercase with simple underscores preserved). There is no limit to the how fine the override can go
+- New authentication plugins (keycloak with openid)
+
+
 0.6.3 (2018-09-24)
 ++++++++++++++++++
 
