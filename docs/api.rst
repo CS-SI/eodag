@@ -162,15 +162,19 @@ Search Plugins
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.search.resto.RestoSearch
+.. autoclass:: eodag.plugins.search.qssearch.QueryStringSearch
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.search.aws.AwsSearch
+.. autoclass:: eodag.plugins.search.qssearch.RestoSearch
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.search.arlas.ArlasSearch
+.. autoclass:: eodag.plugins.search.qssearch.AwsSearch
+   :show-inheritance:
+   :undoc-members:
+
+.. autoclass:: eodag.plugins.search.qssearch.ODataV4Search
    :show-inheritance:
    :undoc-members:
 
@@ -226,6 +230,10 @@ Authentication Plugins
    :undoc-members:
 
 .. autoclass:: eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth
+   :show-inheritance:
+   :undoc-members:
+
+.. autoclass:: eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth
    :show-inheritance:
    :undoc-members:
 

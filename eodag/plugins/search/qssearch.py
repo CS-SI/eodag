@@ -36,7 +36,7 @@ logger = logging.getLogger('eodag.plugins.search.qssearch')
 class QueryStringSearch(Search):
     """A plugin that helps implementing any kind of search protocol that relies on query strings (e.g: opensearch).
 
-    The available configuration parameters for this kind of plugin are::
+    The available configuration parameters for this kind of plugin are:
         - result_type: (optional) One of "json" or "xml", depending on the representation of the provider's search
                        results. The default is "json"
         - results_entry: (mandatory) The name of the key in the provider search result that gives access to the

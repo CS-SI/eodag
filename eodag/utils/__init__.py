@@ -233,7 +233,7 @@ def get_timestamp(date_time, date_format='%Y-%m-%dT%H:%M:%S'):
 def format_search_param(search_param, *args, **kwargs):
     """Format a string of form {<field_name>$<conversion_function>}
 
-    The currently understood converters are::
+    The currently understood converters are:
         - timestamp: converts a date string to a timestamp
         - to_wkt: converts a geometry to its well known text representation
 

@@ -41,6 +41,7 @@ class PluginManager(object):
     constructed. The providers configuration contains information such as the name of the provider, the internet
     endpoint for accessing it, and the plugins to use to perform defined actions (search, download, authenticate,
     crunch).
+
     :param providers_config: The configuration with all information about the providers supported by the `eodag`
     :type providers_config: dict
     """

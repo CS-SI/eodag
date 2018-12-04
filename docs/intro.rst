@@ -44,7 +44,7 @@ Available providers
 
 There are currently 6 available providers implemented on eodag:
 
-* `sobloo <https://sobloo.eu/>`_: Airbus DS catalog for the copernicus program
+* `sobloo <https://sobloo.eu/>`_: Airbus DIAS
 
 * `usgs <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
 
@@ -55,6 +55,12 @@ There are currently 6 available providers implemented on eodag:
 * `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) catalog for Sentinel 2 products
 
 * `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Copernicus (Sentinel 1, 2, 3) products
+
+* `creodias <https://creodias.eu/>`_: CloudFerro DIAS
+
+* `mundi <https://mundiwebservices.com/>`_: Atos DIAS
+
+* `onda <https://www.onda-dias.eu/cms/>`_: Serco DIAS
 
 .. note::
 
@@ -79,37 +85,107 @@ Create a configuration file containing your credentials for each provider.  You 
 
 .. code-block:: yaml
 
-    outputs_prefix: # The path of the root directory for all your downloads
-    extract:    # whether to extract products downloaded as archives (true or false)
     peps:
-        credentials:
-            username:
-            password:
+        priority:
+        search:   # Search parameters configuration
+        download:
+            extract:  # whether to extract the downloaded products (true or false).
+            outputs_prefix: # where to store downloaded products.
+            dl_url_params:  # additional parameters to pass over to the download url as an url parameter
+        auth:
+            credentials:
+                username:
+                password:
     theia:
-        credentials:
-            ident:
-            pass:
+        priority:
+        search:   # Search parameters configuration
+        download:
+            extract:
+            outputs_prefix:
+            dl_url_params:
+        auth:
+            credentials:
+                ident:
+                pass:
     theia_landsat:
-        credentials:
-            username:
-            password:
+        priority:
+        search:   # Search parameters configuration
+        download:
+            extract:
+            outputs_prefix:
+            dl_url_params:
+        auth:
+            credentials:
+                username:
+                password:
     usgs:
-        credentials:
-            username:
-            password:
+        priority:
+        api:
+            extract:
+            outputs_prefix:
+            dl_url_params:
+            product_location_scheme:
+            credentials:
+                username:
+                password:
     aws_s3_sentinel2_l1c:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
+        priority:
+        search:   # Search parameters configuration
+        auth:
+            credentials:
+                aws_access_key_id:
+                aws_secret_access_key:
+        download:
+            extract:
+            outputs_prefix:
+            associated_bucket:
     sobloo:
-        credentials:
-            apikey:
+        priority:
+        search:   # Search parameters configuration
+        download:
+            extract:
+            outputs_prefix:
+            dl_url_params:
+        auth:
+            credentials:
+                apikey:
+    creodias:
+        priority:
+        search:   # Search parameters configuration
+        download:
+            extract:
+            outputs_prefix:
+        auth:
+            credentials:
+                username:
+                password:
+    mundi:
+        priority:
+        search:   # Search parameters configuration
+        download:
+            extract:
+            outputs_prefix:
+        auth:
+            credentials:
+                aws_access_key_id:
+                aws_secret_access_key:
+    onda:
+        priority:
+        search:   # Search parameters configuration
+        download:
+            extract:
+            outputs_prefix:
+        auth:
+            credentials:
+                username:
+                password:
 
 .. warning::
 
     This file contains login information in clear text. Make sure you correctly
     configure access rules to it. It should be read/write-able only by the
-    current user of eodag.
+    current user of eodag. However, note that you can alternatively configure
+    your credentials through environment variables instead
 
 Fill this configuration file with the credentials you obtained from each
 provider.
@@ -130,5 +206,12 @@ For aws_s3_sentinel2_l1c:
     * In access keys, click on create access key.
     * Add these credentials to the user conf file.
 
-For sobloo, create an account here for an api key: https://auth.sobloo.eu/auth/realms/IDP/protocol/openid-connect/auth?client_id=dias&redirect_uri=https%3A%2F%2Fsobloo.eu%2Fsites%2Fall%2Fthemes%2Fdias%2Ftemplates%2Fsso%2Fpopup-signin.html&response_type=id_token%20token&scope=openid&state=176305cc793f40fda565e2260b851d4c&nonce=234b2d571bb4447db8d3385f565255f7&display=popup
+For sobloo, create an account `here <https://auth.sobloo.eu/auth/realms/IDP/protocol/openid-connect/auth?client_id=dias&redirect_uri=https%3A%2F%2Fsobloo.eu%2Fsites%2Fall%2Fthemes%2Fdias%2Ftemplates%2Fsso%2Fpopup-signin.html&response_type=id_token%20token&scope=openid&state=176305cc793f40fda565e2260b851d4c&nonce=234b2d571bb4447db8d3385f565255f7&display=popup>`_ for an api key:
+
+For creodias, create an account here: https://portal.creodias.eu/register.php
+
+For mundi, create an account here: https://mundiwebservices.com (click on "login" and then go in the "register" tab). You will need a "tenant credentials" to be able
+to get an access key and secret access key. When you have these two keys, configure eodag with them
+
+For onda, create an account here: https://www.onda-dias.eu/crm/
 
