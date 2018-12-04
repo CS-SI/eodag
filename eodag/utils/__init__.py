@@ -17,16 +17,20 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import functools
 import re
 import sys
 import types
 import unicodedata
 from datetime import datetime
 from itertools import repeat, starmap
+from string import Formatter
 
 import click
+import six
 from rasterio.crs import CRS
 from requests.auth import AuthBase
+from shapely import geometry
 from tqdm import tqdm, tqdm_notebook
 
 
@@ -43,21 +47,28 @@ except ImportError:  # PY2
 
 
 class RequestsTokenAuth(AuthBase):
-    token = ''
 
-    def __call__(self, req):
-        req.headers['Authorization'] = "Bearer {}".format(self.token)
-        return req
-
-
-class RequestsDictTokenAuth(RequestsTokenAuth):
-    def __init__(self, token_obj, token_key):
-        self.token = token_obj[token_key]
-
-
-class RequestsTextTokenAuth(RequestsTokenAuth):
-    def __init__(self, token):
+    def __init__(self, token, where, qs_key=None):
         self.token = token
+        self.where = where
+        self.qs_key = qs_key
+
+    def __call__(self, request):
+        if self.where == 'qs':
+            parts = urlparse(request.url)
+            qs = parse_qs(parts.query)
+            qs[self.qs_key] = self.token
+            request.url = urlunparse((
+                parts.scheme,
+                parts.netloc,
+                parts.path,
+                parts.params,
+                urlencode(qs),
+                parts.fragment
+            ))
+        elif self.where == 'header':
+            request.headers['Authorization'] = "Bearer {}".format(self.token)
+        return request
 
 
 class FloatRange(click.types.FloatParamType):
@@ -138,6 +149,57 @@ def mutate_dict_in_place(func, mapping):
             mapping[key] = func(value)
 
 
+def merge_mappings(mapping1, mapping2):
+    """Merge two mappings with string keys, values from `mapping2` overriding values from `mapping1`.
+
+    Do its best to detect the key in `mapping1` to override. For example, let's say we have::
+
+        mapping2 = {"keya": "new"}
+        mapping1 = {"keyA": "obsolete"}
+
+    Then::
+
+        merge_mappings(mapping1, mapping2) ==> {"keyA": "new"}
+
+    If mapping2 has a key that cannot be detected in mapping1, this new key is added to mapping1 as is.
+
+    :param dict mapping1: The mapping containing values to be overridden
+    :param dict mapping2: The mapping containing values that will override the first mapping
+    """
+    # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
+    m1_keys_lowercase = {key.lower(): key for key in mapping1}
+    for key, value in mapping2.items():
+        if isinstance(value, dict):
+            try:
+                merge_mappings(mapping1[key], value)
+            except KeyError:
+                # If the key from mapping2 is not in mapping1, it is either key is the lowercased form of the
+                # corresponding key in mapping1 or because key is a new key to be added in mapping1
+                current_value = mapping1.setdefault(m1_keys_lowercase.get(key, key), {})
+                if not current_value:
+                    current_value.update(value)
+                else:
+                    merge_mappings(current_value, value)
+        else:
+            # Even for "scalar" values (a.k.a not nested structures), first check if the key from mapping1 is not the
+            # lowercase version of a key in mapping2. Otherwise, create the key in mapping1. This is the meaning of
+            # m1_keys_lowercase.get(key, key)
+            current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
+            if current_value is not None and isinstance(value, six.string_types):
+                current_value_type = type(current_value)
+                # Bool is a type with special meaning in Python, thus the special case
+                if current_value_type is bool:
+                    if value.capitalize() not in ('True', 'False'):
+                        raise ValueError('Only true or false strings (case insensitive) are allowed for booleans')
+                    # Get the real Python value of the boolean. e.g: value='tRuE' => eval(value.capitalize())=True.
+                    # str.capitalize() transforms the first character of the string to capital and lowercases the rest
+                    mapping1[m1_keys_lowercase[key]] = eval(value.capitalize())
+                else:
+                    mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+            else:
+                mapping1[key] = value
+
+
 def maybe_generator(obj):
     """Generator function that get an arbitrary object and generate values from it if the object is a generator."""
     if isinstance(obj, types.GeneratorType):
@@ -150,12 +212,12 @@ def maybe_generator(obj):
 DEFAULT_PROJ = CRS.from_epsg(4326)
 
 
-def get_timestamp(date_time, date_format='%Y-%m-%d'):
+def get_timestamp(date_time, date_format='%Y-%m-%dT%H:%M:%S'):
     """Returns the given date_time string formatted with date_format as timestamp, in a PY2/3 compatible way
 
     :param date_time: the datetime string to return as timestamp
     :type date_time: str or unicode
-    :param date_format: (optional) the date format in which date_time is given, defaults to '%Y-%m-%d'
+    :param date_format: (optional) the date format in which date_time is given, defaults to '%Y-%m-%dT%H:%M:%S'
     :type date_format: str or unicode
     :returns: the timestamp corresponding to the date_time string in seconds
     :rtype: float
@@ -166,6 +228,59 @@ def get_timestamp(date_time, date_format='%Y-%m-%d'):
     except AttributeError:  # There is no timestamp method on datetime objects in Python 2
         import time
         return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
+
+
+def format_search_param(search_param, *args, **kwargs):
+    """Format a string of form {<field_name>$<conversion_function>}
+
+    The currently understood converters are:
+        - timestamp: converts a date string to a timestamp
+        - to_wkt: converts a geometry to its well known text representation
+
+    :param search_param: The string to be formatted
+    :type search_param: str or unicode
+    :param args: (optional) Additional arguments to use in the formatting process
+    :type args: tuple
+    :param kwargs: (optional) Additional named-arguments to use in the formatting process
+    :type kwargs: dict
+    :returns: The formatted string
+    :rtype: str or unicode
+    """
+    class SearchParamFormatter(Formatter):
+        CONVERSION_FUNC_REGEX = re.compile(r'^(?P<field_name>.+)(?P<sep>\$)(?P<converter>[^()]+)(\((?P<args>.+)?\))?$')
+
+        def __init__(self):
+            self.custom_converter = None
+
+        def get_field(self, field_name, args, kwargs):
+            conversion_func_spec = self.CONVERSION_FUNC_REGEX.match(field_name)
+            # Register a custom converter if any for later use (see convert_field)
+            # This is done because we don't have the value associated to field_name at this stage
+            if conversion_func_spec:
+                field_name = conversion_func_spec.groupdict()['field_name']
+                converter = conversion_func_spec.groupdict()['converter']
+                # We want an empty list if there is no arguments for proper "unpacking" in the functools.partial call
+                func_args = [elt for elt in (conversion_func_spec.groupdict()['args'] or '').split(',') if elt]
+                self.custom_converter = functools.partial(getattr(self, 'convert_{}'.format(converter)), *func_args)
+            return super(SearchParamFormatter, self).get_field(field_name, args, kwargs)
+
+        def convert_field(self, value, conversion):
+            # Do custom conversion if any (see get_field)
+            if self.custom_converter is not None:
+                return self.custom_converter(value)
+            return super(SearchParamFormatter, self).convert_field(value, conversion)
+
+        @staticmethod
+        def convert_timestamp(value):
+            return int(1e3 * get_timestamp(value))
+
+        @staticmethod
+        def convert_to_wkt(value):
+            return geometry.box(*[
+                float(v) for v in '{lonmin} {latmin} {lonmax} {latmax}'.format(**value).split()
+            ]).to_wkt()
+
+    return SearchParamFormatter().vformat(search_param, args, kwargs)
 
 
 class ProgressCallback(object):

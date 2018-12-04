@@ -70,7 +70,7 @@ are implemented by a provider, the more functionality of eodag are available for
 
 This organisation is reflected in the internal providers configuration file. Here is a sample::
 
-   provider-name:
+   provider_name:
       priority: 1
       products:
          # List of supported product types
@@ -105,7 +105,7 @@ This organisation is reflected in the internal providers configuration file. Her
 Note however, that for a provider which already have a Python library for accessing its products, the configuration
 vary a little bit. It does not have the 'search' and 'download' keys. Instead, there is a single 'api' key like this::
 
-   provider-name:
+   provider_name:
       ...
       api:
          plugin: ApiPluginClassName
@@ -114,9 +114,9 @@ vary a little bit. It does not have the 'search' and 'download' keys. Instead, t
 Plugin Management
 ^^^^^^^^^^^^^^^^^
 
-The plugin machinery is managed by one instance of :class:`~eodag.plugins.instances_manager.PluginInstancesManager`.
+The plugin machinery is managed by one instance of :class:`~eodag.plugins.manager.PluginManager`.
 
-.. autoclass:: eodag.plugins.instances_manager.PluginInstancesManager
+.. autoclass:: eodag.plugins.manager.PluginManager
    :members:
    :show-inheritance:
 
@@ -162,15 +162,19 @@ Search Plugins
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.search.resto.RestoSearch
+.. autoclass:: eodag.plugins.search.qssearch.QueryStringSearch
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.search.aws.AwsSearch
+.. autoclass:: eodag.plugins.search.qssearch.RestoSearch
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.search.arlas.ArlasSearch
+.. autoclass:: eodag.plugins.search.qssearch.AwsSearch
+   :show-inheritance:
+   :undoc-members:
+
+.. autoclass:: eodag.plugins.search.qssearch.ODataV4Search
    :show-inheritance:
    :undoc-members:
 
@@ -226,6 +230,10 @@ Authentication Plugins
    :undoc-members:
 
 .. autoclass:: eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth
+   :show-inheritance:
+   :undoc-members:
+
+.. autoclass:: eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth
    :show-inheritance:
    :undoc-members:
 
@@ -296,6 +304,15 @@ plugin topic to which they map:
 * 'eodag.plugins.crunch'   : :class:`~eodag.plugins.crunch.Crunch`
 * 'eodag.plugins.download' : :class:`~eodag.plugins.download.Download`
 * 'eodag.plugins.search'   : :class:`~eodag.plugins.search.base.Search`
+
+
+Providers configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: eodag.config
+   :members:
+   :undoc-members:
+
 
 Utils
 -----

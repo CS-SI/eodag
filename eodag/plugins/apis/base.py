@@ -27,13 +27,6 @@ logger = logging.getLogger('eodag.plugins.apis.base')
 
 class Api(PluginTopic):
 
-    def __init__(self, config):
-        self.config = config
-        self.config.setdefault('outputs_prefix', '/tmp')
-        self.config.setdefault('on_site', False)
-        self.config.setdefault('extract', True)
-        logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
-
     def query(self, *args, **kwargs):
         """Implementation of how the products must be searched goes here.
 

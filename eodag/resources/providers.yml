@@ -15,11 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-USGS:
+---
+!provider
+  name: usgs
   priority: 0
-  api:
-    plugin: UsgsApi
+  api: !plugin
+    type: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
     metadata_mapping:
       id: '$.entityId'
@@ -30,21 +31,23 @@ USGS:
       startTimeFromAscendingNode: '$.startTime'
       completionTimeFromAscendingNode: '$.endTime'
       quicklook: '$.browserUrl'
+    extract: True
   products:
     L8_OLI_TIRS_C1L1:
       dataset: LANDSAT_8_C1
       catalog_node: EE  # Possible values: CWIC, EE, HDDS, LPCS
 
-AmazonWS:
+---
+!provider
+  name: aws_s3_sentinel2_l1c
   priority: 0
-  search:
-    plugin: AwsSearch
-    api_endpoint: 'http://finder.eocloud.eu/resto/api/'
-    product_location_scheme: 's3'
+  search: !plugin
+    type: AwsSearch
+    api_endpoint: 'http://finder.eocloud.eu/resto/api/collections/{collection}/search.json'
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -60,7 +63,7 @@ AmazonWS:
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -77,13 +80,16 @@ AmazonWS:
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
-  download:
-    plugin: AwsDownload
+      partial_support: true
+  download: !plugin
+    type: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
-  auth:
-    plugin: OAuth
+  auth: !plugin
+    type: OAuth
 
-theia-landsat:
+---
+!provider
+  name: theia_landsat
   priority: 0
   products:
     LS_REFLECTANCE:
@@ -101,13 +107,13 @@ theia-landsat:
     PLD_BUNDLE:
       collection: Pleiades
       product_type: Bundle (Pan, XS)
-  search:
-    plugin: RestoSearch
-    api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/'
+  search: !plugin
+    type: RestoSearch
+    api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/collections/{collection}/search.json'
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -122,7 +128,7 @@ theia-landsat:
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -136,11 +142,22 @@ theia-landsat:
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
       quicklook: '$.properties.quicklook'
-  download:
-    plugin: HTTPDownload
+      downloadLink: '$.properties.services.download.url'
+  download: !plugin
+    type: HTTPDownload
     base_uri: 'https://theia-landsat.cnes.fr/resto'
-  auth:
-    plugin: OIDCAuthorizationCodeFlowAuth
+    extract: true
+  auth: !plugin
+    type: OIDCAuthorizationCodeFlowAuth
+    login_form_xpath: '//form[@id="loginForm"]'
+    authentication_uri_source: 'config'
+    additional_login_form_data:
+      sessionDataKey:  'xpath(//input[@name="sessionDataKey"]/@value)'
+    user_consent_needed: True
+    user_consent_form_xpath: '//form[@id="profile"]'
+    user_consent_form_data:
+      consent: 'approve'
+      sessionDataKeyConsent: 'xpath(//input[@name="sessionDataKeyConsent"]/@value)'
     authorization_uri: 'https://sso.theia-land.fr/oauth2/authorize'
     redirect_uri: 'https://theia-landsat.cnes.fr/rocket/'
     authentication_uri: 'https://sso.theia-land.fr/commonauth'
@@ -149,19 +166,22 @@ theia-landsat:
     token_exchange_params:
       redirect_uri: redirectUri
       client_id: clientId
-    token_exchange_post_data_method: json   # One of json, data, params
-    token_provision: qs # One of qs or header. If qs, token_qs_key is mandatory
+    token_exchange_post_data_method: json
+    token_provision: qs
     token_qs_key: '_bearer'
+    token_key: 'token'
 
-theia:
+---
+!provider
+  name: theia
   priority: 0
-  search:
-    plugin: RestoSearch
-    api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api'
+  search: !plugin
+    type: RestoSearch
+    api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -175,7 +195,7 @@ theia:
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -189,28 +209,32 @@ theia:
       sensorMode: '$.properties.sensorMode'
       productVersion: '$.properties.version'
       quicklook: '$.properties.quicklook'
+      downloadLink: '$.properties.services.download.url'
   products:
     S2_MSI_L2A:
       product_type: REFLECTANCE
       collection: SENTINEL2
-  download:
-    plugin: HTTPDownload
+  download: !plugin
+    type: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
+    extract: true
     dl_url_params:
       issuerId: theia
-  auth:
-    plugin: TokenAuth
+  auth: !plugin
+    type: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
 
-peps:
+---
+!provider
+  name: peps
   priority: 1
-  search:
-    plugin: RestoSearch
-    api_endpoint: 'https://peps.cnes.fr/resto/api'
+  search: !plugin
+    type: RestoSearch
+    api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
     metadata_mapping:
       id: '$.id'
       geometry:
-        - box
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
@@ -226,7 +250,7 @@ peps:
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
-        - cloudCover
+        - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
       startTimeFromAscendingNode:
@@ -239,6 +263,7 @@ peps:
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       quicklook: '$.properties.quicklook'
+      downloadLink: '$.properties.services.download.url'
   products:
     S1_SAR_OCN:
       product_type: OCN
@@ -252,7 +277,7 @@ peps:
     S2_MSI_L1C:
       collection: S2ST
       product_type: S2MSI1C
-      partial: false   # Peps only provide L1C products for Sentinel-2A platform
+      partial_support: true   # Peps only provide L1C products for Sentinel-2A platform
     S3_EFR:
       product_type: OL_1_EFR___
       collection: S3
@@ -274,34 +299,37 @@ peps:
     S3_LAN:
       product_type: SR_2_LAN___
       collection: S3
-  download:
-    plugin: HTTPDownload
+  download: !plugin
+    type: HTTPDownload
     base_uri: 'https://peps.cnes.fr/resto'
+    extract: true
     archive_depth: 2
     dl_url_params:
       issuerId: peps
-  auth:
-    plugin: GenericAuth
+  auth: !plugin
+    type: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 
-airbus-ds:
+---
+!provider
+  name: sobloo
   priority: 0
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
-      partial: true
+      partial_support: true
     S1_SAR_RAW:
       product_type: RAW
-      partial: true
+      partial_support: true
     S1_SAR_GRD:
       product_type: GRD
-      partial: true
+      partial_support: true
     S1_SAR_SLC:
       product_type: SLC
-      partial: true
+      partial_support: true
     S1_SAR_OCN:
       product_type: OCN
-      partial: true
+      partial_support: true
     S3_LAN:
       product_type: SR_2_LAN___
     S3_SRA:
@@ -310,18 +338,18 @@ airbus-ds:
       product_type: SR_1_SRA_BS
     S3_SRA_A_BS:
       product_type: SR_1_SRA_A_
-  search:
-    plugin: ArlasSearch
-    api_endpoint: 'https://sobloo.eu/api/v1/services/explore'
-    quicklook_endpoint: 'https://sobloo.eu/api/v1/services/quicklook'
-    arlas_collection: catalog
+  search: !plugin
+    type: RestoSearch
+    api_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_geosearch'
+    collection: catalog
+    result_type: 'json'
     metadata_mapping:
       id: '$.properties.uid'
       geometry:
-        - gintersect
+        - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
-        - 'identification.type'
+        - 'f=identification.type:eq:{productType}'
         - '$.properties.identification.type'
       platform: '$.properties.acquisition.mission'
       platformSerialIdentifier: '$.properties.acquisition.missionCode'
@@ -331,18 +359,327 @@ airbus-ds:
       orbitNumber: '$.properties.orbit.number'
       orbitDirection: '$.properties.orbit.direction'
       cloudCover:
-        - 'contentDesctiption.cloudCoverPercentage'
+        - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       startTimeFromAscendingNode:
-        - 'acquisition.beginViewingDate'
+        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode$timestamp}'
         - '$.properties.acquisition.beginViewingDate'
-      completionTimeFromAscendingNode: '$.properties.acquisition.endViewingDate'
-      quicklook: '$.properties.state.resources.quicklook'
-  download:
-    plugin: HTTPDownload
-    base_uri: 'https://sobloo.eu/api/v1/services/download/'
+      completionTimeFromAscendingNode:
+        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode$timestamp}'
+        - '$.properties.acquisition.endViewingDate'
+      quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
+      downloadLink: '%(base_uri)s/{id}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://sobloo.eu/api/v1/services/download'
     archive_depth: 2
-  auth:
-    plugin: HTTPHeaderAuth
+    extract: true
+  auth: !plugin
+    type: HTTPHeaderAuth
     headers:
       Authorization: "Apikey {apikey}"
+
+---
+!provider
+  name: creodias
+  priority: 0
+  search: !plugin
+    type: RestoSearch
+    api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
+    metadata_mapping:
+      id: '$.id'
+      geometry:
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover:
+        - 'cloudCover=[0,{cloudCover}]'
+        - '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
+      quicklook: '$.properties.thumbnail'
+      downloadLink: '$.properties.services.download.url'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://zipper.creodias.eu/download/'
+    extract: true
+  auth: !plugin
+    type: KeycloakOIDCPasswordAuth
+    auth_base_uri: 'https://auth.creodias.eu/auth'
+    realm: 'dias'
+    client_id: 'CLOUDFERRO_PARTNERS'
+    client_secret: 'dc0aca03-2dc6-4798-a5de-fc5aeb6c8ee1'
+    token_provision: qs
+    token_qs_key: 'token'
+  products:
+    S2_MSI_L1C:
+      product_type: L1C
+      collection: Sentinel2
+      partial_support: true
+    S2_MSI_L2A:
+      product_type: L2A
+      collection: Sentinel2
+      partial_support: true
+    S1_SAR_RAW:
+      product_type: RAW
+      collection: Sentinel1
+    S1_SAR_GRD:
+      product_type: GRD
+      collection: Sentinel1
+    S1_SAR_SLC:
+      product_type: SLC
+      collection: Sentinel1
+    S1_SAR_OCN:
+      product_type: OCN
+      collection: Sentinel1
+    S3_LAN:
+      product_type: LAN
+      collection: Sentinel3
+    S3_SRA:
+      product_type: SRA
+      collection: Sentinel3
+    S3_SRA_BS:
+      product_type: SRA_BS
+      collection: Sentinel3
+    S3_SRA_A_BS:
+      product_type: SRA_A
+      collection: Sentinel3
+    S3_EFR:
+      product_type: EFR
+      collection: Sentinel3
+    S3_ERR:
+      product_type: ERR
+      collection: Sentinel3
+    S3_WAT:
+      product_type: WAT
+      collection: Sentinel3
+    S3_SLSTR_L2LST:
+      product_type: LST
+      collection: Sentinel3
+    S3_OLCI_L2LRR:
+      product_type: LRR
+      collection: Sentinel3
+    S3_OLCI_L2LFR:
+      product_type: LFR
+      collection: Sentinel3
+    S3_SLSTR_L1RBT:
+      product_type: RBT
+      collection: Sentinel3
+
+---
+!provider
+  name: mundi
+  priority: 0
+  search: !plugin
+    type: RestoSearch
+    api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/{collection}/opensearch'
+    result_type: 'xml'
+    result_entry: '//ns:entry'
+    literal_search_params:
+      format: atom
+      relation: intersects
+    free_text_search_param: 'q'
+    free_text_search_operations:
+      AND:
+        - 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+        - 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+    metadata_mapping:
+      id: 'ns:id/text()'
+      abstract: 'ns:summary/text()'
+      platform: 'eo:platform/text()'
+      instrument: 'eo:instrument/text()'
+      sensorType: 'eo:sensorType/text()'
+      processingLevel: 'eo:processingLevel/text()'
+      topicCategory: 'ns:category/text()'
+      publicationDate: 'ns:published/text()'
+      useLimitation: 'DIAS:productConfidentialityLevel/text()'
+      resolution: 'eo:resolution/text()'
+      geometry:
+        - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'georss:box/text()'
+      productType:
+        - 'productType'
+        - 'eo:productType/text()'
+      title: 'eo:title/text()'
+      orbitNumber: 'eo:orbitNumber/text()'
+      orbitDirection: 'eo:orbitDirection/text()'
+      cloudCover: 'eo:cloudCover/text()'
+      snowCover: 'eo:snowCover/text()'
+      startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
+      completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
+      quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
+      downloadLink: 'ns:link[@rel="enclosure"]/@href'
+  download: !plugin
+    type: AwsDownload
+  auth: !plugin
+    type: OAuth
+  products:
+    S1_SAR_RAW:
+      product_type: RAW
+      collection: Sentinel1
+    S1_SAR_GRD:
+      product_type: GRD
+      collection: Sentinel1
+    S1_SAR_SLC:
+      product_type: SLC
+      collection: Sentinel1
+    S1_SAR_OCN:
+      product_type: OCN
+      collection: Sentinel1
+    S2_MSI_L1C:
+      product_type: IMAGE
+      collection: Sentinel2
+    S2_MSI_L2A:
+      product_type: S2MSI2Ap
+      collection: Sentinel2
+
+---
+!provider
+  name: wekeo
+  priority: 0
+  search: !plugin
+    type: CSWSearch
+    api_endpoint: 'https://www.wekeo.eu/elastic-csw/service'
+    metadata_mapping:
+      id: 'dc:identifier/text()'
+      productType: 'dct:alternative/text()'
+      title: 'dc:title/text()'
+      abstract: 'dct:abstract/text()'
+      quicklook: 'https://www.wekeo.eu/sites/default/files/quicklooks/{productType}.jpg'
+      keyword: 'dc:subject[text()]'
+    search_definition:
+      product_type_tags:
+        - name: 'dc:identifier' # any xml tag of the catalogue that can be queryable
+          matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
+  download: !plugin
+    type: HTTPDownload
+  auth: !plugin
+    type: GenericAuth
+  products:
+    S1_SAR_GRD:
+      product_type: "EO:ESA:DAT:SENTINEL-1:L1_GRD"
+    S1_SAR_SLC:
+      product_type: "EO:ESA:DAT:SENTINEL-1:L1_SLC"
+    S2_MSI_L1C:
+      product_type: "EO:ESA:DAT:SENTINEL-2:MSI1C"
+    S3_LAN:
+      product_type: "EO:ESA:DAT:SENTINEL-3:SR_2_LAN___"
+    S3_SRA:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"
+    S3_SRA_BS:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS___"
+    S3_EFR:
+      product_type: "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"
+    S3_ERR:
+      product_type: "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"
+    S3_WAT:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"
+    S3_SLSTR_L2LST:
+      product_type: "EO:ESA:DAT:SENTINEL-3:SL_2_LST___"
+    S3_OLCI_L2LRR:
+      product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LRR___"
+    S3_OLCI_L2LFR:
+      product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LFR___"
+    S3_SLSTR_L1RBT:
+      product_type: "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"
+
+---
+!provider
+  name: onda
+  priority: 0
+  search: !plugin
+    type: ODataV4Search
+    api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    results_entry: 'value'
+    metadata_mapping:
+      id: '$.id'
+      geometry:
+        - 'footprint:"Intersects({geometry$to_wkt})"'
+        - '$.footprint'
+      productType:
+        - "productType:{productType}"
+        - '$.productType'
+      platform: '$.platformName'
+      platformSerialIdentifier: '$.platformSerialIdentifier'
+      instrument: '$.instrumentName'
+      processingLevel: '$.processingLevel'
+      title: '$.filename'
+      orbitNumber: '$.orbitNumber'
+      orbitDirection: '$.orbitDirection'
+      cloudCover:
+        - 'cloudCoverPercentage:[0 TO {cloudCover}]'
+        - '$.cloudCoverPercentage'
+      startTimeFromAscendingNode:
+        - 'beginPosition:[{startTimeFromAscendingNode}Z TO *]'
+        - '$.beginPosition'
+      completionTimeFromAscendingNode:
+        - 'endPosition:[* TO {completionTimeFromAscendingNode}Z]'
+        - '$.endPosition'
+      sensorMode: '$.sensorOperationalMode'
+      quicklook: '$.quicklook'
+      downloadLink: '%(base_uri)s({id})/$value'
+  products:
+    S1_SAR_OCN:
+      product_type: '*OCN*'
+    S1_SAR_GRD:
+      product_type: '*GRD*'
+    S1_SAR_SLC:
+      product_type: '*SLC*'
+    S1_SAR_RAW:
+      product_type: '*RAW*'
+    S2_MSI_L1C:
+      product_type: S2MSI1C
+    S2_MSI_L2A:
+      product_type: S2MSI2A
+    S3_EFR:
+      product_type: OL_1_EFR___
+    S3_ERR:
+      product_type: OL_1_ERR___
+    S3_OLCI_L2LFR:
+      product_type: OL_2_LFR___
+    S3_OLCI_L2LRR:
+      product_type: OL_2_LRR___
+    S3_SLSTR_L1RBT:
+      product_type: SL_1_RBT___
+    S3_SLSTR_L2LST:
+      product_type: SL_2_LST___
+    S3_LAN:
+      product_type: SR_2_LAN___
+    S3_SRA:
+      product_type: SR_1_SRA_A_
+    S3_SRA_BS:
+      product_type: SR_1_SRA_BS
+    S3_SRA_A_BS:
+      product_type: SR_1_SRA___
+    S3_WAT:
+      product_type: SR_2_WAT___
+    L8_L1GT:
+      product_type: L1GT
+    L8_L1T:
+      product_type: L1T
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    extract: true
+  auth: !plugin
+    type: GenericAuth

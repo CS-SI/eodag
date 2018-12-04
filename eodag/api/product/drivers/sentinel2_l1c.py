@@ -49,7 +49,7 @@ class Sentinel2L1C(DatasetDriver):
                 - open only the address for which the extracted spatial resolution maps to a tuple of bands including
                   the band of interest
             - Finally, filter the list of files of the previously opened rasterio dataset, to return the
-              filesystem-like address that matches the band file pattern ``r'^.+_B01\.jp2$'`` if band = 'B01' for
+              filesystem-like address that matches the band file pattern r'^.+_B01\\.jp2$' if band = 'B01' for
               example.
 
         See :func:`~eodag.api.product.drivers.base.DatasetDriver.get_data_address` to get help on the formal

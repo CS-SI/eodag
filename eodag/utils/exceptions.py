@@ -50,3 +50,7 @@ class UnsupportedDatasetAddressScheme(Exception):
 
 class AuthenticationError(Exception):
     """An error indicating that an authentication plugin did not succeeded authenticating a user"""
+
+
+class DownloadError(Exception):
+    """An error indicating something wrong with the download process"""

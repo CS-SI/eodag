@@ -15,15 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import six
+
 from eodag.utils.exceptions import PluginNotFoundError
 
 
-class GeoProductDownloaderPluginMount(type):
+class EODAGPluginMount(type):
     def __init__(cls, name, bases, attrs):
         if not hasattr(cls, 'plugins'):
             # This branch only executes when processing the mount point itself.
@@ -37,29 +36,24 @@ class GeoProductDownloaderPluginMount(type):
             # track of it later.
             cls.plugins.append(cls)
 
-            # Every plugin class has a name attribute defaulting to the name of the class
-            cls.name = cls.__name__
-            # Every plugin class has a priority attribute that an instance can override. Minimum priority by default =>
-            # an instance must override this with higher priority if it wants to be used
-            cls.priority = 0
-            cls.instance_name = ''
-
-            attrs.update({'name': cls.name, 'priority': cls.priority, 'instance_name': cls.instance_name})
-
     def get_plugins(cls, *args, **kwargs):
         return [plugin(*args, **kwargs) for plugin in cls.plugins]
 
-    def get_plugin_by_name(cls, name):
+    def get_plugin_by_class_name(cls, name):
         for plugin in cls.plugins:
-            if name == plugin.name:
+            if name == plugin.__name__:
                 return plugin
         raise PluginNotFoundError("'{}' not found for {} class of plugins".format(name, cls))
 
 
-class PluginTopic(six.with_metaclass(GeoProductDownloaderPluginMount)):
+class PluginTopic(six.with_metaclass(EODAGPluginMount)):
     """Base of all plugin topics in eodag"""
 
+    def __init__(self, provider, config):
+        self.config = config
+        self.provider = provider
+
     def __repr__(self):
-        return '{}(instance_name={}, priority={}, topic={})'.format(
-            self.name, self.instance_name, self.priority, self.__class__.mro()[1].__name__
+        return '{}(provider={}, priority={}, topic={})'.format(
+            self.__class__.__name__, self.provider, self.config.priority, self.__class__.mro()[-3].__name__
         )

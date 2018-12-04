@@ -28,7 +28,7 @@ from requests import HTTPError
 from tqdm import tqdm
 
 from eodag.plugins.download.base import Download
-from eodag.plugins.search.base import MisconfiguredError
+from eodag.utils.exceptions import MisconfiguredError
 
 
 logger = logging.getLogger('eodag.plugins.download.http')
@@ -36,13 +36,10 @@ logger = logging.getLogger('eodag.plugins.download.http')
 
 class HTTPDownload(Download):
 
-    def __init__(self, config):
-        super(HTTPDownload, self).__init__(config)
-        if 'base_uri' not in self.config:
-            raise MisconfiguredError('{} plugin require a base_uri configuration key'.format(self.name))
-        self.config.setdefault('outputs_prefix', '/tmp')
-        self.config.setdefault('extract', True)
-        logger.debug('Images will be downloaded to directory %s', self.config['outputs_prefix'])
+    def __init__(self, provider, config):
+        super(HTTPDownload, self).__init__(provider, config)
+        if not hasattr(self.config, 'base_uri'):
+            raise MisconfiguredError('{} plugin require a base_uri configuration key'.format(self.__name__))
 
     def download(self, product, auth=None, progress_callback=None):
         """Download a product using HTTP protocol.
@@ -59,15 +56,15 @@ class HTTPDownload(Download):
                 # Do not download data if we are on site. Instead give back the absolute path to the data
                 return fs_path
 
-        url = self.__build_download_url(product, auth)
+        url = product.remote_location
         if not url:
             logger.debug('Unable to get download url for %s, skipping download', product)
             return
-        logger.debug('Download url: %s', url)
+        logger.info('Download url: %s', url)
 
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
-        prefix = os.path.abspath(self.config['outputs_prefix'])
+        prefix = os.path.abspath(self.config.outputs_prefix)
         fs_path = os.path.join(prefix, '{}.zip'.format(product.properties['title']))
         download_records_dir = os.path.join(prefix, '.downloaded')
         try:
@@ -87,7 +84,7 @@ class HTTPDownload(Download):
             logger.debug('Removing record file : %s', record_filename)
             os.remove(record_filename)
 
-        with requests.get(url, stream=True, auth=auth, params=self.config.get('dl_url_params', {})) as stream:
+        with requests.get(url, stream=True, auth=auth, params=getattr(self.config, 'dl_url_params', {})) as stream:
             try:
                 stream.raise_for_status()
             except HTTPError:
@@ -113,18 +110,6 @@ class HTTPDownload(Download):
                     return new_fs_path
                 return self.__finalize(fs_path)
 
-    def __build_download_url(self, product, auth):
-        try:
-            url = product.remote_location.format(base=self.config.get('base_uri').rstrip('/'))
-            if product.properties['organisationName'] in ('ESA',):
-                url += '?token={}'.format(auth.token)
-            return url
-        except Exception:
-            import traceback as tb
-            raise RuntimeError('Product {} is incompatible with download plugin {}\n{}'.format(
-                product, self.name, tb.format_exc()
-            ))
-
     def __finalize(self, fs_path):
         """Finalize the download process.
 
@@ -132,7 +117,7 @@ class HTTPDownload(Download):
         :type fs_path: str or unicode
         :return: the absolute path to the product
         """
-        if not self.config['extract']:
+        if not self.config.extract:
             logger.info('Extraction not activated. The product is available as is.')
             return fs_path
         product_path = fs_path[:fs_path.index('.zip')]
@@ -146,13 +131,13 @@ class HTTPDownload(Download):
                     for fileinfo in progressbar:
                         zfile.extract(
                             fileinfo,
-                            path=os.path.join(self.config['outputs_prefix'], product_path)
+                            path=os.path.join(self.config.outputs_prefix, product_path)
                         )
         # Handle depth levels in the product archive. For example, if the downloaded archive was
         # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
         # location will be /top_level/product_base_dir.
         # WARNING: A strong assumption is made here: there is only one subdirectory per level
-        archive_depth = self.config.get('archive_depth', 1)
+        archive_depth = getattr(self.config, 'archive_depth', 1)
         count = 1
         while count < archive_depth:
             product_path = os.path.join(product_path, os.listdir(product_path)[0])

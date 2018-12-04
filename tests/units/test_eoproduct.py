@@ -31,7 +31,8 @@ from shapely import geometry
 
 from tests import EODagTestCase
 from tests.context import (
-    Authentication, DEFAULT_PROJ, Download, EOProduct, NoDriver, Sentinel2L1C, UnsupportedDatasetAddressScheme,
+    Authentication, DEFAULT_PROJ, Download, DownloadError, EOProduct, NoDriver, Sentinel2L1C,
+    UnsupportedDatasetAddressScheme, config,
 )
 
 
@@ -51,10 +52,9 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_search_intersection_geom(self):
         """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         self.assertEqual(product.geometry, product.search_intersection)
 
@@ -68,11 +68,10 @@ class TestEOProduct(EODagTestCase):
                              [10.469970703124998, 3.9957805129630373]]]
         }
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
             self.eoproduct_props,
-            searched_bbox={
+            productType=self.product_type,
+            geometry={
                 'lonmin': 10.469970703124998, 'latmin': 3.9957805129630373,
                 'lonmax': 12.227783203124998, 'latmax': 4.740675384778385
             },
@@ -82,10 +81,9 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_default_driver_unsupported_product_type(self):
         """EOProduct driver attr must be NoDriver if its product type is not associated with a eodag dataset driver"""
         product = EOProduct(
-            self.NOT_ASSOCIATED_PRODUCT_TYPE,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.NOT_ASSOCIATED_PRODUCT_TYPE,
         )
         self.assertIsInstance(product.driver, NoDriver)
 
@@ -93,20 +91,19 @@ class TestEOProduct(EODagTestCase):
         """EOProduct driver attr must be the one registered for valid platform and instrument in DRIVERS"""
         product_type = random.choice(['S2_MSI_L1C'])
         product = EOProduct(
-            product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=product_type,
         )
         self.assertIsInstance(product.driver, Sentinel2L1C)
 
     def test_get_data_local_product_ok(self):
         """A call to get_data on a product present in the local filesystem must succeed"""
+        self.eoproduct_props.update({'downloadLink': 'file://{}'.format(self.local_product_abspath)})
         product = EOProduct(
-            self.product_type,
             self.provider,
-            'file://{}'.format(self.local_product_abspath),  # Download url
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         product.driver = mock.MagicMock(spec_set=NoDriver())
         product.driver.get_data_address.return_value = self.local_band_file
@@ -121,10 +118,9 @@ class TestEOProduct(EODagTestCase):
     def test_get_data_download_on_unsupported_dataset_address_scheme_error(self):
         """If a product is not on the local filesystem, it must download itself before returning the data"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
 
         def get_data_address(*args, **kwargs):
@@ -136,10 +132,16 @@ class TestEOProduct(EODagTestCase):
         product.driver = mock.MagicMock(spec_set=NoDriver())
         product.driver.get_data_address.side_effect = get_data_address
 
-        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
+        mock_downloader = mock.MagicMock(
+            spec_set=Download(provider=self.provider, config=config.PluginConfig.from_mapping({
+                'extract': False, 'archive_depth': 1
+            }))
+        )
         mock_downloader.download.return_value = self.local_product_as_archive_path
-        mock_downloader.config = {'extract': False, 'archive_depth': 1}
-        mock_authenticator = mock.MagicMock(spec_set=Authentication(config={}))
+        # mock_downloader.config = {'extract': False, 'archive_depth': 1}
+        mock_authenticator = mock.MagicMock(
+            spec_set=Authentication(provider=self.provider, config=config.PluginConfig.from_mapping({}))
+        )
 
         product.register_downloader(mock_downloader, mock_authenticator.authenticate())
         data, band = self.execute_get_data(product, give_back=('band',))
@@ -152,10 +154,9 @@ class TestEOProduct(EODagTestCase):
     def test_get_data_download_on_unsupported_dataset_address_scheme_error_without_downloader(self):
         """If a product is not on filesystem and a downloader isn't registered, get_data must return an empty array"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
 
         product.driver = mock.MagicMock(spec_set=NoDriver())
@@ -172,22 +173,25 @@ class TestEOProduct(EODagTestCase):
     def test_get_data_bad_download_on_unsupported_dataset_address_scheme_error(self):
         """If downloader doesn't return the downloaded file path, get_data must return an empty array"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
 
         product.driver = mock.MagicMock(spec_set=NoDriver())
         product.driver.get_data_address.side_effect = UnsupportedDatasetAddressScheme
 
-        mock_downloader = mock.MagicMock(spec_set=Download(config={'extract': False}))
+        mock_downloader = mock.MagicMock(spec_set=Download(
+            provider=self.provider, config=config.PluginConfig.from_mapping({'extract': False})
+        ))
         mock_downloader.download.return_value = None
-        mock_authenticator = mock.MagicMock(spec_set=Authentication(config={}))
+        mock_authenticator = mock.MagicMock(spec_set=Authentication(
+            provider=self.provider, config=config.PluginConfig.from_mapping({})
+        ))
 
         product.register_downloader(mock_downloader, mock_authenticator)
 
-        self.assertEqual(product.download(), '')
+        self.assertRaises(DownloadError, product.download)
 
         data, band = self.execute_get_data(product, give_back=('band',))
 
@@ -214,10 +218,9 @@ class TestEOProduct(EODagTestCase):
         """EOProduct encode method must return an empty bytes if encoding is not supported or is None"""
         encoding = random.choice(['not_supported', None])
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         encoded_raster = product.encode(self.raster, encoding)
         self.assertIsInstance(encoded_raster, bytes)
@@ -227,10 +230,9 @@ class TestEOProduct(EODagTestCase):
         """Test encode method with protocol buffers encoding"""
         # Explicitly provide encoding
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         encoded_raster = product.encode(self.raster, encoding='protobuf')
         self.assertIsInstance(encoded_raster, bytes)
@@ -241,40 +243,36 @@ class TestEOProduct(EODagTestCase):
         self.eoproduct_props['platformSerialIdentifier'] = None
         self.eoproduct_props['instrument'] = None
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         self.assertRaises(TypeError, product.encode, self.raster, encoding='protobuf')
 
         self.eoproduct_props['platformSerialIdentifier'] = None
         self.eoproduct_props['instrument'] = 'MSI'
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         self.assertRaises(TypeError, product.encode, self.raster, encoding='protobuf')
 
         self.eoproduct_props['platformSerialIdentifier'] = 'S2A'
         self.eoproduct_props['instrument'] = None
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         self.assertRaises(TypeError, product.encode, self.raster, encoding='protobuf')
 
     def test_eoproduct_geointerface(self):
         """EOProduct must provide a geo-interface with a set of specific properties"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         geo_interface = geojson.loads(geojson.dumps(product))
         self.assertDictContainsSubset({
@@ -282,7 +280,7 @@ class TestEOProduct(EODagTestCase):
             'geometry': self._tuples_to_lists(geometry.mapping(self.geometry))
         }, geo_interface)
         self.assertDictContainsSubset({
-            'eodag_provider': self.provider, 'eodag_download_url': self.download_url,
+            'eodag_provider': self.provider,
             'eodag_search_intersection': self._tuples_to_lists(geometry.mapping(product.search_intersection)),
             'eodag_product_type': self.product_type,
         }, geo_interface['properties'])
@@ -290,10 +288,9 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         same_product = EOProduct.from_geojson(geojson.loads(geojson.dumps(product)))
         self.assertSequenceEqual(
@@ -314,10 +311,9 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_no_quicklook_url(self):
         """EOProduct.get_quicklook must return an empty string if no quicklook property"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         product.properties['quicklook'] = None
 
@@ -327,16 +323,15 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_http_error(self):
         """EOProduct.get_quicklook must return an empty string if there was an error during retrieval"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         product.properties['quicklook'] = 'https://fake.url.to/quicklook'
 
         self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = requests.HTTPError
-        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
-        mock_downloader.config = {'outputs_prefix': tempfile.gettempdir()}
+        mock_downloader = mock.MagicMock(spec_set=Download(provider=self.provider, config=None))
+        mock_downloader.config = config.PluginConfig.from_mapping({'outputs_prefix': tempfile.gettempdir()})
         product.register_downloader(mock_downloader, None)
 
         quicklook_file_path = product.get_quicklook()
@@ -350,16 +345,15 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_ok(self):
         """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         product.properties['quicklook'] = 'https://fake.url.to/quicklook'
 
         self.requests_http_get.return_value = self._quicklook_response()
-        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
-        mock_downloader.config = {'outputs_prefix': tempfile.gettempdir()}
+        mock_downloader = mock.MagicMock(spec_set=Download(provider=self.provider, config=None))
+        mock_downloader.config = config.PluginConfig.from_mapping({'outputs_prefix': tempfile.gettempdir()})
         product.register_downloader(mock_downloader, None)
 
         quicklook_file_path = product.get_quicklook()
@@ -403,14 +397,13 @@ class TestEOProduct(EODagTestCase):
         with open(existing_quicklook_file_path, 'wb') as fh:
             fh.write(b'content')
         product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         product.properties['quicklook'] = 'https://fake.url.to/quicklook'
-        mock_downloader = mock.MagicMock(spec_set=Download(config={}))
-        mock_downloader.config = {'outputs_prefix': tempfile.gettempdir()}
+        mock_downloader = mock.MagicMock(spec_set=Download(provider=self.provider, config=None))
+        mock_downloader.config = config.PluginConfig.from_mapping({'outputs_prefix': tempfile.gettempdir()})
         product.register_downloader(mock_downloader, None)
 
         quicklook_file_path = product.get_quicklook(filename=quicklook_basename)

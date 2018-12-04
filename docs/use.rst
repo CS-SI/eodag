@@ -41,7 +41,7 @@ of this bbox"
 
 * To list available product types on a specified supported provider::
 
-        eodag list -p airbus-ds
+        eodag list -p sobloo
 
 * To see all the available options and commands::
 

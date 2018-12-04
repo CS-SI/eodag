@@ -46,8 +46,8 @@ RESOURCES_PATH = jp(dirn(__file__), '..', 'eodag', 'resources')
 class EODagTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.provider = 'airbus-ds'
-        self.download_url = ('https://k8s.qualif.geohub.space/api/v1/services/download/8ff765a2-e089-465d-a48f-'
+        self.provider = 'sobloo'
+        self.download_url = ('https://sobloo.eu/api/v1/services/download/8ff765a2-e089-465d-a48f-'
                              'cc27008a0962')
         self.local_filename = 'S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE'
         self.local_product_abspath = os.path.abspath(jp(TEST_RESOURCES_PATH, 'products', self.local_filename))
@@ -82,7 +82,8 @@ class EODagTestCase(unittest.TestCase):
             'platform': 'Sentinel-2',
             'platformSerialIdentifier': self.platform,
             'instrument': self.instrument,
-            'title': self.local_filename
+            'title': self.local_filename,
+            'downloadLink': self.download_url,
         }
         # Put an empty string as value of properties which are not relevant for the tests
         self.eoproduct_props.update({

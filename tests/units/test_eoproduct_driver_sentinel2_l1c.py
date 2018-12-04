@@ -32,10 +32,9 @@ class TestEOProductDriverSentinel2L1C(EODagTestCase):
     def setUp(self):
         super(TestEOProductDriverSentinel2L1C, self).setUp()
         self.product = EOProduct(
-            self.product_type,
             self.provider,
-            self.download_url,
-            self.eoproduct_props
+            self.eoproduct_props,
+            productType=self.product_type,
         )
         self.product.properties['title'] = os.path.join(
             TEST_RESOURCES_PATH,

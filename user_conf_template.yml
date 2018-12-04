@@ -15,31 +15,97 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# Only known system configuration can be overridden for their credentials config key under auth config.
-# Unknown keys will simply be ignored, and the corresponding configuration not overridden.
-outputs_prefix:
-extract: # true or false
 peps:
-    credentials:
-        username:
-        password:
+    priority:
+    search:   # Search parameters configuration
+    download:
+        extract:  # whether to extract the downloaded products (true or false).
+        outputs_prefix: # where to store downloaded products.
+        dl_url_params:  # additional parameters to pass over to the download url as an url parameter
+    auth:
+        credentials:
+            username:
+            password:
 theia:
-    credentials:
-        ident:
-        pass:
-theia-landsat:
-    credentials:
-        username:
-        password:
-USGS:
-    credentials:
-        username:
-        password:
-AmazonWS:
-    credentials:
-        aws_access_key_id:
-        aws_secret_access_key:
-airbus-ds:
-    credentials:
-        apikey:
+    priority:
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+    auth:
+        credentials:
+            ident:
+            pass:
+theia_landsat:
+    priority:
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+    auth:
+        credentials:
+            username:
+            password:
+usgs:
+    priority:
+    api:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+        product_location_scheme:
+        credentials:
+            username:
+            password:
+aws_s3_sentinel2_l1c:
+    priority:
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+    download:
+        extract:
+        outputs_prefix:
+        associated_bucket:
+sobloo:
+    priority:
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+        dl_url_params:
+    auth:
+        credentials:
+            apikey:
+creodias:
+    priority:
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
+mundi:
+    priority:
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+onda:
+    priority:
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:

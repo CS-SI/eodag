@@ -69,7 +69,7 @@ setup(
             'faker',
             'mock; python_version < "3.5" ',
             'coverage',
-            'moto',
+            'moto==1.3.6',
             'twine',
             'wheel',
             'flake8',
@@ -98,6 +98,7 @@ setup(
             'OAuth = eodag.plugins.authentication.oauth:OAuth',
             'TokenAuth = eodag.plugins.authentication.token:TokenAuth',
             'OIDCAuthorizationCodeFlowAuth = eodag.plugins.authentication.openid_connect:OIDCAuthorizationCodeFlowAuth',    # noqa
+            'KeycloakOIDCPasswordAuth = eodag.plugins.authentication.keycloak:KeycloakOIDCPasswordAuth',
         ],
         'eodag.plugins.crunch': [
             'FilterLatestIntersect = eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect',
@@ -109,10 +110,8 @@ setup(
             'HTTPDownload = eodag.plugins.download.http:HTTPDownload',
         ],
         'eodag.plugins.search': [
-            'ArlasSearch = eodag.plugins.search.arlas:ArlasSearch',
-            'AwsSearch = eodag.plugins.search.aws:AwsSearch',
             'CSWSearch = eodag.plugins.search.csw:CSWSearch',
-            'RestoSearch = eodag.plugins.search.resto:RestoSearch',
+            'QueryStringSearch = eodag.plugins.search.qssearch:QueryStringSearch',
         ],
     },
     project_urls={
@@ -129,8 +128,11 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: GIS',
     ),

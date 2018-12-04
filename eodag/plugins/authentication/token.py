@@ -21,7 +21,7 @@ import requests
 from requests import HTTPError
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils import RequestsDictTokenAuth, RequestsTextTokenAuth
+from eodag.utils import RequestsTokenAuth
 from eodag.utils.exceptions import MisconfiguredError
 
 
@@ -31,17 +31,19 @@ class TokenAuth(Authentication):
         # First get the token
         try:
             response = requests.post(
-                self.config['auth_uri'],
-                data=self.config['credentials']
+                self.config.auth_uri,
+                data=self.config.credentials
             )
             try:
                 response.raise_for_status()
             except HTTPError as e:
                 raise e
             else:
-                if self.config.get('token_type', 'text') == 'json':
-                    return RequestsDictTokenAuth(response.json(), self.config['token_key'])
-                return RequestsTextTokenAuth(response.text)
-        except KeyError as err:
-            if 'credentials' in err:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.instance_name)
+                if getattr(self.config, 'token_type', 'text') == 'json':
+                    token = response.json()[self.config.token_key]
+                else:
+                    token = response.text
+                return RequestsTokenAuth(token, 'header')
+        except AttributeError as err:
+            if 'credentials' in err.args:
+                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)

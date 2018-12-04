@@ -77,7 +77,7 @@
         "keyword": {},
         "processingLevel": null,
         "sensorType": null,
-        "eodag_download_url": "https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931cc7b/download",
+        "downloadLink": "https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931cc7b/download",
         "productType": "OCN",
         "orbitNumber": 20624,
         "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",

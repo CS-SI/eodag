@@ -18,19 +18,9 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from eodag.plugins.base import PluginTopic
-from eodag.utils.exceptions import MisconfiguredError
 
 
 class Search(PluginTopic):
-
-    def __init__(self, config):
-        # Defining a products key in the config is made optional
-        if not isinstance(config.get('products', {}), dict):
-            raise MisconfiguredError("'products' must be a dictionary of values")
-            # TODO: an instance without products should have minimum possible priority => it should be lower bounded
-        if not config.get('api_endpoint'):
-            raise MisconfiguredError("'api_endpoint' must be a valid url")
-        self.config = config
 
     def query(self, *args, **kwargs):
         """Implementation of how the products must be searched goes here.

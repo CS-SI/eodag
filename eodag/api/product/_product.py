@@ -19,17 +19,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
-import zipfile
+import re
 
 import numpy
 import rasterio
 import requests
+import six
 import xarray as xr
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 from requests import HTTPError
-from shapely import geometry
-from tqdm import tqdm
+from shapely import geometry, geos, wkb, wkt
 
 from eodag.utils import ProgressCallback
 
@@ -41,7 +41,7 @@ except ImportError:
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.representations import DEFAULT_METADATA_MAPPING, properties_from_json
-from eodag.utils.exceptions import UnsupportedDatasetAddressScheme
+from eodag.utils.exceptions import UnsupportedDatasetAddressScheme, DownloadError
 
 
 logger = logging.getLogger('eodag.api.product')
@@ -56,18 +56,12 @@ class EOProduct(object):
     to its path on the filesystem when the product has been downloaded. It also has a `remote_location` that always
     points to the remote location, so that the product can be downloaded at anytime if it is deleted from the
     filesystem.
+    An EOProduct instance also has a reference to the search parameters that led to its creation.
 
-    :param product_type: The product type of the product as defined in eodag
-    :type product_type: str or unicode
     :param provider: The provider from which the product originates
     :type provider: str or unicode
-    :param download_url: A uri informing where to go to download the product
-    :type download_url: str or unicode
     :param properties: The metadata of the product
     :type properties: dict
-    :param searched_bbox: (optional) The extent that was passed as a search constraint, used to attach to the EOProduct
-                           the intersection of its geometry with this extent
-    :type searched_bbox: dict
 
     .. note::
         The geojson spec `enforces <https://github.com/geojson/draft-geojson/pull/6>`_ the expression of geometries as
@@ -75,13 +69,34 @@ class EOProduct(object):
         Therefore it stores geometries in the before mentioned CRS.
     """
 
-    def __init__(self, product_type, provider, download_url, properties, searched_bbox=None):
-        self.product_type = product_type
+    def __init__(self, provider, properties, *args, **kwargs):
         self.provider = provider
-        self.location = self.remote_location = download_url
+        self.product_type = kwargs.get('productType') or args[0]
+        self.location = self.remote_location = properties.get('downloadLink', '')
         self.properties = properties
-        self.geometry = self.search_intersection = geometry.shape(self.properties['geometry'])
-        if searched_bbox is not None:
+        product_geometry = self.properties['geometry']
+        # Best effort to understand provider specific geometry (the default is to assume an object implementing the
+        # Geo Interface: see https://gist.github.com/2217756)
+        if isinstance(product_geometry, six.string_types):
+            try:
+                product_geometry = wkt.loads(product_geometry)
+            except geos.WKTReadingError:
+                try:
+                    product_geometry = wkb.loads(product_geometry)
+                # Also catching TypeError because product_geometry can be a unicode string and not a bytes string
+                except (geos.WKBReadingError, TypeError):
+                    # Let's try 'latmin lonmin latmax lonmax'
+                    coords = [float(coord) for coord in product_geometry.split(' ')]
+                    if len(coords) == 4:
+                        product_geometry = geometry.box(coords[1], coords[0], coords[3], coords[2])
+                    else:
+                        # Giv up!
+                        raise
+        self.geometry = self.search_intersection = geometry.shape(product_geometry)
+        self.search_args = args
+        self.search_kwargs = kwargs
+        if self.search_kwargs.get('geometry') is not None:
+            searched_bbox = self.search_kwargs['geometry']
             searched_bbox_as_shape = geometry.box(searched_bbox['lonmin'], searched_bbox['latmin'],
                                                   searched_bbox['lonmax'], searched_bbox['latmax'])
             try:
@@ -117,7 +132,7 @@ class EOProduct(object):
                            'downloading the product and then getting the data...')
             try:
                 path_of_downloaded_file = self.download()
-            except RuntimeError:
+            except (RuntimeError, DownloadError):
                 import traceback
                 logger.warning('Error while trying to download the product:\n %s', traceback.format_exc())
                 logger.warning('There might be no download plugin registered for this EO product. Try performing: '
@@ -149,7 +164,6 @@ class EOProduct(object):
             'properties': {
                 'eodag_product_type': self.product_type,
                 'eodag_provider': self.provider,
-                'eodag_download_url': self.location,
                 'eodag_search_intersection': geometry.mapping(self.search_intersection),
             }
         }
@@ -170,10 +184,9 @@ class EOProduct(object):
         :rtype: :class:`~eodag.api.product.EOProduct`
         """
         obj = cls(
-            feature['properties']['eodag_product_type'],
             feature['properties']['eodag_provider'],
-            feature['properties']['eodag_download_url'],
-            properties_from_json(feature, DEFAULT_METADATA_MAPPING)
+            properties_from_json(feature, DEFAULT_METADATA_MAPPING),
+            productType=feature['properties']['eodag_product_type']
         )
         obj.search_intersection = feature['properties']['eodag_search_intersection']
         return obj
@@ -251,47 +264,25 @@ class EOProduct(object):
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str or unicode
+        :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
+        :raises: :class:`RuntimeError`
         """
         if progress_callback is None:
             progress_callback = ProgressCallback()
-
         if self.downloader is None:
-            raise RuntimeError('EO product is unable to download itself due to the lack of a download plugin')
-        # Remove the capability for the downloader to perform extraction if the downloaded product is a zipfile. This
-        # way, the eoproduct is able to control how it stores itself on the local filesystem
-        old_extraction_config = self.downloader.config['extract']
-        self.downloader.config['extract'] = False
+            raise RuntimeError('EO product is unable to download itself due to lacking of a download plugin')
+
         auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else self.downloader_auth
+        # resolve remote location if needed with downloader configuration
+        self.remote_location = self.remote_location % vars(self.downloader.config)
         fs_location = self.downloader.download(self, auth=auth, progress_callback=progress_callback)
         if fs_location is None:
-            logger.warning('The download may have fail or the location of the downloaded file on the local filesystem '
-                           'have not been returned by the download plugin')
-            return ''
-        if zipfile.is_zipfile(fs_location):
-            # Unzip only if it was not done before
-            if not os.path.exists(fs_location[:fs_location.index('.zip')]):
-                with zipfile.ZipFile(fs_location, 'r') as zfile:
-                    fileinfos = tqdm(zfile.infolist(), unit='file',
-                                     desc='Extracting files from {}'.format(os.path.basename(fs_location)))
-                    for fileinfo in fileinfos:
-                        zfile.extract(fileinfo, path=fs_location[:fs_location.index('.zip')])
-            # Handle depth levels in the product archive. For example, if the downloaded archive was
-            # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
-            # location will be /top_level/product_base_dir.
-            # WARNING: A strong assumption is made here: there is only one subdirectory per level
-            archive_depth = self.downloader.config.get('archive_depth', 1)
-            fs_location = fs_location[:fs_location.index('.zip')]
-            count = 1
-            while count < archive_depth:
-                fs_location = os.path.join(fs_location, os.listdir(fs_location)[0])
-                count += 1
-        # After the product has been downloaded, we need to modify its location attribute to reflect that it is now
-        # in the filesystem
-        logger.debug('Product location updated from %s to %s', self.location, fs_location)
+            raise DownloadError("Invalid file location returned by download process: '{}'".format(fs_location))
         self.location = 'file://{}'.format(fs_location)
-        # Restore configuration
-        self.downloader.config['extract'] = old_extraction_config
-        return fs_location
+        logger.debug("Product location updated from '%s' to '%s'", self.remote_location, self.location)
+        logger.info("Remote location of the product is still available through its 'remote_location' property: %s",
+                    self.remote_location)
+        return self.location
 
     def get_quicklook(self, filename=None, progress_callback=None):
         """Download the quick look image of a given EOProduct from its provider if it exists.
@@ -307,6 +298,19 @@ class EOProduct(object):
         :returns: The absolute path of the downloaded quicklook
         :rtype: str (Python 3) or unicode (Python 2)
         """
+
+        def format_quicklook_address():
+            """If the quicklook address is a Python format string, resolve the formatting with the properties of
+            the product.
+            """
+            fstrmatch = re.match(r'.*{.+}*.*', self.properties['quicklook'])
+            if fstrmatch:
+                self.properties['quicklook'].format({
+                    prop_key: prop_val
+                    for prop_key, prop_val in self.properties.items()
+                    if prop_key != 'quicklook'
+                })
+
         if progress_callback is None:
             progress_callback = ProgressCallback()
 
@@ -314,7 +318,9 @@ class EOProduct(object):
             logger.warning('Missing information to retrieve quicklook for EO product: %s', self.properties['id'])
             return ''
 
-        quicklooks_base_dir = os.path.join(self.downloader.config['outputs_prefix'], "quicklooks")
+        format_quicklook_address()
+
+        quicklooks_base_dir = os.path.join(self.downloader.config.outputs_prefix, "quicklooks")
         if not os.path.isdir(quicklooks_base_dir):
             os.makedirs(quicklooks_base_dir)
         quicklook_file = os.path.join(
@@ -325,6 +331,13 @@ class EOProduct(object):
         )
 
         if not os.path.isfile(quicklook_file):
+            # VERY SPECIAL CASE (introduced by the onda provider): first check if it is a byte string, in which case
+            # we just write the content into the quicklook_file and return it
+            if isinstance(self.properties['quicklook'], bytes):
+                with open(quicklook_file, 'wb') as fd:
+                    fd.write(self.properties['quicklook'])
+                return quicklook_file
+
             auth = self.downloader_auth.authenticate() if self.downloader_auth is not None else None
             with requests.get(self.properties['quicklook'], stream=True, auth=auth) as stream:
                 try:
