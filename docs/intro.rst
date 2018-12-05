@@ -42,7 +42,7 @@ types of plugins compose the tool:
 Available providers
 -------------------
 
-There are currently 6 available providers implemented on eodag:
+There are currently 9 available providers implemented on eodag:
 
 * `sobloo <https://sobloo.eu/>`_: Airbus DIAS
 
