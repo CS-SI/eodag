@@ -83,6 +83,11 @@ setup(
         'docs': [
             'sphinx == 1.8.0',
             'nbsphinx-link == 1.1.1'
+        ],
+        'rest': [
+            'flask',
+            'jinja2',
+            'markdown'
         ]
     },
     entry_points={

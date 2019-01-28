@@ -18,6 +18,10 @@
 """Explicitly import here everything you want to use from the eodag package"""
 import sys
 import os
+
+from tests import TEST_RESOURCES_PATH
+
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from eodag import api, config
@@ -28,6 +32,11 @@ from eodag.api.search_result import SearchResult
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
+
+from eodag.rest import settings
+settings.EODAG_CFG_FILE = os.path.join(TEST_RESOURCES_PATH, 'file_config_override.yml')
+from eodag.rest import server as eodag_http_server
+from eodag.rest.server import _get_date
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download

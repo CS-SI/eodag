@@ -27,6 +27,7 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
+from eodag.utils.exceptions import UnsupportedProductType
 
 
 logger = logging.getLogger('eodag.plugins.manager')
@@ -81,17 +82,20 @@ class PluginManager(object):
         :returns: All the plugins supporting the product type, one by one (a generator object)
         :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
         """
-        for config in self.product_type_to_provider_config_map[product_type]:
-            try:
-                config.search.products = config.products
-                config.search.priority = config.priority
-                plugin = self._build_plugin(config.name, config.search, Search)
-                yield plugin
-            except AttributeError:
-                config.api.products = config.products
-                config.api.priority = config.priority
-                plugin = self._build_plugin(config.name, config.api, Api)
-                yield plugin
+        try:
+            for config in self.product_type_to_provider_config_map[product_type]:
+                try:
+                    config.search.products = config.products
+                    config.search.priority = config.priority
+                    plugin = self._build_plugin(config.name, config.search, Search)
+                    yield plugin
+                except AttributeError:
+                    config.api.products = config.products
+                    config.api.priority = config.priority
+                    plugin = self._build_plugin(config.name, config.api, Api)
+                    yield plugin
+        except KeyError:
+            raise UnsupportedProductType(product_type)
 
     def get_download_plugin(self, product):
         """Build and return the download plugin capable of downloading the given product.

@@ -44,6 +44,12 @@ class UnsupportedProvider(Exception):
     """An error indicating that eodag does not support a provider"""
 
 
+class UnsupportedProductType(Exception):
+    """An error indicating that eodag does not support a product type"""
+    def __init__(self, product_type):
+        self.product_type = product_type
+
+
 class UnsupportedDatasetAddressScheme(Exception):
     """An error indicating that eodag does not yet support an address scheme for accessing raster subdatasets"""
 

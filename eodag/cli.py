@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
+import os
 import sys
 import textwrap
 
@@ -188,11 +189,50 @@ def download(ctx, **kwargs):
 @click.option('-f', '--conf', type=click.Path(exists=True),
               help='File path to the user configuration file with its credentials', )
 @click.pass_context
-def serve(ctx, host, port, conf):
+def serve_rpc(ctx, host, port, conf):
     setup_logging(verbose=ctx.obj['verbosity'])
     from eodag.rpc.server import EODAGRPCServer
     server = EODAGRPCServer(host, port, conf)
     server.serve()
+
+
+@eodag.command(help='Start eodag HTTP server')
+@click.option('-d', '--daemon', help='run in daemon mode')
+@click.option('-w', '--world',
+              help=('run flask using IPv4 0.0.0.0 (all network interfaces), '
+                    'otherwise bind to 127.0.0.1 (localhost). '
+                    'This maybe necessary in systems that only run Flask')
+              )
+@click.option('-p', '--port', type=int, default=5000, help='The port on which to listen')
+@click.option('-f', '--config', type=click.Path(exists=True, resolve_path=True),
+              help='File path to the user configuration file with its credentials')
+@click.pass_context
+def serve_rest(ctx, daemon, world, port, config):
+    setup_logging(verbose=ctx.obj['verbosity'])
+    # Set the settings of the app
+    # IMPORTANT: the order of imports counts here (first we override the settings, then we import the app so that the
+    # updated settings is taken into account in the app initialization)
+    from eodag.rest import settings
+    settings.EODAG_CFG_FILE = config
+
+    from eodag.rest.server import app
+
+    bind_host = '127.0.0.1'
+    if world:
+        bind_host = '0.0.0.0'
+    if daemon:
+        try:
+            pid = os.fork()
+        except OSError as e:
+            raise Exception('%s [%d]' % (e.strerror, e.errno))
+
+        if pid == 0:
+            os.setsid()
+            app.run(threaded=True, host=bind_host, port=port)
+        else:
+            sys.exit(0)
+    else:
+        app.run(debug=True, host=bind_host, port=port)
 
 
 if __name__ == '__main__':
