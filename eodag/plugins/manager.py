@@ -25,6 +25,7 @@ import pkg_resources
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
+from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.utils.exceptions import UnsupportedProductType
@@ -137,8 +138,19 @@ class PluginManager(object):
                     # We guess the plugin being built is of type Api, therefore no need for an Auth plugin.
                     return None
 
-    def get_crunch_plugin(self, name, **options):
-        return None
+    @staticmethod
+    def get_crunch_plugin(name, **options):
+        """Instantiate a eodag Crunch plugin whom class name is `name`, and configure it with the `options`
+
+        :param name: The name of the Crunch plugin to instantiate
+        :type name: str or unicode
+        :param options: The configuration parameters of the cruncher
+        :type options: dict
+        :return: The cruncher named `name`
+        :rtype: :class:`~eodag.plugins.crunch.Crunch`
+        """
+        Klass = Crunch.get_plugin_by_class_name(name)
+        return Klass(options)
 
     def set_priority(self, provider, priority):
         """Set the priority of the given provider

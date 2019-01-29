@@ -195,6 +195,20 @@ class EODataAccessGateway(object):
                 logger.debug('Ignoring it')
         return results
 
+    def crunch(self, results, **kwargs):
+        """Apply the filters given through the keyword arguments to the results
+
+        :param results: The results of a eodag search request
+        :type results: :class:`~eodag.api.search_result.SearchResult`
+        :return: The result of successively applying all the filters to the results
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
+        search_criteria = kwargs.pop('search_criteria', {})
+        for cruncher_name, cruncher_args in kwargs.items():
+            cruncher = self._plugins_manager.get_crunch_plugin(cruncher_name, **cruncher_args)
+            results = results.crunch(cruncher, **search_criteria)
+        return results
+
     @staticmethod
     def sort_by_extent(searches):
         """Combines multiple SearchResults and return a list of SearchResults sorted by extent.

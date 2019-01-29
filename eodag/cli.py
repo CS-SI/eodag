@@ -116,20 +116,24 @@ def search_crunch(ctx, **kwargs):
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
 
-    satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
+    gateway = EODataAccessGateway(user_conf_file_path=conf_file)
 
     # Search
-    results = satim_api.search(producttype, **criteria)
+    results = gateway.search(producttype, **criteria)
     click.echo("Found {} products with product type '{}': {}".format(len(results), producttype, results))
 
     # Crunch !
-    for cruncher in (satim_api.get_cruncher(cname, **cruncher_args_dict.get(cname, {})) for cname in cruncher_names):
-        results = results.crunch(cruncher, **criteria)
+    crunch_args = {
+        cruncher_name: cruncher_args_dict.get(cruncher_name, {})
+        for cruncher_name in cruncher_names
+    }
+    crunch_args.update({'search_criteria': criteria})
+    results = gateway.crunch(results, **crunch_args)
 
     storage_filepath = kwargs.pop('storage')
     if not storage_filepath.endswith('.geojson'):
         storage_filepath += '.geojson'
-    result_storage = satim_api.serialize(results, filename=storage_filepath)
+    result_storage = gateway.serialize(results, filename=storage_filepath)
     click.echo("Results stored at '{}'".format(result_storage))
 
 
