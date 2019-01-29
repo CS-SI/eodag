@@ -37,19 +37,18 @@ class QueryStringSearch(Search):
     """A plugin that helps implementing any kind of search protocol that relies on query strings (e.g: opensearch).
 
     The available configuration parameters for this kind of plugin are:
-        - result_type: (optional) One of "json" or "xml", depending on the representation of the provider's search
-                       results. The default is "json"
-        - results_entry: (mandatory) The name of the key in the provider search result that gives access to the
-                         result entries
-        - api_endpoint: (mandatory) The endpoint of the provider's search interface
-        - literal_search_param: (optional) A mapping of (search_param => search_value) pairs giving search parameters
-                                to be passed as is in the search url
-        - free_text_search_param: (optional) The name of a search parameter that will have the value obtained from the
-                                  application of the operations configured in the free_text_search_operations below
-        - free_text_search_operations: (optional) A mapping of (operation => list of operands), that defines all the
-                                       free text search operations to be applied to form the value of the
-                                       free_text_search_param above. The operands are joined together using the
-                                       operator.
+    - result_type: (optional) One of "json" or "xml", depending on the representation of the provider's search
+    results. The default is "json"
+    - results_entry: (mandatory) The name of the key in the provider search result that gives access to the
+    result entries
+    - api_endpoint: (mandatory) The endpoint of the provider's search interface
+    - literal_search_param: (optional) A mapping of (search_param => search_value) pairs giving search
+    parameters to be passed as is in the search url
+    - free_text_search_param: (optional) The name of a search parameter that will have the value obtained from
+    the application of the operations configured in the free_text_search_operations below
+    - free_text_search_operations: (optional) A mapping of (operation => list of operands), that defines all the
+    free text search operations to be applied to form the value of the free_text_search_param above. The
+    operands are joined together using the operator.
 
     The search plugins of this kind can detect when a metadata mapping is "query-able", and get the semantics of how
     to format the query string parameter that enables to make a query on the corresponding metadata. To make a
@@ -57,9 +56,11 @@ class QueryStringSearch(Search):
     specification of the query string search formatting. The later is a string following the specification of Python
     string formatting, with a special behaviour added to it. For example, an entry in the metadata mapping of this
     kind::
+
         completionTimeFromAscendingNode:
             - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode$timestamp}'
             - '$.properties.acquisition.endViewingDate'
+
     means that the search url will have a query string parameter named "f" with a value of
     "acquisition.endViewingDate:lte:1543922280.0" if the search was done with a value of
     `completionTimeFromAscendingNode` being `2018-12-04T12:18:00`. What happened is that

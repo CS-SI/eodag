@@ -197,17 +197,20 @@ def serve_rpc(ctx, host, port, conf):
 
 
 @eodag.command(help='Start eodag HTTP server')
+@click.option('-f', '--config', type=click.Path(exists=True, resolve_path=True), required=True,
+              help='File path to the user configuration file with its credentials')
 @click.option('-d', '--daemon', help='run in daemon mode')
-@click.option('-w', '--world',
+@click.option('-w', '--world', is_flag=True, show_default=True,
               help=('run flask using IPv4 0.0.0.0 (all network interfaces), '
                     'otherwise bind to 127.0.0.1 (localhost). '
                     'This maybe necessary in systems that only run Flask')
               )
-@click.option('-p', '--port', type=int, default=5000, help='The port on which to listen')
-@click.option('-f', '--config', type=click.Path(exists=True, resolve_path=True),
-              help='File path to the user configuration file with its credentials')
+@click.option('-p', '--port', type=int, default=5000, show_default=True,
+              help='The port on which to listen')
+@click.option('--debug', is_flag=True, show_default=True,
+              help='Run in debug mode (for development purpose)')
 @click.pass_context
-def serve_rest(ctx, daemon, world, port, config):
+def serve_rest(ctx, daemon, world, port, config, debug):
     setup_logging(verbose=ctx.obj['verbosity'])
     # Set the settings of the app
     # IMPORTANT: the order of imports counts here (first we override the settings, then we import the app so that the
@@ -232,7 +235,7 @@ def serve_rest(ctx, daemon, world, port, config):
         else:
             sys.exit(0)
     else:
-        app.run(debug=True, host=bind_host, port=port)
+        app.run(debug=debug, host=bind_host, port=port)
 
 
 if __name__ == '__main__':

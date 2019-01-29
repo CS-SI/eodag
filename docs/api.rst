@@ -332,11 +332,6 @@ Utils
    :show-inheritance:
    :undoc-members:
 
-.. automodule:: eodag.utils.known_systems_utils
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 .. automodule:: eodag.utils.logging
    :members:
    :show-inheritance:
