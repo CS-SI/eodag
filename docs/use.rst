@@ -85,7 +85,16 @@ After you have launched the server, navigate to its home page. For example, for 
 development server launched with `eodag serve-rest -f <config> --debug`, go to
 http://127.0.0.1:5000/. You will see a documentation of the interface.
 
-The server provides a GET endpoint with a route defined by (in the case of a local server)::
+The supported operations are:
+
+* List product types::
+
+    # All supported product types
+    http://127.0.0.1:5000/product-types
+    # <provider> only supported product types
+    http://127.0.0.1:5000/product-types/<provider>
+
+* Search product::
 
     http://127.0.0.1:5000/<product_type>/?param=value
 

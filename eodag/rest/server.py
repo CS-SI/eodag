@@ -20,7 +20,7 @@ import eodag
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.utils.exceptions import MisconfiguredError, ValidationError, UnsupportedProductType
+from eodag.utils.exceptions import MisconfiguredError, UnsupportedProductType, UnsupportedProvider, ValidationError
 
 
 app = flask.Flask(__name__)
@@ -144,6 +144,22 @@ def home():
     content = content.format(base_url=request.base_url, product_types=_product_types())
     content = Markup(markdown.markdown(content))
     return render_template('index.html', content=content)
+
+
+@app.route('/product-types/', methods=['GET'])
+@app.route('/product-types/<provider>')
+def list_product_types(provider=None):
+    if provider is not None:
+        try:
+            product_types = eodag_api.list_product_types(provider)
+        except UnsupportedProvider:
+            return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
+        return jsonify(product_types)
+    try:
+        product_types = eodag_api.list_product_types()
+    except Exception:
+        return jsonify({"error": "Unknown server error"}), 500
+    return jsonify(product_types)
 
 
 def main():
