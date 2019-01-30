@@ -29,7 +29,7 @@ from tqdm import tqdm
 
 from eodag.plugins.download.base import Download
 from eodag.utils.exceptions import MisconfiguredError
-
+from eodag.utils import sanitize
 
 logger = logging.getLogger('eodag.plugins.download.http')
 
@@ -65,7 +65,14 @@ class HTTPDownload(Download):
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
         prefix = os.path.abspath(self.config.outputs_prefix)
-        fs_path = os.path.join(prefix, '{}.zip'.format(product.properties['title']))
+        sanitized_title = sanitize(product.properties['title'])
+        if sanitized_title == product.properties['title']:
+            collision_avoidance_suffix = ''
+        else:
+            collision_avoidance_suffix = ('-' + sanitize(product.properties['id']))
+        fs_path = os.path.join(prefix, '{}{}.zip'.format(
+            sanitize(product.properties['title']), collision_avoidance_suffix
+        ))
         download_records_dir = os.path.join(prefix, '.downloaded')
         try:
             os.makedirs(download_records_dir)
