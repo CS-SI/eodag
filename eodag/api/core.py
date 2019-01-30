@@ -18,6 +18,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+from operator import itemgetter
 
 import geojson
 from pkg_resources import resource_filename
@@ -110,15 +111,19 @@ class EODataAccessGateway(object):
         if provider is not None:
             if provider in self.providers_config:
                 provider_supported_products = self.providers_config[provider].products
-                return [dict(
+                products = [dict(
                     ID=code,
                     **self.product_types_config[code]
                 ) for code in provider_supported_products]
-            raise UnsupportedProvider("The requested provider is not (yet) supported")
-        return [dict(
-            ID=code,
-            **value
-        ) for code, value in self.product_types_config.items()]
+            else:
+                raise UnsupportedProvider("The requested provider is not (yet) supported")
+        else:
+            products = [dict(
+                ID=code,
+                **value
+            ) for code, value in self.product_types_config.items()]
+        products.sort(key=itemgetter('ID'))
+        return products
 
     def available_providers(self):
         """Gives the list of the available providers"""
