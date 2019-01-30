@@ -9,12 +9,13 @@ from __future__ import absolute_import, unicode_literals
 import os
 import sys
 from collections import namedtuple
+from functools import wraps
 
 import dateutil.parser
 import flask
 import geojson
 import markdown
-from flask import Markup, jsonify, render_template, request
+from flask import Markup, jsonify, render_template, request, make_response
 
 import eodag
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
@@ -107,7 +108,25 @@ def _filter(products, **kwargs):
     return products
 
 
+def _product_types():
+    result = []
+    for provider in eodag_api.available_providers():
+        for pt in eodag_api.list_product_types(provider):
+            result.append('* *__{ID}__*: {desc}'.format(**pt))
+    return '\n'.join(sorted(result))
+
+
+def cross_origin(request_handler):
+    @wraps(request_handler)
+    def wrapper(*args, **kwargs):
+        resp = make_response(request_handler(*args, **kwargs))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    return wrapper
+
+
 @app.route('/<product_type>/', methods=['GET'])
+@cross_origin
 def search(product_type):
     try:
         criteria = {
@@ -129,15 +148,8 @@ def search(product_type):
     return geojson.dumps(products)
 
 
-def _product_types():
-    result = []
-    for provider in eodag_api.available_providers():
-        for pt in eodag_api.list_product_types(provider):
-            result.append('* *__{ID}__*: {desc}'.format(**pt))
-    return '\n'.join(sorted(result))
-
-
 @app.route('/', methods=['GET'])
+@cross_origin
 def home():
     with open(os.path.join(os.path.dirname(__file__), 'description.md'), 'rt') as fp:
         content = fp.read()
@@ -148,6 +160,7 @@ def home():
 
 @app.route('/product-types/', methods=['GET'])
 @app.route('/product-types/<provider>')
+@cross_origin
 def list_product_types(provider=None):
     if provider is not None:
         try:
