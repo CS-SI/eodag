@@ -61,6 +61,9 @@ setup(
         'jsonpath-rw',
         'lxml',
         'xarray',
+        'flask == 1.0.2',
+        'jinja2 == 2.10',
+        'markdown == 3.0.1',
     ],
     extras_require={
         'dev': [
@@ -85,11 +88,6 @@ setup(
             'nbsphinx == 0.3.5',
             'nbsphinx-link == 1.1.1'
         ],
-        'rest': [
-            'flask == 1.0.2',
-            'jinja2 == 2.10',
-            'markdown == 3.0.1'
-        ]
     },
     entry_points={
         'console_scripts': [

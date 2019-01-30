@@ -68,7 +68,7 @@ Below is the content of the help message of this command::
     Options:
       -f, --config PATH   File path to the user configuration file with its
                           credentials  [required]
-      -d, --daemon TEXT   run in daemon mode
+      -d, --daemon        run in daemon mode  [default: False]
       -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
                           otherwise bind to 127.0.0.1 (localhost). This maybe
                           necessary in systems that only run Flask  [default:

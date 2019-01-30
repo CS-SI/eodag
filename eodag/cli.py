@@ -203,7 +203,7 @@ def serve_rpc(ctx, host, port, conf):
 @eodag.command(help='Start eodag HTTP server')
 @click.option('-f', '--config', type=click.Path(exists=True, resolve_path=True), required=True,
               help='File path to the user configuration file with its credentials')
-@click.option('-d', '--daemon', help='run in daemon mode')
+@click.option('-d', '--daemon', is_flag=True, show_default=True, help='run in daemon mode')
 @click.option('-w', '--world', is_flag=True, show_default=True,
               help=('run flask using IPv4 0.0.0.0 (all network interfaces), '
                     'otherwise bind to 127.0.0.1 (localhost). '
