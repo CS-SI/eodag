@@ -117,16 +117,19 @@ class EODataAccessGateway(object):
                 provider_supported_products = self.providers_config[provider].products
                 for product_type_id in provider_supported_products:
                     product_type = dict(ID=product_type_id, **self.product_types_config[product_type_id])
-                    product_types.append(product_type)
-            else:
-                raise UnsupportedProvider("The requested provider is not (yet) supported")
-        else:
-            # Only get the product types supported by the available providers
-            for provider in self.available_providers():
-                product_types.extend(self.list_product_types(provider=provider))
+                    if product_type_id not in product_types:
+                        product_types.append(product_type)
+                return sorted(product_types, key=itemgetter('ID'))
+            raise UnsupportedProvider("The requested provider is not (yet) supported")
+        # Only get the product types supported by the available providers
+        for provider in self.available_providers():
+            current_product_type_ids = [pt['ID'] for pt in product_types]
+            product_types.extend([
+                pt for pt in self.list_product_types(provider=provider)
+                if pt['ID'] not in current_product_type_ids
+            ])
         # Return the product_types sorted in lexicographic order of their ID
-        product_types.sort(key=itemgetter('ID'))
-        return product_types
+        return sorted(product_types, key=itemgetter('ID'))
 
     def available_providers(self):
         """Gives the list of the available providers"""
