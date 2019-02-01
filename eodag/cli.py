@@ -33,7 +33,7 @@ click.disable_unicode_literals_warning = True
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
-    'RemoveDoubles', 'FilterLatestByName', 'FilterLatestIntersect', 'FilterOverlap',
+    'FilterLatestByName', 'FilterLatestIntersect', 'FilterOverlap',
 ]
 
 
@@ -127,8 +127,8 @@ def search_crunch(ctx, **kwargs):
         cruncher_name: cruncher_args_dict.get(cruncher_name, {})
         for cruncher_name in cruncher_names
     }
-    crunch_args.update({'search_criteria': criteria})
-    results = gateway.crunch(results, **crunch_args)
+    for cruncher_name in cruncher_names:
+        results = gateway.crunch(results, search_criteria=criteria, **crunch_args[cruncher_name])
 
     storage_filepath = kwargs.pop('storage')
     if not storage_filepath.endswith('.geojson'):

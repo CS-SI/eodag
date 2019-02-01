@@ -17,9 +17,12 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import datetime
 import logging
+import time
 
 import dateutil.parser
+from dateutil.tz import tzutc
 from shapely import geometry
 
 from eodag.plugins.crunch.base import Crunch
@@ -30,16 +33,26 @@ logger = logging.getLogger('eodag.plugins.crunch.filter_latest')
 
 class FilterLatestIntersect(Crunch):
 
+    @staticmethod
+    def sort_product_by_start_date(product):
+        start_date = product.properties.get('startTimeFromAscendingNode')
+        if not start_date:
+            # Retrieve year, month, day, hour, minute, second of EPOCH start
+            epoch = time.gmtime(0)[:-3]
+            start_date = datetime.datetime(*epoch).isoformat()
+        if product.provider == 'sobloo':
+            # Sobloo provides dates as timestamps in milliseconds
+            # Transform it to a UTC datetime object which is timezone-aware
+            start_date = datetime.datetime.fromtimestamp(start_date / 1000, tzutc()).isoformat()
+        return dateutil.parser.parse(start_date)
+
     def proceed(self, products, **search_params):
         """Filter latest products (the ones with a the highest start date) that intersect search extent."""
         logger.debug('Start filtering for latest products')
         if not products:
             return []
         # Warning: May crash if startTimeFromAscendingNode is not in the appropriate format
-        products.sort(
-            key=lambda product: dateutil.parser.parse(product.properties.get('startTimeFromAscendingNode')),
-            reverse=True
-        )
+        products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered = []
         add_to_filtered = filtered.append
         footprint = search_params.get('footprint')

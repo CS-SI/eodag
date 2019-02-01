@@ -147,11 +147,11 @@ def sanitize(value):
     rv = unidecode(value)
     # replace punctuation signs and spaces by underscore
     # keep hyphen, dot and underscore from punctuation
-    tobereplaced = re.sub('[-_.]', '', string.punctuation)
+    tobereplaced = re.sub(r'[-_.]', '', string.punctuation)
     # add spaces to be removed
-    tobereplaced += '\s'
+    tobereplaced += r'\s'
 
-    rv = re.sub('[' + tobereplaced + ']+', '_', rv)
+    rv = re.sub(r'[' + tobereplaced + r']+', '_', rv)
     return str(rv)
 
 

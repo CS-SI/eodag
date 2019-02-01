@@ -79,7 +79,7 @@ class RequestTestCase(unittest.TestCase):
     def test_filter(self):
         result1 = self._request_valid('{}?box=0,43,1,44'.format(self.tested_product_type))
         result2 = self._request_valid('{}?box=0,43,1,44&filter=latestIntersect'.format(self.tested_product_type))
-        self.assertGreater(len(result1.features), len(result2.features))
+        self.assertGreaterEqual(len(result1.features), len(result2.features))
 
     def test_get_date(self):
         """Date validation function must correctly validate dates"""

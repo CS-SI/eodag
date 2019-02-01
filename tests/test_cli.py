@@ -130,21 +130,20 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""
         with self.user_conf() as conf_file:
             product_type = 'whatever'
-            cruncher = 'RemoveDoubles'
+            cruncher = 'FilterLatestIntersect'
             criteria = dict(startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
                             geometry=None, cloudCover=None)
             result = self.runner.invoke(eodag, ['search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher])
 
             api_obj = SatImagesAPI.return_value
             search_results = api_obj.search.return_value
-            crunch_results = search_results.crunch.return_value
+            crunch_results = api_obj.crunch.return_value
 
             # Assertions
             SatImagesAPI.assert_called_once_with(user_conf_file_path=conf_file)
             api_obj.search.assert_called_once_with(product_type, **criteria)
-            api_obj.get_cruncher.assert_called_once_with(cruncher, **{})
+            api_obj.crunch.assert_called_once_with(search_results, search_criteria=criteria, **{})
             api_obj.serialize.assert_called_with(crunch_results, filename='search_results.geojson')
-            search_results.crunch.assert_called_once_with(api_obj.get_cruncher.return_value, **criteria)
             self.assertEqual(
                 result.output,
                 '\n'.join(("Found 0 products with product type '{}': {}".format(product_type, search_results),
@@ -156,4 +155,4 @@ class TestEodagCli(unittest.TestCase):
                 'search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher,
                 '--cruncher-args', cruncher, 'minimum_overlap', 10
             ])
-            api_obj.get_cruncher.assert_called_with(cruncher, minimum_overlap=10)
+            api_obj.crunch.assert_called_with(search_results, search_criteria=criteria, minimum_overlap=10)
