@@ -95,8 +95,11 @@ class EODataAccessGateway(object):
         :return: The provider with the maximum priority and its priority
         :rtype: tuple(str, int)
         """
-        preferred, priority = max(((provider, conf.priority) for provider, conf in self.providers_config.items()),
-                                  key=lambda item: item[1])
+        providers_with_priority = [
+            (provider, conf.priority)
+            for provider, conf in self.providers_config.items()
+        ]
+        preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
 
     def list_product_types(self, provider=None):
@@ -108,22 +111,22 @@ class EODataAccessGateway(object):
         :rtype: list(dict)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
+        product_types = []
         if provider is not None:
             if provider in self.providers_config:
                 provider_supported_products = self.providers_config[provider].products
-                products = [dict(
-                    ID=code,
-                    **self.product_types_config[code]
-                ) for code in provider_supported_products]
+                for product_type_id in provider_supported_products:
+                    product_type = dict(ID=product_type_id, **self.product_types_config[product_type_id])
+                    product_types.append(product_type)
             else:
                 raise UnsupportedProvider("The requested provider is not (yet) supported")
         else:
-            products = [dict(
-                ID=code,
-                **value
-            ) for code, value in self.product_types_config.items()]
-        products.sort(key=itemgetter('ID'))
-        return products
+            # Only get the product types supported by the available providers
+            for provider in self.available_providers():
+                product_types.extend(self.list_product_types(provider=provider))
+        # Return the product_types sorted in lexicographic order of their ID
+        product_types.sort(key=itemgetter('ID'))
+        return product_types
 
     def available_providers(self):
         """Gives the list of the available providers"""

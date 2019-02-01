@@ -108,11 +108,14 @@ def _filter(products, **kwargs):
     return products
 
 
-def _product_types():
+def _format_product_types(product_types):
+    """Format product_types
+
+    :param list product_types: A list of EODAG product types as returned by the core api
+    """
     result = []
-    for provider in eodag_api.available_providers():
-        for pt in eodag_api.list_product_types(provider):
-            result.append('* *__{ID}__*: {desc}'.format(**pt))
+    for pt in product_types:
+        result.append('* *__{ID}__*: {desc}'.format(**pt))
     return '\n'.join(sorted(result))
 
 
@@ -153,23 +156,24 @@ def search(product_type):
 def home():
     with open(os.path.join(os.path.dirname(__file__), 'description.md'), 'rt') as fp:
         content = fp.read()
-    content = content.format(base_url=request.base_url, product_types=_product_types())
+    content = content.format(
+        base_url=request.base_url,
+        product_types=_format_product_types(
+            eodag_api.list_product_types()
+        )
+    )
     content = Markup(markdown.markdown(content))
     return render_template('index.html', content=content)
 
 
 @app.route('/product-types/', methods=['GET'])
-@app.route('/product-types/<provider>')
+@app.route('/product-types/<provider>', methods=['GET'])
 @cross_origin
 def list_product_types(provider=None):
-    if provider is not None:
-        try:
-            product_types = eodag_api.list_product_types(provider)
-        except UnsupportedProvider:
-            return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
-        return jsonify(product_types)
     try:
-        product_types = eodag_api.list_product_types()
+        product_types = eodag_api.list_product_types() if provider is None else eodag_api.list_product_types(provider)
+    except UnsupportedProvider:
+        return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
     except Exception:
         return jsonify({"error": "Unknown server error"}), 500
     return jsonify(product_types)
