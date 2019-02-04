@@ -58,16 +58,16 @@ class QueryStringSearch(Search):
     kind::
 
         completionTimeFromAscendingNode:
-            - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode$timestamp}'
+            - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
             - '$.properties.acquisition.endViewingDate'
 
     means that the search url will have a query string parameter named "f" with a value of
     "acquisition.endViewingDate:lte:1543922280.0" if the search was done with a value of
     `completionTimeFromAscendingNode` being `2018-12-04T12:18:00`. What happened is that
-    `{completionTimeFromAscendingNode$timestamp}` was replaced with the timestamp of the value of
+    `{completionTimeFromAscendingNode#timestamp}` was replaced with the timestamp of the value of
     `completionTimeFromAscendingNode`. This example shows all there is to know about the semantics of the query string
     formatting introduced by this plugin: any eodag search parameter can be referenced in the query string
-    with an additional optional conversion function that is separated from it by a `$` (see
+    with an additional optional conversion function that is separated from it by a `#` (see
     :func:`~eodag.utils.format_search_param` for further details on the available converters). Note that for the values
     in the `free_text_search_operations` configuration parameter follow the same rule.
     """

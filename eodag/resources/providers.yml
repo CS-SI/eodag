@@ -362,10 +362,10 @@
         - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       startTimeFromAscendingNode:
-        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode$timestamp}'
+        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#timestamp}'
         - '$.properties.acquisition.beginViewingDate'
       completionTimeFromAscendingNode:
-        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode$timestamp}'
+        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
         - '$.properties.acquisition.endViewingDate'
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
       downloadLink: '%(base_uri)s/{id}'
@@ -614,7 +614,7 @@
     metadata_mapping:
       id: '$.id'
       geometry:
-        - 'footprint:"Intersects({geometry$to_wkt})"'
+        - 'footprint:"Intersects({geometry#to_wkt})"'
         - '$.footprint'
       productType:
         - "productType:{productType}"

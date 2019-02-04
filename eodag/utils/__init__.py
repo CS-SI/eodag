@@ -256,7 +256,7 @@ def get_timestamp(date_time, date_format='%Y-%m-%dT%H:%M:%S'):
 
 
 def format_search_param(search_param, *args, **kwargs):
-    """Format a string of form {<field_name>$<conversion_function>}
+    """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
         - timestamp: converts a date string to a timestamp
@@ -272,7 +272,7 @@ def format_search_param(search_param, *args, **kwargs):
     :rtype: str or unicode
     """
     class SearchParamFormatter(Formatter):
-        CONVERSION_FUNC_REGEX = re.compile(r'^(?P<field_name>.+)(?P<sep>\$)(?P<converter>[^()]+)(\((?P<args>.+)?\))?$')
+        CONVERSION_FUNC_REGEX = re.compile(r'^(?P<field_name>.+)(?P<sep>#)(?P<converter>[^()]+)(\((?P<args>.+)?\))?$')
 
         def __init__(self):
             self.custom_converter = None
