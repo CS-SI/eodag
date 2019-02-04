@@ -22,7 +22,6 @@ import logging
 import time
 
 import dateutil.parser
-from dateutil.tz import tzutc
 from shapely import geometry
 
 from eodag.plugins.crunch.base import Crunch
@@ -40,10 +39,6 @@ class FilterLatestIntersect(Crunch):
             # Retrieve year, month, day, hour, minute, second of EPOCH start
             epoch = time.gmtime(0)[:-3]
             start_date = datetime.datetime(*epoch).isoformat()
-        if product.provider == 'sobloo':
-            # Sobloo provides dates as timestamps in milliseconds
-            # Transform it to a UTC datetime object which is timezone-aware
-            start_date = datetime.datetime.fromtimestamp(start_date / 1000, tzutc()).isoformat()
         return dateutil.parser.parse(start_date)
 
     def proceed(self, products, **search_params):

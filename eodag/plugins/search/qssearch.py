@@ -26,8 +26,7 @@ from lxml import etree
 from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_json, properties_from_xml
 from eodag.plugins.search.base import Search
-from eodag.utils import format_search_param
-from eodag.utils.metadata_mapping import get_search_param
+from eodag.utils.metadata_mapping import format_metadata, get_search_param
 
 
 logger = logging.getLogger('eodag.plugins.search.qssearch')
@@ -68,7 +67,7 @@ class QueryStringSearch(Search):
     `completionTimeFromAscendingNode`. This example shows all there is to know about the semantics of the query string
     formatting introduced by this plugin: any eodag search parameter can be referenced in the query string
     with an additional optional conversion function that is separated from it by a `#` (see
-    :func:`~eodag.utils.format_search_param` for further details on the available converters). Note that for the values
+    :func:`~eodag.utils.format_metadata` for further details on the available converters). Note that for the values
     in the `free_text_search_operations` configuration parameter follow the same rule.
     """
     COMPLEX_QS_REGEX = re.compile(r'^(.+=)?([^=]*)({.+})+([^=&]*)$')
@@ -125,7 +124,7 @@ class QueryStringSearch(Search):
     def add_to_qs_participants(self, qs_participants, query, queryable, args, kwargs):
         if query is not None:
             if self.COMPLEX_QS_REGEX.match(queryable):
-                qs_participants.append(format_search_param(queryable, *args, **kwargs))
+                qs_participants.append(format_metadata(queryable, *args, **kwargs))
             else:
                 qs_participants.append('{}={}'.format(queryable, query))
 
@@ -140,7 +139,7 @@ class QueryStringSearch(Search):
             operator_string = ' {} '.format(operator)
             # Build the operation string by joining the formatted operands together using the operation string
             operation_string = operator_string.join(
-                format_search_param(operand, **kwargs)
+                format_metadata(operand, **kwargs)
                 for operand in operands
             )
             # Finally wrap the operation string in parentheses and add it to the list of queries

@@ -23,7 +23,7 @@ import jsonpath_rw as jsonpath
 from lxml import etree
 from lxml.etree import XPathEvalError
 
-from eodag.utils.metadata_mapping import get_metadata_path
+from eodag.utils.metadata_mapping import format_metadata, get_metadata_path
 
 
 # Keys taken from http://docs.opengeospatial.org/is/13-026r8/13-026r8.html
@@ -133,20 +133,33 @@ def properties_from_json(json, mapping):
         if metadata not in mapping:
             properties[metadata] = 'N/A'
         else:
+            conversion, path = get_metadata_path(mapping[metadata])
             try:
-                path = jsonpath.parse(get_metadata_path(mapping[metadata]))
-            except Exception:   # jsonpath_rw does not provide a proper exception
-                # Assume the mapping is to be passed as is, in which case we readily register it, or is a template, in
-                # which case we register it for later formatting resolution using previously successfully resolved
+                path_parsed = jsonpath.parse(path)
+            except Exception:  # jsonpath_rw does not provide a proper exception
+                # Assume the mapping is to be passed as is, in which case we readily register it. Or it is a template,
+                # in which case we register it for later formatting resolution using previously successfully resolved
                 # properties
-                text = get_metadata_path(mapping[metadata])
+                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
+                # it further
+                _, text = get_metadata_path(mapping[metadata])
                 if re.search(r'({[^{}]+})+', text):
                     templates[metadata] = text
                 else:
                     properties[metadata] = text
             else:
-                match = path.find(json)
-                properties[metadata] = match[0].value if len(match) == 1 else None
+                match = path_parsed.find(json)
+                extracted_value = match[0].value if len(match) == 1 else None
+                if extracted_value is None:
+                    properties[metadata] = None
+                else:
+                    if conversion is None:
+                        properties[metadata] = extracted_value
+                    else:
+                        properties[metadata] = format_metadata(
+                            '{%s#%s}' % (metadata, conversion),
+                            **{metadata: extracted_value}
+                        )
     # Resolve templates
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)
@@ -177,21 +190,43 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix='ns'):
             properties[metadata] = 'N/A'
         else:
             try:
-                value = root.xpath(
-                    get_metadata_path(mapping[metadata]),
+                conversion, path = get_metadata_path(mapping[metadata])
+                extracted_value = root.xpath(
+                    path,
                     namespaces={
                         k or empty_ns_prefix: v for k, v in root.nsmap.items()
                     }
                 )
-                if len(value) > 1:
-                    properties[metadata] = value
+                if len(extracted_value) == 1:
+                    if conversion is None:
+                        properties[metadata] = extracted_value
+                    else:
+                        properties[metadata] = format_metadata(
+                            '{%s#%s}' % (metadata, conversion),
+                            **{metadata: extracted_value}
+                        )
+                elif len(extracted_value) > 1:
+                    if conversion is None:
+                        properties[metadata] = extracted_value
+                    else:
+                        properties[metadata] = [
+                            format_metadata(
+                                '{%s#%s}' % (metadata, conversion),
+                                **{metadata: extracted_value_item}
+                            )
+                            for extracted_value_item in extracted_value
+                        ]
+                # If there is no matched value (empty list), register it as is, no matter if we have a conversion to
+                # do or not
                 else:
-                    properties[metadata] = value[0] if len(value) == 1 else None
+                    properties[metadata] = extracted_value
             except XPathEvalError:
                 # Assume the mapping is to be passed as is, in which case we readily register it, or is a template, in
                 # which case we register it for later formatting resolution using previously successfully resolved
                 # properties
-                text = get_metadata_path(mapping[metadata])
+                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
+                # it further
+                _, text = get_metadata_path(mapping[metadata])
                 if re.search(r'({[^{}]+})+', text):
                     templates[metadata] = text
                 else:

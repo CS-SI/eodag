@@ -362,11 +362,11 @@
         - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       startTimeFromAscendingNode:
-        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#timestamp}'
-        - '$.properties.acquisition.beginViewingDate'
+        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#to_timestamp_milliseconds}'
+        - '$.properties.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds'
       completionTimeFromAscendingNode:
-        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
-        - '$.properties.acquisition.endViewingDate'
+        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#to_timestamp_milliseconds}'
+        - '{$.properties.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
       downloadLink: '%(base_uri)s/{id}'
   download: !plugin
