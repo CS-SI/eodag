@@ -166,10 +166,6 @@ Search Plugins
    :show-inheritance:
    :undoc-members:
 
-.. autoclass:: eodag.plugins.search.qssearch.RestoSearch
-   :show-inheritance:
-   :undoc-members:
-
 .. autoclass:: eodag.plugins.search.qssearch.AwsSearch
    :show-inheritance:
    :undoc-members:

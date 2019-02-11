@@ -20,12 +20,15 @@ from __future__ import unicode_literals
 import logging
 import re
 
+import jsonpath_rw as jsonpath
 import requests
 from lxml import etree
 
 from eodag.api.product import EOProduct
 from eodag.api.product.representations import properties_from_json, properties_from_xml
 from eodag.plugins.search.base import Search
+from eodag.utils import urlencode
+from eodag.utils.exceptions import RequestError
 from eodag.utils.metadata_mapping import format_metadata, get_search_param
 
 
@@ -36,18 +39,49 @@ class QueryStringSearch(Search):
     """A plugin that helps implementing any kind of search protocol that relies on query strings (e.g: opensearch).
 
     The available configuration parameters for this kind of plugin are:
-    - result_type: (optional) One of "json" or "xml", depending on the representation of the provider's search
-    results. The default is "json"
-    - results_entry: (mandatory) The name of the key in the provider search result that gives access to the
-    result entries
-    - api_endpoint: (mandatory) The endpoint of the provider's search interface
-    - literal_search_param: (optional) A mapping of (search_param => search_value) pairs giving search
-    parameters to be passed as is in the search url
-    - free_text_search_param: (optional) The name of a search parameter that will have the value obtained from
-    the application of the operations configured in the free_text_search_operations below
-    - free_text_search_operations: (optional) A mapping of (operation => list of operands), that defines all the
-    free text search operations to be applied to form the value of the free_text_search_param above. The
-    operands are joined together using the operator.
+
+        - **result_type**: (optional) One of "json" or "xml", depending on the representation of the provider's search
+          results. The default is "json"
+
+        - **results_entry**: (mandatory) The name of the key in the provider search result that gives access to the
+          result entries
+
+        - **api_endpoint**: (mandatory) The endpoint of the provider's search interface
+
+        - **literal_search_param**: (optional) A mapping of (search_param => search_value) pairs giving search
+          parameters to be passed as is in the search url query string
+
+        - **pagination**: (mandatory) The configuration of how the pagination is done on the provider. It is a tree
+          with the following nodes:
+
+          - *next_page_url_tpl*: The template for pagination requests. This is a simple Python format string which
+            will be resolved using the following keywords: ``url`` (the base url of the search endpoint), ``search``
+            (the query string corresponding to the search request), ``items_per_page`` (the number of items to return
+            per page), ``skip`` (the number of items to skip) and ``page`` (which page to return).
+
+          - *total_items_nb_key_path*: (optional) An XPath or JsonPath leading to the total number of results
+            satisfying a request. This is used for providers which provides the total results metadata along with the
+            result of the query and don't have an endpoint for querying the number of items satisfying a request, or
+            for providers for which the count endpoint returns a json or xml document
+
+          - *count_endpoint*: (optional) The endpoint for counting the number of items satisfying a request
+
+        - **free_text_search_operations**: (optional) A tree structure of the form::
+
+            <search-param>:     # e.g: $search
+                union: # how to join the operations below (e.g: ' AND ' --> '(op1 AND op2) AND (op3 OR op4)')
+                wrapper: # a pattern for how each operation will be wrapped (e.g: '({})' --> '(op1 AND op2)')
+                operations:     # The operations to build
+                  <opname>:     # e.g: AND
+                    - <op1>    # e.g: 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+                    - <op2>    # e.g: 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+                    ...
+                  ...
+            ...
+
+          With the structure above, each operation will become a string of the form: '(<op1> <opname> <op2>)', then
+          the operations will be joined together using the union string and finally if the number of operations is
+          greater than 1, they will be wrapped as specified by the wrapper config key.
 
     The search plugins of this kind can detect when a metadata mapping is "query-able", and get the semantics of how
     to format the query string parameter that enables to make a query on the corresponding metadata. To make a
@@ -60,17 +94,18 @@ class QueryStringSearch(Search):
             - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
             - '$.properties.acquisition.endViewingDate'
 
-    means that the search url will have a query string parameter named "f" with a value of
-    "acquisition.endViewingDate:lte:1543922280.0" if the search was done with a value of
-    `completionTimeFromAscendingNode` being `2018-12-04T12:18:00`. What happened is that
-    `{completionTimeFromAscendingNode#timestamp}` was replaced with the timestamp of the value of
-    `completionTimeFromAscendingNode`. This example shows all there is to know about the semantics of the query string
+    means that the search url will have a query string parameter named *"f"* with a value of
+    *"acquisition.endViewingDate:lte:1543922280.0"* if the search was done with the value of
+    ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
+    ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value of
+    ``completionTimeFromAscendingNode``. This example shows all there is to know about the semantics of the query string
     formatting introduced by this plugin: any eodag search parameter can be referenced in the query string
-    with an additional optional conversion function that is separated from it by a `#` (see
+    with an additional optional conversion function that is separated from it by a ``#`` (see
     :func:`~eodag.utils.format_metadata` for further details on the available converters). Note that for the values
-    in the `free_text_search_operations` configuration parameter follow the same rule.
+    in the ``free_text_search_operations`` configuration parameter follow the same rule.
     """
     COMPLEX_QS_REGEX = re.compile(r'^(.+=)?([^=]*)({.+})+([^=&]*)$')
+    DEFAULT_ITEMS_PER_PAGE = 10
     extract_properties = {
         'xml': properties_from_xml,
         'json': properties_from_json
@@ -79,17 +114,27 @@ class QueryStringSearch(Search):
     def __init__(self, provider, config):
         super(QueryStringSearch, self).__init__(provider, config)
         self.config.__dict__.setdefault('result_type', 'json')
+        self.config.__dict__.setdefault('results_entry', 'features')
+        self.config.__dict__.setdefault('pagination', {})
+        self.config.__dict__.setdefault('free_text_search_operations', {})
+        self.config.pagination.setdefault('items_per_page', self.DEFAULT_ITEMS_PER_PAGE)
+        if self.config.pagination['items_per_page'] == 0:
+            self.config['items_per_page'] = self.DEFAULT_ITEMS_PER_PAGE
+        self.config.pagination.setdefault('count_url_base', '')
+        self.search_urls = []
+        self.query_params = dict()
+        self.query_string = ''
 
-    def query(self, product_type, *args, **kwargs):
+    def query(self, product_type, cached=False, *args, **kwargs):
+        if not cached:
+            self.rollback()
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
-        qs = self.build_query_string(
-            product_type,
-            productType=provider_product_type,
-            *args,
-            **{k: v for k, v in kwargs.items() if k != 'auth'}
-        )
-        search_url = '{}?{}'.format(self.config.api_endpoint.rstrip('/'), qs)
-        provider_results = self.do_request(search_url, product_type, provider_product_type, *args, **kwargs)
+        keywords = {k: v for k, v in kwargs.items() if k != 'auth'}
+        qp, qs = self.build_query_string(product_type, productType=provider_product_type, *args, **keywords)
+        self.query_params = qp
+        self.query_string = qs
+        self.search_urls = self.collect_search_urls(product_type, *args, **kwargs)
+        provider_results = self.do_search(*args, **kwargs)
         eo_products = self.normalize_results(provider_results, product_type, provider_product_type, *args, **kwargs)
         return eo_products
 
@@ -97,13 +142,18 @@ class QueryStringSearch(Search):
         """Build The query string using the search parameters"""
         logger.debug('Building the query string that will be used for search')
         queryables = self.get_queryables()
-        qs_participants = []
+        query_params = {}
         # Get all the search parameters that are recognised as queryables by the provider (they appear in the
         # queryables dictionary)
         for search_param, query in kwargs.items():
             try:
                 queryable = queryables[search_param]
-                self.add_to_qs_participants(qs_participants, query, queryable, args, kwargs)
+                if kwargs.get(search_param) is not None:
+                    if self.COMPLEX_QS_REGEX.match(queryable):
+                        param, value = queryable.split('=')
+                        query_params[param] = format_metadata(value, *args, **kwargs)
+                    else:
+                        query_params[queryable] = query
             except KeyError:
                 continue
 
@@ -116,39 +166,36 @@ class QueryStringSearch(Search):
         # Now add formatted free text search parameters (this is for cases where a complex query through a free text
         # search parameter is available for the provider and needed for the consumer)
         literal_search_params.update(self.format_free_text_search(**kwargs))
-        qs_participants.extend('{}={}'.format(param, value) for param, value in literal_search_params.items())
+        query_params.update(literal_search_params)
 
-        # Build the final query string
-        return '&'.join(qs_participants)
-
-    def add_to_qs_participants(self, qs_participants, query, queryable, args, kwargs):
-        if query is not None:
-            if self.COMPLEX_QS_REGEX.match(queryable):
-                qs_participants.append(format_metadata(queryable, *args, **kwargs))
-            else:
-                qs_participants.append('{}={}'.format(queryable, query))
+        # Build the final query string, in one go without quoting it (some providers do not operate well with
+        # urlencoded and quoted query strings...
+        return query_params, urlencode(query_params, quote_via=lambda x, *_args, **_kwargs: x)
 
     def format_free_text_search(self, **kwargs):
         """Build the free text search parameter using the search parameters"""
-        free_text_search_param = getattr(self.config, 'free_text_search_param', '')
-        if not free_text_search_param:
-            return {}
-        formatted_query = []
-        for operator, operands in self.config.free_text_search_operations.items():
-            # The Operator string is the operator surrounded with spaces
-            operator_string = ' {} '.format(operator)
-            # Build the operation string by joining the formatted operands together using the operation string
-            operation_string = operator_string.join(
-                format_metadata(operand, **kwargs)
-                for operand in operands
-            )
-            # Finally wrap the operation string in parentheses and add it to the list of queries
-            formatted_query.append('({})'.format(operation_string))
-        # Return the formatted queries joined together using a default 'AND' operator and wrap the overall operation
-        # in parentheses
-        return {
-            free_text_search_param: '({})'.format(' AND '.join(formatted_query))
-        }
+        query_params = {}
+        for param, operations_config in self.config.free_text_search_operations.items():
+            union = operations_config['union']
+            wrapper = operations_config.get('wrapper', '{}')
+            formatted_query = []
+            for operator, operands in operations_config['operations'].items():
+                # The Operator string is the operator wrapped with spaces
+                operator = ' {} '.format(operator)
+                # Build the operation string by joining the formatted operands together using the operation string
+                operation_string = operator.join(
+                    format_metadata(operand, **kwargs)
+                    for operand in operands
+                    if any(kw in operand and val is not None for kw, val in kwargs.items())
+                )
+                # Finally wrap the operation string as specified by the wrapper and add it to the list of queries
+                formatted_query.append(wrapper.format(operation_string))
+            # Join the formatted query using the "union" config parameter, and then wrap it with the Python format
+            # string specified in the "wrapper" config parameter
+            query_params[param] = union.join(formatted_query)
+            if len(operations_config['operations']) > 1:
+                query_params[param] = wrapper.format(query_params[param])
+        return query_params
 
     def get_queryables(self):
         """Retrieve the metadata mappings that are query-able"""
@@ -159,10 +206,56 @@ class QueryStringSearch(Search):
             if len(val) == 2
         }
 
-    def map_product_type(self, product_type, *args, **kwargs):
-        """Map the eodag product type to the provider product type"""
-        logger.debug('Mapping eodag product type to provider product type')
-        return self.config.products[product_type]['product_type']
+    def collect_search_urls(self, *args, **kwargs):
+        urls = []
+        for collection in self.get_collections(*args, **kwargs):
+            search_endpoint = self.config.api_endpoint.rstrip('/').format(collection=collection)
+            count_endpoint = self.config.pagination.get('count_endpoint', '').format(collection=collection)
+            if count_endpoint:
+                count_url = '{}?{}'.format(count_endpoint, self.query_string)
+                max_page, items_per_page = self.count_hits(count_url)
+            else:  # First do one request querying only one element (lightweight request to schedule the pagination)
+                next_url_tpl = self.config.pagination['next_page_url_tpl']
+                count_url = next_url_tpl.format(url=search_endpoint, search=self.query_string,
+                                                items_per_page=1, page=1)
+                max_page, items_per_page = self.count_hits(count_url, result_type=self.config.result_type)
+            for page in range(1, max_page + 1):
+                next_url = self.config.pagination['next_page_url_tpl'].format(
+                    url=search_endpoint,
+                    search=self.query_string,
+                    items_per_page=items_per_page,
+                    page=page,
+                    skip=(page - 1) * items_per_page
+                )
+                urls.append(next_url)
+        return urls
+
+    def do_search(self, start=0, stop=1, *args, **kwargs):
+        """Perform the actual search request
+
+        :param int start: The page where to query, specified as list index (i.e starting at 0) (default: 0)
+        :param int stop: The page where to stop query (default: 1, i.e only fetch the first page by default)
+        """
+        for search_url in self.search_urls[start:stop]:
+            try:
+                response = self._request(
+                    search_url,
+                    info_message='Sending search request: {}'.format(search_url),
+                    exception_message='Skipping error while searching for {} {} instance:'.format(
+                        self.provider, self.__class__.__name__)
+                )
+            except RequestError:
+                raise StopIteration
+            else:
+                if self.config.result_type == 'xml':
+                    root_node = etree.fromstring(response.content)
+                    namespaces = {k or 'ns': v for k, v in root_node.nsmap.items()}
+                    for entry in root_node.xpath(self.config.results_entry, namespaces=namespaces):
+                        yield etree.tostring(entry)
+                else:
+                    results = response.json()
+                    for entry in results[self.config.results_entry]:
+                        yield entry
 
     def normalize_results(self, results, *args, **kwargs):
         """Build EOProducts from provider results"""
@@ -177,50 +270,34 @@ class QueryStringSearch(Search):
             for result in results
         ]
 
-    def do_request(self, search_url, *args, **kwargs):
-        """Perform the actual search request"""
-        try:
-            logger.info('Sending search request: %s', search_url)
-            response = requests.get(search_url)
-            response.raise_for_status()
-        except requests.HTTPError:
-            logger.exception('Skipping error while searching for %s %s instance:', self.provider,
-                             self.__class__.__name__)
-            raise StopIteration
+    def count_hits(self, count_url, result_type='json'):
+        url = count_url.replace('$format=json&', '')
+        response = self._request(
+            # Handle a very annoying special case :'(
+            url,
+            info_message='Sending count request: {}'.format(url),
+            exception_message='Skipping error while counting results for {} {} instance:'.format(
+                self.provider, self.__class__.__name__)
+        )
+        if result_type == 'xml':
+            root_node = etree.fromstring(response.content)
+            total_nb_results = root_node.xpath(
+                self.config.pagination['total_items_nb_key_path'],
+                namespaces={k or 'ns': v for k, v in root_node.nsmap.items()}
+            )[0]
+            total_results = int(total_nb_results)
         else:
-            if self.config.result_type == 'xml':
-                root_node = etree.fromstring(response.content)
-                for entry in root_node.xpath(
-                    self.config.results_entry,
-                    namespaces={k or 'ns': v for k, v in root_node.nsmap.items()}
-                ):
-                    yield etree.tostring(entry)
-            else:
-                for entry in response.json()[self.config.results_entry]:
-                    yield entry
-
-
-class RestoSearch(QueryStringSearch):
-    """A specialisation of a QueryStringSearch that adds the notion of a collection to the api_endpoint parameter"""
-
-    def __init__(self, provider, config):
-        super(RestoSearch, self).__init__(provider, config)
-        self.config.results_entry = 'features'
-
-    def do_request(self, search_url, *args, **kwargs):
-        collections = self.get_collections(*args, **kwargs)
-        results = []
-        # len(collections) == 2 If and Only if the product type is S2-L1C, provider is PEPS and there is no search
-        # constraint on date. Otherwise, it's equal to 1
-        for collection in collections:
-            logger.debug('Collection found for product type %s: %s', args[0], collection)
-            logger.debug('Corresponding Resto product_type found for product type %s: %s', args[0], args[1])
-            for result in super(RestoSearch, self).do_request(
-                search_url.format(collection=collection),
-                *args, **kwargs
-            ):
-                results.append(result)
-        return results
+            count_results = response.json()
+            if isinstance(count_results, dict):
+                path_parsed = jsonpath.parse(self.config.pagination['total_items_nb_key_path'])
+                total_results = path_parsed.find(count_results)[0].value
+            else:  # interpret the result as a raw int
+                total_results = int(count_results)
+        items_per_page = self.config.pagination['items_per_page']
+        max_page, rest = divmod(total_results, items_per_page)
+        if rest != 0:
+            max_page += 1
+        return max_page, items_per_page
 
     def get_collections(self, *args, **kwargs):
         """Get the collection to which the product belongs"""
@@ -242,17 +319,43 @@ class RestoSearch(QueryStringSearch):
                     else:
                         collections = ('S2ST',)
             else:
-                collections = (self.config.products[product_type]['collection'],)
+                collections = (self.config.products[product_type].get('collection', ''),)
         else:
             collection = getattr(self.config, 'collection', None)
             if collection is None:
                 product_type = kwargs.get('productType') or args[0]
-                collection = self.config.products[product_type]['collection']
+                collection = self.config.products[product_type].get('collection', '')
             collections = (collection,)
         return collections
 
+    def map_product_type(self, product_type, *args, **kwargs):
+        """Map the eodag product type to the provider product type"""
+        logger.debug('Mapping eodag product type to provider product type')
+        return self.config.products[product_type]['product_type']
 
-class AwsSearch(RestoSearch):
+    def rollback(self):
+        """Do not rely on any cached and prepared searches"""
+        self.search_urls = []
+        self.query_params = {}
+        self.query_string = ''
+
+    def _request(self, url, info_message=None, exception_message=None):
+        try:
+            if info_message:
+                logger.info(info_message)
+            response = requests.get(url)
+            response.raise_for_status()
+        except requests.HTTPError:
+            if exception_message:
+                logger.exception(exception_message)
+            else:
+                logger.exception('Skipping error while requesting: %s (provider:%s, plugin:%s):', url, self.provider,
+                                 self.__class__.__name__)
+            raise RequestError
+        return response
+
+
+class AwsSearch(QueryStringSearch):
     """A specialisation of RestoSearch that modifies the way the EOProducts are built from the search results"""
 
     def normalize_results(self, results, *args, **kwargs):
@@ -284,25 +387,13 @@ class AwsSearch(RestoSearch):
 class ODataV4Search(QueryStringSearch):
     """A specialisation of a QueryStringSearch that does a two step search to retrieve all products metadata"""
 
-    def build_query_string(self, *args, **kwargs):
-        logger.debug('Building the query string that will be used for search')
-        queryables = self.get_queryables()
-        qs_participants = []
-        for search_param, query in kwargs.items():
-            try:
-                queryable = queryables[search_param]
-                self.add_to_qs_participants(qs_participants, query, queryable, args, kwargs)
-            except KeyError:
-                continue
-        return '$search="{}"&$format={}'.format(' AND '.join(qs_participants), self.config.result_type)
-
-    def do_request(self, search_url, *args, **kwargs):
+    def do_search(self, start=0, stop=1, *args, **kwargs):
         """Do a two step search, as the metadata are not given into the search result"""
         # TODO: This plugin is still very specific to the ONDA provider. Be careful to generalize
         #       it if needed when the chance to do so arrives
         final_result = []
         # Query the products entity set for basic metadata about the product
-        for entity in super(ODataV4Search, self).do_request(search_url, *args, **kwargs):
+        for entity in super(ODataV4Search, self).do_search(start=start, stop=stop, *args, **kwargs):
             if entity['downloadable']:
                 entity_metadata = {
                     'quicklook': entity['quicklook'],

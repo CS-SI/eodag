@@ -60,3 +60,8 @@ class AuthenticationError(Exception):
 
 class DownloadError(Exception):
     """An error indicating something wrong with the download process"""
+
+
+class RequestError(Exception):
+    """An error indicating that a HTTP request has failed. Usually eodag functions and methods should catch and skip
+    this"""

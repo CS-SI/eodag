@@ -120,7 +120,7 @@ def format_metadata(search_param, *args, **kwargs):
         def convert_field(self, value, conversion):
             # Do custom conversion if any (see get_field)
             if self.custom_converter is not None:
-                converted = self.custom_converter(value)
+                converted = self.custom_converter(value) if value is not None else ''
                 # Clear this state variable in case the same converter is used to resolve other named arguments
                 self.custom_converter = None
                 return converted

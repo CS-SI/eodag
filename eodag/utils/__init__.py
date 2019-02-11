@@ -40,9 +40,9 @@ except ImportError:  # PY2
     from urlparse import urljoin, urlparse, parse_qs, urlunparse  # noqa
 
 try:  # PY3
-    from urllib.parse import urlencode  # noqa
+    from urllib.parse import urlencode, quote  # noqa
 except ImportError:  # PY2
-    from urllib import urlencode  # noqa
+    from urllib import urlencode, quote  # noqa
 
 
 class RequestsTokenAuth(AuthBase):

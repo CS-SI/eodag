@@ -44,6 +44,9 @@
   search: !plugin
     type: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -108,8 +111,11 @@
       collection: Pleiades
       product_type: Bundle (Pan, XS)
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -176,8 +182,11 @@
   name: theia
   priority: 0
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -229,8 +238,11 @@
   name: peps
   priority: 1
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -339,10 +351,14 @@
     S3_SRA_A_BS:
       product_type: SR_1_SRA_A_
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_geosearch'
     collection: catalog
     result_type: 'json'
+    pagination:
+      count_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_count'
+      next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={page}'
+      total_items_nb_key_path: '$.totalnb'
     metadata_mapping:
       id: '$.properties.uid'
       geometry:
@@ -384,8 +400,11 @@
   name: creodias
   priority: 0
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -491,18 +510,24 @@
   name: mundi
   priority: 0
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/{collection}/opensearch'
     result_type: 'xml'
     result_entry: '//ns:entry'
     literal_search_params:
       format: atom
       relation: intersects
-    free_text_search_param: 'q'
     free_text_search_operations:
-      AND:
-        - 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
-        - 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+      q:
+        union: ' AND '
+        wrapper: '({})'
+        operations:
+          AND:
+            - 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+            - 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={page}'
+      total_items_nb_key_path: '//os:totalResults/text()'
     metadata_mapping:
       id: 'ns:id/text()'
       abstract: 'ns:summary/text()'
@@ -610,15 +635,27 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    pagination:
+      count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}'
     results_entry: 'value'
+    literal_search_params:
+      $format: json
+    free_text_search_operations:
+      $search:
+        union: ' OR '
+        wrapper: '"{}"'
+        operations:
+          AND:
+            - 'footprint:"Intersects({geometry#to_wkt})"'
+            - 'productType:{productType}'
+            - 'cloudCoverPercentage:[0 TO {cloudCover}]'
+            - 'beginPosition:[{startTimeFromAscendingNode}Z TO *]'
+            - 'endPosition:[* TO {completionTimeFromAscendingNode}Z]'
     metadata_mapping:
       id: '$.id'
-      geometry:
-        - 'footprint:"Intersects({geometry#to_wkt})"'
-        - '$.footprint'
-      productType:
-        - "productType:{productType}"
-        - '$.productType'
+      geometry: '$.footprint'
+      productType: '$.productType'
       platform: '$.platformName'
       platformSerialIdentifier: '$.platformSerialIdentifier'
       instrument: '$.instrumentName'
@@ -626,15 +663,9 @@
       title: '$.filename'
       orbitNumber: '$.orbitNumber'
       orbitDirection: '$.orbitDirection'
-      cloudCover:
-        - 'cloudCoverPercentage:[0 TO {cloudCover}]'
-        - '$.cloudCoverPercentage'
-      startTimeFromAscendingNode:
-        - 'beginPosition:[{startTimeFromAscendingNode}Z TO *]'
-        - '$.beginPosition'
-      completionTimeFromAscendingNode:
-        - 'endPosition:[* TO {completionTimeFromAscendingNode}Z]'
-        - '$.endPosition'
+      cloudCover: '$.cloudCoverPercentage'
+      startTimeFromAscendingNode: '$.beginPosition'
+      completionTimeFromAscendingNode: '$.endPosition'
       sensorMode: '$.sensorOperationalMode'
       quicklook: '$.quicklook'
       downloadLink: '%(base_uri)s({id})/$value'
