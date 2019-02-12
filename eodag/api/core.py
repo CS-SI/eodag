@@ -35,6 +35,11 @@ from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvide
 logger = logging.getLogger('eodag.core')
 
 
+# pagination defaults
+DEFAULT_PAGE = 1
+DEFAULT_ITEMS_PER_PAGE = 10
+
+
 class EODataAccessGateway(object):
     """An API for downloading a wide variety of geospatial products originating from different types of systems.
 
@@ -135,7 +140,8 @@ class EODataAccessGateway(object):
         """Gives the list of the available providers"""
         return tuple(self.providers_config.keys())
 
-    def search(self, product_type, **kwargs):
+    def search(self, product_type, page=DEFAULT_PAGE, max_results=0, items_per_page=DEFAULT_ITEMS_PER_PAGE,
+               start=0, stop=1, return_all=False, **kwargs):
         """Look for products matching criteria in known providers.
 
         The default behaviour is to look for products in the provider with the highest priority. If the search gives
@@ -151,26 +157,50 @@ class EODataAccessGateway(object):
 
         :param product_type: The product type to search
         :type product_type: str or unicode
+        :param page: The page number to return (default: 1)
+        :type page: int
+        :param start: On which page to start on the providers (default: 1)
+        :type start: int
+        :param stop: On which page to stop on the providers (default: 1)
+        :type stop: int
+        :param max_results: The maximum number of results to return. If this number is reached for the preferred
+                            provider, the search stops there. Otherwise, it continues on the other providers
+                            supporting the requested product type, even if ``partial_support`` is de-activated for
+                            the preferred provider and the subsequent providers (default: 0, meaning this constraint
+                            is relaxed => search continuation is driven by the ``partial_support`` mechanism)
+        :type max_results: int
+        :param items_per_page: The number of results that must appear in one single page (default: 10)
+        :type items_per_page: int
         :param dict kwargs: some other criteria that will be used to do the search
-        :returns: A collection of EO products matching the criteria
-        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        :returns: A collection of EO products matching the criteria, the current returned page and the total number of
+                  results found
+        :rtype: tuple[class:`~eodag.api.search_result.SearchResult`, int, int]
 
         .. note::
             The search interfaces, which are implemented as plugins, are required to return a list as a result of their
             processing. This requirement is enforced here.
         """
         results = SearchResult([])
+        # How many results are left to retrieve
+        rest = max_results
+        if items_per_page is None:
+            items_per_page = DEFAULT_ITEMS_PER_PAGE
+        if page is None:
+            page = DEFAULT_PAGE
         for plugin in self._plugins_manager.get_search_plugins(product_type):
             logger.info("Searching product type '%s' on provider: %s", product_type, plugin.provider)
             logger.debug('Using plugin class for search: %s', plugin.__class__.__name__)
             auth = self._plugins_manager.get_auth_plugin(product_type, plugin.provider)
             try:
-                res = plugin.query(product_type, auth=auth, **kwargs)
+                # Configure the number of items per page
+                getattr(plugin.config, 'pagination', {})['items_per_page'] = items_per_page
+                res = plugin.query(product_type, auth=auth, max_results=rest, start=start, stop=stop, **kwargs)
                 logger.info("Found %s result(s) on provider '%s'", len(res), plugin.provider)
                 if not isinstance(res, list):
                     raise PluginImplementationError(
                         'The query function of a Search plugin must return a list of results, got {} '
                         'instead'.format(type(res)))
+
                 # Filter and attach to each eoproduct in the result the plugin capable of downloading it (this
                 # is done to enable the eo_product to download itself doing: eo_product.download())
                 # The filtering is done by keeping only those eo_products that intersects the search extent (if
@@ -182,21 +212,45 @@ class EODataAccessGateway(object):
                     if eo_product.search_intersection is not None:
                         download_plugin = self._plugins_manager.get_download_plugin(eo_product)
                         eo_product.register_downloader(download_plugin, auth)
-                        results.append(eo_product)
-                # Decide if we should go on with the search using the other search plugins. This happens in
-                # 2 cases:
-                # 1. The currently used plugin is the preferred one (the first), and it returned no result
-                # 2. The currently used plugin supports the product_type partially
-                if not plugin.config.products[product_type].get('partial_support', False):
-                    if plugin.provider == self.get_preferred_provider()[0] and len(res) == 0:
-                        logger.info(
-                            "No result from preferred provider: '%s'. Search continues on other providers "
-                            "supporting the product type: '%s'", plugin.provider, product_type)
-                        continue
-                    break
-                logger.info(
-                    "Detected partial support for product type '%s' on provider '%s'. Search continues on "
-                    "other providers supporting it.", product_type, plugin.provider)
+
+                # Decide if we should go on with the search using the other search plugins.
+                # There are two ways of driving the continuation of the search:
+                # 1. Through the specification of a maximum number of results to be reached. In this case, the
+                #    partial_support mechanism is de-activated and we crawl the providers until we reach the maximum
+                #    or we go out of providers
+                # 2. Through the partial_support mechanism, when max == 0 (the default). In that case, the following
+                #    rules makes the search to continue on other providers:
+                #       1. The currently used plugin is the preferred one (the first), and it returned no result
+                #       2. The currently used plugin supports the product_type partially
+                if max_results > 0:
+                    current_results_count = len(res)
+                    if current_results_count < rest:
+                        logger.info("The requested results number is not yet reached: %s over %s => search continues",
+                                    len(results) + current_results_count, max_results)
+                        new_rest = rest - current_results_count
+                        if new_rest <= 0:
+                            # Take only what remained to complete the request and stop searching
+                            results.extend(res[:rest])
+                            break
+                        # modify the maximum number of results we will request from the other providers
+                        rest = new_rest
+                        # Take what we got and continue to the other providers
+                        results.extend(res)
+                else:
+                    if not plugin.config.products[product_type].get('partial_support', False):
+                        if plugin.provider == self.get_preferred_provider()[0] and len(res) == 0:
+                            logger.info(
+                                "No result from preferred provider: '%s'. Search continues on other providers "
+                                "supporting the product type: '%s'", plugin.provider, product_type)
+                            continue
+                        # Take the results and stop searching
+                        results.extend(res)
+                        break
+                    logger.info(
+                        "Detected partial support for product type '%s' on provider '%s'. Search continues on "
+                        "other providers supporting it.", product_type, plugin.provider)
+                    # Take the current results and keep searching
+                    results.extend(res)
             except Exception:
                 import traceback as tb
                 logger.info("No result from provider '%s' due to an error during search. Raise verbosity of log "
@@ -204,7 +258,13 @@ class EODataAccessGateway(object):
                 logger.info('Search continues on other providers supporting the product type')
                 logger.debug('Error while searching on interface %s:\n %s.', plugin, tb.format_exc())
                 logger.debug('Ignoring it')
-        return results
+        # Paginate the result
+        start = (page - 1) * items_per_page
+        stop = start + items_per_page
+        if return_all:
+            start, stop = 0, -2
+            items_per_page = len(results)
+        return SearchResult(results[start:stop]), page, len(results), items_per_page
 
     def crunch(self, results, **kwargs):
         """Apply the filters given through the keyword arguments to the results

@@ -66,6 +66,8 @@ class QueryStringSearch(Search):
 
           - *count_endpoint*: (optional) The endpoint for counting the number of items satisfying a request
 
+          - *items_per_page*: (optional) The maximum number of items a page can have (default: 10)
+
         - **free_text_search_operations**: (optional) A tree structure of the form::
 
             <search-param>:     # e.g: $search
@@ -98,8 +100,8 @@ class QueryStringSearch(Search):
     *"acquisition.endViewingDate:lte:1543922280.0"* if the search was done with the value of
     ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
     ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value of
-    ``completionTimeFromAscendingNode``. This example shows all there is to know about the semantics of the query string
-    formatting introduced by this plugin: any eodag search parameter can be referenced in the query string
+    ``completionTimeFromAscendingNode``. This example shows all there is to know about the semantics of the query
+    string formatting introduced by this plugin: any eodag search parameter can be referenced in the query string
     with an additional optional conversion function that is separated from it by a ``#`` (see
     :func:`~eodag.utils.format_metadata` for further details on the available converters). Note that for the values
     in the ``free_text_search_operations`` configuration parameter follow the same rule.
@@ -120,12 +122,11 @@ class QueryStringSearch(Search):
         self.config.pagination.setdefault('items_per_page', self.DEFAULT_ITEMS_PER_PAGE)
         if self.config.pagination['items_per_page'] == 0:
             self.config['items_per_page'] = self.DEFAULT_ITEMS_PER_PAGE
-        self.config.pagination.setdefault('count_url_base', '')
         self.search_urls = []
         self.query_params = dict()
         self.query_string = ''
 
-    def query(self, product_type, cached=False, *args, **kwargs):
+    def query(self, product_type, cached=False, start=0, stop=1, max_results=0, *args, **kwargs):
         if not cached:
             self.rollback()
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
@@ -133,8 +134,8 @@ class QueryStringSearch(Search):
         qp, qs = self.build_query_string(product_type, productType=provider_product_type, *args, **keywords)
         self.query_params = qp
         self.query_string = qs
-        self.search_urls = self.collect_search_urls(product_type, *args, **kwargs)
-        provider_results = self.do_search(*args, **kwargs)
+        self.search_urls = self.collect_search_urls(max_results=max_results, productType=product_type, *args, **kwargs)
+        provider_results = self.do_search(start=start, stop=stop, *args, **kwargs)
         eo_products = self.normalize_results(provider_results, product_type, provider_product_type, *args, **kwargs)
         return eo_products
 
@@ -206,19 +207,21 @@ class QueryStringSearch(Search):
             if len(val) == 2
         }
 
-    def collect_search_urls(self, *args, **kwargs):
+    def collect_search_urls(self, max_results=0, *args, **kwargs):
         urls = []
         for collection in self.get_collections(*args, **kwargs):
             search_endpoint = self.config.api_endpoint.rstrip('/').format(collection=collection)
             count_endpoint = self.config.pagination.get('count_endpoint', '').format(collection=collection)
             if count_endpoint:
                 count_url = '{}?{}'.format(count_endpoint, self.query_string)
-                max_page, items_per_page = self.count_hits(count_url)
+                max_page, items_per_page = self.count_hits(count_url, max_results=max_results,
+                                                           result_type=self.config.result_type)
             else:  # First do one request querying only one element (lightweight request to schedule the pagination)
                 next_url_tpl = self.config.pagination['next_page_url_tpl']
                 count_url = next_url_tpl.format(url=search_endpoint, search=self.query_string,
-                                                items_per_page=1, page=1)
-                max_page, items_per_page = self.count_hits(count_url, result_type=self.config.result_type)
+                                                items_per_page=1, page=1, skip=0)
+                max_page, items_per_page = self.count_hits(count_url, max_results=max_results,
+                                                           result_type=self.config.result_type)
             for page in range(1, max_page + 1):
                 next_url = self.config.pagination['next_page_url_tpl'].format(
                     url=search_endpoint,
@@ -270,10 +273,10 @@ class QueryStringSearch(Search):
             for result in results
         ]
 
-    def count_hits(self, count_url, result_type='json'):
+    def count_hits(self, count_url, max_results=0, result_type='json'):
+        # Handle a very annoying special case :'(
         url = count_url.replace('$format=json&', '')
         response = self._request(
-            # Handle a very annoying special case :'(
             url,
             info_message='Sending count request: {}'.format(url),
             exception_message='Skipping error while counting results for {} {} instance:'.format(
@@ -293,6 +296,9 @@ class QueryStringSearch(Search):
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
+        # Limit the number of results if the user requested a specific number of total results
+        if 0 < max_results < total_results:
+            total_results = max_results
         items_per_page = self.config.pagination['items_per_page']
         max_page, rest = divmod(total_results, items_per_page)
         if rest != 0:

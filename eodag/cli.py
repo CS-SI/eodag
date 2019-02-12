@@ -99,6 +99,7 @@ def search_crunch(ctx, **kwargs):
         'startTimeFromAscendingNode': None,
         'completionTimeFromAscendingNode': None,
         'cloudCover': kwargs.pop('cloudcover'),
+        'return_all': True,
     }
     if start_date:
         criteria['startTimeFromAscendingNode'] = start_date.isoformat()
@@ -119,8 +120,9 @@ def search_crunch(ctx, **kwargs):
     gateway = EODataAccessGateway(user_conf_file_path=conf_file)
 
     # Search
-    results = gateway.search(producttype, **criteria)
-    click.echo("Found {} products with product type '{}': {}".format(len(results), producttype, results))
+    results, page, total, page_size = gateway.search(producttype, **criteria)
+    click.echo("Found {} overall products with product type '{}'".format(total, producttype))
+    click.echo("Returned page {} of {} products: {}".format(page, page_size, results))
 
     # Crunch !
     crunch_args = {

@@ -115,39 +115,38 @@ class TestEodagCli(unittest.TestCase):
             api_obj = SatImagesAPI.return_value
             api_obj.search.assert_called_once_with(
                 product_type, startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
-                cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44})
+                cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44}, return_all=True)
 
     @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_storage_arg(self, SatImagesAPI):
         """Calling eodag search with specified result filename without .geojson extension"""
         with self.user_conf() as conf_file:
-            self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', 'whatever', '--storage', 'results'])
             api_obj = SatImagesAPI.return_value
-            api_obj.serialize.assert_called_with(api_obj.search.return_value, filename='results.geojson')
+            api_obj.search.return_value = (mock.MagicMock(),) * 4
+            self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', 'whatever', '--storage', 'results'])
+            api_obj.serialize.assert_called_with(api_obj.search.return_value[0], filename='results.geojson')
 
     @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_with_cruncher(self, SatImagesAPI):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""
         with self.user_conf() as conf_file:
+            api_obj = SatImagesAPI.return_value
+            api_obj.search.return_value = (mock.MagicMock(),) * 4
+
             product_type = 'whatever'
             cruncher = 'FilterLatestIntersect'
             criteria = dict(startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
-                            geometry=None, cloudCover=None)
-            result = self.runner.invoke(eodag, ['search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher])
+                            geometry=None, cloudCover=None, return_all=True)
+            self.runner.invoke(eodag, ['search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher])
 
-            api_obj = SatImagesAPI.return_value
-            search_results = api_obj.search.return_value
+            search_results = api_obj.search.return_value[0]
             crunch_results = api_obj.crunch.return_value
 
             # Assertions
             SatImagesAPI.assert_called_once_with(user_conf_file_path=conf_file)
             api_obj.search.assert_called_once_with(product_type, **criteria)
-            api_obj.crunch.assert_called_once_with(search_results, search_criteria=criteria, **{})
+            api_obj.crunch.assert_called_once_with(search_results, search_criteria=criteria)
             api_obj.serialize.assert_called_with(crunch_results, filename='search_results.geojson')
-            self.assertEqual(
-                result.output,
-                '\n'.join(("Found 0 products with product type '{}': {}".format(product_type, search_results),
-                           "Results stored at '{!r}'\n".format(api_obj.serialize.return_value))))
 
             # Call with a cruncher taking arguments
             cruncher = 'FilterOverlap'
