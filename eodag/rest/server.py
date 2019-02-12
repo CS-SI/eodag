@@ -15,9 +15,11 @@ import dateutil.parser
 import flask
 import geojson
 import markdown
-from flask import Markup, jsonify, render_template, request, make_response
+from flask import Markup, jsonify, make_response, render_template, request
+from werkzeug.contrib.cache import SimpleCache
 
 import eodag
+from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
@@ -26,6 +28,7 @@ from eodag.utils.exceptions import MisconfiguredError, UnsupportedProductType, U
 
 app = flask.Flask(__name__)
 app.config.from_object('eodag.rest.settings')
+search_cache = SimpleCache()
 
 eodag_api = eodag.EODataAccessGateway(user_conf_file_path=app.config['EODAG_CFG_FILE'])
 Cruncher = namedtuple('Cruncher', ['clazz', 'config_params'])
@@ -125,6 +128,7 @@ def cross_origin(request_handler):
         resp = make_response(request_handler(*args, **kwargs))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
+
     return wrapper
 
 
@@ -132,13 +136,23 @@ def cross_origin(request_handler):
 @cross_origin
 def search(product_type):
     try:
+        page = _get_int(request.args.get('page'))
+        items_per_page = _get_int(request.args.get('itemsPerPage'))
         criteria = {
             'geometry': _search_bbox(),
             'startTimeFromAscendingNode': _get_date(request.args.get('dtstart')),
             'completionTimeFromAscendingNode': _get_date(request.args.get('dtend')),
             'cloudCover': _get_int(request.args.get('cloudCover')),
+            'items_per_page': items_per_page,
+            'page': page,
         }
-        products = eodag_api.search(product_type, **criteria)
+        cache_key = '{geometry}+{startTimeFromAscendingNode}+{completionTimeFromAscendingNode}+{cloudCover}'
+        stored_value = search_cache.get(cache_key)
+        if stored_value is None:
+            products, _, _, _ = eodag_api.search(product_type, return_all=True, **criteria)
+            search_cache.set(cache_key, geojson.dumps(products))
+        else:
+            products = SearchResult.from_geojson(geojson.loads(stored_value))
         products = _filter(products, **criteria)
 
     except ValidationError as e:
@@ -148,7 +162,22 @@ def search(product_type):
     except UnsupportedProductType as e:
         return jsonify({'error': 'Not Found: {}'.format(e.product_type)}), 404
 
-    return geojson.dumps(products)
+    total = len(products)
+    if items_per_page is None:
+        items_per_page = total
+    if page is None:
+        page = 1
+    start = (page - 1) * items_per_page
+    stop = start + items_per_page
+    response = SearchResult(products[start:stop]).as_geojson_object()
+    response.update({
+        'properties': {
+            'page': page,
+            'itemsPerPage': items_per_page,
+            'totalResults': total
+        }
+    })
+    return jsonify(response), 200
 
 
 @app.route('/', methods=['GET'])
