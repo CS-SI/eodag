@@ -57,10 +57,7 @@ class SearchResult(UserList):
         :returns: An eodag representation of a search result
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
-        return SearchResult([
-            EOProduct.from_geojson(feature)
-            for feature in feature_collection['features']
-        ])
+        return SearchResult(EOProduct.from_geojson(feature) for feature in feature_collection['features'])
 
     def as_geojson_object(self):
         return {'type': 'FeatureCollection', 'features': [product.as_dict() for product in self]}

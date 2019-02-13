@@ -299,7 +299,7 @@ class QueryStringSearch(Search):
         # Limit the number of results if the user requested a specific number of total results
         if 0 < max_results < total_results:
             total_results = max_results
-        items_per_page = self.config.pagination['items_per_page']
+        items_per_page = min(self.config.pagination['items_per_page'], max_results)
         max_page, rest = divmod(total_results, items_per_page)
         if rest != 0:
             max_page += 1

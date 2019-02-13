@@ -171,6 +171,9 @@ class EODataAccessGateway(object):
         :type max_results: int
         :param items_per_page: The number of results that must appear in one single page (default: 10)
         :type items_per_page: int
+        :param return_all: Return all the results that were retrieved. Otherwise, the pagination is applied
+                           (default: False)
+        :type return_all: bool
         :param dict kwargs: some other criteria that will be used to do the search
         :returns: A collection of EO products matching the criteria, the current returned page and the total number of
                   results found
@@ -224,14 +227,14 @@ class EODataAccessGateway(object):
                 #       2. The currently used plugin supports the product_type partially
                 if max_results > 0:
                     current_results_count = len(res)
-                    if current_results_count < rest:
+                    new_rest = rest - current_results_count
+                    if new_rest <= 0:
+                        # Take only what remained to complete the request and stop searching
+                        results.extend(res[:rest])
+                        break
+                    else:
                         logger.info("The requested results number is not yet reached: %s over %s => search continues",
                                     len(results) + current_results_count, max_results)
-                        new_rest = rest - current_results_count
-                        if new_rest <= 0:
-                            # Take only what remained to complete the request and stop searching
-                            results.extend(res[:rest])
-                            break
                         # modify the maximum number of results we will request from the other providers
                         rest = new_rest
                         # Take what we got and continue to the other providers

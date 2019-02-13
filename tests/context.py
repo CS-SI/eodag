@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 from eodag import api, config
 from eodag import EODataAccessGateway
 from eodag.cli import eodag, list_pt, search_crunch, download
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
 from eodag.api.product.drivers import DRIVERS
@@ -36,7 +37,7 @@ from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
 from eodag.rest import settings
 settings.EODAG_CFG_FILE = os.path.join(TEST_RESOURCES_PATH, 'file_config_override.yml')
 from eodag.rest import server as eodag_http_server
-from eodag.rest.server import _get_date
+from eodag.rest.server import _get_date, eodag_api
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download

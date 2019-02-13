@@ -379,7 +379,7 @@
         - '$.properties.contentDescription.cloudCoverPercentage'
       startTimeFromAscendingNode:
         - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#to_timestamp_milliseconds}'
-        - '$.properties.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds'
+        - '{$.properties.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds}'
       completionTimeFromAscendingNode:
         - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#to_timestamp_milliseconds}'
         - '{$.properties.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'

@@ -17,12 +17,13 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import functools
 import json
 import unittest
 
 import geojson
 
-from tests.context import ValidationError, _get_date, eodag_http_server
+from tests.context import ValidationError, _get_date, eodag_http_server, DEFAULT_ITEMS_PER_PAGE
 
 
 class RequestTestCase(unittest.TestCase):
@@ -42,8 +43,14 @@ class RequestTestCase(unittest.TestCase):
         self.assertEquals(200, response.status_code)
 
     def _request_valid(self, url):
+        # Limit the results to 2
+        from ..context import eodag_api
+        old_search = eodag_api.search
+        eodag_api.search = functools.partial(eodag_api.search, max_results=2)
         response = self.app.get(url, follow_redirects=True)
         self.assertEquals(200, response.status_code)
+        # Restore authentic search method
+        eodag_api.search = old_search
         # Assert response format is GeoJSON
         return geojson.loads(response.data)
 
@@ -105,3 +112,11 @@ class RequestTestCase(unittest.TestCase):
         result1 = self._request_valid('{}?box=0,43,1,44'.format(self.tested_product_type))
         result2 = self._request_valid('{}?box=0,43,1,44&cloudCover=10'.format(self.tested_product_type))
         self.assertGreaterEqual(len(result1.features), len(result2.features))
+
+    def test_search_response_contains_pagination_info(self):
+        """Responses to valid search requests must return a geojson with pagination info in properties"""
+        response = self._request_valid('{}'.format(self.tested_product_type))
+        self.assertIn('properties', response)
+        self.assertEqual(1, response['properties']['page'])
+        self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response['properties']['itemsPerPage'])
+        self.assertIn('totalResults', response['properties'])

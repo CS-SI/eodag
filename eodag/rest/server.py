@@ -19,6 +19,7 @@ from flask import Markup, jsonify, make_response, render_template, request
 from werkzeug.contrib.cache import SimpleCache
 
 import eodag
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -146,7 +147,9 @@ def search(product_type):
             'items_per_page': items_per_page,
             'page': page,
         }
-        cache_key = '{geometry}+{startTimeFromAscendingNode}+{completionTimeFromAscendingNode}+{cloudCover}'
+        cache_key = '{}+{geometry}+{startTimeFromAscendingNode}+{completionTimeFromAscendingNode}+{cloudCover}'.format(
+            product_type, **criteria
+        ).replace('+None', '')
         stored_value = search_cache.get(cache_key)
         if stored_value is None:
             products, _, _, _ = eodag_api.search(product_type, return_all=True, **criteria)
@@ -164,9 +167,9 @@ def search(product_type):
 
     total = len(products)
     if items_per_page is None:
-        items_per_page = total
+        items_per_page = DEFAULT_ITEMS_PER_PAGE
     if page is None:
-        page = 1
+        page = DEFAULT_PAGE
     start = (page - 1) * items_per_page
     stop = start + items_per_page
     response = SearchResult(products[start:stop]).as_geojson_object()
@@ -189,7 +192,8 @@ def home():
         base_url=request.base_url,
         product_types=_format_product_types(
             eodag_api.list_product_types()
-        )
+        ),
+        ipp=DEFAULT_ITEMS_PER_PAGE
     )
     content = Markup(markdown.markdown(content))
     return render_template('index.html', content=content)

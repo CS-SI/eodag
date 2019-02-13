@@ -15,14 +15,20 @@ See below to get the list of available product types.
 
 Supported request parameter is
 
-* box: the search bounding box defined by: min_lon,min_lat,max_lon,max_lat.
-* dtstart: the start date
-* dtend: the end date
-* cloudCover: cloud cover
+* `box`: the search bounding box defined by: min_lon,min_lat,max_lon,max_lat.
+* `dtstart`: the start date
+* `dtend`: the end date
+* `cloudCover`: cloud cover
 
 Example URL:
 
 <{base_url}S2_MSI_L1C/?box=0,43,1,44>
+
+It is also possible to paginate the result. Informations about pagination are returned in each response to a search
+request. Pagination paramaters are:
+
+* `page`: The page number (int, defaults to 1)
+* `itemsPerPage`: The maximum number of items per page (int, defaults to {ipp})
 
 ## Filtering
 
@@ -31,9 +37,9 @@ To activate a filter, add the 'filter' request parameter.
 
 Available filters and their matching EODAG cruncher are:
 
-* latestIntersect -> FilterLatestIntersect
-* latestByName -> FilterLatestByName
-* overlap -> FilterOverlap
+* `latestIntersect` -> FilterLatestIntersect
+* `latestByName` -> FilterLatestByName
+* `overlap` -> FilterOverlap
 
 Some filters may require additional configuration parameters
 which can be set as request parameters.
