@@ -156,6 +156,9 @@ class EOProduct(object):
         :returns: The representation of a :class:`~eodag.api.product.EOProduct` as a Python dict
         :rtype: dict
         """
+        search_intersection = None
+        if self.search_intersection is not None:
+            search_intersection = geometry.mapping(self.search_intersection)
         geojson_repr = {
             'type': 'Feature',
             'geometry': geometry.mapping(self.geometry),
@@ -163,7 +166,7 @@ class EOProduct(object):
             'properties': {
                 'eodag_product_type': self.product_type,
                 'eodag_provider': self.provider,
-                'eodag_search_intersection': geometry.mapping(self.search_intersection),
+                'eodag_search_intersection': search_intersection,
             }
         }
         geojson_repr['properties'].update({
