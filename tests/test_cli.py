@@ -115,7 +115,8 @@ class TestEodagCli(unittest.TestCase):
             api_obj = SatImagesAPI.return_value
             api_obj.search.assert_called_once_with(
                 product_type, startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
-                cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44}, return_all=True)
+                cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44},
+                return_all=True, with_pagination_info=True)
 
     @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_storage_arg(self, SatImagesAPI):
@@ -136,7 +137,7 @@ class TestEodagCli(unittest.TestCase):
             product_type = 'whatever'
             cruncher = 'FilterLatestIntersect'
             criteria = dict(startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
-                            geometry=None, cloudCover=None, return_all=True)
+                            geometry=None, cloudCover=None, return_all=True, with_pagination_info=True)
             self.runner.invoke(eodag, ['search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher])
 
             search_results = api_obj.search.return_value[0]

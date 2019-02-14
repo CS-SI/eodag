@@ -100,6 +100,7 @@ def search_crunch(ctx, **kwargs):
         'completionTimeFromAscendingNode': None,
         'cloudCover': kwargs.pop('cloudcover'),
         'return_all': True,
+        'with_pagination_info': True,
     }
     if start_date:
         criteria['startTimeFromAscendingNode'] = start_date.isoformat()

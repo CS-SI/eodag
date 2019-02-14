@@ -152,7 +152,7 @@ def search(product_type):
         ).replace('+None', '')
         stored_value = search_cache.get(cache_key)
         if stored_value is None:
-            products, _, _, _ = eodag_api.search(product_type, return_all=True, **criteria)
+            products = eodag_api.search(product_type, return_all=True, **criteria)
             search_cache.set(cache_key, geojson.dumps(products))
         else:
             products = SearchResult.from_geojson(geojson.loads(stored_value))

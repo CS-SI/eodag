@@ -141,7 +141,7 @@ class EODataAccessGateway(object):
         return tuple(self.providers_config.keys())
 
     def search(self, product_type, page=DEFAULT_PAGE, max_results=0, items_per_page=DEFAULT_ITEMS_PER_PAGE,
-               start=0, stop=1, return_all=False, **kwargs):
+               start=0, stop=1, return_all=False, with_pagination_info=False, **kwargs):
         """Look for products matching criteria in known providers.
 
         The default behaviour is to look for products in the provider with the highest priority. If the search gives
@@ -174,10 +174,13 @@ class EODataAccessGateway(object):
         :param return_all: Return all the results that were retrieved. Otherwise, the pagination is applied
                            (default: False)
         :type return_all: bool
+        :param with_pagination_info: Return the information on pagination with the result (default: False)
+        :type with_pagination_info: bool
         :param dict kwargs: some other criteria that will be used to do the search
         :returns: A collection of EO products matching the criteria, the current returned page and the total number of
                   results found
-        :rtype: tuple[class:`~eodag.api.search_result.SearchResult`, int, int]
+        :rtype: tuple[class:`~eodag.api.search_result.SearchResult`, int, int] or
+                class:`~eodag.api.search_result.SearchResult`
 
         .. note::
             The search interfaces, which are implemented as plugins, are required to return a list as a result of their
@@ -267,7 +270,9 @@ class EODataAccessGateway(object):
         if return_all:
             start, stop = 0, -2
             items_per_page = len(results)
-        return SearchResult(results[start:stop]), page, len(results), items_per_page
+        if with_pagination_info:
+            return SearchResult(results[start:stop]), page, len(results), items_per_page
+        return SearchResult(results)
 
     def crunch(self, results, **kwargs):
         """Apply the filters given through the keyword arguments to the results
