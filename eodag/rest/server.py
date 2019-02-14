@@ -65,6 +65,16 @@ def _get_int(val):
     return val
 
 
+def _get_pagination_info():
+    page = _get_int(request.args.get('page'))
+    items_per_page = _get_int(request.args.get('itemsPerPage'))
+    if page is not None and page < 0:
+        raise ValidationError('invalid page number. Must be positive integer')
+    if items_per_page is not None and items_per_page < 0:
+        raise ValidationError('invalid number of items per page. Must be positive integer')
+    return page, items_per_page
+
+
 def _search_bbox():
     search_bbox = None
     search_bbox_keys = ['lonmin', 'latmin', 'lonmax', 'latmax']
@@ -137,8 +147,7 @@ def cross_origin(request_handler):
 @cross_origin
 def search(product_type):
     try:
-        page = _get_int(request.args.get('page'))
-        items_per_page = _get_int(request.args.get('itemsPerPage'))
+        page, items_per_page = _get_pagination_info()
         criteria = {
             'geometry': _search_bbox(),
             'startTimeFromAscendingNode': _get_date(request.args.get('dtstart')),

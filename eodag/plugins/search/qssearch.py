@@ -151,8 +151,12 @@ class QueryStringSearch(Search):
                 queryable = queryables[search_param]
                 if kwargs.get(search_param) is not None:
                     if self.COMPLEX_QS_REGEX.match(queryable):
-                        param, value = queryable.split('=')
-                        query_params[param] = format_metadata(value, *args, **kwargs)
+                        parts = queryable.split('=')
+                        if len(parts) == 1:
+                            query_params[search_param] = format_metadata(queryable)
+                        else:
+                            param, value = parts
+                            query_params[param] = format_metadata(value, *args, **kwargs)
                     else:
                         query_params[queryable] = query
             except KeyError:
@@ -189,12 +193,15 @@ class QueryStringSearch(Search):
                     for operand in operands
                     if any(kw in operand and val is not None for kw, val in kwargs.items())
                 )
-                # Finally wrap the operation string as specified by the wrapper and add it to the list of queries
-                formatted_query.append(wrapper.format(operation_string))
+                # Finally wrap the operation string as specified by the wrapper and add it to the list of queries (only
+                # if the operation string is not empty)
+                if operation_string:
+                    query = wrapper.format(operation_string)
+                    formatted_query.append(query)
             # Join the formatted query using the "union" config parameter, and then wrap it with the Python format
             # string specified in the "wrapper" config parameter
             query_params[param] = union.join(formatted_query)
-            if len(operations_config['operations']) > 1:
+            if len(operations_config['operations']) > 1 and len(formatted_query) > 1:
                 query_params[param] = wrapper.format(query_params[param])
         return query_params
 
@@ -297,9 +304,13 @@ class QueryStringSearch(Search):
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
         # Limit the number of results if the user requested a specific number of total results
+        if max_results <= 0:
+            max_results = total_results
         if 0 < max_results < total_results:
             total_results = max_results
         items_per_page = min(self.config.pagination['items_per_page'], max_results)
+        if total_results == 0:
+            return -1, 0
         max_page, rest = divmod(total_results, items_per_page)
         if rest != 0:
             max_page += 1
