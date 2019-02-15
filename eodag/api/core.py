@@ -34,7 +34,6 @@ from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvide
 
 logger = logging.getLogger('eodag.core')
 
-
 # pagination defaults
 DEFAULT_PAGE = 1
 DEFAULT_ITEMS_PER_PAGE = 10

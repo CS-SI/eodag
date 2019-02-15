@@ -650,8 +650,8 @@
             - 'footprint:"Intersects({geometry#to_wkt})"'
             - 'productType:{productType}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
-            - 'beginPosition:[{startTimeFromAscendingNode}Z TO *]'
-            - 'endPosition:[* TO {completionTimeFromAscendingNode}Z]'
+            - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
+            - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
     metadata_mapping:
       id: '$.id'
       geometry: '$.footprint'
