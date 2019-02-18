@@ -32,6 +32,8 @@ from eodag.utils import get_timestamp
 
 SEP = r'#'
 INGEST_CONVERSION_REGEX = re.compile(r'^{(?P<path>[^#]*)' + SEP + r'(?P<converter>[^\d\W]\w*)}$')
+NOT_AVAILABLE = 'Not Available'
+NOT_MAPPED = 'Not Mapped'
 
 
 def get_metadata_path(map_value):
@@ -75,7 +77,7 @@ def get_metadata_path(map_value):
 
 
 def get_search_param(map_value):
-    """See :func:`~eodag.utils.metadata_mapping.get_metadata_path`
+    """See :func:`~eodag.api.product.metadata_mapping.get_metadata_path`
 
     :param map_value: The value originating from the definition of `metadata_mapping` in the provider search config
     :type map_value: list
@@ -148,6 +150,11 @@ def format_metadata(search_param, *args, **kwargs):
             return datetime.strptime(date_string, '%Y-%m-%d').replace(
                 tzinfo=tzutc()).isoformat().replace('+00:00', 'Z')
 
+        @staticmethod
+        def convert_to_iso_date(datetime_string):
+            """Remove The time part of a iso datetime string"""
+            return datetime_string[:10]
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
@@ -164,9 +171,14 @@ def properties_from_json(json, mapping):
     """
     properties = {}
     templates = {}
-    for metadata in DEFAULT_METADATA_MAPPING:
+    # Do a shallow copy, the structure is flat enough for this to be sufficient
+    metas = DEFAULT_METADATA_MAPPING.copy()
+    # Update the defaults with the mapping value. This will add any new key
+    # added by the provider mapping that is not in the default metadata
+    metas.update(mapping)
+    for metadata in metas:
         if metadata not in mapping:
-            properties[metadata] = 'N/A'
+            properties[metadata] = NOT_MAPPED
         else:
             conversion, path = get_metadata_path(mapping[metadata])
             try:
@@ -184,7 +196,7 @@ def properties_from_json(json, mapping):
                     properties[metadata] = text
             else:
                 match = path_parsed.find(json)
-                extracted_value = match[0].value if len(match) == 1 else None
+                extracted_value = match[0].value if len(match) == 1 else NOT_AVAILABLE
                 if extracted_value is None:
                     properties[metadata] = None
                 else:
@@ -192,7 +204,7 @@ def properties_from_json(json, mapping):
                         properties[metadata] = extracted_value
                     else:
                         properties[metadata] = format_metadata(
-                            '{%s#%s}' % (metadata, conversion),
+                            '{%s%s%s}' % (metadata, SEP, conversion),
                             **{metadata: extracted_value}
                         )
     # Resolve templates
@@ -219,10 +231,15 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix='ns'):
     """
     properties = {}
     templates = {}
+    # Do a shallow copy, the structure is flat enough for this to be sufficient
+    metas = DEFAULT_METADATA_MAPPING.copy()
+    # Update the defaults with the mapping value. This will add any new key
+    # added by the provider mapping that is not in the default metadata
+    metas.update(mapping)
     root = etree.XML(xml_as_text)
-    for metadata in DEFAULT_METADATA_MAPPING:
+    for metadata in metas:
         if metadata not in mapping:
-            properties[metadata] = 'N/A'
+            properties[metadata] = NOT_MAPPED
         else:
             try:
                 conversion, path = get_metadata_path(mapping[metadata])
@@ -234,27 +251,27 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix='ns'):
                 )
                 if len(extracted_value) == 1:
                     if conversion is None:
-                        properties[metadata] = extracted_value
+                        properties[metadata] = extracted_value[0]
                     else:
                         properties[metadata] = format_metadata(
-                            '{%s#%s}' % (metadata, conversion),
-                            **{metadata: extracted_value}
+                            '{%s%s%s}' % (metadata, SEP, conversion),
+                            **{metadata: extracted_value[0]}
                         )
+                # If there are multiple matches, consider the result as a list, doing a formatting if any
                 elif len(extracted_value) > 1:
                     if conversion is None:
                         properties[metadata] = extracted_value
                     else:
                         properties[metadata] = [
                             format_metadata(
-                                '{%s#%s}' % (metadata, conversion),
+                                '{%s%s%s}' % (metadata, SEP, conversion),     # Re-build conversion format identifier
                                 **{metadata: extracted_value_item}
                             )
                             for extracted_value_item in extracted_value
                         ]
-                # If there is no matched value (empty list), register it as is, no matter if we have a conversion to
-                # do or not
+                # If there is no matched value (empty list), mark the metadata as not available
                 else:
-                    properties[metadata] = extracted_value
+                    properties[metadata] = NOT_AVAILABLE
             except XPathEvalError:
                 # Assume the mapping is to be passed as is, in which case we readily register it, or is a template, in
                 # which case we register it for later formatting resolution using previously successfully resolved
@@ -358,5 +375,5 @@ DEFAULT_METADATA_MAPPING = {
     'quicklook': '$.properties.quicklook',
     # The url to download the product "as is" (literal or as a template to be completed either after the search result
     # is obtained from the provider or during the eodag download phase)
-    'downloadLink': '$.properties.downloadLink'
+    'downloadLink': '$.properties.downloadLink',
 }

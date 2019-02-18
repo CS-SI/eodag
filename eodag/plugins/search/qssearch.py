@@ -25,11 +25,13 @@ import requests
 from lxml import etree
 
 from eodag.api.product import EOProduct
-from eodag.api.product.representations import properties_from_json, properties_from_xml
+from eodag.api.product.metadata_mapping import (
+    format_metadata, get_search_param, properties_from_json,
+    properties_from_xml,
+)
 from eodag.plugins.search.base import Search
 from eodag.utils import urlencode
 from eodag.utils.exceptions import RequestError
-from eodag.utils.metadata_mapping import format_metadata, get_search_param
 
 
 logger = logging.getLogger('eodag.plugins.search.qssearch')
@@ -200,9 +202,11 @@ class QueryStringSearch(Search):
                     formatted_query.append(query)
             # Join the formatted query using the "union" config parameter, and then wrap it with the Python format
             # string specified in the "wrapper" config parameter
-            query_params[param] = union.join(formatted_query)
+            final_query = union.join(formatted_query)
             if len(operations_config['operations']) > 1 and len(formatted_query) > 1:
-                query_params[param] = wrapper.format(query_params[param])
+                final_query = wrapper.format(query_params[param])
+            if final_query:
+                query_params[param] = final_query
         return query_params
 
     def get_queryables(self):

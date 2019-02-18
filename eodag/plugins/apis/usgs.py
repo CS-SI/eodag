@@ -30,7 +30,7 @@ from tqdm import tqdm
 from usgs import USGSError, api
 
 from eodag.api.product import EOProduct
-from eodag.api.product.representations import properties_from_json
+from eodag.api.product.metadata_mapping import properties_from_json
 from .base import Api
 
 

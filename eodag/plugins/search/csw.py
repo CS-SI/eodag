@@ -29,7 +29,7 @@ from owslib.ows import ExceptionReport
 from shapely import geometry, wkt
 
 from eodag.api.product import EOProduct
-from eodag.api.product.representations import properties_from_xml
+from eodag.api.product.metadata_mapping import properties_from_xml
 from eodag.plugins.search.base import Search
 from eodag.utils import DEFAULT_PROJ
 from eodag.utils.import_system import patch_owslib_requests
