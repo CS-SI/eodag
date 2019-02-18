@@ -263,13 +263,12 @@ class EODataAccessGateway(object):
                 logger.info('Search continues on other providers supporting the product type')
                 logger.debug('Error while searching on interface %s:\n %s.', plugin, tb.format_exc())
                 logger.debug('Ignoring it')
-        # Paginate the result
-        start = (page - 1) * items_per_page
-        stop = start + items_per_page
-        if return_all:
-            start, stop = 0, -2
-            items_per_page = len(results)
         if with_pagination_info:
+            # Paginate the result
+            start = (page - 1) * items_per_page
+            stop = start + items_per_page
+            if return_all:
+                return SearchResult(results), 1, len(results), len(results)
             return SearchResult(results[start:stop]), page, len(results), items_per_page
         return SearchResult(results)
 
