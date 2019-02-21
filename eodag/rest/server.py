@@ -29,6 +29,8 @@ from eodag.utils.exceptions import MisconfiguredError, UnsupportedProductType, U
 
 app = flask.Flask(__name__)
 app.config.from_object('eodag.rest.settings')
+# Allows to override settings from a json file
+app.config.from_json('eodag_server_settings.json', silent=True)
 search_cache = SimpleCache()
 
 eodag_api = eodag.EODataAccessGateway(user_conf_file_path=app.config['EODAG_CFG_FILE'])

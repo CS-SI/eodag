@@ -17,7 +17,9 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
+import json
 import os
+import shutil
 import sys
 import textwrap
 
@@ -222,8 +224,8 @@ def serve_rest(ctx, daemon, world, port, config, debug):
     # Set the settings of the app
     # IMPORTANT: the order of imports counts here (first we override the settings, then we import the app so that the
     # updated settings is taken into account in the app initialization)
-    from eodag.rest import settings
-    settings.EODAG_CFG_FILE = config
+    # from eodag.rest import settings
+    # settings.EODAG_CFG_FILE = config
 
     from eodag.rest.server import app
 
@@ -243,6 +245,79 @@ def serve_rest(ctx, daemon, world, port, config, debug):
             sys.exit(0)
     else:
         app.run(debug=debug, host=bind_host, port=port)
+
+
+@eodag.command(help='Configure the settings of the HTTP web app (the providers credential files essentially) and copy '
+                    'the web app source directory into the specified directory')
+@click.option('--root', type=click.Path(exists=True, resolve_path=True), default='/var/www/', show_default=True,
+              help='The directory where to deploy the webapp (a subdirectory with the name from --name option will be '
+                   'created there)')
+@click.option('-f', '--config', type=click.Path(exists=True, resolve_path=True), required=True,
+              help='File path to the user configuration file with its credentials')
+@click.option('--webserver', type=click.Choice(['apache']), default='apache', show_default=True,
+              help='The webserver for which to generate sample configuration')
+@click.option('--threads', type=int, default=5, show_default=True,
+              help='Number of threads for apache webserver config (ignored if not apache webserver)')
+@click.option('--user', type=str, default='www-data', show_default=True, help='The user of the webserver')
+@click.option('--group', type=str, default='www-data', show_default=True, help='The group of the webserver')
+@click.option('--server-name', type=str, default='localhost', show_default=True,
+              help='The name to give to the server')
+@click.option('--wsgi-process-group', type=str, default='eodag-server', show_default=True,
+              help='The name of the wsgi process group (ignored if not apache webserver')
+@click.option('--wsgi-daemon-process', type=str, default='eodag-server', show_default=True,
+              help='The name of the wsgi daemon process (ignored if not apache webserver')
+@click.option('--name', type=str, default='eodag_server', show_default=True,
+              help='The name of the directory that will be created in the webserver root directory to host the WSGI '
+                   'app')
+@click.pass_context
+def deploy_wsgi_app(ctx, root, config, webserver, threads, user, group, server_name, wsgi_process_group,
+                    wsgi_daemon_process, name):
+    setup_logging(verbose=ctx.obj['verbosity'])
+    import eodag as eodag_package
+
+    server_config = {
+        'EODAG_CFG_FILE': config,
+    }
+    eodag_package_path = eodag_package.__path__[0]
+    webapp_src_path = os.path.join(eodag_package_path, 'rest')
+    webapp_dst_path = os.path.join(root, name)
+    if not os.path.exists(webapp_dst_path):
+        os.mkdir(webapp_dst_path)
+    wsgi_path = os.path.join(webapp_dst_path, 'server.wsgi')
+    click.echo('Moving eodag HTTP web app from {} to {}'.format(webapp_src_path, webapp_dst_path))
+    shutil.copy(os.path.join(webapp_src_path, 'server.wsgi'), wsgi_path)
+    shutil.copy(os.path.join(webapp_src_path, 'description.md'), os.path.join(webapp_dst_path, 'description.md'))
+    shutil.copytree(os.path.join(webapp_src_path, 'templates'), os.path.join(webapp_dst_path, 'templates'))
+
+    click.echo('Overriding eodag HTTP server config with values: {}'.format(server_config))
+    with open(os.path.join(webapp_dst_path, 'eodag_server_settings.json'), 'w') as fd:
+        json.dump(server_config, fd)
+
+    click.echo('Finished ! The WSGI file is in {}'.format(wsgi_path))
+    if webserver == 'apache':
+        application_group = '%{GLOBAL}'
+        apache_config_sample = """
+<VirtualHost *>
+    ServerName %(server_name)s
+
+    WSGIDaemonProcess %(wsgi_daemon_process)s user=%(user)s group=%(group)s threads=%(threads)s
+    WSGIScriptAlias / %(wsgi_path)s
+
+    <Directory %(webapp_dst_path)s>
+        WSGIProcessGroup %(wsgi_process_group)s
+        WSGIApplicationGroup %(application_group)s
+        <IfVersion < 2.4>
+            Order allow,deny
+            Allow from all
+        </IfVersion>
+        <IfVersion >= 2.4>
+            Require all granted
+        </IfVersion>
+    </Directory>
+</VirtualHost>
+        """ % locals()
+        click.echo('Sample Apache2 config to add in a your virtual host:')
+        click.echo(apache_config_sample)
 
 
 if __name__ == '__main__':
