@@ -143,12 +143,19 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
-            return datetime.fromtimestamp(timestamp / 1e3, tzutc()).isoformat()
+            try:
+                return datetime.fromtimestamp(timestamp / 1e3, tzutc()).isoformat()
+            except TypeError:
+                return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(date_string):
-            return datetime.strptime(date_string, '%Y-%m-%d').replace(
-                tzinfo=tzutc()).isoformat().replace('+00:00', 'Z')
+        def convert_to_iso_utc_datetime(dt):
+            for idx, fmt in enumerate(('%Y-%m-%d', '%Y-%m-%dT%H:%M:%S')):
+                try:
+                    return datetime.strptime(dt, fmt).replace(tzinfo=tzutc()).isoformat().replace('+00:00', 'Z')
+                except ValueError:
+                    if idx == 1:
+                        raise
 
         @staticmethod
         def convert_to_iso_date(datetime_string):

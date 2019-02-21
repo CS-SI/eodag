@@ -128,7 +128,7 @@ class QueryStringSearch(Search):
         self.query_params = dict()
         self.query_string = ''
 
-    def query(self, product_type, cached=False, start=0, stop=1, max_results=0, *args, **kwargs):
+    def query(self, product_type, cached=False, start=0, stop=1, max_count=False, *args, **kwargs):
         if not cached:
             self.rollback()
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
@@ -136,9 +136,11 @@ class QueryStringSearch(Search):
         qp, qs = self.build_query_string(product_type, productType=provider_product_type, *args, **keywords)
         self.query_params = qp
         self.query_string = qs
-        self.search_urls = self.collect_search_urls(max_results=max_results, productType=product_type, *args, **kwargs)
+        self.search_urls, total_items = self.collect_search_urls(productType=product_type, *args, **kwargs)
         provider_results = self.do_search(start=start, stop=stop, *args, **kwargs)
         eo_products = self.normalize_results(provider_results, product_type, provider_product_type, *args, **kwargs)
+        if max_count:
+            return eo_products, total_items
         return eo_products
 
     def build_query_string(self, *args, **kwargs):
@@ -218,21 +220,22 @@ class QueryStringSearch(Search):
             if len(val) == 2
         }
 
-    def collect_search_urls(self, max_results=0, *args, **kwargs):
+    def collect_search_urls(self, *args, **kwargs):
         urls = []
+        total_results = 0
         for collection in self.get_collections(*args, **kwargs):
             search_endpoint = self.config.api_endpoint.rstrip('/').format(collection=collection)
             count_endpoint = self.config.pagination.get('count_endpoint', '').format(collection=collection)
             if count_endpoint:
                 count_url = '{}?{}'.format(count_endpoint, self.query_string)
-                max_page, items_per_page = self.count_hits(count_url, max_results=max_results,
-                                                           result_type=self.config.result_type)
+                max_page, items_per_page, total_results = self.count_hits(count_url,
+                                                                          result_type=self.config.result_type)
             else:  # First do one request querying only one element (lightweight request to schedule the pagination)
                 next_url_tpl = self.config.pagination['next_page_url_tpl']
                 count_url = next_url_tpl.format(url=search_endpoint, search=self.query_string,
                                                 items_per_page=1, page=1, skip=0)
-                max_page, items_per_page = self.count_hits(count_url, max_results=max_results,
-                                                           result_type=self.config.result_type)
+                max_page, items_per_page, total_results = self.count_hits(count_url,
+                                                                          result_type=self.config.result_type)
             for page in range(1, max_page + 1):
                 next_url = self.config.pagination['next_page_url_tpl'].format(
                     url=search_endpoint,
@@ -242,7 +245,7 @@ class QueryStringSearch(Search):
                     skip=(page - 1) * items_per_page
                 )
                 urls.append(next_url)
-        return urls
+        return urls, total_results
 
     def do_search(self, start=0, stop=1, *args, **kwargs):
         """Perform the actual search request
@@ -250,7 +253,13 @@ class QueryStringSearch(Search):
         :param int start: The page where to query, specified as list index (i.e starting at 0) (default: 0)
         :param int stop: The page where to stop query (default: 1, i.e only fetch the first page by default)
         """
-        for search_url in self.search_urls[start:stop]:
+        # Get all the pages
+        if stop == -1:
+            urls = self.search_urls[start:]
+        # Only get the specified number of pages
+        else:
+            urls = self.search_urls[start:stop]
+        for search_url in urls:
             try:
                 response = self._request(
                     search_url,
@@ -284,7 +293,7 @@ class QueryStringSearch(Search):
             for result in results
         ]
 
-    def count_hits(self, count_url, max_results=0, result_type='json'):
+    def count_hits(self, count_url, result_type='json'):
         # Handle a very annoying special case :'(
         url = count_url.replace('$format=json&', '')
         response = self._request(
@@ -307,18 +316,13 @@ class QueryStringSearch(Search):
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
-        # Limit the number of results if the user requested a specific number of total results
-        if max_results <= 0:
-            max_results = total_results
-        if 0 < max_results < total_results:
-            total_results = max_results
-        items_per_page = min(self.config.pagination['items_per_page'], max_results)
+        items_per_page = self.config.pagination['items_per_page']
         if total_results == 0:
-            return -1, 0
+            return -1, 0, 0
         max_page, rest = divmod(total_results, items_per_page)
         if rest != 0:
             max_page += 1
-        return max_page, items_per_page
+        return max_page, items_per_page, total_results
 
     def get_collections(self, *args, **kwargs):
         """Get the collection to which the product belongs"""

@@ -6,6 +6,7 @@
 
 from __future__ import absolute_import, unicode_literals
 
+import hashlib
 import os
 import sys
 from collections import namedtuple
@@ -31,7 +32,8 @@ app = flask.Flask(__name__)
 app.config.from_object('eodag.rest.settings')
 # Allows to override settings from a json file
 app.config.from_json('eodag_server_settings.json', silent=True)
-search_cache = SimpleCache()
+# Simple cache with 20 minutes timeout
+search_cache = SimpleCache(default_timeout=1200)
 
 eodag_api = eodag.EODataAccessGateway(user_conf_file_path=app.config['EODAG_CFG_FILE'])
 Cruncher = namedtuple('Cruncher', ['clazz', 'config_params'])
@@ -68,8 +70,8 @@ def _get_int(val):
 
 
 def _get_pagination_info():
-    page = _get_int(request.args.get('page'))
-    items_per_page = _get_int(request.args.get('itemsPerPage'))
+    page = _get_int(request.args.get('page', DEFAULT_PAGE))
+    items_per_page = _get_int(request.args.get('itemsPerPage', DEFAULT_ITEMS_PER_PAGE))
     if page is not None and page < 0:
         raise ValidationError('invalid page number. Must be positive integer')
     if items_per_page is not None and items_per_page < 0:
@@ -155,43 +157,49 @@ def search(product_type):
             'startTimeFromAscendingNode': _get_date(request.args.get('dtstart')),
             'completionTimeFromAscendingNode': _get_date(request.args.get('dtend')),
             'cloudCover': _get_int(request.args.get('cloudCover')),
-            'items_per_page': items_per_page,
-            'page': page,
         }
-        cache_key = '{}+{geometry}+{startTimeFromAscendingNode}+{completionTimeFromAscendingNode}+{cloudCover}'.format(
-            product_type, **criteria
-        ).replace('+None', '')
+        cache_key = ('{}+{geometry}+{startTimeFromAscendingNode}+{completionTimeFromAscendingNode}'
+                     '+{cloudCover}').format(product_type, **criteria).replace('+None', '')
+        cache_key = hashlib.md5(cache_key.encode('utf-8')).digest()
         stored_value = search_cache.get(cache_key)
         if stored_value is None:
-            products = eodag_api.search(product_type, return_all=True, **criteria)
-            search_cache.set(cache_key, geojson.dumps(products))
+            total = 0
+            cache = SearchResult([])
+            eodag_api.drop_cache()
         else:
-            products = SearchResult.from_geojson(geojson.loads(stored_value))
-        products = _filter(products, **criteria)
+            total, products = stored_value
+            cache = SearchResult.from_geojson(geojson.loads(products))
 
+        if items_per_page is None:
+            items_per_page = DEFAULT_ITEMS_PER_PAGE
+        if page is None:
+            page = DEFAULT_PAGE
+        start = (page - 1) * items_per_page
+        stop = start + items_per_page
+        missing_items = stop - len(cache)
+        if missing_items > 0:
+            _products, total = eodag_api.search(product_type, with_pagination_info=True,
+                                                max_results=missing_items, **criteria)
+            cache.extend(_products)
+            search_cache.set(cache_key, (total, geojson.dumps(cache)))
+        products = SearchResult(cache[start:stop])
+
+        products = _filter(products, **criteria)
+        response = SearchResult(products).as_geojson_object()
+        response.update({
+            'properties': {
+                'page': page,
+                'itemsPerPage': items_per_page,
+                'totalResults': total
+            }
+        })
+        return jsonify(response), 200
     except ValidationError as e:
         return jsonify({'error': e.message}), 400
     except RuntimeError as e:
         return jsonify({'error': e}), 400
     except UnsupportedProductType as e:
         return jsonify({'error': 'Not Found: {}'.format(e.product_type)}), 404
-
-    total = len(products)
-    if items_per_page is None:
-        items_per_page = DEFAULT_ITEMS_PER_PAGE
-    if page is None:
-        page = DEFAULT_PAGE
-    start = (page - 1) * items_per_page
-    stop = start + items_per_page
-    response = SearchResult(products[start:stop]).as_geojson_object()
-    response.update({
-        'properties': {
-            'page': page,
-            'itemsPerPage': items_per_page,
-            'totalResults': total
-        }
-    })
-    return jsonify(response), 200
 
 
 @app.route('/', methods=['GET'])

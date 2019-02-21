@@ -5,7 +5,5 @@
 import os
 
 # Default configuration file is supposed to live in the same directory as this module, named "eodag_config.yml"
-EODAG_CFG_FILE = os.environ.get(
-    'EODAG_CFG_FILE',
-    os.path.abspath(os.path.realpath(os.path.join(os.path.dirname(__file__), 'eodag_config.yml')))
-)
+DEFAULT_EODAG_CFG_FILE = os.path.abspath(os.path.realpath(os.path.join(os.path.dirname(__file__), 'eodag_config.yml')))
+EODAG_CFG_FILE = os.environ.get('EODAG_CFG_FILE', DEFAULT_EODAG_CFG_FILE)
