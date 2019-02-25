@@ -43,7 +43,7 @@ try:  # PY3
     from urllib.parse import urlencode, quote, quote_plus  # noqa
     if sys.version_info.minor < 5:
         # Explicitly redefining urlencode the way it is defined in Python 3.5
-        def urlencode(query, doseq=False, safe='', encoding=None, errors=None, quote_via=quote_plus):
+        def urlencode(query, doseq=False, safe='', encoding=None, errors=None, quote_via=quote_plus):   # noqa
             """Encode a dict or sequence of two-element tuples into a URL query string.
 
             If any values in the query arg are sequences and doseq is true, each
@@ -78,7 +78,7 @@ try:  # PY3
                     raise TypeError("not a valid non-string sequence "
                                     "or mapping object").with_traceback(tb)
 
-            l = []
+            l = []      # noqa
             if not doseq:
                 for k, v in query:
                     if isinstance(k, bytes):
@@ -107,7 +107,7 @@ try:  # PY3
                     else:
                         try:
                             # Is this a sufficient test for sequence-ness?
-                            x = len(v)
+                            x = len(v)      # noqa
                         except TypeError:
                             # not a sequence
                             v = quote_via(str(v), safe, encoding, errors)
@@ -160,7 +160,7 @@ except ImportError:  # PY2
                 raise TypeError("not a valid non-string sequence "
                                 "or mapping object").with_traceback(tb)
 
-        l = []
+        l = []      # noqa
         if not doseq:
             for k, v in query:
                 if isinstance(k, bytes):
@@ -189,7 +189,7 @@ except ImportError:  # PY2
                 else:
                     try:
                         # Is this a sufficient test for sequence-ness?
-                        x = len(v)
+                        x = len(v)      # noqa
                     except TypeError:
                         # not a sequence
                         v = quote_via(str(v), safe, encoding, errors)
