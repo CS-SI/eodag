@@ -17,6 +17,8 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import os
+import random
 import unittest
 from contextlib import contextmanager
 
@@ -24,8 +26,10 @@ import click
 from click.testing import CliRunner
 from faker import Faker
 
+from tests import TEST_RESOURCES_PATH
+from tests.units.test_core import TestCore
 from tests.utils import no_blanks
-from tests.context import eodag, search_crunch
+from tests.context import eodag, search_crunch, download
 from tests.utils import mock
 
 
@@ -116,14 +120,14 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 product_type, startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
                 cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44},
-                return_all=True, with_pagination_info=True)
+                with_pagination_info=True, exhaust_provider=True)
 
     @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_storage_arg(self, SatImagesAPI):
         """Calling eodag search with specified result filename without .geojson extension"""
         with self.user_conf() as conf_file:
             api_obj = SatImagesAPI.return_value
-            api_obj.search.return_value = (mock.MagicMock(),) * 4
+            api_obj.search.return_value = (mock.MagicMock(),) * 2
             self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', 'whatever', '--storage', 'results'])
             api_obj.serialize.assert_called_with(api_obj.search.return_value[0], filename='results.geojson')
 
@@ -132,12 +136,12 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""
         with self.user_conf() as conf_file:
             api_obj = SatImagesAPI.return_value
-            api_obj.search.return_value = (mock.MagicMock(),) * 4
+            api_obj.search.return_value = (mock.MagicMock(),) * 2
 
             product_type = 'whatever'
             cruncher = 'FilterLatestIntersect'
             criteria = dict(startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
-                            geometry=None, cloudCover=None, return_all=True, with_pagination_info=True)
+                            geometry=None, cloudCover=None)
             self.runner.invoke(eodag, ['search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher])
 
             search_results = api_obj.search.return_value[0]
@@ -145,7 +149,8 @@ class TestEodagCli(unittest.TestCase):
 
             # Assertions
             SatImagesAPI.assert_called_once_with(user_conf_file_path=conf_file)
-            api_obj.search.assert_called_once_with(product_type, **criteria)
+            api_obj.search.assert_called_once_with(product_type, with_pagination_info=True, exhaust_provider=True,
+                                                   **criteria)
             api_obj.crunch.assert_called_once_with(search_results, search_criteria=criteria)
             api_obj.serialize.assert_called_with(crunch_results, filename='search_results.geojson')
 
@@ -156,3 +161,73 @@ class TestEodagCli(unittest.TestCase):
                 '--cruncher-args', cruncher, 'minimum_overlap', 10
             ])
             api_obj.crunch.assert_called_with(search_results, search_criteria=criteria, minimum_overlap=10)
+
+    def test_eodag_list_product_type_ok(self):
+        """Calling eodag list without provider return all supported product types"""
+        all_supported_product_types = [pt for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items() if len(provs) != 0]
+        result = self.runner.invoke(eodag, ['list'])
+        self.assertEqual(result.exit_code, 0)
+        for pt in all_supported_product_types:
+            self.assertIn(pt, result.output)
+
+    def test_eodag_list_product_type_with_provider_ok(self):
+        """Calling eodag list with provider should return all supported product types of specified provider"""
+        provider = random.choice(TestCore.SUPPORTED_PROVIDERS)
+        provider_supported_product_types = [pt for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items()
+                                            if provider in provs]
+        result = self.runner.invoke(eodag, ['list', '-p', provider])
+        self.assertEqual(result.exit_code, 0)
+        for pt in provider_supported_product_types:
+            self.assertIn(pt, result.output)
+
+    def test_eodag_list_product_type_with_provider_ko(self):
+        """Calling eodag list with unsupported provider should fail and print a list of available providers"""
+        provider = 'random'
+        result = self.runner.invoke(eodag, ['list', '-p', provider])
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('Unsupported provider. You may have a typo', result.output)
+        self.assertIn('Available providers: {}'.format(', '.join(sorted(TestCore.SUPPORTED_PROVIDERS))), result.output)
+
+    def test_eodag_download_no_search_results_arg(self):
+        """Calling eodag download without a path to a search result should fail"""
+        result = self.runner.invoke(eodag, ['download'])
+        with click.Context(download) as ctx:
+            self.assertEqual(
+                no_blanks(result.output),
+                no_blanks(''.join(('Nothing to do (no search results file provided)', ctx.get_help())))
+            )
+        self.assertEqual(result.exit_code, 1)
+
+    @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
+    def test_eodag_download_no_conf_file(self, dag):
+        """Calling eodag download without configuration file do nothing"""
+        search_results_path = os.path.join(TEST_RESOURCES_PATH, 'eodag_search_result.geojson')
+        self.runner.invoke(eodag, ['download', '--search-results', search_results_path])
+        dag.assert_not_called()
+
+    @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
+    def test_eodag_download_ok(self, dag):
+        """Calling eodag download with all args well formed succeed"""
+        search_results_path = os.path.join(TEST_RESOURCES_PATH, 'eodag_search_result.geojson')
+        config_path = os.path.join(TEST_RESOURCES_PATH, 'file_config_override.yml')
+        dag.return_value.download_all.return_value = ['file:///fake_path']
+        result = self.runner.invoke(eodag, ['download', '--search-results', search_results_path, '-f', config_path])
+        dag.assert_called_once_with(user_conf_file_path=config_path)
+        dag.return_value.deserialize.assert_called_once_with(search_results_path)
+        dag.return_value.download_all.assert_called()
+        self.assertEqual(dag.return_value.download_all.call_count, 1)
+        self.assertEqual('Downloaded file:///fake_path\n', result.output)
+
+        # Testing the case when no downloaded path is returned
+        dag.return_value.download_all.return_value = [None]
+        result = self.runner.invoke(eodag, ['download', '--search-results', search_results_path, '-f', config_path])
+        self.assertEqual('A file may have been downloaded but we cannot locate it\n', result.output)
+
+    @mock.patch('eodag.rpc.server.EODAGRPCServer', autospec=True)
+    def test_eodag_serve_rpc_ok(self, rpc_server):
+        """Calling eodag serve-rpc serve eodag methods as RPC server"""
+        config_path = os.path.join(TEST_RESOURCES_PATH, 'file_config_override.yml')
+        self.runner.invoke(eodag, ['serve-rpc', '-f', config_path])
+        rpc_server.assert_called_once_with('localhost', 50051, config_path)
+        rpc_server.return_value.serve.assert_called()
+        self.assertEqual(rpc_server.return_value.serve.call_count, 1)

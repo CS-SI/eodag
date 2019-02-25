@@ -136,7 +136,8 @@ class QueryStringSearch(Search):
         qp, qs = self.build_query_string(product_type, productType=provider_product_type, *args, **keywords)
         self.query_params = qp
         self.query_string = qs
-        self.search_urls, total_items = self.collect_search_urls(productType=product_type, *args, **kwargs)
+        self.search_urls, total_items = self.collect_search_urls(productType=product_type, all_in_one=(stop == -1),
+                                                                 *args, **kwargs)
         provider_results = self.do_search(start=start, stop=stop, *args, **kwargs)
         eo_products = self.normalize_results(provider_results, product_type, provider_product_type, *args, **kwargs)
         if max_count:
@@ -220,7 +221,7 @@ class QueryStringSearch(Search):
             if len(val) == 2
         }
 
-    def collect_search_urls(self, *args, **kwargs):
+    def collect_search_urls(self, all_in_one=False, *args, **kwargs):
         urls = []
         total_results = 0
         for collection in self.get_collections(*args, **kwargs):
@@ -236,6 +237,11 @@ class QueryStringSearch(Search):
                                                 items_per_page=1, page=1, skip=0)
                 max_page, items_per_page, total_results = self.count_hits(count_url,
                                                                           result_type=self.config.result_type)
+            # Setup for the queries that request that every results be retrieved (there are only one request URL,
+            # asking for all the results)
+            if all_in_one:
+                max_page = 1
+                items_per_page = total_results
             for page in range(1, max_page + 1):
                 next_url = self.config.pagination['next_page_url_tpl'].format(
                     url=search_endpoint,

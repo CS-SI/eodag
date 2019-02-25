@@ -101,8 +101,6 @@ def search_crunch(ctx, **kwargs):
         'startTimeFromAscendingNode': None,
         'completionTimeFromAscendingNode': None,
         'cloudCover': kwargs.pop('cloudcover'),
-        'return_all': True,
-        'with_pagination_info': True,
     }
     if start_date:
         criteria['startTimeFromAscendingNode'] = start_date.isoformat()
@@ -123,9 +121,8 @@ def search_crunch(ctx, **kwargs):
     gateway = EODataAccessGateway(user_conf_file_path=conf_file)
 
     # Search
-    results, page, total, page_size = gateway.search(producttype, **criteria)
+    results, total = gateway.search(producttype, with_pagination_info=True, exhaust_provider=True, **criteria)
     click.echo("Found {} overall products with product type '{}'".format(total, producttype))
-    click.echo("Returned page {} of {} products: {}".format(page, page_size, results))
 
     # Crunch !
     crunch_args = {
@@ -175,7 +172,7 @@ def download(ctx, **kwargs):
         with click.Context(download) as ctx:
             click.echo('Nothing to do (no search results file provided)')
             click.echo(download.get_help(ctx))
-        sys.exit(0)
+        sys.exit(1)
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
     conf_file = kwargs.pop('conf')
@@ -224,8 +221,8 @@ def serve_rest(ctx, daemon, world, port, config, debug):
     # Set the settings of the app
     # IMPORTANT: the order of imports counts here (first we override the settings, then we import the app so that the
     # updated settings is taken into account in the app initialization)
-    # from eodag.rest import settings
-    # settings.EODAG_CFG_FILE = config
+    from eodag.rest import settings
+    settings.EODAG_CFG_FILE = config
 
     from eodag.rest.server import app
 

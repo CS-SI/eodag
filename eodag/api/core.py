@@ -146,7 +146,7 @@ class EODataAccessGateway(object):
 
     def available_providers(self):
         """Gives the list of the available providers"""
-        return tuple(self.providers_config.keys())
+        return sorted(tuple(self.providers_config.keys()))
 
     def search(self, product_type, page=DEFAULT_PAGE, max_results=0, items_per_page=DEFAULT_ITEMS_PER_PAGE,
                start=0, stop=1, with_pagination_info=False, exhaust_provider=False, **kwargs):
