@@ -68,8 +68,6 @@ class QueryStringSearch(Search):
 
           - *count_endpoint*: (optional) The endpoint for counting the number of items satisfying a request
 
-          - *items_per_page*: (optional) The maximum number of items a page can have (default: 10)
-
         - **free_text_search_operations**: (optional) A tree structure of the form::
 
             <search-param>:     # e.g: $search
@@ -121,28 +119,21 @@ class QueryStringSearch(Search):
         self.config.__dict__.setdefault('results_entry', 'features')
         self.config.__dict__.setdefault('pagination', {})
         self.config.__dict__.setdefault('free_text_search_operations', {})
-        self.config.pagination.setdefault('items_per_page', self.DEFAULT_ITEMS_PER_PAGE)
-        if self.config.pagination['items_per_page'] == 0:
-            self.config['items_per_page'] = self.DEFAULT_ITEMS_PER_PAGE
         self.search_urls = []
         self.query_params = dict()
         self.query_string = ''
 
-    def query(self, product_type, cached=False, start=0, stop=1, max_count=False, *args, **kwargs):
-        if not cached:
-            self.rollback()
+    def query(self, product_type, items_per_page=None, page=None, *args, **kwargs):
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != 'auth'}
         qp, qs = self.build_query_string(product_type, productType=provider_product_type, *args, **keywords)
         self.query_params = qp
         self.query_string = qs
-        self.search_urls, total_items = self.collect_search_urls(productType=product_type, all_in_one=(stop == -1),
-                                                                 *args, **kwargs)
-        provider_results = self.do_search(start=start, stop=stop, *args, **kwargs)
+        self.search_urls, total_items = self.collect_search_urls(productType=product_type, page=page,
+                                                                 items_per_page=items_per_page, *args, **kwargs)
+        provider_results = self.do_search(items_per_page=items_per_page, *args, **kwargs)
         eo_products = self.normalize_results(provider_results, product_type, provider_product_type, *args, **kwargs)
-        if max_count:
-            return eo_products, total_items
-        return eo_products
+        return eo_products, total_items
 
     def build_query_string(self, *args, **kwargs):
         """Build The query string using the search parameters"""
@@ -151,10 +142,11 @@ class QueryStringSearch(Search):
         query_params = {}
         # Get all the search parameters that are recognised as queryables by the provider (they appear in the
         # queryables dictionary)
+
         for search_param, query in kwargs.items():
             try:
                 queryable = queryables[search_param]
-                if kwargs.get(search_param) is not None:
+                if kwargs.get(search_param) is not None and queryable is not None:
                     if self.COMPLEX_QS_REGEX.match(queryable):
                         parts = queryable.split('=')
                         if len(parts) == 1:
@@ -221,28 +213,23 @@ class QueryStringSearch(Search):
             if len(val) == 2
         }
 
-    def collect_search_urls(self, all_in_one=False, *args, **kwargs):
+    def collect_search_urls(self, page=None, items_per_page=None, *args, **kwargs):
         urls = []
         total_results = 0
         for collection in self.get_collections(*args, **kwargs):
             search_endpoint = self.config.api_endpoint.rstrip('/').format(collection=collection)
-            count_endpoint = self.config.pagination.get('count_endpoint', '').format(collection=collection)
-            if count_endpoint:
-                count_url = '{}?{}'.format(count_endpoint, self.query_string)
-                max_page, items_per_page, total_results = self.count_hits(count_url,
-                                                                          result_type=self.config.result_type)
-            else:  # First do one request querying only one element (lightweight request to schedule the pagination)
-                next_url_tpl = self.config.pagination['next_page_url_tpl']
-                count_url = next_url_tpl.format(url=search_endpoint, search=self.query_string,
-                                                items_per_page=1, page=1, skip=0)
-                max_page, items_per_page, total_results = self.count_hits(count_url,
-                                                                          result_type=self.config.result_type)
-            # Setup for the queries that request that every results be retrieved (there are only one request URL,
-            # asking for all the results)
-            if all_in_one:
-                max_page = 1
-                items_per_page = total_results
-            for page in range(1, max_page + 1):
+            if page is not None and items_per_page is not None:
+                count_endpoint = self.config.pagination.get('count_endpoint', '').format(collection=collection)
+                if count_endpoint:
+                    count_url = '{}?{}'.format(count_endpoint, self.query_string)
+                    _total_results = self.count_hits(count_url, result_type=self.config.result_type)
+                else:
+                    # First do one request querying only one element (lightweight request to schedule the pagination)
+                    next_url_tpl = self.config.pagination['next_page_url_tpl']
+                    count_url = next_url_tpl.format(url=search_endpoint, search=self.query_string,
+                                                    items_per_page=1, page=1, skip=0)
+                    _total_results = self.count_hits(count_url, result_type=self.config.result_type)
+                total_results += _total_results or 0
                 next_url = self.config.pagination['next_page_url_tpl'].format(
                     url=search_endpoint,
                     search=self.query_string,
@@ -250,22 +237,20 @@ class QueryStringSearch(Search):
                     page=page,
                     skip=(page - 1) * items_per_page
                 )
-                urls.append(next_url)
+            else:
+                next_url = '{}?{}'.format(search_endpoint, self.query_string)
+            urls.append(next_url)
         return urls, total_results
 
-    def do_search(self, start=0, stop=1, *args, **kwargs):
-        """Perform the actual search request
+    def do_search(self, items_per_page=None, *args, **kwargs):
+        """Perform the actual search request.
 
-        :param int start: The page where to query, specified as list index (i.e starting at 0) (default: 0)
-        :param int stop: The page where to stop query (default: 1, i.e only fetch the first page by default)
+        If there is a specified number of items per page, return the results as soon as this number is reached
+
+        :param int items_per_page: (Optional) The number of items to return for one page
         """
-        # Get all the pages
-        if stop == -1:
-            urls = self.search_urls[start:]
-        # Only get the specified number of pages
-        else:
-            urls = self.search_urls[start:stop]
-        for search_url in urls:
+        results = []
+        for search_url in self.search_urls:
             try:
                 response = self._request(
                     search_url,
@@ -279,12 +264,15 @@ class QueryStringSearch(Search):
                 if self.config.result_type == 'xml':
                     root_node = etree.fromstring(response.content)
                     namespaces = {k or 'ns': v for k, v in root_node.nsmap.items()}
-                    for entry in root_node.xpath(self.config.results_entry, namespaces=namespaces):
-                        yield etree.tostring(entry)
+                    results = [
+                        etree.tostring(entry)
+                        for entry in root_node.xpath(self.config.results_entry, namespaces=namespaces)
+                    ]
                 else:
-                    results = response.json()
-                    for entry in results[self.config.results_entry]:
-                        yield entry
+                    results = response.json()[self.config.results_entry]
+            if items_per_page is not None and len(results) == items_per_page:
+                return results
+        return results
 
     def normalize_results(self, results, *args, **kwargs):
         """Build EOProducts from provider results"""
@@ -322,13 +310,7 @@ class QueryStringSearch(Search):
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
-        items_per_page = self.config.pagination['items_per_page']
-        if total_results == 0:
-            return -1, 0, 0
-        max_page, rest = divmod(total_results, items_per_page)
-        if rest != 0:
-            max_page += 1
-        return max_page, items_per_page, total_results
+        return total_results
 
     def get_collections(self, *args, **kwargs):
         """Get the collection to which the product belongs"""
@@ -364,25 +346,19 @@ class QueryStringSearch(Search):
         logger.debug('Mapping eodag product type to provider product type')
         return self.config.products[product_type]['product_type']
 
-    def rollback(self):
-        """Do not rely on any cached and prepared searches"""
-        self.search_urls = []
-        self.query_params = {}
-        self.query_string = ''
-
     def _request(self, url, info_message=None, exception_message=None):
         try:
             if info_message:
                 logger.info(info_message)
             response = requests.get(url)
             response.raise_for_status()
-        except requests.HTTPError:
+        except requests.HTTPError as err:
             if exception_message:
                 logger.exception(exception_message)
             else:
                 logger.exception('Skipping error while requesting: %s (provider:%s, plugin:%s):', url, self.provider,
                                  self.__class__.__name__)
-            raise RequestError
+            raise RequestError(str(err))
         return response
 
 

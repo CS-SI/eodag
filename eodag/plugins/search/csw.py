@@ -73,7 +73,7 @@ class CSWSearch(Search):
                 logger.info('Found %s results querying %s', len(partial_results), product_type_search_tag)
                 results.extend(partial_results)
         logger.info('Found %s overall results', len(results))
-        return results
+        return results, len(results)
 
     def __init_catalog(self, username=None, password=None):
         """Initializes a catalogue by performing a GetCapabilities request on the url"""

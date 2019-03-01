@@ -6,7 +6,6 @@
 
 from __future__ import absolute_import, unicode_literals
 
-import hashlib
 import os
 import sys
 from collections import namedtuple
@@ -14,10 +13,8 @@ from functools import wraps
 
 import dateutil.parser
 import flask
-import geojson
 import markdown
 from flask import Markup, jsonify, make_response, render_template, request
-from werkzeug.contrib.cache import SimpleCache
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
@@ -25,15 +22,15 @@ from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.utils.exceptions import MisconfiguredError, UnsupportedProductType, UnsupportedProvider, ValidationError
+from eodag.utils.exceptions import (
+    MisconfiguredError, UnsupportedProductType, UnsupportedProvider, ValidationError,
+)
 
 
 app = flask.Flask(__name__)
 app.config.from_object('eodag.rest.settings')
 # Allows to override settings from a json file
 app.config.from_json('eodag_server_settings.json', silent=True)
-# Simple cache with 20 minutes timeout
-search_cache = SimpleCache(default_timeout=1200)
 
 eodag_api = eodag.EODataAccessGateway(user_conf_file_path=app.config['EODAG_CFG_FILE'])
 Cruncher = namedtuple('Cruncher', ['clazz', 'config_params'])
@@ -158,31 +155,13 @@ def search(product_type):
             'completionTimeFromAscendingNode': _get_date(request.args.get('dtend')),
             'cloudCover': _get_int(request.args.get('cloudCover')),
         }
-        cache_key = ('{}+{geometry}+{startTimeFromAscendingNode}+{completionTimeFromAscendingNode}'
-                     '+{cloudCover}').format(product_type, **criteria).replace('+None', '')
-        cache_key = hashlib.md5(cache_key.encode('utf-8')).digest()
-        stored_value = search_cache.get(cache_key)
-        if stored_value is None:
-            total = 0
-            cache = SearchResult([])
-            eodag_api.drop_cache()
-        else:
-            total, products = stored_value
-            cache = SearchResult.from_geojson(geojson.loads(products))
 
         if items_per_page is None:
             items_per_page = DEFAULT_ITEMS_PER_PAGE
         if page is None:
             page = DEFAULT_PAGE
-        start = (page - 1) * items_per_page
-        stop = start + items_per_page
-        missing_items = stop - len(cache)
-        if missing_items > 0:
-            _products, total = eodag_api.search(product_type, with_pagination_info=True,
-                                                max_results=missing_items, **criteria)
-            cache.extend(_products)
-            search_cache.set(cache_key, (total, geojson.dumps(cache)))
-        products = SearchResult(cache[start:stop])
+        products, total = eodag_api.search(product_type, page=page, items_per_page=items_per_page, raise_errors=True,
+                                           **criteria)
 
         products = _filter(products, **criteria)
         response = SearchResult(products).as_geojson_object()
@@ -200,6 +179,8 @@ def search(product_type):
         return jsonify({'error': e}), 400
     except UnsupportedProductType as e:
         return jsonify({'error': 'Not Found: {}'.format(e.product_type)}), 404
+    except Exception as e:
+        return jsonify({'error': 'Server error from provider: {}'.format(e)}), 500
 
 
 @app.route('/', methods=['GET'])

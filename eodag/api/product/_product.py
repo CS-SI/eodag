@@ -40,6 +40,7 @@ except ImportError:
     from shapely.geos import TopologicalError
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
+from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.utils.exceptions import UnsupportedDatasetAddressScheme, DownloadError
 
 
@@ -72,7 +73,11 @@ class EOProduct(object):
         self.provider = provider
         self.product_type = kwargs.get('productType') or args[0]
         self.location = self.remote_location = properties.get('downloadLink', '')
-        self.properties = {key: value for key, value in properties.items() if key != 'geometry'}
+        self.properties = {
+            key: value
+            for key, value in properties.items()
+            if key != 'geometry' and value not in [NOT_MAPPED, NOT_AVAILABLE]
+        }
         product_geometry = properties['geometry']
         # Best effort to understand provider specific geometry (the default is to assume an object implementing the
         # Geo Interface: see https://gist.github.com/2217756)

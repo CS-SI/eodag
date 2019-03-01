@@ -118,9 +118,9 @@ class TestEodagCli(unittest.TestCase):
             self.runner.invoke(eodag, ['search', '--conf', conf_file, '-p', product_type, '-b', 1, 43, 2, 44])
             api_obj = SatImagesAPI.return_value
             api_obj.search.assert_called_once_with(
-                product_type, startTimeFromAscendingNode=None, completionTimeFromAscendingNode=None,
-                cloudCover=None, geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44},
-                with_pagination_info=True, exhaust_provider=True)
+                product_type, items_per_page=20, page=1, startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None, cloudCover=None,
+                geometry={'lonmin': 1, 'latmin': 43, 'lonmax': 2, 'latmax': 44})
 
     @mock.patch('eodag.cli.EODataAccessGateway', autospec=True)
     def test_eodag_search_storage_arg(self, SatImagesAPI):
@@ -149,9 +149,8 @@ class TestEodagCli(unittest.TestCase):
 
             # Assertions
             SatImagesAPI.assert_called_once_with(user_conf_file_path=conf_file)
-            api_obj.search.assert_called_once_with(product_type, with_pagination_info=True, exhaust_provider=True,
-                                                   **criteria)
-            api_obj.crunch.assert_called_once_with(search_results, search_criteria=criteria)
+            api_obj.search.assert_called_once_with(product_type, items_per_page=20, page=1, **criteria)
+            api_obj.crunch.assert_called_once_with(search_results, search_criteria=criteria, **{cruncher: {}})
             api_obj.serialize.assert_called_with(crunch_results, filename='search_results.geojson')
 
             # Call with a cruncher taking arguments
@@ -160,7 +159,8 @@ class TestEodagCli(unittest.TestCase):
                 'search', '-f', conf_file, '-p', product_type, '--cruncher', cruncher,
                 '--cruncher-args', cruncher, 'minimum_overlap', 10
             ])
-            api_obj.crunch.assert_called_with(search_results, search_criteria=criteria, minimum_overlap=10)
+            api_obj.crunch.assert_called_with(search_results, search_criteria=criteria,
+                                              **{cruncher: {'minimum_overlap': 10}})
 
     def test_eodag_list_product_type_ok(self):
         """Calling eodag list without provider return all supported product types"""

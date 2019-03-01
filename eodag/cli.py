@@ -25,7 +25,7 @@ import textwrap
 
 import click
 
-from eodag.api.core import EODataAccessGateway
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
 from eodag.utils.exceptions import UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -77,6 +77,10 @@ def eodag(ctx, verbose):
               default='search_results.geojson',
               help='Path to the file where to store search results (.geojson extension will be automatically appended '
                    'to the filename). DEFAULT: search_results.geojson')
+@click.option('--items', type=int, default=DEFAULT_ITEMS_PER_PAGE, show_default=True,
+              help='The number of items to return. Eodag is bound to whatever limitation the providers have on the '
+                   'number of results they return. This option allows to control how many items eodag should request')
+@click.option('--page', type=int, default=DEFAULT_PAGE, show_default=True, help='Retrieve the given page')
 @click.pass_context
 def search_crunch(ctx, **kwargs):
     # Process inputs for search
@@ -118,19 +122,23 @@ def search_crunch(ctx, **kwargs):
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
 
+    items_per_page = kwargs.pop('items')
+    page = kwargs.pop('page') or 1
+
     gateway = EODataAccessGateway(user_conf_file_path=conf_file)
 
     # Search
-    results, total = gateway.search(producttype, with_pagination_info=True, exhaust_provider=True, **criteria)
-    click.echo("Found {} overall products with product type '{}'".format(total, producttype))
+    results, total = gateway.search(producttype, page=page, items_per_page=items_per_page, **criteria)
+    click.echo("Found a total number of {} products with product type '{}'".format(total, producttype))
+    click.echo("Returned {} products".format(len(results), producttype))
 
     # Crunch !
     crunch_args = {
         cruncher_name: cruncher_args_dict.get(cruncher_name, {})
         for cruncher_name in cruncher_names
     }
-    for cruncher_name in cruncher_names:
-        results = gateway.crunch(results, search_criteria=criteria, **crunch_args[cruncher_name])
+    if crunch_args:
+        results = gateway.crunch(results, search_criteria=criteria, **crunch_args)
 
     storage_filepath = kwargs.pop('storage')
     if not storage_filepath.endswith('.geojson'):

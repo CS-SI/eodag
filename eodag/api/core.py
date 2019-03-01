@@ -59,15 +59,6 @@ class EODataAccessGateway(object):
 
         self._plugins_manager = PluginManager(self.providers_config)
 
-        # A cache of exhausted providers (providers on which there are no results left
-        self._exhausted_providers = set()
-        # A state giving the last index used to query a given provider
-        self._provider_index_cache = {}
-
-    def drop_cache(self):
-        self._provider_index_cache.clear()
-        self._exhausted_providers.clear()
-
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
 
@@ -148,173 +139,107 @@ class EODataAccessGateway(object):
         """Gives the list of the available providers"""
         return sorted(tuple(self.providers_config.keys()))
 
-    def search(self, product_type, page=DEFAULT_PAGE, max_results=0, items_per_page=DEFAULT_ITEMS_PER_PAGE,
-               start=0, stop=1, with_pagination_info=False, exhaust_provider=False, **kwargs):
-        """Look for products matching criteria in known providers.
+    def search(self, product_type, page=DEFAULT_PAGE, items_per_page=DEFAULT_ITEMS_PER_PAGE,
+               raise_errors=False, **kwargs):
+        """Look for products matching criteria on known providers.
 
-        The default behaviour is to look for products in the provider with the highest priority. If the search gives
-        no results, or if the provider is known to support only a partial collection of the searched product type, the
-        search then continues on the other providers supporting the requested product type, ordered by highest
-        priority. These priorities are configurable through user configuration file or individual environment variable.
+        The default behaviour is to look for products on the provider with the highest priority supporting the
+        requested product type. These priorities are configurable through user configuration file or individual
+        environment variable.
 
-        .. note::
-            From the behaviour described here, it is possible to make the search to continue on other providers by
-            setting the `partial_support` configuration parameter to `true` for the corresponding product type in the
-            configuration of the provider with the highest priority, like for example with an environment variable like
-            EODAG__SOBLOO__PRODUCTS__S2_MSI_L1C__PARTIAL_SUPPORT=true
+        .. versionchanged::
+           0.7.1
+
+                * The search now stops at the first provider that supports the requested product type (removal of the
+                  partial mechanism)
+                * The method now returns a tuple of 2 elements, the first one being the result and the second one being
+                  the total number of results satisfying the criteria on the provider. This is useful for applications
+                  wrapping eodag and wishing to implement pagination. An example of this kind of application is the
+                  embedded eodag HTTP server. Also useful for informational purposes in the CLI: the user is informed
+                  about the total number of results available, and can ask for retrieving a given number of these
+                  results (See the help message of the CLI for more information).
 
         :param product_type: The product type to search
         :type product_type: str or unicode
         :param page: The page number to return (default: 1)
         :type page: int
-        :param start: On which page to start on the providers, indexed as in a list. Search plugin implementations are
-                      free to ignore this (default: 0)
-        :type start: int
-        :param stop: On which page to stop on the providers, indexed as in a list. Search plugin implementations are
-                     free to ignore this (default: 1)
-        :type stop: int
-        :param max_results: The maximum number of results to return. If this number is reached for the preferred
-                            provider, the search stops there. Otherwise, it continues on the other providers
-                            supporting the requested product type, even if ``partial_support`` is de-activated for
-                            the preferred provider and the subsequent providers (default: 0, meaning this constraint
-                            is relaxed => search continuation is driven by the ``partial_support`` mechanism)
-        :type max_results: int
         :param items_per_page: The number of results that must appear in one single page (default: 20)
         :type items_per_page: int
-        :param with_pagination_info: Return the information on pagination with the result. This is useful for
-                                     applications that which to implement pagination on top of eodag search interface.
-                                     An example is provided in the embedded HTTP server (default: False)
-        :type with_pagination_info: bool
-        :param exhaust_provider: Retrieve all the results available on each provider (default: False)
-        :type exhaust_provider: bool
+        :param raise_errors:  When an error occurs when searching, if this is set to True, the error is raised
+                              (default: False)
+        :type raise_errors: bool
         :param dict kwargs: some other criteria that will be used to do the search
         :returns: A collection of EO products matching the criteria, the current returned page and the total number of
                   results found
-        :rtype: tuple[class:`~eodag.api.search_result.SearchResult`, int, int] or
-                class:`~eodag.api.search_result.SearchResult`
+        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
 
         .. note::
             The search interfaces, which are implemented as plugins, are required to return a list as a result of their
             processing. This requirement is enforced here.
         """
         results = SearchResult([])
-        if items_per_page is None:
-            items_per_page = DEFAULT_ITEMS_PER_PAGE
-        if page is None:
-            page = DEFAULT_PAGE
-        if page > 1:
-            start = page - 1
-        if start >= stop:   # Ensure we always ask for a range of pages (minimum one page)
-            stop = start + 1
-        if exhaust_provider:      # Retrieve absolutely all results on a given provider (The greedy way)
-            start, stop = 0, -1
         total_results = 0
-        # How many results are left to retrieve
-        rest = max_results
-        for plugin in self._plugins_manager.get_search_plugins(product_type):
-            if plugin.provider in self._exhausted_providers:
-                logging.debug('Skipping exhausted provider: %s', plugin.provi)
-                continue
-            logger.info("Searching product type '%s' on provider: %s", product_type, plugin.provider)
-            logger.debug('Using plugin class for search: %s', plugin.__class__.__name__)
-            auth = self._plugins_manager.get_auth_plugin(product_type, plugin.provider)
-            try:
-                # Configure the number of items per page
-                getattr(plugin.config, 'pagination', {})['items_per_page'] = items_per_page
-                if max_results == 0:
-                    if with_pagination_info:
-                        res, nb_res = plugin.query(product_type, auth=auth, start=start, stop=stop,
-                                                   max_count=True, **kwargs)
-                    else:
-                        res = plugin.query(product_type, auth=auth, start=start, stop=stop, **kwargs)
-                        nb_res = len(res)
+        plugin = next(self._plugins_manager.get_search_plugins(product_type))
+        logger.info("Searching product type '%s' on provider: %s", product_type, plugin.provider)
+        logger.debug('Using plugin class for search: %s', plugin.__class__.__name__)
+        auth = self._plugins_manager.get_auth_plugin(product_type, plugin.provider)
+        try:
+            res, nb_res = plugin.query(product_type, auth=auth, items_per_page=items_per_page, page=page, **kwargs)
 
-                    if not isinstance(res, list):
-                        raise PluginImplementationError(
-                            'The query function of a Search plugin must return a list of results, got {} '
-                            'instead'.format(type(res)))
-                    total_results += nb_res
-                    logger.info("Found %s result(s) on provider '%s'", nb_res, plugin.provider)
+            # Take into account the fact that a provider may not return the count of products (in that case,
+            # fallback to using the length of the results it returned and the page requested. As an example,
+            # check the result of the following request (look for the value of properties.totalResults)
+            # https://theia-landsat.cnes.fr/resto/api/collections/Landsat/search.json?maxRecords=1&page=1
+            if nb_res == 0:
+                nb_res = len(res) * page
 
-                    # Filter and attach to each eoproduct in the result the plugin capable of downloading it (this
-                    # is done to enable the eo_product to download itself doing: eo_product.download())
-                    # The filtering is done by keeping only those eo_products that intersects the search extent (if
-                    # there
-                    # was no search extent, search_intersection contains the geometry of the eo_product)
-                    # WARNING: this means an eo_product that has an invalid geometry can still be returned as a search
-                    # result if there was no search extent (because we will not try to do an intersection)
-                    for eo_product in res:
-                        if eo_product.search_intersection is not None:
-                            download_plugin = self._plugins_manager.get_download_plugin(eo_product)
-                            eo_product.register_downloader(download_plugin, auth)
+            # Attempt to ensure a little bit more coherence. Some providers return a fuzzy number of total
+            # results, meaning that you have to keep requesting it until it has returned everything it has to
+            # know exactly how many EO products they have in their stock. In that case, we need to replace the
+            # returned number of results with the sum of the number of items that were skipped so far and the length
+            # of the currently retrieved items. We know there is an incoherence when the number of skipped items is
+            # greater than the total number of items returned by the plugin
+            nb_skipped_items = items_per_page * (page - 1)
+            nb_current_items = len(res)
+            if nb_skipped_items > nb_res:
+                if nb_res != 0:
+                    nb_res = nb_skipped_items + nb_current_items
+                # This is for when the returned results is an empty list and the number of results returned is
+                # incoherent with the observations. In that case, we assume the total number of results is the number
+                # of skipped results. By requesting a lower page than the current one, a user can iteratively reach the
+                # last page of results for these criteria on the provider.
+                else:
+                    nb_res = nb_skipped_items
 
-                    # Decide if we should go on with the search using the other search plugins using the
-                    # partial_support mechanism. In that case, the following rules makes the search to continue on
-                    # other providers:
-                    #    1. The currently used plugin is the preferred one (the first), and it returned no result
-                    #    2. The currently used plugin supports the product_type partially (partial_support = True)
-                    if not plugin.config.products[product_type].get('partial_support', False):
-                        if plugin.provider == self.get_preferred_provider()[0] and len(res) == 0:
-                            logger.info(
-                                "No result from preferred provider: '%s'. Search continues on other providers "
-                                "supporting the product type: '%s'", plugin.provider, product_type)
-                            continue
-                        # Take the results and stop searching
-                        results.extend(res)
-                        break
-                    logger.info(
-                        "Detected partial support for product type '%s' on provider '%s'. Search continues on "
-                        "other providers supporting it.", product_type, plugin.provider)
-                    # Take the current results and keep searching
-                    results.extend(res)
+            if not isinstance(res, list):
+                raise PluginImplementationError(
+                    'The query function of a Search plugin must return a list of results, got {} '
+                    'instead'.format(type(res)))
 
-                # In case the user specifies the maximum number of results he wants
-                nb_res = 0
-                if max_results > 0:
-                    rest = rest - nb_res
-                    start = self._provider_index_cache.get(plugin.provider, 0)
-                    stop = start + 1
-                    while rest > 0:
-                        # Update the stop index with respect to the max_results requested
-                        current_planning = (stop - start) * items_per_page
-                        if current_planning < rest:
-                            gap = rest - current_planning
-                            if gap < 0:
-                                stop += 1
-                            else:
-                                gap_pages, gap_rest = divmod(gap, items_per_page if items_per_page != 0 else 1)
-                                if gap_rest != 0:
-                                    gap_pages += 1
-                                stop += gap_pages
+            # Filter and attach to each eoproduct in the result the plugin capable of downloading it (this
+            # is done to enable the eo_product to download itself doing: eo_product.download())
+            # The filtering is done by keeping only those eo_products that intersects the search extent (if
+            # there was no search extent, search_intersection contains the geometry of the eo_product)
+            # WARNING: this means an eo_product that has an invalid geometry can still be returned as a search
+            # result if there was no search extent (because we will not try to do an intersection)
+            for eo_product in res:
+                if eo_product.search_intersection is not None:
+                    download_plugin = self._plugins_manager.get_download_plugin(eo_product)
+                    eo_product.register_downloader(download_plugin, auth)
 
-                        if with_pagination_info:
-                            res, nb_res = plugin.query(product_type, auth=auth, start=start, stop=stop,
-                                                       max_count=True, cached=True, **kwargs)
-                        else:
-                            res = plugin.query(product_type, auth=auth, start=start, stop=stop, **kwargs)
-                            nb_res = len(res)
-                        if len(res) == 0:
-                            self._exhausted_providers.add(plugin.provider)
-                            break
-                        results.extend(res)
-                        rest -= nb_res
-                        total_results += nb_res
-                    if rest <= 0:
-                        self._provider_index_cache[plugin.provider] = stop
-                        break
-                    else:
-                        logger.info("The requested results number is not yet reached: %s over %s => search continues",
-                                    len(results) + nb_res, max_results)
-            except Exception:
-                import traceback as tb
-                logger.info("No result from provider '%s' due to an error during search. Raise verbosity of log "
-                            "messages for details", plugin.provider)
-                logger.info('Search continues on other providers supporting the product type')
-                logger.debug('Error while searching on interface %s:\n %s.', plugin, tb.format_exc())
-                logger.debug('Ignoring it')
-        if with_pagination_info:
-            return SearchResult(results), total_results
-        return SearchResult(results)
+            results.extend(res)
+            total_results += nb_res
+            logger.info("Found %s result(s) on provider '%s'", nb_res, plugin.provider)
+        except Exception as e:
+            logger.info("No result from provider '%s' due to an error during search. Raise verbosity of log "
+                        "messages for details", plugin.provider)
+            if raise_errors:
+                # Raise the error, letting the application wrapping eodag know that something went bad. This way it
+                # will be able to decide what to do next
+                raise e
+            else:
+                logger.exception('Error while searching on provider %s (ignored):', plugin.provider)
+        return SearchResult(results), total_results
 
     def crunch(self, results, **kwargs):
         """Apply the filters given through the keyword arguments to the results

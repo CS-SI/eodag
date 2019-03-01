@@ -91,7 +91,7 @@ class UsgsApi(Api):
             logger.debug('Product type %s does not exist on catalogue %s', usgs_dataset, usgs_catalog_node)
             logger.debug("Skipping error: %s", e)
         api.logout()
-        return final
+        return final, len(final)
 
     def download(self, product, auth=None, progress_callback=None):
         url = product.remote_location

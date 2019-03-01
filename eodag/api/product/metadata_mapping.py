@@ -21,11 +21,11 @@ import re
 from datetime import datetime
 from string import Formatter
 
-import jsonpath_rw as jsonpath
 from dateutil.tz import tzutc
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import geometry
+from six import string_types
 
 from eodag.utils import get_timestamp
 
@@ -178,42 +178,30 @@ def properties_from_json(json, mapping):
     """
     properties = {}
     templates = {}
-    # Do a shallow copy, the structure is flat enough for this to be sufficient
-    metas = DEFAULT_METADATA_MAPPING.copy()
-    # Update the defaults with the mapping value. This will add any new key
-    # added by the provider mapping that is not in the default metadata
-    metas.update(mapping)
-    for metadata in metas:
-        if metadata not in mapping:
-            properties[metadata] = NOT_MAPPED
+    for metadata, value in mapping.items():
+        # Treat the case when the value is from a queryable metadata
+        if isinstance(value, list):
+            conversion_or_none, path_or_text = value[1]
         else:
-            conversion, path = get_metadata_path(mapping[metadata])
-            try:
-                path_parsed = jsonpath.parse(path)
-            except Exception:  # jsonpath_rw does not provide a proper exception
-                # Assume the mapping is to be passed as is, in which case we readily register it. Or it is a template,
-                # in which case we register it for later formatting resolution using previously successfully resolved
-                # properties
-                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                # it further
-                _, text = get_metadata_path(mapping[metadata])
-                if re.search(r'({[^{}]+})+', text):
-                    templates[metadata] = text
-                else:
-                    properties[metadata] = text
+            conversion_or_none, path_or_text = value
+        if isinstance(path_or_text, string_types):
+            if re.search(r'({[^{}]+})+', path_or_text):
+                templates[metadata] = path_or_text
             else:
-                match = path_parsed.find(json)
-                extracted_value = match[0].value if len(match) == 1 else NOT_AVAILABLE
-                if extracted_value is None:
-                    properties[metadata] = None
+                properties[metadata] = path_or_text
+        else:
+            match = path_or_text.find(json)
+            extracted_value = match[0].value if len(match) == 1 else NOT_AVAILABLE
+            if extracted_value is None:
+                properties[metadata] = None
+            else:
+                if conversion_or_none is None:
+                    properties[metadata] = extracted_value
                 else:
-                    if conversion is None:
-                        properties[metadata] = extracted_value
-                    else:
-                        properties[metadata] = format_metadata(
-                            '{%s%s%s}' % (metadata, SEP, conversion),
-                            **{metadata: extracted_value}
-                        )
+                    properties[metadata] = format_metadata(
+                        '{%s%s%s}' % (metadata, SEP, conversion_or_none),
+                        **{metadata: extracted_value}
+                    )
     # Resolve templates
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)
@@ -238,58 +226,53 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix='ns'):
     """
     properties = {}
     templates = {}
-    # Do a shallow copy, the structure is flat enough for this to be sufficient
-    metas = DEFAULT_METADATA_MAPPING.copy()
-    # Update the defaults with the mapping value. This will add any new key
-    # added by the provider mapping that is not in the default metadata
-    metas.update(mapping)
     root = etree.XML(xml_as_text)
-    for metadata in metas:
-        if metadata not in mapping:
-            properties[metadata] = NOT_MAPPED
+    for metadata, value in mapping.items():
+        # Treat the case when the value is from a queryable metadata
+        if isinstance(value, list):
+            conversion_or_none, path_or_text = value[1]
         else:
-            try:
-                conversion, path = get_metadata_path(mapping[metadata])
-                extracted_value = root.xpath(
-                    path,
-                    namespaces={
-                        k or empty_ns_prefix: v for k, v in root.nsmap.items()
-                    }
-                )
-                if len(extracted_value) == 1:
-                    if conversion is None:
-                        properties[metadata] = extracted_value[0]
-                    else:
-                        properties[metadata] = format_metadata(
-                            '{%s%s%s}' % (metadata, SEP, conversion),
-                            **{metadata: extracted_value[0]}
+            conversion_or_none, path_or_text = value
+        try:
+            extracted_value = root.xpath(
+                path_or_text,
+                namespaces={
+                    k or empty_ns_prefix: v for k, v in root.nsmap.items()
+                }
+            )
+            if len(extracted_value) == 1:
+                if conversion_or_none is None:
+                    properties[metadata] = extracted_value[0]
+                else:
+                    properties[metadata] = format_metadata(
+                        '{%s%s%s}' % (metadata, SEP, conversion_or_none),
+                        **{metadata: extracted_value[0]}
+                    )
+            # If there are multiple matches, consider the result as a list, doing a formatting if any
+            elif len(extracted_value) > 1:
+                if conversion_or_none is None:
+                    properties[metadata] = extracted_value
+                else:
+                    properties[metadata] = [
+                        format_metadata(
+                            '{%s%s%s}' % (metadata, SEP, conversion_or_none),  # Re-build conversion format identifier
+                            **{metadata: extracted_value_item}
                         )
-                # If there are multiple matches, consider the result as a list, doing a formatting if any
-                elif len(extracted_value) > 1:
-                    if conversion is None:
-                        properties[metadata] = extracted_value
-                    else:
-                        properties[metadata] = [
-                            format_metadata(
-                                '{%s%s%s}' % (metadata, SEP, conversion),     # Re-build conversion format identifier
-                                **{metadata: extracted_value_item}
-                            )
-                            for extracted_value_item in extracted_value
-                        ]
-                # If there is no matched value (empty list), mark the metadata as not available
-                else:
-                    properties[metadata] = NOT_AVAILABLE
-            except XPathEvalError:
-                # Assume the mapping is to be passed as is, in which case we readily register it, or is a template, in
-                # which case we register it for later formatting resolution using previously successfully resolved
-                # properties
-                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                # it further
-                _, text = get_metadata_path(mapping[metadata])
-                if re.search(r'({[^{}]+})+', text):
-                    templates[metadata] = text
-                else:
-                    properties[metadata] = text
+                        for extracted_value_item in extracted_value
+                    ]
+            # If there is no matched value (empty list), mark the metadata as not available
+            else:
+                properties[metadata] = NOT_AVAILABLE
+        except XPathEvalError:
+            # Assume the mapping is to be passed as is, in which case we readily register it, or is a template, in
+            # which case we register it for later formatting resolution using previously successfully resolved
+            # properties
+            # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
+            # it further
+            if re.search(r'({[^{}]+})+', path_or_text):
+                templates[metadata] = path_or_text
+            else:
+                properties[metadata] = path_or_text
     # Resolve templates
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)
