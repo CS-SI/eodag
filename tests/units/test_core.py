@@ -90,6 +90,8 @@ class TestCore(unittest.TestCase):
         self.assertIsInstance(product_types, list)
         for product_type in product_types:
             self.assertListProductTypesRightStructure(product_type)
+        # There should be no repeated product type in the output
+        self.assertEqual(len(product_types), len(set(pt['ID'] for pt in product_types)))
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""

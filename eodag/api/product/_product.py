@@ -40,7 +40,7 @@ except ImportError:
     from shapely.geos import TopologicalError
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
-from eodag.api.product.representations import DEFAULT_METADATA_MAPPING, properties_from_json
+from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.utils.exceptions import UnsupportedDatasetAddressScheme, DownloadError
 
 
@@ -73,8 +73,12 @@ class EOProduct(object):
         self.provider = provider
         self.product_type = kwargs.get('productType') or args[0]
         self.location = self.remote_location = properties.get('downloadLink', '')
-        self.properties = properties
-        product_geometry = self.properties['geometry']
+        self.properties = {
+            key: value
+            for key, value in properties.items()
+            if key != 'geometry' and value not in [NOT_MAPPED, NOT_AVAILABLE]
+        }
+        product_geometry = properties['geometry']
         # Best effort to understand provider specific geometry (the default is to assume an object implementing the
         # Geo Interface: see https://gist.github.com/2217756)
         if isinstance(product_geometry, six.string_types):
@@ -104,7 +108,7 @@ class EOProduct(object):
             except TopologicalError:
                 import traceback as tb
                 logger.warning('Unable to intersect the requested extent: %s with the product geometry: %s. Got:\n%s',
-                               searched_bbox_as_shape, self.properties['geometry'], tb.format_exc())
+                               searched_bbox_as_shape, product_geometry, tb.format_exc())
                 self.search_intersection = None
         self.driver = DRIVERS.get(self.product_type, NoDriver())
         self.downloader = None
@@ -157,6 +161,9 @@ class EOProduct(object):
         :returns: The representation of a :class:`~eodag.api.product.EOProduct` as a Python dict
         :rtype: dict
         """
+        search_intersection = None
+        if self.search_intersection is not None:
+            search_intersection = geometry.mapping(self.search_intersection)
         geojson_repr = {
             'type': 'Feature',
             'geometry': geometry.mapping(self.geometry),
@@ -164,7 +171,7 @@ class EOProduct(object):
             'properties': {
                 'eodag_product_type': self.product_type,
                 'eodag_provider': self.provider,
-                'eodag_search_intersection': geometry.mapping(self.search_intersection),
+                'eodag_search_intersection': search_intersection,
             }
         }
         geojson_repr['properties'].update({
@@ -183,11 +190,12 @@ class EOProduct(object):
         :returns: An instance of :class:`~eodag.api.product.EOProduct`
         :rtype: :class:`~eodag.api.product.EOProduct`
         """
-        obj = cls(
-            feature['properties']['eodag_provider'],
-            properties_from_json(feature, DEFAULT_METADATA_MAPPING),
-            productType=feature['properties']['eodag_product_type']
-        )
+        properties = feature['properties']
+        properties['geometry'] = feature['geometry']
+        properties['id'] = feature['id']
+        provider = feature['properties']['eodag_provider']
+        product_type = feature['properties']['eodag_product_type']
+        obj = cls(provider, properties, productType=product_type)
         obj.search_intersection = feature['properties']['eodag_search_intersection']
         return obj
 

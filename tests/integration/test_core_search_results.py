@@ -156,9 +156,12 @@ class TestCoreSearchResults(unittest.TestCase):
         self.assertEqual(feature['type'], self.geojson_repr['features'][0]['type'])
         self.assertDictEqual(feature['geometry'], self.geojson_repr['features'][0]['geometry'])
         for key, value in self.geojson_repr['features'][0]['properties'].items():
-            if isinstance(value, dict):
-                self.assertDictEqual(value, feature['properties'][key])
-            elif isinstance(value, list):
-                self.assertListEqual(value, feature['properties'][key])
+            if key not in ('geometry', 'id'):
+                if isinstance(value, dict):
+                    self.assertDictEqual(value, feature['properties'][key])
+                elif isinstance(value, list):
+                    self.assertListEqual(value, feature['properties'][key])
+                else:
+                    self.assertEqual(value, feature['properties'][key])
             else:
-                self.assertEqual(value, feature['properties'][key])
+                self.assertEqual(value, feature[key])

@@ -17,21 +17,20 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
-import functools
 import re
+import string
 import sys
 import types
 import unicodedata
 from datetime import datetime
 from itertools import repeat, starmap
-from string import Formatter
 
 import click
 import six
 from rasterio.crs import CRS
 from requests.auth import AuthBase
-from shapely import geometry
 from tqdm import tqdm, tqdm_notebook
+from unidecode import unidecode
 
 
 # All modules using these should import them from utils package
@@ -41,9 +40,169 @@ except ImportError:  # PY2
     from urlparse import urljoin, urlparse, parse_qs, urlunparse  # noqa
 
 try:  # PY3
-    from urllib.parse import urlencode  # noqa
+    from urllib.parse import urlencode, quote, quote_plus  # noqa
+    if sys.version_info.minor < 5:
+        # Explicitly redefining urlencode the way it is defined in Python 3.5
+        def urlencode(query, doseq=False, safe='', encoding=None, errors=None, quote_via=quote_plus):   # noqa
+            """Encode a dict or sequence of two-element tuples into a URL query string.
+
+            If any values in the query arg are sequences and doseq is true, each
+            sequence element is converted to a separate parameter.
+
+            If the query arg is a sequence of two-element tuples, the order of the
+            parameters in the output will match the order of parameters in the
+            input.
+
+            The components of a query arg may each be either a string or a bytes type.
+
+            The safe, encoding, and errors parameters are passed down to the function
+            specified by quote_via (encoding and errors only if a component is a str).
+            """
+
+            if hasattr(query, "items"):
+                query = query.items()
+            else:
+                # It's a bother at times that strings and string-like objects are
+                # sequences.
+                try:
+                    # non-sequence items should not work with len()
+                    # non-empty strings will fail this
+                    if len(query) and not isinstance(query[0], tuple):
+                        raise TypeError
+                    # Zero-length sequences of all types will get here and succeed,
+                    # but that's a minor nit.  Since the original implementation
+                    # allowed empty dicts that type of behavior probably should be
+                    # preserved for consistency
+                except TypeError:
+                    ty, va, tb = sys.exc_info()
+                    raise TypeError("not a valid non-string sequence "
+                                    "or mapping object").with_traceback(tb)
+
+            l = []      # noqa
+            if not doseq:
+                for k, v in query:
+                    if isinstance(k, bytes):
+                        k = quote_via(k, safe)
+                    else:
+                        k = quote_via(str(k), safe, encoding, errors)
+
+                    if isinstance(v, bytes):
+                        v = quote_via(v, safe)
+                    else:
+                        v = quote_via(str(v), safe, encoding, errors)
+                    l.append(k + '=' + v)
+            else:
+                for k, v in query:
+                    if isinstance(k, bytes):
+                        k = quote_via(k, safe)
+                    else:
+                        k = quote_via(str(k), safe, encoding, errors)
+
+                    if isinstance(v, bytes):
+                        v = quote_via(v, safe)
+                        l.append(k + '=' + v)
+                    elif isinstance(v, str):
+                        v = quote_via(v, safe, encoding, errors)
+                        l.append(k + '=' + v)
+                    else:
+                        try:
+                            # Is this a sufficient test for sequence-ness?
+                            x = len(v)      # noqa
+                        except TypeError:
+                            # not a sequence
+                            v = quote_via(str(v), safe, encoding, errors)
+                            l.append(k + '=' + v)
+                        else:
+                            # loop over the sequence
+                            for elt in v:
+                                if isinstance(elt, bytes):
+                                    elt = quote_via(elt, safe)
+                                else:
+                                    elt = quote_via(str(elt), safe, encoding, errors)
+                                l.append(k + '=' + elt)
+            return '&'.join(l)
 except ImportError:  # PY2
-    from urllib import urlencode  # noqa
+    from urllib import quote, quote_plus  # noqa
+
+    # Explicitly redefining urlencode the way it is defined in Python 3.5
+    def urlencode(query, doseq=False, safe='', encoding=None, errors=None, quote_via=quote_plus):
+        """Encode a dict or sequence of two-element tuples into a URL query string.
+
+        If any values in the query arg are sequences and doseq is true, each
+        sequence element is converted to a separate parameter.
+
+        If the query arg is a sequence of two-element tuples, the order of the
+        parameters in the output will match the order of parameters in the
+        input.
+
+        The components of a query arg may each be either a string or a bytes type.
+
+        The safe, encoding, and errors parameters are passed down to the function
+        specified by quote_via (encoding and errors only if a component is a str).
+        """
+
+        if hasattr(query, "items"):
+            query = query.items()
+        else:
+            # It's a bother at times that strings and string-like objects are
+            # sequences.
+            try:
+                # non-sequence items should not work with len()
+                # non-empty strings will fail this
+                if len(query) and not isinstance(query[0], tuple):
+                    raise TypeError
+                # Zero-length sequences of all types will get here and succeed,
+                # but that's a minor nit.  Since the original implementation
+                # allowed empty dicts that type of behavior probably should be
+                # preserved for consistency
+            except TypeError:
+                ty, va, tb = sys.exc_info()
+                raise TypeError("not a valid non-string sequence "
+                                "or mapping object").with_traceback(tb)
+
+        l = []      # noqa
+        if not doseq:
+            for k, v in query:
+                if isinstance(k, bytes):
+                    k = quote_via(k, safe)
+                else:
+                    k = quote_via(str(k), safe, encoding, errors)
+
+                if isinstance(v, bytes):
+                    v = quote_via(v, safe)
+                else:
+                    v = quote_via(str(v), safe, encoding, errors)
+                l.append(k + '=' + v)
+        else:
+            for k, v in query:
+                if isinstance(k, bytes):
+                    k = quote_via(k, safe)
+                else:
+                    k = quote_via(str(k), safe, encoding, errors)
+
+                if isinstance(v, bytes):
+                    v = quote_via(v, safe)
+                    l.append(k + '=' + v)
+                elif isinstance(v, str):
+                    v = quote_via(v, safe, encoding, errors)
+                    l.append(k + '=' + v)
+                else:
+                    try:
+                        # Is this a sufficient test for sequence-ness?
+                        x = len(v)      # noqa
+                    except TypeError:
+                        # not a sequence
+                        v = quote_via(str(v), safe, encoding, errors)
+                        l.append(k + '=' + v)
+                    else:
+                        # loop over the sequence
+                        for elt in v:
+                            if isinstance(elt, bytes):
+                                elt = quote_via(elt, safe)
+                            else:
+                                elt = quote_via(str(elt), safe, encoding, errors)
+                            l.append(k + '=' + elt)
+        return '&'.join(l)
 
 
 class RequestsTokenAuth(AuthBase):
@@ -128,6 +287,29 @@ def utf8_everywhere(mapping):
         else value),
         mapping
     )
+
+
+def sanitize(value):
+    """Sanitize string to be used as a name of a directory.
+    >>> sanitize('productName')
+    'productName'
+    >>> sanitize('name with multiple  spaces')
+    'name_with_multiple_spaces'
+    >>> sanitize('âtre fête île alcôve bûche çà génèse où Noël ovoïde capharnaüm')
+    'atre_fete_ile_alcove_buche_ca_genese_ou_Noel_ovoide_capharnaum'
+    >>> sanitize('replace,ponctuation:;signs!?byunderscorekeeping-hyphen.dot_and_underscore')
+    'replace_ponctuation_signs_byunderscorekeeping-hyphen.dot_and_underscore'
+    """
+    # remove accents
+    rv = unidecode(value)
+    # replace punctuation signs and spaces by underscore
+    # keep hyphen, dot and underscore from punctuation
+    tobereplaced = re.sub(r'[-_.]', '', string.punctuation)
+    # add spaces to be removed
+    tobereplaced += r'\s'
+
+    rv = re.sub(r'[' + tobereplaced + r']+', '_', rv)
+    return str(rv)
 
 
 def mutate_dict_in_place(func, mapping):
@@ -228,59 +410,6 @@ def get_timestamp(date_time, date_format='%Y-%m-%dT%H:%M:%S'):
     except AttributeError:  # There is no timestamp method on datetime objects in Python 2
         import time
         return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
-
-
-def format_search_param(search_param, *args, **kwargs):
-    """Format a string of form {<field_name>$<conversion_function>}
-
-    The currently understood converters are:
-        - timestamp: converts a date string to a timestamp
-        - to_wkt: converts a geometry to its well known text representation
-
-    :param search_param: The string to be formatted
-    :type search_param: str or unicode
-    :param args: (optional) Additional arguments to use in the formatting process
-    :type args: tuple
-    :param kwargs: (optional) Additional named-arguments to use in the formatting process
-    :type kwargs: dict
-    :returns: The formatted string
-    :rtype: str or unicode
-    """
-    class SearchParamFormatter(Formatter):
-        CONVERSION_FUNC_REGEX = re.compile(r'^(?P<field_name>.+)(?P<sep>\$)(?P<converter>[^()]+)(\((?P<args>.+)?\))?$')
-
-        def __init__(self):
-            self.custom_converter = None
-
-        def get_field(self, field_name, args, kwargs):
-            conversion_func_spec = self.CONVERSION_FUNC_REGEX.match(field_name)
-            # Register a custom converter if any for later use (see convert_field)
-            # This is done because we don't have the value associated to field_name at this stage
-            if conversion_func_spec:
-                field_name = conversion_func_spec.groupdict()['field_name']
-                converter = conversion_func_spec.groupdict()['converter']
-                # We want an empty list if there is no arguments for proper "unpacking" in the functools.partial call
-                func_args = [elt for elt in (conversion_func_spec.groupdict()['args'] or '').split(',') if elt]
-                self.custom_converter = functools.partial(getattr(self, 'convert_{}'.format(converter)), *func_args)
-            return super(SearchParamFormatter, self).get_field(field_name, args, kwargs)
-
-        def convert_field(self, value, conversion):
-            # Do custom conversion if any (see get_field)
-            if self.custom_converter is not None:
-                return self.custom_converter(value)
-            return super(SearchParamFormatter, self).convert_field(value, conversion)
-
-        @staticmethod
-        def convert_timestamp(value):
-            return int(1e3 * get_timestamp(value))
-
-        @staticmethod
-        def convert_to_wkt(value):
-            return geometry.box(*[
-                float(v) for v in '{lonmin} {latmin} {lonmax} {latmax}'.format(**value).split()
-            ]).to_wkt()
-
-    return SearchParamFormatter().vformat(search_param, args, kwargs)
 
 
 class ProgressCallback(object):

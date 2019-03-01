@@ -89,6 +89,30 @@ of this bbox"
   verbose the tool is.
 
 
+REST API
+--------
+
+An eodag installation can be exposed through a REST api from the command line::
+
+    # eodag serve-rest --help
+    Usage: eodag serve-rest [OPTIONS]
+
+      Start eodag HTTP server
+
+    Options:
+      -f, --config PATH   File path to the user configuration file with its
+                          credentials  [required]
+      -d, --daemon TEXT   run in daemon mode
+      -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
+                          otherwise bind to 127.0.0.1 (localhost). This maybe
+                          necessary in systems that only run Flask  [default:
+                          False]
+      -p, --port INTEGER  The port on which to listen  [default: 5000]
+      --debug             Run in debug mode (for development purpose)  [default:
+                          False]
+      --help              Show this message and exit.
+
+
 Python API
 ----------
 

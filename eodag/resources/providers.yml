@@ -44,6 +44,9 @@
   search: !plugin
     type: AwsSearch
     api_endpoint: 'http://finder.eocloud.eu/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
       id: '$.id'
       geometry:
@@ -76,11 +79,19 @@
       resolution: '$.properties.resolution'
       sensorMode: '$.properties.sensorMode'
       quicklook: '$.properties.quicklook'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      productionStatus: '$.properties.status'
+      creationDate: '$.properties.published'
+      modificationDate: '$.properties.updated'
   products:
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
-      partial_support: true
   download: !plugin
     type: AwsDownload
     associated_bucket: 'sentinel-s2-l1c'
@@ -108,40 +119,104 @@
       collection: Pleiades
       product_type: Bundle (Pan, XS)
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
-      id: '$.id'
-      geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - '$.geometry'
+      # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
         - '$.properties.productType'
+      doi: '$.properties.doi'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
+      sensorType: '$.properties.sensorType'
+      compositeType: '$.properties.compositeType'
       processingLevel: '$.properties.processingLevel'
+      orbitType: '$.properties.orbitType'
+      spectralRange: '$.properties.spectralRange'
+      wavelengths: '$.properties.wavelengths'
+      hasSecurityConstraints: '$.properties.hasSecurityConstraints'
+      dissemination: '$.properties.dissemination'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
+      topicCategory: '$.properties.topicCategory'
       keyword: '$.properties.keywords'
+      abstract: '$.properties.abstract'
+      resolution: '$.properties.resolution'
       organisationName: '$.properties.organisationName'
+      organisationRole: '$.properties.organisationRole'
+      publicationDate: '$.properties.publicationDate'
+      lineage: '$.properties.lineage'
+      useLimitation: '$.properties.useLimitation'
+      accessConstraint: '$.properties.accessConstraint'
+      otherConstraint: '$.properties.otherConstraint'
+      classification: '$.properties.classification'
+      language: '$.properties.language'
+      specification: '$.properties.specification'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier: '$.properties.parentIdentifier'
+      productionStatus: '$.properties.productionStatus'
+      acquisitionType: '$.properties.acquisitionType'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
+      track: '$.properties.track'
+      frame: '$.properties.frame'
+      swathIdentifier: '$.properties.swathIdentifier'
       cloudCover:
         - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
+      lowestLocation: '$.properties.lowestLocation'
+      highestLocation: '$.properties.highestLocation'
+      productVersion: '$.properties.version'
+      productQualityStatus: '$.properties.productQualityStatus'
+      productQualityDegradationTag: '$.properties.productQualityDegradationTag'
+      processorName: '$.properties.processorName'
+      processingCenter: '$.properties.processingCenter'
+      creationDate: '$.properties.creationDate'
+      modificationDate: '$.properties.modificationDate'
+      processingDate: '$.properties.processingDate'
+      sensorMode: '$.properties.sensorMode'
+      archivingCenter: '$.properties.archivingCenter'
+      processingMode: '$.properties.processingMode'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      availabilityTime: '$.properties.availabilityTime'
+      acquisitionStation: '$.properties.acquisitionStation'
+      acquisitionSubType: '$.properties.acquisitionSubType'
       startTimeFromAscendingNode:
         - startDate
         - '$.properties.startDate'
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      parentIdentifier: '$.properties.parentIdentifier'
-      resolution: '$.properties.resolution'
-      sensorMode: '$.properties.sensorMode'
-      productVersion: '$.properties.version'
+      illuminationAzimuthAngle: '$.properties.illuminationAzimuthAngle'
+      illuminationZenithAngle: '$.properties.illuminationZenithAngle'
+      illuminationElevationAngle: '$.properties.illuminationElevationAngle'
+      polarizationMode: '$.properties.polarizationMode'
+      polarisationChannels: '$.properties.polarisationChannels'
+      antennaLookDirection: '$.properties.antennaLookDirection'
+      minimumIncidenceAngle: '$.properties.minimumIncidenceAngle'
+      maximumIncidenceAngle: '$.properties.maximumIncidenceAngle'
+      dopplerFrequency: '$.properties.dopplerFrequency'
+      incidenceAngleVariation: '$.properties.incidenceAngleVariation'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id: '$.id'
+      # The geographic extent of the product
+      geometry:
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - '$.geometry'
+      # The url of the quicklook
       quicklook: '$.properties.quicklook'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
   download: !plugin
     type: HTTPDownload
@@ -176,40 +251,94 @@
   name: theia
   priority: 0
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
-      id: '$.id'
-      geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - '$.geometry'
+      # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
         - '$.properties.productType'
+      platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
       processingLevel: '$.properties.processingLevel'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
       keyword: '$.properties.keywords'
+      resolution: '$.properties.resolution'
       organisationName: '$.properties.organisationName'
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier: '$.properties.parentIdentifier'
       orbitNumber: '$.properties.orbitNumber'
-      orbitDirection: '$.properties.orbitDirection'
       cloudCover:
         - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
+      productVersion: '$.properties.version'
+      creationDate: '$.properties.productionDate'
+      modificationDate: '$.properties.modificationDate'
+      processingDate: '$.properties.processingDate'
+      sensorMode: '$.properties.sensorMode'
+      archivingCenter: '$.properties.archivingCenter'
+      processingMode: '$.properties.processingMode'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      availabilityTime: '$.properties.availabilityTime'
+      acquisitionStation: '$.properties.acquisitionStation'
+      acquisitionSubType: '$.properties.acquisitionSubType'
       startTimeFromAscendingNode:
-        - startDate
+        - 'startDate={startTimeFromAscendingNode#to_iso_date}'
         - '$.properties.startDate'
       completionTimeFromAscendingNode:
-        - completionDate
+        - 'completionDate={completionTimeFromAscendingNode#to_iso_date}'
         - '$.properties.completionDate'
-      parentIdentifier: '$.properties.parentIdentifier'
-      resolution: '$.properties.resolution'
-      sensorMode: '$.properties.sensorMode'
-      productVersion: '$.properties.version'
+      illuminationAzimuthAngle: '$.properties.illuminationAzimuthAngle'
+      illuminationZenithAngle: '$.properties.illuminationZenithAngle'
+      illuminationElevationAngle: '$.properties.illuminationElevationAngle'
+      polarizationMode: '$.properties.polarizationMode'
+      polarisationChannels: '$.properties.polarisationChannels'
+      antennaLookDirection: '$.properties.antennaLookDirection'
+      minimumIncidenceAngle: '$.properties.minimumIncidenceAngle'
+      maximumIncidenceAngle: '$.properties.maximumIncidenceAngle'
+      dopplerFrequency: '$.properties.dopplerFrequency'
+      incidenceAngleVariation: '$.properties.incidenceAngleVariation'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id: '$.id'
+      # The geographic extent of the product
+      geometry:
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - '$.geometry'
+      # The url of the quicklook
       quicklook: '$.properties.quicklook'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      # Or has a different signification for the provider
+      relativeOrbitNumber: '$.properties.relativeOrbitNumber'
+      waterCover: '$.properties.waterCover'
+      centroid: '$.properties.centroid'
+      percentSaturatedPixelsMax: '$.properties.percentSaturatedPixelsMax'
+      percentNoDataPixelsMax: '$.properties.percentNoDataPixelsMax'
+      nbColInterpolationErrorMax: '$.properties.nbColInterpolationErrorMax'
+      percentGroundUsefulPixels: '$.properties.percentGroundUsefulPixels'
+      percentUsefulPixelsMin: '$.properties.percentUsefulPixelsMin'
+      location: '$.properties.location'
+      bands: '$.properties.bands'
+      thermBands: '$.properties.thermBands'
+      nb_cols: '$.properties.nb_cols'
+      nb_rows: '$.properties.nb_rows'
+      tileId: '$.properties.tileId'
+      thumbnail: '$.properties.thumbnail'
   products:
     S2_MSI_L2A:
       product_type: REFLECTANCE
@@ -229,13 +358,13 @@
   name: peps
   priority: 1
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
-      id: '$.id'
-      geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - '$.geometry'
+      # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
         - '$.properties.productType'
@@ -243,27 +372,82 @@
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
       processingLevel: '$.properties.processingLevel'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
+      topicCategory: '$.properties.topicCategory'
       keyword: '$.properties.keywords'
       abstract: '$.properties.description'
+      resolution: '$.properties.resolution'
       organisationName: '$.properties.organisationName'
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier: '$.properties.parentIdentifier'
+      productionStatus: '$.properties.status'
+      acquisitionType: '$.properties.acquisitionType'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
+      swathIdentifier: '$.properties.swath'
       cloudCover:
         - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
+      productVersion: '$.properties.version'
+      productQualityStatus: '$.properties.onlineQualityCheck'
+      processorName: '$.properties.processingName'
+      processingCenter: '$.properties.processingCenter'
+      creationDate: '$.properties.dhusIngestDate'
+      modificationDate: '$.properties.updated'
+      sensorMode: '$.properties.sensorMode'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
         - startDate
         - '$.properties.startDate'
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      parentIdentifier: '$.properties.parentIdentifier'
-      resolution: '$.properties.resolution'
-      sensorMode: '$.properties.sensorMode'
+      polarizationMode: '$.properties.polarisation'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id: '$.id'
+      # The geographic extent of the product
+      geometry:
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - '$.geometry'
+      # The url of the quicklook
       quicklook: '$.properties.quicklook'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      # Or has a different signification for the provider
+      relativeOrbitNumber: '$.properties.relativeOrbitNumber'
+      water: '$.properties.water'
+      centroid: '$.properties.centroid'
+      thumbnail: '$.properties.thumbnail'
+      s2TakeId: '$.properties.s2TakeId'
+      storage: '$.properties.storage'
+      realtime: '$.properties.realtime'
+      visible: '$.properties.visible'
+      isNrt: '$.properties.isNrt'
+      resourceChecksum: '$.properties.resourceChecksum'
+      resourceSize: '$.properties.resourceSize'
+      snowIce: '$.properties.snowIce'
+      vegetation: '$.properties.vegetation'
+      bareSoil: '$.properties.bareSoil'
+      highProbaClouds: '$.properties.highProbaClouds'
+      mediumProbaClouds: '$.properties.mediumProbaClouds'
+      lowProbaClouds: '$.properties.lowProbaClouds'
+      mgrs: '$.properties.mgrs'
+      newVersion: '$.properties.newVersion'
+      missionTakeId: '$.properties.missionTakeId'
+      cycleNumber: '$.properties.cycleNumber'
+      approxSize: '$.properties.approxSize'
+      ecmwfType: '$.properties.ecmwfType'
   products:
     S1_SAR_OCN:
       product_type: OCN
@@ -277,7 +461,6 @@
     S2_MSI_L1C:
       collection: S2ST
       product_type: S2MSI1C
-      partial_support: true   # Peps only provide L1C products for Sentinel-2A platform
     S3_EFR:
       product_type: OL_1_EFR___
       collection: S3
@@ -317,19 +500,14 @@
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
-      partial_support: true
     S1_SAR_RAW:
       product_type: RAW
-      partial_support: true
     S1_SAR_GRD:
       product_type: GRD
-      partial_support: true
     S1_SAR_SLC:
       product_type: SLC
-      partial_support: true
     S1_SAR_OCN:
       product_type: OCN
-      partial_support: true
     S3_LAN:
       product_type: SR_2_LAN___
     S3_SRA:
@@ -339,15 +517,16 @@
     S3_SRA_A_BS:
       product_type: SR_1_SRA_A_
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_geosearch'
     collection: catalog
     result_type: 'json'
+    pagination:
+      count_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_count'
+      next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={page}'
+      total_items_nb_key_path: '$.totalnb'
     metadata_mapping:
-      id: '$.properties.uid'
-      geometry:
-        - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - '$.geometry'
+      # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - 'f=identification.type:eq:{productType}'
         - '$.properties.identification.type'
@@ -355,20 +534,46 @@
       platformSerialIdentifier: '$.properties.acquisition.missionCode'
       instrument: '$.properties.acquisition.sensorId'
       processingLevel: '$.properties.production.levelCode'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identification.externalId'
+      publicationDate: '{$.properties.timestamp#to_iso_utc_datetime_from_milliseconds}'
+
+      # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber: '$.properties.orbit.number'
       orbitDirection: '$.properties.orbit.direction'
       cloudCover:
         - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
+      creationDate: '{$.properties.state.insertionDate#to_iso_utc_datetime_from_milliseconds}'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      availabilityTime: '$.properties.availabilityTime'
       startTimeFromAscendingNode:
-        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode$timestamp}'
-        - '$.properties.acquisition.beginViewingDate'
+        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#to_timestamp_milliseconds}'
+        - '{$.properties.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds}'
       completionTimeFromAscendingNode:
-        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode$timestamp}'
-        - '$.properties.acquisition.endViewingDate'
+        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#to_timestamp_milliseconds}'
+        - '{$.properties.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id: '$.properties.uid'
+      # The geographic extent of the product
+      geometry:
+        - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - '$.geometry'
+      # The url of the quicklook
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
       downloadLink: '%(base_uri)s/{id}'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      visibility: '$.properties.visibility'
+      archive: '$.properties.archive'
+      centroid: '$.properties.spatialCoverage.geometry.centerPoint'
+      enrichment: '$.properties.enrichment'
+      relativeOrbitNumber: '$.properties.orbit.relativeNumber'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download'
@@ -384,13 +589,13 @@
   name: creodias
   priority: 0
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
-      id: '$.id'
-      geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - '$.geometry'
+      # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
         - '$.properties.productType'
@@ -398,27 +603,53 @@
       platformSerialIdentifier: '$.properties.platform'
       instrument: '$.properties.instrument'
       processingLevel: '$.properties.processingLevel'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
       keyword: '$.properties.keywords'
       abstract: '$.properties.description'
+      resolution: '$.properties.resolution'
       organisationName: '$.properties.organisationName'
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier: '$.properties.parentIdentifier'
+      productionStatus: '$.properties.status'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
         - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
       snowCover: '$.properties.snowCover'
+      modificationDate: '$.properties.updated'
+      sensorMode: '$.properties.sensorMode'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
         - startDate
         - '$.properties.startDate'
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      parentIdentifier: '$.properties.parentIdentifier'
-      resolution: '$.properties.resolution'
-      sensorMode: '$.properties.sensorMode'
-      quicklook: '$.properties.thumbnail'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id: '$.id'
+      # The geographic extent of the product
+      geometry:
+        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - '$.geometry'
+      # The url of the quicklook
+      quicklook: '$.properties.quicklook'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      thumbnail: '$.properties.thumbnail'
+      gmlgeometry: '$.properties.gmlgeometry'
+      centroid: '$.properties.centroid'
+      missionTakeId: '$.properties.missionTakeId'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
@@ -435,11 +666,9 @@
     S2_MSI_L1C:
       product_type: L1C
       collection: Sentinel2
-      partial_support: true
     S2_MSI_L2A:
       product_type: L2A
       collection: Sentinel2
-      partial_support: true
     S1_SAR_RAW:
       product_type: RAW
       collection: Sentinel1
@@ -491,44 +720,140 @@
   name: mundi
   priority: 0
   search: !plugin
-    type: RestoSearch
+    type: QueryStringSearch
     api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/{collection}/opensearch'
     result_type: 'xml'
-    result_entry: '//ns:entry'
+    results_entry: '//ns:entry'
     literal_search_params:
       format: atom
       relation: intersects
-    free_text_search_param: 'q'
     free_text_search_operations:
-      AND:
-        - 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
-        - 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+      q:
+        union: ' AND '
+        wrapper: '({})'
+        operations:
+          AND:
+            - 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+            - 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={page}'
+      total_items_nb_key_path: '//os:totalResults/text()'
     metadata_mapping:
-      id: 'ns:id/text()'
-      abstract: 'ns:summary/text()'
-      platform: 'eo:platform/text()'
-      instrument: 'eo:instrument/text()'
-      sensorType: 'eo:sensorType/text()'
-      processingLevel: 'eo:processingLevel/text()'
-      topicCategory: 'ns:category/text()'
-      publicationDate: 'ns:published/text()'
-      useLimitation: 'DIAS:productConfidentialityLevel/text()'
-      resolution: 'eo:resolution/text()'
-      geometry:
-        - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - 'georss:box/text()'
+      # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - 'productType'
         - 'eo:productType/text()'
+      doi: 'eo:doi/text()'
+      platform: 'eo:platform/text()'
+      platformSerialIdentifier: 'eo:platformSerialIdentifier/text()'
+      instrument: 'eo:instrument/text()'
+      sensorType: 'eo:sensorType/text()'
+      compositeType: 'eo:compositeType/text()'
+      processingLevel: 'eo:processingLevel/text()'
+      orbitType: 'eo:orbitType/text()'
+      spectralRange: 'eo:spectralRange/text()'
+      wavelengths: 'eo:wavelengths/text()'
+      hasSecurityConstraints: 'eo:hasSecurityConstraints/text()'
+      dissemination: 'eo:dissemination/text()'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: 'eo:title/text()'
+      topicCategory: 'ns:category/text()'
+      keyword: 'eo:keyword/text()'
+      abstract: 'ns:summary/text()'
+      resolution: 'eo:resolution/text()'
+      organisationName: 'dc:creator/text()'
+      organisationRole: 'eo:organisationRole/text()'
+      publicationDate: 'ns:published/text()'
+      lineage: 'eo:lineage/text()'
+      useLimitation: 'eo:useLimitation/text()'
+      accessConstraint: 'eo:accessConstraint/text()'
+      otherConstraint: 'dc:rights/text()'
+      classification: 'DIAS:productConfidentialityLevel/text()'
+      language: 'eo:language/text()'
+      specification: 'eo:specification/text()'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier: 'eo:parentIdentifier/text()'
+      productionStatus: 'DIAS:onlineStatus/text()'
+      acquisitionType: 'eo:acquisitionType/text()'
       orbitNumber: 'eo:orbitNumber/text()'
       orbitDirection: 'eo:orbitDirection/text()'
+      track: 'eo:track/text()'
+      frame: 'eo:frame/text()'
+      swathIdentifier: 'eo:swathIdentifier/text()'
       cloudCover: 'eo:cloudCover/text()'
       snowCover: 'eo:snowCover/text()'
+      lowestLocation: 'eo:lowestLocation/text()'
+      highestLocation: 'eo:highestLocation/text()'
+      productVersion: 'DIAS:processingBaseline/text()'
+      productQualityStatus: 'eo:productQualityStatus/text()'
+      productQualityDegradationTag: 'eo:productQualityDegradationTag/text()'
+      processorName: 'eo:processorName/text()'
+      processingCenter: 'eo:processingCenter/text()'
+      creationDate: 'DIAS:onlineDate/text()'
+      modificationDate: 'ns:updated/text()'
+      processingDate: 'eo:processingDate/text()'
+      sensorMode: 'eo:sensorMode/text()'
+      archivingCenter: 'eo:archivingCenter/text()'
+      processingMode: 'eo:processingMode/text()'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      availabilityTime: 'DIAS:onlineDate/text()'
+      acquisitionStation: 'eo:acquisitionStation/text()'
+      acquisitionSubType: 'eo:acquisitionSubType/text()'
       startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
       completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
+      illuminationAzimuthAngle: 'eo:illuminationAzimuthAngle/text()'
+      illuminationZenithAngle: 'eo:illuminationZenithAngle/text()'
+      illuminationElevationAngle: 'eo:illuminationElevationAngle/text()'
+      polarizationMode: 'eo:polarizationMode/text()'
+      polarisationChannels: 'eo:polarisationChannels/text()'
+      antennaLookDirection: 'eo:antennaLookDirection/text()'
+      minimumIncidenceAngle: 'eo:minimumIncidenceAngle/text()'
+      maximumIncidenceAngle: 'eo:maximumIncidenceAngle/text()'
+      dopplerFrequency: 'eo:dopplerFrequency/text()'
+      incidenceAngleVariation: 'eo:incidenceAngleVariation/text()'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id: 'ns:id/text()'
+      # The geographic extent of the product
+      geometry:
+        - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'georss:box/text()'
+      # The url of the quicklook
       quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
       downloadLink: 'ns:link[@rel="enclosure"]/@href'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      metadataFormat: 'DIAS:metadataFormat/text()'
+      imageFileFormat: 'DIAS:imageFileFormat/text()'
+      orderID: 'DIAS:orderID/text()'
+      sceneIndex: 'DIAS:sceneIndex/text()'
+      thumbnail: 'media:group/media:content[media:category="THUMBNAIL"]/@url'
+      identifier: 'dc:identifier/text()'
+      date: 'dc:date/text()'
+      generalQuality: 'DIAS:generalQuality/text()'
+      sensorQuality: 'DIAS:sensorQuality/text()'
+      radiometricQuality: 'DIAS:radiometricQuality/text()'
+      geometricQuality: 'DIAS:geometricQuality/text()'
+      formatCorrectness: 'DIAS:formatCorrectness/text()'
+      equivalentNumberOfScene: 'DIAS:equivalentNumberOfScene/text()'
+      audience: 'dct:audience/text()'
+      archiveInstanceReference: 'DIAS:archiveInstanceReference/text()'
+      productDatapackSize: 'DIAS:productDatapackSize/text()'
+      format: 'dc:format/text()'
+      startOrbitNumber: 'DIAS:startOrbitNumber/text()'
+      datatakeId: 'DIAS:datatakeId/text()'
+      tileIdentifier: 'DIAS:tileIdentifier/text()'
+      manualQualityCheckStatus: 'DIAS:manualQualityCheckStatus/text()'
+      manualQualityCheckStatusComment: 'DIAS:manualQualityCheckStatusComment/text()'
+      referenceProductOnly: 'DIAS:referenceProductOnly/text()'
+      watcherRecordValidity: 'DIAS:watcherRecordValidity/text()'
+      productDeliveryFormat: 'DIAS:productDeliveryFormat/text()'
+      checksum: 'DIAS:checksum/text()'
   download: !plugin
     type: AwsDownload
   auth: !plugin
@@ -610,34 +935,73 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    pagination:
+      count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}'
     results_entry: 'value'
+    literal_search_params:
+      $format: json
+    free_text_search_operations:
+      $search:
+        union: ' OR '
+        wrapper: '"{}"'
+        operations:
+          AND:
+            - 'footprint:"Intersects({geometry#to_wkt})"'
+            - 'productType:{productType}'
+            - 'cloudCoverPercentage:[0 TO {cloudCover}]'
+            - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
+            - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
     metadata_mapping:
-      id: '$.id'
-      geometry:
-        - 'footprint:"Intersects({geometry$to_wkt})"'
-        - '$.footprint'
-      productType:
-        - "productType:{productType}"
-        - '$.productType'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      productType: '$.productType'
       platform: '$.platformName'
       platformSerialIdentifier: '$.platformSerialIdentifier'
       instrument: '$.instrumentName'
       processingLevel: '$.processingLevel'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.filename'
+
+      # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber: '$.orbitNumber'
       orbitDirection: '$.orbitDirection'
-      cloudCover:
-        - 'cloudCoverPercentage:[0 TO {cloudCover}]'
-        - '$.cloudCoverPercentage'
-      startTimeFromAscendingNode:
-        - 'beginPosition:[{startTimeFromAscendingNode}Z TO *]'
-        - '$.beginPosition'
-      completionTimeFromAscendingNode:
-        - 'endPosition:[* TO {completionTimeFromAscendingNode}Z]'
-        - '$.endPosition'
+      cloudCover: '$.cloudCoverPercentage'
+      productVersion: '$.processingBaseline'
+      productQualityStatus: '$.generalQualityFlag'
+      creationDate: '$.creationDate'
+      processingDate: '$.processingDate'
       sensorMode: '$.sensorOperationalMode'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode: '$.beginPosition'
+      completionTimeFromAscendingNode: '$.endPosition'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id: '$.id'
+      # The geographic extent of the product
+      geometry: '$.footprint'
+      # The url of the quicklook
       quicklook: '$.quicklook'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
       downloadLink: '%(base_uri)s({id})/$value'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      radiometricQualityFlag: '$.radiometricQualityFlag'
+      sensorQualityFlag: '$.sensorQualityFlag'
+      geometricQualityFlag: '$.geometricQualityFlag'
+      formatCorrectnessFlag: '$.formatCorrectnessFlag'
+      format: '$.format'
+      dataTakeIdentifier: '$.dataTakeIdentifier'
+      size: '$.size'
+      dataTakeSensingStart: '$.dataTakeSensingStart'
+      relativeOrbitNumber: '$.relativeOrbitNumber'
+      platformNssdcid: '$.platformNssdcid'
+      platformShortName: '$.platformShortName'
+      instrumentShortName: '$.instrumentShortName'
+      degradedMSIDataPercentage: '$.degradedMSIDataPercentage'
+      degradedAncillaryDataPercentage: '$.degradedAncillaryDataPercentage'
   products:
     S1_SAR_OCN:
       product_type: '*OCN*'

@@ -1,2 +1,3 @@
+nbconvert!=5.4                      # Requirement for nbsphinx 0.3.5
 -r requirements-tutorials.txt
 -e .[docs]

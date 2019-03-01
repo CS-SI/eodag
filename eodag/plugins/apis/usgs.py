@@ -30,7 +30,7 @@ from tqdm import tqdm
 from usgs import USGSError, api
 
 from eodag.api.product import EOProduct
-from eodag.api.product.representations import properties_from_json
+from eodag.api.product.metadata_mapping import properties_from_json
 from .base import Api
 
 
@@ -91,7 +91,7 @@ class UsgsApi(Api):
             logger.debug('Product type %s does not exist on catalogue %s', usgs_dataset, usgs_catalog_node)
             logger.debug("Skipping error: %s", e)
         api.logout()
-        return final
+        return final, len(final)
 
     def download(self, product, auth=None, progress_callback=None):
         url = product.remote_location

@@ -49,3 +49,82 @@ of this bbox"
 
 * To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given (up to 3), the more
   verbose the tool is.
+
+
+HTTP Rest Interface
+===================
+
+EODAG has a REST API implementing OpenSearch Geo interface. To run the server, do::
+
+    eodag serve-rest -f <configuration-file>
+
+Below is the content of the help message of this command::
+
+    # eodag serve-rest --help
+    Usage: eodag serve-rest [OPTIONS]
+
+      Start eodag HTTP server
+
+    Options:
+      -f, --config PATH   File path to the user configuration file with its
+                          credentials  [required]
+      -d, --daemon        run in daemon mode  [default: False]
+      -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
+                          otherwise bind to 127.0.0.1 (localhost). This maybe
+                          necessary in systems that only run Flask  [default:
+                          False]
+      -p, --port INTEGER  The port on which to listen  [default: 5000]
+      --debug             Run in debug mode (for development purpose)  [default:
+                          False]
+      --help              Show this message and exit.
+
+Searching
+---------
+
+After you have launched the server, navigate to its home page. For example, for a local
+development server launched with `eodag serve-rest -f <config> --debug`, go to
+http://127.0.0.1:5000/. You will see a documentation of the interface.
+
+The supported operations are:
+
+* List product types::
+
+    # All supported product types
+    http://127.0.0.1:5000/product-types
+    # <provider> only supported product types
+    http://127.0.0.1:5000/product-types/<provider>
+
+* Search product::
+
+    http://127.0.0.1:5000/<product_type>/?param=value
+
+The supported request parameters are:
+
+* `box`: the search bounding box defined by: min_lon,min_lat,max_lon,max_lat.
+* `dtstart`: the start date
+* `dtend`: the end date
+* `cloudCover`: cloud cover
+
+Example URL::
+
+    http://127.0.0.1:5000/S2_MSI_L1C/?box=0,43,1,44
+
+Filtering
+---------
+
+The service provides ability to filter search results by the crunchers available
+to EODAG. To activate a filter, add the `filter` request parameter.
+
+Available filters and their matching EODAG cruncher are:
+
+* `latestIntersect` -> FilterLatestIntersect
+* `latestByName` -> FilterLatestByName
+* `overlap` -> FilterOverlap
+
+Some filters may require additional configuration parameters
+which can be set as request parameters.
+For example, overlap filter requires adding a `minimum_overlap` parameter to the request.
+
+Example URL::
+
+    http://127.0.0.1:5000/S2_MSI_L1C/?box=0,43,1,44&filter=overlap&minimum_overlap=0

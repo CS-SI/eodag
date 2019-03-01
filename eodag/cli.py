@@ -17,12 +17,15 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
+import json
+import os
+import shutil
 import sys
 import textwrap
 
 import click
 
-from eodag.api.core import EODataAccessGateway
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
 from eodag.utils.exceptions import UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -32,7 +35,7 @@ click.disable_unicode_literals_warning = True
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
-    'RemoveDoubles', 'FilterLatestByName', 'FilterLatestIntersect', 'FilterOverlap',
+    'FilterLatestByName', 'FilterLatestIntersect', 'FilterOverlap',
 ]
 
 
@@ -74,6 +77,10 @@ def eodag(ctx, verbose):
               default='search_results.geojson',
               help='Path to the file where to store search results (.geojson extension will be automatically appended '
                    'to the filename). DEFAULT: search_results.geojson')
+@click.option('--items', type=int, default=DEFAULT_ITEMS_PER_PAGE, show_default=True,
+              help='The number of items to return. Eodag is bound to whatever limitation the providers have on the '
+                   'number of results they return. This option allows to control how many items eodag should request')
+@click.option('--page', type=int, default=DEFAULT_PAGE, show_default=True, help='Retrieve the given page')
 @click.pass_context
 def search_crunch(ctx, **kwargs):
     # Process inputs for search
@@ -115,20 +122,28 @@ def search_crunch(ctx, **kwargs):
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
 
-    satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
+    items_per_page = kwargs.pop('items')
+    page = kwargs.pop('page') or 1
+
+    gateway = EODataAccessGateway(user_conf_file_path=conf_file)
 
     # Search
-    results = satim_api.search(producttype, **criteria)
-    click.echo("Found {} products with product type '{}': {}".format(len(results), producttype, results))
+    results, total = gateway.search(producttype, page=page, items_per_page=items_per_page, **criteria)
+    click.echo("Found a total number of {} products with product type '{}'".format(total, producttype))
+    click.echo("Returned {} products".format(len(results), producttype))
 
     # Crunch !
-    for cruncher in (satim_api.get_cruncher(cname, **cruncher_args_dict.get(cname, {})) for cname in cruncher_names):
-        results = results.crunch(cruncher, **criteria)
+    crunch_args = {
+        cruncher_name: cruncher_args_dict.get(cruncher_name, {})
+        for cruncher_name in cruncher_names
+    }
+    if crunch_args:
+        results = gateway.crunch(results, search_criteria=criteria, **crunch_args)
 
     storage_filepath = kwargs.pop('storage')
     if not storage_filepath.endswith('.geojson'):
         storage_filepath += '.geojson'
-    result_storage = satim_api.serialize(results, filename=storage_filepath)
+    result_storage = gateway.serialize(results, filename=storage_filepath)
     click.echo("Results stored at '{}'".format(result_storage))
 
 
@@ -165,7 +180,7 @@ def download(ctx, **kwargs):
         with click.Context(download) as ctx:
             click.echo('Nothing to do (no search results file provided)')
             click.echo(download.get_help(ctx))
-        sys.exit(0)
+        sys.exit(1)
     kwargs['verbose'] = ctx.obj['verbosity']
     setup_logging(**kwargs)
     conf_file = kwargs.pop('conf')
@@ -188,11 +203,126 @@ def download(ctx, **kwargs):
 @click.option('-f', '--conf', type=click.Path(exists=True),
               help='File path to the user configuration file with its credentials', )
 @click.pass_context
-def serve(ctx, host, port, conf):
+def serve_rpc(ctx, host, port, conf):
     setup_logging(verbose=ctx.obj['verbosity'])
     from eodag.rpc.server import EODAGRPCServer
     server = EODAGRPCServer(host, port, conf)
     server.serve()
+
+
+@eodag.command(help='Start eodag HTTP server')
+@click.option('-f', '--config', type=click.Path(exists=True, resolve_path=True), required=True,
+              help='File path to the user configuration file with its credentials')
+@click.option('-d', '--daemon', is_flag=True, show_default=True, help='run in daemon mode')
+@click.option('-w', '--world', is_flag=True, show_default=True,
+              help=('run flask using IPv4 0.0.0.0 (all network interfaces), '
+                    'otherwise bind to 127.0.0.1 (localhost). '
+                    'This maybe necessary in systems that only run Flask')
+              )
+@click.option('-p', '--port', type=int, default=5000, show_default=True,
+              help='The port on which to listen')
+@click.option('--debug', is_flag=True, show_default=True,
+              help='Run in debug mode (for development purpose)')
+@click.pass_context
+def serve_rest(ctx, daemon, world, port, config, debug):
+    setup_logging(verbose=ctx.obj['verbosity'])
+    # Set the settings of the app
+    # IMPORTANT: the order of imports counts here (first we override the settings, then we import the app so that the
+    # updated settings is taken into account in the app initialization)
+    from eodag.rest import settings
+    settings.EODAG_CFG_FILE = config
+
+    from eodag.rest.server import app
+
+    bind_host = '127.0.0.1'
+    if world:
+        bind_host = '0.0.0.0'
+    if daemon:
+        try:
+            pid = os.fork()
+        except OSError as e:
+            raise Exception('%s [%d]' % (e.strerror, e.errno))
+
+        if pid == 0:
+            os.setsid()
+            app.run(threaded=True, host=bind_host, port=port)
+        else:
+            sys.exit(0)
+    else:
+        app.run(debug=debug, host=bind_host, port=port)
+
+
+@eodag.command(help='Configure the settings of the HTTP web app (the providers credential files essentially) and copy '
+                    'the web app source directory into the specified directory')
+@click.option('--root', type=click.Path(exists=True, resolve_path=True), default='/var/www/', show_default=True,
+              help='The directory where to deploy the webapp (a subdirectory with the name from --name option will be '
+                   'created there)')
+@click.option('-f', '--config', type=click.Path(exists=True, resolve_path=True), required=True,
+              help='File path to the user configuration file with its credentials')
+@click.option('--webserver', type=click.Choice(['apache']), default='apache', show_default=True,
+              help='The webserver for which to generate sample configuration')
+@click.option('--threads', type=int, default=5, show_default=True,
+              help='Number of threads for apache webserver config (ignored if not apache webserver)')
+@click.option('--user', type=str, default='www-data', show_default=True, help='The user of the webserver')
+@click.option('--group', type=str, default='www-data', show_default=True, help='The group of the webserver')
+@click.option('--server-name', type=str, default='localhost', show_default=True,
+              help='The name to give to the server')
+@click.option('--wsgi-process-group', type=str, default='eodag-server', show_default=True,
+              help='The name of the wsgi process group (ignored if not apache webserver')
+@click.option('--wsgi-daemon-process', type=str, default='eodag-server', show_default=True,
+              help='The name of the wsgi daemon process (ignored if not apache webserver')
+@click.option('--name', type=str, default='eodag_server', show_default=True,
+              help='The name of the directory that will be created in the webserver root directory to host the WSGI '
+                   'app')
+@click.pass_context
+def deploy_wsgi_app(ctx, root, config, webserver, threads, user, group, server_name, wsgi_process_group,
+                    wsgi_daemon_process, name):
+    setup_logging(verbose=ctx.obj['verbosity'])
+    import eodag as eodag_package
+
+    server_config = {
+        'EODAG_CFG_FILE': config,
+    }
+    eodag_package_path = eodag_package.__path__[0]
+    webapp_src_path = os.path.join(eodag_package_path, 'rest')
+    webapp_dst_path = os.path.join(root, name)
+    if not os.path.exists(webapp_dst_path):
+        os.mkdir(webapp_dst_path)
+    wsgi_path = os.path.join(webapp_dst_path, 'server.wsgi')
+    click.echo('Moving eodag HTTP web app from {} to {}'.format(webapp_src_path, webapp_dst_path))
+    shutil.copy(os.path.join(webapp_src_path, 'server.wsgi'), wsgi_path)
+    shutil.copy(os.path.join(webapp_src_path, 'description.md'), os.path.join(webapp_dst_path, 'description.md'))
+    shutil.copytree(os.path.join(webapp_src_path, 'templates'), os.path.join(webapp_dst_path, 'templates'))
+
+    click.echo('Overriding eodag HTTP server config with values: {}'.format(server_config))
+    with open(os.path.join(webapp_dst_path, 'eodag_server_settings.json'), 'w') as fd:
+        json.dump(server_config, fd)
+
+    click.echo('Finished ! The WSGI file is in {}'.format(wsgi_path))
+    if webserver == 'apache':
+        application_group = '%{GLOBAL}'
+        apache_config_sample = """
+<VirtualHost *>
+    ServerName %(server_name)s
+
+    WSGIDaemonProcess %(wsgi_daemon_process)s user=%(user)s group=%(group)s threads=%(threads)s
+    WSGIScriptAlias / %(wsgi_path)s
+
+    <Directory %(webapp_dst_path)s>
+        WSGIProcessGroup %(wsgi_process_group)s
+        WSGIApplicationGroup %(application_group)s
+        <IfVersion < 2.4>
+            Order allow,deny
+            Allow from all
+        </IfVersion>
+        <IfVersion >= 2.4>
+            Require all granted
+        </IfVersion>
+    </Directory>
+</VirtualHost>
+        """ % locals()
+        click.echo('Sample Apache2 config to add in a your virtual host:')
+        click.echo(apache_config_sample)
 
 
 if __name__ == '__main__':

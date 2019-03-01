@@ -43,37 +43,45 @@ class FilterOverlap(Crunch):
         if not footprint:
             return products
         minimum_overlap = float(self.config.get('minimum_overlap', '0'))
+        logger.info('Minimum overlap is: {} %'.format(minimum_overlap))
         search_extent = geometry.box(footprint['lonmin'], footprint['latmin'],
                                      footprint['lonmax'], footprint['latmax'])
         logger.info('Initial requested extent area: %s', search_extent.area)
-        for product in products:
-            logger.info('Uncovered extent area: %s', search_extent.area)
-            if product.search_intersection:
-                intersection = product.search_intersection
-                product_geometry = product.geometry
-            else:  # Product geometry may be invalid
-                if not product.geometry.is_valid():
-                    logger.debug('Trying our best to deal with invalid geometry on product: %r', product)
-                    product_geometry = product.geometry.buffer(0)
-                    try:
-                        intersection = search_extent.intersection(product_geometry)
-                    except TopologicalError:
-                        logger.debug('Product geometry still invalid. Overlap test restricted to containment')
-                        if search_extent.contains(product_geometry):
-                            logger.debug('Product %r overlaps the search extent. Adding it to filtered results')
-                            add_to_filtered(product)
-                        continue
-                else:
+        if search_extent.area == 0:
+            logger.info('No product can overlap a requested extent that is not a polygon (i.e with area=0)')
+        else:
+            for product in products:
+                logger.info('Uncovered extent area: %s', search_extent.area)
+                if product.search_intersection:
+                    intersection = product.search_intersection
                     product_geometry = product.geometry
-                    intersection = search_extent.intersection(product_geometry)
-            ipos = (intersection.area / search_extent.area) * 100
-            ipop = (intersection.area / product_geometry.area) * 100
-            logger.info('Intersection of product extent and search extent covers %f percent of the search extent '
-                        'area', ipos)
-            logger.info('Intersection of product extent and search extent covers %f percent of the product extent '
-                        'area', ipop)
-            if any((search_extent.contains(product.geometry), ipos >= minimum_overlap, ipop >= minimum_overlap)):
-                logger.info('Product %r overlaps the search extent. Adding it to filtered results', product)
-                add_to_filtered(product)
+                else:  # Product geometry may be invalid
+                    if not product.geometry.is_valid:
+                        logger.debug('Trying our best to deal with invalid geometry on product: %r', product)
+                        product_geometry = product.geometry.buffer(0)
+                        try:
+                            intersection = search_extent.intersection(product_geometry)
+                        except TopologicalError:
+                            logger.debug('Product geometry still invalid. Overlap test restricted to containment')
+                            if search_extent.contains(product_geometry):
+                                logger.debug('Product %r overlaps the search extent. Adding it to filtered results')
+                                add_to_filtered(product)
+                            continue
+                    else:
+                        product_geometry = product.geometry
+                        intersection = search_extent.intersection(product_geometry)
+                ipos = (intersection.area / search_extent.area) * 100
+                ipop = (intersection.area / product_geometry.area) * 100
+                logger.info('Intersection of product extent and search extent covers %f percent of the search extent '
+                            'area', ipos)
+                logger.info('Intersection of product extent and search extent covers %f percent of the product extent '
+                            'area', ipop)
+                if any((search_extent.contains(product.geometry), ipos >= minimum_overlap, ipop >= minimum_overlap)):
+                    logger.info('Product %r overlaps the search extent by the specified constraint. Adding it to '
+                                'filtered results', product)
+                    add_to_filtered(product)
+                else:
+                    logger.info('Product %r does not overlaps the search extent by the specified constraint. '
+                                'Skipping it', product)
         logger.info('Finished filtering products. Resulting products: %r', filtered)
         return filtered

@@ -28,7 +28,7 @@ from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
 
-from eodag.api.product.representations import DEFAULT_METADATA_MAPPING
+from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 
 
 try:

@@ -1,1 +1,2 @@
+xarray<0.10.8,>=0.10    # Requirement for ipyleaflet
 -e .[tutorials]
