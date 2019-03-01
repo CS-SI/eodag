@@ -1,6 +1,26 @@
 Release history
 ---------------
 
+0.7.1 (2018-03-01)
+++++++++++++++++++
+
+- Creates a http rest server interface to eodag
+- Switches separator of conversion functions in search parameters: the separator switches from "$" to "#"
+- In the providers configuration file, an operator can now specify a conversion to be applied to metadata when
+  extracting them from provider search response. See the providers.yml file (sobloo provider, specification of
+  startTimeFromAscendingNode extraction) for an example usage of this feature
+- The RestoSearch plugin is dismissed and merged with its parent to allow better generalization of the
+  QueryStringSearch plugin.
+- Simplifies the way eodag search for product types on the providers: the partial_support mechanism is removed
+- The search interface is modified to return a 2-tuple, the first item being the result and the second the total
+  number of items satisfying the request
+- The EOProduct properties now excludes all metadata that were either not mapped or not available (mapped in the
+  provider metadata_mapping but not present in the provider response). This lowers the size of the number of elements
+  needed to be transferred as response to http requests for the embedded http server
+- Two new cli args are added: --page and --items to precise which page is to be requested on the provider (default 1)
+  and how many results to retrieve (default 20)
+
+
 0.7.0 (2018-12-04)
 ++++++++++++++++++
 
