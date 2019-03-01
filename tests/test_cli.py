@@ -214,7 +214,6 @@ class TestEodagCli(unittest.TestCase):
         result = self.runner.invoke(eodag, ['download', '--search-results', search_results_path, '-f', config_path])
         dag.assert_called_once_with(user_conf_file_path=config_path)
         dag.return_value.deserialize.assert_called_once_with(search_results_path)
-        dag.return_value.download_all.assert_called()
         self.assertEqual(dag.return_value.download_all.call_count, 1)
         self.assertEqual('Downloaded file:///fake_path\n', result.output)
 
@@ -229,5 +228,5 @@ class TestEodagCli(unittest.TestCase):
         config_path = os.path.join(TEST_RESOURCES_PATH, 'file_config_override.yml')
         self.runner.invoke(eodag, ['serve-rpc', '-f', config_path])
         rpc_server.assert_called_once_with('localhost', 50051, config_path)
-        rpc_server.return_value.serve.assert_called()
+        rpc_server.return_value.serve.assert_any_call()
         self.assertEqual(rpc_server.return_value.serve.call_count, 1)
