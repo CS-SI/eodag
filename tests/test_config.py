@@ -24,7 +24,7 @@ import unittest
 import yaml.parser
 from six import StringIO
 
-from .context import ValidationError, config
+from tests.context import ValidationError, config
 
 
 class TestProviderConfig(unittest.TestCase):
@@ -43,14 +43,14 @@ class TestProviderConfig(unittest.TestCase):
                 EODAG_PRODUCT_TYPE: provider_product_type
             '''.format(unslugified_provider_name)
         )
-        provider_config = yaml.load(stream)
+        provider_config = yaml.load(stream, Loader=yaml.Loader)
         self.assertEqual(provider_config.name, slugified_provider_name)
 
     def test_provider_config_valid(self):
         """Provider config must be valid"""
         # Not defining any plugin at all
         invalid_stream = StringIO('''!provider\nname: my_provider''')
-        self.assertRaises(ValidationError, yaml.load, invalid_stream)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader)
 
         # Not defining a class for a plugin
         invalid_stream = StringIO(
@@ -59,7 +59,7 @@ class TestProviderConfig(unittest.TestCase):
                 search: !plugin
                     param: value
             ''')
-        self.assertRaises(ValidationError, yaml.load, invalid_stream)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader)
 
         # Not giving a name to the provider
         invalid_stream = StringIO(
@@ -67,7 +67,7 @@ class TestProviderConfig(unittest.TestCase):
                 api: !plugin
                     type: MyPluginClass
             ''')
-        self.assertRaises(ValidationError, yaml.load, invalid_stream)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader)
 
         # Specifying an api plugin and a search or download or auth plugin at the same type
         invalid_stream1 = StringIO(
@@ -91,9 +91,9 @@ class TestProviderConfig(unittest.TestCase):
                 auth: !plugin
                     type: MyPluginClass4
             ''')
-        self.assertRaises(ValidationError, yaml.load, invalid_stream1)
-        self.assertRaises(ValidationError, yaml.load, invalid_stream2)
-        self.assertRaises(ValidationError, yaml.load, invalid_stream3)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream1, Loader=yaml.Loader)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream2, Loader=yaml.Loader)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream3, Loader=yaml.Loader)
 
     def test_provider_config_update(self):
         """A provider config must be update-able with a dict"""
@@ -106,7 +106,7 @@ class TestProviderConfig(unittest.TestCase):
                     plugin_param1: value1
                     pluginParam2: value2
         ''')
-        provider_config = yaml.load(valid_stream)
+        provider_config = yaml.load(valid_stream, Loader=yaml.Loader)
         overrides = {
             'provider_param': 'new val',
             'api': {
@@ -130,14 +130,14 @@ class TestPluginConfig(unittest.TestCase):
             '''!plugin
                     param: value
         ''')
-        self.assertRaises(ValidationError, yaml.load, invalid_stream)
+        self.assertRaises(ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader)
 
         valid_stream = StringIO(
             '''!plugin
                     type: MySearchPlugin
                     param1: value
         ''')
-        self.assertIsInstance(yaml.load(valid_stream), config.PluginConfig)
+        self.assertIsInstance(yaml.load(valid_stream, Loader=yaml.Loader), config.PluginConfig)
 
     def test_plugin_config_update(self):
         """A plugin config must be update-able by a dict"""
@@ -149,7 +149,7 @@ class TestPluginConfig(unittest.TestCase):
                         sub_param1: v1
                         subParam_2: v2
         ''')
-        plugin_config = yaml.load(valid_stream)
+        plugin_config = yaml.load(valid_stream, Loader=yaml.Loader)
         overrides = {
             'type': 'MyOtherPlugin',
             'new_plugin_param': 'a value',

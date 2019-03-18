@@ -39,7 +39,7 @@ class SimpleYamlProxyConfig(object):
     def __init__(self, conf_file_path):
         with open(os.path.abspath(os.path.realpath(conf_file_path)), 'r') as fh:
             try:
-                self.source = yaml.load(fh)
+                self.source = yaml.load(fh, Loader=yaml.SafeLoader)
                 utf8_everywhere(self.source)
             except yaml.parser.ParserError as e:
                 print('Unable to load user configuration file')
@@ -178,7 +178,7 @@ def load_default_config():
         try:
             # Providers configs are stored in this file as separated yaml documents
             # Load all of it
-            providers_configs = yaml.load_all(fh)
+            providers_configs = yaml.load_all(fh, Loader=yaml.Loader)
         except yaml.parser.ParserError as e:
             logger.error('Unable to load configuration')
             raise e
