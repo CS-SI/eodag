@@ -29,7 +29,7 @@ An :class:`~eodag.api.product._product.EOProduct` has a :attr:`~eodag.api.produc
 which is built using one of the two following methods, depending on the configuration of the provider for which it is
 constructed (these methods are therefore to be used primarily in search plugins).
 
-.. automodule:: eodag.api.product.representations
+.. automodule:: eodag.api.product.metadata_mapping
    :members:
 
 .. module:: eodag.api.product.drivers
@@ -332,9 +332,3 @@ Utils
    :members:
    :show-inheritance:
    :undoc-members:
-
-.. automodule:: eodag.utils.metadata_mapping
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
