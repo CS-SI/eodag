@@ -22,11 +22,8 @@ from eodag.rest.utils import get_home_page_content, search_products
 
 
 app = flask.Flask(__name__)
-app.config.from_object('eodag.rest.settings')
-# Allows to override settings from a json file
-app.config.from_json('eodag_server_settings.json', silent=True)
 
-eodag_api = eodag.EODataAccessGateway(user_conf_file_path=app.config['EODAG_CFG_FILE'])
+eodag_api = eodag.EODataAccessGateway()
 
 
 def cross_origin(request_handler):

@@ -19,8 +19,7 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
 )
 
-cfg_file = os.getenv("EODAG_CFG_FILE")
-eodag_api = eodag.EODataAccessGateway(user_conf_file_path=cfg_file)
+eodag_api = eodag.EODataAccessGateway()
 Cruncher = namedtuple("Cruncher", ["clazz", "config_params"])
 crunchers = {
     "latestIntersect": Cruncher(FilterLatestIntersect, []),
