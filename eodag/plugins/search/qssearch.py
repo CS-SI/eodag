@@ -153,7 +153,7 @@ class QueryStringSearch(Search):
                             query_params[search_param] = format_metadata(queryable)
                         else:
                             param, value = parts
-                            query_params[param] = format_metadata(value, *args, **kwargs)
+                            query_params.setdefault(param, []).append(format_metadata(value, *args, **kwargs))
                     else:
                         query_params[queryable] = query
             except KeyError:
@@ -171,8 +171,8 @@ class QueryStringSearch(Search):
         query_params.update(literal_search_params)
 
         # Build the final query string, in one go without quoting it (some providers do not operate well with
-        # urlencoded and quoted query strings...
-        return query_params, urlencode(query_params, quote_via=lambda x, *_args, **_kwargs: x)
+        # urlencoded and quoted query strings)...
+        return query_params, urlencode(query_params, doseq=True, quote_via=lambda x, *_args, **_kwargs: x)
 
     def format_free_text_search(self, **kwargs):
         """Build the free text search parameter using the search parameters"""
@@ -210,7 +210,7 @@ class QueryStringSearch(Search):
         return {
             key: get_search_param(val)
             for key, val in self.config.metadata_mapping.items()
-            if len(val) == 2
+            if isinstance(val, list) and len(val) == 2
         }
 
     def collect_search_urls(self, page=None, items_per_page=None, *args, **kwargs):
