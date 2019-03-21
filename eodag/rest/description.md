@@ -53,8 +53,10 @@ Example URL:
 
 There is an endpoint for listing supported product types:
 
-{base_url}product-types/ for all providers supported product types or {base_url}product-types/$provider for product
-types supported only by $provider. The result is a json with product type ID and metadata.
+* <{base_url}product-types/> for all providers supported product types or
+* <{base_url}product-types/$provider> for product types supported only by $provider.
+
+The result is a json with product type ID and metadata.
 
 Supported product types are:
 
