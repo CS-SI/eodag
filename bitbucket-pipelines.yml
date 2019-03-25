@@ -59,7 +59,6 @@ pipelines:
                            --cover-erase\
                            --cover-inclusive\
                            --ignore-files=test_end_to_end.py\
-                           --ignore-files=test_http_server.py\
                            eodag tests
       - step:
           name: Unit tests for Py27
@@ -76,5 +75,4 @@ pipelines:
                            --cover-erase\
                            --cover-inclusive\
                            --ignore-files=test_end_to_end.py\
-                           --ignore-files=test_http_server.py\
                            eodag tests

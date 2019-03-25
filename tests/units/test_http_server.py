@@ -17,13 +17,13 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
-import functools
 import json
 import unittest
 
 import geojson
 
-from tests.context import ValidationError, _get_date, eodag_http_server, DEFAULT_ITEMS_PER_PAGE
+from tests import mock
+from tests.context import DEFAULT_ITEMS_PER_PAGE, SearchResult, ValidationError, eodag_http_server, get_date
 
 
 class RequestTestCase(unittest.TestCase):
@@ -39,18 +39,100 @@ class RequestTestCase(unittest.TestCase):
         response = self.app.get('/', follow_redirects=True)
         self.assertEquals(200, response.status_code)
 
-        response = self.app.get('{}'.format(self.tested_product_type), follow_redirects=True)
-        self.assertEquals(200, response.status_code)
+        self._request_valid(self.tested_product_type)
 
-    def _request_valid(self, url):
-        # Limit the results to 2
-        from ..context import eodag_api
-        old_search = eodag_api.search
-        eodag_api.search = functools.partial(eodag_api.search, max_results=2)
+    @mock.patch('eodag.rest.utils.eodag_api.search', autospec=True, return_value=(SearchResult.from_geojson({
+        'features': [{
+            'properties': {
+                'snowCover': None,
+                'resolution': None,
+                'completionTimeFromAscendingNode': '2018-02-16T00:12:14.035Z',
+                'keyword': {},
+                'productType': 'OCN',
+                'downloadLink': ('https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363'
+                                 '-b19f8931cc7b/download'),
+                'eodag_provider': 'peps',
+                'eodag_product_type': 'S1_OCN',
+                'platformSerialIdentifier': 'S1A',
+                'cloudCover': 0,
+                'title': 'S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3',
+                'orbitNumber': 20624,
+                'instrument': 'SAR-C SAR',
+                'abstract': None,
+                'eodag_search_intersection': {
+                    'coordinates': [
+                        [
+                            [
+                                89.590721,
+                                2.614019
+                            ],
+                            [
+                                89.771805,
+                                2.575546
+                            ],
+                            [
+                                89.809341,
+                                2.756323
+                            ],
+                            [
+                                89.628258,
+                                2.794767
+                            ],
+                            [
+                                89.590721,
+                                2.614019
+                            ]
+                        ]
+                    ],
+                    'type': 'Polygon'
+                },
+                'organisationName': None,
+                'startTimeFromAscendingNode': '2018-02-15T23:53:22.871Z',
+                'platform': None,
+                'sensorType': None,
+                'processingLevel': None,
+                'orbitType': None,
+                'topicCategory': None,
+                'orbitDirection': None,
+                'parentIdentifier': None,
+                'sensorMode': None,
+                'quicklook': None,
+            },
+            'id': '578f1768-e66e-5b86-9363-b19f8931cc7b',
+            'type': 'Feature',
+            'geometry': {
+                'coordinates': [
+                    [
+                        [
+                            89.590721,
+                            2.614019
+                        ],
+                        [
+                            89.771805,
+                            2.575546
+                        ],
+                        [
+                            89.809341,
+                            2.756323
+                        ],
+                        [
+                            89.628258,
+                            2.794767
+                        ],
+                        [
+                            89.590721,
+                            2.614019
+                        ]
+                    ]
+                ],
+                'type': 'Polygon'
+            }
+        }],
+        'type': 'FeatureCollection'
+    }), 1))
+    def _request_valid(self, url, _):
         response = self.app.get(url, follow_redirects=True)
         self.assertEquals(200, response.status_code)
-        # Restore authentic search method
-        eodag_api.search = old_search
         # Assert response format is GeoJSON
         return geojson.loads(response.data)
 
@@ -90,17 +172,17 @@ class RequestTestCase(unittest.TestCase):
 
     def test_get_date(self):
         """Date validation function must correctly validate dates"""
-        _get_date('2018-01-01')
-        _get_date('2018-01-01T')
-        _get_date('2018-01-01T00:00')
-        _get_date('2018-01-01T00:00:00')
-        _get_date('2018-01-01T00:00:00Z')
-        _get_date('20180101')
+        get_date('2018-01-01')
+        get_date('2018-01-01T')
+        get_date('2018-01-01T00:00')
+        get_date('2018-01-01T00:00:00')
+        get_date('2018-01-01T00:00:00Z')
+        get_date('20180101')
 
-        self.assertRaises(ValidationError, _get_date, 'foo')
-        self.assertRaises(ValidationError, _get_date, 'foo2018-01-01')
+        self.assertRaises(ValidationError, get_date, 'foo')
+        self.assertRaises(ValidationError, get_date, 'foo2018-01-01')
 
-        self.assertIsNone(_get_date(None))
+        self.assertIsNone(get_date(None))
 
     def test_date_search(self):
         result1 = self._request_valid('{}?box=0,43,1,44'.format(self.tested_product_type))

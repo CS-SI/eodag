@@ -196,7 +196,7 @@ class EOProduct(object):
         provider = feature['properties']['eodag_provider']
         product_type = feature['properties']['eodag_product_type']
         obj = cls(provider, properties, productType=product_type)
-        obj.search_intersection = feature['properties']['eodag_search_intersection']
+        obj.search_intersection = geometry.shape(feature['properties']['eodag_search_intersection'])
         return obj
 
     # Implementation of geo-interface protocol (See https://gist.github.com/sgillies/2217756)
