@@ -39,7 +39,7 @@ def format_product_types(product_types):
     return "\n".join(sorted(result))
 
 
-def get_home_page_content(base_url, ipp):
+def get_home_page_content(base_url, ipp=None):
     """Compute eodag service home page content
 
     :param base_url: the service root URL
@@ -50,7 +50,7 @@ def get_home_page_content(base_url, ipp):
     content = content.format(
         base_url=base_url,
         product_types=format_product_types(eodag_api.list_product_types()),
-        ipp=DEFAULT_ITEMS_PER_PAGE,
+        ipp=ipp or DEFAULT_ITEMS_PER_PAGE,
     )
     content = markdown.markdown(content)
     return content
