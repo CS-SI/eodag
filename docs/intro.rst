@@ -187,6 +187,13 @@ Create a configuration file containing your credentials for each provider.  You 
     current user of eodag. However, note that you can alternatively configure
     your credentials through environment variables instead
 
+.. note::
+
+    The above template is used to create a default user configuration file at
+    ~/.config/eodag/eodag.yml which you can directly modify with your preferences.
+    If you don't want to use the file created in this location, you can still tell
+    eodag which file to use with the environment variable: EODAG_CFG_FILE.
+
 Fill this configuration file with the credentials you obtained from each
 provider.
 
