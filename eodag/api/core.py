@@ -17,7 +17,10 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
+import errno
 import logging
+import os
+import shutil
 from operator import itemgetter
 
 import geojson
@@ -47,12 +50,28 @@ class EODataAccessGateway(object):
     """
 
     def __init__(self, user_conf_file_path=None):
-        self.product_types_config = SimpleYamlProxyConfig(resource_filename('eodag', 'resources/product_types.yml'))
+        self.product_types_config = SimpleYamlProxyConfig(
+            resource_filename('eodag', os.path.join('resources/', 'product_types.yml')))
         self.providers_config = load_default_config()
 
         # First level override: From a user configuration file
-        if user_conf_file_path:
-            override_config_from_file(self.providers_config, user_conf_file_path)
+        if user_conf_file_path is None:
+            env_var_name = 'EODAG_CFG_FILE'
+            standard_configuration_path = os.path.join(os.path.expanduser('~'), '.config', 'eodag', 'eodag.yml')
+            user_conf_file_path = os.getenv(env_var_name)
+            if user_conf_file_path is None:
+                user_conf_file_path = standard_configuration_path
+                conf_dir = os.path.dirname(user_conf_file_path)
+                try:
+                    os.makedirs(conf_dir)
+                except OSError as err:
+                    # Reraise the error unless it's about an already existing directory
+                    if err.errno != errno.EEXIST or not os.path.isdir(conf_dir):
+                        raise
+                if not os.path.isfile(standard_configuration_path):
+                    shutil.copy(resource_filename('eodag', os.path.join('resources', 'user_conf_template.yml')),
+                                standard_configuration_path)
+        override_config_from_file(self.providers_config, user_conf_file_path)
 
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)

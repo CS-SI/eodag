@@ -41,9 +41,10 @@ except ImportError:  # PY2
 
 try:  # PY3
     from urllib.parse import urlencode, quote, quote_plus  # noqa
+
     if sys.version_info.minor < 5:
         # Explicitly redefining urlencode the way it is defined in Python 3.5
-        def urlencode(query, doseq=False, safe='', encoding=None, errors=None, quote_via=quote_plus):   # noqa
+        def urlencode(query, doseq=False, safe='', encoding=None, errors=None, quote_via=quote_plus):  # noqa
             """Encode a dict or sequence of two-element tuples into a URL query string.
 
             If any values in the query arg are sequences and doseq is true, each
@@ -78,7 +79,7 @@ try:  # PY3
                     raise TypeError("not a valid non-string sequence "
                                     "or mapping object").with_traceback(tb)
 
-            l = []      # noqa
+            l = []  # noqa
             if not doseq:
                 for k, v in query:
                     if isinstance(k, bytes):
@@ -107,7 +108,7 @@ try:  # PY3
                     else:
                         try:
                             # Is this a sufficient test for sequence-ness?
-                            x = len(v)      # noqa
+                            x = len(v)  # noqa
                         except TypeError:
                             # not a sequence
                             v = quote_via(str(v), safe, encoding, errors)
@@ -160,7 +161,7 @@ except ImportError:  # PY2
                 raise TypeError("not a valid non-string sequence "
                                 "or mapping object").with_traceback(tb)
 
-        l = []      # noqa
+        l = []  # noqa
         if not doseq:
             for k, v in query:
                 if isinstance(k, bytes):
@@ -189,7 +190,7 @@ except ImportError:  # PY2
                 else:
                     try:
                         # Is this a sufficient test for sequence-ness?
-                        x = len(v)      # noqa
+                        x = len(v)  # noqa
                     except TypeError:
                         # not a sequence
                         v = quote_via(str(v), safe, encoding, errors)
@@ -367,17 +368,24 @@ def merge_mappings(mapping1, mapping2):
             # lowercase version of a key in mapping2. Otherwise, create the key in mapping1. This is the meaning of
             # m1_keys_lowercase.get(key, key)
             current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
-            if current_value is not None and isinstance(value, six.string_types):
+            if current_value is not None:
                 current_value_type = type(current_value)
-                # Bool is a type with special meaning in Python, thus the special case
-                if current_value_type is bool:
-                    if value.capitalize() not in ('True', 'False'):
-                        raise ValueError('Only true or false strings (case insensitive) are allowed for booleans')
-                    # Get the real Python value of the boolean. e.g: value='tRuE' => eval(value.capitalize())=True.
-                    # str.capitalize() transforms the first character of the string to capital and lowercases the rest
-                    mapping1[m1_keys_lowercase[key]] = eval(value.capitalize())
+                if isinstance(value, six.string_types):
+                    # Bool is a type with special meaning in Python, thus the special case
+                    if current_value_type is bool:
+                        if value.capitalize() not in ('True', 'False'):
+                            raise ValueError('Only true or false strings (case insensitive) are allowed for booleans')
+                        # Get the real Python value of the boolean. e.g: value='tRuE' => eval(value.capitalize())=True.
+                        # str.capitalize() transforms the first character of the string to a capital letter
+                        mapping1[m1_keys_lowercase[key]] = eval(value.capitalize())
+                    else:
+                        mapping1[m1_keys_lowercase[key]] = current_value_type(value)
                 else:
-                    mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+                    try:
+                        mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+                    except TypeError:
+                        # Ignore any override value that does not have the same type as the default value
+                        pass
             else:
                 mapping1[key] = value
 

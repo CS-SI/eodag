@@ -81,7 +81,7 @@ How to configure authentication for available providers
 -------------------------------------------------------
 
 Create a configuration file containing your credentials for each provider.  You can download
-:download:`this template <../user_conf_template.yml>`, which has the following layout:
+:download:`this template <../eodag/resources/user_conf_template.yml>`, which has the following layout:
 
 .. code-block:: yaml
 

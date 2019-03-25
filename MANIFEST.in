@@ -1,4 +1,4 @@
-include README.rst LICENSE NOTICE requirements.txt user_conf_template.yml
+include README.rst LICENSE NOTICE requirements.txt
 include eodag/rest/description.md
 include eodag/rest/server.wsgi
 recursive-include docs *.rst

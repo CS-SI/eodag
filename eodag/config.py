@@ -122,8 +122,11 @@ class ProviderConfig(yaml.YAMLObject):
 
         :param dict mapping: The mapping from which to override configuration parameters
         """
+        if mapping is None:
+            mapping = {}
         merge_mappings(self.__dict__, {
-            key: value for key, value in mapping.items() if key not in ('name', 'api', 'search', 'download', 'auth')
+            key: value for key, value in mapping.items()
+            if key not in ('name', 'api', 'search', 'download', 'auth') and value is not None
         })
         for key in ('api', 'search', 'download', 'auth'):
             current_value = getattr(self, key, None)
@@ -164,6 +167,8 @@ class PluginConfig(yaml.YAMLObject):
 
         :param dict mapping: The mapping from which to override configuration parameters
         """
+        if mapping is None:
+            mapping = {}
         merge_mappings(self.__dict__, mapping)
 
 

@@ -17,8 +17,10 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import os
 import unittest
 
+from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, UnsupportedProvider
 
 
@@ -116,3 +118,17 @@ class TestCore(unittest.TestCase):
         self.assertIn('desc', structure)
         self.assertIn('meta', structure)
         self.assertIn(structure['ID'], self.SUPPORTED_PRODUCT_TYPES)
+
+    def test_core_object_creates_config_standard_location(self):
+        """The core object must create a user config file in standard user config location on instantiation"""
+        # The core object is created on setup
+        self.assertTrue(os.path.exists(os.path.join(os.path.expanduser('~'), '.config', 'eodag', 'eodag.yml')))
+
+    def test_core_object_prioritize_config_file_in_envvar(self):
+        """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""
+        os.environ['EODAG_CFG_FILE'] = os.path.join(TEST_RESOURCES_PATH, 'file_config_override.yml')
+        dag = EODataAccessGateway()
+        # usgs priority is set to 5 in the test config overrides
+        self.assertEqual(dag.get_preferred_provider(), ('usgs', 5))
+        # peps outputs prefix is set to /data
+        self.assertEqual(dag.providers_config['peps'].download.outputs_prefix, '/data')
