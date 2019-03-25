@@ -61,9 +61,13 @@ def get_templates_path():
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def get_product_types():
-    """Returns a list of supported product types"""
-    return eodag_api.list_product_types()
+def get_product_types(provider=None):
+    """Returns a list of supported product types
+
+    :param provider: provider name
+    :type provider: str"""
+
+    return eodag_api.list_product_types(provider)
 
 
 def search_bbox(request_bbox):

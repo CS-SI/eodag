@@ -13,17 +13,13 @@ from functools import wraps
 import flask
 from flask import jsonify, make_response, render_template, request
 
-import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.utils.exceptions import (
     UnsupportedProductType, UnsupportedProvider, ValidationError,
 )
-from eodag.rest.utils import get_home_page_content, search_products
-
+from eodag.rest.utils import get_home_page_content, search_products, get_product_types
 
 app = flask.Flask(__name__)
-
-eodag_api = eodag.EODataAccessGateway()
 
 
 def cross_origin(request_handler):
@@ -62,7 +58,7 @@ def home():
 @cross_origin
 def list_product_types(provider=None):
     try:
-        product_types = eodag_api.list_product_types() if provider is None else eodag_api.list_product_types(provider)
+        product_types = get_product_types(provider)
     except UnsupportedProvider:
         return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
     except Exception:
