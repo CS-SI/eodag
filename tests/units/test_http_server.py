@@ -134,11 +134,11 @@ class RequestTestCase(unittest.TestCase):
         response = self.app.get(url, follow_redirects=True)
         self.assertEquals(200, response.status_code)
         # Assert response format is GeoJSON
-        return geojson.loads(response.data)
+        return geojson.loads(response.data.decode('utf-8'))
 
     def _request_not_valid(self, url):
         response = self.app.get(url, follow_redirects=True)
-        response_content = json.loads(response.data)
+        response_content = json.loads(response.data.decode('utf-8'))
 
         self.assertEquals(400, response.status_code)
         self.assertIn('error', response_content)
@@ -146,7 +146,7 @@ class RequestTestCase(unittest.TestCase):
 
     def _request_not_found(self, url):
         response = self.app.get(url, follow_redirects=True)
-        response_content = json.loads(response.data)
+        response_content = json.loads(response.data.decode('utf-8'))
 
         self.assertEquals(404, response.status_code)
         self.assertIn('error', response_content)
