@@ -13,7 +13,7 @@ http://hostname/<product_type>/?param=value
 
 See below to get the list of available product types.
 
-Supported request parameter is
+Supported request parameters are:
 
 * `box`: the search bounding box defined by: min_lon,min_lat,max_lon,max_lat.
 * `dtstart`: the start date
