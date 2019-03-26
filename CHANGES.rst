@@ -1,6 +1,15 @@
 Release history
 ---------------
 
+0.7.2 (2018-03-26)
+++++++++++++++++++
+
+- Fixes bug due to the new version of PyYaml
+- Updates documentation and tutorial
+- Automatically generates a user configuration file in ``~/.config/eodag/eodag.yml``. This path is overridable by the
+  ``EODAG_CFG_FILE`` environment variable.
+
+
 0.7.1 (2018-03-01)
 ++++++++++++++++++
 
