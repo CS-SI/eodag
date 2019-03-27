@@ -82,7 +82,9 @@ class EODataAccessGateway(object):
         """Set max priority for the given provider.
 
         >>> import eodag.utils.exceptions
-        >>> dag = EODataAccessGateway()
+        >>> import tempfile, os
+        >>> config = tempfile.NamedTemporaryFile(delete=True)
+        >>> dag = EODataAccessGateway(user_conf_file_path=os.path.join(tempfile.gettempdir(), config.name))
         >>> dag.get_preferred_provider()    # This also tests get_preferred_provider method by the way
         ('peps', 1)
         >>> # For the following lines, see http://python3porting.com/problems.html#handling-expected-exceptions
@@ -100,6 +102,7 @@ class EODataAccessGateway(object):
         >>> dag.set_preferred_provider(u'usgs')
         >>> dag.get_preferred_provider()
         ('usgs', 4)
+        >>> config.close()
 
         :param provider: The name of the provider that should be considered as the preferred provider to be used for
                          this instance

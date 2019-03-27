@@ -206,9 +206,12 @@ def override_config_from_file(config, file_path):
     :param file_path: The path to the file from where the new values will be read
     :type file_path: str or unicode
     """
+    logger.info('Loading user configuration from: %s', os.path.abspath(file_path))
     with open(os.path.abspath(os.path.realpath(file_path)), 'r') as fh:
         try:
             config_in_file = yaml.safe_load(fh)
+            if config_in_file is None:
+                return
             utf8_everywhere(config_in_file)
         except yaml.parser.ParserError as e:
             logger.error('Unable to load user configuration file')
