@@ -79,6 +79,7 @@ setup(
             'twine',
             'wheel',
             'flake8',
+            'pre-commit',
         ],
         'tutorials': [
             'jupyter',
