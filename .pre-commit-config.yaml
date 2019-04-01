@@ -32,12 +32,6 @@ repos:
     hooks:
     -   id: pydocstyle
         language_version: python3.6
-        args: [
-            # Check for docstring presence only
-            '--select=D1',
-            # Don't require docstrings for tests or setup
-            '--match=(?!test|setup).*\.py'
-        ]
 
 -   repo: https://github.com/pre-commit/mirrors-isort
     # v4.3.15
