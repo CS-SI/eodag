@@ -14,6 +14,7 @@ repos:
     -   id: check-added-large-files
     -   id: debug-statements
     -   id: flake8
+        args: [--max-line-length=120]
         language_version: python3.6
     -   id: check-merge-conflict
 
