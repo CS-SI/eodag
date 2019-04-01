@@ -14,7 +14,6 @@ repos:
     -   id: check-added-large-files
     -   id: debug-statements
     -   id: flake8
-        args: [--max-line-length=88]
         language_version: python3.6
     -   id: check-merge-conflict
 
@@ -35,8 +34,8 @@ repos:
         args: [
             # Check for docstring presence only
             '--select=D1',
-            # Don't require docstrings for tests
-            '--match=(?!test).*\.py'
+            # Don't require docstrings for tests or setup
+            '--match=(?!test|setup).*\.py'
         ]
 
 -   repo: https://github.com/pre-commit/mirrors-isort
