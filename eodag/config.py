@@ -193,7 +193,9 @@ class PluginConfig(yaml.YAMLObject):
         """
         if mapping is None:
             mapping = {}
-        merge_mappings(self.__dict__, mapping)
+        merge_mappings(
+            self.__dict__, {k: v for k, v in mapping.items() if v is not None}
+        )
 
 
 def load_default_config():

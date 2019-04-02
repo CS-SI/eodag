@@ -17,7 +17,6 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
-import errno
 import logging
 import os
 import shutil
@@ -35,6 +34,7 @@ from eodag.config import (
     override_config_from_file,
 )
 from eodag.plugins.manager import PluginManager
+from eodag.utils import makedirs
 from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
 
 logger = logging.getLogger("eodag.core")
@@ -68,12 +68,7 @@ class EODataAccessGateway(object):
             if user_conf_file_path is None:
                 user_conf_file_path = standard_configuration_path
                 conf_dir = os.path.dirname(user_conf_file_path)
-                try:
-                    os.makedirs(conf_dir)
-                except OSError as err:
-                    # Reraise the error unless it's about an already existing directory
-                    if err.errno != errno.EEXIST or not os.path.isdir(conf_dir):
-                        raise
+                makedirs(conf_dir)
                 if not os.path.isfile(standard_configuration_path):
                     shutil.copy(
                         resource_filename(

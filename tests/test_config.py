@@ -23,6 +23,7 @@ import unittest
 
 import yaml.parser
 from six import StringIO
+
 from tests.context import ValidationError, config
 
 
@@ -229,6 +230,10 @@ class TestConfigFunctions(unittest.TestCase):
         # peps:
         #   download:
         #       outputs_prefix: /data
+        #
+        # theia:
+        #     download:
+        #         outputs_prefix:
         config.override_config_from_file(default_config, file_path_override)
         usgs_conf = default_config["usgs"]
         self.assertEqual(usgs_conf.priority, 5)
@@ -247,6 +252,9 @@ class TestConfigFunctions(unittest.TestCase):
 
         peps_conf = default_config["peps"]
         self.assertEqual(peps_conf.download.outputs_prefix, "/data")
+
+        theia_conf = default_config["theia"]
+        self.assertEqual(theia_conf.download.outputs_prefix, "/tmp")
 
     def test_override_config_from_env(self):
         """Default configuration must be overridden by environment variables"""

@@ -17,33 +17,33 @@
 # limitations under the License.
 peps:
     priority:
-    search: {}   # Search parameters configuration
+    search:  # Search parameters configuration
     download:
         extract:  # whether to extract the downloaded products (true or false).
         outputs_prefix: # where to store downloaded products.
-        dl_url_params: {}  # additional parameters to pass over to the download url as an url parameter
+        dl_url_params:  # additional parameters to pass over to the download url as an url parameter
     auth:
         credentials:
             username:
             password:
 theia:
     priority:
-    search: {}   # Search parameters configuration
+    search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
-        dl_url_params: {}
+        dl_url_params:
     auth:
         credentials:
             ident:
             pass:
 theia_landsat:
     priority:
-    search: {}   # Search parameters configuration
+    search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
-        dl_url_params: {}
+        dl_url_params:
     auth:
         credentials:
             username:
@@ -53,14 +53,14 @@ usgs:
     api:
         extract:
         outputs_prefix:
-        dl_url_params: {}
+        dl_url_params:
         product_location_scheme:
         credentials:
             username:
             password:
 aws_s3_sentinel2_l1c:
     priority:
-    search: {}   # Search parameters configuration
+    search:   # Search parameters configuration
     auth:
         credentials:
             aws_access_key_id:
@@ -71,17 +71,17 @@ aws_s3_sentinel2_l1c:
         associated_bucket:
 sobloo:
     priority:
-    search: {}   # Search parameters configuration
+    search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
-        dl_url_params: {}
+        dl_url_params:
     auth:
         credentials:
             apikey:
 creodias:
     priority:
-    search: {}   # Search parameters configuration
+    search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
@@ -91,7 +91,7 @@ creodias:
             password:
 mundi:
     priority:
-    search: {}   # Search parameters configuration
+    search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
@@ -101,7 +101,7 @@ mundi:
             aws_secret_access_key:
 onda:
     priority:
-    search: {}   # Search parameters configuration
+    search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
