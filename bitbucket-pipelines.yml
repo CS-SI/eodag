@@ -5,7 +5,7 @@ pipelines:
         name: Check Code Style and Build Docs
         script:
           - python -m pip install flake8
-          - flake8 .
+          - flake8 --max-line-length=120 .
           - apt-get update
           - apt-get install -y pandoc
           - python -m pip install -r requirements-docs.txt
@@ -42,7 +42,7 @@ pipelines:
           name: Unit tests for Py35
           script:
             - python -m pip install flake8
-            - flake8 .
+            - flake8 --max-line-length=120 .
             - apt-get update
             - apt-get install -y pandoc
             - python -m pip install -r requirements-docs.txt
