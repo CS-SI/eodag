@@ -250,7 +250,9 @@ class QueryStringSearch(Search):
             if user_input is not None:
                 md_mapping = self.config.metadata_mapping.get(eodag_search_key, None)
                 if md_mapping is not None:
-                    queryables[eodag_search_key] = get_search_param(md_mapping)
+                    search_param = get_search_param(md_mapping)
+                    if search_param is not None:
+                        queryables[eodag_search_key] = search_param
         return queryables
 
     def collect_search_urls(self, page=None, items_per_page=None, *args, **kwargs):

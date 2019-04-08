@@ -25,6 +25,10 @@ from operator import itemgetter
 import geojson
 from pkg_resources import resource_filename
 from tqdm import tqdm
+from whoosh import fields
+from whoosh.fields import Schema
+from whoosh.index import create_in, exists_in, open_dir
+from whoosh.qparser import QueryParser
 
 from eodag.api.search_result import SearchResult
 from eodag.config import (
@@ -35,7 +39,11 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.utils import makedirs
-from eodag.utils.exceptions import PluginImplementationError, UnsupportedProvider
+from eodag.utils.exceptions import (
+    NoMatchingProductType,
+    PluginImplementationError,
+    UnsupportedProvider,
+)
 
 logger = logging.getLogger("eodag.core")
 
@@ -58,17 +66,16 @@ class EODataAccessGateway(object):
         )
         self.providers_config = load_default_config()
 
+        self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+        makedirs(self.conf_dir)
+
         # First level override: From a user configuration file
         if user_conf_file_path is None:
             env_var_name = "EODAG_CFG_FILE"
-            standard_configuration_path = os.path.join(
-                os.path.expanduser("~"), ".config", "eodag", "eodag.yml"
-            )
+            standard_configuration_path = os.path.join(self.conf_dir, "eodag.yml")
             user_conf_file_path = os.getenv(env_var_name)
             if user_conf_file_path is None:
                 user_conf_file_path = standard_configuration_path
-                conf_dir = os.path.dirname(user_conf_file_path)
-                makedirs(conf_dir)
                 if not os.path.isfile(standard_configuration_path):
                     shutil.copy(
                         resource_filename(
@@ -83,10 +90,58 @@ class EODataAccessGateway(object):
 
         self._plugins_manager = PluginManager(self.providers_config)
 
+        # Build a search index for product types
+        self._product_types_index = None
+        self.build_index()
+
+    def build_index(self):
+        """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_
+        index for product types searches.
+
+        .. versionadded:: 1.0
+        """
+        index_dir = os.path.join(self.conf_dir, ".index")
+
+        # Handle Python 2/3 compatibility: if index_dir exists and contains a whoosh index, it means it was
+        # potentially created with a previous Python 3 eodag session, thus using pickle highest protocol version
+        # (version 4 at the time of writing for Python 3). In that case, if the current eodag session is in Python 2
+        # a ValueError will be raised saying that the pickle protocol used to serialized the previous index is
+        # incompatible with the current Python version. If that's the case, we first remove the problematic index
+        # and create another one from scratch
+        try:
+            create_index = not exists_in(index_dir)
+        except ValueError as ve:
+            if "unsupported pickle protocol" in ve.message:
+                shutil.rmtree(index_dir)
+                create_index = True
+            else:
+                raise
+
+        if create_index:
+            logger.debug("Creating product types index in %s", index_dir)
+            makedirs(index_dir)
+            product_types_schema = Schema(
+                ID=fields.STORED,
+                abstract=fields.TEXT,
+                instrument=fields.ID,
+                platform=fields.ID,
+                platformSerialIdentifier=fields.IDLIST(),
+                processingLevel=fields.ID,
+                sensorType=fields.ID,
+            )
+            self._product_types_index = create_in(index_dir, product_types_schema)
+            ix_writer = self._product_types_index.writer()
+            for product_type in self.list_product_types():
+                ix_writer.add_document(**product_type)
+            ix_writer.commit()
+        else:
+            if self._product_types_index is None:
+                logger.debug("Opening product types index in %s", index_dir)
+                self._product_types_index = open_dir(index_dir)
+
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
 
-        >>> import eodag.utils.exceptions
         >>> import tempfile, os
         >>> config = tempfile.NamedTemporaryFile(delete=True)
         >>> dag = EODataAccessGateway(user_conf_file_path=os.path.join(
@@ -96,6 +151,7 @@ class EODataAccessGateway(object):
         ('peps', 1)
         >>> # For the following lines, see
         >>> # http://python3porting.com/problems.html#handling-expected-exceptions
+        >>> import eodag.utils.exceptions
         >>> try:
         ...     dag.set_preferred_provider(u'unknown')
         ...     raise AssertionError(u'UnsupportedProvider exception was not raised'
@@ -177,9 +233,67 @@ class EODataAccessGateway(object):
         """Gives the list of the available providers"""
         return sorted(tuple(self.providers_config.keys()))
 
+    def guess_product_type(self, **kwargs):
+        """Find the eodag product type code that best matches a set of search params
+
+        >>> from eodag import EODataAccessGateway
+        >>> dag = EODataAccessGateway()
+        >>> dag.guess_product_type(
+        ...     instrument="MSI",
+        ...     platform="S2",
+        ...     platformSerialIdentifier="S2A",
+        ...     processingLevel="L1C",
+        ...     sensorType="OPTICAL"
+        ... )
+        'S2_MSI_L1C'
+        >>> import eodag.utils.exceptions
+        >>> try:
+        ...     dag.guess_product_type()
+        ...     raise AssertionError(u"NoMatchingProductType exception not raised")
+        ... except eodag.utils.exceptions.NoMatchingProductType:
+        ...     pass
+
+        :param kwargs: A set of search parameters as keywords arguments
+        :return: The best match for the given parameters
+        :rtype: str or unicode
+        :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
+
+        .. versionadded:: 1.0
+        """
+        supported_params = {
+            param
+            for param in (
+                "instrument",
+                "platform",
+                "platformSerialIdentifier",
+                "processingLevel",
+                "sensorType",
+            )
+            if kwargs.get(param, None) is not None
+        }
+        with self._product_types_index.searcher() as searcher:
+            results = None
+            # For each search key, do a guess and then upgrade the result (i.e. when
+            # merging results, if a hit appears in both results, its position is raised
+            # to the top. This way, the top most result will be the hit that best
+            # matches the given queries. Put another way, this best guess is the one
+            # that crosses the highest number of search params from the given queries
+            for search_key in supported_params:
+                query = QueryParser(search_key, self._product_types_index.schema).parse(
+                    kwargs[search_key]
+                )
+                if results is None:
+                    results = searcher.search(query)
+                else:
+                    results.upgrade_and_extend(searcher.search(query))
+            guesses = [r["ID"] for r in results or []]
+        # By now, only return the best bet
+        if guesses:
+            return guesses[0]
+        raise NoMatchingProductType()
+
     def search(
         self,
-        product_type,
         page=DEFAULT_PAGE,
         items_per_page=DEFAULT_ITEMS_PER_PAGE,
         raise_errors=False,
@@ -191,6 +305,27 @@ class EODataAccessGateway(object):
         highest priority supporting the requested product type. These priorities
         are configurable through user configuration file or individual
         environment variable.
+
+        :param page: The page number to return (default: 1)
+        :type page: int
+        :param items_per_page: The number of results that must appear in one single
+                               page (default: 20)
+        :type items_per_page: int
+        :param raise_errors:  When an error occurs when searching, if this is set to
+                              True, the error is raised (default: False)
+        :type raise_errors: bool
+        :param dict kwargs: some other criteria that will be used to do the search
+        :returns: A collection of EO products matching the criteria, the current
+                  returned page and the total number of results found
+        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
+
+        .. versionchanged::
+           1.0
+
+                * The ``product_type`` parameter is no longer mandatory
+                * Support new search parameters compliant with OpenSearch
+                * Fails if a suitable product type could not be guessed (returns an
+                  empty search result)
 
         .. versionchanged::
            0.7.1
@@ -208,21 +343,6 @@ class EODataAccessGateway(object):
                   available, and can ask for retrieving a given number of these
                   results (See the help message of the CLI for more information).
 
-        :param product_type: The product type to search
-        :type product_type: str or unicode
-        :param page: The page number to return (default: 1)
-        :type page: int
-        :param items_per_page: The number of results that must appear in one single
-                               page (default: 20)
-        :type items_per_page: int
-        :param raise_errors:  When an error occurs when searching, if this is set to
-                              True, the error is raised (default: False)
-        :type raise_errors: bool
-        :param dict kwargs: some other criteria that will be used to do the search
-        :returns: A collection of EO products matching the criteria, the current
-                  returned page and the total number of results found
-        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
-
         .. note::
             The search interfaces, which are implemented as plugins, are required to
             return a list as a result of their processing. This requirement is
@@ -230,6 +350,15 @@ class EODataAccessGateway(object):
         """
         results = SearchResult([])
         total_results = 0
+
+        product_type = kwargs.pop("productType", None)
+        if product_type is None:
+            try:
+                product_type = self.guess_product_type(**kwargs)
+            except NoMatchingProductType:
+                logger.error("No product type could be guessed with provided arguments")
+                return results
+
         plugin = next(self._plugins_manager.get_search_plugins(product_type))
         logger.info(
             "Searching product type '%s' on provider: %s", product_type, plugin.provider

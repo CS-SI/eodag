@@ -19,6 +19,9 @@
 
 Usage: eodag [OPTIONS] COMMAND [ARGS]...
 
+  Earth Observation Data Access Gateway: work on EO products from any
+  provider
+
 Options:
   -v, --verbose  Control the verbosity of the logs. For maximum verbosity,
                  type -vvv
@@ -29,7 +32,7 @@ Commands:
                    providers...
   download         Download a list of products from a serialized search...
   list             List supported product types
-  search           Search satellite images by their product types, and...
+  search           Search satellite images by their product types,...
   serve-rest       Start eodag HTTP server
   serve-rpc        Start eodag rpc server
 
@@ -65,7 +68,7 @@ CRUNCHERS = ["FilterLatestByName", "FilterLatestIntersect", "FilterOverlap"]
 )
 @click.pass_context
 def eodag(ctx, verbose):
-    """The master command line"""
+    """Earth Observation Data Access Gateway: work on EO products from any provider"""
     if ctx.obj is None:
         ctx.obj = {}
     ctx.obj["verbosity"] = verbose
@@ -73,8 +76,16 @@ def eodag(ctx, verbose):
 
 @eodag.command(
     name="search",
-    help="Search satellite images by their product types, and optionally crunch "
-    "the search results before storing them in a geojson file",
+    help="Search satellite images by their product types, instrument, platform, "
+    "platform identifier, processing level or sensor type. It is mandatory to provide "
+    "at least one of the previous criteria for eodag to perform a search. "
+    "Optionally crunch the search results before storing them in a geojson file",
+)
+@click.option(
+    "-f",
+    "--conf",
+    help="File path to the user configuration file with its credentials",
+    type=click.Path(exists=True),
 )
 @click.option(
     "-b",
@@ -102,13 +113,20 @@ def eodag(ctx, verbose):
     type=click.IntRange(0, 100),
     help="Maximum cloud cover percentage needed for the product",
 )
-@click.option(
-    "-f",
-    "--conf",
-    help="File path to the user configuration file with its credentials",
-    type=click.Path(exists=True),
-)
 @click.option("-p", "--productType", help="The product type to search")
+@click.option("-i", "--instrument", help="Search for products matching this instrument")
+@click.option("-P", "--platform", help="Search for products matching this platform")
+@click.option(
+    "-t",
+    "--platformSerialIdentifier",
+    help="Search for products originating from the satellite identified by this keyword",
+)
+@click.option(
+    "-L", "--processingLevel", help="Search for products matching this processing level"
+)
+@click.option(
+    "-S", "--sensorType", help="Search for products matching this type of sensor"
+)
 @click.option(
     "--cruncher",
     type=click.Choice(CRUNCHERS),
@@ -151,8 +169,22 @@ def eodag(ctx, verbose):
 def search_crunch(ctx, **kwargs):
     """Search product types and optionnaly apply crunchers to search results"""
     # Process inputs for search
-    producttype = kwargs.pop("producttype")
-    if not producttype:
+    product_type = kwargs.pop("producttype")
+    instrument = kwargs.pop("instrument")
+    platform = kwargs.pop("platform")
+    platform_identifier = kwargs.pop("platformserialidentifier")
+    processing_level = kwargs.pop("processinglevel")
+    sensor_type = kwargs.pop("sensortype")
+    if not any(
+        [
+            product_type,
+            instrument,
+            platform,
+            platform_identifier,
+            processing_level,
+            sensor_type,
+        ]
+    ):
         with click.Context(search_crunch) as ctx:
             print("Give me some work to do. See below for how to do that:", end="\n\n")
             click.echo(search_crunch.get_help(ctx))
@@ -177,6 +209,12 @@ def search_crunch(ctx, **kwargs):
         "startTimeFromAscendingNode": None,
         "completionTimeFromAscendingNode": None,
         "cloudCover": kwargs.pop("cloudcover"),
+        "productType": product_type,
+        "instrument": instrument,
+        "platform": platform,
+        "platformSerialIdentifier": platform_identifier,
+        "processingLevel": processing_level,
+        "sensorType": sensor_type,
     }
     if start_date:
         criteria["startTimeFromAscendingNode"] = start_date.isoformat()
@@ -201,14 +239,10 @@ def search_crunch(ctx, **kwargs):
 
     # Search
     results, total = gateway.search(
-        producttype, page=page, items_per_page=items_per_page, **criteria
+        page=page, items_per_page=items_per_page, **criteria
     )
-    click.echo(
-        "Found a total number of {} products with product type '{}'".format(
-            total, producttype
-        )
-    )
-    click.echo("Returned {} products".format(len(results), producttype))
+    click.echo("Found a total number of {} products".format(total))
+    click.echo("Returned {} products".format(len(results), product_type))
 
     # Crunch !
     crunch_args = {
@@ -238,9 +272,15 @@ def list_pt(ctx, **kwargs):
     click.echo("Listing available product types:")
     try:
         for product_type in dag.list_product_types(provider=provider):
-            text_wrapper.initial_indent = "\n* {}: ".format(product_type["ID"])
-            text_wrapper.subsequent_indent = " " * len(text_wrapper.initial_indent)
-            click.echo(text_wrapper.fill(product_type["desc"] or "No description"))
+            click.echo("\n* {}: ".format(product_type["ID"]))
+            for prop, value in product_type.items():
+                if prop != "ID":
+                    text_wrapper.initial_indent = "    - {}: ".format(prop)
+                    text_wrapper.subsequent_indent = " " * len(
+                        text_wrapper.initial_indent
+                    )
+                    if value is not None:
+                        click.echo(text_wrapper.fill(value))
     except UnsupportedProvider:
         click.echo("Unsupported provider. You may have a typo")
         click.echo(

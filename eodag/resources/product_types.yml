@@ -17,7 +17,7 @@
 # limitations under the License.
 
 S1_SAR_OCN:
-  desc: |
+  abstract: |
     Level-2 OCN products include components for Ocean Swell spectra (OSW) providing continuity with ERS and ASAR WV
     and two new components: Ocean Wind Fields (OWI) and Surface Radial Velocities (RVL).
     The OSW is a two-dimensional ocean surface swell spectrum and includes an estimate of the wind speed and direction
@@ -27,10 +27,14 @@ S1_SAR_OCN:
     derived from internally generated Level-1 GRD images of SM, IW or EW modes.
     The RVL is a ground range gridded difference between the measured Level-2 Doppler grid and the Level-1 calculated
     geometrical Doppler.
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S1_SAR_GRD:
-  desc: |
+  abstract: |
     Level-1 Ground Range Detected (GRD) products consist of focused SAR data that has been detected, multi-looked and
     projected to ground range using an Earth ellipsoid model. Phase information is lost. The resulting product has
     approximately square spatial resolution pixels and square pixel spacing with reduced speckle at the cost of worse
@@ -41,136 +45,244 @@ S1_SAR_GRD:
       Medium Resolution (MR).
     The resolution is dependent upon the amount of multi-looking performed. Level-1 GRD products are available in MR
     and HR for IW and EW modes, MR for WV mode and MR, HR and FR for SM mode.
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S1_SAR_SLC:
-  desc: |
+  abstract: |
     Level-1 Single Look Complex (SLC) products consist of focused SAR data geo-referenced using orbit and attitude
     data from the satellite and provided in zero-Doppler slant-range geometry. The products include a single look in
     each dimension using the full transmit signal bandwidth and consist of complex samples preserving the phase
     information.
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S1_SAR_RAW:
-  desc: |
+  abstract: |
     The SAR Level-0 products consist of the sequence of Flexible Dynamic Block Adaptive Quantization (FDBAQ) compressed
     unfocused SAR raw data. For the data to be usable, it will need to be decompressed and processed using a SAR
     processor.
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L8_L1T:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L8_L1GT:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L8_OLI_TIRS_C1L1:
-  desc: |
+  abstract: |
     Landsat 8 Operational Land Imager and Thermal Infrared Sensor Collection 1 Level-1 products
     Details at https://landsat.usgs.gov/sites/default/files/documents/LSDS-1656_Landsat_Level-1_Product_Collection_Definition.pdf
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L7_L1GT:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L7_L1G:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L7_L1T:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L5_L1GT:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L5_L1G:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 L5_L1T:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 ES_FRS:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_EFR:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_ERR:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_SLSTR_L1RBT:
-  desc: The SLSTR Level-1 product measurement data
-  meta: []
+  abstract: The SLSTR Level-1 product measurement data
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_SRA:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_WAT:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_LAN:
-  desc: LAN or SR_2_LAN___ (peps)
-  meta: []
+  abstract: LAN or SR_2_LAN___ (peps)
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_SLSTR_L2LST:
-  desc: |
+  abstract: |
     The SLSTR Level-2 LST product provides land surface parameters generated on the wide 1 km measurement grid.
     It contains measurement file with Land Surface Temperature (LST) values with associated parameters (LST
     parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_OLCI_L2LRR:
-  desc: |
+  abstract: |
     The OLCI Level-2 Land Reduced Resolution (OL_2_LRR) products contain land and atmospheric geophysical products
     at Reduced resolution with a spatial sampling of approximately 1.2 km. The products are assumed to be computed
     in Near Real Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical
     (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-land
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_OLCI_L2LFR:
-  desc: |
+  abstract: |
     The OLCI Level-2 Land Full Resolution (OL_2_LFR) products contain land and atmospheric geophysical products at Full
     resolution with a spatial sampling of approximately 300 m. The products are assumed to be computed in Near Real
     Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical (NTC) (i.e.
     within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-land
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 LS_REFLECTANCE:
-  desc: Landsat
-  meta: []
+  abstract: Landsat
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 LS_REFLECTANCETOA:
-  desc: Landsat
-  meta: []
+  abstract: Landsat
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 PLD_REFLECTANCE:
-  desc: Pleiades
-  meta: []
+  abstract: Pleiades
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 PLD_REFLECTANCETOA:
-  desc: Pleiades
-  meta: []
+  abstract: Pleiades
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 PLD_BUNDLE:
-  desc: Pleiades
-  meta: []
+  abstract: Pleiades
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S2_MSI_L1C:
-  desc: |
+  abstract: |
     The Level-1C product is composed of 100x100 km2 tiles (ortho-images in UTM/WGS84 projection). It results from
     using a Digital Elevation Model (DEM) to project the image in cartographic geometry. Per-pixel radiometric
     measurements are provided in Top Of Atmosphere (TOA) reflectances along with the parameters to transform them
@@ -178,18 +290,34 @@ S2_MSI_L1C:
     meters depending on the native resolution of the different spectral bands. In Level-1C  products, pixel
     coordinates refer to the upper left corner of the pixel. Level-1C products will additionally include Cloud Masks
     and ECMWF data (total column of ozone, total column of water vapour and mean sea level pressure).
-  meta: []
+  instrument: MSI
+  platform: S2
+  platformSerialIdentifier: S2A,S2B
+  processingLevel: L1C
+  sensorType: OPTICAL
 
 S2_MSI_L2A:
-  desc: |
+  abstract: |
     The Level-2A product provides Bottom Of Atmosphere (BOA) reflectance images derived from the associated Level-1C
     products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
-  meta: []
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_SRA_BS:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
 
 S3_SRA_A_BS:
-  desc: ""
-  meta: []
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:

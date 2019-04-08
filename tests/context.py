@@ -37,7 +37,7 @@ from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.rest import server as eodag_http_server
 from eodag.rest.utils import eodag_api, get_date
-from eodag.utils import DEFAULT_PROJ
+from eodag.utils import DEFAULT_PROJ, makedirs
 from eodag.utils.exceptions import (
     AddressNotFound,
     DownloadError,

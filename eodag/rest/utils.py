@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 # Copyright 2017-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+from __future__ import unicode_literals
 
 import os
 from collections import namedtuple
 
 import dateutil.parser
-import eodag
 import markdown
+
+import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.utils.exceptions import (
-    ValidationError,
     MisconfiguredError,
     UnsupportedProductType,
+    ValidationError,
 )
 
 eodag_api = eodag.EODataAccessGateway()
@@ -35,7 +37,7 @@ def format_product_types(product_types):
     """
     result = []
     for pt in product_types:
-        result.append("* *__{ID}__*: {desc}".format(**pt))
+        result.append("* *__{ID}__*: {abstract}".format(**pt))
     return "\n".join(sorted(result))
 
 
@@ -114,6 +116,7 @@ def get_int(val):
 
 
 def filter_products(products, arguments, **kwargs):
+    """Apply an eodag cruncher to filter products"""
     filter_name = arguments.get("filter")
     if filter_name:
         cruncher = crunchers.get(filter_name)
@@ -139,6 +142,7 @@ def filter_products(products, arguments, **kwargs):
 
 
 def get_pagination_info(arguments):
+    """Get pagination arguments"""
     page = get_int(arguments.get("page", DEFAULT_PAGE))
     items_per_page = get_int(arguments.get("itemsPerPage", DEFAULT_ITEMS_PER_PAGE))
     if page is not None and page < 0:
@@ -167,6 +171,7 @@ def search_products(product_type, arguments):
             "startTimeFromAscendingNode": get_date(arguments.get("dtstart")),
             "completionTimeFromAscendingNode": get_date(arguments.get("dtend")),
             "cloudCover": get_int(arguments.get("cloudCover")),
+            "productType": product_type,
         }
 
         if items_per_page is None:
@@ -174,11 +179,7 @@ def search_products(product_type, arguments):
         if page is None:
             page = DEFAULT_PAGE
         products, total = eodag_api.search(
-            product_type,
-            page=page,
-            items_per_page=items_per_page,
-            raise_errors=True,
-            **criteria
+            page=page, items_per_page=items_per_page, raise_errors=True, **criteria
         )
 
         products = filter_products(products, arguments, **criteria)

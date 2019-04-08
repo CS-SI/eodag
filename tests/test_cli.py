@@ -25,6 +25,7 @@ from contextlib import contextmanager
 import click
 from click.testing import CliRunner
 from faker import Faker
+
 from tests import TEST_RESOURCES_PATH
 from tests.context import download, eodag, search_crunch
 from tests.units.test_core import TestCore
@@ -133,7 +134,7 @@ class TestEodagCli(unittest.TestCase):
             self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
-    def test_eodag_search_bbox_valid(self, SatImagesAPI):
+    def test_eodag_search_bbox_valid(self, dag):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
             product_type = "whatever"
@@ -141,22 +142,27 @@ class TestEodagCli(unittest.TestCase):
                 eodag,
                 ["search", "--conf", conf_file, "-p", product_type, "-b", 1, 43, 2, 44],
             )
-            api_obj = SatImagesAPI.return_value
+            api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
-                product_type,
                 items_per_page=20,
                 page=1,
                 startTimeFromAscendingNode=None,
                 completionTimeFromAscendingNode=None,
                 cloudCover=None,
                 geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                productType=product_type,
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
-    def test_eodag_search_storage_arg(self, SatImagesAPI):
+    def test_eodag_search_storage_arg(self, dag):
         """Calling eodag search with specified result filename without .geojson extension"""  # noqa
         with self.user_conf() as conf_file:
-            api_obj = SatImagesAPI.return_value
+            api_obj = dag.return_value
             api_obj.search.return_value = (mock.MagicMock(),) * 2
             self.runner.invoke(
                 eodag,
@@ -175,10 +181,10 @@ class TestEodagCli(unittest.TestCase):
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
-    def test_eodag_search_with_cruncher(self, SatImagesAPI):
+    def test_eodag_search_with_cruncher(self, dag):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""  # noqa
         with self.user_conf() as conf_file:
-            api_obj = SatImagesAPI.return_value
+            api_obj = dag.return_value
             api_obj.search.return_value = (mock.MagicMock(),) * 2
 
             product_type = "whatever"
@@ -188,6 +194,12 @@ class TestEodagCli(unittest.TestCase):
                 completionTimeFromAscendingNode=None,
                 geometry=None,
                 cloudCover=None,
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                productType=product_type,
             )
             self.runner.invoke(
                 eodag,
@@ -198,9 +210,9 @@ class TestEodagCli(unittest.TestCase):
             crunch_results = api_obj.crunch.return_value
 
             # Assertions
-            SatImagesAPI.assert_called_once_with(user_conf_file_path=conf_file)
+            dag.assert_called_once_with(user_conf_file_path=conf_file)
             api_obj.search.assert_called_once_with(
-                product_type, items_per_page=20, page=1, **criteria
+                items_per_page=20, page=1, **criteria
             )
             api_obj.crunch.assert_called_once_with(
                 search_results, search_criteria=criteria, **{cruncher: {}}
