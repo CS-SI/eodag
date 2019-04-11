@@ -27,11 +27,11 @@ S1_SAR_OCN:
     derived from internally generated Level-1 GRD images of SM, IW or EW modes.
     The RVL is a ground range gridded difference between the measured Level-2 Doppler grid and the Level-1 calculated
     geometrical Doppler.
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L2
+  sensorType: RADAR
 
 S1_SAR_GRD:
   abstract: |
@@ -45,11 +45,11 @@ S1_SAR_GRD:
       Medium Resolution (MR).
     The resolution is dependent upon the amount of multi-looking performed. Level-1 GRD products are available in MR
     and HR for IW and EW modes, MR for WV mode and MR, HR and FR for SM mode.
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L1
+  sensorType: RADAR
 
 S1_SAR_SLC:
   abstract: |
@@ -57,22 +57,22 @@ S1_SAR_SLC:
     data from the satellite and provided in zero-Doppler slant-range geometry. The products include a single look in
     each dimension using the full transmit signal bandwidth and consist of complex samples preserving the phase
     information.
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L1
+  sensorType: RADAR
 
 S1_SAR_RAW:
   abstract: |
     The SAR Level-0 products consist of the sequence of Flexible Dynamic Block Adaptive Quantization (FDBAQ) compressed
     unfocused SAR raw data. For the data to be usable, it will need to be decompressed and processed using a SAR
     processor.
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L0
+  sensorType: RADAR
 
 L8_L1T:
   abstract: ""
@@ -83,12 +83,15 @@ L8_L1T:
   sensorType:
 
 L8_L1GT:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  abstract: |
+    Radiometrically calibrated and orthorectified using ground control points
+    and digital elevation model (DEM) data to correct for relief displacement.
+    Highest quality Level 1 products suitable for pixel-level time series analysis.
+  instrument: OLI,TIRS
+  platform: LANDSAT8
+  platformSerialIdentifier: L8
+  processingLevel: L1
+  sensorType: OPTICAL
 
 L8_OLI_TIRS_C1L1:
   abstract: |
@@ -97,15 +100,18 @@ L8_OLI_TIRS_C1L1:
   instrument:
   platform:
   platformSerialIdentifier:
-  processingLevel:
+  processingLevel: L1
   sensorType:
 
 L7_L1GT:
-  abstract: ""
+  abstract: |
+    Radiometrically calibrated and orthorectified using ground control points
+    and digital elevation model (DEM) data to correct for relief displacement.
+    Highest quality Level 1 products suitable for pixel-level time series analysis.
   instrument:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
+  platformSerialIdentifier: L7
+  processingLevel: L1
   sensorType:
 
 L7_L1G:
@@ -113,7 +119,7 @@ L7_L1G:
   instrument:
   platform:
   platformSerialIdentifier:
-  processingLevel:
+  processingLevel: L1
   sensorType:
 
 L7_L1T:
@@ -121,7 +127,7 @@ L7_L1T:
   instrument:
   platform:
   platformSerialIdentifier:
-  processingLevel:
+  processingLevel: L1
   sensorType:
 
 L5_L1GT:
@@ -129,7 +135,7 @@ L5_L1GT:
   instrument:
   platform:
   platformSerialIdentifier:
-  processingLevel:
+  processingLevel: L1
   sensorType:
 
 L5_L1G:
@@ -137,7 +143,7 @@ L5_L1G:
   instrument:
   platform:
   platformSerialIdentifier:
-  processingLevel:
+  processingLevel: L1
   sensorType:
 
 L5_L1T:
@@ -145,7 +151,7 @@ L5_L1T:
   instrument:
   platform:
   platformSerialIdentifier:
-  processingLevel:
+  processingLevel: L1
   sensorType:
 
 ES_FRS:
@@ -156,64 +162,72 @@ ES_FRS:
   processingLevel:
   sensorType:
 
+# See examples of product type namings for sentinel 3 here:
+# https://www.onda-dias.eu/cms/data/catalogue/sentinel-3/
 S3_EFR:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  sensorType: OPTICAL
 
 S3_ERR:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1,L2
+  sensorType: OPTICAL
 
 S3_SLSTR_L1RBT:
-  abstract: The SLSTR Level-1 product measurement data
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  abstract: |
+    SLSTR Level-1 observation mode products consisting of full resolution,
+    geolocated, co-located nadir and along track view, Top of Atmosphere
+    (TOA) brightness temperatures (in the case of thermal IR channels) or
+    radiances (in the case of visible, NIR and SWIR channels) from all
+    SLSTR channels, and quality flags, pixel classification information
+    and meteorological annotations
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  sensorType: OPTICAL
 
 S3_SRA:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  sensorType: RADAR
 
 S3_WAT:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  sensorType: RADAR
 
 S3_LAN:
   abstract: LAN or SR_2_LAN___ (peps)
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  sensorType: RADAR
 
 S3_SLSTR_L2LST:
   abstract: |
     The SLSTR Level-2 LST product provides land surface parameters generated on the wide 1 km measurement grid.
     It contains measurement file with Land Surface Temperature (LST) values with associated parameters (LST
     parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  sensorType: OPTICAL
 
 S3_OLCI_L2LRR:
   abstract: |
@@ -222,11 +236,11 @@ S3_OLCI_L2LRR:
     in Near Real Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical
     (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-land
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  sensorType: OPTICAL
 
 S3_OLCI_L2LFR:
   abstract: |
@@ -235,11 +249,11 @@ S3_OLCI_L2LFR:
     Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical (NTC) (i.e.
     within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-land
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  sensorType: OPTICAL
 
 LS_REFLECTANCE:
   abstract: Landsat
@@ -257,29 +271,30 @@ LS_REFLECTANCETOA:
   processingLevel:
   sensorType:
 
+# For information on PLEIADES products, see https://www.theia-land.fr/en/product/pleiades/
 PLD_REFLECTANCE:
   abstract: Pleiades
   instrument:
-  platform:
-  platformSerialIdentifier:
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
   processingLevel:
-  sensorType:
+  sensorType: OPTICAL
 
 PLD_REFLECTANCETOA:
   abstract: Pleiades
   instrument:
-  platform:
-  platformSerialIdentifier:
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
   processingLevel:
-  sensorType:
+  sensorType: OPTICAL
 
 PLD_BUNDLE:
   abstract: Pleiades
   instrument:
-  platform:
-  platformSerialIdentifier:
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
   processingLevel:
-  sensorType:
+  sensorType: OPTICAL
 
 S2_MSI_L1C:
   abstract: |
@@ -293,31 +308,31 @@ S2_MSI_L1C:
   instrument: MSI
   platform: S2
   platformSerialIdentifier: S2A,S2B
-  processingLevel: L1C
+  processingLevel: L1
   sensorType: OPTICAL
 
 S2_MSI_L2A:
   abstract: |
     The Level-2A product provides Bottom Of Atmosphere (BOA) reflectance images derived from the associated Level-1C
     products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: MSI
+  platform: SENTINEL2
+  platformSerialIdentifier: S2A,S2B
+  processingLevel: L2
+  sensorType: OPTICAL
 
 S3_SRA_BS:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  sensorType: RADAR
 
 S3_SRA_A_BS:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  sensorType: RADAR

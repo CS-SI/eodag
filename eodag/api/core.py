@@ -123,9 +123,9 @@ class EODataAccessGateway(object):
             product_types_schema = Schema(
                 ID=fields.STORED,
                 abstract=fields.TEXT,
-                instrument=fields.ID,
+                instrument=fields.IDLIST(stored=True),
                 platform=fields.ID,
-                platformSerialIdentifier=fields.IDLIST(),
+                platformSerialIdentifier=fields.IDLIST(stored=True),
                 processingLevel=fields.ID,
                 sensorType=fields.ID,
             )
