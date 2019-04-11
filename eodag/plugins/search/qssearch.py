@@ -52,9 +52,11 @@ class QueryStringSearch(Search):
 
         - **api_endpoint**: (mandatory) The endpoint of the provider's search interface
 
-        - **literal_search_param**: (optional) A mapping of (search_param =>
+        - **literal_search_params**: (optional) A mapping of (search_param =>
           search_value) pairs giving search parameters to be passed as is in the search
-          url query string
+          url query string. This is useful for example in situations where the user wants
+          to pass-in a search query as it is done on the provider interface. In such a case,
+          the user can put in his configuration file the query he needs to pass to the provider.
 
         - **pagination**: (mandatory) The configuration of how the pagination is done
           on the provider. It is a tree with the following nodes:
@@ -197,7 +199,11 @@ class QueryStringSearch(Search):
         # complex query through a free text search parameter is available for the
         # provider and needed for the consumer)
         literal_search_params.update(self.format_free_text_search(**kwargs))
-        query_params.update(literal_search_params)
+        for provider_search_key, provider_value in literal_search_params.items():
+            if isinstance(provider_value, list):
+                query_params.setdefault(provider_search_key, []).extend(provider_value)
+            else:
+                query_params.setdefault(provider_search_key, []).append(provider_value)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
