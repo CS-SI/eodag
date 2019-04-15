@@ -123,9 +123,9 @@ class EODataAccessGateway(object):
             product_types_schema = Schema(
                 ID=fields.STORED,
                 abstract=fields.TEXT,
-                instrument=fields.IDLIST(stored=True),
+                instrument=fields.IDLIST,
                 platform=fields.ID,
-                platformSerialIdentifier=fields.IDLIST(stored=True),
+                platformSerialIdentifier=fields.IDLIST,
                 processingLevel=fields.ID,
                 sensorType=fields.ID,
             )
@@ -240,12 +240,10 @@ class EODataAccessGateway(object):
         >>> dag = EODataAccessGateway()
         >>> dag.guess_product_type(
         ...     instrument="MSI",
-        ...     platform="S2",
+        ...     platform="SENTINEL2",
         ...     platformSerialIdentifier="S2A",
-        ...     processingLevel="L1C",
-        ...     sensorType="OPTICAL"
         ... )
-        'S2_MSI_L1C'
+        ['S2_MSI_L1C', 'S2_MSI_L2A']
         >>> import eodag.utils.exceptions
         >>> try:
         ...     dag.guess_product_type()
@@ -287,9 +285,8 @@ class EODataAccessGateway(object):
                 else:
                     results.upgrade_and_extend(searcher.search(query))
             guesses = [r["ID"] for r in results or []]
-        # By now, only return the best bet
         if guesses:
-            return guesses[0]
+            return guesses
         raise NoMatchingProductType()
 
     def search(
@@ -354,7 +351,9 @@ class EODataAccessGateway(object):
         product_type = kwargs.pop("productType", None)
         if product_type is None:
             try:
-                product_type = self.guess_product_type(**kwargs)
+                guesses = self.guess_product_type(**kwargs)
+                # By now, only use the best bet
+                product_type = guesses[0]
             except NoMatchingProductType:
                 logger.error("No product type could be guessed with provided arguments")
                 return results

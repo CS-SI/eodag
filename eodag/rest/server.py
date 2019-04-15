@@ -68,12 +68,12 @@ def home():
 def list_product_types(provider=None):
     """List eodag' supported product types"""
     try:
-        product_types = get_product_types(provider)
+        product_types = get_product_types(provider, request.args)
     except UnsupportedProvider:
         return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
     except Exception:
         return jsonify({"error": "Unknown server error"}), 500
-    return jsonify(product_types)
+    return jsonify(product_types), 200
 
 
 def main():

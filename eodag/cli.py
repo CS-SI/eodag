@@ -49,7 +49,7 @@ import textwrap
 import click
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
-from eodag.utils.exceptions import UnsupportedProvider
+from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
 # disable warning on Python 2
@@ -261,17 +261,67 @@ def search_crunch(ctx, **kwargs):
 
 @eodag.command(name="list", help="List supported product types")
 @click.option("-p", "--provider", help="List product types supported by this provider")
+@click.option(
+    "-i", "--instrument", help="List product types originating from this instrument"
+)
+@click.option(
+    "-P", "--platform", help="List product types originating from this platform"
+)
+@click.option(
+    "-t",
+    "--platformSerialIdentifier",
+    help="List product types originating from the satellite identified by this keyword",
+)
+@click.option("-L", "--processingLevel", help="List product types of processing level")
+@click.option(
+    "-S", "--sensorType", help="List product types originating from this type of sensor"
+)
 @click.pass_context
 def list_pt(ctx, **kwargs):
     """Print the list of supported product types"""
-    kwargs["verbose"] = ctx.obj["verbosity"]
-    setup_logging(**kwargs)
+    setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
     text_wrapper = textwrap.TextWrapper()
-    click.echo("Listing available product types:")
+    guessed_product_types = []
     try:
-        for product_type in dag.list_product_types(provider=provider):
+        guessed_product_types = dag.guess_product_type(
+            platformSerialIdentifier=kwargs.get("platformserialidentifier"),
+            processingLevel=kwargs.get("processinglevel"),
+            sensorType=kwargs.get("sensortype"),
+            **kwargs
+        )
+    except NoMatchingProductType:
+        if any(
+            kwargs[arg]
+            for arg in [
+                "instrument",
+                "platform",
+                "platformserialidentifier",
+                "processinglevel",
+                "sensortype",
+            ]
+        ):
+            click.echo("No product type match the following criteria you provided:")
+            click.echo(
+                "\n".join(
+                    "-{param}={value}".format(**locals())
+                    for param, value in kwargs.items()
+                    if value is not None
+                )
+            )
+            sys.exit(1)
+    try:
+        if guessed_product_types:
+            product_types = [
+                pt
+                for pt in dag.list_product_types(provider=provider)
+                if pt["ID"] in guessed_product_types
+            ]
+        else:
+            product_types = dag.list_product_types(provider=provider)
+        click.echo("Listing available product types:")
+        for product_type in product_types:
             click.echo("\n* {}: ".format(product_type["ID"]))
             for prop, value in product_type.items():
                 if prop != "ID":

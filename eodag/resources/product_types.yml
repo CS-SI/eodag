@@ -306,7 +306,7 @@ S2_MSI_L1C:
     coordinates refer to the upper left corner of the pixel. Level-1C products will additionally include Cloud Masks
     and ECMWF data (total column of ozone, total column of water vapour and mean sea level pressure).
   instrument: MSI
-  platform: S2
+  platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B
   processingLevel: L1
   sensorType: OPTICAL

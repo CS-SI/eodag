@@ -58,6 +58,27 @@ There is an endpoint for listing supported product types:
 
 The result is a json with product type ID and metadata.
 
+The product types search can be filtered like this:
+
+```
+{base_url}product-types/?param1=value1&param2=value2
+```
+
+where parameters are:
+
+* `instrument`: the name of the instrument producing this type of product (e.g.: OLCI, TIRS). As a general rule, it is
+  the abbreviation of the commercial name of the instrument. Most of the time, this will be official
+* `platform`: the platform producing this type of products (e.g.: SENTINEL2, LANDSAT8). As a general rule, it is
+  constituted with the commercial name of the platform in capital letters, followed by a number - if any
+* `platformSerialIdentifier`: an identifier of the platform (e.g.: S2A, L8). As a general rule, it is constituted with
+  the first letter of the platform in capitals, followed by a number of the platform if any, and a letter from A to Z
+  if there are many satellite for this platform. If the platform does not have a number, a trigram will be used as an
+  identifier. Also, if there is a well-known international standard serial identifier for the platform, it will be used
+* `processingLevel`: the processing level of the product type (e.g.: L1, L2, L0). In general, it is constituted by `L`
+  and the a number from 0 onward indicating the level number
+* `sensorType`: the type of censor (e.g.: OPTICAL, RADAR). This tries to follow as much as possible
+  [This OGC standard](https://www.opengeospatial.org/standards/cat2eoext4ebrim)
+
 Supported product types are:
 
 {product_types}

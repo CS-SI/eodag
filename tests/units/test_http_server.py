@@ -21,6 +21,7 @@ import json
 import unittest
 
 import geojson
+
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -205,3 +206,49 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(1, response["properties"]["page"])
         self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response["properties"]["itemsPerPage"])
         self.assertIn("totalResults", response["properties"])
+
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]
+    )
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.list_product_types",
+        autospec=True,
+        return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
+    )
+    def test_list_product_types_ok(self, list_pt, guess_pt):
+        """A simple request for product types with(out) a provider must succeed"""
+        for url in ("/product-types/", "/product-types/peps"):
+            r = self.app.get(url)
+            self.assertTrue(guess_pt.called)
+            self.assertTrue(list_pt.called)
+            self.assertEquals(200, r.status_code)
+            self.assertListEqual(
+                ["S2_MSI_L1C", "S2_MSI_L2A"],
+                [it["ID"] for it in json.loads(r.data.decode("utf-8"))],
+            )
+
+        guess_pt.return_value = ["S2_MSI_L1C"]
+        url = "/product-types/?instrument=MSI"
+        r = self.app.get(url)
+        self.assertTrue(guess_pt.called)
+        self.assertTrue(list_pt.called)
+        self.assertEquals(200, r.status_code)
+        self.assertListEqual(
+            ["S2_MSI_L1C"], [it["ID"] for it in json.loads(r.data.decode("utf-8"))]
+        )
+
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.list_product_types",
+        autospec=True,
+        return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
+    )
+    def test_list_product_types_nok(self, list_pt):
+        """A request for product types with a not supported filter must return all product types"""  # noqa
+        url = "/product-types/?platform=gibberish"
+        r = self.app.get(url)
+        self.assertTrue(list_pt.called)
+        self.assertEquals(200, r.status_code)
+        self.assertListEqual(
+            ["S2_MSI_L1C", "S2_MSI_L2A"],
+            [it["ID"] for it in json.loads(r.data.decode("utf-8"))],
+        )
