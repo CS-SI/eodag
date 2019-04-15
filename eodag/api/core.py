@@ -294,6 +294,9 @@ class EODataAccessGateway(object):
         page=DEFAULT_PAGE,
         items_per_page=DEFAULT_ITEMS_PER_PAGE,
         raise_errors=False,
+        start=None,
+        end=None,
+        box=None,
         **kwargs
     ):
         """Look for products matching criteria on known providers.
@@ -311,6 +314,12 @@ class EODataAccessGateway(object):
         :param raise_errors:  When an error occurs when searching, if this is set to
                               True, the error is raised (default: False)
         :type raise_errors: bool
+        :param start: Start sensing time in iso format
+        :type start: str or unicode
+        :param end: End sensing time in iso format
+        :type end: str or unicode
+        :param box: A bounding box delimiting the AOI (as a dict with keys: "lonmin", "latmin", "lonmax", "latmax")
+        :type box: dict
         :param dict kwargs: some other criteria that will be used to do the search
         :returns: A collection of EO products matching the criteria, the current
                   returned page and the total number of results found
@@ -357,6 +366,13 @@ class EODataAccessGateway(object):
             except NoMatchingProductType:
                 logger.error("No product type could be guessed with provided arguments")
                 return results
+
+        if start is not None:
+            kwargs["startTimeFromAscendingNode"] = start
+        if end is not None:
+            kwargs["completionTimeFromAscendingNode"] = end
+        if box is not None:
+            kwargs["geometry"] = box
 
         plugin = next(self._plugins_manager.get_search_plugins(product_type))
         logger.info(

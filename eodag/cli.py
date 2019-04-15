@@ -89,7 +89,7 @@ def eodag(ctx, verbose):
 )
 @click.option(
     "-b",
-    "--geometry",
+    "--box",
     type=(float,) * 4,
     default=(None,) * 4,
     help="Search for a product on a bounding box, providing its minlon, minlat, "
@@ -97,13 +97,13 @@ def eodag(ctx, verbose):
 )
 @click.option(
     "-s",
-    "--startTimeFromAscendingNode",
+    "--start",
     type=click.DateTime(),
     help="Maximum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
 )
 @click.option(
     "-e",
-    "--completionTimeFromAscendingNode",
+    "--end",
     type=click.DateTime(),
     help="Minimum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
 )
@@ -192,8 +192,8 @@ def search_crunch(ctx, **kwargs):
 
     kwargs["verbose"] = ctx.obj["verbosity"]
     setup_logging(**kwargs)
-    if kwargs["geometry"] != (None,) * 4:
-        rect = kwargs.pop("geometry")
+    if kwargs["box"] != (None,) * 4:
+        rect = kwargs.pop("box")
         footprint = {
             "lonmin": rect[0],
             "latmin": rect[1],
@@ -202,8 +202,8 @@ def search_crunch(ctx, **kwargs):
         }
     else:
         footprint = None
-    start_date = kwargs.pop("starttimefromascendingnode")
-    stop_date = kwargs.pop("completiontimefromascendingnode")
+    start_date = kwargs.pop("start")
+    stop_date = kwargs.pop("end")
     criteria = {
         "geometry": footprint,
         "startTimeFromAscendingNode": None,
