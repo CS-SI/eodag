@@ -99,11 +99,16 @@ def format_metadata(search_param, *args, **kwargs):
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
-        - to_timestamp_milliseconds: converts a utc date string to a timestamp in
+        - ``to_timestamp_milliseconds``: converts a utc date string to a timestamp in
           milliseconds
-        - to_wkt: converts a geometry to its well known text representation
-        - to_iso_utc_datetime_from_milliseconds: converts a utc timestamp in given
+        - ``to_wkt``: converts a geometry to its well known text representation
+        - ``to_iso_utc_datetime_from_milliseconds``: converts a utc timestamp in given
           milliseconds to a utc iso datetime
+        - ``to_iso_utc_datetime``: converts a UTC datetime string to ISO UTC datetime
+          string
+        - ``to_iso_date``: removes the time part of a iso datetime string
+        - ``remove_extension``: on a string that contains dots, only take the first
+          part of the list obtained by splitting the string on dots
 
     :param search_param: The string to be formatted
     :type search_param: str or unicode
@@ -113,6 +118,11 @@ def format_metadata(search_param, *args, **kwargs):
     :type kwargs: dict
     :returns: The formatted string
     :rtype: str or unicode
+
+    .. versionadded::
+        1.0
+
+            * Added the ``remove_extension`` metadata converter
     """
 
     class MetadataFormatter(Formatter):
@@ -182,8 +192,14 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_to_iso_date(datetime_string):
-            """Remove The time part of a iso datetime string"""
             return datetime_string[:10]
+
+        @staticmethod
+        def convert_remove_extension(string):
+            parts = string.split(".")
+            if parts:
+                return parts[0]
+            return ""
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
@@ -315,6 +331,9 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix="ns"):
 # provider metadata_mapping configuration parameter. It will be automatically
 # detected as queryable by eodag when this is done
 DEFAULT_METADATA_MAPPING = {
+    # Opensearch resource identifier within the search engine context (in our case
+    # within the context of the data provider)
+    "uid": "$.uid",
     # OpenSearch Parameters for Collection Search (Table 3)
     "productType": "$.properties.productType",
     "doi": "$.properties.doi",
@@ -386,6 +405,9 @@ DEFAULT_METADATA_MAPPING = {
     "dopplerFrequency": "$.properties.dopplerFrequency",
     "incidenceAngleVariation": "$.properties.incidenceAngleVariation",
     # Custom parameters (not defined in the base document referenced above)
+    # id differs from uid. The id is an identifier by which a product which is
+    # distributed by many providers can be retrieved (a property that it has in common
+    # in the catalogues of all the providers on which it is referenced)
     "id": "$.id",
     # The geographic extent of the product
     "geometry": "$.geometry",
