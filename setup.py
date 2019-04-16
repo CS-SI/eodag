@@ -61,9 +61,9 @@ setup(
         'jsonpath-rw',
         'lxml',
         'xarray',
-        'flask == 1.0.2',
-        'jinja2 == 2.10',
-        'markdown == 3.0.1',
+        'flask >= 1.0.2',
+        'jinja2 >= 2.10',
+        'markdown >= 3.0.1',
         'unidecode == 1.0.22',
         # Temporary to avoid rasterio error on importing mock (to be removed when it is fixed upstream)
         'mock; python_version < "3.5" ',
