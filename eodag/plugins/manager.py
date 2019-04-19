@@ -88,28 +88,43 @@ class PluginManager(object):
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)
         self._built_plugins_cache = {}
 
-    def get_search_plugins(self, product_type):
+    def get_search_plugins(self, product_type=None):
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority.
 
-        :param product_type: The product type that the constructed plugins must support
+        :param product_type: (Optional) The product type that the constructed plugins
+                             must support
         :type product_type: str or unicode
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
         :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
+
+        .. versionchanged::
+            1.0
+
+                * ``product_type`` is now optional. If no product type is provided,
+                  return all search plugins, ordered by priority
         """
+
+        def get_plugin():
+            try:
+                config.search.products = config.products
+                config.search.priority = config.priority
+                plugin = self._build_plugin(config.name, config.search, Search)
+            except AttributeError:
+                config.api.products = config.products
+                config.api.priority = config.priority
+                plugin = self._build_plugin(config.name, config.api, Api)
+            return plugin
+
+        if product_type is None:
+            for config in sorted(
+                self.providers_config.values(), key=attrgetter("priority"), reverse=True
+            ):
+                yield get_plugin()
         try:
             for config in self.product_type_to_provider_config_map[product_type]:
-                try:
-                    config.search.products = config.products
-                    config.search.priority = config.priority
-                    plugin = self._build_plugin(config.name, config.search, Search)
-                    yield plugin
-                except AttributeError:
-                    config.api.products = config.products
-                    config.api.priority = config.priority
-                    plugin = self._build_plugin(config.name, config.api, Api)
-                    yield plugin
+                yield get_plugin()
         except KeyError:
             raise UnsupportedProductType(product_type)
 
@@ -117,50 +132,46 @@ class PluginManager(object):
         """Build and return the download plugin capable of downloading the given
         product.
 
-
         :param product: The product to get a download plugin for
         :type product: :class:`~eodag.api.product._product.EOProduct`
         :returns: The download plugin capable of downloading the product
         :rtype: :class:`~eodag.plugins.download.Download`
         """
-        for plugin_conf in self.product_type_to_provider_config_map[
-            product.product_type
-        ]:
-            if plugin_conf.name == product.provider:
-                try:
-                    plugin_conf.download.priority = plugin_conf.priority
-                    plugin = self._build_plugin(
-                        product.provider, plugin_conf.download, Download
-                    )
-                    return plugin
-                except AttributeError:
-                    plugin_conf.api.priority = plugin_conf.priority
-                    plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
-                    return plugin
+        plugin_conf = self.providers_config[product.provider]
+        try:
+            plugin_conf.download.priority = plugin_conf.priority
+            plugin = self._build_plugin(
+                product.provider, plugin_conf.download, Download
+            )
+            return plugin
+        except AttributeError:
+            plugin_conf.api.priority = plugin_conf.priority
+            plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
+            return plugin
 
-    def get_auth_plugin(self, product_type, provider):
+    def get_auth_plugin(self, provider):
         """Build and return the authentication plugin for the given product_type and
         provider
 
-        :param product_type: The product type for which to get the authentication plugin
-        :type product_type: str or unicode
         :param provider: The provider for which to get the authentication plugin
         :type provider: str or unicode
         :returns: The Authentication plugin for the provider
         :rtype: :class:`~eodag.plugins.authentication.Authentication`
+
+        .. versionchanged::
+            1.0
+
+                * ``product_type`` is no longer needed to find the auth plugin
         """
-        for plugin_conf in self.product_type_to_provider_config_map[product_type]:
-            if plugin_conf.name == provider:
-                try:
-                    plugin_conf.auth.priority = plugin_conf.priority
-                    plugin = self._build_plugin(
-                        provider, plugin_conf.auth, Authentication
-                    )
-                    return plugin
-                except AttributeError:
-                    # We guess the plugin being built is of type Api, therefore no need
-                    # for an Auth plugin.
-                    return None
+        plugin_conf = self.providers_config[provider]
+        try:
+            plugin_conf.auth.priority = plugin_conf.priority
+            plugin = self._build_plugin(provider, plugin_conf.auth, Authentication)
+            return plugin
+        except AttributeError:
+            # We guess the plugin being built is of type Api, therefore no need
+            # for an Auth plugin.
+            return None
 
     @staticmethod
     def get_crunch_plugin(name, **options):

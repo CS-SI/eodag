@@ -50,8 +50,17 @@ class CSWSearch(Search):
         super(CSWSearch, self).__init__(provider, config)
         self.catalog = None
 
-    def query(self, product_type, auth=None, **kwargs):
-        """Perform a search on a OGC/CSW-like interface"""
+    def query(self, product_type=None, auth=None, **kwargs):
+        """Perform a search on a OGC/CSW-like interface
+
+        .. versionchanged::
+            1.0
+
+                * ``product_type`` is no longer mandatory
+        """
+        product_type = kwargs.get("productType")
+        if product_type is None:
+            return [], 0
         if auth is not None:
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
         else:

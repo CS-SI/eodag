@@ -51,7 +51,9 @@
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
       uid: '$.id'
-      id: '{$.properties.title#remove_extension}'
+      id:
+        - 'productIdentifier=%{id#remove_extension}%'
+        - '{$.properties.title#remove_extension}'
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
@@ -427,7 +429,9 @@
       polarizationMode: '$.properties.polarisation'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '$.properties.productIdentifier'
+      id:
+        - 'productIdentifier={id#remove_extension}'
+        - '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -561,7 +565,7 @@
       orbitNumber: '$.properties.orbit.number'
       orbitDirection: '$.properties.orbit.direction'
       cloudCover:
-        - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
+        - 'f=contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       creationDate: '{$.properties.state.insertionDate#to_iso_utc_datetime_from_milliseconds}'
 
@@ -577,7 +581,9 @@
       sensorMode: '$.properties.acquisition.sensorMode'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '$.properties.identification.externalId'
+      id:
+        - 'f=identification.externalId:eq:{id#remove_extension}'
+        - '$.properties.identification.externalId'
       # The geographic extent of the product
       geometry:
         - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -657,7 +663,9 @@
         - '$.properties.completionDate'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '{$.properties.title#remove_extension}'
+      id:
+        - 'productIdentifier=%{id#remove_extension}%'
+        - '{$.properties.title#remove_extension}'
       # The geographic extent of the product
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -842,7 +850,9 @@
       incidenceAngleVariation: 'eo:incidenceAngleVariation/text()'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: 'dc:identifier/text()'
+      id:
+        - 'uid={id#remove_extension}'
+        - 'dc:identifier/text()'
       # The geographic extent of the product
       geometry:
         - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -978,6 +988,7 @@
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
             - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
             - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
+            - '{id#remove_extension}'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)

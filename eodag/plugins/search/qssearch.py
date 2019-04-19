@@ -140,13 +140,18 @@ class QueryStringSearch(Search):
         self.query_params = dict()
         self.query_string = ""
 
-    def query(self, product_type, items_per_page=None, page=None, *args, **kwargs):
+    def query(self, product_type=None, items_per_page=None, page=None, *args, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
-        keywords = {k: v for k, v in kwargs.items() if k != "auth"}
+        keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         qp, qs = self.build_query_string(
             product_type, productType=provider_product_type, *args, **keywords
         )
+        # If we were not able to build query params but have search criteria, this means
+        # the provider does not support the search criteria given. If so, stop searching
+        # right away
+        if not qp and keywords:
+            return [], 0
         self.query_params = qp
         self.query_string = qs
         self.search_urls, total_items = self.collect_search_urls(
@@ -162,7 +167,7 @@ class QueryStringSearch(Search):
         eo_products = self.normalize_results(
             provider_results, product_type, provider_product_type, *args, **kwargs
         )
-        return eo_products, total_items
+        return eo_products, (total_items or len(eo_products))
 
     def build_query_string(self, *args, **kwargs):
         """Build The query string using the search parameters"""
@@ -255,7 +260,7 @@ class QueryStringSearch(Search):
         for eodag_search_key, user_input in search_params.items():
             if user_input is not None:
                 md_mapping = self.config.metadata_mapping.get(eodag_search_key, None)
-                if md_mapping is not None:
+                if md_mapping is not None and isinstance(md_mapping, list):
                     search_param = get_search_param(md_mapping)
                     if search_param is not None:
                         queryables[eodag_search_key] = search_param
@@ -328,14 +333,16 @@ class QueryStringSearch(Search):
                 if self.config.result_type == "xml":
                     root_node = etree.fromstring(response.content)
                     namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
-                    results = [
-                        etree.tostring(entry)
-                        for entry in root_node.xpath(
-                            self.config.results_entry, namespaces=namespaces
-                        )
-                    ]
+                    results.extend(
+                        [
+                            etree.tostring(entry)
+                            for entry in root_node.xpath(
+                                self.config.results_entry, namespaces=namespaces
+                            )
+                        ]
+                    )
                 else:
-                    results = response.json()[self.config.results_entry]
+                    results.extend(response.json().get(self.config.results_entry, []))
             if items_per_page is not None and len(results) == items_per_page:
                 return results
         return results
@@ -388,8 +395,20 @@ class QueryStringSearch(Search):
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-
         # /asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
+        product_type = kwargs.get("productType")
+        if product_type is None:
+            collections = set()
+            collection = getattr(self.config, "collection", None)
+            if collection is None:
+                try:
+                    for product_type, product_config in self.config.products.items():
+                        collections.add(product_config["collection"])
+                except KeyError:
+                    collections.add("")
+            else:
+                collections.add(collection)
+            return tuple(collections)
         if self.provider == "peps":
-            product_type = kwargs.get("productType") or args[0]
             if product_type == "S2_MSI_L1C":
                 date = kwargs.get("startTimeFromAscendingNode")
                 # If there is no criteria on date, we want to query all the collections
@@ -416,13 +435,14 @@ class QueryStringSearch(Search):
         else:
             collection = getattr(self.config, "collection", None)
             if collection is None:
-                product_type = kwargs.get("productType") or args[0]
                 collection = self.config.products[product_type].get("collection", "")
             collections = (collection,)
         return collections
 
     def map_product_type(self, product_type, *args, **kwargs):
         """Map the eodag product type to the provider product type"""
+        if product_type is None:
+            return
         logger.debug("Mapping eodag product type to provider product type")
         return self.config.products[product_type]["product_type"]
 
@@ -476,15 +496,13 @@ class ODataV4Search(QueryStringSearch):
     """A specialisation of a QueryStringSearch that does a two step search to retrieve
     all products metadata"""
 
-    def do_search(self, start=0, stop=1, *args, **kwargs):
+    def do_search(self, *args, **kwargs):
         """Do a two step search, as the metadata are not given into the search result"""
         # TODO: This plugin is still very specific to the ONDA provider.
         #       Be careful to generalize it if needed when the chance to do so arrives
         final_result = []
         # Query the products entity set for basic metadata about the product
-        for entity in super(ODataV4Search, self).do_search(
-            start=start, stop=stop, *args, **kwargs
-        ):
+        for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
             if entity["downloadable"]:
                 entity_metadata = {
                     "quicklook": entity["quicklook"],

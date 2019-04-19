@@ -39,8 +39,17 @@ logger = logging.getLogger("eodag.plugins.apis.usgs")
 class UsgsApi(Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
 
-    def query(self, product_type, **kwargs):
-        """Search for data on USGS catalogues"""
+    def query(self, product_type=None, **kwargs):
+        """Search for data on USGS catalogues
+
+        .. versionchanged::
+            1.0
+
+                * ``product_type`` is no longer mandatory
+        """
+        product_type = kwargs.get("productType")
+        if product_type is None:
+            return [], 0
         api.login(
             self.config.credentials["username"],
             self.config.credentials["password"],

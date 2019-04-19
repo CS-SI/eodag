@@ -72,7 +72,7 @@ class EOProduct(object):
 
     def __init__(self, provider, properties, *args, **kwargs):
         self.provider = provider
-        self.product_type = kwargs.get("productType") or args[0]
+        self.product_type = kwargs.get("productType")
         self.location = self.remote_location = properties.get("downloadLink", "")
         self.properties = {
             key: value

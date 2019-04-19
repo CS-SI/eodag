@@ -102,7 +102,7 @@ class TestEodagCli(unittest.TestCase):
             eodag, ["search", "--conf", conf_file, "-p", "whatever"]
         )
         self.assertIn(
-            'Error: Invalid value for "-f" / "--conf": Path "{}" does not exist.'.format(
+            'Error: Invalid value for "-f" / "--conf": Path "{}" does not exist.'.format(  # noqa
                 conf_file
             ),
             result.output,
@@ -156,6 +156,7 @@ class TestEodagCli(unittest.TestCase):
                 processingLevel=None,
                 sensorType=None,
                 productType=product_type,
+                id=None,
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -200,6 +201,7 @@ class TestEodagCli(unittest.TestCase):
                 processingLevel=None,
                 sensorType=None,
                 productType=product_type,
+                id=None,
             )
             self.runner.invoke(
                 eodag,

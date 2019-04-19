@@ -102,12 +102,14 @@ class EODataAccessGateway(object):
         """
         index_dir = os.path.join(self.conf_dir, ".index")
 
-        # Handle Python 2/3 compatibility: if index_dir exists and contains a whoosh index, it means it was
-        # potentially created with a previous Python 3 eodag session, thus using pickle highest protocol version
-        # (version 4 at the time of writing for Python 3). In that case, if the current eodag session is in Python 2
-        # a ValueError will be raised saying that the pickle protocol used to serialized the previous index is
-        # incompatible with the current Python version. If that's the case, we first remove the problematic index
-        # and create another one from scratch
+        # Handle Python 2/3 compatibility: if index_dir exists and contains a whoosh
+        # index, it means it was potentially created with a previous Python 3 eodag
+        # session, thus using pickle highest protocol version (version 4 at the time of
+        # writing for Python 3). In that case, if the current eodag session is in Python
+        # 2 a ValueError will be raised saying that the pickle protocol used to
+        # serialized the previous index is incompatible with the current Python version.
+        # If that's the case, we first remove the problematic index and create another
+        # one from scratch
         try:
             create_index = not exists_in(index_dir)
         except ValueError as ve:
@@ -331,14 +333,17 @@ class EODataAccessGateway(object):
                 * The ``product_type`` parameter is no longer mandatory
                 * Support new search parameters compliant with OpenSearch
                 * Fails if a suitable product type could not be guessed (returns an
-                  empty search result)
+                  empty search result) and if the user is not querying a specific
+                  product (by providing ``id`` as search parameter)
+                * A search by ID is now performed if a product type can not be guessed
+                  from the user input, and if the user has provided an ID as a search
+                  criteria (in the keyword arguments)
 
         .. versionchanged::
            0.7.1
 
                 * The search now stops at the first provider that supports the
-                  requested product type (removal of the
-                  partial mechanism)
+                  requested product type (removal of the partial mechanism)
                 * The method now returns a tuple of 2 elements, the first one
                   being the result and the second one being the total number of
                   results satisfying the criteria on the provider. This is useful
@@ -354,9 +359,6 @@ class EODataAccessGateway(object):
             return a list as a result of their processing. This requirement is
             enforced here.
         """
-        results = SearchResult([])
-        total_results = 0
-
         product_type = kwargs.pop("productType", None)
         if product_type is None:
             try:
@@ -364,8 +366,15 @@ class EODataAccessGateway(object):
                 # By now, only use the best bet
                 product_type = guesses[0]
             except NoMatchingProductType:
-                logger.error("No product type could be guessed with provided arguments")
-                return results
+                queried_id = kwargs.get("id", None)
+                if queried_id is None:
+                    logger.error("Unable to satisfy search query: %s", kwargs)
+                    logger.error(
+                        "No product type could be guessed with provided arguments"
+                    )
+                else:
+                    return self._search_by_id(kwargs["id"])
+                return SearchResult([]), 0
 
         if start is not None:
             kwargs["startTimeFromAscendingNode"] = start
@@ -379,46 +388,86 @@ class EODataAccessGateway(object):
             "Searching product type '%s' on provider: %s", product_type, plugin.provider
         )
         logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
-        auth = self._plugins_manager.get_auth_plugin(product_type, plugin.provider)
-        try:
-            res, nb_res = plugin.query(
-                product_type,
-                auth=auth,
-                items_per_page=items_per_page,
-                page=page,
-                **kwargs
+        auth = self._plugins_manager.get_auth_plugin(plugin.provider)
+        return self._do_search(
+            plugin,
+            auth=auth,
+            product_type=product_type,
+            page=page,
+            items_per_page=items_per_page,
+            raise_errors=raise_errors,
+            **kwargs
+        )
+
+    def _search_by_id(self, uid):
+        """Internal method that enables searching a product by its id.
+
+        Keeps requesting providers until a result matching the id is supplied. The
+        search plugins should be developed in the way that enable them to handle the
+        support of a search by id by the providers. The providers are requested one by
+        one, in the order defined by their priorities. Be aware that because of that,
+        the search can be slow, if the priority order is such that the provider that
+        contains the requested product has the lowest priority.
+
+        .. versionadded:: 1.0
+        """
+        for plugin in self._plugins_manager.get_search_plugins():
+            logger.info(
+                "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
+            logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
+            auth = self._plugins_manager.get_auth_plugin(plugin.provider)
+            results, _ = self._do_search(plugin, auth=auth, id=uid)
+            if len(results) == 1:
+                return results, 1
+        return SearchResult([]), 0
 
-            # Take into account the fact that a provider may not return the count of
-            # products (in that case, fallback to using the length of the results it
-            # returned and the page requested. As an example, check the result of the
-            # following request (look for the value of properties.totalResults)
-            # https://theia-landsat.cnes.fr/resto/api/collections/Landsat/search.json?
-            # maxRecords=1&page=1
-            if nb_res == 0:
-                nb_res = len(res) * page
+    def _do_search(self, search_plugin, **kwargs):
+        """Internal method that performs a search on a given provider.
 
-            # Attempt to ensure a little bit more coherence. Some providers return a
-            # fuzzy number of total results, meaning that you have to keep requesting
-            # it until it has returned everything it has to know exactly how many EO
-            # products they have in their stock. In that case, we need to replace the
-            # returned number of results with the sum of the number of items that were
-            # skipped so far and the length of the currently retrieved items. We know
-            # there is an incoherence when the number of skipped items is greater than
-            # the total number of items returned by the plugin
-            nb_skipped_items = items_per_page * (page - 1)
-            nb_current_items = len(res)
-            if nb_skipped_items > nb_res:
-                if nb_res != 0:
-                    nb_res = nb_skipped_items + nb_current_items
-                # This is for when the returned results is an empty list and the number
-                # of results returned is incoherent with the observations. In that case,
-                # we assume the total number of results is the number of skipped
-                # results. By requesting a lower page than the current one, a user can
-                # iteratively reach the last page of results for these criteria on the
-                # provider.
-                else:
-                    nb_res = nb_skipped_items
+        .. versionadded:: 1.0
+        """
+        results = SearchResult([])
+        total_results = 0
+        try:
+            res, nb_res = search_plugin.query(**kwargs)
+
+            # Only do the pagination computations when it makes sense. For example,
+            # for a search by id, we can reasonably guess that the provider will return
+            # At most 1 product, so we don't need such a thing as pagination
+            page = kwargs.get("page")
+            items_per_page = kwargs.get("items_per_page")
+            if page and items_per_page:
+                # Take into account the fact that a provider may not return the count of
+                # products (in that case, fallback to using the length of the results it
+                # returned and the page requested. As an example, check the result of
+                # the following request (look for the value of properties.totalResults)
+                # https://theia-landsat.cnes.fr/resto/api/collections/Landsat/search.json?
+                # maxRecords=1&page=1
+                if nb_res == 0:
+                    nb_res = len(res) * page
+
+                # Attempt to ensure a little bit more coherence. Some providers return a
+                # fuzzy number of total results, meaning that you have to keep requesting
+                # it until it has returned everything it has to know exactly how many EO
+                # products they have in their stock. In that case, we need to replace the
+                # returned number of results with the sum of the number of items that were
+                # skipped so far and the length of the currently retrieved items. We know
+                # there is an incoherence when the number of skipped items is greater than
+                # the total number of items returned by the plugin
+                nb_skipped_items = items_per_page * (page - 1)
+                nb_current_items = len(res)
+                if nb_skipped_items > nb_res:
+                    if nb_res != 0:
+                        nb_res = nb_skipped_items + nb_current_items
+                    # This is for when the returned results is an empty list and the number
+                    # of results returned is incoherent with the observations. In that case,
+                    # we assume the total number of results is the number of skipped
+                    # results. By requesting a lower page than the current one, a user can
+                    # iteratively reach the last page of results for these criteria on the
+                    # provider.
+                    else:
+                        nb_res = nb_skipped_items
 
             if not isinstance(res, list):
                 raise PluginImplementationError(
@@ -440,24 +489,29 @@ class EODataAccessGateway(object):
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    eo_product.register_downloader(download_plugin, auth)
+                    eo_product.register_downloader(
+                        download_plugin, kwargs.get("auth", None)
+                    )
 
             results.extend(res)
             total_results += nb_res
-            logger.info("Found %s result(s) on provider '%s'", nb_res, plugin.provider)
-        except Exception as e:
+            logger.info(
+                "Found %s result(s) on provider '%s'", nb_res, search_plugin.provider
+            )
+        except Exception:
             logger.info(
                 "No result from provider '%s' due to an error during search. Raise "
                 "verbosity of log messages for details",
-                plugin.provider,
+                search_plugin.provider,
             )
-            if raise_errors:
+            if kwargs.get("raise_errors"):
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next
-                raise e
+                raise
             else:
                 logger.exception(
-                    "Error while searching on provider %s (ignored):", plugin.provider
+                    "Error while searching on provider %s (ignored):",
+                    search_plugin.provider,
                 )
         return SearchResult(results), total_results
 
@@ -603,9 +657,7 @@ class EODataAccessGateway(object):
         if product.downloader is None:
             auth = product.downloader_auth
             if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(
-                    product.product_type, product.provider
-                )
+                auth = self._plugins_manager.get_auth_plugin(product.provider)
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )

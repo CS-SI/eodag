@@ -127,6 +127,7 @@ def eodag(ctx, verbose):
 @click.option(
     "-S", "--sensorType", help="Search for products matching this type of sensor"
 )
+@click.option("--id", help="Search for the product identified by this id")
 @click.option(
     "--cruncher",
     type=click.Choice(CRUNCHERS),
@@ -175,6 +176,7 @@ def search_crunch(ctx, **kwargs):
     platform_identifier = kwargs.pop("platformserialidentifier")
     processing_level = kwargs.pop("processinglevel")
     sensor_type = kwargs.pop("sensortype")
+    id_ = kwargs.pop("id")
     if not any(
         [
             product_type,
@@ -183,6 +185,7 @@ def search_crunch(ctx, **kwargs):
             platform_identifier,
             processing_level,
             sensor_type,
+            id_,
         ]
     ):
         with click.Context(search_crunch) as ctx:
@@ -215,6 +218,7 @@ def search_crunch(ctx, **kwargs):
         "platformSerialIdentifier": platform_identifier,
         "processingLevel": processing_level,
         "sensorType": sensor_type,
+        "id": id_,
     }
     if start_date:
         criteria["startTimeFromAscendingNode"] = start_date.isoformat()
