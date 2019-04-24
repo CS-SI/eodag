@@ -320,11 +320,12 @@ class EODataAccessGateway(object):
         :type start: str or unicode
         :param end: End sensing time in iso format
         :type end: str or unicode
-        :param box: A bounding box delimiting the AOI (as a dict with keys: "lonmin", "latmin", "lonmax", "latmax")
+        :param box: A bounding box delimiting the AOI (as a dict with keys: "lonmin",
+                    "latmin", "lonmax", "latmax")
         :type box: dict
         :param dict kwargs: some other criteria that will be used to do the search
-        :returns: A collection of EO products matching the criteria, the current
-                  returned page and the total number of results found
+        :returns: A collection of EO products matching the criteria and the total
+                  number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
 
         .. versionchanged::
@@ -338,6 +339,10 @@ class EODataAccessGateway(object):
                 * A search by ID is now performed if a product type can not be guessed
                   from the user input, and if the user has provided an ID as a search
                   criteria (in the keyword arguments)
+                * It is now possible to pass in the name of the provider on which to
+                  perform the request when searching a product by its ID,
+                  for performance reasons. In that case, the search with the product ID
+                  will be done directly on that provider
 
         .. versionchanged::
            0.7.1
@@ -373,7 +378,8 @@ class EODataAccessGateway(object):
                         "No product type could be guessed with provided arguments"
                     )
                 else:
-                    return self._search_by_id(kwargs["id"])
+                    provider = kwargs.get("provider", None)
+                    return self._search_by_id(kwargs["id"], provider=provider)
                 return SearchResult([]), 0
 
         if start is not None:
@@ -383,7 +389,9 @@ class EODataAccessGateway(object):
         if box is not None:
             kwargs["geometry"] = box
 
-        plugin = next(self._plugins_manager.get_search_plugins(product_type))
+        plugin = next(
+            self._plugins_manager.get_search_plugins(product_type=product_type)
+        )
         logger.info(
             "Searching product type '%s' on provider: %s", product_type, plugin.provider
         )
@@ -399,7 +407,7 @@ class EODataAccessGateway(object):
             **kwargs
         )
 
-    def _search_by_id(self, uid):
+    def _search_by_id(self, uid, provider=None):
         """Internal method that enables searching a product by its id.
 
         Keeps requesting providers until a result matching the id is supplied. The
@@ -407,11 +415,23 @@ class EODataAccessGateway(object):
         support of a search by id by the providers. The providers are requested one by
         one, in the order defined by their priorities. Be aware that because of that,
         the search can be slow, if the priority order is such that the provider that
-        contains the requested product has the lowest priority.
+        contains the requested product has the lowest priority. However, you can always
+        speed up a little the search by passing the name of the provider on which to
+        perform the search, if this information is available
+
+        :param uid: The uid of the EO product
+        :type uid: str (Python 3) or unicode (Python 2)
+        :param provider: (optional) The provider on which to search the product.
+                         This may be useful for performance reasons when the user
+                         knows this product is available on the given provider
+        :type provider: str (Python 3) or unicode (Python 2)
+        :returns: A search result with one EO product or None at all, and the number
+                  of EO products retrieved (0 or 1)
+        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
 
         .. versionadded:: 1.0
         """
-        for plugin in self._plugins_manager.get_search_plugins():
+        for plugin in self._plugins_manager.get_search_plugins(provider=provider):
             logger.info(
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
@@ -447,25 +467,26 @@ class EODataAccessGateway(object):
                 if nb_res == 0:
                     nb_res = len(res) * page
 
-                # Attempt to ensure a little bit more coherence. Some providers return a
-                # fuzzy number of total results, meaning that you have to keep requesting
-                # it until it has returned everything it has to know exactly how many EO
-                # products they have in their stock. In that case, we need to replace the
-                # returned number of results with the sum of the number of items that were
-                # skipped so far and the length of the currently retrieved items. We know
-                # there is an incoherence when the number of skipped items is greater than
-                # the total number of items returned by the plugin
+                # Attempt to ensure a little bit more coherence. Some providers return
+                # a fuzzy number of total results, meaning that you have to keep
+                # requesting it until it has returned everything it has to know exactly
+                # how many EO products they have in their stock. In that case, we need
+                # to replace the returned number of results with the sum of the number
+                # of items that were skipped so far and the length of the currently
+                # retrieved items. We know there is an incoherence when the number of
+                # skipped items is greater than the total number of items returned by
+                # the plugin
                 nb_skipped_items = items_per_page * (page - 1)
                 nb_current_items = len(res)
                 if nb_skipped_items > nb_res:
                     if nb_res != 0:
                         nb_res = nb_skipped_items + nb_current_items
-                    # This is for when the returned results is an empty list and the number
-                    # of results returned is incoherent with the observations. In that case,
-                    # we assume the total number of results is the number of skipped
-                    # results. By requesting a lower page than the current one, a user can
-                    # iteratively reach the last page of results for these criteria on the
-                    # provider.
+                    # This is for when the returned results is an empty list and the
+                    # number of results returned is incoherent with the observations.
+                    # In that case, we assume the total number of results is the number
+                    # of skipped results. By requesting a lower page than the current
+                    # one, a user can iteratively reach the last page of results for
+                    # these criteria on the provider.
                     else:
                         nb_res = nb_skipped_items
 

@@ -11,10 +11,17 @@ import sys
 from functools import wraps
 
 import flask
+import requests
 from flask import jsonify, make_response, render_template, request
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
-from eodag.rest.utils import get_home_page_content, get_product_types, search_products
+from eodag.rest.utils import (
+    get_home_page_content,
+    get_product_types,
+    search_product_by_id,
+    search_products,
+)
+from eodag.utils import makedirs
 from eodag.utils.exceptions import (
     UnsupportedProductType,
     UnsupportedProvider,
@@ -50,6 +57,76 @@ def search(product_type):
         return jsonify({"error": "Not Found: {}".format(e.product_type)}), 404
 
     return jsonify(response), 200
+
+
+@app.route("/search/<uid>/", methods=["GET"])
+@cross_origin
+def search_by_id(uid):
+    """Retrieve the quicklook of a eo product identified by its id"""
+    provider = request.args.get("provider")
+    try:
+        search_result = search_product_by_id(uid, provider=provider)
+    except ValidationError as e:
+        return jsonify({"error": e.message}), 400
+    except RuntimeError as e:
+        return jsonify({"error": e}), 500
+
+    if len(search_result) == 0:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(search_result[0].as_dict()), 200
+
+
+@app.route("/quicklook/<uid>/", methods=["GET"])
+@cross_origin
+def get_quicklook(uid=None):
+    """Retrieve the quicklook of a eo product identified by its id"""
+    if uid is None:
+        return jsonify({"error": "You must provide a EO product uid"}), 400
+    provider = request.args.get("provider")
+    try:
+        search_result = search_product_by_id(uid, provider=provider)
+    except ValidationError as e:
+        return jsonify({"error": e.message}), 400
+    except RuntimeError as e:
+        return jsonify({"error": e}), 500
+
+    if len(search_result) == 0:
+        return jsonify({"error": "EO product not found"}), 400
+
+    eo_product = search_result[0]
+    quicklook = eo_product.properties.get("quicklook", None)
+    if quicklook is None:
+        return jsonify({"error": "Not Found"}), 404
+    quicklook_alt_text = "{} quicklook".format(uid)
+    if quicklook.startswith("http") or quicklook.startswith("https"):
+        # First see if the url of the quicklook is accessible as is
+        resp = requests.get(quicklook)
+        try:
+            resp.raise_for_status()
+            quicklook_src = quicklook
+        except requests.HTTPError:
+            # Flask is known to automatically serve files present in a folder named
+            # "static" in the root folder of the application.
+            # If the url is not accessible as is, try to get it from the provider using
+            # its authentication mechanism
+            quicklooks_dir = os.path.join(
+                os.path.dirname(__file__), "static", "quicklooks"
+            )
+            # First create the static folder and quicklooks dir inside it if necessary
+            makedirs(quicklooks_dir)
+            # Then download the quicklook
+            response = eo_product.get_quicklook(filename=uid, base_dir=quicklooks_dir)
+            # get_quicklook should always return an absolute path, which starts with "/"
+            # If it fails to do so, we consider an error occured while getting the
+            # quicklook
+            if not response.startswith("/"):
+                return jsonify({"error": response}), 500
+            quicklook_src = "/static/quicklooks/{}".format(uid)
+    # If the quicklook is not an HTTP URL, we guess it is a base64 stream. In that case
+    # we directly include it in the <img> tag and return it as is
+    else:
+        quicklook_src = "data:image/png;base64, {}".format(quicklook)
+    return '<img src="{}" alt="{}" />'.format(quicklook_src, quicklook_alt_text), 200
 
 
 @app.route("/", methods=["GET"])

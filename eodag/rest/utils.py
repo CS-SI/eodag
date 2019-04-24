@@ -227,3 +227,26 @@ def search_products(product_type, arguments):
         raise e
 
     return response
+
+
+def search_product_by_id(uid, provider=None):
+    """Search a product by its id
+
+    :param uid: The uid of the EO product
+    :type uid: str (Python 3) or unicode (Python 2)
+    :param provider: (optional) The provider on which to search the product. This may
+                     be useful for performance reasons when the user knows this product
+                     is available on the given provider
+    :type provider: str (Python 3) or unicode (Python 2)
+    :returns: An search result
+    :rtype: :class:`~eodag.api.search_result.SearchResult`
+    :raises: :class:`~eodag.utils.exceptions.ValidationError`
+    :raises: RuntimeError
+    """
+    try:
+        products, total = eodag_api.search(id=uid, provider=provider, raise_errors=True)
+        return products
+    except ValidationError:
+        raise
+    except RuntimeError:
+        raise

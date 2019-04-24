@@ -5,6 +5,8 @@ eodag-server is a REST API for EODAG search tool implementing OpenSearch Geo int
 
 ## Searching
 
+### By product type
+
 The server provides a GET endpoint with a route defined by:
 
 ```
@@ -30,6 +32,24 @@ request. Pagination paramaters are:
 * `page`: The page number (int, defaults to 1)
 * `itemsPerPage`: The maximum number of items per page (int, defaults to {ipp})
 
+### By UID
+
+Since version 1.0 of eodag, it is now possible to search directly an EO product based on its
+ID. The endpoint is the following:
+
+```
+http://hostname/<uid>/?provider=value
+```
+
+You can even specify on which provider to perform the request if you have this information.
+This may speed up your search.
+
+Example requests:
+
+<{base_url}search/S2B_MSIL1C_20180824T105019_N0206_R051_T30TYN_20180824T151058/>
+
+<{base_url}search/S2B_MSIL1C_20180824T105019_N0206_R051_T30TYN_20180824T151058/?provider=onda>
+
 ## Filtering
 
 The service provides ability to filter search results by implemented EODAG crunchers.
@@ -48,6 +68,25 @@ For example, overlap filter requires adding a 'minimum_overlap' parameter to the
 Example URL:
 
 <{base_url}S2_MSI_L1C/?box=0,43,1,44&filter=overlap&minimum_overlap=0>
+
+## Quicklooks
+
+Since version 1.0, an endpoint is available for retrieving EO products quicklooks based on
+their UID:
+
+```
+http://hostname/quicklook/<uid>/?provider=value
+```
+
+The UID is mandatory, and the provider query parameter can be provided to speed up the
+retrieval of the quicklook.
+
+Example URL (with a request on a provider known to make available the quicklook without authentication):
+
+<{base_url}quicklook/S2B_MSIL1C_20180824T105019_N0206_R051_T30TYN_20180824T151058/?provider=onda>
+
+The request for a quicklook may fail due to authentication problems or provider's access problem, or inconsistency
+between the URL given in the search result of the provider and the way to access this URL
 
 ## Product types
 

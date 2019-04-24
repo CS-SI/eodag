@@ -28,7 +28,7 @@ from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils.exceptions import UnsupportedProductType
+from eodag.utils.exceptions import UnsupportedProductType, UnsupportedProvider
 
 logger = logging.getLogger("eodag.plugins.manager")
 
@@ -88,22 +88,29 @@ class PluginManager(object):
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)
         self._built_plugins_cache = {}
 
-    def get_search_plugins(self, product_type=None):
+    def get_search_plugins(self, product_type=None, provider=None):
         """Build and return all the search plugins supporting the given product type,
-        ordered by highest priority.
+        ordered by highest priority, or the search plugin of the given provider
 
         :param product_type: (Optional) The product type that the constructed plugins
                              must support
         :type product_type: str or unicode
+        :param provider: (Optional) The provider on which to get the search plugin
+        :type provider: str or unicode
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
         :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
+        :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
+        :raises: :class:`~eodag.utils.exceptions.UnsupportedProductType`
+        :raises: StopIteration
 
         .. versionchanged::
             1.0
 
                 * ``product_type`` is now optional. If no product type is provided,
                   return all search plugins, ordered by priority
+                * A new optional parameter ``provider`` which defaults to ``None``, if
+                  we want to build the search plugin of that provider
         """
 
         def get_plugin():
@@ -117,11 +124,24 @@ class PluginManager(object):
                 plugin = self._build_plugin(config.name, config.api, Api)
             return plugin
 
+        if provider is not None:
+            try:
+                config = self.providers_config[provider]
+            except KeyError:
+                raise UnsupportedProvider
+            yield get_plugin()
+            # Signal the end of iteration as we already have what we wanted
+            # In a for-loop, this exception is automatically catched
+            raise StopIteration
+
         if product_type is None:
             for config in sorted(
                 self.providers_config.values(), key=attrgetter("priority"), reverse=True
             ):
                 yield get_plugin()
+            # Signal the end of iteration as we already have what we wanted
+            # In a for-loop, this exception is automatically catched
+            raise StopIteration
         try:
             for config in self.product_type_to_provider_config_map[product_type]:
                 yield get_plugin()

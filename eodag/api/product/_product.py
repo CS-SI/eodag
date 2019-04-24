@@ -364,12 +364,17 @@ class EOProduct(object):
         )
         return self.location
 
-    def get_quicklook(self, filename=None, progress_callback=None):
+    def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
         """Download the quick look image of a given EOProduct from its provider if it
         exists.
 
         :param filename: (optional) the name to give to the downloaded quicklook.
         :type filename: str (Python 3) or unicode (Python 2)
+        :param base_dir: (optional) the absolute path of the directory where to store
+                         the quicklooks in the filesystem. If it is not given, it
+                         defaults to the `quicklooks` directory under this EO product
+                         downloader's ``outputs_prefix`` config param
+        :type base_dir: str (Python 3) or unicode (Python 2)
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -378,6 +383,12 @@ class EOProduct(object):
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
         :rtype: str (Python 3) or unicode (Python 2)
+
+        .. versionchanged::
+            1.0
+
+                * Added the ``base_dir`` optional parameter to choose where to download
+                  the retrieved quicklook
         """
 
         def format_quicklook_address():
@@ -405,9 +416,12 @@ class EOProduct(object):
 
         format_quicklook_address()
 
-        quicklooks_base_dir = os.path.join(
-            self.downloader.config.outputs_prefix, "quicklooks"
-        )
+        if base_dir is not None:
+            quicklooks_base_dir = os.path.abspath(os.path.realpath(base_dir))
+        else:
+            quicklooks_base_dir = os.path.join(
+                self.downloader.config.outputs_prefix, "quicklooks"
+            )
         if not os.path.isdir(quicklooks_base_dir):
             os.makedirs(quicklooks_base_dir)
         quicklook_file = os.path.join(
@@ -417,9 +431,12 @@ class EOProduct(object):
 
         if not os.path.isfile(quicklook_file):
             # VERY SPECIAL CASE (introduced by the onda provider): first check if
-            # it is a byte string, in which case we just write the content into
-            # the quicklook_file and return it
-            if isinstance(self.properties["quicklook"], bytes):
+            # it is a HTTP URL. If not, we assume it is a byte string, in which case
+            # we just write the content into the quicklook_file and return it.
+            if not (
+                self.properties["quicklook"].startswith("http")
+                or self.properties["quicklook"].startswith("https")
+            ):
                 with open(quicklook_file, "wb") as fd:
                     fd.write(self.properties["quicklook"])
                 return quicklook_file
@@ -434,11 +451,11 @@ class EOProduct(object):
             ) as stream:
                 try:
                     stream.raise_for_status()
-                except HTTPError:
+                except HTTPError as e:
                     import traceback as tb
 
                     logger.error("Error while getting resource :\n%s", tb.format_exc())
-                    return ""
+                    return str(e)
                 else:
                     stream_size = int(stream.headers.get("content-length", 0))
                     with open(quicklook_file, "wb") as fhandle:
