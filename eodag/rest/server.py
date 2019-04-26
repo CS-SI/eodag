@@ -70,6 +70,8 @@ def search_by_id(uid):
         return jsonify({"error": e.message}), 400
     except RuntimeError as e:
         return jsonify({"error": e}), 500
+    except UnsupportedProvider:
+        return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
 
     if len(search_result) == 0:
         return jsonify({"error": "Not found"}), 404
@@ -89,6 +91,8 @@ def get_quicklook(uid=None):
         return jsonify({"error": e.message}), 400
     except RuntimeError as e:
         return jsonify({"error": e}), 500
+    except UnsupportedProvider:
+        return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
 
     if len(search_result) == 0:
         return jsonify({"error": "EO product not found"}), 400

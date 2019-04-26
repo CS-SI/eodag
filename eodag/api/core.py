@@ -364,7 +364,7 @@ class EODataAccessGateway(object):
             return a list as a result of their processing. This requirement is
             enforced here.
         """
-        product_type = kwargs.pop("productType", None)
+        product_type = kwargs.get("productType", None)
         if product_type is None:
             try:
                 guesses = self.guess_product_type(**kwargs)
