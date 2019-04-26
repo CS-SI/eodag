@@ -1,7 +1,18 @@
 Release history
 ---------------
 
-0.7.2 (2018-03-26)
+1.0 (2019-04-26)
+++++++++++++++++
+
+- Fixes a bug occuring when ``outputs_prefix`` config parameter is not set in user config
+- Adds product type search functionality
+- Extends the list of search parameters with ``instrument``, ``platform``, ``platformSerialIdentifier``, ``processingLevel`` and ``sensorType``
+- The cli arguments are now fully compliant with opensearch geo/time extensions
+- Adds functionality to search products by their ID
+- Exposes search products by ID functionality on REST interface
+- Exposes get quicklook functionality on REST interface
+
+0.7.2 (2019-03-26)
 ++++++++++++++++++
 
 - Fixes bug due to the new version of PyYaml
@@ -10,7 +21,7 @@ Release history
   ``EODAG_CFG_FILE`` environment variable.
 
 
-0.7.1 (2018-03-01)
+0.7.1 (2019-03-01)
 ++++++++++++++++++
 
 - Creates a http rest server interface to eodag
