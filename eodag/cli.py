@@ -35,6 +35,7 @@ Commands:
   search           Search satellite images by their product types,...
   serve-rest       Start eodag HTTP server
   serve-rpc        Start eodag rpc server
+  version          Print eodag version and exit
 
   noqa: D103
 """
@@ -72,6 +73,18 @@ def eodag(ctx, verbose):
     if ctx.obj is None:
         ctx.obj = {}
     ctx.obj["verbosity"] = verbose
+
+
+@eodag.command(name="version", help="Print eodag version and exit")
+def version():
+    """Print eodag version and exit"""
+    base_dir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
+    info = {}
+    with open(os.path.join(base_dir, "__meta__.py"), "r") as f:
+        exec(f.read(), info)
+        click.echo(
+            "{__title__} ({__description__}): version {__version__}".format(**info)
+        )
 
 
 @eodag.command(
