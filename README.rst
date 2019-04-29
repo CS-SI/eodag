@@ -182,6 +182,8 @@ Releases are made by tagging a commit on the master branch. To make a new releas
       also `NOTICE` - in case a new dependency is added).
     * Check that the version string in `eodag/__meta__.py` (the variable `__version__`)
       is correctly updated
+    * Push your local master branch to remote. That will trigger the bitbucket pipeline
+      that runs the unit tests.
     * Tag the commit that represents the state of the release with a message. For example,
       for version 1.0, do this: `git tag -a v1.0 -m 'version 1.0'`
     * Push the tags to bitbucket: `git push --tags`. This will trigger a build on bitbucket
