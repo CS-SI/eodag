@@ -140,13 +140,12 @@ class QueryStringSearch(Search):
         self.query_params = dict()
         self.query_string = ""
 
-    def query(self, product_type=None, items_per_page=None, page=None, *args, **kwargs):
+    def query(self, items_per_page=None, page=None, *args, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
+        product_type = kwargs.get("productType", None)
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
-        qp, qs = self.build_query_string(
-            product_type, productType=provider_product_type, *args, **keywords
-        )
+        qp, qs = self.build_query_string(product_type, *args, **keywords)
         # If we were not able to build query params but have search criteria, this means
         # the provider does not support the search criteria given. If so, stop searching
         # right away
@@ -155,11 +154,7 @@ class QueryStringSearch(Search):
         self.query_params = qp
         self.query_string = qs
         self.search_urls, total_items = self.collect_search_urls(
-            productType=product_type,
-            page=page,
-            items_per_page=items_per_page,
-            *args,
-            **kwargs
+            page=page, items_per_page=items_per_page, *args, **kwargs
         )
         provider_results = self.do_search(
             items_per_page=items_per_page, *args, **kwargs

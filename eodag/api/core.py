@@ -382,6 +382,7 @@ class EODataAccessGateway(object):
                     return self._search_by_id(kwargs["id"], provider=provider)
                 return SearchResult([]), 0
 
+        kwargs["productType"] = product_type
         if start is not None:
             kwargs["startTimeFromAscendingNode"] = start
         if end is not None:
@@ -400,7 +401,6 @@ class EODataAccessGateway(object):
         return self._do_search(
             plugin,
             auth=auth,
-            product_type=product_type,
             page=page,
             items_per_page=items_per_page,
             raise_errors=raise_errors,
