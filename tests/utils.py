@@ -18,10 +18,10 @@
 from __future__ import unicode_literals
 
 # All tests files should import mock from this place
-try:    # PY3
-    from unittest import mock   # noqa
-except ImportError:    # PY2
-    import mock     # noqa
+try:  # PY3
+    from unittest import mock  # noqa
+except ImportError:  # PY2
+    import mock  # noqa
 
 
 def no_blanks(string):
@@ -32,4 +32,4 @@ def no_blanks(string):
 
     :returns the same string with all blank characters removed
     """
-    return string.replace('\n', '').replace('\t', '').replace(' ', '')
+    return string.replace("\n", "").replace("\t", "").replace(" ", "")

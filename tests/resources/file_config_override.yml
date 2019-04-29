@@ -17,3 +17,7 @@ aws_s3_sentinel2_l1c:
 peps:
   download:
     outputs_prefix: /data
+
+theia:
+  download:
+    outputs_prefix:

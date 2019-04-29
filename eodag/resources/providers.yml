@@ -48,7 +48,12 @@
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
-      id: '$.id'
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
+      id:
+        - 'productIdentifier=%{id#remove_extension}%'
+        - '{$.properties.title#remove_extension}'
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
@@ -257,6 +262,9 @@
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
@@ -311,7 +319,7 @@
       incidenceAngleVariation: '$.properties.incidenceAngleVariation'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '$.id'
+      id: '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -364,14 +372,23 @@
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
         - '$.properties.productType'
       platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
-      instrument: '$.properties.instrument'
-      processingLevel: '$.properties.processingLevel'
+      platformSerialIdentifier:
+        - platform
+        - '$.properties.platform'
+      instrument:
+        - instrument
+        - '$.properties.instrument'
+      processingLevel:
+        - processingLevel
+        - '$.properties.processingLevel'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
@@ -412,7 +429,9 @@
       polarizationMode: '$.properties.polarisation'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '$.id'
+      id:
+        - 'productIdentifier={id#remove_extension}'
+        - '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -526,6 +545,9 @@
       next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={page}'
       total_items_nb_key_path: '$.totalnb'
     metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.properties.uid'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - 'f=identification.type:eq:{productType}'
@@ -543,7 +565,7 @@
       orbitNumber: '$.properties.orbit.number'
       orbitDirection: '$.properties.orbit.direction'
       cloudCover:
-        - 'contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
+        - 'f=contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       creationDate: '{$.properties.state.insertionDate#to_iso_utc_datetime_from_milliseconds}'
 
@@ -555,9 +577,13 @@
       completionTimeFromAscendingNode:
         - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#to_timestamp_milliseconds}'
         - '{$.properties.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
+      polarisationChannels: '$.properties.acquisition.polarization'
+      sensorMode: '$.properties.acquisition.sensorMode'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '$.properties.uid'
+      id:
+        - 'f=identification.externalId:eq:{id#remove_extension}'
+        - '$.properties.identification.externalId'
       # The geographic extent of the product
       geometry:
         - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -595,6 +621,9 @@
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
     metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
@@ -634,7 +663,9 @@
         - '$.properties.completionDate'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '$.id'
+      id:
+        - 'productIdentifier=%{id#remove_extension}%'
+        - '{$.properties.title#remove_extension}'
       # The geographic extent of the product
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -739,6 +770,9 @@
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={page}'
       total_items_nb_key_path: '//os:totalResults/text()'
     metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: 'ns:id/text()'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - 'productType'
@@ -816,7 +850,9 @@
       incidenceAngleVariation: 'eo:incidenceAngleVariation/text()'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: 'ns:id/text()'
+      id:
+        - 'uid={id#remove_extension}'
+        - 'dc:identifier/text()'
       # The geographic extent of the product
       geometry:
         - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
@@ -952,7 +988,11 @@
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
             - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
             - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
+            - '{id#remove_extension}'
     metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType: '$.productType'
       platform: '$.platformName'
@@ -978,7 +1018,7 @@
       completionTimeFromAscendingNode: '$.endPosition'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '$.id'
+      id: '{$.filename#remove_extension}'
       # The geographic extent of the product
       geometry: '$.footprint'
       # The url of the quicklook

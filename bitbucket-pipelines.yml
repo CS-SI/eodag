@@ -5,11 +5,10 @@ pipelines:
         name: Check Code Style and Build Docs
         script:
           - python -m pip install flake8
-          - flake8 .
+          - flake8 --max-line-length=120 .
           - apt-get update
           - apt-get install -y pandoc
           - python -m pip install -r requirements-docs.txt
-          - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
           - (cd docs && /usr/bin/make html)
   tags:
     v*:
@@ -43,11 +42,10 @@ pipelines:
           name: Unit tests for Py35
           script:
             - python -m pip install flake8
-            - flake8 .
+            - flake8 --max-line-length=120 .
             - apt-get update
             - apt-get install -y pandoc
             - python -m pip install -r requirements-docs.txt
-            - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
             - (cd docs && /usr/bin/make html)
             - python -m pip install -r requirements-dev.txt
             - mkdir -p test-reports
@@ -64,7 +62,6 @@ pipelines:
           name: Unit tests for Py27
           image: python:2.7-stretch
           script:
-            - export PYTHONWARNINGS="ignore:numpy.dtype size changed"
             - python -m pip install -r requirements-dev.txt
             - mkdir -p test-reports
             - |

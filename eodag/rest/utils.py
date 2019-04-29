@@ -1,22 +1,25 @@
 # -*- coding: utf-8 -*-
 # Copyright 2017-2018 CS Systemes d'Information (CS SI)
 # All rights reserved
+from __future__ import unicode_literals
 
 import os
 from collections import namedtuple
 
 import dateutil.parser
-import eodag
 import markdown
+
+import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.utils.exceptions import (
-    ValidationError,
     MisconfiguredError,
+    NoMatchingProductType,
     UnsupportedProductType,
+    ValidationError,
 )
 
 eodag_api = eodag.EODataAccessGateway()
@@ -35,7 +38,7 @@ def format_product_types(product_types):
     """
     result = []
     for pt in product_types:
-        result.append("* *__{ID}__*: {desc}".format(**pt))
+        result.append("* *__{ID}__*: {abstract}".format(**pt))
     return "\n".join(sorted(result))
 
 
@@ -61,13 +64,37 @@ def get_templates_path():
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def get_product_types(provider=None):
+def get_product_types(provider=None, filters=None):
     """Returns a list of supported product types
 
     :param provider: provider name
-    :type provider: str"""
-
-    return eodag_api.list_product_types(provider)
+    :type provider: str
+    :param filters: additional filters for product types search
+    :type filters: dict
+    :returns: a list of corresponding product types
+    :rtype: list
+    """
+    if filters is None:
+        filters = {}
+    try:
+        guessed_product_types = eodag_api.guess_product_type(
+            instrument=filters.get("instrument"),
+            platform=filters.get("platform"),
+            platformSerialIdentifier=filters.get("platformSerialIdentifier"),
+            sensorType=filters.get("sensorType"),
+            processingLevel=filters.get("processingLevel"),
+        )
+    except NoMatchingProductType:
+        guessed_product_types = []
+    if guessed_product_types:
+        product_types = [
+            pt
+            for pt in eodag_api.list_product_types(provider=provider)
+            if pt["ID"] in guessed_product_types
+        ]
+    else:
+        product_types = eodag_api.list_product_types(provider=provider)
+    return product_types
 
 
 def search_bbox(request_bbox):
@@ -114,6 +141,7 @@ def get_int(val):
 
 
 def filter_products(products, arguments, **kwargs):
+    """Apply an eodag cruncher to filter products"""
     filter_name = arguments.get("filter")
     if filter_name:
         cruncher = crunchers.get(filter_name)
@@ -139,6 +167,7 @@ def filter_products(products, arguments, **kwargs):
 
 
 def get_pagination_info(arguments):
+    """Get pagination arguments"""
     page = get_int(arguments.get("page", DEFAULT_PAGE))
     items_per_page = get_int(arguments.get("itemsPerPage", DEFAULT_ITEMS_PER_PAGE))
     if page is not None and page < 0:
@@ -167,6 +196,7 @@ def search_products(product_type, arguments):
             "startTimeFromAscendingNode": get_date(arguments.get("dtstart")),
             "completionTimeFromAscendingNode": get_date(arguments.get("dtend")),
             "cloudCover": get_int(arguments.get("cloudCover")),
+            "productType": product_type,
         }
 
         if items_per_page is None:
@@ -174,11 +204,7 @@ def search_products(product_type, arguments):
         if page is None:
             page = DEFAULT_PAGE
         products, total = eodag_api.search(
-            product_type,
-            page=page,
-            items_per_page=items_per_page,
-            raise_errors=True,
-            **criteria
+            page=page, items_per_page=items_per_page, raise_errors=True, **criteria
         )
 
         products = filter_products(products, arguments, **criteria)
@@ -201,3 +227,26 @@ def search_products(product_type, arguments):
         raise e
 
     return response
+
+
+def search_product_by_id(uid, provider=None):
+    """Search a product by its id
+
+    :param uid: The uid of the EO product
+    :type uid: str (Python 3) or unicode (Python 2)
+    :param provider: (optional) The provider on which to search the product. This may
+                     be useful for performance reasons when the user knows this product
+                     is available on the given provider
+    :type provider: str (Python 3) or unicode (Python 2)
+    :returns: An search result
+    :rtype: :class:`~eodag.api.search_result.SearchResult`
+    :raises: :class:`~eodag.utils.exceptions.ValidationError`
+    :raises: RuntimeError
+    """
+    try:
+        products, total = eodag_api.search(id=uid, provider=provider, raise_errors=True)
+        return products
+    except ValidationError:
+        raise
+    except RuntimeError:
+        raise

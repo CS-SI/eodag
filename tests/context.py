@@ -15,33 +15,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Explicitly import here everything you want to use from the eodag package"""
-import sys
+"""Explicitly import here everything you want to use from the eodag package
+
+    isort:skip_file
+"""
 import os
+import sys
 
-from tests import TEST_RESOURCES_PATH
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
-from eodag import api, config
-from eodag import EODataAccessGateway
-from eodag.cli import eodag, list_pt, search_crunch, download
+from eodag import EODataAccessGateway, api, config
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
-from eodag.api.search_result import SearchResult
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
-
-from eodag.rest import server as eodag_http_server
-from eodag.rest.utils import get_date, eodag_api
-
+from eodag.api.search_result import SearchResult
+from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-
-from eodag.utils import DEFAULT_PROJ
+from eodag.rest import server as eodag_http_server
+from eodag.rest.utils import eodag_api, get_date
+from eodag.utils import DEFAULT_PROJ, makedirs
 from eodag.utils.exceptions import (
-    AddressNotFound, UnsupportedDatasetAddressScheme, UnsupportedProvider, ValidationError, DownloadError
+    AddressNotFound,
+    DownloadError,
+    UnsupportedDatasetAddressScheme,
+    UnsupportedProvider,
+    ValidationError,
 )
+from tests import TEST_RESOURCES_PATH

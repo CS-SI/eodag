@@ -1,0 +1,41 @@
+exclude: '^$'
+fail_fast: false
+repos:
+
+-   repo: https://github.com/pre-commit/pre-commit-hooks.git
+    rev: v2.1.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-docstring-first
+    -   id: check-json
+    -   id: check-yaml
+        args: [--allow-multiple-documents, --unsafe]
+    -   id: check-xml
+    -   id: check-added-large-files
+    -   id: debug-statements
+    -   id: flake8
+        args: [--max-line-length=120]
+        language_version: python3.6
+    -   id: check-merge-conflict
+
+-   repo: 'https://github.com/ambv/black'
+    # stable
+    rev: 19.3b0
+    hooks:
+    -   id: black
+        args: ['--safe']
+        language_version: python3.6
+
+-   repo: 'https://github.com/chewse/pre-commit-mirrors-pydocstyle'
+    # 2.1.1
+    rev: v2.1.1
+    hooks:
+    -   id: pydocstyle
+        language_version: python3.6
+
+-   repo: https://github.com/pre-commit/mirrors-isort
+    # v4.3.15
+    rev: v4.3.15
+    hooks:
+    -   id: isort
