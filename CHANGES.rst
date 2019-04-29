@@ -4,13 +4,13 @@ Release history
 1.0 (2019-04-26)
 ++++++++++++++++
 
-- Fixes a bug occuring when ``outputs_prefix`` config parameter is not set in user config
 - Adds product type search functionality
 - Extends the list of search parameters with ``instrument``, ``platform``, ``platformSerialIdentifier``, ``processingLevel`` and ``sensorType``
-- The cli arguments are now fully compliant with opensearch geo/time extensions
+- The cli arguments are now fully compliant with opensearch geo(bbox)/time extensions
 - Adds functionality to search products by their ID
 - Exposes search products by ID functionality on REST interface
 - Exposes get quicklook functionality on REST interface
+- Fixes a bug occuring when ``outputs_prefix`` config parameter is not set in user config
 
 0.7.2 (2019-03-26)
 ++++++++++++++++++

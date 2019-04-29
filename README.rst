@@ -7,7 +7,7 @@ data provider. The EODAG SDK is structured around three functions:
 
     * List product types: list of supported products and their description
 
-    * Search products (by product type) : searches products according to the search criteria provided
+    * Search products (by product type or uid) : searches products according to the search criteria provided
 
     * Download products : download product “as is"
 
@@ -47,9 +47,9 @@ Then you can start playing with it:
 
         eodag search \
         --conf my_conf.yml \
-        --geometry 1 43 2 44 \
-        --startTimeFromAscendingNode 2018-01-01 \
-        --completionTimeFromAscendingNode 2018-01-31 \
+        --box 1 43 2 44 \
+        --start 2018-01-01 \
+        --end 2018-01-31 \
         --cloudCover 20 \
         --productType S2_MSI_L1C
         --cruncher FilterLatestIntersect \
@@ -86,7 +86,7 @@ of this bbox"
         eodag --help
 
 * To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given (up to 3), the more
-  verbose the tool is.
+  verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
 
 
 REST API
@@ -122,16 +122,11 @@ Example usage for interacting with the api in your Python code:
 
     from eodag import EODataAccessGateway
 
-    dag = EODataAccessGateway(user_conf_file_path='/path/to/user/conf.yaml')
+    dag = EODataAccessGateway()
     product_type = 'S2_MSI_L1C'
     footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
     start, end = '2018-01-01', '2018-01-31'
-    search_results = dag.search(
-        product_type,
-        geometry=footprint,
-        startTimeFromAscendingNode=start,
-        completionTimeFromAscendingNode=end,
-    )
+    search_results = dag.search(productType=product_type, box=footprint, start=start, end=end)
     product_paths = dag.download_all(search_results)
     for path in product_paths:
         print('Downloaded : {}'.format(path))
@@ -145,6 +140,7 @@ If you intend to contribute to eodag source code::
     git clone https://bitbucket.org/geostorm/eodag.git
     cd eodag
     python -m pip intall -r requirements-dev.txt
+    pre-commit install
 
 To run the default test suite (which excludes end-to-end tests)::
 
@@ -172,6 +168,28 @@ To run the entire tests (units, integraton and end-to-end)::
     `pandoc <http://pandoc.org>`_ to succeed. If the build process fails for
     you, please `install <http://pandoc.org/installing.html>`_ pandoc and try
     again.
+
+.. note::
+
+    eodag is tested against python versions 2.7, 3.5 and 3.6. Ensure you have
+    these versions installed before you run tox. You can use
+    `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
+    of python
+
+Releases are made by tagging a commit on the master branch. To make a new release,
+
+    * Ensure you correctly updated `README.rst` and `CHANGES.rst` (and occasionally,
+      also `NOTICE` - in case a new dependency is added).
+    * Check that the version string in `eodag/__meta__.py` (the variable `__version__`)
+      is correctly updated
+    * Tag the commit that represents the state of the release with a message. For example,
+      for version 1.0, do this: `git tag -a v1.0 -m 'version 1.0'`
+    * Push the tags to bitbucket: `git push --tags`. This will trigger a build on bitbucket
+      pipelines that will do the release automatically.
+
+The documentation is managed by a webhook, and the latest documentation on readthedocs follows
+the documentation present in `master`. Therefore, there is nothing to do apart from updating
+the `master` branch to publish the latest documentation.
 
 LICENSE
 =======
