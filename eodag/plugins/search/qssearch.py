@@ -145,6 +145,7 @@ class QueryStringSearch(Search):
         product_type = kwargs.get("productType", None)
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
+        keywords["productType"] = provider_product_type
         qp, qs = self.build_query_string(product_type, *args, **keywords)
         # If we were not able to build query params but have search criteria, this means
         # the provider does not support the search criteria given. If so, stop searching
