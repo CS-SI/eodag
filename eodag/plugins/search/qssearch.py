@@ -419,10 +419,10 @@ class QueryStringSearch(Search):
                         int(match["month"]),
                         int(match["day"]),
                     )
-                    if year == 2016 and month <= 12 and day <= 5:
-                        collections = ("S2",)
-                    else:
+                    if year > 2016 or (year == 2016 and month == 12 and day > 5):
                         collections = ("S2ST",)
+                    else:
+                        collections = ("S2", "S2ST")
             else:
                 collections = (
                     self.config.products[product_type].get("collection", ""),
