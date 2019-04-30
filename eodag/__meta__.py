@@ -17,12 +17,11 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
-
-__title__ = 'eodag'
-__description__ = 'Earth Observation Data Access Gateway'
-__version__ = '1.0'
+__title__ = "eodag"
+__description__ = "Earth Observation Data Access Gateway"
+__version__ = "1.0.1"
 __author__ = "CS Systemes d'Information (CSSI)"
-__author_email__ = 'admin@geostorm.eu'
-__url__ = 'https://bitbucket.org/geostorm/eodag'
-__license__ = 'Apache 2.0'
+__author_email__ = "admin@geostorm.eu"
+__url__ = "https://bitbucket.org/geostorm/eodag"
+__license__ = "Apache 2.0"
 __copyright__ = "Copyright 2018, CS Systemes d'Information, http://www.c-s.fr"

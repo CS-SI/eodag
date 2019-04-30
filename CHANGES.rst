@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+1.0.1 (2019-04-30)
+++++++++++++++++++
+
+- Fixes `#97 <https://bitbucket.org/geostorm/eodag/issues/97/conversion-to-provider-product-type-is-not>`_
+- Fixes `#96 <https://bitbucket.org/geostorm/eodag/issues/96/eodag-does-not-handle-well-the-switch-in>`_
+
 1.0 (2019-04-26)
 ++++++++++++++++
 
