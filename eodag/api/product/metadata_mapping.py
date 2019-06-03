@@ -417,4 +417,6 @@ DEFAULT_METADATA_MAPPING = {
     # either after the search result is obtained from the provider or during the eodag
     # download phase)
     "downloadLink": "$.properties.downloadLink",
+    # custom field, can contain several parameters : "key1=value1&key2=value2"
+    "custom": "$.properties.custom",
 }

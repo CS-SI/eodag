@@ -179,6 +179,11 @@ def version():
     show_default=True,
     help="Retrieve the given page",
 )
+@click.option(
+    "--custom",
+    type=str,
+    help="Custom fields for query string. Format :'key1=value1&key2=value2'",
+)
 @click.pass_context
 def search_crunch(ctx, **kwargs):
     """Search product types and optionnaly apply crunchers to search results"""
@@ -190,6 +195,7 @@ def search_crunch(ctx, **kwargs):
     processing_level = kwargs.pop("processinglevel")
     sensor_type = kwargs.pop("sensortype")
     id_ = kwargs.pop("id")
+    custom = kwargs.pop("custom")
     if not any(
         [
             product_type,
@@ -233,6 +239,8 @@ def search_crunch(ctx, **kwargs):
         "sensorType": sensor_type,
         "id": id_,
     }
+    if custom:
+        criteria["custom"] = custom
     if start_date:
         criteria["startTimeFromAscendingNode"] = start_date.isoformat()
     if stop_date:

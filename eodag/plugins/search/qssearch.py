@@ -32,7 +32,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.search.base import Search
-from eodag.utils import urlencode
+from eodag.utils import parse_qs, urlencode
 from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
@@ -186,6 +186,12 @@ class QueryStringSearch(Search):
                     query_params.setdefault(provider_search_key, []).append(
                         format_metadata(provider_value, *args, **kwargs)
                     )
+            elif eodag_search_key == "custom":
+                # extracts custom key:values from custom query parameter
+                logger.debug('Converting custom query parameter "%s"' % user_input)
+                custom_dict = parse_qs(user_input)
+                for k in custom_dict.keys():
+                    query_params[k] = custom_dict[k]
             else:
                 query_params[provider_search_key] = user_input
 
