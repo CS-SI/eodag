@@ -162,7 +162,7 @@ To only run end-to-end test::
 
     tox -- tests.test_end_to_end
 
-To run the entire tests (units, integraton and end-to-end)::
+To run the entire tests (units, integration and end-to-end)::
 
     tox -- tests eodag
 
