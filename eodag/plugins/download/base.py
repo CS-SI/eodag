@@ -16,8 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
+import logging
+
+from tqdm import tqdm
 
 from eodag.plugins.base import PluginTopic
+
+logger = logging.getLogger("eodag.plugins.download.base")
 
 
 class Download(PluginTopic):
@@ -28,3 +33,28 @@ class Download(PluginTopic):
 
     def download(self, product, auth=None, progress_callback=None):
         raise NotImplementedError('A Download plugin must implement a method named download')
+
+    def download_all(self, products, auth=None, progress_callback=None):
+        """
+        A sequential download_all implementation
+        using download method for every products
+        """
+        paths = []
+        with tqdm(
+            products, unit="product", desc="Downloading products"
+        ) as bar:
+            for product in bar:
+                try:
+                    paths.append(
+                        self.download(product, progress_callback=progress_callback)
+                    )
+                except Exception:
+                    import traceback as tb
+
+                    logger.warning(
+                        "A problem occurred during download of product: %s. "
+                        "Skipping it",
+                        product,
+                    )
+                    logger.debug("\n%s", tb.format_exc())
+        return paths

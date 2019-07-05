@@ -69,3 +69,6 @@ class AwsDownload(Download):
             parts = path.split('/')
             bucket, prefix = parts[1], '/{}'.format('/'.join(parts[2:]))
         return bucket, prefix
+
+    def download_all(self, products, auth=None, progress_callback=None):
+        super(AwsDownload, self).download_all(products, auth=auth, progress_callback=progress_callback)

@@ -150,3 +150,6 @@ class HTTPDownload(Download):
             product_path = os.path.join(product_path, os.listdir(product_path)[0])
             count += 1
         return product_path
+
+    def download_all(self, products, auth=None, progress_callback=None):
+        super(HTTPDownload, self).download_all(products, auth=auth, progress_callback=progress_callback)

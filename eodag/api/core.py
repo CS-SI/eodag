@@ -24,7 +24,6 @@ from operator import itemgetter
 
 import geojson
 from pkg_resources import resource_filename
-from tqdm import tqdm
 from whoosh import fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
@@ -593,23 +592,12 @@ class EODataAccessGateway(object):
         paths = []
         if search_result:
             logger.info("Downloading %s products", len(search_result))
-            with tqdm(
-                search_result, unit="product", desc="Downloading products"
-            ) as bar:
-                for product in bar:
-                    try:
-                        paths.append(
-                            self.download(product, progress_callback=progress_callback)
-                        )
-                    except Exception:
-                        import traceback as tb
-
-                        logger.warning(
-                            "A problem occurred during download of product: %s. "
-                            "Skipping it",
-                            product,
-                        )
-                        logger.debug("\n%s", tb.format_exc())
+            # Get download plugin using first product assuming product from several provider
+            # aren't mixed into a search result
+            download_plugin = self._plugins_manager.get_download_plugin(
+                search_result[0]
+            )
+            paths = download_plugin.download_all(search_result, progress_callback)
         else:
             logger.info("Empty search result, nothing to be downloaded !")
         return paths
