@@ -608,7 +608,7 @@
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '%(base_uri)s/{id}'
+      downloadLink: '%(base_uri)s/{uid}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       visibility: '$.properties.visibility'
