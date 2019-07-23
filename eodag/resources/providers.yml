@@ -31,6 +31,9 @@
       startTimeFromAscendingNode: '$.startTime'
       completionTimeFromAscendingNode: '$.endTime'
       quicklook: '$.browserUrl'
+      custom:
+        - custom
+        - '$.properties.custom'
     extract: True
   products:
     L8_OLI_TIRS_C1L1:
@@ -93,6 +96,9 @@
       productionStatus: '$.properties.status'
       creationDate: '$.properties.published'
       modificationDate: '$.properties.updated'
+      custom:
+        - custom
+        - '$.properties.custom'
   products:
     S2_MSI_L1C:
       product_type: L1C
@@ -223,6 +229,9 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
+      custom:
+        - custom
+        - '$.properties.custom'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://theia-landsat.cnes.fr/resto'
@@ -347,6 +356,9 @@
       nb_rows: '$.properties.nb_rows'
       tileId: '$.properties.tileId'
       thumbnail: '$.properties.thumbnail'
+      custom:
+        - custom
+        - '$.properties.custom'
   products:
     S2_MSI_L2A:
       product_type: REFLECTANCE
@@ -467,6 +479,10 @@
       cycleNumber: '$.properties.cycleNumber'
       approxSize: '$.properties.approxSize'
       ecmwfType: '$.properties.ecmwfType'
+      custom:
+        - custom
+        - '$.properties.custom'
+
   products:
     S1_SAR_OCN:
       product_type: OCN
@@ -592,7 +608,7 @@
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '%(base_uri)s/{id}'
+      downloadLink: '%(base_uri)s/{uid}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       visibility: '$.properties.visibility'
@@ -600,6 +616,9 @@
       centroid: '$.properties.spatialCoverage.geometry.centerPoint'
       enrichment: '$.properties.enrichment'
       relativeOrbitNumber: '$.properties.orbit.relativeNumber'
+      custom:
+        - custom
+        - '$.properties.custom'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download'
@@ -681,6 +700,9 @@
       gmlgeometry: '$.properties.gmlgeometry'
       centroid: '$.properties.centroid'
       missionTakeId: '$.properties.missionTakeId'
+      custom:
+        - custom
+        - '$.properties.custom'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
@@ -890,6 +912,9 @@
       watcherRecordValidity: 'DIAS:watcherRecordValidity/text()'
       productDeliveryFormat: 'DIAS:productDeliveryFormat/text()'
       checksum: 'DIAS:checksum/text()'
+      custom:
+        - custom
+        - '$.properties.custom'
   download: !plugin
     type: AwsDownload
   auth: !plugin
@@ -928,6 +953,9 @@
       abstract: 'dct:abstract/text()'
       quicklook: 'https://www.wekeo.eu/sites/default/files/quicklooks/{productType}.jpg'
       keyword: 'dc:subject[text()]'
+      custom:
+        - custom
+        - '$.properties.custom'
     search_definition:
       product_type_tags:
         - name: 'dc:identifier' # any xml tag of the catalogue that can be queryable
@@ -1042,6 +1070,9 @@
       instrumentShortName: '$.instrumentShortName'
       degradedMSIDataPercentage: '$.degradedMSIDataPercentage'
       degradedAncillaryDataPercentage: '$.degradedAncillaryDataPercentage'
+      custom:
+        - custom
+        - '$.properties.custom'
   products:
     S1_SAR_OCN:
       product_type: '*OCN*'

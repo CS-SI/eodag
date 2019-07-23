@@ -11,8 +11,8 @@ Then you can start playing with it:
 
         eodag search \
         --conf my_conf.yml \
-        --geometry 1 43 2 44 \
-        --startTimeFromAscendingNode 2018-01-01 --completionTimeFromAscendingNode 2018-01-31 \
+        --box 1 43 2 44 \
+        --start 2018-01-01 --end 2018-01-31 \
         --productType S2_MSI_L1C \
         --cruncher FilterLatestIntersect \
         --storage my_search.geojson

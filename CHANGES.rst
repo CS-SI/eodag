@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+1.1.0 (2019-07-23)
+++++++++++++++++++
+
+- Adds custom fields for query string search
+- Adapts to new download interface for sobloo
+
 1.0.1 (2019-04-30)
 ++++++++++++++++++
 
