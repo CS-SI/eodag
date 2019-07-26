@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+1.1.1 (2019-07-26)
+++++++++++++++++++
+
+- Updates documentation for custom field
+
 1.1.0 (2019-07-23)
 ++++++++++++++++++
 
