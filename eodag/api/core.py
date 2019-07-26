@@ -323,7 +323,8 @@ class EODataAccessGateway(object):
         :param box: A bounding box delimiting the AOI (as a dict with keys: "lonmin",
                     "latmin", "lonmax", "latmax")
         :type box: dict
-        :param dict kwargs: some other criteria that will be used to do the search
+        :param dict kwargs: some other criteria that will be used to do the search,
+                            may content custom parameter ``custom="foo=1&bar=2"``
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)

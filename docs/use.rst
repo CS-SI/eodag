@@ -31,6 +31,14 @@ The request above means : "Give me all the products of type `S2_MSI_L1C`, use `F
 that are contained in the bbox I gave you, or whom spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
 of this bbox"
 
+You can use `eaodag search` with custom parameters. Custom parameters will be used as is in the query string search sent
+to the provider. For instance, if you want to add foo=1 and bar=2 to the previous query::
+
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
+                     --cruncher FilterOverlap \
+                     --cruncher-args FilterOverlap minimum_overlap 1 \
+                     --custom "foo=1&bar=2"
+
 * To download the result of a previous call to `search`::
 
         eodag download --conf my_conf.yml --search-results my_search.geojson
