@@ -82,7 +82,14 @@ setup(
             "flake8",
             "pre-commit",
         ],
-        "tutorials": ["jupyter", "ipyleaflet", "ipywidgets", "matplotlib", "folium"],
+        "tutorials": [
+            "jupyter",
+            "ipyleaflet",
+            "ipywidgets",
+            "matplotlib",
+            "folium",
+            "imageio",
+        ],
         "docs": ["sphinx == 1.8.0", "nbsphinx == 0.3.5", "nbsphinx-link == 1.1.1"],
     },
     entry_points={
