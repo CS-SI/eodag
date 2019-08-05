@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+1.1.2 (2019-08-05)
+++++++++++++++++++
+
+- Fix dependency version issue (Jinja2)
+- Tutorials fixes and enhancements
+
 1.1.1 (2019-07-26)
 ++++++++++++++++++
 

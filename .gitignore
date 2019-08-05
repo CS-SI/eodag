@@ -99,3 +99,4 @@ examples/eodag_workspace
 tests/resources/user_conf.yml
 
 .idea/*
+.vscode

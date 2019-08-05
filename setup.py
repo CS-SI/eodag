@@ -63,7 +63,6 @@ setup(
         "lxml",
         "xarray",
         "flask >= 1.0.2",
-        "jinja2 >= 2.10",
         "markdown >= 3.0.1",
         "unidecode == 1.0.22",
         "whoosh",
@@ -83,7 +82,14 @@ setup(
             "flake8",
             "pre-commit",
         ],
-        "tutorials": ["jupyter", "ipyleaflet", "ipywidgets", "matplotlib"],
+        "tutorials": [
+            "jupyter",
+            "ipyleaflet",
+            "ipywidgets",
+            "matplotlib",
+            "folium",
+            "imageio",
+        ],
         "docs": ["sphinx == 1.8.0", "nbsphinx == 0.3.5", "nbsphinx-link == 1.1.1"],
     },
     entry_points={
