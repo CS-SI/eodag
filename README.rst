@@ -1,6 +1,12 @@
 eodag
 =====
 
+.. image:: https://badge.fury.io/py/eodag.svg
+    :target: https://badge.fury.io/py/eodag
+
+.. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
+    :target: https://eodag.readthedocs.io/en/latest/
+
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
 data provider. The EODAG SDK is structured around three functions:
