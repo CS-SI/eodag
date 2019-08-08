@@ -98,5 +98,13 @@ docs/tutorials/eodag_workspace/.downloaded
 examples/eodag_workspace
 tests/resources/user_conf.yml
 
+# IDE
+# Pycharm
 .idea/*
+# VSCode
 .vscode
+# Eclipse/PyDev
+.project
+.pydevproject
+.settings/
+
