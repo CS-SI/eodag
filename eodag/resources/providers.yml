@@ -581,7 +581,7 @@
       orbitNumber: '$.properties.orbit.number'
       orbitDirection: '$.properties.orbit.direction'
       cloudCover:
-        - 'f=contentDescription.cloudCoverPercentage:range:0,{cloudCover}'
+        - 'f=contentDescription.cloudCoverPercentage:lte:{cloudCover}'
         - '$.properties.contentDescription.cloudCoverPercentage'
       creationDate: '{$.properties.state.insertionDate#to_iso_utc_datetime_from_milliseconds}'
 
