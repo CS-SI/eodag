@@ -222,3 +222,9 @@ to get an access key and secret access key. When you have these two keys, config
 
 For onda, create an account here: https://www.onda-dias.eu/crm/
 
+
+Parameters mapping
+------------------
+
+The list of parameters mapped for available providers can be found in this
+`CSV file <_static/params_mapping.csv>`_.
