@@ -36,6 +36,8 @@ pipelines:
     master:
       - step:
           name: Unit tests for Py35
+          caches:
+            - pip
           script:
             - python -m pip install flake8
             - flake8 --max-line-length=120 .
@@ -57,6 +59,8 @@ pipelines:
       - step:
           name: Unit tests for Py27
           image: python:2.7-stretch
+          caches:
+            - pip
           script:
             - python -m pip install -r requirements-dev.txt
             - mkdir -p test-reports
