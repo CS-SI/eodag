@@ -24,10 +24,11 @@ import unittest
 from collections import OrderedDict, namedtuple
 from io import StringIO
 
-from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
+
+from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 
 try:
     from unittest import mock  # PY3
@@ -176,6 +177,13 @@ class EODagTestCase(unittest.TestCase):
             shapely_mapping["coordinates"][i] = list(coords)
             coords = shapely_mapping["coordinates"][i]
             for j, pair in enumerate(coords):
+
+                # Coordinates rounded to 6 decimals by geojson lib
+                # So rounding coordinates in order to be able to compare
+                # coordinates after a `geojson.loads`
+                # see https://github.com/jazzband/geojson.git
+                pair = tuple(round(i, 6) for i in pair)
+
                 coords[j] = list(pair)
         return shapely_mapping
 
