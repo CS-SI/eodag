@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+1.2.0 (2019-08-22)
+++++++++++++++++++
+
+- Add download_all support by plugins
+- Fix GeoJSON rounding issue with new geojson lib
+
 1.1.3 (2019-08-05)
 ++++++++++++++++++
 
