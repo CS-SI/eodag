@@ -1,1 +1,1 @@
-.
+-r requirements-tutorials.txt
