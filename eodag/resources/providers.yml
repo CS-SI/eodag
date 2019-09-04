@@ -616,6 +616,15 @@
       centroid: '$.properties.spatialCoverage.geometry.centerPoint'
       enrichment: '$.properties.enrichment'
       relativeOrbitNumber: '$.properties.orbit.relativeNumber'
+      storage:
+        - 'f=state.services.download:eq:{storage}'
+        - '$.properties.state.services.download'
+      wcs:
+        - 'f=state.services.wcs:eq:{wcs}'
+        - '$.properties.state.services.wcs'
+      wmts:
+        - 'f=state.services.wmts:eq:{wmts}'
+        - '$.properties.state.services.wmts'
       custom:
         - custom
         - '$.properties.custom'
