@@ -175,6 +175,7 @@ class QueryStringSearch(Search):
 
         for eodag_search_key, provider_search_key in queryables.items():
             user_input = kwargs[eodag_search_key]
+
             if self.COMPLEX_QS_REGEX.match(provider_search_key):
                 parts = provider_search_key.split("=")
                 if len(parts) == 1:
@@ -190,8 +191,13 @@ class QueryStringSearch(Search):
                 # extracts custom key:values from custom query parameter
                 logger.debug('Converting custom query parameter "%s"' % user_input)
                 custom_dict = parse_qs(user_input)
+                # parsed dict as {k1:[v1], k2:[v2,v3]}
                 for k in custom_dict.keys():
-                    query_params[k] = custom_dict[k]
+                    for custom_val in custom_dict[k]:
+                        if k in query_params.keys():
+                            query_params[k].append(custom_val)
+                        else:
+                            query_params.setdefault(k, []).append(custom_val)
             else:
                 query_params[provider_search_key] = user_input
 

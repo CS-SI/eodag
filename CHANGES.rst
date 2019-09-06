@@ -1,6 +1,14 @@
 Release history
 ---------------
 
+1.3.0 (2019-09-06)
+++++++++++++++++++
+
+- Add parameters mapping in documentation
+- Add new queryable parameters for sobloo `#105 <https://bitbucket.org/geostorm/eodag/issues/105>`_
+- Fix custom search
+- Fix sobloo cloudCoverage query `#106 <https://bitbucket.org/geostorm/eodag/issues/106>`_
+
 1.2.3 (2019-08-26)
 ++++++++++++++++++
 
