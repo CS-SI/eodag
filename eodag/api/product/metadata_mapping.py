@@ -156,7 +156,10 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_to_timestamp_milliseconds(value):
-            return int(1e3 * get_timestamp(value))
+            if len(value) == 10:
+                return int(1e3 * get_timestamp(value, date_format="%Y-%m-%d"))
+            else:
+                return int(1e3 * get_timestamp(value))
 
         @staticmethod
         def convert_to_wkt(value):
