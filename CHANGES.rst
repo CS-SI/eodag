@@ -1,6 +1,14 @@
 Release history
 ---------------
 
+1.3.1 (2019-09-27)
+++++++++++++++++++
+
+- Added calls graphs in documentation
+- Tutorial notebooks fixes `#109 <https://bitbucket.org/geostorm/eodag/issues/109>`_, `#110 <https://bitbucket.org/geostorm/eodag/issues/110>`_
+- Download unit display fix `#108 <https://bitbucket.org/geostorm/eodag/issues/108>`_
+- Fix date format with sobloo provider `#107 <https://bitbucket.org/geostorm/eodag/issues/107>`_
+
 1.3.0 (2019-09-06)
 ++++++++++++++++++
 
