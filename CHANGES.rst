@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+1.3.2 (2019-09-27)
+++++++++++++++++++
+
+- Fixes pagination configuration for sobloo provider `#111 <https://bitbucket.org/geostorm/eodag/issues/111>`_
+
 1.3.1 (2019-09-27)
 ++++++++++++++++++
 
