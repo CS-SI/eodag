@@ -558,7 +558,7 @@
     result_type: 'json'
     pagination:
       count_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_count'
-      next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={page}'
+      next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={skip}'
       total_items_nb_key_path: '$.totalnb'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
