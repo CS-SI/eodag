@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+1.3.3 (2019-10-11)
+++++++++++++++++++
+
+- Fixes product configuration for theia provider `#113 <https://bitbucket.org/geostorm/eodag/issues/113>`_
+
 1.3.2 (2019-09-27)
 ++++++++++++++++++
 

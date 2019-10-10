@@ -276,7 +276,7 @@
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
-        - productType
+        - processingLevel
         - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
@@ -361,7 +361,7 @@
         - '$.properties.custom'
   products:
     S2_MSI_L2A:
-      product_type: REFLECTANCE
+      product_type: LEVEL2A
       collection: SENTINEL2
   download: !plugin
     type: HTTPDownload
