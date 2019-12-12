@@ -1,3 +1,4 @@
+=====
 eodag
 =====
 
@@ -7,8 +8,26 @@ eodag
 .. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
     :target: https://eodag.readthedocs.io/en/latest/
 
+.. image:: https://img.shields.io/bitbucket/issues/geostorm/eodag.svg
+    :target: https://bitbucket.org/geostorm/eodag/issues?status=new&status=open
+
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fgeostorm%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
+|
+.. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+    :target: https://www.apache.org/licenses/LICENSE-2.0
+
+.. image:: https://img.shields.io/badge/python-2.7-blue.svg
+    :target: https://www.python.org/downloads/release/python-270/
+
+.. image:: https://img.shields.io/badge/python-3.5-blue.svg
+    :target: https://www.python.org/downloads/release/python-350/
+
+.. image:: https://img.shields.io/badge/python-3.6-blue.svg
+    :target: https://www.python.org/downloads/release/python-360/
+
+.. image:: https://img.shields.io/badge/python-3.7-blue.svg
+    :target: https://www.python.org/downloads/release/python-370/
 
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
