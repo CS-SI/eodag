@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+1.3.4 (2019-12-12)
+++++++++++++++++++
+
+- Use sobloo official api endpoint, fixes `#115 <https://bitbucket.org/geostorm/eodag/issues/115>`_
+- New badges in readme and CS logo
+
 1.3.3 (2019-10-11)
 ++++++++++++++++++
 

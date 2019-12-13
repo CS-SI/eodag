@@ -553,57 +553,57 @@
       product_type: SR_1_SRA_A_
   search: !plugin
     type: QueryStringSearch
-    api_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_geosearch'
+    api_endpoint: 'https://sobloo.eu/api/v1/services/search'
     collection: catalog
     result_type: 'json'
     pagination:
-      count_endpoint: 'https://sobloo.eu/api/v1/services/explore/explore/{collection}/_count'
       next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={skip}'
       total_items_nb_key_path: '$.totalnb'
+    results_entry: 'hits'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
-      uid: '$.properties.uid'
+      uid: '$.data.uid'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - 'f=identification.type:eq:{productType}'
-        - '$.properties.identification.type'
-      platform: '$.properties.acquisition.mission'
-      platformSerialIdentifier: '$.properties.acquisition.missionCode'
-      instrument: '$.properties.acquisition.sensorId'
-      processingLevel: '$.properties.production.levelCode'
+        - '$.data.identification.type'
+      platform: '$.data.acquisition.mission'
+      platformSerialIdentifier: '$.data.acquisition.missionCode'
+      instrument: '$.data.acquisition.sensorId'
+      processingLevel: '$.data.production.levelCode'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.properties.identification.externalId'
-      publicationDate: '{$.properties.timestamp#to_iso_utc_datetime_from_milliseconds}'
+      title: '$.data.identification.externalId'
+      publicationDate: '{$.data.timestamp#to_iso_utc_datetime_from_milliseconds}'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      orbitNumber: '$.properties.orbit.number'
-      orbitDirection: '$.properties.orbit.direction'
+      orbitNumber: '$.data.orbit.number'
+      orbitDirection: '$.data.orbit.direction'
       cloudCover:
         - 'f=contentDescription.cloudCoverPercentage:lte:{cloudCover}'
-        - '$.properties.contentDescription.cloudCoverPercentage'
-      creationDate: '{$.properties.state.insertionDate#to_iso_utc_datetime_from_milliseconds}'
+        - '$.data.contentDescription.cloudCoverPercentage'
+      creationDate: '{$.data.state.insertionDate#to_iso_utc_datetime_from_milliseconds}'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      availabilityTime: '$.properties.availabilityTime'
+      availabilityTime: '$.data.availabilityTime'
       startTimeFromAscendingNode:
         - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#to_timestamp_milliseconds}'
-        - '{$.properties.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds}'
+        - '{$.data.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds}'
       completionTimeFromAscendingNode:
         - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#to_timestamp_milliseconds}'
-        - '{$.properties.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
-      polarisationChannels: '$.properties.acquisition.polarization'
-      sensorMode: '$.properties.acquisition.sensorMode'
+        - '{$.data.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
+      polarisationChannels: '$.data.acquisition.polarization'
+      sensorMode: '$.data.acquisition.sensorMode'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'f=identification.externalId:eq:{id#remove_extension}'
-        - '$.properties.identification.externalId'
+        - '$.data.identification.externalId'
       # The geographic extent of the product
       geometry:
         - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - '$.geometry'
+        - '$.md.geometry'
       # The url of the quicklook
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{id}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
@@ -611,23 +611,23 @@
       downloadLink: '%(base_uri)s/{uid}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      visibility: '$.properties.visibility'
-      archive: '$.properties.archive'
-      centroid: '$.properties.spatialCoverage.geometry.centerPoint'
-      enrichment: '$.properties.enrichment'
-      relativeOrbitNumber: '$.properties.orbit.relativeNumber'
+      visibility: '$.data.visibility'
+      archive: '$.data.archive'
+      centroid: '$.data.spatialCoverage.geometry.centerPoint'
+      enrichment: '$.data.enrichment'
+      relativeOrbitNumber: '$.data.orbit.relativeNumber'
       storage:
         - 'f=state.services.download:eq:{storage}'
-        - '$.properties.state.services.download'
+        - '$.data.state.services.download'
       wcs:
         - 'f=state.services.wcs:eq:{wcs}'
-        - '$.properties.state.services.wcs'
+        - '$.data.state.services.wcs'
       wmts:
         - 'f=state.services.wmts:eq:{wmts}'
-        - '$.properties.state.services.wmts'
+        - '$.data.state.services.wmts'
       custom:
         - custom
-        - '$.properties.custom'
+        - '$.data.custom'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download'

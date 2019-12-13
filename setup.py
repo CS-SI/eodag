@@ -47,7 +47,7 @@ setup(
         "PyYAML",
         "tqdm",
         "shapely",
-        "owslib",
+        "owslib == 0.18.0",
         "six",
         "geojson",
         "pyproj",
