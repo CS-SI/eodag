@@ -13,7 +13,9 @@ eodag
 
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fgeostorm%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
+
 |
+
 .. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
     :target: https://www.apache.org/licenses/LICENSE-2.0
 

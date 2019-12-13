@@ -6,6 +6,7 @@ Release history
 
 - Use sobloo official api endpoint, fixes `#115 <https://bitbucket.org/geostorm/eodag/issues/115>`_
 - New badges in readme and CS logo
+- Set owslib version to 0.18.0 (py27 support dropped)
 
 1.3.3 (2019-10-11)
 ++++++++++++++++++
