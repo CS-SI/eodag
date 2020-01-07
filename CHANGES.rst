@@ -1,6 +1,14 @@
 Release history
 ---------------
 
+1.3.5 (2020-01-07)
+++++++++++++++++++
+
+- Removed tqdm_notebook warning, fixes `#117 <https://bitbucket.org/geostorm/eodag/issues/117>`_
+- Removed traceback from geom intersection warning, fixes `#114 <https://bitbucket.org/geostorm/eodag/issues/114>`_
+- Documentation update for provider priorities and parametters mapping
+- New test for readme/pypi syntax
+
 1.3.4 (2019-12-12)
 ++++++++++++++++++
 

@@ -117,14 +117,11 @@ class EOProduct(object):
                     searched_bbox_as_shape
                 )
             except TopologicalError:
-                import traceback as tb
-
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
-                    "geometry: %s. Got:\n%s",
+                    "geometry: %s",
                     searched_bbox_as_shape,
                     product_geometry,
-                    tb.format_exc(),
                 )
                 self.search_intersection = None
         self.driver = DRIVERS.get(self.product_type, NoDriver())

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS Systemes d'Information, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -19,9 +19,9 @@ from __future__ import unicode_literals
 
 __title__ = "eodag"
 __description__ = "Earth Observation Data Access Gateway"
-__version__ = "1.3.4"
+__version__ = "1.3.5"
 __author__ = "CS Systemes d'Information (CSSI)"
 __author_email__ = "admin@geostorm.eu"
 __url__ = "https://bitbucket.org/geostorm/eodag"
 __license__ = "Apache 2.0"
-__copyright__ = "Copyright 2019, CS Systemes d'Information, http://www.c-s.fr"
+__copyright__ = "Copyright 2020, CS Systemes d'Information, http://www.c-s.fr"

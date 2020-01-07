@@ -36,7 +36,8 @@ import click
 import six
 from rasterio.crs import CRS
 from requests.auth import AuthBase
-from tqdm import tqdm, tqdm_notebook
+from tqdm import tqdm
+from tqdm.notebook import tqdm as tqdm_notebook
 from unidecode import unidecode
 
 # All modules using these should import them from utils package

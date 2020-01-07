@@ -86,7 +86,7 @@ Create a configuration file containing your credentials for each provider.  You 
 .. code-block:: yaml
 
     peps:
-        priority:
+        priority: # Lower value means lower priority (Default: 1)
         search:   # Search parameters configuration
         download:
             extract:  # whether to extract the downloaded products (true or false).
@@ -97,7 +97,7 @@ Create a configuration file containing your credentials for each provider.  You 
                 username:
                 password:
     theia:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         download:
             extract:
@@ -108,7 +108,7 @@ Create a configuration file containing your credentials for each provider.  You 
                 ident:
                 pass:
     theia_landsat:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         download:
             extract:
@@ -119,7 +119,7 @@ Create a configuration file containing your credentials for each provider.  You 
                 username:
                 password:
     usgs:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         api:
             extract:
             outputs_prefix:
@@ -129,7 +129,7 @@ Create a configuration file containing your credentials for each provider.  You 
                 username:
                 password:
     aws_s3_sentinel2_l1c:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         auth:
             credentials:
@@ -140,7 +140,7 @@ Create a configuration file containing your credentials for each provider.  You 
             outputs_prefix:
             associated_bucket:
     sobloo:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         download:
             extract:
@@ -150,7 +150,7 @@ Create a configuration file containing your credentials for each provider.  You 
             credentials:
                 apikey:
     creodias:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         download:
             extract:
@@ -160,7 +160,7 @@ Create a configuration file containing your credentials for each provider.  You 
                 username:
                 password:
     mundi:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         download:
             extract:
@@ -170,7 +170,7 @@ Create a configuration file containing your credentials for each provider.  You 
                 aws_access_key_id:
                 aws_secret_access_key:
     onda:
-        priority:
+        priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         download:
             extract:
