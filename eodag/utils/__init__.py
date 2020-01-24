@@ -207,7 +207,7 @@ except ImportError:  # PY2
                 if isinstance(v, bytes):
                     v = quote_via(v, safe)
                     l.append(k + "=" + v)
-                elif isinstance(v, str):
+                elif isinstance(v, six.string_types):
                     v = quote_via(v, safe, encoding, errors)
                     l.append(k + "=" + v)
                 else:

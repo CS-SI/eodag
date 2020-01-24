@@ -30,7 +30,7 @@
       abstract: '$.summary'
       startTimeFromAscendingNode: '$.startTime'
       completionTimeFromAscendingNode: '$.endTime'
-      quicklook: '$.browserUrl'
+      quicklook: '$.browseUrl'
       custom:
         - custom
         - '$.properties.custom'

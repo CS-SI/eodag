@@ -16,23 +16,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
+
 import logging
 
 from tqdm import tqdm
 
 from eodag.plugins.base import PluginTopic
+from eodag.utils import ProgressCallback
 
 logger = logging.getLogger("eodag.plugins.download.base")
 
 
 class Download(PluginTopic):
+    """Base Download Plugin.
+
+    :param provider: An eodag providers configuration dictionary
+    :type provider: dict
+    :param config: Path to the user configuration file
+    :type config: str or unicode
+    """
 
     def __init__(self, provider, config):
         super(Download, self).__init__(provider, config)
-        self.authenticate = bool(getattr(self.config, 'authenticate', False))
+        self.authenticate = bool(getattr(self.config, "authenticate", False))
 
     def download(self, product, auth=None, progress_callback=None):
-        raise NotImplementedError('A Download plugin must implement a method named download')
+        """
+        Base download method. Not available, should be defined for each plugin
+        """
+        raise NotImplementedError(
+            "A Download plugin must implement a method named download"
+        )
 
     def download_all(self, products, auth=None, progress_callback=None):
         """
@@ -40,13 +54,31 @@ class Download(PluginTopic):
         using download method for every products
         """
         paths = []
-        with tqdm(
-            products, unit="product", desc="Downloading products"
-        ) as bar:
+        with tqdm(products, unit="product", desc="Downloading products") as bar:
             for product in bar:
                 try:
+                    if progress_callback is None:
+                        progress_callback = ProgressCallback()
+                    if product.downloader is None:
+                        raise RuntimeError(
+                            "EO product is unable to download itself due to lacking of a "
+                            "download plugin"
+                        )
+
+                    auth = (
+                        product.downloader_auth.authenticate()
+                        if product.downloader_auth is not None
+                        else product.downloader_auth
+                    )
+                    # resolve remote location if needed with downloader configuration
+                    product.remote_location = product.remote_location % vars(
+                        product.downloader.config
+                    )
+
                     paths.append(
-                        self.download(product, progress_callback=progress_callback)
+                        self.download(
+                            product, auth=auth, progress_callback=progress_callback
+                        )
                     )
                 except Exception:
                     import traceback as tb

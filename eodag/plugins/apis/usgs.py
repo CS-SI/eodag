@@ -17,12 +17,14 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
+import copy
 import hashlib
 import logging
 import os
 import re
 import zipfile
 
+import jsonpath_rw as jsonpath
 import requests
 from requests import HTTPError
 from shapely import geometry
@@ -30,7 +32,12 @@ from tqdm import tqdm
 from usgs import USGSError, api
 
 from eodag.api.product import EOProduct
-from eodag.api.product.metadata_mapping import properties_from_json
+from eodag.api.product.metadata_mapping import (
+    DEFAULT_METADATA_MAPPING,
+    NOT_MAPPED,
+    get_metadata_path,
+    properties_from_json,
+)
 from eodag.plugins.apis.base import Api
 
 logger = logging.getLogger("eodag.plugins.apis.usgs")
@@ -94,31 +101,67 @@ class UsgsApi(Api):
             )
 
             for result in results["data"]["results"]:
-                r_lower_left = result["lowerLeftCoordinate"]
-                r_upper_right = result["upperRightCoordinate"]
+                r_lower_left = result["spatialFootprint"]["coordinates"][0][0]
+                r_upper_right = result["spatialFootprint"]["coordinates"][0][2]
                 summary_match = result_summary_pattern.match(
                     result["summary"]
                 ).groupdict()
                 result["geometry"] = geometry.box(
-                    r_lower_left["longitude"],
-                    r_lower_left["latitude"],
-                    r_upper_right["longitude"],
-                    r_upper_right["latitude"],
+                    r_lower_left[0], r_lower_left[1], r_upper_right[0], r_upper_right[1]
                 )
+
+                # Same method as in base.py, Search.__init__()
+                # Prepare the metadata mapping
+                # Do a shallow copy, the structure is flat enough for this to be sufficient
+                metas = DEFAULT_METADATA_MAPPING.copy()
+                # Update the defaults with the mapping value. This will add any new key
+                # added by the provider mapping that is not in the default metadata.
+                # A deepcopy is done to prevent self.config.metadata_mapping from being modified when metas[metadata]
+                # is a list and is modified
+                metas.update(copy.deepcopy(self.config.metadata_mapping))
+                for metadata in metas:
+                    if metadata not in self.config.metadata_mapping:
+                        metas[metadata] = (None, NOT_MAPPED)
+                    else:
+                        conversion, path = get_metadata_path(metas[metadata])
+                        try:
+                            # If the metadata is queryable (i.e a list of 2 elements),
+                            # replace the value of the last item
+                            if len(metas[metadata]) == 2:
+                                metas[metadata][1] = (conversion, jsonpath.parse(path))
+                            else:
+                                metas[metadata] = (conversion, jsonpath.parse(path))
+                        except Exception:  # jsonpath_rw does not provide a proper exception
+                            # Assume the mapping is to be passed as is.
+                            # Ignore any transformation specified. If a value is to be passed as is, we don't want to
+                            # transform it further
+                            _, text = get_metadata_path(metas[metadata])
+                            if len(metas[metadata]) == 2:
+                                metas[metadata][1] = (None, text)
+                            else:
+                                metas[metadata] = (None, text)
+
                 result["productType"] = usgs_dataset
+
+                product_properties = properties_from_json(result, metas)
+
+                if getattr(self.config, "product_location_scheme", "https") == "file":
+                    product_properties["downloadLink"] = dl_url_pattern.format(
+                        base_url="file://"
+                    )
+                else:
+                    product_properties["downloadLink"] = dl_url_pattern.format(
+                        base_url=self.config.google_base_url.rstrip("/"),
+                        entity=result["entityId"],
+                        **summary_match
+                    )
+
                 final.append(
                     EOProduct(
-                        product_type,
-                        self.provider,
-                        dl_url_pattern.format(base_url="file://")
-                        if self.config.product_location_scheme == "file"
-                        else dl_url_pattern.format(
-                            base_url=self.config.google_base_url.rstrip("/"),
-                            entity=result["entityId"],
-                            **summary_match
-                        ),
-                        properties_from_json(result, self.config.metadata_mapping),
-                        searched_bbox=footprint,
+                        productType=product_type,
+                        provider=self.provider,
+                        properties=product_properties,
+                        geometry=footprint,
                     )
                 )
         except USGSError as e:

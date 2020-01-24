@@ -1,6 +1,15 @@
 Release history
 ---------------
 
+1.3.6 (2020-01-24)
+++++++++++++++++++
+
+- USGS plugin corrections, fixes `#73 <https://bitbucket.org/geostorm/eodag/issues/73>`_
+- Fixed py27 encodeurl in querystring
+- End-to-end tests update, fixes `#119 <https://bitbucket.org/geostorm/eodag/issues/119>`_
+- Default eodag conf used in end-to-end tests, fixes `#98 <https://bitbucket.org/geostorm/eodag/issues/98>`_
+- Fixed download_all method `#118 <https://bitbucket.org/geostorm/eodag/issues/118>`_
+
 1.3.5 (2020-01-07)
 ++++++++++++++++++
 
