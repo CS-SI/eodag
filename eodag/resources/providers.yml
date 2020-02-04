@@ -789,14 +789,6 @@
     literal_search_params:
       format: atom
       relation: intersects
-    free_text_search_operations:
-      q:
-        union: ' AND '
-        wrapper: '({})'
-        operations:
-          AND:
-            - 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
-            - 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={page}'
       total_items_nb_key_path: '//os:totalResults/text()'
@@ -814,7 +806,9 @@
       instrument: 'eo:instrument/text()'
       sensorType: 'eo:sensorType/text()'
       compositeType: 'eo:compositeType/text()'
-      processingLevel: 'eo:processingLevel/text()'
+      processingLevel:
+        - 'processingLevel'
+        - 'eo:processingLevel/text()'
       orbitType: 'eo:orbitType/text()'
       spectralRange: 'eo:spectralRange/text()'
       wavelengths: 'eo:wavelengths/text()'
@@ -822,7 +816,7 @@
       dissemination: 'eo:dissemination/text()'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: 'eo:title/text()'
+      title: 'ns:title/text()'
       topicCategory: 'ns:category/text()'
       keyword: 'eo:keyword/text()'
       abstract: 'ns:summary/text()'
@@ -847,7 +841,9 @@
       track: 'eo:track/text()'
       frame: 'eo:frame/text()'
       swathIdentifier: 'eo:swathIdentifier/text()'
-      cloudCover: 'eo:cloudCover/text()'
+      cloudCover:
+        - 'cloudCover=[0,{cloudCover}]'
+        - 'eo:cloudCover/text()'
       snowCover: 'eo:snowCover/text()'
       lowestLocation: 'eo:lowestLocation/text()'
       highestLocation: 'eo:highestLocation/text()'
@@ -867,8 +863,12 @@
       availabilityTime: 'DIAS:onlineDate/text()'
       acquisitionStation: 'eo:acquisitionStation/text()'
       acquisitionSubType: 'eo:acquisitionSubType/text()'
-      startTimeFromAscendingNode: 'DIAS:sensingStartDate/text()'
-      completionTimeFromAscendingNode: 'DIAS:sensingStopDate/text()'
+      startTimeFromAscendingNode:
+        - 'timeStart={startTimeFromAscendingNode#to_iso_utc_datetime}'
+        - 'DIAS:sensingStartDate/text()'
+      completionTimeFromAscendingNode:
+        - 'timeEnd={completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - 'DIAS:sensingStopDate/text()'
       illuminationAzimuthAngle: 'eo:illuminationAzimuthAngle/text()'
       illuminationZenithAngle: 'eo:illuminationZenithAngle/text()'
       illuminationElevationAngle: 'eo:illuminationElevationAngle/text()'
@@ -923,29 +923,31 @@
       checksum: 'DIAS:checksum/text()'
       custom:
         - custom
-        - '$.properties.custom'
+        - 'custom/text()'
   download: !plugin
-    type: AwsDownload
+    type: S3RestDownload
+    base_uri: 'https://mundiwebservices.com/dp'
+    extract: true
   auth: !plugin
-    type: OAuth
+    type: HTTPHeaderAuth
+    headers:
+      Cookie: "seeedtoken={apikey}"
   products:
-    S1_SAR_RAW:
-      product_type: RAW
-      collection: Sentinel1
     S1_SAR_GRD:
       product_type: GRD
+      processingLevel: L1_
       collection: Sentinel1
     S1_SAR_SLC:
       product_type: SLC
-      collection: Sentinel1
-    S1_SAR_OCN:
-      product_type: OCN
+      processingLevel: L1_
       collection: Sentinel1
     S2_MSI_L1C:
       product_type: IMAGE
+      processingLevel: L1C
       collection: Sentinel2
     S2_MSI_L2A:
-      product_type: S2MSI2Ap
+      product_type: IMAGE
+      processingLevel: L2A
       collection: Sentinel2
 
 ---

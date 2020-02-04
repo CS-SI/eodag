@@ -97,8 +97,7 @@ mundi:
         outputs_prefix:
     auth:
         credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
+            apikey:
 onda:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration

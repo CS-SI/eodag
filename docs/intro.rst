@@ -167,8 +167,7 @@ Create a configuration file containing your credentials for each provider.  You 
             outputs_prefix:
         auth:
             credentials:
-                aws_access_key_id:
-                aws_secret_access_key:
+                apikey:
     onda:
         priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
@@ -217,8 +216,8 @@ For sobloo, create an account `here <https://auth.sobloo.eu/auth/realms/IDP/prot
 
 For creodias, create an account here: https://portal.creodias.eu/register.php
 
-For mundi, create an account here: https://mundiwebservices.com (click on "login" and then go in the "register" tab). You will need a "tenant credentials" to be able
-to get an access key and secret access key. When you have these two keys, configure eodag with them
+For mundi, create an account here: https://mundiwebservices.com (click on "login" and then go in the "register" tab).
+Then use as apikey the Web Token provided in https://mundiwebservices.com/account/profile
 
 For onda, create an account here: https://www.onda-dias.eu/crm/
 
