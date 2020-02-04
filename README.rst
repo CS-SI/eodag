@@ -169,7 +169,7 @@ If you intend to contribute to eodag source code::
 
     git clone https://bitbucket.org/geostorm/eodag.git
     cd eodag
-    python -m pip intall -r requirements-dev.txt
+    python -m pip install -r requirements-dev.txt
     pre-commit install
 
 To run the default test suite (which excludes end-to-end tests)::
@@ -233,7 +233,7 @@ See LICENSE file for details.
 AUTHORS
 =======
 
-EODAG is developed by CS Systèmes d'Information.
+EODAG is developed by `CS Systèmes d'Information <https://www.c-s.fr>`_.
 
 
 CREDITS
