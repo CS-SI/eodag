@@ -146,6 +146,20 @@ class QueryStringSearch(Search):
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = provider_product_type
+        # Add to the query, the queryable parameters set in the provider product type definition
+        product_type_def_params = self.get_product_type_def_params(
+            product_type, *args, **kwargs
+        )
+        keywords.update(
+            {
+                k: v
+                for k, v in product_type_def_params.items()
+                if k not in keywords.keys()
+                and k in self.config.metadata_mapping.keys()
+                and isinstance(self.config.metadata_mapping[k], list)
+            }
+        )
+
         qp, qs = self.build_query_string(product_type, *args, **keywords)
         # If we were not able to build query params but have search criteria, this means
         # the provider does not support the search criteria given. If so, stop searching
@@ -453,6 +467,13 @@ class QueryStringSearch(Search):
             return
         logger.debug("Mapping eodag product type to provider product type")
         return self.config.products[product_type]["product_type"]
+
+    def get_product_type_def_params(self, product_type, *args, **kwargs):
+        """Get the provider product type definition parameters"""
+        if product_type is None:
+            return
+        logger.debug("Getting provider product type definition parameters")
+        return self.config.products[product_type]
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
