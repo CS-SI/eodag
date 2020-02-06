@@ -44,7 +44,7 @@ class TestCore(unittest.TestCase):
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "mundi", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "mundi", "creodias"],
         "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
-        "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias"],
+        "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias", "peps"],
         "S2_MSI_L1C": [
             "aws_s3_sentinel2_l1c",
             "peps",

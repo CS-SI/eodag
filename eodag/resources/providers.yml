@@ -496,6 +496,9 @@
     S2_MSI_L1C:
       collection: S2ST
       product_type: S2MSI1C
+    S2_MSI_L2A:
+      collection: S2ST
+      product_type: S2MSI2A
     S3_EFR:
       product_type: OL_1_EFR___
       collection: S3
