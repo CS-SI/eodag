@@ -803,7 +803,9 @@
       doi: 'eo:doi/text()'
       platform: 'eo:platform/text()'
       platformSerialIdentifier: 'eo:platformSerialIdentifier/text()'
-      instrument: 'eo:instrument/text()'
+      instrument:
+        - 'instrument'
+        - 'eo:instrument/text()'
       sensorType: 'eo:sensorType/text()'
       compositeType: 'eo:compositeType/text()'
       processingLevel:
@@ -949,6 +951,10 @@
       product_type: IMAGE
       processingLevel: L2A
       collection: Sentinel2
+    S3_OLCI_L2LFR:
+      product_type: OL_2_LFR___
+      instrument: OLCI
+      collection: Sentinel3
 
 ---
 !provider

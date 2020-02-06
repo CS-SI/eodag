@@ -61,7 +61,7 @@ class TestCore(unittest.TestCase):
         "S3_SRA_BS": ["sobloo", "onda", "wekeo", "creodias"],
         "S3_SRA_A_BS": ["sobloo", "onda", "creodias"],
         "S3_WAT": ["onda", "wekeo", "creodias"],
-        "S3_OLCI_L2LFR": ["peps", "onda", "wekeo", "creodias"],
+        "S3_OLCI_L2LFR": ["peps", "onda", "wekeo", "creodias", "mundi"],
         "S3_OLCI_L2LRR": ["peps", "onda", "wekeo", "creodias"],
         "S3_SLSTR_L1RBT": ["peps", "onda", "wekeo", "creodias"],
         "S3_SLSTR_L2LST": ["peps", "onda", "wekeo", "creodias"],
