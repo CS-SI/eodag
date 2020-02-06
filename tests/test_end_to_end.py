@@ -21,6 +21,7 @@ import glob
 import multiprocessing
 import os
 import unittest
+from pathlib import Path
 
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import EODataAccessGateway
@@ -142,8 +143,16 @@ class TestEODagEndToEnd(unittest.TestCase):
         self.downloaded_file_path = os.path.join(
             product.downloader.config.outputs_prefix, expected_filename
         )
+        # check whether expected_filename refers to a file or a dir
+        if os.path.isdir(self.downloaded_file_path):
+            product_directory = Path(self.downloaded_file_path)
+            downloaded_size = sum(
+                f.stat().st_size for f in product_directory.glob("**/*") if f.is_file()
+            )
+        else:
+            downloaded_size = os.stat(self.downloaded_file_path).st_size
         # The partially downloaded file should be greater or equal to 1 MB
-        self.assertGreaterEqual(os.stat(self.downloaded_file_path).st_size, 2 ** 20)
+        self.assertGreaterEqual(downloaded_size, 2 ** 20)
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(
@@ -192,6 +201,17 @@ class TestEODagEndToEnd(unittest.TestCase):
             (137.772897, 13.134202, 153.749135, 23.885986),
         )
         expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_mundi(self):
+        product = self.execute_search(
+            "mundi",
+            "S2_MSI_L1C",
+            "2019-11-08",
+            "2019-11-16",
+            (137.772897, 13.134202, 153.749135, 23.885986),
+        )
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_get_quicklook_peps(self):
