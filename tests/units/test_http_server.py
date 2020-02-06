@@ -42,7 +42,7 @@ class RequestTestCase(unittest.TestCase):
 
     def test_route(self):
         response = self.app.get("/", follow_redirects=True)
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
 
         self._request_valid(self.tested_product_type)
 
@@ -123,7 +123,7 @@ class RequestTestCase(unittest.TestCase):
     )
     def _request_valid(self, url, _):
         response = self.app.get(url, follow_redirects=True)
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         # Assert response format is GeoJSON
         return geojson.loads(response.data.decode("utf-8"))
 
@@ -131,7 +131,7 @@ class RequestTestCase(unittest.TestCase):
         response = self.app.get(url, follow_redirects=True)
         response_content = json.loads(response.data.decode("utf-8"))
 
-        self.assertEquals(400, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertIn("error", response_content)
         self.assertIn("invalid", response_content["error"])
 
@@ -139,7 +139,7 @@ class RequestTestCase(unittest.TestCase):
         response = self.app.get(url, follow_redirects=True)
         response_content = json.loads(response.data.decode("utf-8"))
 
-        self.assertEquals(404, response.status_code)
+        self.assertEqual(404, response.status_code)
         self.assertIn("error", response_content)
         self.assertIn("Not Found", response_content["error"])
 
@@ -221,7 +221,7 @@ class RequestTestCase(unittest.TestCase):
             r = self.app.get(url)
             self.assertTrue(guess_pt.called)
             self.assertTrue(list_pt.called)
-            self.assertEquals(200, r.status_code)
+            self.assertEqual(200, r.status_code)
             self.assertListEqual(
                 ["S2_MSI_L1C", "S2_MSI_L2A"],
                 [it["ID"] for it in json.loads(r.data.decode("utf-8"))],
@@ -232,7 +232,7 @@ class RequestTestCase(unittest.TestCase):
         r = self.app.get(url)
         self.assertTrue(guess_pt.called)
         self.assertTrue(list_pt.called)
-        self.assertEquals(200, r.status_code)
+        self.assertEqual(200, r.status_code)
         self.assertListEqual(
             ["S2_MSI_L1C"], [it["ID"] for it in json.loads(r.data.decode("utf-8"))]
         )
@@ -247,7 +247,7 @@ class RequestTestCase(unittest.TestCase):
         url = "/product-types/?platform=gibberish"
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
-        self.assertEquals(200, r.status_code)
+        self.assertEqual(200, r.status_code)
         self.assertListEqual(
             ["S2_MSI_L1C", "S2_MSI_L2A"],
             [it["ID"] for it in json.loads(r.data.decode("utf-8"))],

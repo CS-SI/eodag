@@ -21,10 +21,14 @@ import glob
 import multiprocessing
 import os
 import unittest
-from pathlib import Path
 
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import EODataAccessGateway
+
+try:  # py3
+    from pathlib import Path
+except ImportError:  # py2
+    from pathlib2 import Path
 
 
 class TestEODagEndToEnd(unittest.TestCase):
@@ -195,6 +199,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_peps_after_20161205(self):
         product = self.execute_search(
             "peps",
@@ -217,6 +222,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_theia(self):
         product = self.execute_search(
             "theia",
@@ -265,6 +271,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
         product = self.execute_search(
             "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", (50, 50, 50.3, 50.3)
