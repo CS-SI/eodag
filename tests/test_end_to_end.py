@@ -102,7 +102,10 @@ class TestEODagEndToEnd(unittest.TestCase):
             },
         }
         self.eodag.set_preferred_provider(provider)
-        results, _ = self.eodag.search(productType=product_type, **search_criteria)
+        results, nb_results = self.eodag.search(
+            productType=product_type, **search_criteria
+        )
+        # self.assertLess(nb_results, 1000)
         one_product = results[0]
         self.assertEqual(one_product.provider, provider)
         return one_product
@@ -212,6 +215,22 @@ class TestEODagEndToEnd(unittest.TestCase):
             (137.772897, 13.134202, 153.749135, 23.885986),
         )
         expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_theia(self):
+        product = self.execute_search(
+            "theia",
+            "S2_MSI_L2A",
+            "2019-03-01",
+            "2019-03-15",
+            (
+                0.2563590566012408,
+                43.19555008715042,
+                2.379835675499976,
+                43.907759172380565,
+            ),
+        )
+        expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_get_quicklook_peps(self):

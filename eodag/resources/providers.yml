@@ -36,6 +36,7 @@
         - '$.properties.custom'
     extract: True
   products:
+    # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt
     L8_OLI_TIRS_C1L1:
       dataset: LANDSAT_8_C1
       catalog_node: EE  # Possible values: CWIC, EE, HDDS, LPCS
@@ -111,157 +112,6 @@
 
 ---
 !provider
-  name: theia_landsat
-  priority: 0
-  products:
-    LS_REFLECTANCE:
-      collection: Landsat
-      product_type: REFLECTANCE
-    LS_REFLECTANCETOA:
-      collection: Landsat
-      product_type: REFLECTANCETOA
-    PLD_REFLECTANCE:
-      collection: Pleiades
-      product_type: REFLECTANCE
-    PLD_REFLECTANCETOA:
-      collection: Pleiades
-      product_type: REFLECTANCETOA
-    PLD_BUNDLE:
-      collection: Pleiades
-      product_type: Bundle (Pan, XS)
-  search: !plugin
-    type: QueryStringSearch
-    api_endpoint: 'https://theia-landsat.cnes.fr/resto/api/collections/{collection}/search.json'
-    pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
-      total_items_nb_key_path: '$.properties.totalResults'
-    metadata_mapping:
-      # OpenSearch Parameters for Collection Search (Table 3)
-      productType:
-        - productType
-        - '$.properties.productType'
-      doi: '$.properties.doi'
-      platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
-      instrument: '$.properties.instrument'
-      sensorType: '$.properties.sensorType'
-      compositeType: '$.properties.compositeType'
-      processingLevel: '$.properties.processingLevel'
-      orbitType: '$.properties.orbitType'
-      spectralRange: '$.properties.spectralRange'
-      wavelengths: '$.properties.wavelengths'
-      hasSecurityConstraints: '$.properties.hasSecurityConstraints'
-      dissemination: '$.properties.dissemination'
-
-      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.properties.title'
-      topicCategory: '$.properties.topicCategory'
-      keyword: '$.properties.keywords'
-      abstract: '$.properties.abstract'
-      resolution: '$.properties.resolution'
-      organisationName: '$.properties.organisationName'
-      organisationRole: '$.properties.organisationRole'
-      publicationDate: '$.properties.publicationDate'
-      lineage: '$.properties.lineage'
-      useLimitation: '$.properties.useLimitation'
-      accessConstraint: '$.properties.accessConstraint'
-      otherConstraint: '$.properties.otherConstraint'
-      classification: '$.properties.classification'
-      language: '$.properties.language'
-      specification: '$.properties.specification'
-
-      # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier: '$.properties.parentIdentifier'
-      productionStatus: '$.properties.productionStatus'
-      acquisitionType: '$.properties.acquisitionType'
-      orbitNumber: '$.properties.orbitNumber'
-      orbitDirection: '$.properties.orbitDirection'
-      track: '$.properties.track'
-      frame: '$.properties.frame'
-      swathIdentifier: '$.properties.swathIdentifier'
-      cloudCover:
-        - 'cloudCover=[0,{cloudCover}]'
-        - '$.properties.cloudCover'
-      snowCover: '$.properties.snowCover'
-      lowestLocation: '$.properties.lowestLocation'
-      highestLocation: '$.properties.highestLocation'
-      productVersion: '$.properties.version'
-      productQualityStatus: '$.properties.productQualityStatus'
-      productQualityDegradationTag: '$.properties.productQualityDegradationTag'
-      processorName: '$.properties.processorName'
-      processingCenter: '$.properties.processingCenter'
-      creationDate: '$.properties.creationDate'
-      modificationDate: '$.properties.modificationDate'
-      processingDate: '$.properties.processingDate'
-      sensorMode: '$.properties.sensorMode'
-      archivingCenter: '$.properties.archivingCenter'
-      processingMode: '$.properties.processingMode'
-
-      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      availabilityTime: '$.properties.availabilityTime'
-      acquisitionStation: '$.properties.acquisitionStation'
-      acquisitionSubType: '$.properties.acquisitionSubType'
-      startTimeFromAscendingNode:
-        - startDate
-        - '$.properties.startDate'
-      completionTimeFromAscendingNode:
-        - completionDate
-        - '$.properties.completionDate'
-      illuminationAzimuthAngle: '$.properties.illuminationAzimuthAngle'
-      illuminationZenithAngle: '$.properties.illuminationZenithAngle'
-      illuminationElevationAngle: '$.properties.illuminationElevationAngle'
-      polarizationMode: '$.properties.polarizationMode'
-      polarisationChannels: '$.properties.polarisationChannels'
-      antennaLookDirection: '$.properties.antennaLookDirection'
-      minimumIncidenceAngle: '$.properties.minimumIncidenceAngle'
-      maximumIncidenceAngle: '$.properties.maximumIncidenceAngle'
-      dopplerFrequency: '$.properties.dopplerFrequency'
-      incidenceAngleVariation: '$.properties.incidenceAngleVariation'
-
-      # Custom parameters (not defined in the base document referenced above)
-      id: '$.id'
-      # The geographic extent of the product
-      geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
-        - '$.geometry'
-      # The url of the quicklook
-      quicklook: '$.properties.quicklook'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.properties.services.download.url'
-      custom:
-        - custom
-        - '$.properties.custom'
-  download: !plugin
-    type: HTTPDownload
-    base_uri: 'https://theia-landsat.cnes.fr/resto'
-    extract: true
-  auth: !plugin
-    type: OIDCAuthorizationCodeFlowAuth
-    login_form_xpath: '//form[@id="loginForm"]'
-    authentication_uri_source: 'config'
-    additional_login_form_data:
-      sessionDataKey:  'xpath(//input[@name="sessionDataKey"]/@value)'
-    user_consent_needed: True
-    user_consent_form_xpath: '//form[@id="profile"]'
-    user_consent_form_data:
-      consent: 'approve'
-      sessionDataKeyConsent: 'xpath(//input[@name="sessionDataKeyConsent"]/@value)'
-    authorization_uri: 'https://sso.theia-land.fr/oauth2/authorize'
-    redirect_uri: 'https://theia-landsat.cnes.fr/rocket/'
-    authentication_uri: 'https://sso.theia-land.fr/commonauth'
-    token_uri: 'https://theia-landsat.cnes.fr/resto/api/auth/theia'
-    client_id: 'ZYhcLtyuDM0f2BMH1bIF1Fc2neQa'
-    token_exchange_params:
-      redirect_uri: redirectUri
-      client_id: clientId
-    token_exchange_post_data_method: json
-    token_provision: qs
-    token_qs_key: '_bearer'
-    token_key: 'token'
-
----
-!provider
   name: theia
   priority: 0
   search: !plugin
@@ -276,7 +126,7 @@
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
-        - processingLevel
+        - productType
         - '$.properties.productType'
       platform: '$.properties.collection'
       platformSerialIdentifier: '$.properties.platform'
@@ -361,8 +211,27 @@
         - '$.properties.custom'
   products:
     S2_MSI_L2A:
-      product_type: LEVEL2A
+      product_type: REFLECTANCE
+      processingLevel: LEVEL2A
       collection: SENTINEL2
+    L8_REFLECTANCE:
+      collection: LANDSAT
+      product_type: REFLECTANCE
+    L57_REFLECTANCE:
+      collection: Landsat57
+      product_type: REFLECTANCE
+    PLD_PAN:
+      collection: Pleiades
+      product_type: Panchromatique (Pan)
+    PLD_XS:
+      collection: Pleiades
+      product_type: Multispectral (XS)
+    PLD_BUNDLE:
+      collection: Pleiades
+      product_type: Bundle (Pan, XS)
+    PLD_PANSHARPENED:
+      collection: Pleiades
+      product_type: Pansharpened (Pan+XS)
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'

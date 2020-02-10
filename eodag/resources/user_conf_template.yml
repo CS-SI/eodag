@@ -37,17 +37,6 @@ theia:
         credentials:
             ident:
             pass:
-theia_landsat:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        outputs_prefix:
-        dl_url_params:
-    auth:
-        credentials:
-            username:
-            password:
 usgs:
     priority: # Lower value means lower priority (Default: 0)
     api:

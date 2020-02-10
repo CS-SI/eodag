@@ -29,8 +29,8 @@ from tests.utils import mock
 
 class TestCore(unittest.TestCase):
     SUPPORTED_PRODUCT_TYPES = {
-        "LS_REFLECTANCE": ["theia_landsat"],
-        "LS_REFLECTANCETOA": ["theia_landsat"],
+        "L8_REFLECTANCE": ["theia"],
+        "L57_REFLECTANCE": ["theia"],
         "L5_L1T": [],
         "L5_L1G": [],
         "L5_L1GT": [],
@@ -65,9 +65,10 @@ class TestCore(unittest.TestCase):
         "S3_OLCI_L2LRR": ["peps", "onda", "wekeo", "creodias"],
         "S3_SLSTR_L1RBT": ["peps", "onda", "wekeo", "creodias"],
         "S3_SLSTR_L2LST": ["peps", "onda", "wekeo", "creodias"],
-        "PLD_BUNDLE": ["theia_landsat"],
-        "PLD_REFLECTANCE": ["theia_landsat"],
-        "PLD_REFLECTANCETOA": ["theia_landsat"],
+        "PLD_PAN": ["theia"],
+        "PLD_XS": ["theia"],
+        "PLD_BUNDLE": ["theia"],
+        "PLD_PANSHARPENED": ["theia"],
         "ES_FRS": [],
     }
     SUPPORTED_PROVIDERS = [
@@ -75,7 +76,6 @@ class TestCore(unittest.TestCase):
         "aws_s3_sentinel2_l1c",
         "usgs",
         "theia",
-        "theia_landsat",
         "sobloo",
         "creodias",
         "mundi",
@@ -89,7 +89,9 @@ class TestCore(unittest.TestCase):
 
     def tearDown(self):
         super(TestCore, self).tearDown()
-        for old in glob.glob1(self.dag.conf_dir, "*.old"):
+        for old in glob.glob1(self.dag.conf_dir, "*.old") + glob.glob1(
+            self.dag.conf_dir, ".*.old"
+        ):
             old_path = os.path.join(self.dag.conf_dir, old)
             if os.path.exists(old_path):
                 try:
