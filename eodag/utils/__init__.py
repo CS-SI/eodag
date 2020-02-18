@@ -190,25 +190,25 @@ except ImportError:  # PY2
                 if isinstance(k, bytes):
                     k = quote_via(k, safe)
                 else:
-                    k = quote_via(str(k), safe, encoding, errors)
+                    k = quote_via(str(k), safe)
 
                 if isinstance(v, bytes):
                     v = quote_via(v, safe)
                 else:
-                    v = quote_via(str(v), safe, encoding, errors)
+                    v = quote_via(str(v), safe)
                 l.append(k + "=" + v)
         else:
             for k, v in query:
                 if isinstance(k, bytes):
                     k = quote_via(k, safe)
                 else:
-                    k = quote_via(str(k), safe, encoding, errors)
+                    k = quote_via(str(k), safe)
 
                 if isinstance(v, bytes):
                     v = quote_via(v, safe)
                     l.append(k + "=" + v)
                 elif isinstance(v, six.string_types):
-                    v = quote_via(v, safe, encoding, errors)
+                    v = quote_via(v, safe)
                     l.append(k + "=" + v)
                 else:
                     try:
@@ -216,7 +216,7 @@ except ImportError:  # PY2
                         x = len(v)  # noqa
                     except TypeError:
                         # not a sequence
-                        v = quote_via(str(v), safe, encoding, errors)
+                        v = quote_via(str(v), safe)
                         l.append(k + "=" + v)
                     else:
                         # loop over the sequence
@@ -224,7 +224,7 @@ except ImportError:  # PY2
                             if isinstance(elt, bytes):
                                 elt = quote_via(elt, safe)
                             else:
-                                elt = quote_via(str(elt), safe, encoding, errors)
+                                elt = quote_via(str(elt), safe)
                             l.append(k + "=" + elt)
         return "&".join(l)
 

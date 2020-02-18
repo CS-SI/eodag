@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 
 import logging
 import re
+from urllib.request import urlopen
 
 import jsonpath_rw as jsonpath
 import requests
@@ -32,7 +33,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.search.base import Search
-from eodag.utils import parse_qs, urlencode
+from eodag.utils import parse_qs, quote, urlencode
 from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
@@ -477,10 +478,38 @@ class QueryStringSearch(Search):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
-            if info_message:
-                logger.info(info_message)
-            response = requests.get(url)
-            response.raise_for_status()
+            # requests auto quote url params, without any option to prevent it
+            # use urllib instead of requests if req must be sent unquoted
+            if hasattr(self.config, "dont_quote"):
+                # keep unquoted desired params
+                base_url, params = url.split("?")
+                qry = quote(params)
+                for keep_unquoted in self.config.dont_quote:
+                    qry = qry.replace(quote(keep_unquoted), keep_unquoted)
+
+                # prepare req for Response building
+                req = requests.Request(method="GET", url=base_url)
+                prep = req.prepare()
+                prep.url = base_url + "?" + qry
+                # send urllib req
+                if info_message:
+                    logger.info(info_message.replace(url, prep.url))
+                urllib_response = urlopen(prep.url)
+                # py2 compatibility : prevent AttributeError: addinfourl instance has no attribute 'reason'
+                if not hasattr(urllib_response, "reason"):
+                    urllib_response.reason = ""
+                if not hasattr(urllib_response, "status") and hasattr(
+                    urllib_response, "code"
+                ):
+                    urllib_response.status = urllib_response.code
+                # build Response
+                adapter = requests.adapters.HTTPAdapter()
+                response = adapter.build_response(prep, urllib_response)
+            else:
+                if info_message:
+                    logger.info(info_message)
+                response = requests.get(url)
+                response.raise_for_status()
         except requests.HTTPError as err:
             if exception_message:
                 logger.exception(exception_message)
@@ -531,6 +560,7 @@ class ODataV4Search(QueryStringSearch):
         #       Be careful to generalize it if needed when the chance to do so arrives
         final_result = []
         # Query the products entity set for basic metadata about the product
+        skipped = 0
         for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
             if entity["downloadable"]:
                 entity_metadata = {
@@ -553,6 +583,12 @@ class ODataV4Search(QueryStringSearch):
                         {item["id"]: item["value"] for item in response.json()["value"]}
                     )
                     final_result.append(entity_metadata)
+            else:
+                skipped += 1
+        if skipped > 0:
+            logger.info(
+                "Skipped fetching metadata for %s undownloadable products", skipped
+            )
         return final_result
 
     def get_metadata_search_url(self, entity):

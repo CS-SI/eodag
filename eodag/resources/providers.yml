@@ -888,6 +888,13 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    dont_quote:
+      - '['
+      - ']'
+      - '$'
+      - '='
+      - '&'
+      - ':'
     pagination:
       count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}'
@@ -942,7 +949,7 @@
       quicklook: '$.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '%(base_uri)s({id})/$value'
+      downloadLink: '%(base_uri)s({uid})/$value'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       radiometricQualityFlag: '$.radiometricQualityFlag'
