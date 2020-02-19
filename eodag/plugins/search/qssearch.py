@@ -19,7 +19,6 @@ from __future__ import unicode_literals
 
 import logging
 import re
-from urllib.request import urlopen
 
 import jsonpath_rw as jsonpath
 import requests
@@ -35,6 +34,14 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import parse_qs, quote, urlencode
 from eodag.utils.exceptions import RequestError
+
+try:  # py3
+    from urllib.error import HTTPError as urllib_HTTPError
+    from urllib.request import urlopen
+except ImportError:  # py2
+    from urllib2 import HTTPError as urllib_HTTPError
+    from urllib2 import urlopen
+
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -510,7 +517,7 @@ class QueryStringSearch(Search):
                     logger.info(info_message)
                 response = requests.get(url)
                 response.raise_for_status()
-        except requests.HTTPError as err:
+        except (requests.HTTPError, urllib_HTTPError) as err:
             if exception_message:
                 logger.exception(exception_message)
             else:
