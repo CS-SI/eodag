@@ -1,16 +1,27 @@
 .. image:: docs/_static/eodag_bycs.png
     :target: https://bitbucket.org/geostorm/eodag
 
-.. role:: raw-html(raw)
-    :format: html
+|
 
-:raw-html:`<a class="reference external image-reference" href="https://badge.fury.io/py/eodag" rel="nofollow"><img src="https://badge.fury.io/py/eodag.svg" type="image/svg+xml"></a>`
-:raw-html:`<a class="reference external image-reference" href="https://eodag.readthedocs.io/en/latest/" rel="nofollow"><img alt="https://readthedocs.org/projects/pip/badge/?version=latest&amp;style=flat" src="https://readthedocs.org/projects/pip/badge/?version=latest&amp;style=flat"></a>`
-:raw-html:`<a class="reference external image-reference" href="https://bitbucket.org/geostorm/eodag/issues?status=new&amp;status=open" rel="nofollow"><img src="https://img.shields.io/bitbucket/issues/geostorm/eodag.svg" type="image/svg+xml"></a>`
-:raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fgeostorm%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
-:raw-html:`<br>`
-:raw-html:`<a class="reference external image-reference" href="https://pypi.org/project/eodag/" rel="nofollow"><img src="https://img.shields.io/pypi/l/eodag.svg" type="image/svg+xml"></a>`
-:raw-html:`<a class="reference external image-reference" href="https://pypi.org/project/eodag/" rel="nofollow"><img src="https://img.shields.io/pypi/pyversions/eodag.svg" type="image/svg+xml"></a>`
+.. image:: https://badge.fury.io/py/eodag.svg
+    :target: https://badge.fury.io/py/eodag
+
+.. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
+    :target: https://eodag.readthedocs.io/en/latest/
+
+.. image:: https://img.shields.io/bitbucket/issues/geostorm/eodag.svg
+    :target: https://bitbucket.org/geostorm/eodag/issues?status=new&status=open
+
+.. image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fgeostorm%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
+
+|
+
+.. image:: https://img.shields.io/pypi/l/eodag.svg
+    :target: https://pypi.org/project/eodag/
+
+.. image:: https://img.shields.io/pypi/pyversions/eodag.svg
+    :target: https://pypi.org/project/eodag/
 
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
