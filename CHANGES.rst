@@ -1,6 +1,21 @@
 Release history
 ---------------
 
+1.4.0 (2020-02-24)
+++++++++++++++++++
+
+- Warning: last release including Python 2.7 support
+- Add to query the parameters set in the provider product type definition
+- New S3RestDownload plugin for mundi, fixes `#127 <https://bitbucket.org/geostorm/eodag/issues/127>`_
+- S3_OLCI_L2LFR support for mundi, see `#124 <https://bitbucket.org/geostorm/eodag/issues/124>`_
+- S2_MSI_L2A support for peps, see `#124 <https://bitbucket.org/geostorm/eodag/issues/124>`_
+- Theia-landsat provider moved to theia, fixes `#95 <https://bitbucket.org/geostorm/eodag/issues/95>`_
+- Fixed onda query quoting issues, fixes `#128 <https://bitbucket.org/geostorm/eodag/issues/128>`_
+- Mundi, creodias and onda added to end-to-end tests
+- Gdal install instructions and missing auxdata in ship_detection tutorial
+- Sobloo and creodias quicklooks fix
+- Eodag logo added and other minor changes to documentation
+
 1.3.6 (2020-01-24)
 ++++++++++++++++++
 
