@@ -32,8 +32,16 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.search.base import Search
-from eodag.utils import parse_qs, urlencode
+from eodag.utils import parse_qs, quote, urlencode
 from eodag.utils.exceptions import RequestError
+
+try:  # py3
+    from urllib.error import HTTPError as urllib_HTTPError
+    from urllib.request import urlopen
+except ImportError:  # py2
+    from urllib2 import HTTPError as urllib_HTTPError
+    from urllib2 import urlopen
+
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -146,6 +154,20 @@ class QueryStringSearch(Search):
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = provider_product_type
+        # Add to the query, the queryable parameters set in the provider product type definition
+        product_type_def_params = self.get_product_type_def_params(
+            product_type, *args, **kwargs
+        )
+        keywords.update(
+            {
+                k: v
+                for k, v in product_type_def_params.items()
+                if k not in keywords.keys()
+                and k in self.config.metadata_mapping.keys()
+                and isinstance(self.config.metadata_mapping[k], list)
+            }
+        )
+
         qp, qs = self.build_query_string(product_type, *args, **keywords)
         # If we were not able to build query params but have search criteria, this means
         # the provider does not support the search criteria given. If so, stop searching
@@ -454,13 +476,48 @@ class QueryStringSearch(Search):
         logger.debug("Mapping eodag product type to provider product type")
         return self.config.products[product_type]["product_type"]
 
+    def get_product_type_def_params(self, product_type, *args, **kwargs):
+        """Get the provider product type definition parameters"""
+        if product_type is None:
+            return
+        logger.debug("Getting provider product type definition parameters")
+        return self.config.products[product_type]
+
     def _request(self, url, info_message=None, exception_message=None):
         try:
-            if info_message:
-                logger.info(info_message)
-            response = requests.get(url)
-            response.raise_for_status()
-        except requests.HTTPError as err:
+            # requests auto quote url params, without any option to prevent it
+            # use urllib instead of requests if req must be sent unquoted
+            if hasattr(self.config, "dont_quote"):
+                # keep unquoted desired params
+                base_url, params = url.split("?")
+                qry = quote(params)
+                for keep_unquoted in self.config.dont_quote:
+                    qry = qry.replace(quote(keep_unquoted), keep_unquoted)
+
+                # prepare req for Response building
+                req = requests.Request(method="GET", url=base_url)
+                prep = req.prepare()
+                prep.url = base_url + "?" + qry
+                # send urllib req
+                if info_message:
+                    logger.info(info_message.replace(url, prep.url))
+                urllib_response = urlopen(prep.url)
+                # py2 compatibility : prevent AttributeError: addinfourl instance has no attribute 'reason'
+                if not hasattr(urllib_response, "reason"):
+                    urllib_response.reason = ""
+                if not hasattr(urllib_response, "status") and hasattr(
+                    urllib_response, "code"
+                ):
+                    urllib_response.status = urllib_response.code
+                # build Response
+                adapter = requests.adapters.HTTPAdapter()
+                response = adapter.build_response(prep, urllib_response)
+            else:
+                if info_message:
+                    logger.info(info_message)
+                response = requests.get(url)
+                response.raise_for_status()
+        except (requests.HTTPError, urllib_HTTPError) as err:
             if exception_message:
                 logger.exception(exception_message)
             else:
@@ -510,6 +567,7 @@ class ODataV4Search(QueryStringSearch):
         #       Be careful to generalize it if needed when the chance to do so arrives
         final_result = []
         # Query the products entity set for basic metadata about the product
+        skipped = 0
         for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
             if entity["downloadable"]:
                 entity_metadata = {
@@ -532,6 +590,12 @@ class ODataV4Search(QueryStringSearch):
                         {item["id"]: item["value"] for item in response.json()["value"]}
                     )
                     final_result.append(entity_metadata)
+            else:
+                skipped += 1
+        if skipped > 0:
+            logger.info(
+                "Skipped fetching metadata for %s undownloadable products", skipped
+            )
         return final_result
 
     def get_metadata_search_url(self, entity):

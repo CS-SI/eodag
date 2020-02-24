@@ -25,6 +25,11 @@ import unittest
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import EODataAccessGateway
 
+try:  # py3
+    from pathlib import Path
+except ImportError:  # py2
+    from pathlib2 import Path
+
 
 class TestEODagEndToEnd(unittest.TestCase):
     """Make real case tests. This assume the existence of a user conf file in resources folder named user_conf.yml"""  # noqa
@@ -101,7 +106,10 @@ class TestEODagEndToEnd(unittest.TestCase):
             },
         }
         self.eodag.set_preferred_provider(provider)
-        results, _ = self.eodag.search(productType=product_type, **search_criteria)
+        results, nb_results = self.eodag.search(
+            productType=product_type, **search_criteria
+        )
+        # self.assertLess(nb_results, 1000)
         one_product = results[0]
         self.assertEqual(one_product.provider, provider)
         return one_product
@@ -142,8 +150,16 @@ class TestEODagEndToEnd(unittest.TestCase):
         self.downloaded_file_path = os.path.join(
             product.downloader.config.outputs_prefix, expected_filename
         )
+        # check whether expected_filename refers to a file or a dir
+        if os.path.isdir(self.downloaded_file_path):
+            product_directory = Path(self.downloaded_file_path)
+            downloaded_size = sum(
+                f.stat().st_size for f in product_directory.glob("**/*") if f.is_file()
+            )
+        else:
+            downloaded_size = os.stat(self.downloaded_file_path).st_size
         # The partially downloaded file should be greater or equal to 1 MB
-        self.assertGreaterEqual(os.stat(self.downloaded_file_path).st_size, 2 ** 20)
+        self.assertGreaterEqual(downloaded_size, 2 ** 20)
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(
@@ -183,6 +199,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_peps_after_20161205(self):
         product = self.execute_search(
             "peps",
@@ -194,6 +211,67 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    def test_end_to_end_search_download_mundi(self):
+        product = self.execute_search(
+            "mundi",
+            "S2_MSI_L1C",
+            "2019-11-08",
+            "2019-11-16",
+            (137.772897, 13.134202, 153.749135, 23.885986),
+        )
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    @unittest.skip("service unavailable for the moment")
+    def test_end_to_end_search_download_theia(self):
+        product = self.execute_search(
+            "theia",
+            "S2_MSI_L2A",
+            "2019-03-01",
+            "2019-03-15",
+            (
+                0.2563590566012408,
+                43.19555008715042,
+                2.379835675499976,
+                43.907759172380565,
+            ),
+        )
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_creodias(self):
+        product = self.execute_search(
+            "creodias",
+            "S2_MSI_L1C",
+            "2019-03-01",
+            "2019-03-15",
+            (
+                0.2563590566012408,
+                43.19555008715042,
+                2.379835675499976,
+                43.907759172380565,
+            ),
+        )
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_onda(self):
+        product = self.execute_search(
+            "onda",
+            "S2_MSI_L1C",
+            "2020-01-01",
+            "2020-01-15",
+            (
+                0.2563590566012408,
+                43.19555008715042,
+                2.379835675499976,
+                43.907759172380565,
+            ),
+        )
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
         product = self.execute_search(
             "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", (50, 50, 50.3, 50.3)

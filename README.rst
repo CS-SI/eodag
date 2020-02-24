@@ -1,35 +1,16 @@
-=====
-eodag
-=====
+.. image:: docs/_static/eodag_bycs.png
+    :target: https://bitbucket.org/geostorm/eodag
 
-.. image:: https://badge.fury.io/py/eodag.svg
-    :target: https://badge.fury.io/py/eodag
+.. role:: raw-html(raw)
+    :format: html
 
-.. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
-    :target: https://eodag.readthedocs.io/en/latest/
-
-.. image:: https://img.shields.io/bitbucket/issues/geostorm/eodag.svg
-    :target: https://bitbucket.org/geostorm/eodag/issues?status=new&status=open
-
-.. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fgeostorm%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
-
-|
-
-.. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
-    :target: https://www.apache.org/licenses/LICENSE-2.0
-
-.. image:: https://img.shields.io/badge/python-2.7-blue.svg
-    :target: https://www.python.org/downloads/release/python-270/
-
-.. image:: https://img.shields.io/badge/python-3.5-blue.svg
-    :target: https://www.python.org/downloads/release/python-350/
-
-.. image:: https://img.shields.io/badge/python-3.6-blue.svg
-    :target: https://www.python.org/downloads/release/python-360/
-
-.. image:: https://img.shields.io/badge/python-3.7-blue.svg
-    :target: https://www.python.org/downloads/release/python-370/
+:raw-html:`<a class="reference external image-reference" href="https://badge.fury.io/py/eodag" rel="nofollow"><img src="https://badge.fury.io/py/eodag.svg" type="image/svg+xml"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://eodag.readthedocs.io/en/latest/" rel="nofollow"><img alt="https://readthedocs.org/projects/pip/badge/?version=latest&amp;style=flat" src="https://readthedocs.org/projects/pip/badge/?version=latest&amp;style=flat"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://bitbucket.org/geostorm/eodag/issues?status=new&amp;status=open" rel="nofollow"><img src="https://img.shields.io/bitbucket/issues/geostorm/eodag.svg" type="image/svg+xml"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fgeostorm%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
+:raw-html:`<br>`
+:raw-html:`<a class="reference external image-reference" href="https://pypi.org/project/eodag/" rel="nofollow"><img src="https://img.shields.io/pypi/l/eodag.svg" type="image/svg+xml"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://pypi.org/project/eodag/" rel="nofollow"><img src="https://img.shields.io/pypi/pyversions/eodag.svg" type="image/svg+xml"></a>`
 
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
@@ -169,7 +150,7 @@ If you intend to contribute to eodag source code::
 
     git clone https://bitbucket.org/geostorm/eodag.git
     cd eodag
-    python -m pip intall -r requirements-dev.txt
+    python -m pip install -r requirements-dev.txt
     pre-commit install
 
 To run the default test suite (which excludes end-to-end tests)::
@@ -233,7 +214,7 @@ See LICENSE file for details.
 AUTHORS
 =======
 
-EODAG is developed by CS Systèmes d'Information.
+EODAG is developed by `CS Systèmes d'Information <https://www.c-s.fr>`_.
 
 
 CREDITS

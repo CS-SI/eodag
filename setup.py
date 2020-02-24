@@ -111,6 +111,7 @@ setup(
         "eodag.plugins.download": [
             "AwsDownload = eodag.plugins.download.aws:AwsDownload",
             "HTTPDownload = eodag.plugins.download.http:HTTPDownload",
+            "S3RestDownload = eodag.plugins.download.s3rest:S3RestDownload",
         ],
         "eodag.plugins.search": [
             "CSWSearch = eodag.plugins.search.csw:CSWSearch",

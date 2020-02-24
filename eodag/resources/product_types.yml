@@ -255,45 +255,56 @@ S3_OLCI_L2LFR:
   processingLevel: L2
   sensorType: OPTICAL
 
-LS_REFLECTANCE:
-  abstract: Landsat
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
-
-LS_REFLECTANCETOA:
-  abstract: Landsat
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
-
-# For information on PLEIADES products, see https://www.theia-land.fr/en/product/pleiades/
-PLD_REFLECTANCE:
-  abstract: Pleiades
-  instrument:
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel:
+L8_REFLECTANCE:
+  abstract: |
+    Landsat 8 L2A data distributed by Theia since 2017-03-20 using operational version of MUSCATE, UTM projection,
+    and tiled using Sentinel-2 tiles.
+  instrument: OLI,TIRS
+  platform: LANDSAT8
+  platformSerialIdentifier: L8
+  processingLevel: L2A
   sensorType: OPTICAL
 
-PLD_REFLECTANCETOA:
-  abstract: Pleiades
-  instrument:
+L57_REFLECTANCE:
+  abstract: |
+    Landsat 5,7,8 L2A data (old format) distributed by Theia (2014 to 2017-03-20) using MUSCATE prototype,
+    Lamber 93 projection.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L5,L7,L8
+  processingLevel: L2A
+  sensorType: OPTICAL
+
+PLD_PAN:
+  abstract: Pleiades Panchromatic (Pan)
+  instrument: PHR
   platform: PLEIADES
   platformSerialIdentifier: P1A,P1B
-  processingLevel:
+  processingLevel: PRIMARY
+  sensorType: OPTICAL
+
+PLD_XS:
+  abstract: Pleiades Multispectral (XS)
+  instrument: PHR
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
+  processingLevel: PRIMARY
   sensorType: OPTICAL
 
 PLD_BUNDLE:
-  abstract: Pleiades
-  instrument:
+  abstract: Pleiades Bundle (Pan, XS)
+  instrument: PHR
   platform: PLEIADES
   platformSerialIdentifier: P1A,P1B
-  processingLevel:
+  processingLevel: PRIMARY
+  sensorType: OPTICAL
+
+PLD_PANSHARPENED:
+  abstract: Pleiades Pansharpened (Pan+XS)
+  instrument: PHR
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
+  processingLevel: PRIMARY
   sensorType: OPTICAL
 
 S2_MSI_L1C:

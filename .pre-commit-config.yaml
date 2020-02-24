@@ -13,6 +13,7 @@ repos:
         args: [--allow-multiple-documents, --unsafe]
     -   id: check-xml
     -   id: check-added-large-files
+        args: ['--maxkb=1600']
     -   id: debug-statements
     -   id: flake8
         args: [--max-line-length=120]
