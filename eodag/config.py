@@ -302,4 +302,8 @@ def override_config_from_mapping(config, mapping):
         if old_conf is not None:
             old_conf.update(new_conf)
         else:
+            logger.warning(
+                "%s: unknown provider found in user conf, trying to use provided configuration",
+                provider,
+            )
             mapping[provider] = ProviderConfig.from_mapping(new_conf)

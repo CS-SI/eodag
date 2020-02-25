@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+1.4.1 (2020-02-25)
+++++++++++++++++++
+
+- Warning message if an unknow provider is found in user configuration file, fixes `#129 <https://bitbucket.org/geostorm/eodag/issues/129>`_
+
 1.4.0 (2020-02-24)
 ++++++++++++++++++
 
