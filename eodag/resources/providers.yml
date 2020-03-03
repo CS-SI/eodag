@@ -283,7 +283,7 @@
 
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier: '$.properties.parentIdentifier'
-      productionStatus: '$.properties.status'
+      productionStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk)|(?P<STAGING>staging)|(?P<OFFLINE>tape))}'
       acquisitionType: '$.properties.acquisitionType'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
@@ -330,7 +330,7 @@
       centroid: '$.properties.centroid'
       thumbnail: '$.properties.thumbnail'
       s2TakeId: '$.properties.s2TakeId'
-      storage: '$.properties.storage'
+      storage: '$.properties.storage.mode'
       realtime: '$.properties.realtime'
       visible: '$.properties.visible'
       isNrt: '$.properties.isNrt'
@@ -452,6 +452,7 @@
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber: '$.data.orbit.number'
       orbitDirection: '$.data.orbit.direction'
+      productionStatus: '{$.data.state.services.download#get_group_name((?P<ONLINE>internal)|(?P<OFFLINE>external))}'
       cloudCover:
         - 'f=contentDescription.cloudCoverPercentage:lte:{cloudCover}'
         - '$.data.contentDescription.cloudCoverPercentage'
@@ -544,7 +545,7 @@
 
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier: '$.properties.parentIdentifier'
-      productionStatus: '$.properties.status'
+      productionStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
@@ -933,6 +934,7 @@
       cloudCover: '$.cloudCoverPercentage'
       productVersion: '$.processingBaseline'
       productQualityStatus: '$.generalQualityFlag'
+      productionStatus: '{$.offline#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
       creationDate: '$.creationDate'
       processingDate: '$.processingDate'
       sensorMode: '$.sensorOperationalMode'
@@ -952,6 +954,8 @@
       downloadLink: '%(base_uri)s({uid})/$value'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
+      offline : '$.offline'
+      downloadable : '$.downloadable'
       radiometricQualityFlag: '$.radiometricQualityFlag'
       sensorQualityFlag: '$.sensorQualityFlag'
       geometricQualityFlag: '$.geometricQualityFlag'
