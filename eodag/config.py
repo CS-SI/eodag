@@ -306,4 +306,7 @@ def override_config_from_mapping(config, mapping):
                 "%s: unknown provider found in user conf, trying to use provided configuration",
                 provider,
             )
-            mapping[provider] = ProviderConfig.from_mapping(new_conf)
+            try:
+                mapping[provider] = ProviderConfig.from_mapping(new_conf)
+            except ValidationError as e:
+                logger.warning("%s skipped: %s", provider, e)

@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+1.4.2 (2020-03-04)
+++++++++++++++++++
+
+- Skip badly configured providers in user configuration, see `#129 <https://bitbucket.org/geostorm/eodag/issues/129>`_
+
 1.4.1 (2020-02-25)
 ++++++++++++++++++
 
