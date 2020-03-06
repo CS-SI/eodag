@@ -38,6 +38,9 @@ INGEST_CONVERSION_REGEX = re.compile(
 )
 NOT_AVAILABLE = "Not Available"
 NOT_MAPPED = "Not Mapped"
+ONLINE_STATUS = "ONLINE"
+STAGING_STATUS = "STAGING"
+OFFLINE_STATUS = "OFFLINE"
 
 
 def get_metadata_path(map_value):

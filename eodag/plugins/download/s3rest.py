@@ -27,10 +27,11 @@ from xml.parsers.expat import ExpatError
 import requests
 from requests import HTTPError
 
+from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import urljoin
-from eodag.utils.exceptions import DownloadError, RequestError
+from eodag.utils.exceptions import DownloadError, NotAvailableError, RequestError
 
 logger = logging.getLogger("eodag.plugins.download.s3rest")
 
@@ -43,7 +44,7 @@ class S3RestDownload(AwsDownload):
     Re-use AwsDownload bucket some handling methods
     """
 
-    def download(self, product, auth=None, progress_callback=None):
+    def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download method for S3 REST API.
 
         :param product: The EO product to download
@@ -61,6 +62,20 @@ class S3RestDownload(AwsDownload):
         """
         # get bucket urls
         bucket_name, prefix = self.get_bucket_name_and_prefix(product)
+
+        if (
+            bucket_name is None
+            and "productionStatus" in product.properties
+            and product.properties["productionStatus"] == OFFLINE_STATUS
+        ):
+            raise NotAvailableError(
+                "%s is not available for download on %s (status = %s)"
+                % (
+                    product.properties["title"],
+                    self.provider,
+                    product.properties["productionStatus"],
+                )
+            )
 
         bucket_url = urljoin(
             product.downloader.config.base_uri.strip("/") + "/", bucket_name
@@ -96,7 +111,10 @@ class S3RestDownload(AwsDownload):
                 bucket_url.strip("/") + "/", prefix.strip("/")
             )
             return HTTPDownload(self.provider, self.config).download(
-                product=product, auth=auth, progress_callback=progress_callback
+                product=product,
+                auth=auth,
+                progress_callback=progress_callback,
+                **kwargs
             )
 
         # destination product path

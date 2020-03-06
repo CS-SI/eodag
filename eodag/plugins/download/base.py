@@ -18,13 +18,21 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+from datetime import datetime, timedelta
+from time import sleep
 
 from tqdm import tqdm
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import ProgressCallback
+from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.notebook import NotebookWidgets
 
 logger = logging.getLogger("eodag.plugins.download.base")
+
+# default wait times in minutes
+DEFAULT_DOWNLOAD_WAIT = 2
+DEFAULT_DOWNLOAD_TIMEOUT = 20
 
 
 class Download(PluginTopic):
@@ -40,7 +48,14 @@ class Download(PluginTopic):
         super(Download, self).__init__(provider, config)
         self.authenticate = bool(getattr(self.config, "authenticate", False))
 
-    def download(self, product, auth=None, progress_callback=None):
+    def download(
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+    ):
         """
         Base download method. Not available, should be defined for each plugin
         """
@@ -48,45 +63,113 @@ class Download(PluginTopic):
             "A Download plugin must implement a method named download"
         )
 
-    def download_all(self, products, auth=None, progress_callback=None):
+    def download_all(
+        self,
+        products,
+        auth=None,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+    ):
         """
         A sequential download_all implementation
         using download method for every products
         """
         paths = []
-        with tqdm(products, unit="product", desc="Downloading products") as bar:
-            for product in bar:
-                try:
-                    if progress_callback is None:
-                        progress_callback = ProgressCallback()
-                    if product.downloader is None:
-                        raise RuntimeError(
-                            "EO product is unable to download itself due to lacking of a "
-                            "download plugin"
+        # initiate retry loop
+        start_time = datetime.now()
+        stop_time = datetime.now() + timedelta(minutes=timeout)
+        nb_products = len(products)
+        retry_count = 0
+        # another output for notbooks
+        nb_info = NotebookWidgets()
+
+        for product in products:
+            product.next_try = start_time
+
+        with tqdm(
+            total=len(products), unit="product", desc="Downloading products"
+        ) as bar:
+            while "Loop until all products are download or timeout is reached":
+                # try downloading each product before retry
+                for product in products:
+                    if datetime.now() >= product.next_try:
+                        product.next_try += timedelta(minutes=wait)
+                        try:
+                            if progress_callback is None:
+                                progress_callback = ProgressCallback()
+                            if product.downloader is None:
+                                raise RuntimeError(
+                                    "EO product is unable to download itself due to lacking of a "
+                                    "download plugin"
+                                )
+
+                            auth = (
+                                product.downloader_auth.authenticate()
+                                if product.downloader_auth is not None
+                                else product.downloader_auth
+                            )
+                            # resolve remote location if needed with downloader configuration
+                            product.remote_location = product.remote_location % vars(
+                                product.downloader.config
+                            )
+
+                            paths.append(
+                                self.download(
+                                    product,
+                                    auth=auth,
+                                    progress_callback=progress_callback,
+                                    timeout=-1,
+                                )
+                            )
+
+                            # product downloaded, to not retry it
+                            products.remove(product)
+                            bar.update(1)
+
+                        except NotAvailableError as e:
+                            logger.info(e)
+                            continue
+
+                        except Exception:
+                            import traceback as tb
+
+                            logger.warning(
+                                "A problem occurred during download of product: %s. "
+                                "Skipping it",
+                                product,
+                            )
+                            logger.debug("\n%s", tb.format_exc())
+
+                if (
+                    len(products) > 0
+                    and datetime.now() < products[0].next_try
+                    and datetime.now() < stop_time
+                ):
+                    wait_seconds = (products[0].next_try - datetime.now()).seconds
+                    retry_count += 1
+                    info_message = (
+                        "[Retry #%s, %s/%s D/L] Waiting %ss until next download try (retry every %s' for %s')"
+                        % (
+                            retry_count,
+                            (nb_products - len(products)),
+                            nb_products,
+                            wait_seconds,
+                            wait,
+                            timeout,
                         )
-
-                    auth = (
-                        product.downloader_auth.authenticate()
-                        if product.downloader_auth is not None
-                        else product.downloader_auth
                     )
-                    # resolve remote location if needed with downloader configuration
-                    product.remote_location = product.remote_location % vars(
-                        product.downloader.config
-                    )
-
-                    paths.append(
-                        self.download(
-                            product, auth=auth, progress_callback=progress_callback
-                        )
-                    )
-                except Exception:
-                    import traceback as tb
-
+                    logger.info(info_message)
+                    nb_info.display_html(info_message)
+                    sleep(wait_seconds + 1)
+                elif len(products) > 0 and datetime.now() >= stop_time:
                     logger.warning(
-                        "A problem occurred during download of product: %s. "
-                        "Skipping it",
-                        product,
+                        "%s products could not be downloaded: %s",
+                        len(products),
+                        [prod.properties["title"] for prod in products],
                     )
-                    logger.debug("\n%s", tb.format_exc())
+                    break
+                elif len(products) == 0:
+                    break
+
         return paths

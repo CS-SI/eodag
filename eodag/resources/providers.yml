@@ -236,6 +236,7 @@
     type: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
     extract: true
+    order_enabled: true
     dl_url_params:
       issuerId: theia
   auth: !plugin
@@ -394,6 +395,7 @@
     base_uri: 'https://peps.cnes.fr/resto'
     extract: true
     archive_depth: 2
+    order_enabled: true
     dl_url_params:
       issuerId: peps
   auth: !plugin
@@ -505,6 +507,7 @@
     type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download'
     archive_depth: 2
+    order_enabled: true
     extract: true
   auth: !plugin
     type: HTTPHeaderAuth
@@ -575,7 +578,8 @@
       quicklook: '{thumbnail}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.properties.services.download.url'
+      downloadLink: 'https://zipper.creodias.eu/download/{uid}'
+      # downloadLink: '$.properties.services.download.url'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
@@ -589,6 +593,7 @@
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
     extract: true
+    order_enabled: false
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: 'https://auth.creodias.eu/auth'
@@ -852,6 +857,7 @@
           matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
   download: !plugin
     type: HTTPDownload
+    order_enabled: false
   auth: !plugin
     type: GenericAuth
   products:
@@ -952,6 +958,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '%(base_uri)s({uid})/$value'
+      # Url used for ordering product if it is offline/archived
+      orderLink: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       offline : '$.offline'
@@ -1016,5 +1024,9 @@
     type: HTTPDownload
     base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
     extract: true
+    order_enabled: true
+    order_method: 'POST'
+    order_headers:
+      Content-Type: application/json
   auth: !plugin
     type: GenericAuth
