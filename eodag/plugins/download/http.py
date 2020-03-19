@@ -36,7 +36,11 @@ from eodag.plugins.download.base import (
     Download,
 )
 from eodag.utils import sanitize
-from eodag.utils.exceptions import MisconfiguredError, NotAvailableError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    NotAvailableError,
+)
 from eodag.utils.notebook import NotebookWidgets
 
 logger = logging.getLogger("eodag.plugins.download.http")
@@ -172,8 +176,23 @@ class HTTPDownload(Download):
                         try:
                             stream.raise_for_status()
                         except HTTPError as e:
+                            # check if error is identified as auth_error in provider conf
+                            auth_errors = getattr(
+                                self.config, "auth_error_code", [None]
+                            )
+                            if not isinstance(auth_errors, list):
+                                auth_errors = [auth_errors]
+                            if e.response.status_code in auth_errors:
+                                raise AuthenticationError(
+                                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                                    % (
+                                        e.response.status_code,
+                                        e.response.text.strip(),
+                                        self.provider,
+                                    )
+                                )
                             # product not available
-                            if (
+                            elif (
                                 product.properties.get(
                                     "productionStatus", ONLINE_STATUS
                                 )
