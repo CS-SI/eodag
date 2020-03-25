@@ -46,8 +46,8 @@
   name: aws_s3_sentinel2_l1c
   priority: 0
   search: !plugin
-    type: AwsSearch
-    api_endpoint: 'http://finder.eocloud.eu/resto/api/collections/{collection}/search.json'
+    type: QueryStringSearch
+    api_endpoint: 'http://opensearch.sentinel-hub.com/resto/api/collections/{collection}/search.json'
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -56,16 +56,16 @@
       # within the context of the data provider)
       uid: '$.id'
       id:
-        - 'productIdentifier=%{id#remove_extension}%'
-        - '{$.properties.title#remove_extension}'
+        - 'identifier={id}'
+        - '$.properties.productIdentifier'
       geometry:
         - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
         - '$.geometry'
       productType:
         - productType
         - '$.properties.productType'
-      platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
+      platform: '$.properties.platform'
+      platformSerialIdentifier: '$.properties.spacecraft'
       instrument: '$.properties.instrument'
       processingLevel: '$.properties.processingLevel'
       title: '$.properties.title'
@@ -97,12 +97,17 @@
       productionStatus: '$.properties.status'
       creationDate: '$.properties.published'
       modificationDate: '$.properties.updated'
+
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      downloadLink: '$.properties.s3URI'
+
       custom:
         - custom
         - '$.properties.custom'
   products:
     S2_MSI_L1C:
-      product_type: L1C
+      product_type: S2MSI1C
       collection: Sentinel2
   download: !plugin
     type: AwsDownload
