@@ -3,18 +3,24 @@
 # All rights reserved
 from __future__ import unicode_literals
 
+import datetime
 import os
+import re
 from collections import namedtuple
 
 import dateutil.parser
 import markdown
+from shapely.geometry import Polygon, shape
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
+from eodag.config import dict_items_recursive_apply, load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
+from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -29,6 +35,8 @@ crunchers = {
     "latestByName": Cruncher(FilterLatestByName, ["name_pattern"]),
     "overlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
 }
+stac_config = load_stac_config()
+preferred_provider = eodag_api.get_preferred_provider()[0]
 
 
 def format_product_types(product_types):
@@ -122,7 +130,12 @@ def get_date(date):
 
     if date:
         try:
-            date = dateutil.parser.parse(date).isoformat()
+            date = (
+                dateutil.parser.parse(date)
+                .astimezone(datetime.timezone.utc)
+                .isoformat()
+                .replace("+00:00", "")
+            )
         except ValueError as e:
             exc = ValidationError("invalid input date: %s" % e)
             raise exc
@@ -169,7 +182,10 @@ def filter_products(products, arguments, **kwargs):
 def get_pagination_info(arguments):
     """Get pagination arguments"""
     page = get_int(arguments.get("page", DEFAULT_PAGE))
-    items_per_page = get_int(arguments.get("itemsPerPage", DEFAULT_ITEMS_PER_PAGE))
+    # items_per_page can be specified using limit or itemsPerPage
+    items_per_page = get_int(arguments.get("limit", DEFAULT_ITEMS_PER_PAGE))
+    items_per_page = get_int(arguments.get("itemsPerPage", items_per_page))
+
     if page is not None and page < 0:
         raise ValidationError("invalid page number. Must be positive integer")
     if items_per_page is not None and items_per_page < 0:
@@ -177,6 +193,60 @@ def get_pagination_info(arguments):
             "invalid number of items per page. Must be positive integer"
         )
     return page, items_per_page
+
+
+def get_geometry(arguments):
+    """Get geometry from arguments
+    """
+
+    geom = None
+
+    if "bbox" in arguments:
+        # get bbox
+        request_bbox = arguments.get("bbox", None)
+        if request_bbox and isinstance(request_bbox, str):
+            request_bbox = request_bbox.split(",")
+        elif request_bbox and not isinstance(request_bbox, list):
+            raise ValidationError("bbox argument type should be Array")
+
+        try:
+            request_bbox_list = [float(coord) for coord in request_bbox]
+        except ValueError as e:
+            raise ValidationError("invalid bbox coordinate type: %s" % e)
+        # lonmin, latmin, lonmax, latmax
+        if len(request_bbox_list) < 4:
+            raise ValidationError(
+                "invalid bbox length (%s) for bbox %s"
+                % (len(request_bbox_list), request_bbox)
+            )
+        geom = Polygon(
+            (
+                (request_bbox_list[0], request_bbox_list[1]),
+                (request_bbox_list[0], request_bbox_list[3]),
+                (request_bbox_list[2], request_bbox_list[3]),
+                (request_bbox_list[2], request_bbox_list[1]),
+            )
+        )
+
+    if "intersects" in arguments and geom:
+        new_geom = shape(arguments.get("intersects"))
+        if new_geom.intersects(geom):
+            geom = new_geom.intersection(geom)
+        else:
+            geom = new_geom
+    elif "intersects" in arguments:
+        geom = shape(arguments.get("intersects"))
+
+    if "geom" in arguments and geom:
+        new_geom = shape(arguments.get("geom"))
+        if new_geom.intersects(geom):
+            geom = new_geom.intersection(geom)
+        else:
+            geom = new_geom
+    elif "geom" in arguments:
+        geom = shape(arguments.get("geom"))
+
+    return geom
 
 
 def search_products(product_type, arguments):
@@ -191,13 +261,19 @@ def search_products(product_type, arguments):
 
     try:
         page, items_per_page = get_pagination_info(arguments)
+        geom = get_geometry(arguments)
+
         criteria = {
-            "geometry": search_bbox(arguments.get("box")),
+            "geom": geom,
+            # "geom": arguments.get("geom"),
+            # "geometry": search_bbox(arguments.get("box")),
             "startTimeFromAscendingNode": get_date(arguments.get("dtstart")),
             "completionTimeFromAscendingNode": get_date(arguments.get("dtend")),
             "cloudCover": get_int(arguments.get("cloudCover")),
             "productType": product_type,
         }
+        if "id" in arguments.keys():
+            criteria["id"] = arguments["id"]
 
         if items_per_page is None:
             items_per_page = DEFAULT_ITEMS_PER_PAGE
@@ -208,16 +284,25 @@ def search_products(product_type, arguments):
         )
 
         products = filter_products(products, arguments, **criteria)
-        response = SearchResult(products).as_geojson_object()
-        response.update(
-            {
-                "properties": {
-                    "page": page,
-                    "itemsPerPage": items_per_page,
-                    "totalResults": total,
+
+        if not arguments.get("unserialized"):
+            response = SearchResult(products).as_geojson_object()
+            response.update(
+                {
+                    "properties": {
+                        "page": page,
+                        "itemsPerPage": items_per_page,
+                        "totalResults": total,
+                    }
                 }
+            )
+        else:
+            response = SearchResult(products)
+            response.properties = {
+                "page": page,
+                "itemsPerPage": items_per_page,
+                "totalResults": total,
             }
-        )
 
     except ValidationError as e:
         raise e
@@ -229,24 +314,332 @@ def search_products(product_type, arguments):
     return response
 
 
-def search_product_by_id(uid, provider=None):
+def search_product_by_id(uid, product_type=None):
     """Search a product by its id
 
     :param uid: The uid of the EO product
     :type uid: str (Python 3) or unicode (Python 2)
-    :param provider: (optional) The provider on which to search the product. This may
-                     be useful for performance reasons when the user knows this product
-                     is available on the given provider
-    :type provider: str (Python 3) or unicode (Python 2)
+    :param product_type: (optional) The product type
+    :type product_type: str (Python 3) or unicode (Python 2)
     :returns: An search result
     :rtype: :class:`~eodag.api.search_result.SearchResult`
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     :raises: RuntimeError
     """
     try:
-        products, total = eodag_api.search(id=uid, provider=provider, raise_errors=True)
+        products, total = eodag_api.search(id=uid, productType=product_type)
+        # products, total = eodag_api.search(id=uid, productType=product_type, provider=provider, raise_errors=True)
         return products
     except ValidationError:
         raise
     except RuntimeError:
         raise
+
+
+# STAC ------------------------------------------------------------------------
+
+
+def get_stac_conformance():
+    """Build STAC conformance
+
+    :returns: conformance dictionnary
+    :rtype: dict
+    """
+    return stac_config["conformance"]
+
+
+def get_stac_collections(url, root, provider=preferred_provider):
+    """Build STAC collections
+
+    :param url: requested URL
+    :type url: str
+    :param root: API root
+    :type root: str
+    :param provider: chosen provider
+    :type provider: str
+    :returns: collections dictionnary
+    :rtype: dict
+    """
+    return StacCollection(
+        url=url,
+        stac_config=stac_config,
+        provider=provider,
+        eodag_api=eodag_api,
+        root=root,
+    ).get_collections()
+
+
+def get_stac_collection_by_id(url, root, collection_id, provider=preferred_provider):
+    """Build STAC collection by id
+
+    :param url: requested URL
+    :type url: str
+    :param root: API root
+    :type root: str
+    :param collection_id: product_type as ID of the collection
+    :type collection_id: str
+    :param provider: chosen provider
+    :type provider: str
+    :returns: collection dictionnary
+    :rtype: dict
+    """
+    return StacCollection(
+        url=url,
+        stac_config=stac_config,
+        provider=provider,
+        eodag_api=eodag_api,
+        root=root,
+    ).get_collection_by_id(collection_id)
+
+
+def get_stac_item_by_id(
+    url, item_id, root="/", catalogs=[], provider=preferred_provider
+):
+    """Build STAC item by id
+
+    :param url: requested URL
+    :type url: str
+    :param root: API root
+    :type root: str
+    :param item_id: product ID
+    :type item_id: str
+    :param catalogs: catalogs list (only first is used as product_type)
+    :type catalogs: list
+    :param provider: chosen provider
+    :type provider: str
+    :returns: collection dictionnary
+    :rtype: dict
+    """
+    product_type = catalogs[0]
+    product = search_product_by_id(item_id, product_type=product_type)[0]
+
+    return StacItem(
+        url=url,
+        stac_config=stac_config,
+        provider=provider,
+        eodag_api=eodag_api,
+        root=root,
+    ).get_stac_item_from_product(product=product)
+
+
+def download_stac_item_by_id(catalogs, item_id, provider=preferred_provider):
+    """Download item
+
+    :param catalogs: catalogs list (only first is used as product_type)
+    :type catalogs: list
+    :param item_id: product ID
+    :type item_id: str
+    :param provider: chosen provider
+    :type provider: str
+    :returns: downloaded item local path
+    :rtype: str
+    """
+    eodag_api.providers_config[provider].download.extract = False
+
+    product = search_product_by_id(item_id, product_type=catalogs[0])[0]
+
+    product_path = eodag_api.download(product)
+
+    return product_path.replace("file://", "")
+
+
+def get_stac_catalogs(url, root="/", catalogs=[], provider=preferred_provider):
+    """Build STAC catalog
+
+    :param url: requested URL
+    :type url: str
+    :param root: API root
+    :type root: str
+    :param catalogs: catalogs list
+    :type catalogs: list
+    :param provider: chosen provider
+    :type provider: str
+    :returns: catalog dictionnary
+    :rtype: dict
+    """
+    return StacCatalog(
+        url=url,
+        stac_config=stac_config,
+        root=root,
+        provider=provider,
+        eodag_api=eodag_api,
+        catalogs=catalogs,
+    ).get_stac_catalog()
+
+
+# def get_stac_catalogs_items(
+#     url, arguments, root="/", catalogs=[], provider=preferred_provider
+# ):
+#     """Get items collection dict for given catalogs list
+
+#     :param url: requested URL
+#     :type url: str
+#     :param arguments: request args
+#     :type arguments: dict
+#     :param root: API root
+#     :type root: str
+#     :param catalogs: catalogs list
+#     :type catalogs: list
+#     :param provider: chosen provider
+#     :type provider: str
+#     :returns: catalog dictionnary
+#     :rtype: dict
+#     """
+#     result_catalog = StacCatalog(
+#         url=url,
+#         stac_config=stac_config,
+#         root=root,
+#         provider=provider,
+#         eodag_api=eodag_api,
+#         catalogs=catalogs,
+#     )
+
+#     search_results = search_products(
+#         product_type=result_catalog.search_args["product_type"],
+#         arguments=dict(
+#             arguments, **result_catalog.search_args, **{"unserialized": "true"}
+#         ),
+#     )
+
+#     return StacItem(
+#         url=url,
+#         stac_config=stac_config,
+#         provider=provider,
+#         eodag_api=eodag_api,
+#         root=root,
+#     ).get_stac_items(
+#         search_results=search_results,
+#         catalog=dict(
+#             result_catalog.get_stac_catalog(),
+#             **{"url": result_catalog.url, "root": result_catalog.root},
+#         ),
+#     )
+
+
+def search_stac_items(
+    url, arguments, root="/", catalogs=[], provider=preferred_provider
+):
+    """Get items collection dict for given catalogs list
+
+    :param url: requested URL
+    :type url: str
+    :param arguments: request args
+    :type arguments: dict
+    :param root: API root
+    :type root: str
+    :param catalogs: catalogs list
+    :type catalogs: list
+    :param provider: chosen provider
+    :type provider: str
+    :returns: catalog dictionnary
+    :rtype: dict
+    """
+    collections = arguments.get("collections", None)
+
+    # use catalogs from path or if it is empty, collections from args
+    if catalogs:
+        result_catalog = StacCatalog(
+            url=url,
+            stac_config=stac_config,
+            root=root,
+            provider=provider,
+            eodag_api=eodag_api,
+            catalogs=catalogs,
+        )
+    elif collections:
+        # get collection as product_type
+        if isinstance(collections, str):
+            collections = collections.split(",")
+        elif not isinstance(collections, list):
+            raise ValidationError("Collections argument type should be Array")
+
+        result_catalog = StacCatalog(
+            url=url,
+            stac_config=stac_config,
+            root=root,
+            provider=provider,
+            eodag_api=eodag_api,
+            # handle only one collection per request (STAC allows multiple)
+            catalogs=collections[0:1],
+        )
+        arguments.pop("collections")
+    else:
+        raise NoMatchingProductType("No product_type found in collections argument")
+
+    # get id
+    ids = arguments.get("ids", None)
+    if ids:
+        # handle only one id per request (STAC allows multiple)
+        arguments["id"] = ids.split(",")[0]
+        arguments.pop("ids")
+
+    # get datetime
+    if "datetime" in arguments.keys():
+        dtime_split = arguments.get("datetime", "").split("/")
+        if len(dtime_split) > 1:
+            arguments["dtstart"] = (
+                dtime_split[0]
+                if dtime_split[0] != ".."
+                else datetime.datetime.min.isoformat() + "Z"
+            )
+            arguments["dtend"] = (
+                dtime_split[1]
+                if dtime_split[1] != ".."
+                else datetime.datetime.now(datetime.timezone.utc)
+                .isoformat()
+                .replace("+00:00", "")
+                + "Z"
+            )
+        elif len(dtime_split) == 1:
+            # same time for start & end if only one is given
+            arguments["dtstart"], arguments["dtend"] = dtime_split[0:1] * 2
+        arguments.pop("datetime")
+
+    search_results = search_products(
+        product_type=result_catalog.search_args["product_type"],
+        arguments=dict(
+            arguments, **result_catalog.search_args, **{"unserialized": "true"}
+        ),
+    )
+
+    return StacItem(
+        url=url,
+        stac_config=stac_config,
+        provider=provider,
+        eodag_api=eodag_api,
+        root=root,
+    ).get_stac_items(
+        search_results=search_results,
+        catalog=dict(
+            result_catalog.get_stac_catalog(),
+            **{"url": result_catalog.url, "root": result_catalog.root},
+        ),
+    )
+
+
+def get_stac_extension_oseo(url):
+    """Build STAC OGC / OpenSearch Extension for EO
+
+    :param url: requested URL
+    :type url: str
+    :returns: catalog dictionnary
+    :rtype: dict
+    """
+
+    item_mapping = dict_items_recursive_apply(
+        stac_config["item"], lambda _, x: str(x).replace("$.product.", "$.")
+    )
+
+    # all properties as string type by default
+    oseo_properties = {
+        f"oseo:{k}": {
+            "type": "string",
+            "title": k[0].upper() + re.sub(r"([A-Z][a-z]+)", r" \1", k[1:]),
+        }
+        for k, v in OSEO_METADATA_MAPPING.items()
+        if v not in str(item_mapping)
+    }
+
+    return StacCommon.get_stac_extension(
+        url=url, stac_config=stac_config, extension="oseo", properties=oseo_properties
+    )

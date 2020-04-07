@@ -19,6 +19,10 @@
 !provider
   name: usgs
   priority: 0
+  description: U.S geological survey catalog for Landsat products
+  roles:
+    - host
+  url: https://earthexplorer.usgs.gov/
   api: !plugin
     type: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
@@ -42,6 +46,10 @@
 !provider
   name: aws_eos
   priority: 0
+  description: EOS search for Amazon public datasets
+  roles:
+    - host
+  url: https://developers.eos.com/datasets_description.html
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
@@ -487,6 +495,10 @@
 !provider
   name: theia
   priority: 0
+  description: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
+  roles:
+    - host
+  url: https://theia.cnes.fr/atdistrib/rocket/
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
@@ -646,6 +658,12 @@
 !provider
   name: peps
   priority: 1
+  description: |
+    The PEPS platform, the French "mirror site", redistributes the products of Sentinel satellites,
+    S1A, S1B, S2A and S2B, S3A and S3B from COPERNICUS, the European system for the Earth monitoring.
+  roles:
+    - host
+  url: https://peps.cnes.fr
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
@@ -804,9 +822,15 @@
 !provider
   name: sobloo
   priority: 0
+  description: Airbus DIAS
+  roles:
+    - host
+  url: https://sobloo.eu/
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
+    S2_MSI_L2A:
+      product_type: S2MSI2A
     S1_SAR_RAW:
       product_type: RAW
     S1_SAR_GRD:
@@ -907,6 +931,10 @@
 !provider
   name: creodias
   priority: 0
+  description: CloudFerro DIAS
+  roles:
+    - host
+  url: https://creodias.eu/
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
@@ -1048,6 +1076,10 @@
 !provider
   name: mundi
   priority: 0
+  description: Atos DIAS
+  roles:
+    - host
+  url: https://mundiwebservices.com/
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/{collection}/opensearch'
@@ -1206,6 +1238,7 @@
 !provider
   name: wekeo
   priority: 0
+  description: Wekeo
   search: !plugin
     type: CSWSearch
     api_endpoint: 'https://www.wekeo.eu/elastic-csw/service'
@@ -1257,6 +1290,10 @@
 !provider
   name: onda
   priority: 0
+  description: Serco DIAS
+  roles:
+    - host
+  url: https://www.onda-dias.eu/cms/
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'

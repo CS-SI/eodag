@@ -282,6 +282,8 @@ S1_SAR_OCN:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L2
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 Level-2 OCN
 
 S1_SAR_GRD:
   abstract: |
@@ -300,6 +302,8 @@ S1_SAR_GRD:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 Level-1 Ground Range Detected
 
 S1_SAR_SLC:
   abstract: |
@@ -312,6 +316,8 @@ S1_SAR_SLC:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 Level-1 Single Look Complex
 
 S1_SAR_RAW:
   abstract: |
@@ -323,6 +329,8 @@ S1_SAR_RAW:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L0
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 SAR Level-0
 
 # Sentinel 2 ------------------------------------------------------------------
 S2_MSI_L1C:
@@ -339,6 +347,70 @@ S2_MSI_L1C:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L1
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2015-06-23T00:00:00Z"
+  title: SENTINEL2 Level-1C
+  bands:
+    - name: B01
+      common_name: coastal
+      center_wavelength: 0.4439
+      full_width_half_max: 0.027
+      gsd: 60
+    - name: B02
+      common_name: blue
+      center_wavelength: 0.4966
+      full_width_half_max: 0.098
+      gsd: 10
+    - name: B03
+      common_name: green
+      center_wavelength: 0.56
+      full_width_half_max: 0.045
+      gsd: 10
+    - name: B04
+      common_name: red
+      center_wavelength: 0.6645
+      full_width_half_max: 0.038
+      gsd: 10
+    - name: B05
+      center_wavelength: 0.7039
+      full_width_half_max: 0.019
+      gsd: 20
+    - name: B06
+      center_wavelength: 0.7402
+      full_width_half_max: 0.018
+      gsd: 20
+    - name: B07
+      center_wavelength: 0.7825
+      full_width_half_max: 0.028
+      gsd: 20
+    - name: B08
+      common_name: nir
+      center_wavelength: 0.8351
+      full_width_half_max: 0.145
+      gsd: 10
+    - name: B8A
+      center_wavelength: 0.8648
+      full_width_half_max: 0.033
+      gsd: 20
+    - name: B09
+      center_wavelength: 0.945
+      full_width_half_max: 0.026
+      gsd: 60
+    - name: B10
+      common_name: cirrus
+      center_wavelength: 0.13735
+      full_width_half_max: 0.075
+      gsd: 60
+    - name: B11
+      common_name: swir16
+      center_wavelength: 0.16137
+      full_width_half_max: 0.075
+      gsd: 20
+    - name: B12
+      common_name: swir22
+      center_wavelength: 0.22024
+      full_width_half_max: 0.242
+      gsd: 20
 
 S2_MSI_L2A:
   abstract: |
@@ -349,6 +421,8 @@ S2_MSI_L2A:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL2 Level-2A
 
 S2_MSI_L2A_MAJA:
   abstract: |
@@ -361,6 +435,8 @@ S2_MSI_L2A_MAJA:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL2 Level-2A
 
 S2_MSI_L2B_MAJA_SNOW:
   abstract: |
@@ -405,6 +481,8 @@ S3_SRA_BS:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1
 
 S3_SRA_A_BS:
   abstract: ""
@@ -413,6 +491,8 @@ S3_SRA_A_BS:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1
 
 # See examples of product type namings for sentinel 3 here:
 # https://www.onda-dias.eu/cms/data/catalogue/sentinel-3/
@@ -423,6 +503,7 @@ S3_EFR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: OPTICAL
+  license: proprietary
 
 S3_ERR:
   abstract: ""
@@ -431,6 +512,7 @@ S3_ERR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1,L2
   sensorType: OPTICAL
+  license: proprietary
 
 S3_SLSTR_L1RBT:
   abstract: |
@@ -445,6 +527,8 @@ S3_SLSTR_L1RBT:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-1
 
 S3_SRA:
   abstract: ""
@@ -453,6 +537,8 @@ S3_SRA:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1
 
 S3_WAT:
   abstract: ""
@@ -461,6 +547,8 @@ S3_WAT:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 WAT
 
 S3_LAN:
   abstract: LAN or SR_2_LAN___ (peps)
@@ -469,6 +557,8 @@ S3_LAN:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 LAN
 
 S3_SLSTR_L2LST:
   abstract: |
@@ -480,6 +570,8 @@ S3_SLSTR_L2LST:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2 LST
 
 S3_OLCI_L2LRR:
   abstract: |
@@ -493,6 +585,8 @@ S3_OLCI_L2LRR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Land Reduced Resolution
 
 S3_OLCI_L2LFR:
   abstract: |
@@ -506,6 +600,8 @@ S3_OLCI_L2LFR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Land Full Resolution
 
 # SPOT ------------------------------------------------------------------------
 SPOT_SWH:

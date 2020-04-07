@@ -17,10 +17,14 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
+import ast
+import copy
 import logging
 import os
 import tempfile
+from collections import defaultdict
 
+import jsonpath_rw as jsonpath
 import yaml
 import yaml.constructor
 import yaml.parser
@@ -310,3 +314,197 @@ def override_config_from_mapping(config, mapping):
                 mapping[provider] = ProviderConfig.from_mapping(new_conf)
             except ValidationError as e:
                 logger.warning("%s skipped: %s", provider, e)
+
+
+def load_yml_config(yml_path):
+    """Build a conf dictionnary from given yml absolute path
+
+    :returns: The yml configuration file
+    :rtype: dict
+    """
+    config = SimpleYamlProxyConfig(yml_path)
+    return dict_items_recursive_apply(config.source, string_to_jsonpath)
+
+
+def load_stac_config():
+    """Build the stac configuration into a dictionnary
+
+    :returns: The stac configuration
+    :rtype: dict
+    """
+    return load_yml_config(
+        resource_filename("eodag", os.path.join("resources/", "stac.yml"))
+    )
+
+
+def format_dict_items(config_dict, **format_variables):
+    """Recursive apply string.format(**format_variables) to dict elements
+
+    :param config_dict: dictionnary having values that need to be parsed
+    :type config_dict: dict
+    :param format_variables: variables used as args for parsing
+    :type format_variables: dict
+    :returns: updated dict
+    :rtype: dict
+    """
+    return dict_items_recursive_apply(config_dict, format_string, **format_variables)
+
+
+def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
+    """Recursive applyparse jsonpath elements in dict
+
+    :param jsonpath_dict: dictionnary having values that need to be parsed
+    :type jsonpath_dict: dict
+    :param values_dict: values dict used as args for parsing
+    :type values_dict: dict
+    :returns: updated dict
+    :rtype: dict
+    """
+    return dict_items_recursive_apply(jsonpath_dict, parse_jsonpath, **values_dict)
+
+
+def dict_items_recursive_apply(config_dict, apply_method, **apply_method_parameters):
+    """Recursive apply method to dict elements
+
+    :param config_dict: input dictionnary containing nested lists/dicts
+    :type config_dict: dict
+    :param apply_method: method to be applied to dict elements
+    :type apply_method: :func:`apply_method`
+    :param apply_method_parameters: optional parameters passed to the method
+    :type apply_method_parameters: dict
+    :returns: updated dict
+    :rtype: dict
+    """
+    result_dict = copy.deepcopy(config_dict)
+    for dict_k, dict_v in result_dict.items():
+        if isinstance(dict_v, dict):
+            result_dict[dict_k] = dict_items_recursive_apply(
+                dict_v, apply_method, **apply_method_parameters
+            )
+        elif any(isinstance(dict_v, t) for t in (list, tuple)):
+            result_dict[dict_k] = list_items_recursive_apply(
+                dict_v, apply_method, **apply_method_parameters
+            )
+        else:
+            result_dict[dict_k] = apply_method(
+                dict_k, dict_v, **apply_method_parameters
+            )
+
+    return result_dict
+
+
+def list_items_recursive_apply(config_list, apply_method, **apply_method_parameters):
+    """Recursive apply method to list elements
+
+    :param config_list: input list containing nested lists/dicts
+    :type config_list: list
+    :param apply_method: method to be applied to list elements
+    :type apply_method: :func:`apply_method`
+    :param apply_method_parameters: optional parameters passed to the method
+    :type apply_method_parameters: dict
+    :returns: updated list
+    :rtype: list
+    """
+    result_list = copy.deepcopy(config_list)
+    for list_idx, list_v in enumerate(result_list):
+        if isinstance(list_v, dict):
+            result_list[list_idx] = dict_items_recursive_apply(
+                list_v, apply_method, **apply_method_parameters
+            )
+        elif any(isinstance(list_v, t) for t in (list, tuple)):
+            result_list[list_idx] = list_items_recursive_apply(
+                list_v, apply_method, **apply_method_parameters
+            )
+        else:
+            result_list[list_idx] = apply_method(
+                list_idx, list_v, **apply_method_parameters
+            )
+
+    return result_list
+
+
+def string_to_jsonpath(key, str_value):
+    """Get jsonpath for "$.foo.bar" like string
+
+    :param key: input item key
+    :type key: str
+    :param str_value: input item value, to be converted
+    :type str_value: str
+    :returns: parsed value
+    :rtype: str
+    """
+    if "$." in str(str_value):
+        try:
+            return jsonpath.parse(str_value)
+        except Exception:  # jsonpath_rw does not provide a proper exception
+            # If str_value does not contain a jsonpath, return it as is
+            return str_value
+    else:
+        return str_value
+
+
+def format_string(key, str_to_format, **format_variables):
+    """Format "{foo}" like string
+
+    :param key: input item key
+    :type key: str
+    :param str_to_format: input item value, to be parsed
+    :type str_to_format: str
+    :returns: parsed value
+    :rtype: str
+    """
+    if isinstance(str_to_format, str):
+        # defaultdict usage will return "" for missing keys in format_args
+        try:
+            result = str_to_format.format_map(defaultdict(str, **format_variables))
+        except TypeError:
+            logger.error("Unable to format str=%s" % str_to_format)
+            raise
+
+        # try to convert string to python object
+        try:
+            return ast.literal_eval(result)
+        except (SyntaxError, ValueError):
+            return result
+    else:
+        return str_to_format
+
+
+def parse_jsonpath(key, jsonpath_obj, **values_dict):
+    """Parse jsonpah in jsonpath_obj using values_dict
+
+    :param key: input item key
+    :type key: str
+    :param jsonpath_obj: input item value, to be parsed
+    :type jsonpath_obj: str
+    :param values_dict: values used as args for parsing
+    :type values_dict: dict
+    :returns: parsed value
+    :rtype: str
+    """
+    if isinstance(jsonpath_obj, jsonpath.jsonpath.Child):
+        match = jsonpath_obj.find(values_dict)
+        return match[0].value if len(match) == 1 else None
+    else:
+        return jsonpath_obj
+
+
+def update_nested_dict(old_dict, new_dict):
+    """Update recursively old_dict items with new_dict ones
+
+    :param old_dict: dict to be updated
+    :type old_dict: dict
+    :param new_dict: incomming dict
+    :type new_dict: dict
+    :returns: updated dict
+    :rtype: dict
+    """
+    for k, v in new_dict.items():
+        if k in old_dict.keys():
+            if isinstance(v, dict) and isinstance(old_dict[k], dict):
+                old_dict[k] = update_nested_dict(old_dict[k], v)
+            elif v:
+                old_dict[k] = v
+        else:
+            old_dict[k] = v
+    return old_dict

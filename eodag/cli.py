@@ -102,6 +102,14 @@ def version():
     type=click.Path(exists=True),
 )
 @click.option(
+    "-l",
+    "--loc",
+    type=click.Path(exists=True, resolve_path=True),
+    required=False,
+    help="File path to a location shapefile, followed by the location attribute "
+    "used for filtering, and its value (e.g.: --loc /path/to/countries.shp ISO2 FR)",
+)
+@click.option(
     "-b",
     "--box",
     type=(float,) * 4,
@@ -461,6 +469,13 @@ def serve_rpc(ctx, host, port, conf):
     help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
 )
 @click.option(
+    "-l",
+    "--locs",
+    type=click.Path(exists=True, resolve_path=True),
+    required=False,
+    help="File path to the location shapefiles configuration file",
+)
+@click.option(
     "-d", "--daemon", is_flag=True, show_default=True, help="run in daemon mode"
 )
 @click.option(
@@ -489,7 +504,7 @@ def serve_rpc(ctx, host, port, conf):
     help="Run in debug mode (for development purpose)",
 )
 @click.pass_context
-def serve_rest(ctx, daemon, world, port, config, debug):
+def serve_rest(ctx, daemon, world, port, config, locs, debug):
     """Serve EODAG functionalities through a WEB interface"""
     setup_logging(verbose=ctx.obj["verbosity"])
     # Set the settings of the app
@@ -498,6 +513,11 @@ def serve_rest(ctx, daemon, world, port, config, debug):
     # the app initialization)
     if config:
         os.environ["EODAG_CFG_FILE"] = config
+
+    if config:
+        os.environ["EODAG_CFG_FILE"] = config
+    if locs:
+        os.environ["EODAG_LOCS_CFG_FILE"] = locs
 
     from eodag.rest.server import app
 

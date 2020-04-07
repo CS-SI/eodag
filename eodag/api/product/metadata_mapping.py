@@ -525,11 +525,11 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
     return dest_dict
 
 
-# Keys taken from http://docs.opengeospatial.org/is/13-026r8/13-026r8.html
+# Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html
 # For a metadata to be queryable, The way to query it must be specified in the
 # provider metadata_mapping configuration parameter. It will be automatically
 # detected as queryable by eodag when this is done
-DEFAULT_METADATA_MAPPING = {
+OSEO_METADATA_MAPPING = {
     # Opensearch resource identifier within the search engine context (in our case
     # within the context of the data provider)
     "uid": "$.uid",
@@ -603,17 +603,22 @@ DEFAULT_METADATA_MAPPING = {
     "maximumIncidenceAngle": "$.properties.maximumIncidenceAngle",
     "dopplerFrequency": "$.properties.dopplerFrequency",
     "incidenceAngleVariation": "$.properties.incidenceAngleVariation",
-    # Custom parameters (not defined in the base document referenced above)
-    # id differs from uid. The id is an identifier by which a product which is
-    # distributed by many providers can be retrieved (a property that it has in common
-    # in the catalogues of all the providers on which it is referenced)
-    "id": "$.id",
-    # The geographic extent of the product
-    "geometry": "$.geometry",
-    # The url of the quicklook
-    "quicklook": "$.properties.quicklook",
-    # The url to download the product "as is" (literal or as a template to be completed
-    # either after the search result is obtained from the provider or during the eodag
-    # download phase)
-    "downloadLink": "$.properties.downloadLink",
 }
+DEFAULT_METADATA_MAPPING = dict(
+    OSEO_METADATA_MAPPING,
+    **{
+        # Custom parameters (not defined in the base document referenced above)
+        # id differs from uid. The id is an identifier by which a product which is
+        # distributed by many providers can be retrieved (a property that it has in common
+        # in the catalogues of all the providers on which it is referenced)
+        "id": "$.id",
+        # The geographic extent of the product
+        "geometry": "$.geometry",
+        # The url of the quicklook
+        "quicklook": "$.properties.quicklook",
+        # The url to download the product "as is" (literal or as a template to be completed
+        # either after the search result is obtained from the provider or during the eodag
+        # download phase)
+        "downloadLink": "$.properties.downloadLink",
+    }
+)

@@ -49,6 +49,7 @@ setup(
         "PyYAML",
         "tqdm",
         "shapely",
+        "fiona",
         "owslib == 0.18.0",
         "six",
         "geojson",

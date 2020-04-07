@@ -34,6 +34,7 @@ from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
     load_default_config,
+    load_yml_config,
     override_config_from_env,
     override_config_from_file,
 )
@@ -59,9 +60,11 @@ class EODataAccessGateway(object):
 
     :param user_conf_file_path: Path to the user configuration file
     :type user_conf_file_path: str or unicode
+    :param locations_conf_path: Path to the locations configuration file
+    :type locations_conf_path: str or unicode
     """
 
-    def __init__(self, user_conf_file_path=None):
+    def __init__(self, user_conf_file_path=None, locations_conf_path=None):
         self.product_types_config = SimpleYamlProxyConfig(
             resource_filename("eodag", os.path.join("resources/", "product_types.yml"))
         )
@@ -94,6 +97,14 @@ class EODataAccessGateway(object):
         # Build a search index for product types
         self._product_types_index = None
         self.build_index()
+
+        # set locations configuration
+        if locations_conf_path is None:
+            locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
+            if locations_conf_path is None:
+                # empty string will set empty conf without error
+                locations_conf_path = ""
+        self.set_locations_conf(locations_conf_path)
 
     def build_index(self):
         """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_
@@ -222,6 +233,42 @@ class EODataAccessGateway(object):
         ]
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
+
+    def set_locations_conf(self, locations_conf_path):
+        """Set locations configuration.
+        This configuration (YML format) will contain a shapefile list associated
+        to a name and attribute parameters needed to identify the needed geometry.
+        You can also configure parent attributes, which can be used for creating
+        a catalogs path when using eodag as a REST server.
+        Example of locations configuration file content:
+        ```yml
+        shapefiles:
+            - name: country
+                path: /path/to/countries_list.shp
+                attr: ISO2
+            - name: department
+                path: /path/to/FR_departments.shp
+                attr: code_insee
+                parent:
+                    name: country
+                    attr: FR
+        ```
+        :param locations_conf_path: Path to the locations configuration file
+        :type locations_conf_path: str or unicode
+        """
+        if os.path.isfile(locations_conf_path):
+            locations_config = load_yml_config(locations_conf_path)
+
+            main_key = next(iter(locations_config))
+            locations_config = locations_config[main_key]
+
+            logger.info("Locations configuration loaded from %s" % locations_conf_path)
+            self.locations_config = locations_config
+        else:
+            logger.info(
+                "Could not load locations configuration from %s" % locations_conf_path
+            )
+            self.locations_config = []
 
     def list_product_types(self, provider=None):
         """Lists supported product types.
