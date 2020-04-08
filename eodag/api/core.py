@@ -36,6 +36,7 @@ from eodag.config import (
     override_config_from_env,
     override_config_from_file,
 )
+from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
 from eodag.utils import makedirs
 from eodag.utils.exceptions import (
@@ -575,7 +576,13 @@ class EODataAccessGateway(object):
             for extent_as_wkb_hex in products_grouped_by_extent
         ]
 
-    def download_all(self, search_result, progress_callback=None):
+    def download_all(
+        self,
+        search_result,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+    ):
         """Download all products resulting from a search.
 
         :param search_result: A collection of EO products resulting from a search
@@ -586,6 +593,12 @@ class EODataAccessGateway(object):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param wait: (optional) If download fails, wait time in minutes between
+                    two download tries of the same product (default=2')
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes
+                    before stop retrying to download (default=20')
+        :type timeout: int
         :returns: A collection of the absolute paths to the downloaded products
         :rtype: list
         """
@@ -597,7 +610,12 @@ class EODataAccessGateway(object):
             download_plugin = self._plugins_manager.get_download_plugin(
                 search_result[0]
             )
-            paths = download_plugin.download_all(search_result, progress_callback)
+            paths = download_plugin.download_all(
+                search_result,
+                progress_callback=progress_callback,
+                wait=wait,
+                timeout=timeout,
+            )
         else:
             logger.info("Empty search result, nothing to be downloaded !")
         return paths
@@ -629,7 +647,13 @@ class EODataAccessGateway(object):
         with open(filename, "r") as fh:
             return SearchResult.from_geojson(geojson.load(fh))
 
-    def download(self, product, progress_callback=None):
+    def download(
+        self,
+        product,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+    ):
         """Download a single product.
 
         This is an alias to the method of the same name on
@@ -656,6 +680,12 @@ class EODataAccessGateway(object):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param wait: (optional) If download fails, wait time in minutes between
+                    two download tries (default=2')
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes
+                        before stop retrying to download (default=20')
+        :type timeout: int
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str or unicode
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
@@ -671,7 +701,9 @@ class EODataAccessGateway(object):
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )
-        return product.download(progress_callback=progress_callback)
+        return product.download(
+            progress_callback=progress_callback, wait=wait, timeout=timeout
+        )
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration

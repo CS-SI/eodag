@@ -27,10 +27,16 @@ from xml.parsers.expat import ExpatError
 import requests
 from requests import HTTPError
 
+from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import urljoin
-from eodag.utils.exceptions import DownloadError, RequestError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    DownloadError,
+    NotAvailableError,
+    RequestError,
+)
 
 logger = logging.getLogger("eodag.plugins.download.s3rest")
 
@@ -43,7 +49,7 @@ class S3RestDownload(AwsDownload):
     Re-use AwsDownload bucket some handling methods
     """
 
-    def download(self, product, auth=None, progress_callback=None):
+    def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download method for S3 REST API.
 
         :param product: The EO product to download
@@ -62,6 +68,20 @@ class S3RestDownload(AwsDownload):
         # get bucket urls
         bucket_name, prefix = self.get_bucket_name_and_prefix(product)
 
+        if (
+            bucket_name is None
+            and "productionStatus" in product.properties
+            and product.properties["productionStatus"] == OFFLINE_STATUS
+        ):
+            raise NotAvailableError(
+                "%s is not available for download on %s (status = %s)"
+                % (
+                    product.properties["title"],
+                    self.provider,
+                    product.properties["productionStatus"],
+                )
+            )
+
         bucket_url = urljoin(
             product.downloader.config.base_uri.strip("/") + "/", bucket_name
         )
@@ -73,14 +93,29 @@ class S3RestDownload(AwsDownload):
         try:
             bucket_contents.raise_for_status()
         except requests.HTTPError as err:
-            logger.exception(
-                "Could not get content from %s (provider:%s, plugin:%s)\n%s",
-                nodes_list_url,
-                self.provider,
-                self.__class__.__name__,
-                bucket_contents.text,
-            )
-            raise RequestError(str(err))
+            # check if error is identified as auth_error in provider conf
+            auth_errors = getattr(self.config, "auth_error_code", [None])
+            if not isinstance(auth_errors, list):
+                auth_errors = [auth_errors]
+            if err.response.status_code in auth_errors:
+                raise AuthenticationError(
+                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                    % (
+                        err.response.status_code,
+                        err.response.text.strip(),
+                        self.provider,
+                    )
+                )
+            # other error
+            else:
+                logger.exception(
+                    "Could not get content from %s (provider:%s, plugin:%s)\n%s",
+                    nodes_list_url,
+                    self.provider,
+                    self.__class__.__name__,
+                    bucket_contents.text,
+                )
+                raise RequestError(str(err))
         try:
             xmldoc = minidom.parseString(bucket_contents.text)
         except ExpatError as err:
@@ -96,7 +131,10 @@ class S3RestDownload(AwsDownload):
                 bucket_url.strip("/") + "/", prefix.strip("/")
             )
             return HTTPDownload(self.provider, self.config).download(
-                product=product, auth=auth, progress_callback=progress_callback
+                product=product,
+                auth=auth,
+                progress_callback=progress_callback,
+                **kwargs
             )
 
         # destination product path

@@ -25,37 +25,55 @@ from eodag.utils.exceptions import AuthenticationError
 
 
 class KeycloakOIDCPasswordAuth(Authentication):
+    """Authentication plugin using Keycloak and OpenId Connect"""
 
-    GRANT_TYPE = 'password'
-    TOKEN_URL_TEMPLATE = '{auth_base_uri}/realms/{realm}/protocol/openid-connect/token'
+    GRANT_TYPE = "password"
+    TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
 
     def __init__(self, provider, config):
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
         self.session = requests.Session()
 
     def authenticate(self):
+        """
+        Makes authentication request
+        """
         response = self.session.post(
             self.TOKEN_URL_TEMPLATE.format(
-                auth_base_uri=self.config.auth_base_uri.rstrip('/'),
-                realm=self.config.realm
+                auth_base_uri=self.config.auth_base_uri.rstrip("/"),
+                realm=self.config.realm,
             ),
             data={
-                'client_id': self.config.client_id,
-                'client_secret': self.config.client_secret,
-                'username': self.config.credentials['username'],
-                'password': self.config.credentials['password'],
-                'grant_type': self.GRANT_TYPE,
-            }
+                "client_id": self.config.client_id,
+                "client_secret": self.config.client_secret,
+                "username": self.config.credentials["username"],
+                "password": self.config.credentials["password"],
+                "grant_type": self.GRANT_TYPE,
+            },
         )
         try:
             response.raise_for_status()
-        except requests.HTTPError:
-            import traceback as tb
-            raise AuthenticationError(
-                'Something went wrong while trying to get access token:\n{}'.format(tb.format_exc())
-            )
+        except requests.HTTPError as e:
+            # check if error is identified as auth_error in provider conf
+            auth_errors = getattr(self.config, "auth_error_code", [None])
+            if not isinstance(auth_errors, list):
+                auth_errors = [auth_errors]
+            if e.response.status_code in auth_errors:
+                raise AuthenticationError(
+                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                    % (e.response.status_code, e.response.text.strip(), self.provider)
+                )
+            # other error
+            else:
+                import traceback as tb
+
+                raise AuthenticationError(
+                    "Something went wrong while trying to get access token:\n{}".format(
+                        tb.format_exc()
+                    )
+                )
         return CodeAuthorizedAuth(
-            response.json()['access_token'],
+            response.json()["access_token"],
             self.config.token_provision,
-            key=getattr(self.config, 'token_qs_key', None)
+            key=getattr(self.config, "token_qs_key", None),
         )

@@ -39,6 +39,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
+from eodag.utils.exceptions import NotAvailableError
 
 logger = logging.getLogger("eodag.plugins.apis.usgs")
 
@@ -174,7 +175,7 @@ class UsgsApi(Api):
         api.logout()
         return final, len(final)
 
-    def download(self, product, auth=None, progress_callback=None):
+    def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download data from USGS catalogues"""
         url = product.remote_location
         if not url:
@@ -221,12 +222,18 @@ class UsgsApi(Api):
                         progress_callback(len(chunk), stream_size)
             try:
                 stream.raise_for_status()
-            except HTTPError:
-                import traceback
+            except HTTPError as e:
+                if e.response.status_code == 404:
+                    raise NotAvailableError(
+                        "%s not available, request returned: %s"
+                        % (product.properties["title"], e)
+                    )
+                else:
+                    import traceback
 
-                logger.error(
-                    "Error while getting resource : %s", traceback.format_exc()
-                )
+                    logger.error(
+                        "Error while getting resource : %s", traceback.format_exc()
+                    )
             else:
                 with open(record_filename, "w") as fh:
                     fh.write(url)

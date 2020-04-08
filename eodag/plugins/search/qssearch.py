@@ -567,35 +567,29 @@ class ODataV4Search(QueryStringSearch):
         #       Be careful to generalize it if needed when the chance to do so arrives
         final_result = []
         # Query the products entity set for basic metadata about the product
-        skipped = 0
         for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
-            if entity["downloadable"]:
-                entity_metadata = {
-                    "quicklook": entity["quicklook"],
-                    "id": entity["id"],
-                    "footprint": entity["footprint"],
-                }
-                metadata_url = self.get_metadata_search_url(entity)
-                try:
-                    response = requests.get(metadata_url)
-                    response.raise_for_status()
-                except requests.HTTPError:
-                    logger.exception(
-                        "Skipping error while searching for %s %s instance:",
-                        self.provider,
-                        self.__class__.__name__,
-                    )
-                else:
-                    entity_metadata.update(
-                        {item["id"]: item["value"] for item in response.json()["value"]}
-                    )
-                    final_result.append(entity_metadata)
+            entity_metadata = {
+                "quicklook": entity["quicklook"],
+                "id": entity["id"],
+                "footprint": entity["footprint"],
+                "downloadable": entity["downloadable"],
+                "offline": entity["offline"],
+            }
+            metadata_url = self.get_metadata_search_url(entity)
+            try:
+                response = requests.get(metadata_url)
+                response.raise_for_status()
+            except requests.HTTPError:
+                logger.exception(
+                    "Skipping error while searching for %s %s instance:",
+                    self.provider,
+                    self.__class__.__name__,
+                )
             else:
-                skipped += 1
-        if skipped > 0:
-            logger.info(
-                "Skipped fetching metadata for %s undownloadable products", skipped
-            )
+                entity_metadata.update(
+                    {item["id"]: item["value"] for item in response.json()["value"]}
+                )
+                final_result.append(entity_metadata)
         return final_result
 
     def get_metadata_search_url(self, entity):

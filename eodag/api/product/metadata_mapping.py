@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
+import logging
 import re
 from datetime import datetime
 from string import Formatter
@@ -29,12 +30,17 @@ from six import string_types
 
 from eodag.utils import get_timestamp
 
+logger = logging.getLogger("eodag.api.product.metadata_mapping")
+
 SEP = r"#"
 INGEST_CONVERSION_REGEX = re.compile(
-    r"^{(?P<path>[^#]*)" + SEP + r"(?P<converter>[^\d\W]\w*)}$"
+    r"^{(?P<path>[^#]*)" + SEP + r"(?P<converter>[^\d\W]\w*)(\((?P<args>.*)\))*}$"
 )
 NOT_AVAILABLE = "Not Available"
 NOT_MAPPED = "Not Mapped"
+ONLINE_STATUS = "ONLINE"
+STAGING_STATUS = "STAGING"
+OFFLINE_STATUS = "OFFLINE"
 
 
 def get_metadata_path(map_value):
@@ -78,7 +84,7 @@ def get_metadata_path(map_value):
     match = INGEST_CONVERSION_REGEX.match(path)
     if match:
         g = match.groupdict()
-        return g["converter"], g["path"]
+        return [g["converter"], g["args"]], g["path"]
     return None, path
 
 
@@ -127,11 +133,14 @@ def format_metadata(search_param, *args, **kwargs):
 
     class MetadataFormatter(Formatter):
         CONVERSION_REGEX = re.compile(
-            r"^(?P<field_name>.+)" + SEP + r"(?P<converter>[^\d\W]\w*)$"
+            r"^(?P<field_name>.+)"
+            + SEP
+            + r"(?P<converter>[^\d\W]\w*)(\((?P<args>.*)\))*$"
         )
 
         def __init__(self):
             self.custom_converter = None
+            self.custom_args = None
 
         def get_field(self, field_name, args, kwargs):
             conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
@@ -141,16 +150,23 @@ def format_metadata(search_param, *args, **kwargs):
             if conversion_func_spec:
                 field_name = conversion_func_spec.groupdict()["field_name"]
                 converter = conversion_func_spec.groupdict()["converter"]
+                self.custom_args = conversion_func_spec.groupdict()["args"]
                 self.custom_converter = getattr(self, "convert_{}".format(converter))
             return super(MetadataFormatter, self).get_field(field_name, args, kwargs)
 
         def convert_field(self, value, conversion):
             # Do custom conversion if any (see get_field)
             if self.custom_converter is not None:
-                converted = self.custom_converter(value) if value is not None else ""
+                if self.custom_args is not None and value is not None:
+                    converted = self.custom_converter(value, self.custom_args)
+                elif value is not None:
+                    converted = self.custom_converter(value)
+                else:
+                    converted = ""
                 # Clear this state variable in case the same converter is used to
                 # resolve other named arguments
                 self.custom_converter = None
+                self.custom_args = None
                 return converted
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
@@ -204,6 +220,16 @@ def format_metadata(search_param, *args, **kwargs):
                 return parts[0]
             return ""
 
+        @staticmethod
+        def convert_get_group_name(string, pattern):
+            try:
+                return re.search(pattern, str(string)).lastgroup
+            except AttributeError:
+                logger.warning(
+                    "Could not extract property from %s using %s", string, pattern
+                )
+                return NOT_AVAILABLE
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
@@ -241,6 +267,18 @@ def properties_from_json(json, mapping):
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value
                 else:
+                    # reformat conversion_or_none as metadata#converter(args) or metadata#converter
+                    if (
+                        len(conversion_or_none) > 1
+                        and isinstance(conversion_or_none, list)
+                        and conversion_or_none[1] is not None
+                    ):
+                        conversion_or_none = "%s(%s)" % (
+                            conversion_or_none[0],
+                            conversion_or_none[1],
+                        )
+                    elif isinstance(conversion_or_none, list):
+                        conversion_or_none = conversion_or_none[0]
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value}

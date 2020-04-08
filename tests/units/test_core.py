@@ -41,8 +41,8 @@ class TestCore(unittest.TestCase):
         "L8_L1GT": ["onda"],
         "L8_OLI_TIRS_C1L1": ["usgs"],
         "S1_SAR_GRD": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
-        "S1_SAR_OCN": ["peps", "sobloo", "onda", "mundi", "creodias"],
-        "S1_SAR_RAW": ["sobloo", "onda", "mundi", "creodias"],
+        "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
+        "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
         "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
         "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias", "peps"],
         "S2_MSI_L1C": [

@@ -125,8 +125,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         )
         dl_process.start()
         try:
-            # It is assumed that after 5 seconds, we should have already get at least 1
-            # Megabytes of data from provider
+            # It is assumed that after 5 seconds, we should have already get at least 10
+            # Kilobytes of data from provider
             # Consider changing this to fit a lower internet bandwidth
             dl_process.join(timeout=5)
             # added this timeout loop, to handle long download start times
@@ -136,8 +136,8 @@ class TestEODagEndToEnd(unittest.TestCase):
                 and not glob.glob("%s/[!quicklooks]*" % TESTS_DOWNLOAD_PATH)
                 and max_wait_time > 0
             ):
-                dl_process.join(timeout=5)
-                max_wait_time -= 5
+                dl_process.join(timeout=10)
+                max_wait_time -= 10
             if dl_process.is_alive():  # The process has timed out
                 dl_process.terminate()
         except KeyboardInterrupt:
@@ -158,8 +158,8 @@ class TestEODagEndToEnd(unittest.TestCase):
             )
         else:
             downloaded_size = os.stat(self.downloaded_file_path).st_size
-        # The partially downloaded file should be greater or equal to 1 MB
-        self.assertGreaterEqual(downloaded_size, 2 ** 20)
+        # The partially downloaded file should be greater or equal to 10 KB
+        self.assertGreaterEqual(downloaded_size, 10 * 2 ** 10)
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(
@@ -172,8 +172,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         product = self.execute_search(
             "sobloo",
             "S2_MSI_L1C",
-            "2018-05-01",
-            "2018-06-01",
+            "2019-05-01",
+            "2019-06-01",
             (
                 0.2563590566012408,
                 43.19555008715042,
@@ -199,7 +199,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    @unittest.skip("service unavailable for the moment")
+    # @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_peps_after_20161205(self):
         product = self.execute_search(
             "peps",
@@ -222,7 +222,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    @unittest.skip("service unavailable for the moment")
+    # @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_theia(self):
         product = self.execute_search(
             "theia",
@@ -271,7 +271,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    @unittest.skip("service unavailable for the moment")
+    # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
         product = self.execute_search(
             "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", (50, 50, 50.3, 50.3)

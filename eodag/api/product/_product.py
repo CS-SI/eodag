@@ -33,6 +33,7 @@ from shapely import geometry, geos, wkb, wkt
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
+from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.utils import ProgressCallback
 from eodag.utils.exceptions import DownloadError, UnsupportedDatasetAddressScheme
 
@@ -305,7 +306,12 @@ class EOProduct(object):
         self.downloader = downloader
         self.downloader_auth = authenticator
 
-    def download(self, progress_callback=None):
+    def download(
+        self,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+    ):
         """Download the EO product using the provided download plugin and the
         authenticator if necessary.
 
@@ -340,7 +346,11 @@ class EOProduct(object):
         # resolve remote location if needed with downloader configuration
         self.remote_location = self.remote_location % vars(self.downloader.config)
         fs_location = self.downloader.download(
-            self, auth=auth, progress_callback=progress_callback
+            self,
+            auth=auth,
+            progress_callback=progress_callback,
+            wait=wait,
+            timeout=timeout,
         )
         if fs_location is None:
             raise DownloadError(
