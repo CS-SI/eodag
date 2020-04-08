@@ -1,6 +1,18 @@
 Release history
 ---------------
 
+1.5.0 (2020-04-08)
+++++++++++++++++++
+
+- Warning: last release including Python 2.7 support
+- ``productionStatus`` parameter standardization over providers
+- Not-available products download management, using ``wait``/``timeout``
+  `download <https://eodag.readthedocs.io/en/latest/api.html#eodag.api.core.EODataAccessGateway.download>`_
+  optional parameters, fixes `#125 <https://bitbucket.org/geostorm/eodag/issues/125>`_
+- More explicit authentication errors messages
+- Update search endoint for aws_s3_sentinel2_l1c and add RequestPayer option usage,
+  fixes `#131 <https://bitbucket.org/geostorm/eodag/issues/131>`_
+
 1.4.2 (2020-03-04)
 ++++++++++++++++++
 
@@ -9,14 +21,14 @@ Release history
 1.4.1 (2020-02-25)
 ++++++++++++++++++
 
-- Warning message if an unknow provider is found in user configuration file, fixes `#129 <https://bitbucket.org/geostorm/eodag/issues/129>`_
+- Warning message if an unknow provider is found in user configuration file,
+  fixes `#129 <https://bitbucket.org/geostorm/eodag/issues/129>`_
 
 1.4.0 (2020-02-24)
 ++++++++++++++++++
 
-- Warning: last release including Python 2.7 support
 - Add to query the parameters set in the provider product type definition
-- New S3RestDownload plugin for mundi, fixes `#127 <https://bitbucket.org/geostorm/eodag/issues/127>`_
+- New ``S3RestDownload`` plugin for mundi, fixes `#127 <https://bitbucket.org/geostorm/eodag/issues/127>`_
 - S3_OLCI_L2LFR support for mundi, see `#124 <https://bitbucket.org/geostorm/eodag/issues/124>`_
 - S2_MSI_L2A support for peps, see `#124 <https://bitbucket.org/geostorm/eodag/issues/124>`_
 - Theia-landsat provider moved to theia, fixes `#95 <https://bitbucket.org/geostorm/eodag/issues/95>`_
@@ -33,7 +45,7 @@ Release history
 - Fixed py27 encodeurl in querystring
 - End-to-end tests update, fixes `#119 <https://bitbucket.org/geostorm/eodag/issues/119>`_
 - Default eodag conf used in end-to-end tests, fixes `#98 <https://bitbucket.org/geostorm/eodag/issues/98>`_
-- Fixed download_all method `#118 <https://bitbucket.org/geostorm/eodag/issues/118>`_
+- Fixed ``download_all`` method `#118 <https://bitbucket.org/geostorm/eodag/issues/118>`_
 
 1.3.5 (2020-01-07)
 ++++++++++++++++++
@@ -64,7 +76,8 @@ Release history
 ++++++++++++++++++
 
 - Added calls graphs in documentation
-- Tutorial notebooks fixes `#109 <https://bitbucket.org/geostorm/eodag/issues/109>`_, `#110 <https://bitbucket.org/geostorm/eodag/issues/110>`_
+- Tutorial notebooks fixes `#109 <https://bitbucket.org/geostorm/eodag/issues/109>`_,
+  `#110 <https://bitbucket.org/geostorm/eodag/issues/110>`_
 - Download unit display fix `#108 <https://bitbucket.org/geostorm/eodag/issues/108>`_
 - Fix date format with sobloo provider `#107 <https://bitbucket.org/geostorm/eodag/issues/107>`_
 
@@ -129,7 +142,8 @@ Release history
 ++++++++++++++++
 
 - Adds product type search functionality
-- Extends the list of search parameters with ``instrument``, ``platform``, ``platformSerialIdentifier``, ``processingLevel`` and ``sensorType``
+- Extends the list of search parameters with ``instrument``, ``platform``, ``platformSerialIdentifier``,
+  ``processingLevel`` and ``sensorType``
 - The cli arguments are now fully compliant with opensearch geo(bbox)/time extensions
 - Adds functionality to search products by their ID
 - Exposes search products by ID functionality on REST interface
