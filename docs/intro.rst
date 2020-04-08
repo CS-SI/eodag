@@ -209,15 +209,28 @@ Then use as apikey the Web Token provided in https://mundiwebservices.com/accoun
 For onda, create an account here: https://www.onda-dias.eu/crm/
 
 
+Storage status handle
+---------------------
+
+The storage status has been standardized for all providers in the parameter ``storageStatus``, and its different
+values mapped to these 3 unique status:
+
+* `ONLINE`: the product is available for download (immediately);
+* `STAGING`: the product has been ordered and will be `ONLINE` soon;
+* `OFFLINE`: the product is not available for download, but can eventually be ordered.
+
+If product status is `OFFLINE`, the download method will request an order of the product (if available)
+and retry to download it every 2 minutes (or specified ``wait`` parameter)
+during 20 minutes (or specified ``timeout`` parameter).
+
+If product status is `STAGING`, the download method will retry to download it every 2 minutes
+(or specified ``wait`` parameter) during 20 minutes (or specified ``timeout`` parameter).
+
+See `download() <https://eodag.readthedocs.io/en/latest/api.html#eodag.api.core.EODataAccessGateway.download>`_ documentation for more details.
+
+
 Parameters mapping
 ------------------
 
 The list of parameters mapped for available providers can be found in this
 `CSV file <_static/params_mapping.csv>`_.
-
-The storage status has been standardized for all providers in the parameter ``storageStatus``, and its different
-values mapped to these 3 unique status:
-
-* `ONLINE`: the product is available for download;
-* `STAGING`: the product has been ordered and will be `ONLINE` soon;
-* `OFFLINE`: the product is not available for download, but can eventually be ordered.
