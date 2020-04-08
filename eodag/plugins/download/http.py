@@ -132,8 +132,8 @@ class HTTPDownload(Download):
         ordered_message = ""
         if (
             "orderLink" in product.properties
-            and "productionStatus" in product.properties
-            and product.properties["productionStatus"] == OFFLINE_STATUS
+            and "storageStatus" in product.properties
+            and product.properties["storageStatus"] == OFFLINE_STATUS
         ):
             order_method = getattr(self.config, "order_method", "GET")
             with requests.request(
@@ -193,9 +193,7 @@ class HTTPDownload(Download):
                                 )
                             # product not available
                             elif (
-                                product.properties.get(
-                                    "productionStatus", ONLINE_STATUS
-                                )
+                                product.properties.get("storageStatus", ONLINE_STATUS)
                                 != ONLINE_STATUS
                             ):
                                 msg = (
@@ -207,7 +205,7 @@ class HTTPDownload(Download):
                                     "%s(initially %s) requested, returned: %s"
                                     % (
                                         product.properties["title"],
-                                        product.properties["productionStatus"],
+                                        product.properties["storageStatus"],
                                         msg,
                                     )
                                 )
@@ -222,15 +220,14 @@ class HTTPDownload(Download):
                             stream_size = int(stream.headers.get("content-length", 0))
                             if (
                                 stream_size == 0
-                                and "productionStatus" in product.properties
-                                and product.properties["productionStatus"]
-                                != ONLINE_STATUS
+                                and "storageStatus" in product.properties
+                                and product.properties["storageStatus"] != ONLINE_STATUS
                             ):
                                 raise NotAvailableError(
                                     "%s(initially %s) ordered, got: %s"
                                     % (
                                         product.properties["title"],
-                                        product.properties["productionStatus"],
+                                        product.properties["storageStatus"],
                                         stream.reason,
                                     )
                                 )
@@ -275,15 +272,12 @@ class HTTPDownload(Download):
                 nb_info.display_html(retry_info)
                 sleep(wait_seconds + 1)
             elif datetime.now() >= stop_time and timeout > 0:
-                if "productionStatus" not in product.properties:
-                    product.properties["productionStatus"] = "N/A status"
+                if "storageStatus" not in product.properties:
+                    product.properties["storageStatus"] = "N/A status"
                 logger.info(not_available_info)
                 raise NotAvailableError(
                     "%s is not available (%s) and could not be downloaded, timeout reached"
-                    % (
-                        product.properties["title"],
-                        product.properties["productionStatus"],
-                    )
+                    % (product.properties["title"], product.properties["storageStatus"])
                 )
             elif datetime.now() >= stop_time:
                 raise NotAvailableError(not_available_info)

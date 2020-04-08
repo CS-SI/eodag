@@ -94,13 +94,14 @@
       accessConstraint: '$.properties.license'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      productionStatus: '$.properties.status'
       creationDate: '$.properties.published'
       modificationDate: '$.properties.updated'
 
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.s3URI'
+      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '$.properties.status'
 
       custom:
         - custom
@@ -290,7 +291,6 @@
 
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier: '$.properties.parentIdentifier'
-      productionStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk)|(?P<STAGING>staging)|(?P<OFFLINE>tape))}'
       acquisitionType: '$.properties.acquisitionType'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
@@ -329,6 +329,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
+      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk)|(?P<STAGING>staging)|(?P<OFFLINE>tape))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       # Or has a different signification for the provider
@@ -461,7 +463,6 @@
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber: '$.data.orbit.number'
       orbitDirection: '$.data.orbit.direction'
-      productionStatus: '{$.data.state.services.download#get_group_name((?P<ONLINE>internal)|(?P<OFFLINE>external))}'
       cloudCover:
         - 'f=contentDescription.cloudCoverPercentage:lte:{cloudCover}'
         - '$.data.contentDescription.cloudCoverPercentage'
@@ -491,6 +492,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '%(base_uri)s/{uid}'
+      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '{$.data.state.services.download#get_group_name((?P<ONLINE>internal)|(?P<OFFLINE>external))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       visibility: '$.data.visibility'
@@ -558,7 +561,6 @@
 
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier: '$.properties.parentIdentifier'
-      productionStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
       orbitNumber: '$.properties.orbitNumber'
       orbitDirection: '$.properties.orbitDirection'
       cloudCover:
@@ -589,7 +591,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/download/{uid}'
-      # downloadLink: '$.properties.services.download.url'
+      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
@@ -725,7 +728,6 @@
 
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier: 'eo:parentIdentifier/text()'
-      productionStatus: 'DIAS:onlineStatus/text()'
       acquisitionType: 'eo:acquisitionType/text()'
       orbitNumber: 'eo:orbitNumber/text()'
       orbitDirection: 'eo:orbitDirection/text()'
@@ -784,6 +786,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'ns:link[@rel="enclosure"]/@href'
+      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: 'DIAS:onlineStatus/text()'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       metadataFormat: 'DIAS:metadataFormat/text()'
@@ -952,7 +956,6 @@
       cloudCover: '$.cloudCoverPercentage'
       productVersion: '$.processingBaseline'
       productQualityStatus: '$.generalQualityFlag'
-      productionStatus: '{$.offline#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
       creationDate: '$.creationDate'
       processingDate: '$.processingDate'
       sensorMode: '$.sensorOperationalMode'
@@ -970,6 +973,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '%(base_uri)s({uid})/$value'
+      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '{$.offline#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
       # Url used for ordering product if it is offline/archived
       orderLink: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
 

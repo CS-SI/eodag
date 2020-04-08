@@ -214,3 +214,10 @@ Parameters mapping
 
 The list of parameters mapped for available providers can be found in this
 `CSV file <_static/params_mapping.csv>`_.
+
+The storage status has been standardized for all providers in the parameter ``storageStatus``, and its different
+values mapped to these 3 unique status:
+
+* `ONLINE`: the product is available for download;
+* `STAGING`: the product has been ordered and will be `ONLINE` soon;
+* `OFFLINE`: the product is not available for download, but can eventually be ordered.

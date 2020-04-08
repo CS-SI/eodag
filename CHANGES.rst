@@ -1,10 +1,16 @@
 Release history
 ---------------
 
-1.5.0 (2020-04-08)
+1.5.1 (2020-04-08)
 ++++++++++++++++++
 
 - Warning: last release including Python 2.7 support
+- ``productionStatus`` parameter renamed to ``storageStatus``,
+  see `Parameters Mapping documentation <https://eodag.readthedocs.io/en/latest/intro.html#parameters-mapping>`_
+
+1.5.0 (2020-04-08)
+++++++++++++++++++
+
 - ``productionStatus`` parameter standardization over providers
 - Not-available products download management, using ``wait``/``timeout``
   `download <https://eodag.readthedocs.io/en/latest/api.html#eodag.api.core.EODataAccessGateway.download>`_

@@ -70,15 +70,15 @@ class S3RestDownload(AwsDownload):
 
         if (
             bucket_name is None
-            and "productionStatus" in product.properties
-            and product.properties["productionStatus"] == OFFLINE_STATUS
+            and "storageStatus" in product.properties
+            and product.properties["storageStatus"] == OFFLINE_STATUS
         ):
             raise NotAvailableError(
                 "%s is not available for download on %s (status = %s)"
                 % (
                     product.properties["title"],
                     self.provider,
-                    product.properties["productionStatus"],
+                    product.properties["storageStatus"],
                 )
             )
 
