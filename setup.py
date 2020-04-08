@@ -41,7 +41,9 @@ setup(
     package_data={"": ["LICENSE", "NOTICE"]},
     include_package_data=True,
     install_requires=[
-        "click",
+        # CLI Test fail with Click 7.1.1 : Changes introduced to string quoting in responses
+        # https://github.com/pallets/click/issues/1499
+        "click == 7.0.0",
         "requests",
         "python-dateutil",
         "PyYAML",
