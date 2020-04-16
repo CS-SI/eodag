@@ -65,7 +65,14 @@ class UsgsApi(Api):
         usgs_catalog_node = self.config.products[product_type]["catalog_node"]
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
         end_date = kwargs.pop("completionTimeFromAscendingNode", None)
-        footprint = kwargs.pop("geometry", None)
+        geom = kwargs.pop("geometry", None)
+        footprint = {}
+        if hasattr(geom, "bounds"):
+            footprint["lonmin"], footprint["latmin"], footprint["lonmax"], footprint[
+                "latmax"
+            ] = geom.bounds
+        else:
+            footprint = geom
 
         # Configuration to generate the download url of search results
         result_summary_pattern = re.compile(

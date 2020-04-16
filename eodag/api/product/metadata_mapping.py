@@ -26,7 +26,6 @@ import jsonpath_rw as jsonpath
 from dateutil.tz import tzutc
 from lxml import etree
 from lxml.etree import XPathEvalError
-from shapely import geometry
 from six import string_types
 
 from eodag.utils import get_timestamp
@@ -179,15 +178,24 @@ def format_metadata(search_param, *args, **kwargs):
                 return int(1e3 * get_timestamp(value))
 
         @staticmethod
-        def convert_to_wkt(value):
-            return geometry.box(
-                *[
-                    float(v)
-                    for v in "{lonmin} {latmin} {lonmax} {latmax}".format(
-                        **value
-                    ).split()
-                ]
-            ).to_wkt()
+        def convert_to_wkt_convex_hull(value):
+            if hasattr(value, "convex_hull"):
+                return value.convex_hull.to_wkt()
+            else:
+                logger.warning("Could not get wkt_convex_hull from %s", value)
+                return value
+
+        @staticmethod
+        def convert_to_bbox_dict(value):
+            if hasattr(value, "bounds"):
+                bbox_dict = {}
+                bbox_dict["lonmin"], bbox_dict["latmin"], bbox_dict[
+                    "lonmax"
+                ], bbox_dict["latmax"] = value.bounds
+                return bbox_dict
+            else:
+                logger.warning("Could not get bbox_dict from %s", value)
+                return value
 
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):

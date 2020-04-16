@@ -57,14 +57,64 @@
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
+<<<<<<< HEAD
         - |
           {{"search":{{"shape":{{"coordinates":
-          [[[{geometry[lonmin]},{geometry[latmin]}],
-          [{geometry[lonmax]},{geometry[latmin]}],
-          [{geometry[lonmax]},{geometry[latmax]}],
-          [{geometry[lonmin]},{geometry[latmax]}],
-          [{geometry[lonmin]},{geometry[latmin]}]]], "type": "Polygon"}} }} }}
+          [[[{geometry.bounds[0]},{geometry.bounds[1]}],
+          [{geometry.bounds[2]},{geometry.bounds[1]}],
+          [{geometry.bounds[2]},{geometry.bounds[3]}],
+          [{geometry.bounds[0]},{geometry.bounds[3]}],
+          [{geometry.bounds[0]},{geometry.bounds[1]}]]], "type": "Polygon"}} }} }}
         - '$.dataGeometry'
+=======
+        - 'geometry={geometry#to_wkt_convex_hull}'
+        - '$.geometry'
+      productType:
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.platform'
+      platformSerialIdentifier: '$.properties.spacecraft'
+      instrument: '$.properties.instrument'
+      processingLevel: '$.properties.processingLevel'
+      title: '$.properties.title'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      organisationName: '$.properties.organisationName'
+      orbitNumber: '$.properties.orbitNumber'
+      orbitDirection: '$.properties.orbitDirection'
+      cloudCover:
+        - 'cloudCover=[0,{cloudCover}]'
+        - '$.properties.cloudCover'
+      snowCover: '$.properties.snowCover'
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
+      parentIdentifier: '$.properties.parentIdentifier'
+      resolution: '$.properties.resolution'
+      sensorMode: '$.properties.sensorMode'
+      quicklook: '$.properties.quicklook'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      creationDate: '$.properties.published'
+      modificationDate: '$.properties.updated'
+
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      downloadLink: '$.properties.s3URI'
+      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '$.properties.status'
+
+      custom:
+        - custom
+        - '$.properties.custom'
+>>>>>>> search by geometry instead of bbox
   products:
     CBERS4_PAN10M_L2:
       instrument: PAN10M
@@ -567,7 +617,7 @@
       id: '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -737,7 +787,7 @@
         - '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -879,7 +929,7 @@
         - '$.data.identification.externalId'
       # The geographic extent of the product
       geometry:
-        - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'gintersect={geometry#to_wkt_convex_hull}'
         - '$.md.geometry'
       # The url of the quicklook
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{uid}'
@@ -965,7 +1015,7 @@
         - '{$.properties.title#remove_extension}'
       # The geographic extent of the product
       geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '{thumbnail}'
@@ -1159,7 +1209,7 @@
         - 'dc:identifier/text()'
       # The geographic extent of the product
       geometry:
-        - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - 'georss:box/text()'
       # The url of the quicklook
       quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
@@ -1279,7 +1329,7 @@
         wrapper: '"{}"'
         operations:
           AND:
-            - 'footprint:"Intersects({geometry#to_wkt})"'
+            - 'footprint:"Intersects({geometry#to_wkt_convex_hull})"'
             - 'productType:{productType}'
             - 'platformName:{platform}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'

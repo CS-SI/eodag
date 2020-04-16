@@ -34,9 +34,13 @@ from datetime import datetime
 from itertools import repeat, starmap
 
 import click
+import fiona
+import shapely.wkt
 import six
 from rasterio.crs import CRS
 from requests.auth import AuthBase
+from shapely.geometry import MultiPolygon, Polygon, shape
+from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
 from unidecode import unidecode
@@ -608,3 +612,65 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
             )
 
     return jsonpath_dict
+
+def get_geometry_from_various(locations_config=[], **query_args):
+    """Creates a shapely geometry using given query kwargs arguments
+
+    :param locations_config: EODAG locations configuration
+    :type locations_config: list
+    :param query_args: query kwargs arguments from core.search() method
+    :type query_args: dict
+    :returns: shapely geometry found
+    :rtype: :class:`shapely.geometry.BaseGeometry`
+    """
+    geom = None
+
+    if "geometry" in query_args:
+        geom_arg = query_args["geometry"]
+
+        bbox_keys = ["lonmin", "latmin", "lonmax", "latmax"]
+        if isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
+            # bbox dict
+            geom = Polygon(
+                (
+                    (geom_arg["lonmin"], geom_arg["latmin"]),
+                    (geom_arg["lonmin"], geom_arg["latmax"]),
+                    (geom_arg["lonmax"], geom_arg["latmax"]),
+                    (geom_arg["lonmax"], geom_arg["latmin"]),
+                )
+            )
+        elif isinstance(geom_arg, list) and len(geom_arg) >= 4:
+            # bbox list
+            geom = Polygon(
+                (
+                    (geom_arg[0], geom_arg[1]),
+                    (geom_arg[0], geom_arg[3]),
+                    (geom_arg[2], geom_arg[3]),
+                    (geom_arg[2], geom_arg[1]),
+                )
+            )
+        elif isinstance(geom_arg, str):
+            # WKT geometry
+            geom = shapely.wkt.loads(geom_arg)
+        elif isinstance(geom_arg, MultiPolygon):
+            # MultiPolygon: extract first Polygon
+            geom = geom_arg[0]
+        elif isinstance(geom_arg, BaseGeometry):
+            geom = geom_arg
+
+    # look for location name in locations configuration
+    locations_dict = {loc["name"]: loc for loc in locations_config}
+    for arg in query_args.keys():
+        if arg in locations_dict.keys():
+            attr = locations_dict[arg]["attr"]
+            with fiona.open(locations_dict[arg]["path"]) as features:
+                for feat in features:
+                    if feat["properties"][attr] == query_args[arg]:
+                        new_geom = shape(feat["geometry"])
+                        if not geom:
+                            geom = new_geom
+                        # get geoms intersection if intersects or keep original
+                        elif new_geom.intersects(geom):
+                            geom = new_geom.intersection(geom)
+
+    return geom

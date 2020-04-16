@@ -34,7 +34,7 @@ from shapely import geometry, geos, wkb, wkt
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
-from eodag.utils import ProgressCallback
+from eodag.utils import ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, UnsupportedDatasetAddressScheme
 
 try:
@@ -114,22 +114,16 @@ class EOProduct(object):
         self.search_args = args
         self.search_kwargs = kwargs
         if self.search_kwargs.get("geometry") is not None:
-            searched_bbox = self.search_kwargs["geometry"]
-            searched_bbox_as_shape = geometry.box(
-                searched_bbox["lonmin"],
-                searched_bbox["latmin"],
-                searched_bbox["lonmax"],
-                searched_bbox["latmax"],
+            searched_geom = get_geometry_from_various(
+                **{"geometry": self.search_kwargs["geometry"]}
             )
             try:
-                self.search_intersection = self.geometry.intersection(
-                    searched_bbox_as_shape
-                )
+                self.search_intersection = self.geometry.intersection(searched_geom)
             except TopologicalError:
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
                     "geometry: %s",
-                    searched_bbox_as_shape,
+                    searched_geom,
                     product_geometry,
                 )
                 self.search_intersection = None

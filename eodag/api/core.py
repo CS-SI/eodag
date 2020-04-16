@@ -39,7 +39,7 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import makedirs, utf8_everywhere
+from eodag.utils import get_geometry_from_various, makedirs, utf8_everywhere
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
@@ -327,7 +327,7 @@ class EODataAccessGateway(object):
         raise_errors=False,
         start=None,
         end=None,
-        box=None,
+        geom=None,
         **kwargs
     ):
         """Look for products matching criteria on known providers.
@@ -349,11 +349,22 @@ class EODataAccessGateway(object):
         :type start: str or unicode
         :param end: End sensing time in iso format
         :type end: str or unicode
-        :param box: A bounding box delimiting the AOI (as a dict with keys: "lonmin",
-                    "latmin", "lonmax", "latmax")
-        :type box: dict
+        :param geom: Dictionnary defining the AOI. Information can be defined in different ways:
+                    * with a Shapely geometry object ("obj" as key):
+                      ``{"obj": :class:`shapely.geometry.base.BaseGeometry`}``
+                    * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
+                      ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
+                    * with a bounding box as list of float:
+                      ``[lonmin, latmin, lonmax, latmax]``
+                    * with a WKT str
+                    The geometry can also be passed as ``<location_name>="<attr_value>"`` in kwargs
+        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
         :param dict kwargs: some other criteria that will be used to do the search,
-                            using paramaters compatibles with the provider
+                            using paramaters compatibles with the provider, or also
+                            location filtering by name using locations configuration
+                            ``<location_name>="<attr_value>"`` (e.g.: ``country="FR"`` will use
+                            the geometry of the feature having the property ISO2=FR in the shapefile
+                            configured with name=country and attr=ISO2)
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -425,8 +436,10 @@ class EODataAccessGateway(object):
             kwargs["startTimeFromAscendingNode"] = start
         if end is not None:
             kwargs["completionTimeFromAscendingNode"] = end
-        if box is not None:
-            kwargs["geometry"] = box
+        if geom is not None:
+            kwargs["geometry"] = geom
+
+        kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
 
         plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
