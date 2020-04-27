@@ -369,7 +369,7 @@ def list_pt(ctx, **kwargs):
                         text_wrapper.initial_indent
                     )
                     if value is not None:
-                        click.echo(text_wrapper.fill(value))
+                        click.echo(text_wrapper.fill(str(value)))
     except UnsupportedProvider:
         click.echo("Unsupported provider. You may have a typo")
         click.echo(
