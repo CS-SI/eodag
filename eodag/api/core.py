@@ -20,6 +20,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import os
 import shutil
+from copy import deepcopy
 from operator import itemgetter
 
 import geojson
@@ -142,7 +143,9 @@ class EODataAccessGateway(object):
                     create_index = True
 
         except ValueError as ve:
-            if "unsupported pickle protocol" in ve.message:
+            if "unsupported pickle protocol" in (
+                ve.message if hasattr(ve, "message") else str(ve)
+            ):
                 shutil.rmtree(index_dir)
                 create_index = True
             else:
@@ -160,7 +163,11 @@ class EODataAccessGateway(object):
                 processingLevel=fields.ID,
                 sensorType=fields.ID,
                 eodagVersion=fields.ID,
+                license=fields.ID,
+                title=fields.ID,
+                missionStartDate=fields.ID,
             )
+            non_indexable_fields = ["bands"]
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types():
@@ -172,7 +179,13 @@ class EODataAccessGateway(object):
                 utf8_everywhere(versioned_product_type)
                 versioned_product_type["ID"] = product_type_id
                 # add to index
-                ix_writer.add_document(**versioned_product_type)
+                ix_writer.add_document(
+                    **{
+                        k: v
+                        for k, v in versioned_product_type.items()
+                        if k not in non_indexable_fields
+                    }
+                )
             ix_writer.commit()
         else:
             if self._product_types_index is None:
