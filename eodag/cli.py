@@ -392,11 +392,29 @@ def download(ctx, **kwargs):
         conf_file = click.format_filename(conf_file)
         satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
         search_results = satim_api.deserialize(search_result_path)
-        for downloaded_file in satim_api.download_all(search_results):
-            if downloaded_file is None:
-                click.echo("A file may have been downloaded but we cannot locate it")
-            else:
-                click.echo("Downloaded {}".format(downloaded_file))
+        # register downloader
+        for idx, product in enumerate(search_results):
+            if product.downloader is None:
+                auth = product.downloader_auth
+                if auth is None:
+                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
+                search_results[idx].register_downloader(
+                    satim_api._plugins_manager.get_download_plugin(product), auth
+                )
+
+        downloaded_files = satim_api.download_all(search_results)
+        if downloaded_files and len(downloaded_files) > 0:
+            for downloaded_file in downloaded_files:
+                if downloaded_file is None:
+                    click.echo(
+                        "A file may have been downloaded but we cannot locate it"
+                    )
+                else:
+                    click.echo("Downloaded {}".format(downloaded_file))
+        else:
+            click.echo(
+                "Error during download, a file may have been downloaded but we cannot locate it"
+            )
 
 
 @eodag.command(help="Start eodag rpc server")

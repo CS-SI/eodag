@@ -125,7 +125,7 @@ setup(
         "Documentation": "https://eodag.readthedocs.io/en/latest/",
         "Source Code": "https://bitbucket.org/geostorm/eodag",
     },
-    classifiers=(
+    classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
@@ -141,5 +141,5 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: GIS",
-    ),
+    ],
 )

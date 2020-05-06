@@ -131,6 +131,17 @@ class Download(PluginTopic):
                             logger.info(e)
                             continue
 
+                        except RuntimeError:
+                            import traceback as tb
+
+                            logger.error(
+                                "A problem occurred during download of product: %s. "
+                                "Skipping it",
+                                product,
+                            )
+                            logger.debug("\n%s", tb.format_exc())
+                            stop_time = datetime.now()
+
                         except Exception:
                             import traceback as tb
 

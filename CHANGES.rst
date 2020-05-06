@@ -1,10 +1,15 @@
 Release history
 ---------------
 
-1.5.1 (2020-04-08)
+1.5.2 (2020-05-06)
 ++++++++++++++++++
 
 - Warning: last release including Python 2.7 support
+- Fix CLI download_all missing plugin configuration, fixes `#134 <https://bitbucket.org/geostorm/eodag/issues/134>`_
+
+1.5.1 (2020-04-08)
+++++++++++++++++++
+
 - ``productionStatus`` parameter renamed to ``storageStatus``,
   see `Parameters Mapping documentation <https://eodag.readthedocs.io/en/latest/intro.html#parameters-mapping>`_
 
