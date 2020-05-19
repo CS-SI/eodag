@@ -107,6 +107,7 @@ class Download(PluginTopic):
                 sanitize(product.properties["title"]), collision_avoidance_suffix
             ),
         )
+        fs_dir_path = fs_path.replace(".zip", "")
         download_records_dir = os.path.join(prefix, ".downloaded")
         try:
             os.makedirs(download_records_dir)
@@ -124,6 +125,9 @@ class Download(PluginTopic):
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info("Product already downloaded: %s", fs_path)
             return self._finalize(fs_path), None
+        elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
+            logger.info("Product already downloaded: %s", fs_dir_path)
+            return self._finalize(fs_dir_path), None
         # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
         elif os.path.isfile(record_filename):
             logger.debug(
@@ -141,7 +145,7 @@ class Download(PluginTopic):
         :type fs_path: str or unicode
         :return: the absolute path to the product
         """
-        if not self.config.extract:
+        if not getattr(self.config, "extract", False):
             logger.info("Extraction not activated. The product is available as is.")
             return fs_path
         product_path = fs_path[: fs_path.index(".zip")]

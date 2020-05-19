@@ -231,6 +231,11 @@ def format_metadata(search_param, *args, **kwargs):
                 )
                 return NOT_AVAILABLE
 
+        @staticmethod
+        def convert_replace_str(string, args):
+            old, new = [x.strip() for x in args.split(",")]
+            return string.replace(old, new)
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 

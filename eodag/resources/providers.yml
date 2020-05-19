@@ -115,6 +115,138 @@
 
 ---
 !provider
+  name: aws_eos
+  priority: 0
+  search: !plugin
+    type: PostJsonSearch
+    api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
+    pagination:
+      next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+      total_items_nb_key_path: '$.meta.found'
+    query_params_key: 'search'
+    metadata_mapping:
+      # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
+      geometry:
+        - |
+          {{"search":{{"shape":{{"coordinates":
+          [[[{geometry[lonmin]},{geometry[latmin]}],
+          [{geometry[lonmax]},{geometry[latmin]}],
+          [{geometry[lonmax]},{geometry[latmax]}],
+          [{geometry[lonmin]},{geometry[latmax]}],
+          [{geometry[lonmin]},{geometry[latmin]}]]], "type": "Polygon"}} }} }}
+        - '$.dataGeometry'
+      custom:
+        - custom
+        - '$.properties.custom'
+  products:
+    S2_MSI_L1C:
+      product_type: S2MSI1C
+      collection: sentinel2
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        platformSerialIdentifier:
+          - 'satelliteName'
+          - '$.satelliteName'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - 'productName'
+          - '$.productName'
+        # OpenSearch Parameters for Product Search (Table 5)
+        cloudCover:
+          - 'cloudCoverage'
+          - '$.cloudCoverage'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        illuminationAzimuthAngle:
+          - 'azimuthAngle'
+          - '$.azimuthAngle'
+        illuminationZenithAngle:
+          - 'zenithAngle'
+          - '$.zenithAngle'
+        # Custom parameters (not defined in the base document referenced above)
+        dataCoveragePercentage:
+          - 'dataCoveragePercentage'
+          - '$.dataCoveragePercentage'
+        latitudeBand:
+          - 'latitudeBand'
+          - '$.latitudeBand'
+        originalTileMeta:
+          - 'originalTileMeta'
+          - '{$.originalTileMeta#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        utmZone:
+          - 'utmZone'
+          - '$.utmZone'
+        thumbnail:
+          - 'thumbnail'
+          - '{$.thumbnail#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        quicklook:
+          - 'thumbnail'
+          - '{thumbnail}'
+        archivingTime:
+          - 'archivingTime'
+          - '$.archivingTime'
+        originalSceneID:
+          - 'originalSceneID'
+          - '$.originalSceneID'
+        sunElevation:
+          - 'sunElevation'
+          - '$.sunElevation'
+        awsPath:
+          - 'awsPath'
+          - '$.awsPath'
+        downloadLink: 's3://sentinel-s2-l1c/{awsPath}'
+        offsetXmlKey:
+          - 'offsetXmlKey'
+          - '$.offsetXmlKey'
+        productMetaLink:
+          - 'productMetaLink'
+          - '{$.productMetaLink#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        gridSquare:
+          - 'gridSquare'
+          - '$.gridSquare'
+        tileOrigin:
+          - 'tileOrigin'
+          - '$.tileOrigin'
+        startTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode#to_timestamp_milliseconds}"}} }} }}'
+          - '$.timestamp'
+        completionTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
+          - '$.timestamp'
+        sceneID:
+          - 'sceneID'
+          - '$.sceneID'
+        date:
+          - 'date'
+          - '$.date'
+        productPath:
+          - 'productPath'
+          - '$.productPath'
+        indexingTime:
+          - 'IndexingTime'
+          - '$.IndexingTime'
+        id:
+          - 'title'
+          - '{title}'
+        tileGeometry:
+          - 'tileGeometry'
+          - '$.tileGeometry'
+        # processedL2A:
+        #   - 'processedL2A'
+        #   - '$.processedL2A'
+        # awsPathL2A:
+        #   - 'awsPathL2A'
+        #   - '$.awsPathL2A'
+  download: !plugin
+    type: AwsDownload
+    build_safe: true
+    safe_complementary_url_key:
+      - productPath
+    associated_bucket: 'sentinel-s2-l1c'
+  auth: !plugin
+    type: OAuth
+
+---
+!provider
   name: theia
   priority: 0
   search: !plugin
