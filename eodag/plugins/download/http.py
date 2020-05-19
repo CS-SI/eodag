@@ -17,9 +17,8 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
-import hashlib
+# import hashlib
 import logging
-import os
 import shutil
 import zipfile
 from datetime import datetime, timedelta
@@ -27,7 +26,6 @@ from time import sleep
 
 import requests
 from requests import HTTPError
-from tqdm import tqdm
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import (
@@ -35,7 +33,6 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
-from eodag.utils import sanitize
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -70,63 +67,11 @@ class HTTPDownload(Download):
         the user is warned, it is renamed to remove the zip extension and
         no further treatment is done (no extraction)
         """
-        if product.location != product.remote_location:
-            scheme_prefix_len = len("file://")
-            fs_path = product.location[scheme_prefix_len:]
-            # The fs path of a product is either a file (if 'extract' config is False) or a directory
-            if os.path.isfile(fs_path) or os.path.isdir(fs_path):
-                logger.info(
-                    "Product already present on this platform. Identifier: %s", fs_path
-                )
-                # Do not download data if we are on site. Instead give back the absolute path to the data
-                return fs_path
+        fs_path, record_filename = self._prepare_download(product)
+        if not fs_path or not record_filename:
+            return fs_path
 
         url = product.remote_location
-        if not url:
-            logger.debug(
-                "Unable to get download url for %s, skipping download", product
-            )
-            return
-        logger.info("Download url: %s", url)
-
-        # Strong asumption made here: all products downloaded will be zip files
-        # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
-        prefix = os.path.abspath(self.config.outputs_prefix)
-        sanitized_title = sanitize(product.properties["title"])
-        if sanitized_title == product.properties["title"]:
-            collision_avoidance_suffix = ""
-        else:
-            collision_avoidance_suffix = "-" + sanitize(product.properties["id"])
-        fs_path = os.path.join(
-            prefix,
-            "{}{}.zip".format(
-                sanitize(product.properties["title"]), collision_avoidance_suffix
-            ),
-        )
-        download_records_dir = os.path.join(prefix, ".downloaded")
-        try:
-            os.makedirs(download_records_dir)
-        except OSError as exc:
-            import errno
-
-            if exc.errno != errno.EEXIST:  # Skip error if dir exists
-                import traceback as tb
-
-                logger.warning(
-                    "Unable to create records directory. Got:\n%s", tb.format_exc()
-                )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        record_filename = os.path.join(download_records_dir, url_hash)
-        if os.path.isfile(record_filename) and os.path.isfile(fs_path):
-            logger.info("Product already downloaded: %s", fs_path)
-            return self.__finalize(fs_path)
-        # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
-        elif os.path.isfile(record_filename):
-            logger.debug(
-                "Record file found (%s) but not the actual file", record_filename
-            )
-            logger.debug("Removing record file : %s", record_filename)
-            os.remove(record_filename)
 
         # order product if it is offline
         ordered_message = ""
@@ -249,7 +194,7 @@ class HTTPDownload(Download):
                                 new_fs_path = fs_path[: fs_path.index(".zip")]
                                 shutil.move(fs_path, new_fs_path)
                                 return new_fs_path
-                            return self.__finalize(fs_path)
+                            return self._finalize(fs_path)
 
                 except NotAvailableError as e:
                     if not getattr(self.config, "order_enabled", False):
@@ -281,45 +226,6 @@ class HTTPDownload(Download):
                 )
             elif datetime.now() >= stop_time:
                 raise NotAvailableError(not_available_info)
-
-    def __finalize(self, fs_path):
-        """Finalize the download process.
-
-        :param fs_path: The path to the local zip archive downloaded or already present
-        :type fs_path: str or unicode
-        :return: the absolute path to the product
-        """
-        if not self.config.extract:
-            logger.info("Extraction not activated. The product is available as is.")
-            return fs_path
-        product_path = fs_path[: fs_path.index(".zip")]
-        product_path_exists = os.path.exists(product_path)
-        if not product_path_exists or (
-            product_path_exists and len(os.listdir(product_path)) == 0
-        ):
-            logger.info("Extraction activated")
-            with zipfile.ZipFile(fs_path, "r") as zfile:
-                fileinfos = zfile.infolist()
-                with tqdm(
-                    fileinfos,
-                    unit="file",
-                    desc="Extracting files from {}".format(os.path.basename(fs_path)),
-                ) as progressbar:
-                    for fileinfo in progressbar:
-                        zfile.extract(
-                            fileinfo,
-                            path=os.path.join(self.config.outputs_prefix, product_path),
-                        )
-        # Handle depth levels in the product archive. For example, if the downloaded archive was
-        # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
-        # location will be /top_level/product_base_dir.
-        # WARNING: A strong assumption is made here: there is only one subdirectory per level
-        archive_depth = getattr(self.config, "archive_depth", 1)
-        count = 1
-        while count < archive_depth:
-            product_path = os.path.join(product_path, os.listdir(product_path)[0])
-            count += 1
-        return product_path
 
     def download_all(
         self,
