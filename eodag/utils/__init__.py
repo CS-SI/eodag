@@ -496,10 +496,11 @@ def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S"):
 class ProgressCallback(object):
     """A callable used to render progress to users for long running processes"""
 
-    def __init__(self):
+    def __init__(self, max_size=None):
         self.pb = None
+        self.max_size = max_size
 
-    def __call__(self, current_size, max_size):
+    def __call__(self, current_size, max_size=None):
         """Update the progress bar.
 
         :param current_size: amount of data already processed
@@ -507,18 +508,22 @@ class ProgressCallback(object):
         :param max_size: maximum amount of data to be processed
         :type max_size: int
         """
+        if max_size is not None:
+            self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm(total=max_size, unit="B", unit_scale=True)
+            self.pb = tqdm(total=self.max_size, unit="B", unit_scale=True)
         self.pb.update(current_size)
 
 
 class NotebookProgressCallback(ProgressCallback):
     """A custom progress bar to be used inside Jupyter notebooks"""
 
-    def __call__(self, current_size, max_size):
+    def __call__(self, current_size, max_size=None):
         """Update the progress bar"""
+        if max_size is not None:
+            self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm_notebook(total=max_size, unit="B", unit_scale=True)
+            self.pb = tqdm_notebook(total=self.max_size, unit="B", unit_scale=True)
         self.pb.update(current_size)
 
 
