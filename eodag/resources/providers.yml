@@ -31,9 +31,6 @@
       startTimeFromAscendingNode: '$.startTime'
       completionTimeFromAscendingNode: '$.endTime'
       quicklook: '$.browseUrl'
-      custom:
-        - custom
-        - '$.properties.custom'
     extract: True
   products:
     # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt
@@ -126,6 +123,11 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -197,24 +199,8 @@
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       # Or has a different signification for the provider
-      relativeOrbitNumber: '$.properties.relativeOrbitNumber'
-      waterCover: '$.properties.waterCover'
-      centroid: '$.properties.centroid'
-      percentSaturatedPixelsMax: '$.properties.percentSaturatedPixelsMax'
-      percentNoDataPixelsMax: '$.properties.percentNoDataPixelsMax'
-      nbColInterpolationErrorMax: '$.properties.nbColInterpolationErrorMax'
-      percentGroundUsefulPixels: '$.properties.percentGroundUsefulPixels'
-      percentUsefulPixelsMin: '$.properties.percentUsefulPixelsMin'
-      location: '$.properties.location'
-      bands: '$.properties.bands'
-      thermBands: '$.properties.thermBands'
-      nb_cols: '$.properties.nb_cols'
-      nb_rows: '$.properties.nb_rows'
-      tileId: '$.properties.tileId'
       thumbnail: '$.properties.thumbnail'
-      custom:
-        - custom
-        - '$.properties.custom'
+
   products:
     S2_MSI_L2A:
       product_type: REFLECTANCE
@@ -260,6 +246,11 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -333,33 +324,7 @@
       storageStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk)|(?P<STAGING>staging)|(?P<OFFLINE>tape))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      # Or has a different signification for the provider
-      relativeOrbitNumber: '$.properties.relativeOrbitNumber'
-      water: '$.properties.water'
-      centroid: '$.properties.centroid'
       thumbnail: '$.properties.thumbnail'
-      s2TakeId: '$.properties.s2TakeId'
-      storage: '$.properties.storage.mode'
-      realtime: '$.properties.realtime'
-      visible: '$.properties.visible'
-      isNrt: '$.properties.isNrt'
-      resourceChecksum: '$.properties.resourceChecksum'
-      resourceSize: '$.properties.resourceSize'
-      snowIce: '$.properties.snowIce'
-      vegetation: '$.properties.vegetation'
-      bareSoil: '$.properties.bareSoil'
-      highProbaClouds: '$.properties.highProbaClouds'
-      mediumProbaClouds: '$.properties.mediumProbaClouds'
-      lowProbaClouds: '$.properties.lowProbaClouds'
-      mgrs: '$.properties.mgrs'
-      newVersion: '$.properties.newVersion'
-      missionTakeId: '$.properties.missionTakeId'
-      cycleNumber: '$.properties.cycleNumber'
-      approxSize: '$.properties.approxSize'
-      ecmwfType: '$.properties.ecmwfType'
-      custom:
-        - custom
-        - '$.properties.custom'
 
   products:
     S1_SAR_OCN:
@@ -443,6 +408,11 @@
       next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={skip}'
       total_items_nb_key_path: '$.totalnb'
     results_entry: 'hits'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9\.%]+$'
+      search_param: 'f={metadata}:eq:{{{metadata}}}'
+      metadata_path: '$.data.*'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -495,24 +465,6 @@
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '{$.data.state.services.download#get_group_name((?P<ONLINE>internal)|(?P<OFFLINE>external))}'
 
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      visibility: '$.data.visibility'
-      archive: '$.data.archive'
-      centroid: '$.data.spatialCoverage.geometry.centerPoint'
-      enrichment: '$.data.enrichment'
-      relativeOrbitNumber: '$.data.orbit.relativeNumber'
-      storage:
-        - 'f=state.services.download:eq:{storage}'
-        - '$.data.state.services.download'
-      wcs:
-        - 'f=state.services.wcs:eq:{wcs}'
-        - '$.data.state.services.wcs'
-      wmts:
-        - 'f=state.services.wmts:eq:{wmts}'
-        - '$.data.state.services.wmts'
-      custom:
-        - custom
-        - '$.data.custom'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://sobloo.eu/api/v1/services/download'
@@ -537,6 +489,11 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -596,12 +553,6 @@
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
-      gmlgeometry: '$.properties.gmlgeometry'
-      centroid: '$.properties.centroid'
-      missionTakeId: '$.properties.missionTakeId'
-      custom:
-        - custom
-        - '$.properties.custom'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
@@ -684,6 +635,11 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={page}'
       total_items_nb_key_path: '//os:totalResults/text()'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '*'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -790,35 +746,7 @@
       storageStatus: 'DIAS:onlineStatus/text()'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      metadataFormat: 'DIAS:metadataFormat/text()'
-      imageFileFormat: 'DIAS:imageFileFormat/text()'
-      orderID: 'DIAS:orderID/text()'
-      sceneIndex: 'DIAS:sceneIndex/text()'
       thumbnail: 'media:group/media:content[media:category="THUMBNAIL"]/@url'
-      identifier: 'dc:identifier/text()'
-      date: 'dc:date/text()'
-      generalQuality: 'DIAS:generalQuality/text()'
-      sensorQuality: 'DIAS:sensorQuality/text()'
-      radiometricQuality: 'DIAS:radiometricQuality/text()'
-      geometricQuality: 'DIAS:geometricQuality/text()'
-      formatCorrectness: 'DIAS:formatCorrectness/text()'
-      equivalentNumberOfScene: 'DIAS:equivalentNumberOfScene/text()'
-      audience: 'dct:audience/text()'
-      archiveInstanceReference: 'DIAS:archiveInstanceReference/text()'
-      productDatapackSize: 'DIAS:productDatapackSize/text()'
-      format: 'dc:format/text()'
-      startOrbitNumber: 'DIAS:startOrbitNumber/text()'
-      datatakeId: 'DIAS:datatakeId/text()'
-      tileIdentifier: 'DIAS:tileIdentifier/text()'
-      manualQualityCheckStatus: 'DIAS:manualQualityCheckStatus/text()'
-      manualQualityCheckStatusComment: 'DIAS:manualQualityCheckStatusComment/text()'
-      referenceProductOnly: 'DIAS:referenceProductOnly/text()'
-      watcherRecordValidity: 'DIAS:watcherRecordValidity/text()'
-      productDeliveryFormat: 'DIAS:productDeliveryFormat/text()'
-      checksum: 'DIAS:checksum/text()'
-      custom:
-        - custom
-        - 'custom/text()'
   download: !plugin
     type: S3RestDownload
     base_uri: 'https://mundiwebservices.com/dp'
@@ -864,9 +792,6 @@
       abstract: 'dct:abstract/text()'
       quicklook: 'https://www.wekeo.eu/sites/default/files/quicklooks/{productType}.jpg'
       keyword: 'dc:subject[text()]'
-      custom:
-        - custom
-        - '$.properties.custom'
     search_definition:
       product_type_tags:
         - name: 'dc:identifier' # any xml tag of the catalogue that can be queryable
@@ -936,6 +861,16 @@
             - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
             - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
             - '{id#remove_extension}'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9]+$'
+      search_param:
+        free_text_search_operations:
+          $search:
+            operations:
+              AND:
+                - '{metadata}:{{{metadata}}}'
+      metadata_path: '$.*'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -977,27 +912,6 @@
       storageStatus: '{$.offline#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
       # Url used for ordering product if it is offline/archived
       orderLink: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
-
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      offline : '$.offline'
-      downloadable : '$.downloadable'
-      radiometricQualityFlag: '$.radiometricQualityFlag'
-      sensorQualityFlag: '$.sensorQualityFlag'
-      geometricQualityFlag: '$.geometricQualityFlag'
-      formatCorrectnessFlag: '$.formatCorrectnessFlag'
-      format: '$.format'
-      dataTakeIdentifier: '$.dataTakeIdentifier'
-      size: '$.size'
-      dataTakeSensingStart: '$.dataTakeSensingStart'
-      relativeOrbitNumber: '$.relativeOrbitNumber'
-      platformNssdcid: '$.platformNssdcid'
-      platformShortName: '$.platformShortName'
-      instrumentShortName: '$.instrumentShortName'
-      degradedMSIDataPercentage: '$.degradedMSIDataPercentage'
-      degradedAncillaryDataPercentage: '$.degradedAncillaryDataPercentage'
-      custom:
-        - custom
-        - '$.properties.custom'
   products:
     S1_SAR_OCN:
       product_type: '*OCN*'

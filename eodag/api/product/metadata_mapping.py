@@ -234,7 +234,7 @@ def format_metadata(search_param, *args, **kwargs):
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
-def properties_from_json(json, mapping):
+def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=None):
     """Extract properties from a provider json result.
 
     :param json: the representation of a provider result as a json object
@@ -243,11 +243,17 @@ def properties_from_json(json, mapping):
                     keys and the location of the values of these properties in the json
                     representation, expressed as a
                     `jsonpath <http://goessner.net/articles/JsonPath/>`_
+    :param discovery_pattern: regex pattern for metadata key discovery,
+                                e.g. "^[a-zA-Z]+$"
+    :type discovery_pattern: str
+    :param discovery_path: str representation of jsonpath
+    :type discovery_path: str
     :return: the metadata of the :class:`~eodag.api.product.EOProduct`
     :rtype: dict
     """
     properties = {}
     templates = {}
+    used_jsonpaths = []
     for metadata, value in mapping.items():
         # Treat the case when the value is from a queryable metadata
         if isinstance(value, list):
@@ -261,7 +267,11 @@ def properties_from_json(json, mapping):
                 properties[metadata] = path_or_text
         else:
             match = path_or_text.find(json)
-            extracted_value = match[0].value if len(match) == 1 else NOT_AVAILABLE
+            if len(match) == 1:
+                extracted_value = match[0].value
+                used_jsonpaths.append(match[0].path)
+            else:
+                extracted_value = NOT_AVAILABLE
             if extracted_value is None:
                 properties[metadata] = None
             else:
@@ -287,10 +297,29 @@ def properties_from_json(json, mapping):
     # Resolve templates
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)
+
+    # adds missing discovered properties
+    if discovery_pattern and discovery_path:
+        discovered_properties = jsonpath.parse(discovery_path).find(json)
+        for found_jsonpath in discovered_properties:
+            found_key = found_jsonpath.path.fields[-1]
+            if (
+                re.compile(discovery_pattern).match(found_key)
+                and found_key not in properties.keys()
+                and found_jsonpath.path not in used_jsonpaths
+            ):
+                properties[found_key] = found_jsonpath.value
+
     return properties
 
 
-def properties_from_xml(xml_as_text, mapping, empty_ns_prefix="ns"):
+def properties_from_xml(
+    xml_as_text,
+    mapping,
+    empty_ns_prefix="ns",
+    discovery_pattern=None,
+    discovery_path=None,
+):
     """Extract properties from a provider xml result.
 
     :param xml_as_text: the representation of a provider result as xml
@@ -310,6 +339,7 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix="ns"):
     """
     properties = {}
     templates = {}
+    used_xpaths = []
     root = etree.XML(xml_as_text)
     for metadata, value in mapping.items():
         # Treat the case when the value is from a queryable metadata
@@ -325,6 +355,20 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix="ns"):
             if len(extracted_value) == 1:
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value[0]
+                    # store element tag in used_xpaths
+                    used_xpaths.append(
+                        getattr(
+                            root.xpath(
+                                path_or_text.replace("/text()", ""),
+                                namespaces={
+                                    k or empty_ns_prefix: v
+                                    for k, v in root.nsmap.items()
+                                },
+                            )[0],
+                            "tag",
+                            None,
+                        )
+                    )
                 else:
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
@@ -365,6 +409,23 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix="ns"):
     # Resolve templates
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)
+
+    # adds missing discovered properties
+    if discovery_pattern and discovery_path:
+        # discovered_properties = discovery_path.find(json)
+        discovered_properties = root.xpath(
+            discovery_path,
+            namespaces={k or empty_ns_prefix: v for k, v in root.nsmap.items()},
+        )
+        for found_xpath in discovered_properties:
+            found_key = found_xpath.tag.rpartition("}")[-1]
+            if (
+                re.compile(discovery_pattern).match(found_key)
+                and found_key not in properties.keys()
+                and found_xpath.tag not in used_xpaths
+            ):
+                properties[found_key] = found_xpath.text
+
     return properties
 
 
@@ -495,6 +556,4 @@ DEFAULT_METADATA_MAPPING = {
     # either after the search result is obtained from the provider or during the eodag
     # download phase)
     "downloadLink": "$.properties.downloadLink",
-    # custom field, can contain several parameters : "key1=value1&key2=value2"
-    "custom": "$.properties.custom",
 }

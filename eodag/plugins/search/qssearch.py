@@ -26,13 +26,14 @@ from lxml import etree
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    NOT_MAPPED,
     format_metadata,
     get_search_param,
     properties_from_json,
     properties_from_xml,
 )
 from eodag.plugins.search.base import Search
-from eodag.utils import parse_qs, quote, urlencode
+from eodag.utils import dict_items_recursive_apply, quote, update_nested_dict, urlencode
 from eodag.utils.exceptions import RequestError
 
 try:  # py3
@@ -190,6 +191,12 @@ class QueryStringSearch(Search):
     def build_query_string(self, *args, **kwargs):
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
+
+        if "raise_errors" in kwargs.keys():
+            del kwargs["raise_errors"]
+        # . not allowed in eodag_search_key, replaced with %2E
+        kwargs = {k.replace(".", "%2E"): v for k, v in kwargs.items()}
+
         queryables = self.get_queryables(kwargs)
         query_params = {}
         # Get all the search parameters that are recognised as queryables by the
@@ -209,17 +216,6 @@ class QueryStringSearch(Search):
                     query_params.setdefault(provider_search_key, []).append(
                         format_metadata(provider_value, *args, **kwargs)
                     )
-            elif eodag_search_key == "custom":
-                # extracts custom key:values from custom query parameter
-                logger.debug('Converting custom query parameter "%s"' % user_input)
-                custom_dict = parse_qs(user_input)
-                # parsed dict as {k1:[v1], k2:[v2,v3]}
-                for k in custom_dict.keys():
-                    for custom_val in custom_dict[k]:
-                        if k in query_params.keys():
-                            query_params[k].append(custom_val)
-                        else:
-                            query_params.setdefault(k, []).append(custom_val)
             else:
                 query_params[provider_search_key] = user_input
 
@@ -289,11 +285,49 @@ class QueryStringSearch(Search):
         queryables = {}
         for eodag_search_key, user_input in search_params.items():
             if user_input is not None:
-                md_mapping = self.config.metadata_mapping.get(eodag_search_key, None)
+                md_mapping = self.config.metadata_mapping.get(
+                    eodag_search_key, (None, NOT_MAPPED)
+                )
+                _, md_value = md_mapping
+                # query param from defined metadata_mapping
                 if md_mapping is not None and isinstance(md_mapping, list):
                     search_param = get_search_param(md_mapping)
                     if search_param is not None:
                         queryables[eodag_search_key] = search_param
+                # query param from metadata auto discovery
+                elif md_value == NOT_MAPPED and getattr(
+                    self.config, "discover_metadata", {}
+                ).get("auto_discovery", False):
+                    pattern = re.compile(
+                        self.config.discover_metadata.get("metadata_pattern", "")
+                    )
+                    search_param_cfg = self.config.discover_metadata.get(
+                        "search_param", ""
+                    )
+                    if pattern.match(eodag_search_key) and isinstance(
+                        search_param_cfg, str
+                    ):
+                        search_param = search_param_cfg.format(
+                            metadata=eodag_search_key
+                        )
+                        queryables[eodag_search_key] = search_param
+                    elif pattern.match(eodag_search_key) and isinstance(
+                        search_param_cfg, dict
+                    ):
+                        search_param_cfg_parsed = dict_items_recursive_apply(
+                            search_param_cfg,
+                            lambda k, v: v.format(metadata=eodag_search_key),
+                        )
+                        for k, v in search_param_cfg_parsed.items():
+                            if getattr(self.config, k, None):
+                                update_nested_dict(
+                                    getattr(self.config, k), v, extend_list_values=True
+                                )
+                            else:
+                                logger.warning(
+                                    "Could not use discover_metadata[search_param]: no entry for %s in plugin config",
+                                    k,
+                                )
         return queryables
 
     def collect_search_urls(self, page=None, items_per_page=None, *args, **kwargs):
@@ -385,7 +419,14 @@ class QueryStringSearch(Search):
             product = EOProduct(
                 self.provider,
                 QueryStringSearch.extract_properties[self.config.result_type](
-                    result, self.config.metadata_mapping
+                    result,
+                    self.config.metadata_mapping,
+                    discovery_pattern=getattr(self.config, "discover_metadata", {}).get(
+                        "metadata_pattern", None
+                    ),
+                    discovery_path=getattr(self.config, "discover_metadata", {}).get(
+                        "metadata_path", "null"
+                    ),
                 ),
                 *args,
                 **kwargs
@@ -479,7 +520,7 @@ class QueryStringSearch(Search):
         if product_type is None:
             return
         logger.debug("Mapping eodag product type to provider product type")
-        return self.config.products[product_type]["product_type"]
+        return self.config.products[product_type].get("product_type", None)
 
     def get_product_type_def_params(self, product_type, *args, **kwargs):
         """Get the provider product type definition parameters"""
@@ -523,14 +564,16 @@ class QueryStringSearch(Search):
                 response = requests.get(url)
                 response.raise_for_status()
         except (requests.HTTPError, urllib_HTTPError) as err:
+            err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
-                logger.exception(exception_message)
+                logger.exception("%s %s" % (exception_message, err_msg))
             else:
                 logger.exception(
-                    "Skipping error while requesting: %s (provider:%s, plugin:%s):",
+                    "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
                     url,
                     self.provider,
                     self.__class__.__name__,
+                    err_msg,
                 )
             raise RequestError(str(err))
         return response

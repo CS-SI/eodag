@@ -17,13 +17,12 @@
 # limitations under the License.
 from __future__ import unicode_literals
 
-
-try:  # PY2
-    from UserList import UserList
-except ImportError:  # PY3
-    from collections import UserList
-
 from eodag.api.product import EOProduct
+
+try:  # PY3
+    from collections import UserList
+except ImportError:  # PY2
+    from UserList import UserList
 
 
 class SearchResult(UserList):
@@ -57,10 +56,18 @@ class SearchResult(UserList):
         :returns: An eodag representation of a search result
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
-        return SearchResult(EOProduct.from_geojson(feature) for feature in feature_collection['features'])
+        return SearchResult(
+            EOProduct.from_geojson(feature)
+            for feature in feature_collection["features"]
+        )
 
     def as_geojson_object(self):
-        return {'type': 'FeatureCollection', 'features': [product.as_dict() for product in self]}
+        """GeoJSON representation of SearchResult
+        """
+        return {
+            "type": "FeatureCollection",
+            "features": [product.as_dict() for product in self],
+        }
 
     @property
     def __geo_interface__(self):
