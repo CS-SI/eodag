@@ -380,8 +380,9 @@ class QueryStringSearch(Search):
     def normalize_results(self, results, *args, **kwargs):
         """Build EOProducts from provider results"""
         logger.debug("Adapting plugin results to eodag product representation")
-        return [
-            EOProduct(
+        products = []
+        for result in results:
+            product = EOProduct(
                 self.provider,
                 QueryStringSearch.extract_properties[self.config.result_type](
                     result, self.config.metadata_mapping
@@ -389,8 +390,12 @@ class QueryStringSearch(Search):
                 *args,
                 **kwargs
             )
-            for result in results
-        ]
+            # use product_type_config as default properties
+            product.properties = dict(
+                getattr(self.config, "product_type_config", {}), **product.properties
+            )
+            products.append(product)
+        return products
 
     def count_hits(self, count_url, result_type="json"):
         """Count the number of results satisfying some criteria"""

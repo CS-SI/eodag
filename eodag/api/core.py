@@ -397,6 +397,17 @@ class EODataAccessGateway(object):
         logger.info(
             "Searching product type '%s' on provider: %s", product_type, plugin.provider
         )
+        # add product_types_config to plugin config
+        plugin.config.product_type_config = dict(
+            [
+                p
+                for p in self.list_product_types(plugin.provider)
+                if p["ID"] == product_type
+            ][0],
+            **{"productType": product_type}
+        )
+        plugin.config.product_type_config.pop("ID", None)
+
         logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
         auth = self._plugins_manager.get_auth_plugin(plugin.provider)
         return self._do_search(
