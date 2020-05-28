@@ -22,6 +22,7 @@ import re
 from datetime import datetime
 from string import Formatter
 
+import jsonpath_rw as jsonpath
 from dateutil.tz import tzutc
 from lxml import etree
 from lxml.etree import XPathEvalError
@@ -365,6 +366,42 @@ def properties_from_xml(xml_as_text, mapping, empty_ns_prefix="ns"):
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)
     return properties
+
+
+def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
+    """Metadata configuration dictionary to jsonpath objects dictionnay
+    Transform every src_dict value from jsonpath str to jsonpath object
+
+    :param src_dict: Input dict containing jsonpath str as values
+    :type src_dict: dict
+    :param dest_dict: Output dict containing jsonpath objects as values
+    :type dest_dict: dict
+    :return: dest_dict
+    :rtype: dict
+    """
+    if not dest_dict:
+        dest_dict = src_dict
+    for metadata in src_dict:
+        if metadata not in dest_dict:
+            dest_dict[metadata] = (None, NOT_MAPPED)
+        else:
+            conversion, path = get_metadata_path(dest_dict[metadata])
+            try:
+                # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
+                if len(dest_dict[metadata]) == 2:
+                    dest_dict[metadata][1] = (conversion, jsonpath.parse(path))
+                else:
+                    dest_dict[metadata] = (conversion, jsonpath.parse(path))
+            except Exception:  # jsonpath_rw does not provide a proper exception
+                # Assume the mapping is to be passed as is.
+                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
+                # it further
+                _, text = get_metadata_path(dest_dict[metadata])
+                if len(dest_dict[metadata]) == 2:
+                    dest_dict[metadata][1] = (None, text)
+                else:
+                    dest_dict[metadata] = (None, text)
+    return dest_dict
 
 
 # Keys taken from http://docs.opengeospatial.org/is/13-026r8/13-026r8.html

@@ -17,13 +17,21 @@
 # limitations under the License.
 from __future__ import absolute_import, print_function, unicode_literals
 
-import jsonpath_rw as jsonpath
-
-from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING, NOT_MAPPED, get_metadata_path
+from eodag.api.product.metadata_mapping import (
+    DEFAULT_METADATA_MAPPING,
+    mtd_cfg_as_jsonpath,
+)
 from eodag.plugins.base import PluginTopic
 
 
 class Search(PluginTopic):
+    """Base Search Plugin.
+
+    :param provider: An eodag providers configuration dictionary
+    :type provider: dict
+    :param config: Path to the user configuration file
+    :type config: str or unicode
+    """
 
     def __init__(self, provider, config):
         super(Search, self).__init__(provider, config)
@@ -33,26 +41,9 @@ class Search(PluginTopic):
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata
         metas.update(self.config.metadata_mapping)
-        for metadata in metas:
-            if metadata not in self.config.metadata_mapping:
-                self.config.metadata_mapping[metadata] = (None, NOT_MAPPED)
-            else:
-                conversion, path = get_metadata_path(self.config.metadata_mapping[metadata])
-                try:
-                    # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (conversion, jsonpath.parse(path))
-                    else:
-                        self.config.metadata_mapping[metadata] = (conversion, jsonpath.parse(path))
-                except Exception:  # jsonpath_rw does not provide a proper exception
-                    # Assume the mapping is to be passed as is.
-                    # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                    # it further
-                    _, text = get_metadata_path(self.config.metadata_mapping[metadata])
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (None, text)
-                    else:
-                        self.config.metadata_mapping[metadata] = (None, text)
+        self.config.metadata_mapping = mtd_cfg_as_jsonpath(
+            metas, self.config.metadata_mapping
+        )
 
     def query(self, *args, **kwargs):
         """Implementation of how the products must be searched goes here.
@@ -60,4 +51,4 @@ class Search(PluginTopic):
         This method must return a list of EOProduct instances (see eodag.api.product module) which will
         be processed by a Download plugin.
         """
-        raise NotImplementedError('A Search plugin must implement a method named query')
+        raise NotImplementedError("A Search plugin must implement a method named query")

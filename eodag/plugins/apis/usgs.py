@@ -24,7 +24,6 @@ import os
 import re
 import zipfile
 
-import jsonpath_rw as jsonpath
 import requests
 from requests import HTTPError
 from shapely import geometry
@@ -34,8 +33,7 @@ from usgs import USGSError, api
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
-    NOT_MAPPED,
-    get_metadata_path,
+    mtd_cfg_as_jsonpath,
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
@@ -120,27 +118,7 @@ class UsgsApi(Api):
                 # A deepcopy is done to prevent self.config.metadata_mapping from being modified when metas[metadata]
                 # is a list and is modified
                 metas.update(copy.deepcopy(self.config.metadata_mapping))
-                for metadata in metas:
-                    if metadata not in self.config.metadata_mapping:
-                        metas[metadata] = (None, NOT_MAPPED)
-                    else:
-                        conversion, path = get_metadata_path(metas[metadata])
-                        try:
-                            # If the metadata is queryable (i.e a list of 2 elements),
-                            # replace the value of the last item
-                            if len(metas[metadata]) == 2:
-                                metas[metadata][1] = (conversion, jsonpath.parse(path))
-                            else:
-                                metas[metadata] = (conversion, jsonpath.parse(path))
-                        except Exception:  # jsonpath_rw does not provide a proper exception
-                            # Assume the mapping is to be passed as is.
-                            # Ignore any transformation specified. If a value is to be passed as is, we don't want to
-                            # transform it further
-                            _, text = get_metadata_path(metas[metadata])
-                            if len(metas[metadata]) == 2:
-                                metas[metadata][1] = (None, text)
-                            else:
-                                metas[metadata] = (None, text)
+                metas = mtd_cfg_as_jsonpath(metas)
 
                 result["productType"] = usgs_dataset
 
