@@ -124,6 +124,11 @@
       next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
       total_items_nb_key_path: '$.meta.found'
     query_params_key: 'search'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9]+$'
+      search_param: '{{{{"search":{{{{"{metadata}":"{{{metadata}}}" }}}} }}}}'
+      metadata_path: '$.*'
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
@@ -135,113 +140,162 @@
           [{geometry[lonmin]},{geometry[latmax]}],
           [{geometry[lonmin]},{geometry[latmin]}]]], "type": "Polygon"}} }} }}
         - '$.dataGeometry'
-      custom:
-        - custom
-        - '$.properties.custom'
   products:
-    S2_MSI_L1C:
-      product_type: S2MSI1C
-      collection: sentinel2
+    S1_SAR_GRD:
+      product_type: GRD
+      collection: sentinel1
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
         platformSerialIdentifier:
-          - 'satelliteName'
+          - '{{"search":{{"missionId":"{platformSerialIdentifier}" }} }}'
+          - '$.missionId'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Product Search (Table 5)
+        orbitNumber:
+          - '{{"search":{{"absoluteOrbitNumber":"{orbitNumber}" }} }}'
+          - '$.absoluteOrbitNumber'
+        orbitDirection:
+          - '{{"search":{{"passDirection":"{orbitDirection}" }} }}'
+          - '$.passDirection'
+        sensorMode:
+          - '{{"search":{{"mode":"{sensorMode}" }} }}'
+          - '$.mode'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        startTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode}"}} }} }}'
+          - '$.date'
+        completionTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
+          - '$.date'
+        polarizationMode:
+          - '{{"search":{{"polarization":"{polarizationMode}" }} }}'
+          - '$.polarization'
+        # Custom parameters (not defined in the base document referenced above)
+        awsPath:
+          - '{{"search":{{"awsPath":"{awsPath}" }} }}'
+          - '$.awsPath'
+        downloadLink: 's3://sentinel-s1-l1c/{awsPath}'
+        thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
+        quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
+        id:
+          - '{{"search":{{"title":"{id}" }} }}'
+          - '{title}'
+    S2_MSI_L1C:
+      # product_type: S2MSI1C
+      collection: sentinel2
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        productType: '$.null'
+        platformSerialIdentifier:
+          - '{{"search":{{"satelliteName":"{platformSerialIdentifier}" }} }}'
           - '$.satelliteName'
         # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
         title:
-          - 'productName'
+          - '{{"search":{{"productName":"{title}" }} }}'
           - '$.productName'
         # OpenSearch Parameters for Product Search (Table 5)
         cloudCover:
-          - 'cloudCoverage'
+          - '{{"search":{{"cloudCoverage":"{cloudCover}" }} }}'
           - '$.cloudCoverage'
         # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-        illuminationAzimuthAngle:
-          - 'azimuthAngle'
-          - '$.azimuthAngle'
-        illuminationZenithAngle:
-          - 'zenithAngle'
-          - '$.zenithAngle'
-        # Custom parameters (not defined in the base document referenced above)
-        dataCoveragePercentage:
-          - 'dataCoveragePercentage'
-          - '$.dataCoveragePercentage'
-        latitudeBand:
-          - 'latitudeBand'
-          - '$.latitudeBand'
-        originalTileMeta:
-          - 'originalTileMeta'
-          - '{$.originalTileMeta#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
-        utmZone:
-          - 'utmZone'
-          - '$.utmZone'
-        thumbnail:
-          - 'thumbnail'
-          - '{$.thumbnail#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
-        quicklook:
-          - 'thumbnail'
-          - '{thumbnail}'
-        archivingTime:
-          - 'archivingTime'
-          - '$.archivingTime'
-        originalSceneID:
-          - 'originalSceneID'
-          - '$.originalSceneID'
-        sunElevation:
-          - 'sunElevation'
-          - '$.sunElevation'
-        awsPath:
-          - 'awsPath'
-          - '$.awsPath'
-        downloadLink: 's3://sentinel-s2-l1c/{awsPath}'
-        offsetXmlKey:
-          - 'offsetXmlKey'
-          - '$.offsetXmlKey'
-        productMetaLink:
-          - 'productMetaLink'
-          - '{$.productMetaLink#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
-        gridSquare:
-          - 'gridSquare'
-          - '$.gridSquare'
-        tileOrigin:
-          - 'tileOrigin'
-          - '$.tileOrigin'
         startTimeFromAscendingNode:
-          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode#to_timestamp_milliseconds}"}} }} }}'
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode}"}} }} }}'
           - '$.timestamp'
         completionTimeFromAscendingNode:
           - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
           - '$.timestamp'
-        sceneID:
-          - 'sceneID'
-          - '$.sceneID'
-        date:
-          - 'date'
-          - '$.date'
+        illuminationAzimuthAngle:
+          - '{{"search":{{"azimuthAngle":"{illuminationAzimuthAngle}" }} }}'
+          - '$.azimuthAngle'
+        illuminationZenithAngle:
+          - '{{"search":{{"zenithAngle":"{illuminationZenithAngle}" }} }}'
+          - '$.zenithAngle'
+        # Custom parameters (not defined in the base document referenced above)
+        originalTileMeta: '{$.originalTileMeta#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        thumbnail: '{$.thumbnail#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        awsPath:
+          - '{{"search":{{"awsPath":"{awsPath}" }} }}'
+          - '$.awsPath'
+        downloadLink: 's3://sentinel-s2-l1c/{awsPath}'
+        productMetaLink: '{$.productMetaLink#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
         productPath:
-          - 'productPath'
+          - '{{"search":{{"productPath":"{productPath}" }} }}'
           - '$.productPath'
-        indexingTime:
-          - 'IndexingTime'
-          - '$.IndexingTime'
         id:
-          - 'title'
+          - '{{"search":{{"productName":"{id}" }} }}'
           - '{title}'
-        tileGeometry:
-          - 'tileGeometry'
-          - '$.tileGeometry'
-        # processedL2A:
-        #   - 'processedL2A'
-        #   - '$.processedL2A'
-        # awsPathL2A:
-        #   - 'awsPathL2A'
-        #   - '$.awsPathL2A'
+        processedL2A: '$.null'
+        awsPathL2A: '$.null'
+    S2_MSI_L2A:
+      collection: sentinel2
+      processedL2A: true
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        productType: '$.null'
+        platformSerialIdentifier:
+          - '{{"search":{{"satelliteName":"{platformSerialIdentifier}" }} }}'
+          - '$.satelliteName'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title: '{$.productName#fake_l2a_title_from_l1c}'
+        # OpenSearch Parameters for Product Search (Table 5)
+        cloudCover:
+          - '{{"search":{{"cloudCoverage":"{cloudCover}" }} }}'
+          - '$.cloudCoverage'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        startTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode}"}} }} }}'
+          - '$.timestamp'
+        completionTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
+          - '$.timestamp'
+        illuminationAzimuthAngle:
+          - '{{"search":{{"azimuthAngle":"{illuminationAzimuthAngle}" }} }}'
+          - '$.azimuthAngle'
+        illuminationZenithAngle:
+          - '{{"search":{{"zenithAngle":"{illuminationZenithAngle}" }} }}'
+          - '$.zenithAngle'
+        # Custom parameters (not defined in the base document referenced above)
+        originalTileMeta: '{$.originalTileMeta#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l2a)}'
+        thumbnail: '{$.thumbnail#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        quicklook: '{thumbnail}'
+        downloadLink: 's3://sentinel-s2-l2a/{awsPathL2A}'
+        awsPath: '$.null'
+        productMetaLink: '$.null'
+        productPath: '$.null'
+        productInfo: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{awsPathL2A}/productInfo.json'
+        id: '{title}'
+        processedL2A:
+          - '{{"search":{{"processedL2A":"{processedL2A}" }} }}'
+          - '$.processedL2A'
+        awsPathL2A:
+          - '{{"search":{{"awsPathL2A":"{awsPathL2A}" }} }}'
+          - '$.awsPathL2A'
+
   download: !plugin
     type: AwsDownload
-    build_safe: true
-    safe_complementary_url_key:
-      - productPath
-    associated_bucket: 'sentinel-s2-l1c'
+    build_safe:
+      S1_SAR_GRD:
+        true
+      S2_MSI_L1C:
+        safe_complementary_url_key:
+          - productPath
+      S2_MSI_L2A:
+        fetch_metadata:
+          fetch_url: '{productInfo}'
+          fetch_format: json
+          update_metadata:
+            title: '$.name'
+            id: '{title}'
+            productPath: '$.path'
+        safe_complementary_url_key:
+          - productPath
+    associated_bucket:
+      S1_SAR_GRD: 'sentinel-s1-l1c'
+      S2_MSI_L1C: 'sentinel-s2-l1c'
+      S2_MSI_L2A: 'sentinel-s2-l2a'
   auth: !plugin
     type: OAuth
 

@@ -236,6 +236,24 @@ def format_metadata(search_param, *args, **kwargs):
             old, new = [x.strip() for x in args.split(",")]
             return string.replace(old, new)
 
+        @staticmethod
+        def convert_fake_l2a_title_from_l1c(string):
+            title_regex = re.compile(
+                r"^(?P<tile1>\w+)_(?P<tile2>\w+)_(?P<tile3>\w+)_(?P<tile4>\w+)_(?P<tile5>\w+)_"
+                + r"(?P<tile6>\w+)_(?P<tile7>\w+)$"
+            )
+            title_match = title_regex.match(string)
+            if title_match:
+                title_dict = title_match.groupdict()
+                return "%s_MSIL2A_%s____________%s________________" % (
+                    title_dict["tile1"],
+                    title_dict["tile3"],
+                    title_dict["tile6"],
+                )
+            else:
+                logger.error("Could not extract fake title from %s" % string)
+                return NOT_AVAILABLE
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 

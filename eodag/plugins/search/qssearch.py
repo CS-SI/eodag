@@ -696,11 +696,19 @@ class PostJsonSearch(QueryStringSearch):
         product_type = kwargs.get("productType", None)
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
-        keywords["productType"] = provider_product_type
-        # Add to the query, the queryable parameters set in the provider product type definition
+        keywords["productType"] = (
+            provider_product_type if provider_product_type else product_type
+        )
+
+        # provider product type specific conf
         product_type_def_params = self.get_product_type_def_params(
             product_type, *args, **kwargs
         )
+
+        # update config using provider product type definition metadata_mapping
+        self.update_metadata_mapping(product_type_def_params["metadata_mapping"])
+
+        # Add to the query, the queryable parameters set in the provider product type definition
         keywords.update(
             {
                 k: v
@@ -710,8 +718,6 @@ class PostJsonSearch(QueryStringSearch):
                 and isinstance(self.config.metadata_mapping[k], list)
             }
         )
-        # update config using provider product type definition metadata_mapping
-        self.update_metadata_mapping(product_type_def_params["metadata_mapping"])
 
         qp, _ = self.build_query_string(product_type, *args, **keywords)
         # If we were not able to build query params but have search criteria, this means
@@ -727,7 +733,7 @@ class PostJsonSearch(QueryStringSearch):
             items_per_page=items_per_page, *args, **kwargs
         )
         eo_products = self.normalize_results(
-            provider_results, product_type, provider_product_type, *args, **kwargs
+            provider_results, product_type, *args, **kwargs
         )
         return eo_products, (total_items or len(eo_products))
 
