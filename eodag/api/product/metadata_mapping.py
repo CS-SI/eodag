@@ -238,20 +238,44 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string):
-            title_regex = re.compile(
-                r"^(?P<tile1>\w+)_(?P<tile2>\w+)_(?P<tile3>\w+)_(?P<tile4>\w+)_(?P<tile5>\w+)_"
-                + r"(?P<tile6>\w+)_(?P<tile7>\w+)$"
+            id_regex = re.compile(
+                r"^(?P<id1>\w+)_(?P<id2>\w+)_(?P<id3>\w+)_(?P<id4>\w+)_(?P<id5>\w+)_(?P<id6>\w+)_(?P<id7>\w+)$"
             )
-            title_match = title_regex.match(string)
-            if title_match:
-                title_dict = title_match.groupdict()
+            id_match = id_regex.match(string)
+            if id_match:
+                id_dict = id_match.groupdict()
                 return "%s_MSIL2A_%s____________%s________________" % (
-                    title_dict["tile1"],
-                    title_dict["tile3"],
-                    title_dict["tile6"],
+                    id_dict["id1"],
+                    id_dict["id3"],
+                    id_dict["id6"],
                 )
             else:
                 logger.error("Could not extract fake title from %s" % string)
+                return NOT_AVAILABLE
+
+        @staticmethod
+        def convert_s2msil2a_title_to_aws_productinfo(string):
+            id_regex = re.compile(
+                r"^(?P<id1>\w+)_(?P<id2>\w+)_(?P<year>[0-9]{4})(?P<month>[0-9]{2})(?P<day>[0-9]{2})T[0-9]+_"
+                + r"(?P<id4>[A-Z0-9_]+)_(?P<id5>[A-Z0-9_]+)_T(?P<tile1>[0-9]{2})(?P<tile2>[A-Z])(?P<tile3>[A-Z]{2})_"
+                + r"(?P<id7>[A-Z0-9_]+)$"
+            )
+            id_match = id_regex.match(string)
+            if id_match:
+                id_dict = id_match.groupdict()
+                return (
+                    "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{collection}.json"
+                    % (
+                        id_dict["tile1"],
+                        id_dict["tile2"],
+                        id_dict["tile3"],
+                        id_dict["year"],
+                        int(id_dict["month"]),
+                        int(id_dict["day"]),
+                    )
+                )
+            else:
+                logger.error("Could not extract title infos from %s" % string)
                 return NOT_AVAILABLE
 
     return MetadataFormatter().vformat(search_param, args, kwargs)

@@ -232,6 +232,31 @@
     S2_MSI_L2A:
       collection: sentinel2
       processedL2A: true
+      # specific QueryStringSearch usage for these parameters (replaces current query)
+      specific_qssearch:
+        parameters:
+          - title
+          - id
+        results_entry: ''
+        collection:
+          - tileInfo
+          - productInfo
+        merge_responses: true
+        metadata_mapping:
+          title:
+            - 'title'
+            - '$.name'
+          id:
+            - 'title'
+            - '{title}'
+          awsPathL2A: '$.tiles[0].path'
+          downloadLink: 's3://sentinel-s2-l2a/{awsPathL2A}'
+          productPath: '$.path'
+          startTimeFromAscendingNode: '$.timestamp'
+          completionTimeFromAscendingNode: '$.timestamp'
+          geometry: '$.tileDataGeometry'
+          productInfo: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{awsPathL2A}/productInfo.json'
+          originalSceneID: '$.tiles[0].datastrip.id'
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
         productType: '$.null'
@@ -266,7 +291,9 @@
         productMetaLink: '$.null'
         productPath: '$.null'
         productInfo: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{awsPathL2A}/productInfo.json'
-        id: '{title}'
+        id:
+          - '{id#s2msil2a_title_to_aws_productinfo}'
+          - '{title}'
         processedL2A:
           - '{{"search":{{"processedL2A":"{processedL2A}" }} }}'
           - '$.processedL2A'

@@ -406,16 +406,24 @@ class QueryStringSearch(Search):
                 if self.config.result_type == "xml":
                     root_node = etree.fromstring(response.content)
                     namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
-                    results.extend(
-                        [
-                            etree.tostring(entry)
-                            for entry in root_node.xpath(
-                                self.config.results_entry, namespaces=namespaces
-                            )
-                        ]
+                    result = [
+                        etree.tostring(entry)
+                        for entry in root_node.xpath(
+                            self.config.results_entry, namespaces=namespaces
+                        )
+                    ]
+                else:
+                    result = response.json().get(
+                        self.config.results_entry, [response.json()]
+                    )
+                if getattr(self.config, "merge_responses", False):
+                    results = (
+                        [dict(r, **result[i]) for i, r in enumerate(results)]
+                        if results
+                        else result
                     )
                 else:
-                    results.extend(response.json().get(self.config.results_entry, []))
+                    results.extend(result)
             if items_per_page is not None and len(results) == items_per_page:
                 return results
         return results
@@ -521,7 +529,9 @@ class QueryStringSearch(Search):
             collection = getattr(self.config, "collection", None)
             if collection is None:
                 collection = self.config.products[product_type].get("collection", "")
-            collections = (collection,)
+            collections = (
+                (collection,) if not isinstance(collection, list) else tuple(collection)
+            )
         return collections
 
     def map_product_type(self, product_type, *args, **kwargs):
@@ -720,6 +730,36 @@ class PostJsonSearch(QueryStringSearch):
         )
 
         qp, _ = self.build_query_string(product_type, *args, **keywords)
+
+        for query_param, query_value in qp.items():
+            if (
+                query_param
+                in self.config.products[product_type].get(
+                    "specific_qssearch", {"parameters": []}
+                )["parameters"]
+            ):
+                self.config.api_endpoint = query_value
+                self.config.metadata_mapping = self.config.products[product_type][
+                    "specific_qssearch"
+                ]["metadata_mapping"]
+                self.config.results_entry = self.config.products[product_type][
+                    "specific_qssearch"
+                ]["results_entry"]
+                self.config.collection = self.config.products[product_type][
+                    "specific_qssearch"
+                ].get("collection", None)
+                self.config.merge_responses = self.config.products[product_type][
+                    "specific_qssearch"
+                ].get("merge_responses", None)
+                super(PostJsonSearch, self).__init__(
+                    provider=self.provider, config=self.config
+                )
+                self.count_hits = lambda *x, **y: 1
+                self._request = super(PostJsonSearch, self)._request
+                return super(PostJsonSearch, self).query(
+                    items_per_page=items_per_page, page=page, *args, **kwargs
+                )
+
         # If we were not able to build query params but have search criteria, this means
         # the provider does not support the search criteria given. If so, stop searching
         # right away
@@ -781,7 +821,10 @@ class PostJsonSearch(QueryStringSearch):
                     _total_results = self.count_hits(
                         search_endpoint, result_type=self.config.result_type
                     )
-                total_results += _total_results or 0
+                if getattr(self.config, "merge_responses", False):
+                    total_results = _total_results or 0
+                else:
+                    total_results += _total_results or 0
                 next_page_query_obj = self.config.pagination[
                     "next_page_query_obj"
                 ].format(
