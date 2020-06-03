@@ -141,6 +141,107 @@
           [{geometry[lonmin]},{geometry[latmin]}]]], "type": "Polygon"}} }} }}
         - '$.dataGeometry'
   products:
+    CBERS4_PAN10M_L2:
+      instrument: PAN10M
+      collection: cbers4
+      processingLevel: 2
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        productType: '$.null'
+        platformSerialIdentifier:
+          - '{{"search":{{"satelliteName":"{platformSerialIdentifier}" }} }}'
+          - '$.satelliteName'
+        instrument:
+          - '{{"search":{{"sensor":"{instrument}" }} }}'
+          - '$.sensor'
+        processingLevel:
+          - '{{"search":{{"processingLevel":"{processingLevel}" }} }}'
+          - '$.processingLevel'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        startTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode}"}} }} }}'
+          - '$.date'
+        completionTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
+          - '$.date'
+        illuminationAzimuthAngle:
+          - '{{"search":{{"sunAzimuth":"{illuminationAzimuthAngle}" }} }}'
+          - '$.sunAzimuth'
+        illuminationElevationAngle:
+          - '{{"search":{{"sunElevation":"{illuminationElevationAngle}" }} }}'
+          - '$.sunElevation'
+        # Custom parameters (not defined in the base document referenced above)
+        awsPath:
+          - '{{"search":{{"downloadUrl":"{awsPath}" }} }}'
+          - '$.downloadUrl'
+        downloadLink: 's3://cbers-pds/{awsPath}'
+        metaDownloadLink: 's3://cbers-meta-pds/{awsPath}'
+        previewBaseName: '{$.sceneID#replace_str(_L2,)}'
+        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        id:
+          - '{{"search":{{"sceneID":"{id}" }} }}'
+          - '{title}'
+    CBERS4_PAN10M_L4:
+      instrument: PAN10M
+      collection: cbers4
+      processingLevel: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+    CBERS4_PAN5M_L2:
+      instrument: PAN5M
+      collection: cbers4
+      processingLevel: 2
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+    CBERS4_PAN5M_L4:
+      instrument: PAN5M
+      collection: cbers4
+      processingLevel: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+    CBERS4_MUX_L2:
+      instrument: MUX
+      collection: cbers4
+      processingLevel: 2
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+    CBERS4_MUX_L4:
+      instrument: MUX
+      collection: cbers4
+      processingLevel: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+    CBERS4_AWFI_L2:
+      instrument: AWFI
+      collection: cbers4
+      processingLevel: 2
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+    CBERS4_AWFI_L4:
+      instrument: AWFI
+      collection: cbers4
+      processingLevel: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+
     S1_SAR_GRD:
       product_type: GRD
       collection: sentinel1
@@ -181,10 +282,9 @@
         thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
         quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
         id:
-          - '{{"search":{{"title":"{id}" }} }}'
+          - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
     S2_MSI_L1C:
-      # product_type: S2MSI1C
       collection: sentinel2
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
@@ -303,13 +403,31 @@
 
   download: !plugin
     type: AwsDownload
-    build_safe:
+    products:
+      CBERS4_MUX_L2:
+        default_bucket: 'cbers-pds'
+        complementary_url_key:
+          - metaDownloadLink
+      CBERS4_AWFI_L2:
+        complementary_url_key:
+          - metaDownloadLink
+      CBERS4_PAN5M_L2:
+        complementary_url_key:
+          - metaDownloadLink
+      CBERS4_PAN10M_L2:
+        complementary_url_key:
+          - metaDownloadLink
       S1_SAR_GRD:
-        true
+        default_bucket: 'sentinel-s1-l1c'
+        build_safe: true
       S2_MSI_L1C:
-        safe_complementary_url_key:
+        default_bucket: 'sentinel-s2-l1c'
+        build_safe: true
+        complementary_url_key:
           - productPath
       S2_MSI_L2A:
+        default_bucket: 'sentinel-s2-l2a'
+        build_safe: true
         fetch_metadata:
           fetch_url: '{productInfo}'
           fetch_format: json
@@ -317,12 +435,17 @@
             title: '$.name'
             id: '{title}'
             productPath: '$.path'
-        safe_complementary_url_key:
+        complementary_url_key:
           - productPath
-    associated_bucket:
-      S1_SAR_GRD: 'sentinel-s1-l1c'
-      S2_MSI_L1C: 'sentinel-s2-l1c'
-      S2_MSI_L2A: 'sentinel-s2-l2a'
+    # associated_bucket:
+    #   S1_SAR_GRD: 'sentinel-s1-l1c'
+    #   S2_MSI_L1C: 'sentinel-s2-l1c'
+    #   S2_MSI_L2A: 'sentinel-s2-l2a'
+    #   CBERS4_PAN10M_L2: 'cbers-meta-pds'
+      # CBERS4_PAN10M_L2: 'cbers-pds'
+      # Landsat 8 landsat-pds
+      # MODIS MCD43A4 modis-pds
+      # NAIP naip-analytic
   auth: !plugin
     type: OAuth
 

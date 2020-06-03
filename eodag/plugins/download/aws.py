@@ -119,6 +119,10 @@ S1_REPORT_REGEX = re.compile(
 S1_REGEX = re.compile(
     r"^GRD/[0-9]{4}/[0-9]+/[0-9]+/[A-Z0-9]+/[A-Z0-9]+/(?P<title>S1[A-Z0-9_]+)/(?P<file>.+)$"
 )
+# CBERS4 generic
+CBERS4_REGEX = re.compile(
+    r"^GRD/[0-9]{4}/[0-9]+/[0-9]+/[A-Z0-9]+/[A-Z0-9]+/(?P<title>S1[A-Z0-9_]+)/(?P<file>.+)$"
+)
 
 # S1 image number conf per polarization ---------------------------------------
 S1_IMG_NB_PER_POLAR = {
@@ -153,18 +157,15 @@ class AwsDownload(Download):
         :return: The absolute path to the downloaded product in the local filesystem
         :rtype: str or unicode
         """
-        bucket_name, prefix = self.get_bucket_name_and_prefix(product)
-        prefixes = [prefix]
+        product_conf = self.config.products.get(product.product_type, {})
 
-        # SAFE product build
-        build_safe = getattr(product.downloader.config, "build_safe", {}).get(
-            product.product_type, {}
-        )
+        build_safe = product_conf.get("build_safe", False)
+
         # xtra metadata needed for SAFE product
-        if isinstance(build_safe, dict) and "fetch_metadata" in build_safe.keys():
-            fetch_format = build_safe["fetch_metadata"]["fetch_format"]
-            update_metadata = build_safe["fetch_metadata"]["update_metadata"]
-            fetch_url = build_safe["fetch_metadata"]["fetch_url"].format(
+        if build_safe and "fetch_metadata" in product_conf.keys():
+            fetch_format = product_conf["fetch_metadata"]["fetch_format"]
+            update_metadata = product_conf["fetch_metadata"]["update_metadata"]
+            fetch_url = product_conf["fetch_metadata"]["fetch_url"].format(
                 **product.properties
             )
             if fetch_format == "json":
@@ -178,41 +179,44 @@ class AwsDownload(Download):
                 logger.warning(
                     "SAFE metadata fetch format %s not implemented" % fetch_format
                 )
-                pass
-        # use complementary files for SAFE product
-        if (
-            isinstance(build_safe, dict)
-            and "safe_complementary_url_key" in build_safe.keys()
-        ):
-            safe_complementary_urls = [
-                product.properties[k] for k in build_safe["safe_complementary_url_key"]
-            ]
-            prefixes += safe_complementary_urls
+
+        bucket_names_and_prefixes = [self.get_bucket_name_and_prefix(product)]
+        # add complementary urls
+        for complementary_url_key in product_conf.get("complementary_url_key", []):
+            bucket_names_and_prefixes.append(
+                self.get_bucket_name_and_prefix(
+                    product, product.properties[complementary_url_key]
+                )
+            )
 
         # prepare download & create dirs
         product_local_path, record_filename = self._prepare_download(product)
-        if not product_local_path or not record_filename:
-            return product_local_path
-        product_local_path = product_local_path.replace(".zip", "")
-        # remove existing incomplete file
-        if os.path.isfile(product_local_path):
-            os.remove(product_local_path)
-        # create product dest dir
-        if not os.path.isdir(product_local_path):
-            os.makedirs(product_local_path)
-
-        # connect to aws s3
-        access_key, access_secret = auth
-        s3 = boto3.resource(
-            "s3", aws_access_key_id=access_key, aws_secret_access_key=access_secret
-        )
-        bucket = s3.Bucket(bucket_name)
+        # if not product_local_path or not record_filename:
+        #     return product_local_path
+        # product_local_path = product_local_path.replace(".zip", "")
+        # # remove existing incomplete file
+        # if os.path.isfile(product_local_path):
+        #     os.remove(product_local_path)
+        # # create product dest dir
+        # if not os.path.isdir(product_local_path):
+        #     os.makedirs(product_local_path)
 
         with tqdm(
-            total=len(prefixes), unit="parts", desc="Downloading product parts"
+            total=len(bucket_names_and_prefixes),
+            unit="parts",
+            desc="Downloading product parts",
         ) as bar:
 
-            for prefix in prefixes:
+            for bucket_name, prefix in bucket_names_and_prefixes:
+                # connect to aws s3
+                access_key, access_secret = auth
+                s3 = boto3.resource(
+                    "s3",
+                    aws_access_key_id=access_key,
+                    aws_secret_access_key=access_secret,
+                )
+                bucket = s3.Bucket(bucket_name)
+
                 total_size = sum(
                     [
                         p.size
@@ -226,50 +230,58 @@ class AwsDownload(Download):
                     Prefix=prefix, RequestPayer="requester"
                 ):
                     chunck_rel_path = self.get_chunck_dest_path(
-                        product, product_chunk, build_safe=build_safe
+                        product, product_chunk, build_safe=build_safe, dir_prefix=prefix
                     )
                     chunck_abs_path = os.path.join(product_local_path, chunck_rel_path)
                     chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
                     if not os.path.isdir(chunck_abs_path_dir):
                         os.makedirs(chunck_abs_path_dir)
 
-                    if not os.path.isfile(chunck_abs_path):
-                        bucket.download_file(
-                            product_chunk.key,
-                            chunck_abs_path,
-                            ExtraArgs={"RequestPayer": "requester"},
-                            Callback=progress_callback,
-                        )
+                    # if not os.path.isfile(chunck_abs_path):
+                    #     bucket.download_file(
+                    #         product_chunk.key,
+                    #         chunck_abs_path,
+                    #         ExtraArgs={"RequestPayer": "requester"},
+                    #         Callback=progress_callback,
+                    #     )
                 bar.update(1)
 
-        # finalize safe product
-        if build_safe and "S2_MSI" in product.product_type:
-            self.finalize_s2_safe_product(product_local_path)
+        # # finalize safe product
+        # if build_safe and "S2_MSI" in product.product_type:
+        #     self.finalize_s2_safe_product(product_local_path)
 
-        # save hash/record file
-        with open(record_filename, "w") as fh:
-            fh.write(product.remote_location)
-        logger.debug("Download recorded in %s", record_filename)
+        # # save hash/record file
+        # with open(record_filename, "w") as fh:
+        #     fh.write(product.remote_location)
+        # logger.debug("Download recorded in %s", record_filename)
 
         return product_local_path
 
-    def get_bucket_name_and_prefix(self, product):
+    def get_bucket_name_and_prefix(self, product, url=None):
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product.EOProduct`
+        :param url: URL to use as product.location
+        :type url: str
         :return: bucket_name and prefix as str
         :rtype: tuple
         """
+        if not url:
+            url = product.location
         bucket, prefix = None, None
-        # Assume the bucket is encoded into the product location as a URL or given as the 'associated_bucket' config
+        # Assume the bucket is encoded into the product location as a URL or given as the 'default_bucket' config
         # param
-        scheme, netloc, path, params, query, fragment = urlparse(product.location)
-        if scheme == "s3":
-            bucket, prefix = (
-                self.config.associated_bucket[product.product_type],
-                path.strip("/"),
+        scheme, netloc, path, params, query, fragment = urlparse(url)
+        if not scheme or scheme == "s3":
+            bucket = (
+                netloc
+                if netloc
+                else self.config.products.get(product.product_type, {}).get(
+                    "default_bucket", ""
+                )
             )
+            prefix = path.strip("/")
         elif scheme in ("http", "https", "ftp"):
             parts = path.split("/")
             bucket, prefix = parts[1], "/{}".format("/".join(parts[2:]))
@@ -316,7 +328,7 @@ class AwsDownload(Download):
             logger.exception("Could not finalize SAFE product from downloaded data")
             raise DownloadError(e)
 
-    def get_chunck_dest_path(self, product, chunk, build_safe=False):
+    def get_chunck_dest_path(self, product, chunk, dir_prefix, build_safe=False):
         """Get chunck destination path
         """
         if build_safe:
@@ -509,17 +521,18 @@ class AwsDownload(Download):
                 )
         # no SAFE format
         else:
-            # S2 Tiles generic
-            if S2_TILE_REGEX.match(chunk.key):
-                found_dict = S2_TILE_REGEX.match(chunk.key).groupdict()
-                product_path = "%s" % (found_dict["file"])
-            # S1 Tiles generic
-            elif S1_REGEX.match(chunk.key):
-                found_dict = S1_REGEX.match(chunk.key).groupdict()
-                product_path = "%s" % (found_dict["file"])
-            # default
-            else:
-                product_path = chunk.key
+            product_path = chunk.key.split(dir_prefix.strip("/") + "/")[-1]
+            # # S2 Tiles generic
+            # if S2_TILE_REGEX.match(chunk.key):
+            #     found_dict = S2_TILE_REGEX.match(chunk.key).groupdict()
+            #     product_path = "%s" % (found_dict["file"])
+            # # S1 Tiles generic
+            # elif S1_REGEX.match(chunk.key):
+            #     found_dict = S1_REGEX.match(chunk.key).groupdict()
+            #     product_path = "%s" % (found_dict["file"])
+            # # default
+            # else:
+            #     product_path = chunk.key
         logger.debug("Downloading %s to %s" % (chunk.key, product_path))
         return product_path
 
