@@ -107,6 +107,7 @@ ES_FRS:
   sensorType:
 
 # Landasat --------------------------------------------------------------------
+# https://www.usgs.gov/faqs/what-naming-convention-landsat-collections-level-1-scenes
 L5_L1GT:
   abstract: ""
   instrument:
@@ -178,34 +179,15 @@ L8_REFLECTANCE:
   processingLevel: L2A
   sensorType: OPTICAL
 
-L8_L1T:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
-
-L8_L1GT:
+L8_OLI_TIRS_C1L1:
   abstract: |
-    Radiometrically calibrated and orthorectified using ground control points
-    and digital elevation model (DEM) data to correct for relief displacement.
-    Highest quality Level 1 products suitable for pixel-level time series analysis.
+    Landsat 8 Operational Land Imager and Thermal Infrared Sensor Collection 1 Level-1 products. Details at
+    https://landsat.usgs.gov/sites/default/files/documents/LSDS-1656_Landsat_Level-1_Product_Collection_Definition.pdf
   instrument: OLI,TIRS
   platform: LANDSAT8
   platformSerialIdentifier: L8
   processingLevel: L1
   sensorType: OPTICAL
-
-L8_OLI_TIRS_C1L1:
-  abstract: |
-    Landsat 8 Operational Land Imager and Thermal Infrared Sensor Collection 1 Level-1 products. Details at
-    https://landsat.usgs.gov/sites/default/files/documents/LSDS-1656_Landsat_Level-1_Product_Collection_Definition.pdf
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
 
 # Pleiades - ------------------------------------------------------------------
 PLD_PAN:

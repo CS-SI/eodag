@@ -1193,6 +1193,7 @@
           AND:
             - 'footprint:"Intersects({geometry#to_wkt})"'
             - 'productType:{productType}'
+            - 'platformName:{platform}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
             - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
             - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
@@ -1213,7 +1214,9 @@
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType: '$.productType'
-      platform: '$.platformName'
+      platform:
+        - platform
+        - '$.platformName'
       platformSerialIdentifier: '$.platformSerialIdentifier'
       instrument: '$.instrumentName'
       processingLevel: '$.processingLevel'
@@ -1283,10 +1286,8 @@
       product_type: SR_1_SRA___
     S3_WAT:
       product_type: SR_2_WAT___
-    L8_L1GT:
-      product_type: L1GT
-    L8_L1T:
-      product_type: L1T
+    L8_OLI_TIRS_C1L1:
+      platform: 'Landsat-*'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
