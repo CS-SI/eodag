@@ -237,6 +237,11 @@ def format_metadata(search_param, *args, **kwargs):
             return string.replace(old, new)
 
         @staticmethod
+        def convert_slice_str(string, args):
+            cmin, cmax, cstep = [x.strip() for x in args.split(",")]
+            return string[int(cmin) : int(cmax) : int(cstep)]
+
+        @staticmethod
         def convert_fake_l2a_title_from_l1c(string):
             id_regex = re.compile(
                 r"^(?P<id1>\w+)_(?P<id2>\w+)_(?P<id3>\w+)_(?P<id4>\w+)_(?P<id5>\w+)_(?P<id6>\w+)_(?P<id7>\w+)$"

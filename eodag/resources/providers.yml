@@ -126,7 +126,7 @@
     query_params_key: 'search'
     discover_metadata:
       auto_discovery: true
-      metadata_pattern: '^[a-zA-Z0-9]+$'
+      metadata_pattern: '^[a-zA-Z0-9_]+$'
       search_param: '{{{{"search":{{{{"{metadata}":"{{{metadata}}}" }}}} }}}}'
       metadata_path: '$.*'
     metadata_mapping:
@@ -241,7 +241,125 @@
         previewBaseName: '{$.sceneID#replace_str(_L4,)}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
-
+    L8_OLI_TIRS_C1L1:
+      collection: landsat8
+      onAmazon: true
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        productType: '$.null'
+        platform:
+          - '{{"search":{{"satelliteName":"{platform}" }} }}'
+          - '$.satelliteName'
+        instrument:
+          - '{{"search":{{"sensor":"{instrument}" }} }}'
+          - '$.sensor'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"productID":"{title}" }} }}'
+          - '$.productID'
+        # OpenSearch Parameters for Product Search (Table 5)
+        cloudCover:
+          - '{{"search":{{"cloudCoverage":"{cloudCover}" }} }}'
+          - '$.cloudCoverage'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        availabilityTime:
+          - '{{"search":{{"IndexingTime":{{"from":"{availabilityTime}"}} }} }}'
+          - '$.IndexingTime'
+        acquisitionStation:
+          - '{{"search":{{"receivingStation":{{"from":"{acquisitionStation}"}} }} }}'
+          - '$.receivingStation'
+        startTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode}"}} }} }}'
+          - '$.sceneStartTime'
+        completionTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
+          - '$.sceneStopTime'
+        illuminationAzimuthAngle:
+          - '{{"search":{{"sunAzimuth":"{illuminationAzimuthAngle}" }} }}'
+          - '$.sunAzimuth'
+        illuminationElevationAngle:
+          - '{{"search":{{"sunElevation":"{illuminationElevationAngle}" }} }}'
+          - '$.sunElevation'
+        # Custom parameters (not defined in the base document referenced above)
+        onAmazon:
+          - '{{"search":{{"onAmazon":"{onAmazon}" }} }}'
+          - '$.onAmazon'
+        path:
+          - '{{"search":{{"path":"{path}" }} }}'
+          - '$.path'
+        row:
+          - '{{"search":{{"row":"{row}" }} }}'
+          - '$.row'
+        downloadLink: 's3://landsat-pds/c1/L8/{path:03.0f}/{row:03.0f}/{title}/'
+        thumbnail: '$.thumbnail'
+        quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{path:03.0f}/{row:03.0f}/{title}/{title}_thumb_large.jpg'
+        id:
+          - '{{"search":{{"productID":"{id}" }} }}'
+          - '{title}'
+    MODIS_MCD43A4:
+      collection: modis
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        productType: '$.null'
+        instrument:
+          - '{{"search":{{"satelliteName":"{instrument}" }} }}'
+          - '$.satelliteName'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Product Search (Table 5)
+        cloudCover:
+          - '{{"search":{{"cloudCoverage":"{cloudCover}" }} }}'
+          - '$.cloudCoverage'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        startTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode}"}} }} }}'
+          - '$.BeginningDateTime'
+        completionTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
+          - '$.EndingDateTime'
+        # Custom parameters (not defined in the base document referenced above)
+        verticalTileNumber:
+          - '{{"search":{{"verticalTileNumber":"{verticalTileNumber}" }} }}'
+          - '$.verticalTileNumber'
+        horizontalTileNumber:
+          - '{{"search":{{"horizontalTileNumber":"{horizontalTileNumber}" }} }}'
+          - '$.horizontalTileNumber'
+        doyDate: '{$.sceneID#slice_str(9,16,1)}'
+        downloadLink: 's3://modis-pds/MCD43A4.006/{horizontalTileNumber:02.0f}/{verticalTileNumber:02.0f}/{doyDate}/'
+        thumbnail: '$.thumbnail'
+        quicklook: '$.thumbnail'
+        id:
+          - '{{"search":{{"sceneID":"{id}" }} }}'
+          - '{title}'
+    NAIP:
+      collection: naip
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        productType: '$.null'
+        platformSerialIdentifier:
+          - '{{"search":{{"satelliteName":"{platformSerialIdentifier}" }} }}'
+          - '$.satelliteName'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        startTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"from":"{startTimeFromAscendingNode}"}} }} }}'
+          - '$.date'
+        completionTimeFromAscendingNode:
+          - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
+          - '$.date'
+        # Custom parameters (not defined in the base document referenced above)
+        awsPath:
+          - '{{"search":{{"awsPath":"{awsPath}" }} }}'
+          - '$.awsPath'
+        downloadLink: 's3://naip-analytic/{awsPath}'
+        id:
+          - '{{"search":{{"sceneID":"{id}" }} }}'
+          - '{title}'
     S1_SAR_GRD:
       product_type: GRD
       collection: sentinel1
@@ -437,15 +555,6 @@
             productPath: '$.path'
         complementary_url_key:
           - productPath
-    # associated_bucket:
-    #   S1_SAR_GRD: 'sentinel-s1-l1c'
-    #   S2_MSI_L1C: 'sentinel-s2-l1c'
-    #   S2_MSI_L2A: 'sentinel-s2-l2a'
-    #   CBERS4_PAN10M_L2: 'cbers-meta-pds'
-      # CBERS4_PAN10M_L2: 'cbers-pds'
-      # Landsat 8 landsat-pds
-      # MODIS MCD43A4 modis-pds
-      # NAIP naip-analytic
   auth: !plugin
     type: OAuth
 

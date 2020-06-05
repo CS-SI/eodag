@@ -191,15 +191,15 @@ class AwsDownload(Download):
 
         # prepare download & create dirs
         product_local_path, record_filename = self._prepare_download(product)
-        # if not product_local_path or not record_filename:
-        #     return product_local_path
-        # product_local_path = product_local_path.replace(".zip", "")
-        # # remove existing incomplete file
-        # if os.path.isfile(product_local_path):
-        #     os.remove(product_local_path)
-        # # create product dest dir
-        # if not os.path.isdir(product_local_path):
-        #     os.makedirs(product_local_path)
+        if not product_local_path or not record_filename:
+            return product_local_path
+        product_local_path = product_local_path.replace(".zip", "")
+        # remove existing incomplete file
+        if os.path.isfile(product_local_path):
+            os.remove(product_local_path)
+        # create product dest dir
+        if not os.path.isdir(product_local_path):
+            os.makedirs(product_local_path)
 
         with tqdm(
             total=len(bucket_names_and_prefixes),
@@ -237,23 +237,23 @@ class AwsDownload(Download):
                     if not os.path.isdir(chunck_abs_path_dir):
                         os.makedirs(chunck_abs_path_dir)
 
-                    # if not os.path.isfile(chunck_abs_path):
-                    #     bucket.download_file(
-                    #         product_chunk.key,
-                    #         chunck_abs_path,
-                    #         ExtraArgs={"RequestPayer": "requester"},
-                    #         Callback=progress_callback,
-                    #     )
+                    if not os.path.isfile(chunck_abs_path):
+                        bucket.download_file(
+                            product_chunk.key,
+                            chunck_abs_path,
+                            ExtraArgs={"RequestPayer": "requester"},
+                            Callback=progress_callback,
+                        )
                 bar.update(1)
 
-        # # finalize safe product
-        # if build_safe and "S2_MSI" in product.product_type:
-        #     self.finalize_s2_safe_product(product_local_path)
+        # finalize safe product
+        if build_safe and "S2_MSI" in product.product_type:
+            self.finalize_s2_safe_product(product_local_path)
 
-        # # save hash/record file
-        # with open(record_filename, "w") as fh:
-        #     fh.write(product.remote_location)
-        # logger.debug("Download recorded in %s", record_filename)
+        # save hash/record file
+        with open(record_filename, "w") as fh:
+            fh.write(product.remote_location)
+        logger.debug("Download recorded in %s", record_filename)
 
         return product_local_path
 
@@ -522,17 +522,6 @@ class AwsDownload(Download):
         # no SAFE format
         else:
             product_path = chunk.key.split(dir_prefix.strip("/") + "/")[-1]
-            # # S2 Tiles generic
-            # if S2_TILE_REGEX.match(chunk.key):
-            #     found_dict = S2_TILE_REGEX.match(chunk.key).groupdict()
-            #     product_path = "%s" % (found_dict["file"])
-            # # S1 Tiles generic
-            # elif S1_REGEX.match(chunk.key):
-            #     found_dict = S1_REGEX.match(chunk.key).groupdict()
-            #     product_path = "%s" % (found_dict["file"])
-            # # default
-            # else:
-            #     product_path = chunk.key
         logger.debug("Downloading %s to %s" % (chunk.key, product_path))
         return product_path
 

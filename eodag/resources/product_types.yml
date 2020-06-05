@@ -189,6 +189,37 @@ L8_OLI_TIRS_C1L1:
   processingLevel: L1
   sensorType: OPTICAL
 
+# MODIS -----------------------------------------------------------------------
+MODIS_MCD43A4:
+  abstract: |
+    The MODerate-resolution Imaging Spectroradiometer (MODIS) Reflectance product MCD43A4 provides 500 meter
+    reflectance data adjusted using a bidirectional reflectance distribution function (BRDF) to model the values as if
+    they were taken from nadir view. The MCD43A4 product contains 16 days of data provided in a level-3 gridded data
+    set in Sinusoidal projection. Both Terra and Aqua data are used in the generation of this product, providing the
+    highest probability for quality assurance input data. It is designated with a shortname beginning with MCD, which
+    is used to refer to 'combined' products, those comprised of data using both Terra and Aqua.
+  instrument: MODIS
+  platform: Terra+Aqua
+  platformSerialIdentifier: EOS AM-1+PM-1
+  processingLevel: L3
+  sensorType: OPTICAL
+
+# NAIP -----------------------------------------------------------------------
+NAIP:
+  abstract: |
+    The National Agriculture Imagery Program (NAIP) acquires aerial imagery during the agricultural growing seasons in
+    the continental U.S. This "leaf-on" imagery and typically ranges from 60 centimeters to 100 centimeters in
+    resolution and is available from the naip-analytic Amazon S3 bucket as 4-band (RGB + NIR) imagery in MRF format.
+    NAIP data is delivered at the state level; every year, a number of states receive updates, with an overall update
+    cycle of two or three years. The tiling format of NAIP imagery is based on a 3.75' x 3.75' quarter quadrangle with
+    a 300 meter buffer on all four sides. NAIP imagery is formatted to the UTM coordinate system using NAD83. NAIP
+    imagery may contain as much as 10% cloud cover per tile.
+  instrument: film and digital cameras
+  platform: National Agriculture Imagery Program
+  platformSerialIdentifier: NAIP
+  processingLevel: N/A
+  sensorType: OPTICAL
+
 # Pleiades - ------------------------------------------------------------------
 PLD_PAN:
   abstract: Pleiades Panchromatic (Pan)
