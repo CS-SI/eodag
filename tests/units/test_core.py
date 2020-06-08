@@ -37,13 +37,22 @@ class TestCore(unittest.TestCase):
         "L7_L1G": [],
         "L7_L1T": [],
         "L7_L1GT": [],
-        "L8_OLI_TIRS_C1L1": ["onda", "usgs"],
-        "S1_SAR_GRD": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
+        "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos"],
+        "S1_SAR_GRD": [
+            "peps",
+            "sobloo",
+            "onda",
+            "wekeo",
+            "mundi",
+            "creodias",
+            "aws_eos",
+        ],
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
         "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
-        "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias", "peps"],
+        "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias", "peps", "aws_eos"],
         "S2_MSI_L1C": [
+            "aws_eos",
             "aws_s3_sentinel2_l1c",
             "peps",
             "sobloo",
@@ -68,6 +77,16 @@ class TestCore(unittest.TestCase):
         "PLD_BUNDLE": ["theia"],
         "PLD_PANSHARPENED": ["theia"],
         "ES_FRS": [],
+        "CBERS4_PAN10M_L2": ["aws_eos"],
+        "CBERS4_PAN10M_L4": ["aws_eos"],
+        "CBERS4_PAN5M_L2": ["aws_eos"],
+        "CBERS4_PAN5M_L4": ["aws_eos"],
+        "CBERS4_MUX_L2": ["aws_eos"],
+        "CBERS4_MUX_L4": ["aws_eos"],
+        "CBERS4_AWFI_L2": ["aws_eos"],
+        "CBERS4_AWFI_L4": ["aws_eos"],
+        "MODIS_MCD43A4": ["aws_eos"],
+        "NAIP": ["aws_eos"],
     }
     SUPPORTED_PROVIDERS = [
         "peps",
@@ -79,6 +98,7 @@ class TestCore(unittest.TestCase):
         "mundi",
         "onda",
         "wekeo",
+        "aws_eos",
     ]
 
     def setUp(self):
