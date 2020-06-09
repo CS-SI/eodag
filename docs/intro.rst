@@ -48,7 +48,7 @@ There are currently 9 available providers implemented on eodag:
 
 * `usgs <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
 
-* `aws_s3_sentinel2_l1c <http://sentinel-pds.s3-website.eu-central-1.amazonaws.com/>`_: Amazon public bucket for Sentinel 2 products
+* `aws_eos <https://developers.eos.com/datasets_description.html>`_: EOS search for Amazon public datasets
 
 * `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
 
@@ -115,17 +115,16 @@ Create a configuration file containing your credentials for each provider.  You 
             credentials:
                 username:
                 password:
-    aws_s3_sentinel2_l1c:
+    aws_eos:
         priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
         auth:
             credentials:
+                apikey:
                 aws_access_key_id:
                 aws_secret_access_key:
         download:
-            extract:
             outputs_prefix:
-            associated_bucket:
     sobloo:
         priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
@@ -189,8 +188,10 @@ For theia, you only need to register once here: https://sso.theia-land.fr/theia/
 
 For peps, create an account here: https://peps.cnes.fr/rocket/#/register
 
-For aws_s3_sentinel2_l1c:
+For aws_eos, you need credentials for both EOS (search) and AWS (download):
 
+    * Create an account on EOS: https://auth.eos.com
+    * Get your EOS api key from https://console.eos.com
     * Create an account on AWS website: https://aws.amazon.com/fr/ (warning:
       A credit card number must be given because fees apply after a given
       amount of downloaded data).

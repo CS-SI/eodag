@@ -6,11 +6,12 @@ usgs:
       username: usr
       password: pwd
 
-aws_s3_sentinel2_l1c:
+aws_eos:
   search:
     product_location_scheme: 'file'
   auth:
     credentials:
+      apikey: api-key
       aws_access_key_id: access-key-id
       aws_secret_access_key: secret-access-key
 

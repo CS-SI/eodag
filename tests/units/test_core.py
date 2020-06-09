@@ -53,7 +53,6 @@ class TestCore(unittest.TestCase):
         "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias", "peps", "aws_eos"],
         "S2_MSI_L1C": [
             "aws_eos",
-            "aws_s3_sentinel2_l1c",
             "peps",
             "sobloo",
             "onda",
@@ -90,7 +89,6 @@ class TestCore(unittest.TestCase):
     }
     SUPPORTED_PROVIDERS = [
         "peps",
-        "aws_s3_sentinel2_l1c",
         "usgs",
         "theia",
         "sobloo",
