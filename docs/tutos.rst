@@ -8,6 +8,8 @@ original notebooks:
 
     * :download:`tuto_basics.ipynb <../examples/tuto_basics.ipynb>`
 
+    * :download:`tuto_advanced.ipynb <../examples/tuto_advanced.ipynb>`
+
     * :download:`tuto_bandmath.ipynb <../examples/tuto_bandmath.ipynb>`
 
     * :download:`tuto_burnt_areas_gpt.ipynb <../examples/tuto_burnt_areas_gpt.ipynb>`
@@ -20,6 +22,7 @@ original notebooks:
    :maxdepth: 2
 
    tutorials/tuto_basics.nblink
+   tutorials/tuto_advanced.nblink
    tutorials/tuto_bandmath.nblink
    tutorials/tuto_burnt_areas_gpt.nblink
    tutorials/tuto_burnt_areas_snappy.nblink
