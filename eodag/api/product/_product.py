@@ -81,6 +81,21 @@ class EOProduct(object):
             if key != "geometry" and value not in [NOT_MAPPED, NOT_AVAILABLE]
         }
         product_geometry = properties["geometry"]
+        # Let's try 'latmin lonmin latmax lonmax'
+        if isinstance(product_geometry, six.string_types):
+            bbox_pattern = re.compile(
+                r"^(\d+\.?\d*) (\d+\.?\d*) (\d+\.?\d*) (\d+\.?\d*)$"
+            )
+            found_bbox = bbox_pattern.match(product_geometry)
+            if found_bbox:
+                coords = found_bbox.groups()
+                if len(coords) == 4:
+                    product_geometry = geometry.box(
+                        float(coords[1]),
+                        float(coords[0]),
+                        float(coords[3]),
+                        float(coords[2]),
+                    )
         # Best effort to understand provider specific geometry (the default is to
         # assume an object implementing the Geo Interface: see
         # https://gist.github.com/2217756)
@@ -93,15 +108,8 @@ class EOProduct(object):
                 # Also catching TypeError because product_geometry can be a unicode
                 # string and not a bytes string
                 except (geos.WKBReadingError, TypeError):
-                    # Let's try 'latmin lonmin latmax lonmax'
-                    coords = [float(coord) for coord in product_geometry.split(" ")]
-                    if len(coords) == 4:
-                        product_geometry = geometry.box(
-                            coords[1], coords[0], coords[3], coords[2]
-                        )
-                    else:
-                        # Giv up!
-                        raise
+                    # Giv up!
+                    raise
         self.geometry = self.search_intersection = geometry.shape(product_geometry)
         self.search_args = args
         self.search_kwargs = kwargs
