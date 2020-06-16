@@ -313,6 +313,15 @@ class EOProduct(object):
         """
         self.downloader = downloader
         self.downloader_auth = authenticator
+        # resolve locations and properties if needed with downloader configuration
+        self.location = self.location % vars(self.downloader.config)
+        self.remote_location = self.remote_location % vars(self.downloader.config)
+        for k, v in self.properties.items():
+            if isinstance(v, six.string_types):
+                try:
+                    self.properties[k] = v % vars(self.downloader.config)
+                except TypeError:
+                    pass
 
     def download(
         self,
@@ -351,8 +360,6 @@ class EOProduct(object):
             if self.downloader_auth is not None
             else self.downloader_auth
         )
-        # resolve remote location if needed with downloader configuration
-        self.remote_location = self.remote_location % vars(self.downloader.config)
         fs_location = self.downloader.download(
             self,
             auth=auth,
