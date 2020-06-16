@@ -498,9 +498,8 @@ def serve_rest(ctx, daemon, world, port, config, debug):
     # IMPORTANT: the order of imports counts here (first we override the settings,
     # then we import the app so that the updated settings is taken into account in
     # the app initialization)
-    from eodag.rest import settings
-
-    settings.EODAG_CFG_FILE = config
+    if config:
+        os.environ["EODAG_CFG_FILE"] = config
 
     from eodag.rest.server import app
 
