@@ -1,5 +1,5 @@
 .. image:: https://eodag.readthedocs.io/en/latest/_static/eodag_bycs.png
-    :target: https://bitbucket.org/geostorm/eodag
+    :target: https://github.com/CS-SI/eodag
 
 |
 
@@ -9,11 +9,11 @@
 .. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
     :target: https://eodag.readthedocs.io/en/latest/
 
-.. image:: https://img.shields.io/bitbucket/issues/geostorm/eodag.svg
-    :target: https://bitbucket.org/geostorm/eodag/issues?status=new&status=open
+.. image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
+    :target: https://github.com/CS-SI/eodag/issues
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/git/https%3A%2F%2Fbitbucket.org%2Fgeostorm%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
+    :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
 
 |
 
@@ -159,7 +159,7 @@ Contribute
 
 If you intend to contribute to eodag source code::
 
-    git clone https://bitbucket.org/geostorm/eodag.git
+    git clone https://github.com/CS-SI/eodag.git
     cd eodag
     python -m pip install -r requirements-dev.txt
     pre-commit install
@@ -204,12 +204,10 @@ Releases are made by tagging a commit on the master branch. To make a new releas
       also `NOTICE` - in case a new dependency is added).
     * Check that the version string in `eodag/__meta__.py` (the variable `__version__`)
       is correctly updated
-    * Push your local master branch to remote. That will trigger the bitbucket pipeline
-      that runs the unit tests.
+    * Push your local master branch to remote.
     * Tag the commit that represents the state of the release with a message. For example,
       for version 1.0, do this: `git tag -a v1.0 -m 'version 1.0'`
-    * Push the tags to bitbucket: `git push --tags`. This will trigger a build on bitbucket
-      pipelines that will do the release automatically.
+    * Push the tags to github: `git push --tags`.
 
 The documentation is managed by a webhook, and the latest documentation on readthedocs follows
 the documentation present in `master`. Therefore, there is nothing to do apart from updating

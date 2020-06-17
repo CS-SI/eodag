@@ -16,7 +16,7 @@ extra dependancies installation. To install them, type this on the command line 
 
 Then clone eodag repository::
 
-    git clone https://bitbucket.org/geostorm/eodag.git
+    git clone https://github.com/CS-SI/eodag.git
 
 And then invoke jupyter notebook like this::
 
@@ -31,4 +31,3 @@ It should open your navigator in the directory `eodag/examples` where you can vi
     `--config` with an arbitrary non-empty value like this::
 
         jupyter notebook --notebook-dir=eodag/examples --config=arbitrary
-

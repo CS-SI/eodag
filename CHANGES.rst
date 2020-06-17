@@ -5,7 +5,7 @@ Release history
 ++++++++++++++++++
 
 - Warning: last release including Python 2.7 support
-- Fix CLI download_all missing plugin configuration, fixes `#134 <https://bitbucket.org/geostorm/eodag/issues/134>`_
+- Fix CLI download_all missing plugin configuration, fixes `#134 <https://github.com/CS-SI/eodag/issues/134>`_
 
 1.5.1 (2020-04-08)
 ++++++++++++++++++
@@ -19,31 +19,31 @@ Release history
 - ``productionStatus`` parameter standardization over providers
 - Not-available products download management, using ``wait``/``timeout``
   `download <https://eodag.readthedocs.io/en/latest/api.html#eodag.api.core.EODataAccessGateway.download>`_
-  optional parameters, fixes `#125 <https://bitbucket.org/geostorm/eodag/issues/125>`_
+  optional parameters, fixes `#125 <https://github.com/CS-SI/eodag/issues/125>`_
 - More explicit authentication errors messages
 - Update search endoint for aws_s3_sentinel2_l1c and add RequestPayer option usage,
-  fixes `#131 <https://bitbucket.org/geostorm/eodag/issues/131>`_
+  fixes `#131 <https://github.com/CS-SI/eodag/issues/131>`_
 
 1.4.2 (2020-03-04)
 ++++++++++++++++++
 
-- Skip badly configured providers in user configuration, see `#129 <https://bitbucket.org/geostorm/eodag/issues/129>`_
+- Skip badly configured providers in user configuration, see `#129 <https://github.com/CS-SI/eodag/issues/129>`_
 
 1.4.1 (2020-02-25)
 ++++++++++++++++++
 
 - Warning message if an unknow provider is found in user configuration file,
-  fixes `#129 <https://bitbucket.org/geostorm/eodag/issues/129>`_
+  fixes `#129 <https://github.com/CS-SI/eodag/issues/129>`_
 
 1.4.0 (2020-02-24)
 ++++++++++++++++++
 
 - Add to query the parameters set in the provider product type definition
-- New ``S3RestDownload`` plugin for mundi, fixes `#127 <https://bitbucket.org/geostorm/eodag/issues/127>`_
-- S3_OLCI_L2LFR support for mundi, see `#124 <https://bitbucket.org/geostorm/eodag/issues/124>`_
-- S2_MSI_L2A support for peps, see `#124 <https://bitbucket.org/geostorm/eodag/issues/124>`_
-- Theia-landsat provider moved to theia, fixes `#95 <https://bitbucket.org/geostorm/eodag/issues/95>`_
-- Fixed onda query quoting issues, fixes `#128 <https://bitbucket.org/geostorm/eodag/issues/128>`_
+- New ``S3RestDownload`` plugin for mundi, fixes `#127 <https://github.com/CS-SI/eodag/issues/127>`_
+- S3_OLCI_L2LFR support for mundi, see `#124 <https://github.com/CS-SI/eodag/issues/124>`_
+- S2_MSI_L2A support for peps, see `#124 <https://github.com/CS-SI/eodag/issues/124>`_
+- Theia-landsat provider moved to theia, fixes `#95 <https://github.com/CS-SI/eodag/issues/95>`_
+- Fixed onda query quoting issues, fixes `#128 <https://github.com/CS-SI/eodag/issues/128>`_
 - Mundi, creodias and onda added to end-to-end tests
 - Gdal install instructions and missing auxdata in ship_detection tutorial
 - Sobloo and creodias quicklooks fix
@@ -52,53 +52,53 @@ Release history
 1.3.6 (2020-01-24)
 ++++++++++++++++++
 
-- USGS plugin corrections, fixes `#73 <https://bitbucket.org/geostorm/eodag/issues/73>`_
+- USGS plugin corrections, fixes `#73 <https://github.com/CS-SI/eodag/issues/73>`_
 - Fixed py27 encodeurl in querystring
-- End-to-end tests update, fixes `#119 <https://bitbucket.org/geostorm/eodag/issues/119>`_
-- Default eodag conf used in end-to-end tests, fixes `#98 <https://bitbucket.org/geostorm/eodag/issues/98>`_
-- Fixed ``download_all`` method `#118 <https://bitbucket.org/geostorm/eodag/issues/118>`_
+- End-to-end tests update, fixes `#119 <https://github.com/CS-SI/eodag/issues/119>`_
+- Default eodag conf used in end-to-end tests, fixes `#98 <https://github.com/CS-SI/eodag/issues/98>`_
+- Fixed ``download_all`` method `#118 <https://github.com/CS-SI/eodag/issues/118>`_
 
 1.3.5 (2020-01-07)
 ++++++++++++++++++
 
-- Removed tqdm_notebook warning, fixes `#117 <https://bitbucket.org/geostorm/eodag/issues/117>`_
-- Removed traceback from geom intersection warning, fixes `#114 <https://bitbucket.org/geostorm/eodag/issues/114>`_
+- Removed tqdm_notebook warning, fixes `#117 <https://github.com/CS-SI/eodag/issues/117>`_
+- Removed traceback from geom intersection warning, fixes `#114 <https://github.com/CS-SI/eodag/issues/114>`_
 - Documentation update for provider priorities and parametters mapping
 - New test for readme/pypi syntax
 
 1.3.4 (2019-12-12)
 ++++++++++++++++++
 
-- Use sobloo official api endpoint, fixes `#115 <https://bitbucket.org/geostorm/eodag/issues/115>`_
+- Use sobloo official api endpoint, fixes `#115 <https://github.com/CS-SI/eodag/issues/115>`_
 - New badges in readme and CS logo
 - Set owslib version to 0.18.0 (py27 support dropped)
 
 1.3.3 (2019-10-11)
 ++++++++++++++++++
 
-- Fixes product configuration for theia provider `#113 <https://bitbucket.org/geostorm/eodag/issues/113>`_
+- Fixes product configuration for theia provider `#113 <https://github.com/CS-SI/eodag/issues/113>`_
 
 1.3.2 (2019-09-27)
 ++++++++++++++++++
 
-- Fixes pagination configuration for sobloo provider `#111 <https://bitbucket.org/geostorm/eodag/issues/111>`_
+- Fixes pagination configuration for sobloo provider `#111 <https://github.com/CS-SI/eodag/issues/111>`_
 
 1.3.1 (2019-09-27)
 ++++++++++++++++++
 
 - Added calls graphs in documentation
-- Tutorial notebooks fixes `#109 <https://bitbucket.org/geostorm/eodag/issues/109>`_,
-  `#110 <https://bitbucket.org/geostorm/eodag/issues/110>`_
-- Download unit display fix `#108 <https://bitbucket.org/geostorm/eodag/issues/108>`_
-- Fix date format with sobloo provider `#107 <https://bitbucket.org/geostorm/eodag/issues/107>`_
+- Tutorial notebooks fixes `#109 <https://github.com/CS-SI/eodag/issues/109>`_,
+  `#110 <https://github.com/CS-SI/eodag/issues/110>`_
+- Download unit display fix `#108 <https://github.com/CS-SI/eodag/issues/108>`_
+- Fix date format with sobloo provider `#107 <https://github.com/CS-SI/eodag/issues/107>`_
 
 1.3.0 (2019-09-06)
 ++++++++++++++++++
 
 - Add parameters mapping in documentation
-- Add new queryable parameters for sobloo `#105 <https://bitbucket.org/geostorm/eodag/issues/105>`_
+- Add new queryable parameters for sobloo `#105 <https://github.com/CS-SI/eodag/issues/105>`_
 - Fix custom search
-- Fix sobloo cloudCoverage query `#106 <https://bitbucket.org/geostorm/eodag/issues/106>`_
+- Fix sobloo cloudCoverage query `#106 <https://github.com/CS-SI/eodag/issues/106>`_
 
 1.2.3 (2019-08-26)
 ++++++++++++++++++
@@ -146,8 +146,8 @@ Release history
 1.0.1 (2019-04-30)
 ++++++++++++++++++
 
-- Fixes `#97 <https://bitbucket.org/geostorm/eodag/issues/97/conversion-to-provider-product-type-is-not>`_
-- Fixes `#96 <https://bitbucket.org/geostorm/eodag/issues/96/eodag-does-not-handle-well-the-switch-in>`_
+- Fixes `#97 <https://github.com/CS-SI/eodag/issues/97/conversion-to-provider-product-type-is-not>`_
+- Fixes `#96 <https://github.com/CS-SI/eodag/issues/96/eodag-does-not-handle-well-the-switch-in>`_
 
 1.0 (2019-04-26)
 ++++++++++++++++

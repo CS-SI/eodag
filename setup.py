@@ -121,9 +121,9 @@ setup(
         ],
     },
     project_urls={
-        "Bug Tracker": "https://bitbucket.org/geostorm/eodag/issues/",
+        "Bug Tracker": "https://github.com/CS-SI/eodag/issues/",
         "Documentation": "https://eodag.readthedocs.io/en/latest/",
-        "Source Code": "https://bitbucket.org/geostorm/eodag",
+        "Source Code": "https://github.com/CS-SI/eodag",
     },
     classifiers=[
         "Development Status :: 1 - Planning",

@@ -7,7 +7,7 @@ If you intend to contribute to eodag source code:
 
 .. code-block:: bash
 
-    git clone https://bitbucket.org/geostorm/eodag.git
+    git clone https://github.com/CS-SI/eodag.git
     cd eodag
     python -m pip install -r requirements-dev.txt
 
