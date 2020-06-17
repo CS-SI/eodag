@@ -506,10 +506,18 @@
       productType:
         - productType
         - '$.properties.productType'
-      platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
-      instrument: '$.properties.instrument'
-      processingLevel: '$.properties.processingLevel'
+      platform:
+        - platform
+        - '$.properties.platform'
+      platformSerialIdentifier:
+        - 'platform={platformSerialIdentifier}'
+        - '$.properties.platform'
+      instrument:
+        - instrument
+        - '$.properties.instrument'
+      processingLevel:
+        - processingLevel
+        - '$.properties.processingLevel'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
@@ -572,10 +580,36 @@
       thumbnail: '$.properties.thumbnail'
 
   products:
-    S2_MSI_L2A:
-      product_type: REFLECTANCE
+    S2_MSI_L2A_MAJA:
       processingLevel: LEVEL2A
       collection: SENTINEL2
+    S2_MSI_L2B_MAJA_SNOW:
+      processingLevel: L2B-SNOW
+      collection: Snow
+    S2_MSI_L2B_MAJA_WATER:
+      processingLevel: L2B-WATER
+      collection: WaterQual
+    S2_MSI_L3A_WASP:
+      processingLevel: LEVEL3A
+      collection: SENTINEL2
+    SPOT_SWH:
+      collection: SPOTWORLDHERITAGE
+      processingLevel: LEVEL1C
+    SPOT_SWH_OLD:
+      collection: SWH1
+      processingLevel: LEVEL1C
+    SPOT5_SPIRIT:
+      collection: Spirit
+      processingLevel: 1A
+    VENUS_L1C:
+      collection: VENUS
+      processingLevel: LEVEL1C
+    VENUS_L2A_MAJA:
+      collection: VENUS
+      processingLevel: LEVEL2A
+    VENUS_L3A_MAJA:
+      collection: VENUS
+      processingLevel: LEVEL3A
     L8_REFLECTANCE:
       collection: LANDSAT
       product_type: REFLECTANCE
@@ -594,6 +628,8 @@
     PLD_PANSHARPENED:
       collection: Pleiades
       product_type: Pansharpened (Pan+XS)
+    OSO:
+      collection: OSO
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'

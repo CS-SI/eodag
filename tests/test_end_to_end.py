@@ -239,7 +239,7 @@ class TestEODagEndToEnd(unittest.TestCase):
     def test_end_to_end_search_download_theia(self):
         product = self.execute_search(
             "theia",
-            "S2_MSI_L2A",
+            "S2_MSI_L2A_MAJA",
             "2019-03-01",
             "2019-03-15",
             (

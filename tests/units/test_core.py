@@ -50,7 +50,11 @@ class TestCore(unittest.TestCase):
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
         "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
-        "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias", "peps", "aws_eos"],
+        "S2_MSI_L2A": ["onda", "mundi", "creodias", "peps", "aws_eos"],
+        "S2_MSI_L2A_MAJA": ["theia"],
+        "S2_MSI_L2B_MAJA_SNOW": ["theia"],
+        "S2_MSI_L2B_MAJA_WATER": ["theia"],
+        "S2_MSI_L3A_WASP": ["theia"],
         "S2_MSI_L1C": [
             "aws_eos",
             "peps",
@@ -86,6 +90,13 @@ class TestCore(unittest.TestCase):
         "CBERS4_AWFI_L4": ["aws_eos"],
         "MODIS_MCD43A4": ["aws_eos"],
         "NAIP": ["aws_eos"],
+        "SPOT_SWH": ["theia"],
+        "SPOT_SWH_OLD": ["theia"],
+        "SPOT5_SPIRIT": ["theia"],
+        "VENUS_L1C": ["theia"],
+        "VENUS_L2A_MAJA": ["theia"],
+        "VENUS_L3A_MAJA": ["theia"],
+        "OSO": ["theia"],
     }
     SUPPORTED_PROVIDERS = [
         "peps",
