@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -29,12 +29,14 @@ from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressSch
 
 
 class Sentinel2L1C(DatasetDriver):
-    BAND_FILE_PATTERN_TPL = r'^.+_{band}\.jp2$'
+    """Driver for Sentinel2 L1C product"""
+
+    BAND_FILE_PATTERN_TPL = r"^.+_{band}\.jp2$"
     SPATIAL_RES_PER_BANDS = {
-        '10m': ('B02', 'B03', 'B04', 'B08'),
-        '20m': ('B05', 'B06', 'B07', 'B11', 'B12', 'B8A'),
-        '60m': ('B01', 'B09', 'B10'),
-        'TCI': ('TCI',),
+        "10m": ("B02", "B03", "B04", "B08"),
+        "20m": ("B05", "B06", "B07", "B11", "B12", "B8A"),
+        "60m": ("B01", "B09", "B10"),
+        "TCI": ("TCI",),
     }
 
     def get_data_address(self, eo_product, band):
@@ -55,28 +57,45 @@ class Sentinel2L1C(DatasetDriver):
         See :func:`~eodag.api.product.drivers.base.DatasetDriver.get_data_address` to get help on the formal
         parameters.
         """
-        product_location_scheme = eo_product.location.split('://')[0]
-        if product_location_scheme == 'file':
-            top_level_mtd = os.path.join(re.sub(r'file://', '', eo_product.location), 'MTD_MSIL1C.xml')
+        product_location_scheme = eo_product.location.split("://")[0]
+        if product_location_scheme == "file":
+            top_level_mtd = os.path.join(
+                re.sub(r"file://", "", eo_product.location), "MTD_MSIL1C.xml"
+            )
             # Ignore the NotGeoreferencedWarning thrown by rasterio
             with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', category=UserWarning, message='Dataset has no geotransform set')
+                warnings.filterwarnings(
+                    "ignore",
+                    category=UserWarning,
+                    message="Dataset has no geotransform set",
+                )
                 with rasterio.open(top_level_mtd) as dataset:
                     for address in dataset.subdatasets:
-                        spatial_res = address.split(':')[-2]
+                        spatial_res = address.split(":")[-2]
                         if band in self.SPATIAL_RES_PER_BANDS[spatial_res]:
                             with rasterio.open(address) as subdataset:
-                                band_file_pattern = re.compile(self.BAND_FILE_PATTERN_TPL.format(band=band))
-                                for filename in filter(lambda f: band_file_pattern.match(f), subdataset.files):
+                                band_file_pattern = re.compile(
+                                    self.BAND_FILE_PATTERN_TPL.format(band=band)
+                                )
+                                for filename in filter(
+                                    lambda f: band_file_pattern.match(f),
+                                    subdataset.files,
+                                ):
                                     return filename
                 raise AddressNotFound
-        if product_location_scheme == 's3':
+        if product_location_scheme == "s3":
             access_key, access_secret = eo_product.downloader_auth.authenticate()
-            s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=access_secret)
-            bucket = s3.Bucket('sentinel-s2-l1c')
-            for summary in bucket.objects.filter(Prefix=eo_product.location.split('s3://')[-1]):
-                if '{}.jp2'.format(band) in summary.key:
-                    return 's3://sentinel-s2-l1c/{}'.format(summary.key)
+            s3 = boto3.resource(
+                "s3", aws_access_key_id=access_key, aws_secret_access_key=access_secret
+            )
+            bucket = s3.Bucket("sentinel-s2-l1c")
+            for summary in bucket.objects.filter(
+                Prefix=eo_product.location.split("s3://")[-1]
+            ):
+                if "{}.jp2".format(band) in summary.key:
+                    return "s3://sentinel-s2-l1c/{}".format(summary.key)
             raise AddressNotFound
-        raise UnsupportedDatasetAddressScheme('eo product {} is accessible through a location scheme that is not yet '
-                                              'supported by eodag: {}'.format(eo_product, product_location_scheme))
+        raise UnsupportedDatasetAddressScheme(
+            "eo product {} is accessible through a location scheme that is not yet "
+            "supported by eodag: {}".format(eo_product, product_location_scheme)
+        )

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -26,24 +26,25 @@ from eodag.utils.exceptions import MisconfiguredError
 
 
 class TokenAuth(Authentication):
+    """TokenAuth authentication plugin"""
 
     def authenticate(self):
+        """Authenticate"""
         # First get the token
         try:
-            response = requests.post(
-                self.config.auth_uri,
-                data=self.config.credentials
-            )
+            response = requests.post(self.config.auth_uri, data=self.config.credentials)
             try:
                 response.raise_for_status()
             except HTTPError as e:
                 raise e
             else:
-                if getattr(self.config, 'token_type', 'text') == 'json':
+                if getattr(self.config, "token_type", "text") == "json":
                     token = response.json()[self.config.token_key]
                 else:
                     token = response.text
-                return RequestsTokenAuth(token, 'header')
+                return RequestsTokenAuth(token, "header")
         except AttributeError as err:
-            if 'credentials' in err.args:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)
+            if "credentials" in err.args:
+                raise MisconfiguredError(
+                    "Missing Credentials for provider: %s", self.provider
+                )

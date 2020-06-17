@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -22,6 +22,7 @@ from contextlib import contextmanager
 
 import boto3
 from moto import mock_s3
+
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
     AddressNotFound,

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -24,22 +24,26 @@ from eodag.utils.exceptions import MisconfiguredError
 
 
 class GenericAuth(Authentication):
+    """GenericAuth authentication plugin"""
 
     def authenticate(self):
-        method = getattr(self.config, 'method', None)
+        """Authenticate"""
+        method = getattr(self.config, "method", None)
         try:
             if not method:
-                method = 'basic'
-            if method == 'basic':
+                method = "basic"
+            if method == "basic":
                 return HTTPBasicAuth(
-                    self.config.credentials['username'],
-                    self.config.credentials['password']
+                    self.config.credentials["username"],
+                    self.config.credentials["password"],
                 )
-            if method == 'digest':
+            if method == "digest":
                 return HTTPDigestAuth(
-                    self.config.credentials['username'],
-                    self.config.credentials['password']
+                    self.config.credentials["username"],
+                    self.config.credentials["password"],
                 )
         except AttributeError as err:
-            if 'credentials' in err.args:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)
+            if "credentials" in err.args:
+                raise MisconfiguredError(
+                    "Missing Credentials for provider: %s", self.provider
+                )

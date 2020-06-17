@@ -223,7 +223,7 @@ See LICENSE file for details.
 AUTHORS
 =======
 
-EODAG is developed by `CS Systèmes d'Information <https://www.c-s.fr>`_.
+EODAG is developed by `CS GROUP - France <https://www.c-s.fr>`_.
 
 
 CREDITS

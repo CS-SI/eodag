@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -118,20 +118,28 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         token_qs_key:
 
     """
-    SCOPE = 'openid'
-    RESPONSE_TYPE = 'code'
-    CONFIG_XPATH_REGEX = re.compile(r'^xpath\((?P<xpath_value>.+)\)$')
+
+    SCOPE = "openid"
+    RESPONSE_TYPE = "code"
+    CONFIG_XPATH_REGEX = re.compile(r"^xpath\((?P<xpath_value>.+)\)$")
 
     def __init__(self, provider, config):
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
-        if getattr(self.config, 'token_provision', None) not in ('qs', 'header'):
-            raise MisconfiguredError('Provider config parameter "token_provision" must be one of "qs" or "header"')
-        if self.config.token_provision == 'qs' and not getattr(self.config, 'token_qs_key', ''):
-            raise MisconfiguredError('Provider config parameter "token_provision" with value "qs" must have '
-                                     '"token_qs_key" config parameter as well')
+        if getattr(self.config, "token_provision", None) not in ("qs", "header"):
+            raise MisconfiguredError(
+                'Provider config parameter "token_provision" must be one of "qs" or "header"'
+            )
+        if self.config.token_provision == "qs" and not getattr(
+            self.config, "token_qs_key", ""
+        ):
+            raise MisconfiguredError(
+                'Provider config parameter "token_provision" with value "qs" must have '
+                '"token_qs_key" config parameter as well'
+            )
         self.session = requests.Session()
 
     def authenticate(self):
+        """Authenticate"""
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
@@ -142,20 +150,30 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             token = self.exchange_code_for_token(exchange_url, state)
         except Exception:
             import traceback as tb
+
             raise AuthenticationError(
-                'Something went wrong while trying to get authorization token:\n{}'.format(tb.format_exc())
+                "Something went wrong while trying to get authorization token:\n{}".format(
+                    tb.format_exc()
+                )
             )
-        return CodeAuthorizedAuth(token, self.config.token_provision, key=getattr(self.config, 'token_qs_key', None))
+        return CodeAuthorizedAuth(
+            token,
+            self.config.token_provision,
+            key=getattr(self.config, "token_qs_key", None),
+        )
 
     def authenticate_user(self, state):
+        """Authenticate user"""
         params = {
-            'client_id': self.config.client_id,
-            'response_type': self.RESPONSE_TYPE,
-            'scope': self.SCOPE,
-            'state': state,
-            'redirect_uri': self.config.redirect_uri,
+            "client_id": self.config.client_id,
+            "response_type": self.RESPONSE_TYPE,
+            "scope": self.SCOPE,
+            "state": state,
+            "redirect_uri": self.config.redirect_uri,
         }
-        authorization_response = self.session.get(self.config.authorization_uri, params=params)
+        authorization_response = self.session.get(
+            self.config.authorization_uri, params=params
+        )
 
         login_document = etree.HTML(authorization_response.text)
         login_form = login_document.xpath(self.config.login_form_xpath)[0]
@@ -163,24 +181,33 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             # Get the form data to pass to the login form from config or from the login form
             login_data = {
                 key: self._constant_or_xpath_extracted(value, login_form)
-                for key, value in getattr(self.config, 'additional_login_form_data', {}).items()
+                for key, value in getattr(
+                    self.config, "additional_login_form_data", {}
+                ).items()
             }
             # Add the credentials
             login_data.update(self.config.credentials)
-            auth_uri = getattr(self.config, 'authentication_uri', None)
+            auth_uri = getattr(self.config, "authentication_uri", None)
             # Retrieve the authentication_uri from the login form if so configured
-            if self.config.authentication_uri_source == 'login-form':
+            if self.config.authentication_uri_source == "login-form":
                 # Given that the login_form_xpath resolves to an HTML element, if suffices to add '/@action' to get
                 # the value of its action attribute to this xpath
-                auth_uri = login_form.xpath(self.config.login_form_xpath.rstrip('/') + '/@action')[0]
+                auth_uri = login_form.xpath(
+                    self.config.login_form_xpath.rstrip("/") + "/@action"
+                )[0]
             return self.session.post(auth_uri, data=login_data)
         except AttributeError as err:
-            if 'credentials' in err.args:
-                raise MisconfiguredError('Missing Credentials for provider: %s', self.provider)
+            if "credentials" in err.args:
+                raise MisconfiguredError(
+                    "Missing Credentials for provider: %s", self.provider
+                )
 
     def grant_user_consent(self, authentication_response):
+        """Grant user consent"""
         user_consent_document = etree.HTML(authentication_response.text)
-        user_consent_form = user_consent_document.xpath(self.config.user_consent_form_xpath)[0]
+        user_consent_form = user_consent_document.xpath(
+            self.config.user_consent_form_xpath
+        )[0]
         # Get the form data to pass to the consent form from config or from the consent form
         user_consent_data = {
             key: self._constant_or_xpath_extracted(value, user_consent_form)
@@ -189,31 +216,41 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         return self.session.post(self.config.authorization_uri, data=user_consent_data)
 
     def exchange_code_for_token(self, authorized_url, state):
+        """Get exchange code for token"""
         qs = parse_qs(urlparse(authorized_url).query)
-        if qs['state'][0] != state:
+        if qs["state"][0] != state:
             raise AuthenticationError(
-                'The state received in the authorized url does not match initially computed state')
-        code = qs['code'][0]
+                "The state received in the authorized url does not match initially computed state"
+            )
+        code = qs["code"][0]
         token_exchange_data = {
-            'redirect_uri': self.config.redirect_uri,
-            'client_id': self.config.client_id,
-            'code': code,
-            'state': state,
+            "redirect_uri": self.config.redirect_uri,
+            "client_id": self.config.client_id,
+            "code": code,
+            "state": state,
         }
         # If necessary, change the keys of the form data that will be passed to the token exchange POST request
-        custom_token_exchange_params = getattr(self.config, 'token_exchange_params', {})
+        custom_token_exchange_params = getattr(self.config, "token_exchange_params", {})
         if custom_token_exchange_params:
-            token_exchange_data[custom_token_exchange_params['redirect_uri']] = token_exchange_data.pop('redirect_uri')
-            token_exchange_data[custom_token_exchange_params['client_id']] = token_exchange_data.pop('client_id')
+            token_exchange_data[
+                custom_token_exchange_params["redirect_uri"]
+            ] = token_exchange_data.pop("redirect_uri")
+            token_exchange_data[
+                custom_token_exchange_params["client_id"]
+            ] = token_exchange_data.pop("client_id")
         # If the client_secret is known, the token exchange request must be authenticated with a BASIC Auth, using the
         # client_id and client_secret as username and password respectively
-        if getattr(self.config, 'client_secret', None):
-            token_exchange_data.update({
-                'auth': (self.config.client_id, self.config.client_secret),
-                'grant_type': 'authorization_code',
-                'client_secret': self.config.client_secret
-            })
-        post_request_kwargs = {self.config.token_exchange_post_data_method: token_exchange_data}
+        if getattr(self.config, "client_secret", None):
+            token_exchange_data.update(
+                {
+                    "auth": (self.config.client_id, self.config.client_secret),
+                    "grant_type": "authorization_code",
+                    "client_secret": self.config.client_secret,
+                }
+            )
+        post_request_kwargs = {
+            self.config.token_exchange_post_data_method: token_exchange_data
+        }
         r = self.session.post(self.config.token_uri, **post_request_kwargs)
         return r.json()[self.config.token_key]
 
@@ -221,17 +258,27 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         match = self.CONFIG_XPATH_REGEX.match(value)
         if not match:
             return value
-        value_from_xpath = form_element.xpath(self.CONFIG_XPATH_REGEX.match(value).groupdict('xpath_value'))
+        value_from_xpath = form_element.xpath(
+            self.CONFIG_XPATH_REGEX.match(value).groupdict("xpath_value")
+        )
         if len(value_from_xpath) == 1:
             return value_from_xpath[0]
 
     @staticmethod
     def compute_state():
+        """Compute state"""
         rand = SystemRandom()
-        return ''.join(repeatfunc(rand.choice, 22, string.digits + string.ascii_lowercase + string.ascii_uppercase))
+        return "".join(
+            repeatfunc(
+                rand.choice,
+                22,
+                string.digits + string.ascii_lowercase + string.ascii_uppercase,
+            )
+        )
 
 
 class CodeAuthorizedAuth(AuthBase):
+    """CodeAuthorizedAuth authentication plugin"""
 
     def __init__(self, token, where, key=None):
         self.token = token
@@ -239,18 +286,21 @@ class CodeAuthorizedAuth(AuthBase):
         self.key = key
 
     def __call__(self, request):
-        if self.where == 'qs':
+        """Perform the actual authentication"""
+        if self.where == "qs":
             parts = urlparse(request.url)
             qs = parse_qs(parts.query)
             qs[self.key] = self.token
-            request.url = urlunparse((
-                parts.scheme,
-                parts.netloc,
-                parts.path,
-                parts.params,
-                urlencode(qs),
-                parts.fragment
-            ))
-        elif self.where == 'header':
-            request.headers['Authorization'] = "Bearer {}".format(self.token)
+            request.url = urlunparse(
+                (
+                    parts.scheme,
+                    parts.netloc,
+                    parts.path,
+                    parts.params,
+                    urlencode(qs),
+                    parts.fragment,
+                )
+            )
+        elif self.where == "header":
+            request.headers["Authorization"] = "Bearer {}".format(self.token)
         return request

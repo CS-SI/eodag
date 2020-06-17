@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -15,12 +15,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""EODAG drivers package"""
 from __future__ import unicode_literals
 
-from eodag.api.product.drivers.base import NoDriver     # noqa
+from eodag.api.product.drivers.base import NoDriver  # noqa
 from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
 
-
-DRIVERS = {
-    'S2_MSI_L1C': Sentinel2L1C(),
-}
+DRIVERS = {"S2_MSI_L1C": Sentinel2L1C()}

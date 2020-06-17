@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -15,9 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import importlib
 import pkgutil
@@ -64,13 +62,17 @@ def import_all_modules(base_package, depth=1, exclude=()):
         for _, name, ispkg in pkgutil.iter_modules(base_package.__path__):
             if not exclude or name not in exclude:
                 if ispkg:
-                    pkg = importlib.import_module('.{}'.format(name), package=base_package.__name__)
+                    pkg = importlib.import_module(
+                        ".{}".format(name), package=base_package.__name__
+                    )
                     import_all_modules(pkg, depth=depth - 1, exclude=exclude)
                 else:
-                    importlib.import_module('.{}'.format(name), package=base_package.__name__)
+                    importlib.import_module(
+                        ".{}".format(name), package=base_package.__name__
+                    )
     for _, name, ispkg in pkgutil.iter_modules(base_package.__path__):
         if (not exclude or name not in exclude) and not ispkg:
-            importlib.import_module('.{}'.format(name), package=base_package.__name__)
+            importlib.import_module(".{}".format(name), package=base_package.__name__)
 
 
 @contextmanager
@@ -83,6 +85,7 @@ def patch_owslib_requests(verify=True):
     :type verify: bool
     """
     from owslib.util import requests
+
     old_request = requests.request
     old_post = requests.post
     try:
