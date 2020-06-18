@@ -1,10 +1,24 @@
 Release history
 ---------------
 
-1.5.2 (2020-05-06)
+1.6.0 (2020-06-18)
 ++++++++++++++++++
 
 - Warning: last release including Python 2.7 support
+- Github set as default version control repository hosting service for source code and issues
+- New provider for AWS: aws_eos (S2_MSI_L1C/L2A, S1_SAR_GRD, L8, CBERS-4, MODIS, NAIP), replaces aws_s3_sentinel2_l1c
+- Build SAFE products for AWS Sentinel data
+- New theia product types for S2, SPOT, VENUS, OSO
+- New search plugin for POST requests (PostJsonSearch)
+- Metadata auto discovery (for product properties and search parameter), replaces custom parameter
+- Search configuration can be tweaked for each provider product type
+- Fixed Lansat-8 search for onda, fixes `#135 <https://github.com/CS-SI/eodag/issues/135>`_
+- Advanced tutorial notebook, fixes `#130 <https://github.com/CS-SI/eodag/issues/130>`_
+- Various minor fixes, code refactorization, and tests update
+
+1.5.2 (2020-05-06)
+++++++++++++++++++
+
 - Fix CLI download_all missing plugin configuration, fixes `#134 <https://github.com/CS-SI/eodag/issues/134>`_
 
 1.5.1 (2020-04-08)
