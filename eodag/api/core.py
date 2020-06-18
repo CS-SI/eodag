@@ -23,6 +23,7 @@ import shutil
 from operator import itemgetter
 
 import geojson
+import pkg_resources
 from pkg_resources import resource_filename
 from whoosh import fields
 from whoosh.fields import Schema
@@ -38,7 +39,7 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import makedirs
+from eodag.utils import makedirs, utf8_everywhere
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
@@ -102,6 +103,9 @@ class EODataAccessGateway(object):
         """
         index_dir = os.path.join(self.conf_dir, ".index")
 
+        # use eodag_version to help keeping index up-to-date
+        eodag_version = pkg_resources.get_distribution("eodag").version
+
         # Handle Python 2/3 compatibility: if index_dir exists and contains a whoosh
         # index, it means it was potentially created with a previous Python 3 eodag
         # session, thus using pickle highest protocol version (version 4 at the time of
@@ -112,6 +116,20 @@ class EODataAccessGateway(object):
         # one from scratch
         try:
             create_index = not exists_in(index_dir)
+            # check index version
+            if not create_index:
+                if self._product_types_index is None:
+                    logger.debug("Opening product types index in %s", index_dir)
+                    self._product_types_index = open_dir(index_dir)
+                try:
+                    self.guess_product_type(eodagVersion=eodag_version)
+                except NoMatchingProductType:
+                    logger.debug(
+                        "Out-of-date product types index removed from %s", index_dir
+                    )
+                    shutil.rmtree(index_dir)
+                    create_index = True
+
         except ValueError as ve:
             if "unsupported pickle protocol" in ve.message:
                 shutil.rmtree(index_dir)
@@ -130,11 +148,20 @@ class EODataAccessGateway(object):
                 platformSerialIdentifier=fields.IDLIST,
                 processingLevel=fields.ID,
                 sensorType=fields.ID,
+                eodagVersion=fields.ID,
             )
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types():
-                ix_writer.add_document(**product_type)
+                versioned_product_type = dict(
+                    product_type, **{"eodagVersion": eodag_version}
+                )
+                # py27: encode items except ID
+                product_type_id = versioned_product_type.pop("ID")
+                utf8_everywhere(versioned_product_type)
+                versioned_product_type["ID"] = product_type_id
+                # add to index
+                ix_writer.add_document(**versioned_product_type)
             ix_writer.commit()
         else:
             if self._product_types_index is None:
@@ -244,8 +271,9 @@ class EODataAccessGateway(object):
         ...     instrument="MSI",
         ...     platform="SENTINEL2",
         ...     platformSerialIdentifier="S2A",
-        ... )
-        ['S2_MSI_L1C', 'S2_MSI_L2A']
+        ... ) # doctest: +NORMALIZE_WHITESPACE
+        ['S2_MSI_L1C', 'S2_MSI_L2A', 'S2_MSI_L2A_MAJA', 'S2_MSI_L2B_MAJA_SNOW',
+            'S2_MSI_L2B_MAJA_WATER', 'S2_MSI_L3A_WASP']
         >>> import eodag.utils.exceptions
         >>> try:
         ...     dag.guess_product_type()
@@ -268,6 +296,7 @@ class EODataAccessGateway(object):
                 "platformSerialIdentifier",
                 "processingLevel",
                 "sensorType",
+                "eodagVersion",
             )
             if kwargs.get(param, None) is not None
         }
