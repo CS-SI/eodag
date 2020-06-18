@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -219,11 +219,12 @@ class TestConfigFunctions(unittest.TestCase):
         #           username: usr
         #           password: pwd
         #
-        # aws_s3_sentinel2_l1c:
+        # aws_eos:
         #   search:
         #       product_location_scheme: file
         #   auth:
         #       credentials:
+        #           apikey: api-key
         #           aws_access_key_id: access-key-id
         #           aws_secret_access_key: secret-access-key
         #
@@ -241,8 +242,9 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(usgs_conf.api.credentials["username"], "usr")
         self.assertEqual(usgs_conf.api.credentials["password"], "pwd")
 
-        aws_conf = default_config["aws_s3_sentinel2_l1c"]
+        aws_conf = default_config["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
+        self.assertEqual(aws_conf.auth.credentials["apikey"], "api-key")
         self.assertEqual(
             aws_conf.auth.credentials["aws_access_key_id"], "access-key-id"
         )
@@ -263,14 +265,13 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ["EODAG__USGS__API__EXTRACT"] = "false"
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
         os.environ["EODAG__USGS__API__CREDENTIALS__PASSWORD"] = "pwd"
+        os.environ["EODAG__AWS_EOS__SEARCH__PRODUCT_LOCATION_SCHEME"] = "file"
+        os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__APIKEY"] = "api-key"
         os.environ[
-            "EODAG__AWS_S3_SENTINEL2_L1C__SEARCH__PRODUCT_LOCATION_SCHEME"
-        ] = "file"
-        os.environ[
-            "EODAG__AWS_S3_SENTINEL2_L1C__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
+            "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
         ] = "access-key-id"
         os.environ[
-            "EODAG__AWS_S3_SENTINEL2_L1C__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
+            "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"
         os.environ["EODAG__PEPS__DOWNLOAD__OUTPUTS_PREFIX"] = "/data"
 
@@ -281,8 +282,9 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(usgs_conf.api.credentials["username"], "usr")
         self.assertEqual(usgs_conf.api.credentials["password"], "pwd")
 
-        aws_conf = default_config["aws_s3_sentinel2_l1c"]
+        aws_conf = default_config["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
+        self.assertEqual(aws_conf.auth.credentials["apikey"], "api-key")
         self.assertEqual(
             aws_conf.auth.credentials["aws_access_key_id"], "access-key-id"
         )

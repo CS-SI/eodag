@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -23,8 +23,10 @@ from eodag.utils.exceptions import PluginNotFoundError
 
 
 class EODAGPluginMount(type):
+    """Plugin mount"""
+
     def __init__(cls, name, bases, attrs):
-        if not hasattr(cls, 'plugins'):
+        if not hasattr(cls, "plugins"):
             # This branch only executes when processing the mount point itself.
             # So, since this is a new plugin type, not an implementation, this
             # class shouldn't be registered as a plugin. Instead, it sets up a
@@ -37,13 +39,17 @@ class EODAGPluginMount(type):
             cls.plugins.append(cls)
 
     def get_plugins(cls, *args, **kwargs):
+        """Get plugins"""
         return [plugin(*args, **kwargs) for plugin in cls.plugins]
 
     def get_plugin_by_class_name(cls, name):
+        """Get plugin by class_name"""
         for plugin in cls.plugins:
             if name == plugin.__name__:
                 return plugin
-        raise PluginNotFoundError("'{}' not found for {} class of plugins".format(name, cls))
+        raise PluginNotFoundError(
+            "'{}' not found for {} class of plugins".format(name, cls)
+        )
 
 
 class PluginTopic(six.with_metaclass(EODAGPluginMount)):
@@ -54,6 +60,9 @@ class PluginTopic(six.with_metaclass(EODAGPluginMount)):
         self.provider = provider
 
     def __repr__(self):
-        return '{}(provider={}, priority={}, topic={})'.format(
-            self.__class__.__name__, self.provider, self.config.priority, self.__class__.mro()[-3].__name__
+        return "{}(provider={}, priority={}, topic={})".format(
+            self.__class__.__name__,
+            self.provider,
+            self.config.priority,
+            self.__class__.mro()[-3].__name__,
         )

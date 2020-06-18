@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -81,6 +81,21 @@ class EOProduct(object):
             if key != "geometry" and value not in [NOT_MAPPED, NOT_AVAILABLE]
         }
         product_geometry = properties["geometry"]
+        # Let's try 'latmin lonmin latmax lonmax'
+        if isinstance(product_geometry, six.string_types):
+            bbox_pattern = re.compile(
+                r"^(\d+\.?\d*) (\d+\.?\d*) (\d+\.?\d*) (\d+\.?\d*)$"
+            )
+            found_bbox = bbox_pattern.match(product_geometry)
+            if found_bbox:
+                coords = found_bbox.groups()
+                if len(coords) == 4:
+                    product_geometry = geometry.box(
+                        float(coords[1]),
+                        float(coords[0]),
+                        float(coords[3]),
+                        float(coords[2]),
+                    )
         # Best effort to understand provider specific geometry (the default is to
         # assume an object implementing the Geo Interface: see
         # https://gist.github.com/2217756)
@@ -93,15 +108,8 @@ class EOProduct(object):
                 # Also catching TypeError because product_geometry can be a unicode
                 # string and not a bytes string
                 except (geos.WKBReadingError, TypeError):
-                    # Let's try 'latmin lonmin latmax lonmax'
-                    coords = [float(coord) for coord in product_geometry.split(" ")]
-                    if len(coords) == 4:
-                        product_geometry = geometry.box(
-                            coords[1], coords[0], coords[3], coords[2]
-                        )
-                    else:
-                        # Giv up!
-                        raise
+                    # Giv up!
+                    raise
         self.geometry = self.search_intersection = geometry.shape(product_geometry)
         self.search_args = args
         self.search_kwargs = kwargs
@@ -305,6 +313,15 @@ class EOProduct(object):
         """
         self.downloader = downloader
         self.downloader_auth = authenticator
+        # resolve locations and properties if needed with downloader configuration
+        self.location = self.location % vars(self.downloader.config)
+        self.remote_location = self.remote_location % vars(self.downloader.config)
+        for k, v in self.properties.items():
+            if isinstance(v, six.string_types):
+                try:
+                    self.properties[k] = v % vars(self.downloader.config)
+                except TypeError:
+                    pass
 
     def download(
         self,
@@ -343,8 +360,6 @@ class EOProduct(object):
             if self.downloader_auth is not None
             else self.downloader_auth
         )
-        # resolve remote location if needed with downloader configuration
-        self.remote_location = self.remote_location % vars(self.downloader.config)
         fs_location = self.downloader.download(
             self,
             auth=auth,

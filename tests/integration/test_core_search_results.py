@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -19,10 +19,12 @@ from __future__ import unicode_literals
 
 import json
 import os
+import shutil
 import tempfile
 import unittest
 
 from shapely import geometry
+
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, SearchResult
 
@@ -108,14 +110,19 @@ class TestCoreSearchResults(unittest.TestCase):
             # specified file
             path = self.dag.serialize(self.search_result, filename=f.name)
             self.assertEqual(path, f.name)
-            # Serialization when the destination is not specified => goes to
-            # 'search_results.geojson' in the cur dir
-            self.assertEqual(
-                self.dag.serialize(self.search_result), "search_results.geojson"
-            )
         with open(path, "r") as f:
             self.make_assertions(f)
         os.unlink(path)
+        # Serialization when the destination is not specified => goes to
+        # 'search_results.geojson' in the cur dir
+        tmpdirname = tempfile.mkdtemp()
+        current_dir = os.getcwd()
+        os.chdir(tmpdirname)
+        self.assertEqual(
+            self.dag.serialize(self.search_result), "search_results.geojson"
+        )
+        os.chdir(current_dir)
+        shutil.rmtree(tmpdirname)
 
     def test_core_deserialize_search_results(self):
         """The core api must deserialize a search result from geojson"""

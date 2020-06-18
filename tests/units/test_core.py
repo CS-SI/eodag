@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -37,16 +37,26 @@ class TestCore(unittest.TestCase):
         "L7_L1G": [],
         "L7_L1T": [],
         "L7_L1GT": [],
-        "L8_L1T": ["onda"],
-        "L8_L1GT": ["onda"],
-        "L8_OLI_TIRS_C1L1": ["usgs"],
-        "S1_SAR_GRD": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
+        "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos"],
+        "S1_SAR_GRD": [
+            "peps",
+            "sobloo",
+            "onda",
+            "wekeo",
+            "mundi",
+            "creodias",
+            "aws_eos",
+        ],
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
         "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
-        "S2_MSI_L2A": ["theia", "onda", "mundi", "creodias", "peps"],
+        "S2_MSI_L2A": ["onda", "mundi", "creodias", "peps", "aws_eos"],
+        "S2_MSI_L2A_MAJA": ["theia"],
+        "S2_MSI_L2B_MAJA_SNOW": ["theia"],
+        "S2_MSI_L2B_MAJA_WATER": ["theia"],
+        "S2_MSI_L3A_WASP": ["theia"],
         "S2_MSI_L1C": [
-            "aws_s3_sentinel2_l1c",
+            "aws_eos",
             "peps",
             "sobloo",
             "onda",
@@ -70,10 +80,26 @@ class TestCore(unittest.TestCase):
         "PLD_BUNDLE": ["theia"],
         "PLD_PANSHARPENED": ["theia"],
         "ES_FRS": [],
+        "CBERS4_PAN10M_L2": ["aws_eos"],
+        "CBERS4_PAN10M_L4": ["aws_eos"],
+        "CBERS4_PAN5M_L2": ["aws_eos"],
+        "CBERS4_PAN5M_L4": ["aws_eos"],
+        "CBERS4_MUX_L2": ["aws_eos"],
+        "CBERS4_MUX_L4": ["aws_eos"],
+        "CBERS4_AWFI_L2": ["aws_eos"],
+        "CBERS4_AWFI_L4": ["aws_eos"],
+        "MODIS_MCD43A4": ["aws_eos"],
+        "NAIP": ["aws_eos"],
+        "SPOT_SWH": ["theia"],
+        "SPOT_SWH_OLD": ["theia"],
+        "SPOT5_SPIRIT": ["theia"],
+        "VENUS_L1C": ["theia"],
+        "VENUS_L2A_MAJA": ["theia"],
+        "VENUS_L3A_MAJA": ["theia"],
+        "OSO": ["theia"],
     }
     SUPPORTED_PROVIDERS = [
         "peps",
-        "aws_s3_sentinel2_l1c",
         "usgs",
         "theia",
         "sobloo",
@@ -81,6 +107,7 @@ class TestCore(unittest.TestCase):
         "mundi",
         "onda",
         "wekeo",
+        "aws_eos",
     ]
 
     def setUp(self):

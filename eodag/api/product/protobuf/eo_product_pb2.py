@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -19,161 +19,271 @@
 # source: eo_product.proto
 
 import sys
-_b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
+
 from google.protobuf import descriptor as _descriptor
+from google.protobuf import descriptor_pb2
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
-from google.protobuf import descriptor_pb2
+
+_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
 DESCRIPTOR = _descriptor.FileDescriptor(
-  name='eo_product.proto',
-  package='eodag',
-  syntax='proto3',
-  serialized_pb=_b('\n\x10\x65o_product.proto\x12\x05\x65odag\">\n\x07NDArray\x12\x11\n\x05\x61rray\x18\x01 \x03(\x01\x42\x02\x10\x01\x12\x11\n\x05shape\x18\x02 \x03(\x07\x42\x02\x10\x01\x12\r\n\x05\x64type\x18\x03 \x01(\t\"\x89\x01\n\x13\x45OProductSubdataset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x10\n\x08producer\x18\x02 \x01(\t\x12\x14\n\x0cproduct_type\x18\x03 \x01(\t\x12\x10\n\x08platform\x18\x04 \x01(\t\x12\x0e\n\x06sensor\x18\x05 \x01(\t\x12\x1c\n\x04\x64\x61ta\x18\x06 \x01(\x0b\x32\x0e.eodag.NDArrayb\x06proto3')
+    name="eo_product.proto",
+    package="eodag",
+    syntax="proto3",
+    serialized_pb=_b(
+        '\n\x10\x65o_product.proto\x12\x05\x65odag">\n\x07NDArray\x12\x11\n\x05\x61rray\x18\x01 \x03(\x01\x42\x02\x10\x01\x12\x11\n\x05shape\x18\x02 \x03(\x07\x42\x02\x10\x01\x12\r\n\x05\x64type\x18\x03 \x01(\t"\x89\x01\n\x13\x45OProductSubdataset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x10\n\x08producer\x18\x02 \x01(\t\x12\x14\n\x0cproduct_type\x18\x03 \x01(\t\x12\x10\n\x08platform\x18\x04 \x01(\t\x12\x0e\n\x06sensor\x18\x05 \x01(\t\x12\x1c\n\x04\x64\x61ta\x18\x06 \x01(\x0b\x32\x0e.eodag.NDArrayb\x06proto3'
+    ),
 )
 
 
-
-
 _NDARRAY = _descriptor.Descriptor(
-  name='NDArray',
-  full_name='eodag.NDArray',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='array', full_name='eodag.NDArray.array', index=0,
-      number=1, type=1, cpp_type=5, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='shape', full_name='eodag.NDArray.shape', index=1,
-      number=2, type=7, cpp_type=3, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='dtype', full_name='eodag.NDArray.dtype', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=27,
-  serialized_end=89,
+    name="NDArray",
+    full_name="eodag.NDArray",
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name="array",
+            full_name="eodag.NDArray.array",
+            index=0,
+            number=1,
+            type=1,
+            cpp_type=5,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=_descriptor._ParseOptions(
+                descriptor_pb2.FieldOptions(), _b("\020\001")
+            ),
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="shape",
+            full_name="eodag.NDArray.shape",
+            index=1,
+            number=2,
+            type=7,
+            cpp_type=3,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=_descriptor._ParseOptions(
+                descriptor_pb2.FieldOptions(), _b("\020\001")
+            ),
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="dtype",
+            full_name="eodag.NDArray.dtype",
+            index=2,
+            number=3,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode("utf-8"),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    options=None,
+    is_extendable=False,
+    syntax="proto3",
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=27,
+    serialized_end=89,
 )
 
 
 _EOPRODUCTSUBDATASET = _descriptor.Descriptor(
-  name='EOProductSubdataset',
-  full_name='eodag.EOProductSubdataset',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='id', full_name='eodag.EOProductSubdataset.id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='producer', full_name='eodag.EOProductSubdataset.producer', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='product_type', full_name='eodag.EOProductSubdataset.product_type', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='platform', full_name='eodag.EOProductSubdataset.platform', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='sensor', full_name='eodag.EOProductSubdataset.sensor', index=4,
-      number=5, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='data', full_name='eodag.EOProductSubdataset.data', index=5,
-      number=6, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=92,
-  serialized_end=229,
+    name="EOProductSubdataset",
+    full_name="eodag.EOProductSubdataset",
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name="id",
+            full_name="eodag.EOProductSubdataset.id",
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode("utf-8"),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="producer",
+            full_name="eodag.EOProductSubdataset.producer",
+            index=1,
+            number=2,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode("utf-8"),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="product_type",
+            full_name="eodag.EOProductSubdataset.product_type",
+            index=2,
+            number=3,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode("utf-8"),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="platform",
+            full_name="eodag.EOProductSubdataset.platform",
+            index=3,
+            number=4,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode("utf-8"),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="sensor",
+            full_name="eodag.EOProductSubdataset.sensor",
+            index=4,
+            number=5,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode("utf-8"),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+        _descriptor.FieldDescriptor(
+            name="data",
+            full_name="eodag.EOProductSubdataset.data",
+            index=5,
+            number=6,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            options=None,
+            file=DESCRIPTOR,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    options=None,
+    is_extendable=False,
+    syntax="proto3",
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=92,
+    serialized_end=229,
 )
 
-_EOPRODUCTSUBDATASET.fields_by_name['data'].message_type = _NDARRAY
-DESCRIPTOR.message_types_by_name['NDArray'] = _NDARRAY
-DESCRIPTOR.message_types_by_name['EOProductSubdataset'] = _EOPRODUCTSUBDATASET
+_EOPRODUCTSUBDATASET.fields_by_name["data"].message_type = _NDARRAY
+DESCRIPTOR.message_types_by_name["NDArray"] = _NDARRAY
+DESCRIPTOR.message_types_by_name["EOProductSubdataset"] = _EOPRODUCTSUBDATASET
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-NDArray = _reflection.GeneratedProtocolMessageType('NDArray', (_message.Message,), dict(
-  DESCRIPTOR = _NDARRAY,
-  __module__ = 'eo_product_pb2'
-  # @@protoc_insertion_point(class_scope:eodag.NDArray)
-  ))
+NDArray = _reflection.GeneratedProtocolMessageType(
+    "NDArray",
+    (_message.Message,),
+    dict(
+        DESCRIPTOR=_NDARRAY,
+        __module__="eo_product_pb2"
+        # @@protoc_insertion_point(class_scope:eodag.NDArray)
+    ),
+)
 _sym_db.RegisterMessage(NDArray)
 
-EOProductSubdataset = _reflection.GeneratedProtocolMessageType('EOProductSubdataset', (_message.Message,), dict(
-  DESCRIPTOR = _EOPRODUCTSUBDATASET,
-  __module__ = 'eo_product_pb2'
-  # @@protoc_insertion_point(class_scope:eodag.EOProductSubdataset)
-  ))
+EOProductSubdataset = _reflection.GeneratedProtocolMessageType(
+    "EOProductSubdataset",
+    (_message.Message,),
+    dict(
+        DESCRIPTOR=_EOPRODUCTSUBDATASET,
+        __module__="eo_product_pb2"
+        # @@protoc_insertion_point(class_scope:eodag.EOProductSubdataset)
+    ),
+)
 _sym_db.RegisterMessage(EOProductSubdataset)
 
 
-_NDARRAY.fields_by_name['array'].has_options = True
-_NDARRAY.fields_by_name['array']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
-_NDARRAY.fields_by_name['shape'].has_options = True
-_NDARRAY.fields_by_name['shape']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
+_NDARRAY.fields_by_name["array"].has_options = True
+_NDARRAY.fields_by_name["array"]._options = _descriptor._ParseOptions(
+    descriptor_pb2.FieldOptions(), _b("\020\001")
+)
+_NDARRAY.fields_by_name["shape"].has_options = True
+_NDARRAY.fields_by_name["shape"]._options = _descriptor._ParseOptions(
+    descriptor_pb2.FieldOptions(), _b("\020\001")
+)
 # @@protoc_insertion_point(module_scope)

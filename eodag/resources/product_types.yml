@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -16,6 +16,256 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# CBERS 4 ---------------------------------------------------------------------
+CBERS4_MUX_L2:
+  abstract: |
+    CBERS-4 MUX camera Level-2 product. System corrected images, expect some
+    translation error.
+  instrument: MUX
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L2
+  sensorType: OPTICAL
+
+CBERS4_AWFI_L2:
+  abstract: |
+    CBERS-4 AWFI camera Level-2 product. System corrected images, expect some
+    translation error.
+  instrument: AWFI
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L2
+  sensorType: OPTICAL
+
+CBERS4_PAN5M_L2:
+  abstract: |
+    CBERS-4 PAN5M camera Level-2 product. System corrected images, expect some
+    translation error.
+  instrument: PAN5M
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L2
+  sensorType: OPTICAL
+
+CBERS4_PAN10M_L2:
+  abstract: |
+    CBERS-4 PAN10M camera Level-2 product. System corrected images, expect some
+    translation error.
+  instrument: PAN10M
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L2
+  sensorType: OPTICAL
+
+CBERS4_MUX_L4:
+  abstract: |
+    CBERS-4 MUX camera Level-4 product. Orthorectified with ground control
+    points.
+  instrument: MUX
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L4
+  sensorType: OPTICAL
+
+CBERS4_AWFI_L4:
+  abstract: |
+    CBERS-4 MUX camera Level-4 product. Orthorectified with ground control
+    points.
+  instrument: AWFI
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L4
+  sensorType: OPTICAL
+
+CBERS4_PAN5M_L4:
+  abstract: |
+    CBERS-4 MUX camera Level-4 product. Orthorectified with ground control
+    points.
+  instrument: PAN5M
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L4
+  sensorType: OPTICAL
+
+CBERS4_PAN10M_L4:
+  abstract: |
+    CBERS-4 MUX camera Level-4 product. Orthorectified with ground control
+    points.
+  instrument: PAN10M
+  platform: China-Brazil Earth Resources Satellite
+  platformSerialIdentifier: CBERS-4
+  processingLevel: L4
+  sensorType: OPTICAL
+
+# -----------------------------------------------------------------------------
+ES_FRS:
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
+
+# Landasat --------------------------------------------------------------------
+# https://www.usgs.gov/faqs/what-naming-convention-landsat-collections-level-1-scenes
+L5_L1GT:
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L1
+  sensorType:
+
+L5_L1G:
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L1
+  sensorType:
+
+L5_L1T:
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L1
+  sensorType:
+
+L7_L1GT:
+  abstract: |
+    Radiometrically calibrated and orthorectified using ground control points
+    and digital elevation model (DEM) data to correct for relief displacement.
+    Highest quality Level 1 products suitable for pixel-level time series analysis.
+  instrument:
+  platform:
+  platformSerialIdentifier: L7
+  processingLevel: L1
+  sensorType:
+
+L7_L1G:
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L1
+  sensorType:
+
+L7_L1T:
+  abstract: ""
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L1
+  sensorType:
+
+L57_REFLECTANCE:
+  abstract: |
+    Landsat 5,7,8 L2A data (old format) distributed by Theia (2014 to 2017-03-20) using MUSCATE prototype,
+    Lamber 93 projection.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L5,L7,L8
+  processingLevel: L2A
+  sensorType: OPTICAL
+
+L8_REFLECTANCE:
+  abstract: |
+    Landsat 8 L2A data distributed by Theia since 2017-03-20 using operational version of MUSCATE, UTM projection,
+    and tiled using Sentinel-2 tiles.
+  instrument: OLI,TIRS
+  platform: LANDSAT8
+  platformSerialIdentifier: L8
+  processingLevel: L2A
+  sensorType: OPTICAL
+
+L8_OLI_TIRS_C1L1:
+  abstract: |
+    Landsat 8 Operational Land Imager and Thermal Infrared Sensor Collection 1 Level-1 products. Details at
+    https://landsat.usgs.gov/sites/default/files/documents/LSDS-1656_Landsat_Level-1_Product_Collection_Definition.pdf
+  instrument: OLI,TIRS
+  platform: LANDSAT8
+  platformSerialIdentifier: L8
+  processingLevel: L1
+  sensorType: OPTICAL
+
+# MODIS -----------------------------------------------------------------------
+MODIS_MCD43A4:
+  abstract: |
+    The MODerate-resolution Imaging Spectroradiometer (MODIS) Reflectance product MCD43A4 provides 500 meter
+    reflectance data adjusted using a bidirectional reflectance distribution function (BRDF) to model the values as if
+    they were taken from nadir view. The MCD43A4 product contains 16 days of data provided in a level-3 gridded data
+    set in Sinusoidal projection. Both Terra and Aqua data are used in the generation of this product, providing the
+    highest probability for quality assurance input data. It is designated with a shortname beginning with MCD, which
+    is used to refer to 'combined' products, those comprised of data using both Terra and Aqua.
+  instrument: MODIS
+  platform: Terra+Aqua
+  platformSerialIdentifier: EOS AM-1+PM-1
+  processingLevel: L3
+  sensorType: OPTICAL
+
+# OSO -------------------------------------------------------------------------
+OSO:
+  abstract: |
+    An overview of OSO Land Cover data is given on https://www.theia-land.fr/en/ceslist/land-cover-sec/
+    and the specific description of OSO products is available on
+    https://www.theia-land.fr/product/carte-doccupation-des-sols-de-la-france-metropolitaine/
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3B
+  sensorType:
+
+# NAIP -----------------------------------------------------------------------
+NAIP:
+  abstract: |
+    The National Agriculture Imagery Program (NAIP) acquires aerial imagery during the agricultural growing seasons in
+    the continental U.S. This "leaf-on" imagery and typically ranges from 60 centimeters to 100 centimeters in
+    resolution and is available from the naip-analytic Amazon S3 bucket as 4-band (RGB + NIR) imagery in MRF format.
+    NAIP data is delivered at the state level; every year, a number of states receive updates, with an overall update
+    cycle of two or three years. The tiling format of NAIP imagery is based on a 3.75' x 3.75' quarter quadrangle with
+    a 300 meter buffer on all four sides. NAIP imagery is formatted to the UTM coordinate system using NAD83. NAIP
+    imagery may contain as much as 10% cloud cover per tile.
+  instrument: film and digital cameras
+  platform: National Agriculture Imagery Program
+  platformSerialIdentifier: NAIP
+  processingLevel: N/A
+  sensorType: OPTICAL
+
+# Pleiades - ------------------------------------------------------------------
+PLD_PAN:
+  abstract: Pleiades Panchromatic (Pan)
+  instrument: PHR
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
+  processingLevel: PRIMARY
+  sensorType: OPTICAL
+
+PLD_XS:
+  abstract: Pleiades Multispectral (XS)
+  instrument: PHR
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
+  processingLevel: PRIMARY
+  sensorType: OPTICAL
+
+PLD_BUNDLE:
+  abstract: Pleiades Bundle (Pan, XS)
+  instrument: PHR
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
+  processingLevel: PRIMARY
+  sensorType: OPTICAL
+
+PLD_PANSHARPENED:
+  abstract: Pleiades Pansharpened (Pan+XS)
+  instrument: PHR
+  platform: PLEIADES
+  platformSerialIdentifier: P1A,P1B
+  processingLevel: PRIMARY
+  sensorType: OPTICAL
+
+# Sentinel 1 ------------------------------------------------------------------
 S1_SAR_OCN:
   abstract: |
     Level-2 OCN products include components for Ocean Swell spectra (OSW) providing continuity with ERS and ASAR WV
@@ -74,93 +324,95 @@ S1_SAR_RAW:
   processingLevel: L0
   sensorType: RADAR
 
-L8_L1T:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
-
-L8_L1GT:
+# Sentinel 2 ------------------------------------------------------------------
+S2_MSI_L1C:
   abstract: |
-    Radiometrically calibrated and orthorectified using ground control points
-    and digital elevation model (DEM) data to correct for relief displacement.
-    Highest quality Level 1 products suitable for pixel-level time series analysis.
-  instrument: OLI,TIRS
-  platform: LANDSAT8
-  platformSerialIdentifier: L8
+    The Level-1C product is composed of 100x100 km2 tiles (ortho-images in UTM/WGS84 projection). It results from
+    using a Digital Elevation Model (DEM) to project the image in cartographic geometry. Per-pixel radiometric
+    measurements are provided in Top Of Atmosphere (TOA) reflectances along with the parameters to transform them
+    into radiances. Level-1C products are resampled with a constant Ground Sampling Distance (GSD) of 10, 20 and 60
+    meters depending on the native resolution of the different spectral bands. In Level-1C  products, pixel
+    coordinates refer to the upper left corner of the pixel. Level-1C products will additionally include Cloud Masks
+    and ECMWF data (total column of ozone, total column of water vapour and mean sea level pressure).
+  instrument: MSI
+  platform: SENTINEL2
+  platformSerialIdentifier: S2A,S2B
   processingLevel: L1
   sensorType: OPTICAL
 
-L8_OLI_TIRS_C1L1:
+S2_MSI_L2A:
   abstract: |
-    Landsat 8 Operational Land Imager and Thermal Infrared Sensor Collection 1 Level-1 products
-    Details at https://landsat.usgs.gov/sites/default/files/documents/LSDS-1656_Landsat_Level-1_Product_Collection_Definition.pdf
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
+    The Level-2A product provides Bottom Of Atmosphere (BOA) reflectance images derived from the associated Level-1C
+    products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
+  instrument: MSI
+  platform: SENTINEL2
+  platformSerialIdentifier: S2A,S2B
+  processingLevel: L2
+  sensorType: OPTICAL
 
-L7_L1GT:
+S2_MSI_L2A_MAJA:
   abstract: |
-    Radiometrically calibrated and orthorectified using ground control points
-    and digital elevation model (DEM) data to correct for relief displacement.
-    Highest quality Level 1 products suitable for pixel-level time series analysis.
-  instrument:
-  platform:
-  platformSerialIdentifier: L7
-  processingLevel: L1
-  sensorType:
+    The level 2A products correct the data for atmospheric effects and detect the clouds and their shadows using MAJA.
+    MAJA uses MUSCATE processing center at CNES, in the framework of THEIA land data center. Sentinel-2 level 1C data
+    are downloaded from PEPS. The full description of the product format is available at
+    https://theia.cnes.fr/atdistrib/documents/PSC-NT-411-0362-CNES_01_00_SENTINEL-2A_L2A_Products_Description.pdf
+  instrument: MSI
+  platform: SENTINEL2
+  platformSerialIdentifier: S2A,S2B
+  processingLevel: L2
+  sensorType: OPTICAL
 
-L7_L1G:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
+S2_MSI_L2B_MAJA_SNOW:
+  abstract: |
+    The Theia snow product is derived from Sentinel-2 L2A images generated by Theia. It  indicates the snow presence or
+    absence on the land surface every fifth day if there is no cloud. The product is distributed by Theia as a raster
+    file (8 bits GeoTIFF) of 20 m resolution and a vector file (Shapefile polygons). More details about the snow
+    products description are available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=10748#en
+  instrument: MSI
+  platform: SENTINEL2
+  platformSerialIdentifier: S2A,S2B
+  processingLevel: L2
+  sensorType: OPTICAL
 
-L7_L1T:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
+S2_MSI_L2B_MAJA_WATER:
+  abstract: |
+    A description of the Land Water Quality data distributed by Theia is available at
+    https://theia.cnes.fr/atdistrib/documents/THEIA-ST-411-0477-CNES_01-03_Format_Specification_of_OBS2CO_WaterColor_Products.pdf
+  instrument: MSI
+  platform: SENTINEL2
+  platformSerialIdentifier: S2A,S2B
+  processingLevel: L2
+  sensorType: OPTICAL
 
-L5_L1GT:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
+S2_MSI_L3A_WASP:
+  abstract: |
+    The Level-3A product provides a monthly synthesis of surface reflectances from Theia's L2A products. The synthesis
+    is based on a weighted arithmetic mean of clear observations.
+    The data processing is produced by WASP (Weighted Average Synthesis Processor), by MUSCATE data center at CNES,
+    in the framework of THEIA data center. The full description of the product format is available at
+    https://theia.cnes.fr/atdistrib/documents/THEIA-ST-411-0419-CNES_01-04_Format_Specification_of_MUSCATE_Level-3A_Products-signed.pdf
+  instrument: MSI
+  platform: SENTINEL2
+  platformSerialIdentifier: S2A,S2B
+  processingLevel: L3
+  sensorType: OPTICAL
 
-L5_L1G:
+# Sentinel 3 ------------------------------------------------------------------
+S3_SRA_BS:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  sensorType:
+  sensorType: RADAR
 
-L5_L1T:
+S3_SRA_A_BS:
   abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  sensorType:
-
-ES_FRS:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  sensorType: RADAR
 
 # See examples of product type namings for sentinel 3 here:
 # https://www.onda-dias.eu/cms/data/catalogue/sentinel-3/
@@ -255,95 +507,58 @@ S3_OLCI_L2LFR:
   processingLevel: L2
   sensorType: OPTICAL
 
-L8_REFLECTANCE:
+# SPOT ------------------------------------------------------------------------
+SPOT_SWH:
   abstract: |
-    Landsat 8 L2A data distributed by Theia since 2017-03-20 using operational version of MUSCATE, UTM projection,
-    and tiled using Sentinel-2 tiles.
-  instrument: OLI,TIRS
-  platform: LANDSAT8
-  platformSerialIdentifier: L8
+    The Spot World Heritage (SWH) programme objective is the free availability for non-commercial use of orthorectified
+    products derived from multispectral images of more than 5 years old from the Spot 1-5 satellites family.
+    More informations on https://www.theia-land.fr/en/product/spot-world-heritage/
+  instrument:
+  platform: SPOT1-5
+  platformSerialIdentifier: SPOT1-5
+  processingLevel: L1C
+  sensorType: OPTICAL
+SPOT_SWH_OLD:
+  abstract: |
+    Spot world heritage Old format.
+  instrument:
+  platform: SPOT1-5
+  platformSerialIdentifier: SPOT1-5
+  processingLevel: L1C
+  sensorType: OPTICAL
+SPOT5_SPIRIT:
+  abstract: |
+    SPOT 5 stereoscopic survey of Polar Ice.
+  instrument:
+  platform: SPOT5
+  platformSerialIdentifier: SPOT5
+  processingLevel: L1A
+  sensorType: OPTICAL
+
+# VENUS ------------------------------------------------------------------------
+VENUS_L1C:
+  abstract: |
+    A light description of Venus L1 data is available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=12984
+  instrument:
+  platform: VENUS
+  platformSerialIdentifier: VENUS
+  processingLevel: L1C
+  sensorType: OPTICAL
+
+VENUS_L2A_MAJA:
+  abstract: |
+    Level2 products provide surface reflectances after atmospheric correction, along with masks of clouds and their
+    shadows. Data is processed by MAJA (before called MACCS) for THEIA land data center.
+  instrument:
+  platform: VENUS
+  platformSerialIdentifier: VENUS
   processingLevel: L2A
   sensorType: OPTICAL
 
-L57_REFLECTANCE:
-  abstract: |
-    Landsat 5,7,8 L2A data (old format) distributed by Theia (2014 to 2017-03-20) using MUSCATE prototype,
-    Lamber 93 projection.
-  instrument: OLI,TIRS
-  platform: LANDSAT
-  platformSerialIdentifier: L5,L7,L8
-  processingLevel: L2A
-  sensorType: OPTICAL
-
-PLD_PAN:
-  abstract: Pleiades Panchromatic (Pan)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  sensorType: OPTICAL
-
-PLD_XS:
-  abstract: Pleiades Multispectral (XS)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  sensorType: OPTICAL
-
-PLD_BUNDLE:
-  abstract: Pleiades Bundle (Pan, XS)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  sensorType: OPTICAL
-
-PLD_PANSHARPENED:
-  abstract: Pleiades Pansharpened (Pan+XS)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  sensorType: OPTICAL
-
-S2_MSI_L1C:
-  abstract: |
-    The Level-1C product is composed of 100x100 km2 tiles (ortho-images in UTM/WGS84 projection). It results from
-    using a Digital Elevation Model (DEM) to project the image in cartographic geometry. Per-pixel radiometric
-    measurements are provided in Top Of Atmosphere (TOA) reflectances along with the parameters to transform them
-    into radiances. Level-1C products are resampled with a constant Ground Sampling Distance (GSD) of 10, 20 and 60
-    meters depending on the native resolution of the different spectral bands. In Level-1C  products, pixel
-    coordinates refer to the upper left corner of the pixel. Level-1C products will additionally include Cloud Masks
-    and ECMWF data (total column of ozone, total column of water vapour and mean sea level pressure).
-  instrument: MSI
-  platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
-  processingLevel: L1
-  sensorType: OPTICAL
-
-S2_MSI_L2A:
-  abstract: |
-    The Level-2A product provides Bottom Of Atmosphere (BOA) reflectance images derived from the associated Level-1C
-    products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
-  instrument: MSI
-  platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
-  processingLevel: L2
-  sensorType: OPTICAL
-
-S3_SRA_BS:
+VENUS_L3A_MAJA:
   abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L1
-  sensorType: RADAR
-
-S3_SRA_A_BS:
-  abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L1
-  sensorType: RADAR
+  instrument:
+  platform: VENUS
+  platformSerialIdentifier: VENUS
+  processingLevel: L3A
+  sensorType: OPTICAL

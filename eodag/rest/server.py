@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # -*- coding: utf-8 -*-
-# Copyright 2017-2018 CS Systemes d'Information (CS SI)
+# Copyright 2017-2018 CS GROUP - France (CS SI)
 # All rights reserved
 
 from __future__ import absolute_import, unicode_literals

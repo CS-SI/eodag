@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -50,6 +50,7 @@ import textwrap
 import click
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
+from eodag.utils import parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -240,7 +241,12 @@ def search_crunch(ctx, **kwargs):
         "id": id_,
     }
     if custom:
-        criteria["custom"] = custom
+        custom_dict = parse_qs(custom)
+        for k, v in custom_dict.items():
+            if isinstance(v, list) and len(v) == 1:
+                criteria[k] = v[0]
+            else:
+                criteria[k] = v
     if start_date:
         criteria["startTimeFromAscendingNode"] = start_date.isoformat()
     if stop_date:
@@ -267,7 +273,7 @@ def search_crunch(ctx, **kwargs):
         page=page, items_per_page=items_per_page, **criteria
     )
     click.echo("Found a total number of {} products".format(total))
-    click.echo("Returned {} products".format(len(results), product_type))
+    click.echo("Returned {} products".format(len(results)))
 
     # Crunch !
     crunch_args = {
@@ -492,9 +498,8 @@ def serve_rest(ctx, daemon, world, port, config, debug):
     # IMPORTANT: the order of imports counts here (first we override the settings,
     # then we import the app so that the updated settings is taken into account in
     # the app initialization)
-    from eodag.rest import settings
-
-    settings.EODAG_CFG_FILE = config
+    if config:
+        os.environ["EODAG_CFG_FILE"] = config
 
     from eodag.rest.server import app
 

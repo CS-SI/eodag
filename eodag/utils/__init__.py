@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -22,6 +22,7 @@ this package should go here
 """
 from __future__ import unicode_literals
 
+import copy
 import errno
 import os
 import re
@@ -496,10 +497,11 @@ def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S"):
 class ProgressCallback(object):
     """A callable used to render progress to users for long running processes"""
 
-    def __init__(self):
+    def __init__(self, max_size=None):
         self.pb = None
+        self.max_size = max_size
 
-    def __call__(self, current_size, max_size):
+    def __call__(self, current_size, max_size=None):
         """Update the progress bar.
 
         :param current_size: amount of data already processed
@@ -507,18 +509,22 @@ class ProgressCallback(object):
         :param max_size: maximum amount of data to be processed
         :type max_size: int
         """
+        if max_size is not None:
+            self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm(total=max_size, unit="B", unit_scale=True)
+            self.pb = tqdm(total=self.max_size, unit="B", unit_scale=True)
         self.pb.update(current_size)
 
 
 class NotebookProgressCallback(ProgressCallback):
     """A custom progress bar to be used inside Jupyter notebooks"""
 
-    def __call__(self, current_size, max_size):
+    def __call__(self, current_size, max_size=None):
         """Update the progress bar"""
+        if max_size is not None:
+            self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm_notebook(total=max_size, unit="B", unit_scale=True)
+            self.pb = tqdm_notebook(total=self.max_size, unit="B", unit_scale=True)
         self.pb.update(current_size)
 
 
@@ -535,3 +541,70 @@ def makedirs(dirpath):
         # Reraise the error unless it's about an already existing directory
         if err.errno != errno.EEXIST or not os.path.isdir(dirpath):
             raise
+
+
+def update_nested_dict(old_dict, new_dict, extend_list_values=False):
+    """Update recursively old_dict items with new_dict ones
+
+    :param old_dict: dict to be updated
+    :type old_dict: dict
+    :param new_dict: incomming dict
+    :type new_dict: dict
+    :param extend_list_values: extend old_dict value if both old/new values are lists
+    :type extend_list_values: bool
+    :returns: updated dict
+    :rtype: dict
+    """
+    for k, v in new_dict.items():
+        if k in old_dict.keys():
+            if isinstance(v, dict) and isinstance(old_dict[k], dict):
+                old_dict[k] = update_nested_dict(
+                    old_dict[k], v, extend_list_values=extend_list_values
+                )
+            elif (
+                extend_list_values
+                and isinstance(old_dict[k], list)
+                and isinstance(v, list)
+            ):
+                old_dict[k].extend(v)
+            elif v:
+                old_dict[k] = v
+        else:
+            old_dict[k] = v
+    return old_dict
+
+
+def dict_items_recursive_apply(config_dict, apply_method, **apply_method_parameters):
+    """Recursive apply method to dict elements
+
+    :param config_dict: input nested dictionnary
+    :type config_dict: dict
+    :param apply_method: method to be applied to dict elements
+    :type apply_method: :func:`apply_method`
+    :param apply_method_parameters: optional parameters passed to the method
+    :type apply_method_parameters: dict
+    :returns: updated dict
+    :rtype: dict
+    """
+    jsonpath_dict = copy.deepcopy(config_dict)
+    for dict_k, dict_v in jsonpath_dict.items():
+        if isinstance(dict_v, dict):
+            jsonpath_dict[dict_k] = dict_items_recursive_apply(
+                dict_v, apply_method, **apply_method_parameters
+            )
+        elif any(isinstance(dict_v, t) for t in (list, tuple)):
+            for list_idx, list_v in enumerate(dict_v):
+                if isinstance(list_v, dict):
+                    jsonpath_dict[dict_k][list_idx] = dict_items_recursive_apply(
+                        list_v, apply_method, **apply_method_parameters
+                    )
+                else:
+                    jsonpath_dict[dict_k][list_idx] = apply_method(
+                        dict_k, list_v, **apply_method_parameters
+                    )
+        else:
+            jsonpath_dict[dict_k] = apply_method(
+                dict_k, dict_v, **apply_method_parameters
+            )
+
+    return jsonpath_dict

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -324,10 +324,18 @@ class EODataAccessGateway(object):
                     "latmin", "lonmax", "latmax")
         :type box: dict
         :param dict kwargs: some other criteria that will be used to do the search,
-                            may content custom parameter ``custom="foo=1&bar=2"``
+                            using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
+
+        .. versionchanged::
+           1.6
+
+                * Any search parameter supported by the provider can be passed as
+                  kwargs. Each provider has a 'discover_metadata' configuration
+                  with a metadata_pattern (to which the parameter must match) and a
+                  search_param setting, defining the way the query will be built.
 
         .. versionchanged::
            1.0
@@ -397,6 +405,17 @@ class EODataAccessGateway(object):
         logger.info(
             "Searching product type '%s' on provider: %s", product_type, plugin.provider
         )
+        # add product_types_config to plugin config
+        plugin.config.product_type_config = dict(
+            [
+                p
+                for p in self.list_product_types(plugin.provider)
+                if p["ID"] == product_type
+            ][0],
+            **{"productType": product_type}
+        )
+        plugin.config.product_type_config.pop("ID", None)
+
         logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
         auth = self._plugins_manager.get_auth_plugin(plugin.provider)
         return self._do_search(

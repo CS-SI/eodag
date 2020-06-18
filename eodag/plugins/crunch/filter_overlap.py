@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -21,50 +21,67 @@ import logging
 
 from shapely import geometry
 
+from eodag.plugins.crunch.base import Crunch
+
 try:
     from shapely.errors import TopologicalError
 except ImportError:
     from shapely.geos import TopologicalError
 
-from eodag.plugins.crunch.base import Crunch
 
-
-logger = logging.getLogger('eodag.plugins.crunch.filter_overlap')
+logger = logging.getLogger("eodag.plugins.crunch.filter_overlap")
 
 
 class FilterOverlap(Crunch):
+    """FilterOverlap cruncher
+
+    Filter products, retaining only those that are overlapping with the search_extent
+    """
 
     def proceed(self, products, **search_params):
-        """Filter products, retaining only those that are overlapping with the search_extent"""
-        logger.info('Start filtering for overlapping products')
+        """Execute crunch: Filter products, retaining only those that are overlapping with the search_extent"""
+        logger.info("Start filtering for overlapping products")
         filtered = []
         add_to_filtered = filtered.append
-        footprint = search_params.get('geometry')
+        footprint = search_params.get("geometry")
         if not footprint:
             return products
-        minimum_overlap = float(self.config.get('minimum_overlap', '0'))
-        logger.info('Minimum overlap is: {} %'.format(minimum_overlap))
-        search_extent = geometry.box(footprint['lonmin'], footprint['latmin'],
-                                     footprint['lonmax'], footprint['latmax'])
-        logger.info('Initial requested extent area: %s', search_extent.area)
+        minimum_overlap = float(self.config.get("minimum_overlap", "0"))
+        logger.info("Minimum overlap is: {} %".format(minimum_overlap))
+        search_extent = geometry.box(
+            footprint["lonmin"],
+            footprint["latmin"],
+            footprint["lonmax"],
+            footprint["latmax"],
+        )
+        logger.info("Initial requested extent area: %s", search_extent.area)
         if search_extent.area == 0:
-            logger.info('No product can overlap a requested extent that is not a polygon (i.e with area=0)')
+            logger.info(
+                "No product can overlap a requested extent that is not a polygon (i.e with area=0)"
+            )
         else:
             for product in products:
-                logger.info('Uncovered extent area: %s', search_extent.area)
+                logger.info("Uncovered extent area: %s", search_extent.area)
                 if product.search_intersection:
                     intersection = product.search_intersection
                     product_geometry = product.geometry
                 else:  # Product geometry may be invalid
                     if not product.geometry.is_valid:
-                        logger.debug('Trying our best to deal with invalid geometry on product: %r', product)
+                        logger.debug(
+                            "Trying our best to deal with invalid geometry on product: %r",
+                            product,
+                        )
                         product_geometry = product.geometry.buffer(0)
                         try:
                             intersection = search_extent.intersection(product_geometry)
                         except TopologicalError:
-                            logger.debug('Product geometry still invalid. Overlap test restricted to containment')
+                            logger.debug(
+                                "Product geometry still invalid. Overlap test restricted to containment"
+                            )
                             if search_extent.contains(product_geometry):
-                                logger.debug('Product %r overlaps the search extent. Adding it to filtered results')
+                                logger.debug(
+                                    "Product %r overlaps the search extent. Adding it to filtered results"
+                                )
                                 add_to_filtered(product)
                             continue
                     else:
@@ -72,16 +89,34 @@ class FilterOverlap(Crunch):
                         intersection = search_extent.intersection(product_geometry)
                 ipos = (intersection.area / search_extent.area) * 100
                 ipop = (intersection.area / product_geometry.area) * 100
-                logger.info('Intersection of product extent and search extent covers %f percent of the search extent '
-                            'area', ipos)
-                logger.info('Intersection of product extent and search extent covers %f percent of the product extent '
-                            'area', ipop)
-                if any((search_extent.contains(product.geometry), ipos >= minimum_overlap, ipop >= minimum_overlap)):
-                    logger.info('Product %r overlaps the search extent by the specified constraint. Adding it to '
-                                'filtered results', product)
+                logger.info(
+                    "Intersection of product extent and search extent covers %f percent of the search extent "
+                    "area",
+                    ipos,
+                )
+                logger.info(
+                    "Intersection of product extent and search extent covers %f percent of the product extent "
+                    "area",
+                    ipop,
+                )
+                if any(
+                    (
+                        search_extent.contains(product.geometry),
+                        ipos >= minimum_overlap,
+                        ipop >= minimum_overlap,
+                    )
+                ):
+                    logger.info(
+                        "Product %r overlaps the search extent by the specified constraint. Adding it to "
+                        "filtered results",
+                        product,
+                    )
                     add_to_filtered(product)
                 else:
-                    logger.info('Product %r does not overlaps the search extent by the specified constraint. '
-                                'Skipping it', product)
-        logger.info('Finished filtering products. Resulting products: %r', filtered)
+                    logger.info(
+                        "Product %r does not overlaps the search extent by the specified constraint. "
+                        "Skipping it",
+                        product,
+                    )
+        logger.info("Finished filtering products. Resulting products: %r", filtered)
         return filtered

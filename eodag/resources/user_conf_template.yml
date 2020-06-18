@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -47,17 +47,16 @@ usgs:
         credentials:
             username:
             password:
-aws_s3_sentinel2_l1c:
+aws_eos:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     auth:
         credentials:
+            apikey:
             aws_access_key_id:
             aws_secret_access_key:
     download:
-        extract:
         outputs_prefix:
-        associated_bucket:
 sobloo:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -26,15 +26,19 @@ from shapely import geometry
 
 from eodag.plugins.crunch.base import Crunch
 
-
-logger = logging.getLogger('eodag.plugins.crunch.filter_latest')
+logger = logging.getLogger("eodag.plugins.crunch.filter_latest")
 
 
 class FilterLatestIntersect(Crunch):
+    """FilterLatestIntersect cruncher
+
+    Filter latest products (the ones with a the highest start date) that intersect search extent
+    """
 
     @staticmethod
     def sort_product_by_start_date(product):
-        start_date = product.properties.get('startTimeFromAscendingNode')
+        """Get product start date"""
+        start_date = product.properties.get("startTimeFromAscendingNode")
         if not start_date:
             # Retrieve year, month, day, hour, minute, second of EPOCH start
             epoch = time.gmtime(0)[:-3]
@@ -42,32 +46,39 @@ class FilterLatestIntersect(Crunch):
         return dateutil.parser.parse(start_date)
 
     def proceed(self, products, **search_params):
-        """Filter latest products (the ones with a the highest start date) that intersect search extent."""
-        logger.debug('Start filtering for latest products')
+        """Execute crunch:
+        Filter latest products (the ones with a the highest start date) that intersect search extent.
+        """
+        logger.debug("Start filtering for latest products")
         if not products:
             return []
         # Warning: May crash if startTimeFromAscendingNode is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered = []
         add_to_filtered = filtered.append
-        footprint = search_params.get('footprint')
+        footprint = search_params.get("footprint")
         if not footprint:
             return products
         search_extent = geometry.box(
-            footprint['lonmin'],
-            footprint['latmin'],
-            footprint['lonmax'],
-            footprint['latmax']
+            footprint["lonmin"],
+            footprint["latmin"],
+            footprint["lonmax"],
+            footprint["latmax"],
         )
-        logger.debug('Initial requested extent area: %s', search_extent.area)
+        logger.debug("Initial requested extent area: %s", search_extent.area)
         for product in products:
-            logger.debug('Uncovered extent area: %s', search_extent.area)
+            logger.debug("Uncovered extent area: %s", search_extent.area)
             if product.search_intersection:
-                logger.debug('Product %r intersects the requested extent. Adding it to the final result', product)
+                logger.debug(
+                    "Product %r intersects the requested extent. Adding it to the final result",
+                    product,
+                )
                 add_to_filtered(product)
             search_extent = search_extent.difference(product.geometry)
             if search_extent.is_empty:
-                logger.debug('The requested extent is now entirely covered by the search result')
+                logger.debug(
+                    "The requested extent is now entirely covered by the search result"
+                )
                 break
-        logger.debug('Finished filtering products. Resulting products: %r', filtered)
+        logger.debug("Finished filtering products. Resulting products: %r", filtered)
         return filtered

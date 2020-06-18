@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -21,11 +21,11 @@ import logging
 
 from eodag.plugins.base import PluginTopic
 
-
-logger = logging.getLogger('eodag.plugins.apis.base')
+logger = logging.getLogger("eodag.plugins.apis.base")
 
 
 class Api(PluginTopic):
+    """Plugins API Base plugin"""
 
     def query(self, *args, **kwargs):
         """Implementation of how the products must be searched goes here.
@@ -33,8 +33,8 @@ class Api(PluginTopic):
         This method must return a list of EOProduct instances (see eodag.api.product module) which will
         be processed by a Download plugin.
         """
-        raise NotImplementedError('A Api plugin must implement a method named query')
+        raise NotImplementedError("A Api plugin must implement a method named query")
 
     def download(self, *args, **kwargs):
         """Implementation of how the products must be downloaded."""
-        raise NotImplementedError('A Api plugin must implement a method named download')
+        raise NotImplementedError("A Api plugin must implement a method named download")

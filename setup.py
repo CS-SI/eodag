@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -121,9 +121,9 @@ setup(
         ],
     },
     project_urls={
-        "Bug Tracker": "https://bitbucket.org/geostorm/eodag/issues/",
+        "Bug Tracker": "https://github.com/CS-SI/eodag/issues/",
         "Documentation": "https://eodag.readthedocs.io/en/latest/",
-        "Source Code": "https://bitbucket.org/geostorm/eodag",
+        "Source Code": "https://github.com/CS-SI/eodag",
     },
     classifiers=[
         "Development Status :: 1 - Planning",
@@ -139,6 +139,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: GIS",
     ],

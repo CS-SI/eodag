@@ -128,8 +128,11 @@ html_theme_options = {
     "logo": "eodag_logo.png",
     "logo_name": False,
     "show_related": True,
-    "fixed_sidebar": True,
+    "fixed_sidebar": False,
     "show_powered_by": False,
+    "github_user": "CS-SI",
+    "github_repo": "eodag",
+    "github_banner": True,
 }
 
 # html_logo = 'https://img.shields.io/badge/style-git%20repo-blue?logo=bitbucket&label=bitbucket'
@@ -147,10 +150,9 @@ html_static_path = ["_static"]
 # This is required for the alabaster theme
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {
-    # "index": ["sidebarxtra.html"],
     "**": [
         "about.html",
-        "sidebarxtra.html",
+        # "sidebarxtra.html",
         "navigation.html",
         "relations.html",  # needs 'show_related': True theme option to display
         "searchbox.html",
@@ -191,7 +193,7 @@ latex_documents = [
         master_doc,
         "eodag.tex",
         "eodag Documentation",
-        "CS Systemes d'Information (CSSI)",
+        "CS GROUP - France (CSSI)",
         "manual",
     )
 ]
