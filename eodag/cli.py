@@ -273,7 +273,7 @@ def search_crunch(ctx, **kwargs):
         page=page, items_per_page=items_per_page, **criteria
     )
     click.echo("Found a total number of {} products".format(total))
-    click.echo("Returned {} products".format(len(results), product_type))
+    click.echo("Returned {} products".format(len(results)))
 
     # Crunch !
     crunch_args = {
