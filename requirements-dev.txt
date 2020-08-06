@@ -1,2 +1,2 @@
-python-dateutil<2.7.0,>=2.1 # requirement for moto
+python-dateutil<3.0.0,>=2.1 # requirement for moto
 -e .[dev]
