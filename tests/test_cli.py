@@ -303,15 +303,6 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
-    def test_eodag_download_no_conf_file(self, dag):
-        """Calling eodag download without configuration file do nothing"""
-        search_results_path = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
-        )
-        self.runner.invoke(eodag, ["download", "--search-results", search_results_path])
-        dag.assert_not_called()
-
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_download_ok(self, dag):
         """Calling eodag download with all args well formed succeed"""
         search_results_path = os.path.join(
