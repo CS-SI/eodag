@@ -86,7 +86,7 @@ setup(
         ],
         "tutorials": [
             "jupyter",
-            "ipyleaflet",
+            "ipyleaflet >= 0.10.0",
             "ipywidgets",
             "matplotlib",
             "folium",
