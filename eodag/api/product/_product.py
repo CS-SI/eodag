@@ -84,7 +84,7 @@ class EOProduct(object):
         # Let's try 'latmin lonmin latmax lonmax'
         if isinstance(product_geometry, six.string_types):
             bbox_pattern = re.compile(
-                r"^(\d+\.?\d*) (\d+\.?\d*) (\d+\.?\d*) (\d+\.?\d*)$"
+                r"^(-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*)$"
             )
             found_bbox = bbox_pattern.match(product_geometry)
             if found_bbox:
