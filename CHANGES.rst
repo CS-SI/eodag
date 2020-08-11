@@ -1,10 +1,20 @@
 Release history
 ---------------
 
-1.6.0 (2020-06-18)
+1.6.0rc1 (2020-08-11)
 ++++++++++++++++++
 
 - Warning: last release including Python 2.7 support
+- Queryable parameters configuration update for peps
+- Fixed re-download error after original zip deletion, fixes `#142 <https://github.com/CS-SI/eodag/issues/142>`_
+- Fixed python-dateutil version conflict, fixes `#141 <https://github.com/CS-SI/eodag/issues/141>`_
+- Default user configuration file usage in CLI mode
+- Fixed error when provider returns geometry as bbox with negative coords, fixes
+  `#143 <https://github.com/CS-SI/eodag/issues/143>`_
+
+1.6.0rc0 (2020-06-18)
+++++++++++++++++++
+
 - Github set as default version control repository hosting service for source code and issues
 - New provider for AWS: aws_eos (S2_MSI_L1C/L2A, S1_SAR_GRD, L8, CBERS-4, MODIS, NAIP), replaces aws_s3_sentinel2_l1c
 - Build SAFE products for AWS Sentinel data
