@@ -217,8 +217,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         product = self.execute_search(
             "peps",
             "S2_MSI_L1C",
-            "2019-11-08",
-            "2019-11-16",
+            "2020-08-08",
+            "2020-08-16",
             (137.772897, 13.134202, 153.749135, 23.885986),
         )
         expected_filename = "{}.zip".format(product.properties["title"])
@@ -228,8 +228,8 @@ class TestEODagEndToEnd(unittest.TestCase):
         product = self.execute_search(
             "mundi",
             "S2_MSI_L1C",
-            "2020-08-08",
-            "2020-08-16",
+            "2019-11-08",
+            "2019-11-16",
             (137.772897, 13.134202, 153.749135, 23.885986),
         )
         expected_filename = "{}".format(product.properties["title"])
