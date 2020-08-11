@@ -1,7 +1,7 @@
 Release history
 ---------------
 
-1.6.0rc1 (2020-08-11)
+1.6.0rc2 (2020-08-11)
 ++++++++++++++++++
 
 - Warning: last release including Python 2.7 support

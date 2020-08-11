@@ -245,7 +245,7 @@ class HTTPDownload(Download):
         """
         download_all using parent (base plugin) method
         """
-        super(HTTPDownload, self).download_all(
+        return super(HTTPDownload, self).download_all(
             products,
             auth=auth,
             progress_callback=progress_callback,
