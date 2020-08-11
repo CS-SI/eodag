@@ -69,7 +69,7 @@ class UsgsApi(Api):
 
         # Configuration to generate the download url of search results
         result_summary_pattern = re.compile(
-            r"^Entity ID: .+, Acquisition Date: .+, Path: (?P<path>\d+), Row: (?P<row>\d+)$"  # noqa
+            r"^ID: .+, Acquisition Date: .+, Path: (?P<path>\d+), Row: (?P<row>\d+)$"  # noqa
         )
         # See https://pyformat.info/, on section "Padding and aligning strings" to
         # understand {path:0>3} and {row:0>3}.

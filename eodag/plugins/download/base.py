@@ -148,7 +148,9 @@ class Download(PluginTopic):
         if not getattr(self.config, "extract", False):
             logger.info("Extraction not activated. The product is available as is.")
             return fs_path
-        product_path = fs_path[: fs_path.index(".zip")]
+        product_path = (
+            fs_path[: fs_path.index(".zip")] if ".zip" in fs_path else fs_path
+        )
         product_path_exists = os.path.exists(product_path)
         if product_path_exists and os.path.isfile(product_path):
             logger.info(

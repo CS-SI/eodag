@@ -681,28 +681,44 @@
       topicCategory: '$.properties.topicCategory'
       keyword: '$.properties.keywords'
       abstract: '$.properties.description'
-      resolution: '$.properties.resolution'
-      organisationName: '$.properties.organisationName'
+      resolution:
+        - 'resolution'
+        - '$.properties.resolution'
+      organisationName:
+        - 'organisationName'
+        - '$.properties.organisationName'
       publicationDate: '$.properties.published'
       accessConstraint: '$.properties.license'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier: '$.properties.parentIdentifier'
+      parentIdentifier:
+        - 'parentIdentifier'
+        - '$.properties.parentIdentifier'
       acquisitionType: '$.properties.acquisitionType'
-      orbitNumber: '$.properties.orbitNumber'
-      orbitDirection: '$.properties.orbitDirection'
-      swathIdentifier: '$.properties.swath'
+      orbitNumber:
+        - 'orbitNumber'
+        - '$.properties.orbitNumber'
+      orbitDirection:
+        - 'orbitDirection'
+        - '$.properties.orbitDirection'
+      swathIdentifier:
+        - 'swath'
+        - '$.properties.swath'
       cloudCover:
         - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
-      snowCover: '$.properties.snowCover'
+      snowCover:
+        - 'snowCover=[0,{snowCover}]'
+        - '$.properties.snowCover'
       productVersion: '$.properties.version'
       productQualityStatus: '$.properties.onlineQualityCheck'
       processorName: '$.properties.processingName'
       processingCenter: '$.properties.processingCenter'
       creationDate: '$.properties.dhusIngestDate'
       modificationDate: '$.properties.updated'
-      sensorMode: '$.properties.sensorMode'
+      sensorMode:
+        - 'sensorMode'
+        - '$.properties.sensorMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
@@ -711,7 +727,9 @@
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      polarizationMode: '$.properties.polarisation'
+      polarizationMode:
+        - 'polarisation'
+        - '$.properties.polarisation'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
