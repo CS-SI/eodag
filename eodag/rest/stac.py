@@ -403,7 +403,9 @@ class StacItem(StacCommon):
         # parse f-strings
         format_args = copy.deepcopy(self.stac_config)
         # format_args["collection"] = dict(catalog.as_dict(), **{"url": catalog.url})
-        format_args["catalog"] = dict(catalog.as_dict(), **{"url": catalog.url})
+        format_args["catalog"] = dict(
+            catalog.as_dict(), **{"url": catalog.url, "root": catalog.root}
+        )
         format_args["item"] = product_item
         product_item = format_dict_items(product_item, **format_args)
         product_item["bbox"] = [float(i) for i in product_item["bbox"]]

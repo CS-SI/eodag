@@ -50,6 +50,28 @@ def format_product_types(product_types):
     return "\n".join(sorted(result))
 
 
+def get_detailled_collections_list(provider=preferred_provider):
+    """Returns detailled collections / product_types list for a given provider as a list of config dicts
+
+    :param provider: chosen provider
+    :type provider: str
+    :returns: list of config dicts
+    :rtype: list
+    """
+    return eodag_api.list_product_types(provider=provider)
+
+
+# def get_provider_config(provider=preferred_provider):
+#     """Returns given provier configuration
+
+#     :param provider: chosen provider
+#     :type provider: str
+#     :returns: config dict
+#     :rtype: dict
+#     """
+#     return eodag_api.providers_config[provider].__dict__
+
+
 def get_home_page_content(base_url, ipp=None):
     """Compute eodag service home page content
 
@@ -411,15 +433,17 @@ def get_stac_item_by_id(
     :rtype: dict
     """
     product_type = catalogs[0]
-    product = search_product_by_id(item_id, product_type=product_type)[0]
-
-    return StacItem(
-        url=url,
-        stac_config=stac_config,
-        provider=provider,
-        eodag_api=eodag_api,
-        root=root,
-    ).get_stac_item_from_product(product=product)
+    found_products = search_product_by_id(item_id, product_type=product_type)
+    if len(found_products) > 0:
+        return StacItem(
+            url=url,
+            stac_config=stac_config,
+            provider=provider,
+            eodag_api=eodag_api,
+            root=root,
+        ).get_stac_item_from_product(product=found_products[0])
+    else:
+        return None
 
 
 def download_stac_item_by_id(catalogs, item_id, provider=preferred_provider):

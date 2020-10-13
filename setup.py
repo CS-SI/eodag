@@ -60,6 +60,7 @@ setup(
         "rasterio",
         "protobuf",
         "grpcio",
+        "flasgger",
         # To be able to do 'import concurrent.futures' in Python 2.7
         "futures; python_version < '3.5'",
         "jsonpath-rw",

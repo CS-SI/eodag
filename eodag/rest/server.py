@@ -6,19 +6,21 @@
 
 from __future__ import absolute_import, unicode_literals
 
+import io
 import logging
 import os
 import sys
 import traceback
+from distutils import dist
 from functools import wraps
 
 import flask
 import geojson
-import requests
-from flask import jsonify, make_response, render_template, request, send_file
+import pkg_resources
+from flasgger import Swagger
+from flask import abort, jsonify, make_response, request, send_file
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
-from eodag.utils import makedirs
+from eodag.config import load_stac_api_config
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -29,8 +31,6 @@ from eodag.utils.exceptions import (
 
 from eodag.rest.utils import (  # get_stac_landing_page,; get_stac_product_types_catalog,; search_products,
     download_stac_item_by_id,
-    get_home_page_content,
-    get_product_types,
     get_stac_catalogs,
     get_stac_collection_by_id,
     get_stac_collections,
@@ -38,15 +38,58 @@ from eodag.rest.utils import (  # get_stac_landing_page,; get_stac_product_types
     get_stac_extension_oseo,
     get_stac_item_by_id,
     load_stac_config,
-    search_product_by_id,
     search_stac_items,
+    get_detailled_collections_list,
 )
 
 logger = logging.getLogger("eodag.rest.server")
 
 app = flask.Flask(__name__)
 
+# eodag metadata
+distribution = pkg_resources.get_distribution("eodag")
+metadata_str = distribution.get_metadata(distribution.PKG_INFO)
+metadata_obj = dist.DistributionMetadata()
+metadata_obj.read_pkg_file(io.StringIO(metadata_str))
+
+# confs from resources yaml files
 stac_config = load_stac_config()
+
+stac_api_config = {"info": {}}
+stac_api_config = load_stac_api_config()
+root_catalog = get_stac_catalogs(url="")
+stac_api_version = stac_api_config["info"]["version"]
+stac_api_config["info"]["title"] = root_catalog["title"] + " / eodag"
+stac_api_config["info"]["description"] = (
+    root_catalog["description"]
+    + f" (stac-api-spec {stac_api_version})"
+    + "".join(
+        [
+            f'\n - [{pt["ID"]}](/collections/{pt["ID"]}): {pt["abstract"]}'
+            for pt in get_detailled_collections_list()
+        ]
+    )
+)
+stac_api_config["info"]["version"] = getattr(
+    metadata_obj, "version", stac_api_config["info"]["version"]
+)
+stac_api_config["info"]["contact"]["name"] = "EODAG"
+stac_api_config["info"]["contact"]["url"] = getattr(
+    metadata_obj, "url", stac_api_config["info"]["contact"]["url"]
+)
+stac_api_config["title"] = root_catalog["title"] + " - service-doc"
+stac_api_config["specs"] = [
+    {
+        "endpoint": "service-desc",
+        "route": "/service-desc",
+        "rule_filter": lambda rule: True,  # all in
+        "model_filter": lambda tag: True,  # all in
+    }
+]
+stac_api_config["static_url_path"] = "/service-static"
+stac_api_config["specs_route"] = "/service-doc/"
+stac_api_config.pop("servers", None)
+swagger = Swagger(app, config=stac_api_config, merge=True)
 
 
 def cross_origin(request_handler):
@@ -90,6 +133,12 @@ def handle_internal_error(error):
     return response
 
 
+@app.errorhandler(404)
+def handle_resource_not_found(e):
+    """Not found [404] errors handle"""
+    return jsonify(error=str(e)), 404
+
+
 @app.route("/conformance", methods=["GET"])
 @cross_origin
 def conformance():
@@ -113,7 +162,30 @@ def catalogs_root():
 @app.route("/<path:catalogs>", methods=["GET"])
 @cross_origin
 def stac_catalogs(catalogs):
-    """STAC catalogs"""
+    """Describe the given catalog and list available sub-catalogs
+    ---
+    tags:
+      - Capabilities
+    parameters:
+      - name: catalogs
+        in: path
+        required: true
+        description: |-
+            The catalog's path.
+
+            For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
+        schema:
+            type: string
+    responses:
+        200:
+            description: The catalog's description
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/collection'
+        '500':
+            $ref: '#/components/responses/ServerError'
+    """
 
     catalogs = catalogs.strip("/").split("/")
     response = get_stac_catalogs(
@@ -125,7 +197,36 @@ def stac_catalogs(catalogs):
 @app.route("/<path:catalogs>/items", methods=["GET"])
 @cross_origin
 def stac_catalogs_items(catalogs):
-    """STAC catalogs items"""
+    """Fetch catalog's features
+    ---
+    tags:
+      - Data
+    description: |-
+        Fetch features in the given catalog provided with `catalogs`.
+    parameters:
+      - name: catalogs
+        in: path
+        required: true
+        description: |-
+            The path to the catalog that contains the requested features.
+
+            For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
+        schema:
+            type: string
+      - $ref: '#/components/parameters/bbox'
+      - $ref: '#/components/parameters/datetime'
+      - $ref: '#/components/parameters/limit'
+    responses:
+        200:
+            description: The list of items found for the given catalog.
+            type: array
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/itemCollection'
+        '500':
+            $ref: '#/components/responses/ServerError
+    '"""
 
     catalogs = catalogs.strip("/").split("/")
     response = search_stac_items(
@@ -142,16 +243,51 @@ def stac_catalogs_items(catalogs):
 @app.route("/<path:catalogs>/items/<item_id>", methods=["GET"])
 @cross_origin
 def stac_catalogs_item(catalogs, item_id):
-    """STAC item by id"""
+    """Fetch catalog's single features
+    ---
+    tags:
+      - Data
+    description: |-
+        Fetch the feature with id `featureId` in the given catalog provided.
+        with `catalogs`.
+    parameters:
+        - name: catalogs
+          in: path
+          required: true
+          description: |-
+                The path to the catalog that contains the requested feature.
+
+
+                For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
+          schema:
+                type: string
+        - name: item_id
+          in: path
+          description: |-
+            local identifier of a feature (for example `S2A_MSIL1C_20200805T104031_N0209_R008_T31TCJ_20200805T110310`)
+          required: true
+          schema:
+              type: string
+    responses:
+        '200':
+          $ref: '#/components/responses/Feature'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    """
 
     catalogs = catalogs.strip("/").split("/")
     response = get_stac_item_by_id(
         url=request.url, item_id=item_id, root=request.url_root, catalogs=catalogs
     )
 
-    return app.response_class(
-        response=geojson.dumps(response), status=200, mimetype="application/json"
-    )
+    if response:
+        return app.response_class(
+            response=geojson.dumps(response), status=200, mimetype="application/json"
+        )
+    else:
+        abort(404, f"No item found matching `{item_id}` id in catalog `{catalogs}`")
 
 
 @app.route("/<path:catalogs>/items/<item_id>/download", methods=["GET"])
@@ -260,130 +396,6 @@ def stac_collections_item_download(collection_id, item_id):
     filename = os.path.basename(response)
 
     return send_file(response, as_attachment=True, attachment_filename=filename)
-
-
-# @app.route("/<product_type>/", methods=["GET"])
-# @cross_origin
-# def search(product_type):
-#     """Search for a product by product type on eodag"""
-#     try:
-#         response = search_products(product_type, request.args)
-#     except ValidationError as e:
-#         return jsonify({"error": e.message}), 400
-#     except RuntimeError as e:
-#         return jsonify({"error": e}), 400
-#     except UnsupportedProductType as e:
-#         return jsonify({"error": "Not Found: {}".format(e.product_type)}), 404
-
-#     return jsonify(response), 200
-
-
-# @app.route("/search/<uid>/", methods=["GET"])
-# @cross_origin
-# def search_by_id(uid):
-#     """Retrieve the quicklook of a eo product identified by its id"""
-#     provider = request.args.get("provider")
-#     try:
-#         search_result = search_product_by_id(uid, provider=provider)
-#     except ValidationError as e:
-#         return jsonify({"error": e.message}), 400
-#     except RuntimeError as e:
-#         return jsonify({"error": e}), 500
-#     except UnsupportedProvider:
-#         return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
-
-#     if len(search_result) == 0:
-#         return jsonify({"error": "Not found"}), 404
-#     return jsonify(search_result[0].as_dict()), 200
-
-
-@app.route("/quicklook/<uid>/", methods=["GET"])
-@cross_origin
-def get_quicklook(uid=None):
-    """Retrieve the quicklook of a eo product identified by its id"""
-    if uid is None:
-        return jsonify({"error": "You must provide a EO product uid"}), 400
-    provider = request.args.get("provider")
-    try:
-        search_result = search_product_by_id(uid, provider=provider)
-    except ValidationError as e:
-        return jsonify({"error": e.message}), 400
-    except RuntimeError as e:
-        return jsonify({"error": e}), 500
-    except UnsupportedProvider:
-        return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
-
-    if len(search_result) == 0:
-        return jsonify({"error": "EO product not found"}), 400
-
-    eo_product = search_result[0]
-    quicklook = eo_product.properties.get("quicklook", None)
-    if quicklook is None:
-        return jsonify({"error": "Not Found"}), 404
-    quicklook_alt_text = "{} quicklook".format(uid)
-    if quicklook.startswith("http") or quicklook.startswith("https"):
-        # First see if the url of the quicklook is accessible as is
-        resp = requests.get(quicklook)
-        try:
-            resp.raise_for_status()
-            quicklook_src = quicklook
-        except requests.HTTPError:
-            # Flask is known to automatically serve files present in a folder named
-            # "static" in the root folder of the application.
-            # If the url is not accessible as is, try to get it from the provider using
-            # its authentication mechanism
-            quicklooks_dir = os.path.join(
-                os.path.dirname(__file__), "static", "quicklooks"
-            )
-            # First create the static folder and quicklooks dir inside it if necessary
-            makedirs(quicklooks_dir)
-            # Then download the quicklook
-            response = eo_product.get_quicklook(filename=uid, base_dir=quicklooks_dir)
-            # get_quicklook should always return an absolute path, which starts with "/"
-            # If it fails to do so, we consider an error occured while getting the
-            # quicklook
-            if not response.startswith("/"):
-                return jsonify({"error": response}), 500
-            quicklook_src = "/static/quicklooks/{}".format(uid)
-    # If the quicklook is not an HTTP URL, we guess it is a base64 stream. In that case
-    # we directly include it in the <img> tag and return it as is
-    else:
-        quicklook_src = "data:image/png;base64, {}".format(quicklook)
-    return '<img src="{}" alt="{}" />'.format(quicklook_src, quicklook_alt_text), 200
-
-
-@app.route("/service-desc/", methods=["GET"])
-@cross_origin
-def service_desc():
-    """Render description"""
-    return render_template(
-        "index.html",
-        content=get_home_page_content(request.base_url, DEFAULT_ITEMS_PER_PAGE),
-    )
-
-
-@app.route("/service-doc/", methods=["GET"])
-@cross_origin
-def service_doc():
-    """Render doc"""
-    return render_template(
-        "index.html",
-        content=get_home_page_content(request.base_url, DEFAULT_ITEMS_PER_PAGE),
-    )
-
-
-@app.route("/product-types/", methods=["GET"])
-@app.route("/product-types/<provider>", methods=["GET"])
-@cross_origin
-def list_product_types(provider=None):
-    """List eodag' supported product types"""
-    try:
-        product_types = get_product_types(provider, request.args)
-    except UnsupportedProvider:
-        return jsonify({"error": "Unknown provider: %s" % (provider,)}), 400
-    except Exception:
-        return jsonify({"error": "Unknown server error"}), 500
-    return jsonify(product_types), 200
 
 
 def main():

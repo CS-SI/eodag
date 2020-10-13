@@ -337,6 +337,17 @@ def load_stac_config():
     )
 
 
+def load_stac_api_config():
+    """Build the stac API configuration into a dictionnary
+
+    :returns: The stac API configuration
+    :rtype: dict
+    """
+    return load_yml_config(
+        resource_filename("eodag", os.path.join("resources/", "stac_api.yml"))
+    )
+
+
 def format_dict_items(config_dict, **format_variables):
     """Recursive apply string.format(**format_variables) to dict elements
 
