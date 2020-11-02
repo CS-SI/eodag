@@ -50,7 +50,7 @@ class TestCore(unittest.TestCase):
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
         "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
-        "S2_MSI_L2A": ["onda", "mundi", "creodias", "peps", "aws_eos"],
+        "S2_MSI_L2A": ["onda", "mundi", "creodias", "peps", "aws_eos", "sobloo"],
         "S2_MSI_L2A_MAJA": ["theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
