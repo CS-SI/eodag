@@ -94,7 +94,7 @@ setup(
             "folium",
             "imageio",
         ],
-        "docs": ["sphinx == 1.8.0", "nbsphinx == 0.3.5", "nbsphinx-link == 1.1.1"],
+        "docs": ["sphinx == 3.3.0", "nbsphinx == 0.8.0", "nbsphinx-link == 1.3.0"],
     },
     entry_points={
         "console_scripts": ["eodag = eodag.cli:eodag"],
