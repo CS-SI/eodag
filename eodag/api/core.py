@@ -15,12 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 import os
 import shutil
-from copy import deepcopy
 from operator import itemgetter
 
 import geojson
@@ -41,7 +38,7 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import get_geometry_from_various, makedirs, utf8_everywhere
+from eodag.utils import get_geometry_from_various, makedirs
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
@@ -60,9 +57,9 @@ class EODataAccessGateway(object):
     from different types of providers.
 
     :param user_conf_file_path: Path to the user configuration file
-    :type user_conf_file_path: str or unicode
+    :type user_conf_file_path: str
     :param locations_conf_path: Path to the locations configuration file
-    :type locations_conf_path: str or unicode
+    :type locations_conf_path: str
     """
 
     def __init__(self, user_conf_file_path=None, locations_conf_path=None):
@@ -175,10 +172,6 @@ class EODataAccessGateway(object):
                 versioned_product_type = dict(
                     product_type, **{"eodagVersion": eodag_version}
                 )
-                # py27: encode items except ID
-                product_type_id = versioned_product_type.pop("ID")
-                utf8_everywhere(versioned_product_type)
-                versioned_product_type["ID"] = product_type_id
                 # add to index
                 ix_writer.add_document(
                     **{
@@ -225,7 +218,7 @@ class EODataAccessGateway(object):
 
         :param provider: The name of the provider that should be considered as the
                          preferred provider to be used for this instance
-        :type provider: str or unicode
+        :type provider: str
         """
         if provider not in self.available_providers():
             raise UnsupportedProvider("This provider is not recognised by eodag")
@@ -268,7 +261,7 @@ class EODataAccessGateway(object):
                     attr: FR
         ```
         :param locations_conf_path: Path to the locations configuration file
-        :type locations_conf_path: str or unicode
+        :type locations_conf_path: str
         """
         if os.path.isfile(locations_conf_path):
             locations_config = load_yml_config(locations_conf_path)
@@ -289,7 +282,7 @@ class EODataAccessGateway(object):
 
         :param provider: The name of a provider that must support the product
                          types we are about to list
-        :type provider: str or unicode
+        :type provider: str
         :returns: The list of the product types that can be accessed using eodag.
         :rtype: list(dict)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
@@ -344,7 +337,7 @@ class EODataAccessGateway(object):
 
         :param kwargs: A set of search parameters as keywords arguments
         :return: The best match for the given parameters
-        :rtype: str or unicode
+        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
 
         .. versionadded:: 1.0
@@ -407,9 +400,9 @@ class EODataAccessGateway(object):
                               True, the error is raised (default: False)
         :type raise_errors: bool
         :param start: Start sensing time in iso format
-        :type start: str or unicode
+        :type start: str
         :param end: End sensing time in iso format
-        :type end: str or unicode
+        :type end: str
         :param geom: Dictionnary defining the AOI. Information can be defined in different ways:
 
                     * with a Shapely geometry object ("obj" as key):
@@ -544,11 +537,11 @@ class EODataAccessGateway(object):
         perform the search, if this information is available
 
         :param uid: The uid of the EO product
-        :type uid: str (Python 3) or unicode (Python 2)
+        :type uid: str
         :param provider: (optional) The provider on which to search the product.
                          This may be useful for performance reasons when the user
                          knows this product is available on the given provider
-        :type provider: str (Python 3) or unicode (Python 2)
+        :type provider: str
         :returns: A search result with one EO product or None at all, and the number
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -750,9 +743,9 @@ class EODataAccessGateway(object):
         :param search_result: A collection of EO products resulting from a search
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
         :param filename: The name of the file to generate
-        :type filename: str or unicode
+        :type filename: str
         :returns: The name of the created file
-        :rtype: str or unicode
+        :rtype: str
         """
         with open(filename, "w") as fh:
             geojson.dump(search_result, fh)
@@ -763,7 +756,7 @@ class EODataAccessGateway(object):
         """Loads results of a search from a geojson file.
 
         :param filename: A filename containing a search result encoded as a geojson
-        :type filename: str or unicode
+        :type filename: str
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
@@ -810,7 +803,7 @@ class EODataAccessGateway(object):
                         before stop retrying to download (default=20')
         :type timeout: int
         :returns: The absolute path to the downloaded product in the local filesystem
-        :rtype: str or unicode
+        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
@@ -832,7 +825,7 @@ class EODataAccessGateway(object):
         """Build a crunch plugin from a configuration
 
         :param name: The name of the cruncher to build
-        :type name: str of unicode
+        :type name: str
         :param options: The configuration options of the cruncher
         :type options: dict
         :return: The cruncher named ``name``

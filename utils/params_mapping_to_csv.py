@@ -15,12 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, unicode_literals
-
 import csv
 import logging
 import os
-import sys
 
 import requests
 from lxml import html
@@ -68,9 +65,6 @@ def params_mapping_to_csv(
         [provider + "_mapping" for provider in dag.providers_config.keys()]
         + [provider + "_query" for provider in dag.providers_config.keys()]
     )
-    # py2 compatibility
-    if sys.version_info[0] < 3:
-        fieldnames = [x.encode("utf8") for x in fieldnames]
 
     # write to csv
     with open(csv_file_path, "w") as csvfile:
@@ -129,11 +123,6 @@ def params_mapping_to_csv(
                         else:
                             params_row[provider + "_mapping"] = mapping_dict[param]
 
-            # py2 compatibility
-            if sys.version_info[0] < 3:
-                params_row = {
-                    k.encode("utf8"): v.encode("utf8") for k, v in params_row.items()
-                }
             writer.writerow(params_row)
 
     logger.info(csv_file_path + " written")

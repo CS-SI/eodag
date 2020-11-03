@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright 2017-2018 CS GROUP - France (CS SI)
 # All rights reserved
-from __future__ import unicode_literals
 
 import datetime
 import os
@@ -301,9 +300,9 @@ def search_product_by_id(uid, product_type=None):
     """Search a product by its id
 
     :param uid: The uid of the EO product
-    :type uid: str (Python 3) or unicode (Python 2)
+    :type uid: str
     :param product_type: (optional) The product type
-    :type product_type: str (Python 3) or unicode (Python 2)
+    :type product_type: str
     :returns: An search result
     :rtype: :class:`~eodag.api.search_result.SearchResult`
     :raises: :class:`~eodag.utils.exceptions.ValidationError`

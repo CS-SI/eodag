@@ -15,8 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 from operator import attrgetter
 
@@ -94,9 +92,9 @@ class PluginManager(object):
 
         :param product_type: (Optional) The product type that the constructed plugins
                              must support
-        :type product_type: str or unicode
+        :type product_type: str
         :param provider: (Optional) The provider on which to get the search plugin
-        :type provider: str or unicode
+        :type provider: str
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
         :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
@@ -174,7 +172,7 @@ class PluginManager(object):
         provider
 
         :param provider: The provider for which to get the authentication plugin
-        :type provider: str or unicode
+        :type provider: str
         :returns: The Authentication plugin for the provider
         :rtype: :class:`~eodag.plugins.authentication.Authentication`
 
@@ -199,7 +197,7 @@ class PluginManager(object):
         it with the `options`
 
         :param name: The name of the Crunch plugin to instantiate
-        :type name: str or unicode
+        :type name: str
         :param options: The configuration parameters of the cruncher
         :type options: dict
         :return: The cruncher named `name`
@@ -212,7 +210,7 @@ class PluginManager(object):
         """Set the priority of the given provider
 
         :param provider: The provider which is assigned the priority
-        :type provider: str or unicode
+        :type provider: str
         :param priority: The priority to assign to the provider
         :type priority: int
         """
@@ -237,7 +235,7 @@ class PluginManager(object):
         registered as the given provider
 
         :param provider: The provider for which to build the plugin
-        :type provider: str or unicode
+        :type provider: str
         :param plugin_conf: The configuration of the plugin to be built
         :type plugin_conf: :class:`~eodag.config.PluginConfig`
         :param topic_class: The type of plugin to build

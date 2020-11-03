@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
@@ -157,7 +156,7 @@ class AwsDownload(Download):
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :return: The absolute path to the downloaded product in the local filesystem
-        :rtype: str or unicode
+        :rtype: str
         """
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}

@@ -15,22 +15,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import glob
 import multiprocessing
 import os
 import shutil
 import unittest
+from pathlib import Path
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import EODataAccessGateway
-
-try:  # py3
-    from pathlib import Path
-except ImportError:  # py2
-    from pathlib2 import Path
 
 
 class TestEODagEndToEnd(unittest.TestCase):

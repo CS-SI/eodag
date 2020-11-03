@@ -15,11 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import json
 import logging
 import re
+from urllib.error import HTTPError as urllib_HTTPError
+from urllib.request import urlopen
 
 import jsonpath_rw as jsonpath
 import requests
@@ -39,14 +40,6 @@ from eodag.config import load_stac_provider_config
 from eodag.plugins.search.base import Search
 from eodag.utils import dict_items_recursive_apply, quote, update_nested_dict, urlencode
 from eodag.utils.exceptions import RequestError
-
-try:  # py3
-    from urllib.error import HTTPError as urllib_HTTPError
-    from urllib.request import urlopen
-except ImportError:  # py2
-    from urllib2 import HTTPError as urllib_HTTPError
-    from urllib2 import urlopen
-
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 

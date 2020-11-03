@@ -39,8 +39,6 @@ Commands:
 
   noqa: D103
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import json
 import os
 import shutil
@@ -53,9 +51,6 @@ from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGat
 from eodag.utils import parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
-
-# disable warning on Python 2
-click.disable_unicode_literals_warning = True
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = ["FilterLatestByName", "FilterLatestIntersect", "FilterOverlap"]

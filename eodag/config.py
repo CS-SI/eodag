@@ -15,8 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
-
 import ast
 import copy
 import logging
@@ -30,7 +28,7 @@ import yaml.constructor
 import yaml.parser
 from pkg_resources import resource_filename
 
-from eodag.utils import merge_mappings, slugify, utf8_everywhere
+from eodag.utils import merge_mappings, slugify
 from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.config")
@@ -44,7 +42,6 @@ class SimpleYamlProxyConfig(object):
         with open(os.path.abspath(os.path.realpath(conf_file_path)), "r") as fh:
             try:
                 self.source = yaml.load(fh, Loader=yaml.SafeLoader)
-                utf8_everywhere(self.source)
             except yaml.parser.ParserError as e:
                 print("Unable to load user configuration file")
                 raise e
@@ -77,7 +74,7 @@ class ProviderConfig(yaml.YAMLObject):
     """Representation of eodag configuration.
 
     :param name: The name of the provider
-    :type name: str or unicode
+    :type name: str
     :param priority: (optional) The priority of the provider while searching a product.
                      Lower value means lower priority. (Default: 0)
     :type priority: int
@@ -159,7 +156,7 @@ class PluginConfig(yaml.YAMLObject):
     """Representation of a plugin config
 
     :param name: The name of the plugin class to use to instantiate the plugin object
-    :type name: str or unicode
+    :type name: str
     :param dict metadata_mapping: (optional) The mapping between eodag metadata and
                                   the plugin specific metadata
     :param dict free_params: (optional) Additional configuration parameters
@@ -235,7 +232,7 @@ def override_config_from_file(config, file_path):
 
     :param dict config: An eodag providers configuration dictionary
     :param file_path: The path to the file from where the new values will be read
-    :type file_path: str or unicode
+    :type file_path: str
     """
     logger.info("Loading user configuration from: %s", os.path.abspath(file_path))
     with open(os.path.abspath(os.path.realpath(file_path)), "r") as fh:
@@ -243,7 +240,6 @@ def override_config_from_file(config, file_path):
             config_in_file = yaml.safe_load(fh)
             if config_in_file is None:
                 return
-            utf8_everywhere(config_in_file)
         except yaml.parser.ParserError as e:
             logger.error("Unable to load user configuration file")
             raise e
@@ -271,9 +267,9 @@ def override_config_from_env(config):
             }
 
         :param env_var: The environment variable to be transformed into a dictionary
-        :type env_var: str or unicode
+        :type env_var: str
         :param env_value: The value from environment variable
-        :type env_value: str or unicode
+        :type env_value: str
         :param dict mapping: The mapping in which the value will be created
         """
         parts = env_var.split("__")

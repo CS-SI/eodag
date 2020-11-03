@@ -20,7 +20,6 @@
 Everything that does not fit into one of the specialised categories of utilities in
 this package should go here
 """
-from __future__ import unicode_literals
 
 import copy
 import errno
@@ -36,7 +35,6 @@ from itertools import repeat, starmap
 import click
 import fiona
 import shapely.wkt
-import six
 from rasterio.crs import CRS
 from requests.auth import AuthBase
 from shapely.geometry import MultiPolygon, Polygon, shape
@@ -46,114 +44,21 @@ from tqdm.notebook import tqdm as tqdm_notebook
 from unidecode import unidecode
 
 # All modules using these should import them from utils package
-try:  # PY3
-    from urllib.parse import urljoin, urlparse, parse_qs, urlunparse  # noqa
-except ImportError:  # PY2
-    from urlparse import urljoin, urlparse, parse_qs, urlunparse  # noqa
-
-try:  # PY3
-    from urllib.parse import quote, quote_plus  # noqa
-
-    if sys.version_info.minor < 5:
-        # Explicitly redefining urlencode the way it is defined in Python 3.5
-        def urlencode(
-            query,
-            doseq=False,
-            safe="",
-            encoding=None,
-            errors=None,
-            quote_via=quote_plus,
-        ):  # noqa
-            """Encode a dict or sequence of two-element tuples into a URL query string.
-
-            If any values in the query arg are sequences and doseq is true, each
-            sequence element is converted to a separate parameter.
-
-            If the query arg is a sequence of two-element tuples, the order of the
-            parameters in the output will match the order of parameters in the
-            input.
-
-            The components of a query arg may each be either a string or a bytes type.
-
-            The safe, encoding, and errors parameters are passed down to the function
-            specified by quote_via (encoding and errors only if a component is a str).
-            """
-
-            if hasattr(query, "items"):
-                query = query.items()
-            else:
-                # It's a bother at times that strings and string-like objects are
-                # sequences.
-                try:
-                    # non-sequence items should not work with len()
-                    # non-empty strings will fail this
-                    if len(query) and not isinstance(query[0], tuple):
-                        raise TypeError
-                    # Zero-length sequences of all types will get here and succeed,
-                    # but that's a minor nit.  Since the original implementation
-                    # allowed empty dicts that type of behavior probably should be
-                    # preserved for consistency
-                except TypeError:
-                    ty, va, tb = sys.exc_info()
-                    raise TypeError(
-                        "not a valid non-string sequence " "or mapping object"
-                    ).with_traceback(tb)
-
-            l = []  # noqa
-            if not doseq:
-                for k, v in query:
-                    if isinstance(k, bytes):
-                        k = quote_via(k, safe)
-                    else:
-                        k = quote_via(str(k), safe, encoding, errors)
-
-                    if isinstance(v, bytes):
-                        v = quote_via(v, safe)
-                    else:
-                        v = quote_via(str(v), safe, encoding, errors)
-                    l.append(k + "=" + v)
-            else:
-                for k, v in query:
-                    if isinstance(k, bytes):
-                        k = quote_via(k, safe)
-                    else:
-                        k = quote_via(str(k), safe, encoding, errors)
-
-                    if isinstance(v, bytes):
-                        v = quote_via(v, safe)
-                        l.append(k + "=" + v)
-                    elif isinstance(v, str):
-                        v = quote_via(v, safe, encoding, errors)
-                        l.append(k + "=" + v)
-                    else:
-                        try:
-                            # Is this a sufficient test for sequence-ness?
-                            x = len(v)  # noqa
-                        except TypeError:
-                            # not a sequence
-                            v = quote_via(str(v), safe, encoding, errors)
-                            l.append(k + "=" + v)
-                        else:
-                            # loop over the sequence
-                            for elt in v:
-                                if isinstance(elt, bytes):
-                                    elt = quote_via(elt, safe)
-                                else:
-                                    elt = quote_via(str(elt), safe, encoding, errors)
-                                l.append(k + "=" + elt)
-            return "&".join(l)
-
-    else:
-        from urllib.parse import urlencode
+from urllib.parse import (  # noqa; noqa
+    parse_qs,
+    quote,
+    quote_plus,
+    urljoin,
+    urlparse,
+    urlunparse,
+)
 
 
-except ImportError:  # PY2
-    from urllib import quote, quote_plus  # noqa
-
+if sys.version_info.minor < 5:
     # Explicitly redefining urlencode the way it is defined in Python 3.5
     def urlencode(
-        query, doseq=False, safe="", encoding=None, errors=None, quote_via=quote_plus
-    ):
+        query, doseq=False, safe="", encoding=None, errors=None, quote_via=quote_plus,
+    ):  # noqa
         """Encode a dict or sequence of two-element tuples into a URL query string.
 
         If any values in the query arg are sequences and doseq is true, each
@@ -195,25 +100,25 @@ except ImportError:  # PY2
                 if isinstance(k, bytes):
                     k = quote_via(k, safe)
                 else:
-                    k = quote_via(str(k), safe)
+                    k = quote_via(str(k), safe, encoding, errors)
 
                 if isinstance(v, bytes):
                     v = quote_via(v, safe)
                 else:
-                    v = quote_via(str(v), safe)
+                    v = quote_via(str(v), safe, encoding, errors)
                 l.append(k + "=" + v)
         else:
             for k, v in query:
                 if isinstance(k, bytes):
                     k = quote_via(k, safe)
                 else:
-                    k = quote_via(str(k), safe)
+                    k = quote_via(str(k), safe, encoding, errors)
 
                 if isinstance(v, bytes):
                     v = quote_via(v, safe)
                     l.append(k + "=" + v)
-                elif isinstance(v, six.string_types):
-                    v = quote_via(v, safe)
+                elif isinstance(v, str):
+                    v = quote_via(v, safe, encoding, errors)
                     l.append(k + "=" + v)
                 else:
                     try:
@@ -221,7 +126,7 @@ except ImportError:  # PY2
                         x = len(v)  # noqa
                     except TypeError:
                         # not a sequence
-                        v = quote_via(str(v), safe)
+                        v = quote_via(str(v), safe, encoding, errors)
                         l.append(k + "=" + v)
                     else:
                         # loop over the sequence
@@ -229,9 +134,13 @@ except ImportError:  # PY2
                             if isinstance(elt, bytes):
                                 elt = quote_via(elt, safe)
                             else:
-                                elt = quote_via(str(elt), safe)
+                                elt = quote_via(str(elt), safe, encoding, errors)
                             l.append(k + "=" + elt)
         return "&".join(l)
+
+
+else:
+    from urllib.parse import urlencode
 
 
 class RequestsTokenAuth(AuthBase):
@@ -318,10 +227,7 @@ def slugify(value, allow_unicode=False):
     Remove characters that aren't alphanumerics, underscores, or hyphens.
     Convert to lowercase. Also strip leading and trailing whitespace.
     """
-    try:  # PY2
-        value = unicode(value)
-    except NameError:  # PY3
-        value = str(value)
+    value = str(value)
     if allow_unicode:
         value = unicodedata.normalize("NFKC", value)
     else:
@@ -332,21 +238,6 @@ def slugify(value, allow_unicode=False):
         )
     value = re.sub(r"[^\w\s-]", "", value).strip().lower()
     return re.sub(r"[-\s]+", "-", value)
-
-
-def utf8_everywhere(mapping):
-    """Recursively transforms all string found in the dict mapping to UTF-8 if we are
-    on Python 2"""
-    mutate_dict_in_place(
-        (
-            lambda value: value.decode("utf-8")
-            if isinstance(value, str)
-            and sys.version_info.major == 2
-            and sys.version_info.minor == 7
-            else value
-        ),
-        mapping,
-    )
 
 
 def sanitize(value):
@@ -436,7 +327,7 @@ def merge_mappings(mapping1, mapping2):
             current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
             if current_value is not None:
                 current_value_type = type(current_value)
-                if isinstance(value, six.string_types):
+                if isinstance(value, str):
                     # Bool is a type with special meaning in Python, thus the special
                     # case
                     if current_value_type is bool:
@@ -477,25 +368,17 @@ DEFAULT_PROJ = CRS.from_epsg(4326)
 
 
 def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S"):
-    """Returns the given date_time string formatted with date_format as timestamp,
-    in a PY2/3 compatible way
+    """Returns the given date_time string formatted with date_format as timestamp
 
     :param date_time: the datetime string to return as timestamp
-    :type date_time: str or unicode
+    :type date_time: str
     :param date_format: (optional) the date format in which date_time is given,
                         defaults to '%Y-%m-%dT%H:%M:%S'
-    :type date_format: str or unicode
+    :type date_format: str
     :returns: the timestamp corresponding to the date_time string in seconds
     :rtype: float
     """
-    date_time = datetime.strptime(date_time, date_format)
-    try:
-        return date_time.timestamp()
-    # There is no timestamp method on datetime objects in Python 2
-    except AttributeError:
-        import time
-
-        return time.mktime(date_time.timetuple()) + date_time.microsecond / 1e6
+    return datetime.strptime(date_time, date_format).timestamp()
 
 
 class ProgressCallback(object):
