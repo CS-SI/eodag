@@ -34,7 +34,11 @@ from eodag.config import (
     string_to_jsonpath,
     update_nested_dict,
 )
-from eodag.utils.exceptions import NotAvailableError, ValidationError
+from eodag.utils.exceptions import (
+    MisconfiguredError,
+    NotAvailableError,
+    ValidationError,
+)
 
 logger = logging.getLogger("eodag.rest.stac")
 
@@ -309,11 +313,16 @@ class StacItem(StacCommon):
         :returns: filtered item model
         :rtype: dict
         """
-        product_type_dict = [
-            pt
-            for pt in self.eodag_api.list_product_types(provider=self.provider)
-            if pt["ID"] == product_type
-        ][0]
+        try:
+            product_type_dict = [
+                pt
+                for pt in self.eodag_api.list_product_types(provider=self.provider)
+                if pt["ID"] == product_type
+            ][0]
+        except IndexError:
+            raise MisconfiguredError(
+                f"Product type {product_type} not available for {self.provider}"
+            )
 
         result_item_model = copy.deepcopy(item_model)
 
@@ -514,7 +523,7 @@ class StacCollection(StacCommon):
         try:
             collection = [c for c in collection_list if c["id"] == collection_id][0]
         except IndexError:
-            raise NotAvailableError("%s collection not available" % collection_id)
+            raise NotAvailableError("%s collection not found" % collection_id)
 
         self.update_data(collection)
         return self.as_dict()

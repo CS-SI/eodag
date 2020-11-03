@@ -132,8 +132,8 @@ class RequestTestCase(unittest.TestCase):
         response_content = json.loads(response.data.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
-        self.assertIn("error", response_content)
-        self.assertIn("invalid", response_content["error"])
+        self.assertIn("description", response_content)
+        self.assertIn("invalid", response_content["description"])
 
     def _request_not_found(self, url):
         response = self.app.get(url, follow_redirects=True)
@@ -141,27 +141,39 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
         self.assertIn("error", response_content)
-        self.assertIn("Not Found", response_content["error"])
+        self.assertIn("not found", response_content["error"])
 
     def test_request_params(self):
-        self._request_not_valid("{}?box=1".format(self.tested_product_type))
-        self._request_not_valid("{}?box=0,43,1".format(self.tested_product_type))
-        self._request_not_valid("{}?box=0,,1".format(self.tested_product_type))
-        self._request_not_valid("{}?box=a,43,1,44".format(self.tested_product_type))
+        self._request_not_valid(
+            "search?collections={}&bbox=1".format(self.tested_product_type)
+        )
+        self._request_not_valid(
+            "search?collections={}&bbox=0,43,1".format(self.tested_product_type)
+        )
+        self._request_not_valid(
+            "search?collections={}&bbox=0,,1".format(self.tested_product_type)
+        )
+        self._request_not_valid(
+            "search?collections={}&bbox=a,43,1,44".format(self.tested_product_type)
+        )
 
-        self._request_valid("{}".format(self.tested_product_type))
-        self._request_valid("{}?box=0,43,1,44".format(self.tested_product_type))
+        self._request_valid("search?collections={}".format(self.tested_product_type))
+        self._request_valid(
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
+        )
 
     def test_not_found(self):
         """A request to eodag server with a not supported product type must return a 404 HTTP error code"""  # noqa
-        self._request_not_found("/ZZZ/?box=0,43,1,44")
+        self._request_not_found("search?collections=ZZZ&bbox=0,43,1,44")
 
     def test_filter(self):
         result1 = self._request_valid(
-            "{}?box=0,43,1,44".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
         )
         result2 = self._request_valid(
-            "{}?box=0,43,1,44&filter=latestIntersect".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44&filter=latestIntersect".format(
+                self.tested_product_type
+            )
         )
         self.assertGreaterEqual(len(result1.features), len(result2.features))
 
@@ -181,10 +193,10 @@ class RequestTestCase(unittest.TestCase):
 
     def test_date_search(self):
         result1 = self._request_valid(
-            "{}?box=0,43,1,44".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
         )
         result2 = self._request_valid(
-            "{}?box=0,43,1,44&dtstart=2018-01-20&dtend=2018-01-25".format(
+            "search?collections={}&bbox=0,43,1,44&dtstart=2018-01-20&dtend=2018-01-25".format(
                 self.tested_product_type
             )
         )
@@ -192,20 +204,27 @@ class RequestTestCase(unittest.TestCase):
 
     def test_cloud_cover_search(self):
         result1 = self._request_valid(
-            "{}?box=0,43,1,44".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
         )
         result2 = self._request_valid(
-            "{}?box=0,43,1,44&cloudCover=10".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44&cloudCover=10".format(
+                self.tested_product_type
+            )
         )
         self.assertGreaterEqual(len(result1.features), len(result2.features))
 
     def test_search_response_contains_pagination_info(self):
         """Responses to valid search requests must return a geojson with pagination info in properties"""  # noqa
-        response = self._request_valid("{}".format(self.tested_product_type))
-        self.assertIn("properties", response)
-        self.assertEqual(1, response["properties"]["page"])
-        self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response["properties"]["itemsPerPage"])
-        self.assertIn("totalResults", response["properties"])
+        response = self._request_valid(
+            "search?collections={}".format(self.tested_product_type)
+        )
+        self.assertIn("numberMatched", response)
+        self.assertIn("numberReturned", response)
+        self.assertIn("context", response)
+        self.assertEqual(1, response["context"]["page"])
+        self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response["context"]["limit"])
+        self.assertIn("matched", response["context"])
+        self.assertIn("returned", response["context"])
 
     @mock.patch(
         "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]

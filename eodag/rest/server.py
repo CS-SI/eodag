@@ -24,6 +24,7 @@ from eodag.config import load_stac_api_config
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
+    NotAvailableError,
     UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
@@ -133,6 +134,7 @@ def handle_internal_error(error):
     return response
 
 
+@app.errorhandler(NotAvailableError)
 @app.errorhandler(404)
 def handle_resource_not_found(e):
     """Not found [404] errors handle"""
