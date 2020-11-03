@@ -397,6 +397,7 @@ class EODataAccessGateway(object):
         :param end: End sensing time in iso format
         :type end: str or unicode
         :param geom: Dictionnary defining the AOI. Information can be defined in different ways:
+
                     * with a Shapely geometry object ("obj" as key):
                       ``{"obj": :class:`shapely.geometry.base.BaseGeometry`}``
                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):

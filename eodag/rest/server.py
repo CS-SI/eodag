@@ -63,10 +63,10 @@ stac_api_version = stac_api_config["info"]["version"]
 stac_api_config["info"]["title"] = root_catalog["title"] + " / eodag"
 stac_api_config["info"]["description"] = (
     root_catalog["description"]
-    + f" (stac-api-spec {stac_api_version})"
+    + " (stac-api-spec {})".format(stac_api_version)
     + "".join(
         [
-            f'\n - [{pt["ID"]}](/collections/{pt["ID"]}): {pt["abstract"]}'
+            "\n - [{0}](/collections/{0}): {1}".format(pt["ID"], pt["abstract"])
             for pt in get_detailled_collections_list()
         ]
     )
@@ -289,7 +289,10 @@ def stac_catalogs_item(catalogs, item_id):
             response=geojson.dumps(response), status=200, mimetype="application/json"
         )
     else:
-        abort(404, f"No item found matching `{item_id}` id in catalog `{catalogs}`")
+        abort(
+            404,
+            "No item found matching `{}` id in catalog `{}`".format(item_id, catalogs),
+        )
 
 
 @app.route("/<path:catalogs>/items/<item_id>/download", methods=["GET"])

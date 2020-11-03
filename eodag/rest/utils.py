@@ -10,6 +10,7 @@ from collections import namedtuple
 
 import dateutil.parser
 import markdown
+from dateutil import tz
 from shapely.geometry import Polygon, shape
 
 import eodag
@@ -121,7 +122,7 @@ def get_date(date):
         try:
             date = (
                 dateutil.parser.parse(date)
-                .astimezone(datetime.timezone.utc)
+                .replace(tzinfo=tz.UTC)
                 .isoformat()
                 .replace("+00:00", "")
             )
@@ -630,7 +631,7 @@ def get_stac_extension_oseo(url):
 
     # all properties as string type by default
     oseo_properties = {
-        f"oseo:{k}": {
+        "oseo:{}".format(k): {
             "type": "string",
             "title": k[0].upper() + re.sub(r"([A-Z][a-z]+)", r" \1", k[1:]),
         }

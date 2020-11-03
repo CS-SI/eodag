@@ -613,6 +613,7 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
 
     return jsonpath_dict
 
+
 def get_geometry_from_various(locations_config=[], **query_args):
     """Creates a shapely geometry using given query kwargs arguments
 

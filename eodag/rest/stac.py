@@ -23,6 +23,7 @@ from collections import defaultdict
 
 import dateutil.parser
 import fiona
+from dateutil import tz
 from dateutil.relativedelta import relativedelta
 from shapely.geometry import shape
 
@@ -322,7 +323,9 @@ class StacItem(StacCommon):
             ][0]
         except IndexError:
             raise MisconfiguredError(
-                f"Product type {product_type} not available for {self.provider}"
+                "Product type {} not available for {}".format(
+                    product_type, self.provider
+                )
             )
 
         result_item_model = copy.deepcopy(item_model)
@@ -740,12 +743,12 @@ class StacCatalog(StacCommon):
         extent_date_min, extent_date_max = self.get_datetime_extent()
 
         datetime_min = max(
-            [extent_date_min, dateutil.parser.parse(f"{year}-01-01T00:00:00Z")]
+            [extent_date_min, dateutil.parser.parse("{}-01-01T00:00:00Z".format(year))]
         )
         datetime_max = min(
             [
                 extent_date_max,
-                dateutil.parser.parse(f"{(year)}-01-01T00:00:00Z")
+                dateutil.parser.parse("{}-01-01T00:00:00Z".format((year)))
                 + relativedelta(years=1),
             ]
         )
@@ -768,12 +771,15 @@ class StacCatalog(StacCommon):
         year = extent_date_min.year
 
         datetime_min = max(
-            [extent_date_min, dateutil.parser.parse(f"{year}-{month}-01T00:00:00Z")]
+            [
+                extent_date_min,
+                dateutil.parser.parse("{}-{}-01T00:00:00Z".format(year, month)),
+            ]
         )
         datetime_max = min(
             [
                 extent_date_max,
-                dateutil.parser.parse(f"{year}-{month}-01T00:00:00Z")
+                dateutil.parser.parse("{}-{}-01T00:00:00Z".format(year, month))
                 + relativedelta(months=1),
             ]
         )
@@ -797,12 +803,15 @@ class StacCatalog(StacCommon):
         month = extent_date_min.month
 
         datetime_min = max(
-            [extent_date_min, dateutil.parser.parse(f"{year}-{month}-{day}T00:00:00Z")]
+            [
+                extent_date_min,
+                dateutil.parser.parse("{}-{}-{}T00:00:00Z".format(year, month, day)),
+            ]
         )
         datetime_max = min(
             [
                 extent_date_max,
-                dateutil.parser.parse(f"{year}-{month}-{day}T00:00:00Z")
+                dateutil.parser.parse("{}-{}-{}T00:00:00Z".format(year, month, day))
                 + relativedelta(days=1),
             ]
         )
@@ -819,11 +828,9 @@ class StacCatalog(StacCommon):
         :returns: start & stop dates
         :rtype: tuple
         """
-        extent_date_min = dateutil.parser.parse(default_min_date).astimezone(
-            datetime.timezone.utc
-        )
-        extent_date_max = datetime.datetime.now(datetime.timezone.utc).astimezone(
-            datetime.timezone.utc
+        extent_date_min = dateutil.parser.parse(default_min_date).replace(tzinfo=tz.UTC)
+        extent_date_max = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=tz.UTC
         )
         for interval in self.data["extent"]["temporal"]["interval"]:
             extent_date_min_str, extent_date_max_str = interval
@@ -839,8 +846,8 @@ class StacCatalog(StacCommon):
                 )
 
         return (
-            extent_date_min.astimezone(datetime.timezone.utc),
-            extent_date_max.astimezone(datetime.timezone.utc),
+            extent_date_min.replace(tzinfo=tz.UTC),
+            extent_date_max.replace(tzinfo=tz.UTC),
         )
 
     def set_stac_date(self, datetime_min, datetime_max, catalog_model):
@@ -925,14 +932,16 @@ class StacCatalog(StacCommon):
         """
 
         if catalog_name not in self.stac_config["catalogs"]:
-            logger.warning(f"no entry found for {catalog_name} in location_config")
+            logger.warning(
+                "no entry found for {} in location_config".format(catalog_name)
+            )
             return []
         location_config = self.stac_config["catalogs"][catalog_name]
 
         for k in ["path", "attr"]:
             if k not in location_config.keys():
                 logger.warning(
-                    f"no {k} key found for {catalog_name} in location_config"
+                    "no {} key found for {} in location_config".format(k, catalog_name)
                 )
                 return []
         path = location_config["path"]
@@ -959,7 +968,7 @@ class StacCatalog(StacCommon):
 
         if location_list_cat_key not in self.stac_config["catalogs"]:
             logger.warning(
-                f"no entry found for {catalog_name}'s list in location_config"
+                "no entry found for {}'s list in location_config".format(catalog_name)
             )
             return {}
         location_config = self.stac_config["catalogs"][location_list_cat_key]
@@ -967,7 +976,9 @@ class StacCatalog(StacCommon):
         for k in ["path", "attr"]:
             if k not in location_config.keys():
                 logger.warning(
-                    f"no {k} key found for {catalog_name}'s list in location_config"
+                    "no {} key found for {}'s list in location_config".format(
+                        k, catalog_name
+                    )
                 )
                 return {}
         path = location_config["path"]
@@ -1018,7 +1029,7 @@ class StacCatalog(StacCommon):
             )
 
             # set default child/parent for this location
-            parsed["location"]["parent_key"] = f"{loc['name']}_list"
+            parsed["location"]["parent_key"] = "{}_list".format(loc["name"])
 
             locations_config["{}_list".format(loc["name"])] = parsed["locations_list"]
             locations_config[loc["name"]] = parsed["location"]
