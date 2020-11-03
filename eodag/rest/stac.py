@@ -36,6 +36,7 @@ from eodag.config import (
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
+    NoMatchingProductType,
     NotAvailableError,
     ValidationError,
 )
@@ -454,15 +455,47 @@ class StacCollection(StacCommon):
             **kwargs,
         )
 
-    def __get_collection_list(self):
+    def __get_product_types(self, filters=None):
+        """Returns a list of supported product types
+
+        :param filters: additional filters for product types search
+        :type filters: dict
+        :returns: a list of corresponding product types
+        :rtype: list
+        """
+        if filters is None:
+            filters = {}
+        try:
+            guessed_product_types = self.eodag_api.guess_product_type(
+                instrument=filters.get("instrument"),
+                platform=filters.get("platform"),
+                platformSerialIdentifier=filters.get("platformSerialIdentifier"),
+                sensorType=filters.get("sensorType"),
+                processingLevel=filters.get("processingLevel"),
+            )
+        except NoMatchingProductType:
+            guessed_product_types = []
+        if guessed_product_types:
+            product_types = [
+                pt
+                for pt in self.eodag_api.list_product_types(provider=self.provider)
+                if pt["ID"] in guessed_product_types
+            ]
+        else:
+            product_types = self.eodag_api.list_product_types(provider=self.provider)
+        return product_types
+
+    def __get_collection_list(self, filters=None):
         """Build STAC collections list
 
+        :param filters: additional filters for collections search
+        :type filters: dict
         :returns: STAC collection dicts list
         :rtype: list
         """
         collection_model = copy.deepcopy(self.stac_config["collection"])
 
-        product_types = self.eodag_api.list_product_types(provider=self.provider)
+        product_types = self.__get_product_types(filters)
 
         collection_list = []
         for product_type in product_types:
@@ -487,14 +520,16 @@ class StacCollection(StacCommon):
 
         return collection_list
 
-    def get_collections(self):
+    def get_collections(self, filters=None):
         """Build STAC collections
 
+        :param filters: additional filters for collections search
+        :type filters: dict
         :returns: collections dictionnary
         :rtype: dict
         """
         collections = copy.deepcopy(self.stac_config["collections"])
-        collections["collections"] = self.__get_collection_list()
+        collections["collections"] = self.__get_collection_list(filters)
 
         collections["links"] += [
             {

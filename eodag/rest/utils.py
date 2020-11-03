@@ -94,39 +94,6 @@ def get_templates_path():
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def get_product_types(provider=None, filters=None):
-    """Returns a list of supported product types
-
-    :param provider: provider name
-    :type provider: str
-    :param filters: additional filters for product types search
-    :type filters: dict
-    :returns: a list of corresponding product types
-    :rtype: list
-    """
-    if filters is None:
-        filters = {}
-    try:
-        guessed_product_types = eodag_api.guess_product_type(
-            instrument=filters.get("instrument"),
-            platform=filters.get("platform"),
-            platformSerialIdentifier=filters.get("platformSerialIdentifier"),
-            sensorType=filters.get("sensorType"),
-            processingLevel=filters.get("processingLevel"),
-        )
-    except NoMatchingProductType:
-        guessed_product_types = []
-    if guessed_product_types:
-        product_types = [
-            pt
-            for pt in eodag_api.list_product_types(provider=provider)
-            if pt["ID"] in guessed_product_types
-        ]
-    else:
-        product_types = eodag_api.list_product_types(provider=provider)
-    return product_types
-
-
 def search_bbox(request_bbox):
     """Transform request bounding box as a bbox suitable for eodag search"""
 
@@ -370,13 +337,15 @@ def get_stac_conformance():
     return stac_config["conformance"]
 
 
-def get_stac_collections(url, root, provider=preferred_provider):
+def get_stac_collections(url, root, arguments, provider=preferred_provider):
     """Build STAC collections
 
     :param url: requested URL
     :type url: str
     :param root: API root
     :type root: str
+    :param arguments: request args
+    :type arguments: dict
     :param provider: chosen provider
     :type provider: str
     :returns: collections dictionnary
@@ -388,7 +357,7 @@ def get_stac_collections(url, root, provider=preferred_provider):
         provider=provider,
         eodag_api=eodag_api,
         root=root,
-    ).get_collections()
+    ).get_collections(arguments)
 
 
 def get_stac_collection_by_id(url, root, collection_id, provider=preferred_provider):

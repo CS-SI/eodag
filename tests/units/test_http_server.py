@@ -236,24 +236,33 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_list_product_types_ok(self, list_pt, guess_pt):
         """A simple request for product types with(out) a provider must succeed"""
-        for url in ("/product-types/", "/product-types/peps"):
+        for url in ("/collections",):
             r = self.app.get(url)
             self.assertTrue(guess_pt.called)
             self.assertTrue(list_pt.called)
             self.assertEqual(200, r.status_code)
             self.assertListEqual(
                 ["S2_MSI_L1C", "S2_MSI_L2A"],
-                [it["ID"] for it in json.loads(r.data.decode("utf-8"))],
+                [
+                    it["title"]
+                    for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                    if it["rel"] == "child"
+                ],
             )
 
         guess_pt.return_value = ["S2_MSI_L1C"]
-        url = "/product-types/?instrument=MSI"
+        url = "/collections?instrument=MSI"
         r = self.app.get(url)
         self.assertTrue(guess_pt.called)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
         self.assertListEqual(
-            ["S2_MSI_L1C"], [it["ID"] for it in json.loads(r.data.decode("utf-8"))]
+            ["S2_MSI_L1C"],
+            [
+                it["title"]
+                for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                if it["rel"] == "child"
+            ],
         )
 
     @mock.patch(
@@ -263,11 +272,15 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_list_product_types_nok(self, list_pt):
         """A request for product types with a not supported filter must return all product types"""  # noqa
-        url = "/product-types/?platform=gibberish"
+        url = "/collections?platform=gibberish"
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
         self.assertListEqual(
             ["S2_MSI_L1C", "S2_MSI_L2A"],
-            [it["ID"] for it in json.loads(r.data.decode("utf-8"))],
+            [
+                it["title"]
+                for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                if it["rel"] == "child"
+            ],
         )

@@ -304,12 +304,18 @@ def stac_catalogs_item_download(catalogs, item_id):
     return send_file(response, as_attachment=True, attachment_filename=filename)
 
 
+@app.route("/collections/", methods=["GET"])
 @app.route("/collections", methods=["GET"])
 @cross_origin
 def collections():
-    """STAC collections"""
+    """STAC collections
 
-    response = get_stac_collections(url=request.url, root=request.url_root)
+    Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
+    """
+
+    response = get_stac_collections(
+        url=request.url, root=request.url_root, arguments=request.args.to_dict()
+    )
 
     return jsonify(response), 200
 
