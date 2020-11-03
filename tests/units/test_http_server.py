@@ -196,11 +196,44 @@ class RequestTestCase(unittest.TestCase):
             "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
         )
         result2 = self._request_valid(
-            "search?collections={}&bbox=0,43,1,44&dtstart=2018-01-20&dtend=2018-01-25".format(
+            "search?collections={}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
                 self.tested_product_type
             )
         )
         self.assertGreaterEqual(len(result1.features), len(result2.features))
+
+    def test_date_search_from_items(self):
+        result1 = self._request_valid(
+            "collections/{}/items?bbox=0,43,1,44".format(self.tested_product_type)
+        )
+        result2 = self._request_valid(
+            "collections/{}/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
+                self.tested_product_type
+            )
+        )
+        self.assertGreaterEqual(len(result1.features), len(result2.features))
+
+    def test_date_search_from_catalog_items(self):
+        result1 = self._request_valid(
+            "{}/year/2018/month/01/items?bbox=0,43,1,44".format(
+                self.tested_product_type
+            )
+        )
+        result2 = self._request_valid(
+            "{}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
+                self.tested_product_type
+            )
+        )
+        self.assertGreaterEqual(len(result1.features), len(result2.features))
+
+    def test_catalog_browse(self):
+        result = self._request_valid(
+            "{}/year/2018/month/01/day".format(self.tested_product_type)
+        )
+        self.assertListEqual(
+            [str(i) for i in range(1, 32)],
+            [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
+        )
 
     def test_cloud_cover_search(self):
         result1 = self._request_valid(
@@ -284,3 +317,13 @@ class RequestTestCase(unittest.TestCase):
                 if it["rel"] == "child"
             ],
         )
+
+    def test_conformance(self):
+        self._request_valid("conformance")
+
+    def test_service_desc(self):
+        self._request_valid("service-desc")
+
+    def test_service_doc(self):
+        response = self.app.get("service-doc", follow_redirects=True)
+        self.assertEqual(200, response.status_code)
