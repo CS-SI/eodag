@@ -170,10 +170,10 @@ def filter_products(products, arguments, **kwargs):
 
 def get_pagination_info(arguments):
     """Get pagination arguments"""
-    page = get_int(arguments.get("page", DEFAULT_PAGE))
+    page = get_int(arguments.pop("page", DEFAULT_PAGE))
     # items_per_page can be specified using limit or itemsPerPage
-    items_per_page = get_int(arguments.get("limit", DEFAULT_ITEMS_PER_PAGE))
-    items_per_page = get_int(arguments.get("itemsPerPage", items_per_page))
+    items_per_page = get_int(arguments.pop("limit", DEFAULT_ITEMS_PER_PAGE))
+    items_per_page = get_int(arguments.pop("itemsPerPage", items_per_page))
 
     if page is not None and page < 0:
         raise ValidationError("invalid page number. Must be positive integer")
@@ -192,7 +192,7 @@ def get_geometry(arguments):
 
     if "bbox" in arguments:
         # get bbox
-        request_bbox = arguments.get("bbox", None)
+        request_bbox = arguments.pop("bbox", None)
         if request_bbox and isinstance(request_bbox, str):
             request_bbox = request_bbox.split(",")
         elif request_bbox and not isinstance(request_bbox, list):
@@ -218,22 +218,22 @@ def get_geometry(arguments):
         )
 
     if "intersects" in arguments and geom:
-        new_geom = shape(arguments.get("intersects"))
+        new_geom = shape(arguments.pop("intersects"))
         if new_geom.intersects(geom):
             geom = new_geom.intersection(geom)
         else:
             geom = new_geom
     elif "intersects" in arguments:
-        geom = shape(arguments.get("intersects"))
+        geom = shape(arguments.pop("intersects"))
 
     if "geom" in arguments and geom:
-        new_geom = shape(arguments.get("geom"))
+        new_geom = shape(arguments.pop("geom"))
         if new_geom.intersects(geom):
             geom = new_geom.intersection(geom)
         else:
             geom = new_geom
     elif "geom" in arguments:
-        geom = shape(arguments.get("geom"))
+        geom = shape(arguments.pop("geom"))
 
     return geom
 
@@ -254,11 +254,9 @@ def search_products(product_type, arguments):
 
         criteria = {
             "geom": geom,
-            # "geom": arguments.get("geom"),
-            # "geometry": search_bbox(arguments.get("box")),
-            "startTimeFromAscendingNode": get_date(arguments.get("dtstart")),
-            "completionTimeFromAscendingNode": get_date(arguments.get("dtend")),
-            "cloudCover": get_int(arguments.get("cloudCover")),
+            "startTimeFromAscendingNode": get_date(arguments.pop("dtstart", None)),
+            "completionTimeFromAscendingNode": get_date(arguments.pop("dtend", None)),
+            "cloudCover": get_int(arguments.pop("cloudCover", None)),
             "productType": product_type,
         }
         if "id" in arguments.keys():
@@ -268,13 +266,20 @@ def search_products(product_type, arguments):
             items_per_page = DEFAULT_ITEMS_PER_PAGE
         if page is None:
             page = DEFAULT_PAGE
+
+        unserialized = arguments.pop("unserialized", None)
+        arguments.pop("product_type", None)
+
         products, total = eodag_api.search(
-            page=page, items_per_page=items_per_page, raise_errors=True, **criteria
+            page=page,
+            items_per_page=items_per_page,
+            raise_errors=True,
+            **dict(criteria, **arguments),
         )
 
         products = filter_products(products, arguments, **criteria)
 
-        if not arguments.get("unserialized"):
+        if not unserialized:
             response = SearchResult(products).as_geojson_object()
             response.update(
                 {
