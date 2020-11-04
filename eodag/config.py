@@ -351,6 +351,12 @@ def load_stac_api_config():
 def format_dict_items(config_dict, **format_variables):
     """Recursive apply string.format(**format_variables) to dict elements
 
+    >>> format_dict_items(
+    ...     {"foo": {"bar": "{a}"}, "baz": ["{b}?", "{b}!"]},
+    ...     **{"a": "qux", "b":"quux"},
+    ... ) == {"foo": {"bar": "qux"}, "baz": ["quux?", "quux!"]}
+    True
+
     :param config_dict: dictionnary having values that need to be parsed
     :type config_dict: dict
     :param format_variables: variables used as args for parsing
@@ -362,7 +368,14 @@ def format_dict_items(config_dict, **format_variables):
 
 
 def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
-    """Recursive applyparse jsonpath elements in dict
+    """Recursive parse jsonpath elements in dict
+
+    >>> import jsonpath_rw as jsonpath
+    >>> jsonpath_parse_dict_items(
+    ...     {"foo": {"bar": jsonpath.parse("$.a.b")}, "qux": [jsonpath.parse("$.c"), jsonpath.parse("$.c")]},
+    ...     {"a":{"b":"baz"}, "c":"quux"}
+    ... ) == {'foo': {'bar': 'baz'}, 'qux': ['quux', 'quux']}
+    True
 
     :param jsonpath_dict: dictionnary having values that need to be parsed
     :type jsonpath_dict: dict
@@ -376,6 +389,12 @@ def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
 
 def dict_items_recursive_apply(config_dict, apply_method, **apply_method_parameters):
     """Recursive apply method to dict elements
+
+    >>> dict_items_recursive_apply(
+    ...     {"foo": {"bar":"baz"}, "qux": ["a","b"]},
+    ...     lambda k,v,x: v.upper()+x, **{"x":"!"}
+    ... ) == {'foo': {'bar': 'BAZ!'}, 'qux': ['A!', 'B!']}
+    True
 
     :param config_dict: input dictionnary containing nested lists/dicts
     :type config_dict: dict
@@ -407,6 +426,12 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
 def list_items_recursive_apply(config_list, apply_method, **apply_method_parameters):
     """Recursive apply method to list elements
 
+    >>> list_items_recursive_apply(
+    ...     [{"foo": {"bar":"baz"}}, "qux"],
+    ...     lambda k,v,x: v.upper()+x,
+    ...     **{"x":"!"})
+    [{'foo': {'bar': 'BAZ!'}}, 'QUX!']
+
     :param config_list: input list containing nested lists/dicts
     :type config_list: list
     :param apply_method: method to be applied to list elements
@@ -437,6 +462,9 @@ def list_items_recursive_apply(config_list, apply_method, **apply_method_paramet
 def string_to_jsonpath(key, str_value):
     """Get jsonpath for "$.foo.bar" like string
 
+    >>> string_to_jsonpath(None, "$.foo.bar")
+    Child(Child(Root(), Fields('foo')), Fields('bar'))
+
     :param key: input item key
     :type key: str
     :param str_value: input item value, to be converted
@@ -456,6 +484,9 @@ def string_to_jsonpath(key, str_value):
 
 def format_string(key, str_to_format, **format_variables):
     """Format "{foo}" like string
+
+    >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})
+    'foo qux, quux ?'
 
     :param key: input item key
     :type key: str
@@ -484,6 +515,10 @@ def format_string(key, str_to_format, **format_variables):
 def parse_jsonpath(key, jsonpath_obj, **values_dict):
     """Parse jsonpah in jsonpath_obj using values_dict
 
+    >>> import jsonpath_rw as jsonpath
+    >>> parse_jsonpath(None, jsonpath.parse("$.foo.bar"), **{"foo":{"bar":"baz"}})
+    'baz'
+
     :param key: input item key
     :type key: str
     :param jsonpath_obj: input item value, to be parsed
@@ -502,6 +537,12 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
 
 def update_nested_dict(old_dict, new_dict):
     """Update recursively old_dict items with new_dict ones
+
+    >>> update_nested_dict(
+    ...     {"a": {"a.a": 1, "a.b": 2}, "b": 3},
+    ...     {"a": {"a.a": 10}}
+    ... ) == {'a': {'a.a': 10, 'a.b': 2}, 'b': 3}
+    True
 
     :param old_dict: dict to be updated
     :type old_dict: dict
