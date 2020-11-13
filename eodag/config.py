@@ -348,6 +348,17 @@ def load_stac_api_config():
     )
 
 
+def load_stac_provider_config():
+    """Build the stac provider configuration into a dictionnary
+
+    :returns: The stac provider configuration
+    :rtype: dict
+    """
+    return SimpleYamlProxyConfig(
+        resource_filename("eodag", os.path.join("resources/", "stac_provider.yml"))
+    ).source
+
+
 def format_dict_items(config_dict, **format_variables):
     """Recursive apply string.format(**format_variables) to dict elements
 

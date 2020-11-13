@@ -1424,3 +1424,29 @@
       Content-Type: application/json
   auth: !plugin
     type: GenericAuth
+
+---
+!provider
+  name: astraea_eod
+  priority: 0
+  url: https://earthondemand.astraea.earth
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
+  products:
+    S2_MSI_L1C:
+      product_type: sentinel2_l1c
+    S2_MSI_L2A:
+      product_type: sentinel2_l2a
+    L8_OLI_TIRS_C1L1:
+      product_type: landsat8_l1tp
+    MODIS_MCD43A4:
+      product_type: mcd43a4
+    NAIP:
+      product_type: naip
+  download: !plugin
+    type: AwsDownload
+    base_uri: https://eod-catalog-svc-prod.astraea.earth
+    flatten_top_dirs: True
+  auth: !plugin
+    type: OAuth

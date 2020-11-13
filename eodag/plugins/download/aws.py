@@ -20,9 +20,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import os
 import re
+import shutil
 
 import boto3
 import requests
+from botocore.exceptions import ClientError
 from lxml import etree
 from tqdm import tqdm
 
@@ -157,9 +159,16 @@ class AwsDownload(Download):
         :return: The absolute path to the downloaded product in the local filesystem
         :rtype: str or unicode
         """
-        product_conf = self.config.products.get(product.product_type, {})
+        product_conf = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        )
 
         build_safe = product_conf.get("build_safe", False)
+
+        # product conf overrides provider conf for "flatten_top_dirs"
+        flatten_top_dirs = product_conf.get(
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+        )
 
         # xtra metadata needed for SAFE product
         if build_safe and "fetch_metadata" in product_conf.keys():
@@ -179,8 +188,18 @@ class AwsDownload(Download):
                 logger.warning(
                     "SAFE metadata fetch format %s not implemented" % fetch_format
                 )
+        # if assets are defined, use them instead of scanning product.location
+        if hasattr(product, "assets"):
+            bucket_names_and_prefixes = []
+            for complementary_url in getattr(product, "assets", {}).values():
+                bucket_names_and_prefixes.append(
+                    self.get_bucket_name_and_prefix(
+                        product, complementary_url.get("href", "")
+                    )
+                )
+        else:
+            bucket_names_and_prefixes = [self.get_bucket_name_and_prefix(product)]
 
-        bucket_names_and_prefixes = [self.get_bucket_name_and_prefix(product)]
         # add complementary urls
         for complementary_url_key in product_conf.get("complementary_url_key", []):
             bucket_names_and_prefixes.append(
@@ -208,47 +227,65 @@ class AwsDownload(Download):
         ) as bar:
 
             for bucket_name, prefix in bucket_names_and_prefixes:
-                # connect to aws s3
-                access_key, access_secret = auth
-                s3 = boto3.resource(
-                    "s3",
-                    aws_access_key_id=access_key,
-                    aws_secret_access_key=access_secret,
-                )
-                bucket = s3.Bucket(bucket_name)
-
-                total_size = sum(
-                    [
-                        p.size
-                        for p in bucket.objects.filter(
-                            Prefix=prefix, RequestPayer="requester"
-                        )
-                    ]
-                )
-                progress_callback.max_size = total_size
-                for product_chunk in bucket.objects.filter(
-                    Prefix=prefix, RequestPayer="requester"
-                ):
-                    chunck_rel_path = self.get_chunck_dest_path(
-                        product, product_chunk, build_safe=build_safe, dir_prefix=prefix
+                try:
+                    # connect to aws s3
+                    access_key, access_secret = auth
+                    s3 = boto3.resource(
+                        "s3",
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=access_secret,
                     )
-                    chunck_abs_path = os.path.join(product_local_path, chunck_rel_path)
-                    chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
-                    if not os.path.isdir(chunck_abs_path_dir):
-                        os.makedirs(chunck_abs_path_dir)
+                    bucket = s3.Bucket(bucket_name)
 
-                    if not os.path.isfile(chunck_abs_path):
-                        bucket.download_file(
-                            product_chunk.key,
-                            chunck_abs_path,
-                            ExtraArgs={"RequestPayer": "requester"},
-                            Callback=progress_callback,
+                    total_size = sum(
+                        [
+                            p.size
+                            for p in bucket.objects.filter(
+                                Prefix=prefix, RequestPayer="requester"
+                            )
+                        ]
+                    )
+                    progress_callback.max_size = total_size
+                    for product_chunk in bucket.objects.filter(
+                        Prefix=prefix, RequestPayer="requester"
+                    ):
+                        chunck_rel_path = self.get_chunck_dest_path(
+                            product,
+                            product_chunk,
+                            build_safe=build_safe,
+                            dir_prefix=prefix,
                         )
+                        chunck_abs_path = os.path.join(
+                            product_local_path, chunck_rel_path
+                        )
+                        chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
+                        if not os.path.isdir(chunck_abs_path_dir):
+                            os.makedirs(chunck_abs_path_dir)
+
+                        if not os.path.isfile(chunck_abs_path):
+                            bucket.download_file(
+                                product_chunk.key,
+                                chunck_abs_path,
+                                ExtraArgs={"RequestPayer": "requester"},
+                                Callback=progress_callback,
+                            )
+                except ClientError as e:
+                    logger.warning("Unexpected error: %s" % e)
+                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 bar.update(1)
 
         # finalize safe product
         if build_safe and "S2_MSI" in product.product_type:
             self.finalize_s2_safe_product(product_local_path)
+        # flatten directory structure
+        elif flatten_top_dirs:
+            tmp_product_local_path = "%s-tmp" % product_local_path
+            for d, dirs, files in os.walk(product_local_path):
+                if len(files) != 0:
+                    shutil.copytree(d, tmp_product_local_path)
+                    shutil.rmtree(product_local_path)
+                    os.rename(tmp_product_local_path, product_local_path)
+                    break
 
         # save hash/record file
         with open(record_filename, "w") as fh:
@@ -277,9 +314,9 @@ class AwsDownload(Download):
             bucket = (
                 netloc
                 if netloc
-                else self.config.products.get(product.product_type, {}).get(
-                    "default_bucket", ""
-                )
+                else getattr(self.config, "products", {})
+                .get(product.product_type, {})
+                .get("default_bucket", "")
             )
             prefix = path.strip("/")
         elif scheme in ("http", "https", "ftp"):

@@ -34,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
+from eodag.config import load_stac_provider_config
 from eodag.plugins.search.base import Search
 from eodag.utils import dict_items_recursive_apply, quote, update_nested_dict, urlencode
 from eodag.utils.exceptions import RequestError
@@ -869,3 +870,49 @@ class PostJsonSearch(QueryStringSearch):
                 )
             raise RequestError(str(err))
         return response
+
+
+class StacSearch(QueryStringSearch):
+    """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
+
+    def __init__(self, provider, config):
+        stac_provider_config = load_stac_provider_config()
+        config.__dict__.setdefault(
+            "pagination", stac_provider_config.get("search", {}).get("pagination", {})
+        )
+        config.__dict__.setdefault(
+            "discover_metadata",
+            stac_provider_config.get("search", {}).get("discover_metadata", {}),
+        )
+        config.__dict__.setdefault(
+            "metadata_mapping",
+            stac_provider_config.get("search", {}).get("metadata_mapping", {}),
+        )
+
+        super(QueryStringSearch, self).__init__(provider, config)
+        self.config.__dict__.setdefault("result_type", "json")
+        self.config.__dict__.setdefault("results_entry", "features")
+        self.config.__dict__.setdefault("free_text_search_operations", {})
+        self.search_urls = []
+        self.query_params = dict()
+        self.query_string = ""
+
+        # TODO: fetch /collections to add dynamically product types
+        # response = self._request(
+        #     config.api_endpoint.replace("/search", "/collections"),
+        # )
+        # collections = [c["id"] for c in response.json().get("collections", {}) if "id" in c.keys()]
+        # for c in collections:
+        #     if c not in str(self.config.products):
+        #         self.config.products[c] = {"product_type": c}
+
+    def normalize_results(self, results, *args, **kwargs):
+        """Build EOProducts from provider results"""
+
+        products = super(StacSearch, self).normalize_results(results, *args, **kwargs)
+
+        # move assets from properties to product's attr
+        for product in products:
+            product.assets = product.properties.pop("assets", [])
+
+        return products

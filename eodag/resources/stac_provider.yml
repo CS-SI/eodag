@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+search:
+  type: StacSearch
+  pagination:
+    next_page_url_tpl: '{url}?{search}&limit={items_per_page}&page={page}'
+    total_items_nb_key_path: '$.context.matched'
+  discover_metadata:
+    auto_discovery: true
+    metadata_pattern: '^[a-zA-Z0-9_:-]+$'
+    search_param: '{metadata}={{{metadata}}}'
+    metadata_path: '$.properties.*'
+  metadata_mapping:
+    # OpenSearch Parameters for Collection Search (Table 3)
+    productType:
+      - 'collections={productType}'
+      - '$.collection'
+    doi: '$.properties."sci:doi"'
+    platform: '$.properties.constellation'
+    platformSerialIdentifier: '$.properties.platform'
+    instrument: '$.properties.instruments'
+    # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+    title: '$.id'
+    abstract: '$.properties.description'
+    resolution: '$.properties."eo:gsd"'
+    # OpenSearch Parameters for Product Search (Table 5)
+    orbitNumber: '$.properties."sat:relative_orbit"'
+    orbitDirection: '$.properties."sat:orbit_state"'
+    cloudCover: '$.properties."eo:cloud_cover"'
+    sensorMode: '$.properties."sar:instrument_mode"'
+    # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+    availabilityTime: '$.properties.availabilityTime'
+    acquisitionStation: '$.properties.acquisitionStation'
+    acquisitionSubType: '$.properties.acquisitionSubType'
+    startTimeFromAscendingNode: '$.properties.datetime'
+    completionTimeFromAscendingNode:
+      - 'datetime={startTimeFromAscendingNode}Z/{completionTimeFromAscendingNode}Z'
+      - '$.properties.end_datetime'
+    illuminationAzimuthAngle: '$.properties."view:sun_azimuth"'
+    illuminationElevationAngle: '$.properties."view:sun_elevation"'
+    polarisationChannels: '$.properties."sar:polarizations"'
+    dopplerFrequency: '$.properties."sar:frequency_band"'
+    # Custom parameters (not defined in the base document referenced above)
+    id:
+      - 'ids={id}'
+      - '$.id'
+    geometry:
+      - 'bbox={geometry.bounds#csv_list}'
+      - '$.geometry'
+    downloadLink: '%(base_uri)s/collections/{productType}/items/{id}'
+    # Normalization code moves assets from properties to product's attr
+    assets: '$.assets'
