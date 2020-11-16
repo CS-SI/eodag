@@ -30,6 +30,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     format_metadata,
     get_metadata_path,
+    get_metadata_path_value,
     get_search_param,
     properties_from_json,
     properties_from_xml,
@@ -679,28 +680,33 @@ class PostJsonSearch(QueryStringSearch):
         """
         self.config.metadata_mapping.update(metadata_mapping)
         for metadata in metadata_mapping:
-            conversion, path = get_metadata_path(self.config.metadata_mapping[metadata])
-            try:
-                # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
-                if len(self.config.metadata_mapping[metadata]) == 2:
-                    self.config.metadata_mapping[metadata][1] = (
-                        conversion,
-                        jsonpath.parse(path),
-                    )
-                else:
-                    self.config.metadata_mapping[metadata] = (
-                        conversion,
-                        jsonpath.parse(path),
-                    )
-            except Exception:  # jsonpath_rw does not provide a proper exception
-                # Assume the mapping is to be passed as is.
-                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                # it further
-                _, text = get_metadata_path(self.config.metadata_mapping[metadata])
-                if len(self.config.metadata_mapping[metadata]) == 2:
-                    self.config.metadata_mapping[metadata][1] = (None, text)
-                else:
-                    self.config.metadata_mapping[metadata] = (None, text)
+            path = get_metadata_path_value(self.config.metadata_mapping[metadata])
+            # check if path has already been parsed
+            if isinstance(path, str):
+                conversion, path = get_metadata_path(
+                    self.config.metadata_mapping[metadata]
+                )
+                try:
+                    # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
+                    if len(self.config.metadata_mapping[metadata]) == 2:
+                        self.config.metadata_mapping[metadata][1] = (
+                            conversion,
+                            jsonpath.parse(path),
+                        )
+                    else:
+                        self.config.metadata_mapping[metadata] = (
+                            conversion,
+                            jsonpath.parse(path),
+                        )
+                except Exception:  # jsonpath_rw does not provide a proper exception
+                    # Assume the mapping is to be passed as is.
+                    # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
+                    # it further
+                    _, text = get_metadata_path(self.config.metadata_mapping[metadata])
+                    if len(self.config.metadata_mapping[metadata]) == 2:
+                        self.config.metadata_mapping[metadata][1] = (None, text)
+                    else:
+                        self.config.metadata_mapping[metadata] = (None, text)
 
     def query(self, items_per_page=None, page=None, *args, **kwargs):
         """Perform a search on an OpenSearch-like interface"""

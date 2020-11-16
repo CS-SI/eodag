@@ -80,12 +80,21 @@ def get_metadata_path(map_value):
     :return: The value of the path to the metadata value in the provider search result
     :rtype: str (Python 3) or unicode (Python 2)
     """
-    path = map_value[1] if isinstance(map_value, list) else map_value
-    match = INGEST_CONVERSION_REGEX.match(path)
+    path = get_metadata_path_value(map_value)
+    try:
+        match = INGEST_CONVERSION_REGEX.match(path)
+    except TypeError as e:
+        logger.error("Could not match regex on metadata path '%s'" % str(path))
+        raise e
     if match:
         g = match.groupdict()
         return [g["converter"], g["args"]], g["path"]
     return None, path
+
+
+def get_metadata_path_value(map_value):
+    """ Get raw metadata path without converter """
+    return map_value[1] if isinstance(map_value, list) else map_value
 
 
 def get_search_param(map_value):
