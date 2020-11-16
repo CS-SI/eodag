@@ -90,7 +90,7 @@ collection:
     temporal:
       interval:
         - - '$.product_type.missionStartDate'
-          - null
+          - '$.product_type.missionEndDate'
       # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
   properties:
     eo:bands: '$.product_type.bands'

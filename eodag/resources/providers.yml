@@ -839,14 +839,14 @@
       product_type: SLC
     S1_SAR_OCN:
       product_type: OCN
-    S3_LAN:
-      product_type: SR_2_LAN___
-    S3_SRA:
-      product_type: SR_1_SRA___
-    S3_SRA_BS:
-      product_type: SR_1_SRA_BS
-    S3_SRA_A_BS:
-      product_type: SR_1_SRA_A_
+    # S3_LAN:
+    #   product_type: SR_2_LAN___
+    # S3_SRA:
+    #   product_type: SR_1_SRA___
+    # S3_SRA_BS:
+    #   product_type: SR_1_SRA_BS
+    # S3_SRA_A_BS:
+    #   product_type: SR_1_SRA_A_
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/search'

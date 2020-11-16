@@ -166,6 +166,7 @@ class EODataAccessGateway(object):
                 license=fields.ID,
                 title=fields.ID,
                 missionStartDate=fields.ID,
+                missionEndDate=fields.ID,
             )
             non_indexable_fields = ["bands"]
             self._product_types_index = create_in(index_dir, product_types_schema)
