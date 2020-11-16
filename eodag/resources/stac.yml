@@ -23,8 +23,8 @@ stac_version: 1.0.0-beta.2
 # https://stacspec.org/STAC-api.html#operation/getLandingPage
 
 landing_page:
-  title: "{catalog[provider]}"
-  description: "STAC API for {catalog[provider]} provided by EODAG"
+  title: "EODAG"
+  description: "STAC API provided by EODAG"
   links:
     - rel: self
       href: "{catalog[root]}"
@@ -199,7 +199,8 @@ item:
   links:
     - rel: self
       title: "{item[id]}"
-      href: "{catalog[url]}/items/{item[id]}"
+      href: "{catalog[url]}/{item[id]}"
+      # href: "{catalog[url]}/items/{item[id]}"
     - rel: root
       href: /
     - rel: parent

@@ -73,6 +73,9 @@ class StacCommon(object):
 
         self.data = {}
 
+        if self.provider and self.eodag_api.get_preferred_provider() != self.provider:
+            self.eodag_api.set_preferred_provider(self.provider)
+
     def update_data(self, data):
         """Updates data using given input STAC dict data
 
@@ -502,12 +505,24 @@ class StacCollection(StacCommon):
 
         collection_list = []
         for product_type in product_types:
+            # get default provider for each product_type
+            product_type_provider = (
+                self.provider
+                or next(
+                    self.eodag_api._plugins_manager.get_search_plugins(
+                        product_type=product_type["ID"]
+                    )
+                ).provider
+            )
+
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(
                 collection_model,
                 {
                     "product_type": product_type,
-                    "provider": self.eodag_api.providers_config[self.provider].__dict__,
+                    "provider": self.eodag_api.providers_config[
+                        product_type_provider
+                    ].__dict__,
                 },
             )
             # parse f-strings

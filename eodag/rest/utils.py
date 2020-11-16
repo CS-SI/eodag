@@ -37,7 +37,6 @@ crunchers = {
     "overlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
 }
 stac_config = load_stac_config()
-preferred_provider = eodag_api.get_preferred_provider()[0]
 
 
 def format_product_types(product_types):
@@ -51,7 +50,7 @@ def format_product_types(product_types):
     return "\n".join(sorted(result))
 
 
-def get_detailled_collections_list(provider=preferred_provider):
+def get_detailled_collections_list(provider=None):
     """Returns detailled collections / product_types list for a given provider as a list of config dicts
 
     :param provider: chosen provider
@@ -60,17 +59,6 @@ def get_detailled_collections_list(provider=preferred_provider):
     :rtype: list
     """
     return eodag_api.list_product_types(provider=provider)
-
-
-# def get_provider_config(provider=preferred_provider):
-#     """Returns given provier configuration
-
-#     :param provider: chosen provider
-#     :type provider: str
-#     :returns: config dict
-#     :rtype: dict
-#     """
-#     return eodag_api.providers_config[provider].__dict__
 
 
 def get_home_page_content(base_url, ipp=None):
@@ -343,7 +331,7 @@ def get_stac_conformance():
     return stac_config["conformance"]
 
 
-def get_stac_collections(url, root, arguments, provider=preferred_provider):
+def get_stac_collections(url, root, arguments, provider=None):
     """Build STAC collections
 
     :param url: requested URL
@@ -366,7 +354,7 @@ def get_stac_collections(url, root, arguments, provider=preferred_provider):
     ).get_collections(arguments)
 
 
-def get_stac_collection_by_id(url, root, collection_id, provider=preferred_provider):
+def get_stac_collection_by_id(url, root, collection_id, provider=None):
     """Build STAC collection by id
 
     :param url: requested URL
@@ -389,9 +377,7 @@ def get_stac_collection_by_id(url, root, collection_id, provider=preferred_provi
     ).get_collection_by_id(collection_id)
 
 
-def get_stac_item_by_id(
-    url, item_id, root="/", catalogs=[], provider=preferred_provider
-):
+def get_stac_item_by_id(url, item_id, root="/", catalogs=[], provider=None):
     """Build STAC item by id
 
     :param url: requested URL
@@ -421,7 +407,7 @@ def get_stac_item_by_id(
         return None
 
 
-def download_stac_item_by_id(catalogs, item_id, provider=preferred_provider):
+def download_stac_item_by_id(catalogs, item_id, provider=None):
     """Download item
 
     :param catalogs: catalogs list (only first is used as product_type)
@@ -433,16 +419,19 @@ def download_stac_item_by_id(catalogs, item_id, provider=preferred_provider):
     :returns: downloaded item local path
     :rtype: str
     """
-    eodag_api.providers_config[provider].download.extract = False
+    if provider:
+        eodag_api.set_preferred_provider(provider)
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
+
+    eodag_api.providers_config[product.provider].download.extract = False
 
     product_path = eodag_api.download(product)
 
     return product_path.replace("file://", "")
 
 
-def get_stac_catalogs(url, root="/", catalogs=[], provider=preferred_provider):
+def get_stac_catalogs(url, root="/", catalogs=[], provider=None):
     """Build STAC catalog
 
     :param url: requested URL
@@ -466,58 +455,7 @@ def get_stac_catalogs(url, root="/", catalogs=[], provider=preferred_provider):
     ).get_stac_catalog()
 
 
-# def get_stac_catalogs_items(
-#     url, arguments, root="/", catalogs=[], provider=preferred_provider
-# ):
-#     """Get items collection dict for given catalogs list
-
-#     :param url: requested URL
-#     :type url: str
-#     :param arguments: request args
-#     :type arguments: dict
-#     :param root: API root
-#     :type root: str
-#     :param catalogs: catalogs list
-#     :type catalogs: list
-#     :param provider: chosen provider
-#     :type provider: str
-#     :returns: catalog dictionnary
-#     :rtype: dict
-#     """
-#     result_catalog = StacCatalog(
-#         url=url,
-#         stac_config=stac_config,
-#         root=root,
-#         provider=provider,
-#         eodag_api=eodag_api,
-#         catalogs=catalogs,
-#     )
-
-#     search_results = search_products(
-#         product_type=result_catalog.search_args["product_type"],
-#         arguments=dict(
-#             arguments, **result_catalog.search_args, **{"unserialized": "true"}
-#         ),
-#     )
-
-#     return StacItem(
-#         url=url,
-#         stac_config=stac_config,
-#         provider=provider,
-#         eodag_api=eodag_api,
-#         root=root,
-#     ).get_stac_items(
-#         search_results=search_results,
-#         catalog=dict(
-#             result_catalog.get_stac_catalog(),
-#             **{"url": result_catalog.url, "root": result_catalog.root},
-#         ),
-#     )
-
-
-def search_stac_items(
-    url, arguments, root="/", catalogs=[], provider=preferred_provider
-):
+def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
     """Get items collection dict for given catalogs list
 
     :param url: requested URL

@@ -156,7 +156,12 @@ def conformance():
 def catalogs_root():
     """STAC catalogs root"""
 
-    response = get_stac_catalogs(url=request.url, root=request.url_root, catalogs=[])
+    response = get_stac_catalogs(
+        url=request.url.split("?")[0],
+        root=request.url_root,
+        catalogs=[],
+        provider=request.args.to_dict().get("provider", None),
+    )
 
     return jsonify(response), 200
 
@@ -191,7 +196,10 @@ def stac_catalogs(catalogs):
 
     catalogs = catalogs.strip("/").split("/")
     response = get_stac_catalogs(
-        url=request.url, root=request.url_root, catalogs=catalogs
+        url=request.url.split("?")[0],
+        root=request.url_root,
+        catalogs=catalogs,
+        provider=request.args.to_dict().get("provider", None),
     )
     return jsonify(response), 200
 
@@ -281,7 +289,11 @@ def stac_catalogs_item(catalogs, item_id):
 
     catalogs = catalogs.strip("/").split("/")
     response = get_stac_item_by_id(
-        url=request.url, item_id=item_id, root=request.url_root, catalogs=catalogs
+        url=request.url.split("?")[0],
+        item_id=item_id,
+        root=request.url_root,
+        catalogs=catalogs,
+        provider=request.args.to_dict().get("provider", None),
     )
 
     if response:
@@ -301,7 +313,11 @@ def stac_catalogs_item_download(catalogs, item_id):
     """STAC item local download"""
 
     catalogs = catalogs.strip("/").split("/")
-    response = download_stac_item_by_id(catalogs=catalogs, item_id=item_id)
+    response = download_stac_item_by_id(
+        catalogs=catalogs,
+        item_id=item_id,
+        provider=request.args.to_dict().get("provider", None),
+    )
     filename = os.path.basename(response)
 
     return send_file(response, as_attachment=True, attachment_filename=filename)
@@ -329,7 +345,10 @@ def collection_by_id(collection_id):
     """STAC collection by id"""
 
     response = get_stac_collection_by_id(
-        url=request.url, root=request.url_root, collection_id=collection_id
+        url=request.url.split("?")[0],
+        root=request.url_root,
+        collection_id=collection_id,
+        provider=request.args.to_dict().get("provider", None),
     )
 
     return jsonify(response), 200
@@ -387,10 +406,11 @@ def stac_collections_item(collection_id, item_id):
     """STAC collection item by id"""
 
     response = get_stac_item_by_id(
-        url=request.url,
+        url=request.url.split("?")[0],
         item_id=item_id,
         root=request.url_root,
         catalogs=[collection_id],
+        provider=request.args.to_dict().get("provider", None),
     )
 
     return app.response_class(
@@ -403,7 +423,11 @@ def stac_collections_item(collection_id, item_id):
 def stac_collections_item_download(collection_id, item_id):
     """STAC collection item local download"""
 
-    response = download_stac_item_by_id(catalogs=[collection_id], item_id=item_id)
+    response = download_stac_item_by_id(
+        catalogs=[collection_id],
+        item_id=item_id,
+        provider=request.args.to_dict().get("provider", None),
+    )
     filename = os.path.basename(response)
 
     return send_file(response, as_attachment=True, attachment_filename=filename)
