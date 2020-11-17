@@ -15,8 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 import os
 import re
@@ -24,7 +22,6 @@ import re
 import numpy
 import rasterio
 import requests
-import six
 import xarray as xr
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
@@ -34,7 +31,7 @@ from shapely import geometry, geos, wkb, wkt
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
-from eodag.utils import ProgressCallback
+from eodag.utils import ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, UnsupportedDatasetAddressScheme
 
 try:
@@ -59,7 +56,7 @@ class EOProduct(object):
     parameters that led to its creation.
 
     :param provider: The provider from which the product originates
-    :type provider: str or unicode
+    :type provider: str
     :param properties: The metadata of the product
     :type properties: dict
 
@@ -82,7 +79,7 @@ class EOProduct(object):
         }
         product_geometry = properties["geometry"]
         # Let's try 'latmin lonmin latmax lonmax'
-        if isinstance(product_geometry, six.string_types):
+        if isinstance(product_geometry, str):
             bbox_pattern = re.compile(
                 r"^(-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*)$"
             )
@@ -99,13 +96,13 @@ class EOProduct(object):
         # Best effort to understand provider specific geometry (the default is to
         # assume an object implementing the Geo Interface: see
         # https://gist.github.com/2217756)
-        if isinstance(product_geometry, six.string_types):
+        if isinstance(product_geometry, str):
             try:
                 product_geometry = wkt.loads(product_geometry)
             except geos.WKTReadingError:
                 try:
                     product_geometry = wkb.loads(product_geometry)
-                # Also catching TypeError because product_geometry can be a unicode
+                # Also catching TypeError because product_geometry can be a
                 # string and not a bytes string
                 except (geos.WKBReadingError, TypeError):
                     # Giv up!
@@ -114,22 +111,16 @@ class EOProduct(object):
         self.search_args = args
         self.search_kwargs = kwargs
         if self.search_kwargs.get("geometry") is not None:
-            searched_bbox = self.search_kwargs["geometry"]
-            searched_bbox_as_shape = geometry.box(
-                searched_bbox["lonmin"],
-                searched_bbox["latmin"],
-                searched_bbox["lonmax"],
-                searched_bbox["latmax"],
+            searched_geom = get_geometry_from_various(
+                **{"geometry": self.search_kwargs["geometry"]}
             )
             try:
-                self.search_intersection = self.geometry.intersection(
-                    searched_bbox_as_shape
-                )
+                self.search_intersection = self.geometry.intersection(searched_geom)
             except TopologicalError:
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
                     "geometry: %s",
-                    searched_bbox_as_shape,
+                    searched_geom,
                     product_geometry,
                 )
                 self.search_intersection = None
@@ -142,12 +133,12 @@ class EOProduct(object):
 
         :param crs: The coordinate reference system in which the dataset should be
                     returned
-        :type crs: str or unicode
+        :type crs: str
         :param resolution: The resolution in which the dataset should be returned
                            (given in the unit of the crs)
         :type resolution: float
         :param band: The band of the dataset to retrieve (e.g.: 'B01')
-        :type band: str or unicode
+        :type band: str
         :param extent: The coordinates on which to zoom as a tuple
                        (min_x, min_y, max_x, max_y) in the given `crs`
         :type extent: (float, float, float, float)
@@ -263,7 +254,7 @@ class EOProduct(object):
         :param raster: The raster data to encode
         :type raster: xarray.DataArray
         :param encoding: The encoding of the export
-        :type encoding: str or unicode
+        :type encoding: str
         :return: The data encoded in the specified encoding
         :rtype: bytes
         """
@@ -317,7 +308,7 @@ class EOProduct(object):
         self.location = self.location % vars(self.downloader.config)
         self.remote_location = self.remote_location % vars(self.downloader.config)
         for k, v in self.properties.items():
-            if isinstance(v, six.string_types):
+            if isinstance(v, str):
                 try:
                     self.properties[k] = v % vars(self.downloader.config)
                 except TypeError:
@@ -343,7 +334,7 @@ class EOProduct(object):
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path to the downloaded product on the local filesystem
-        :rtype: str or unicode
+        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
@@ -391,12 +382,12 @@ class EOProduct(object):
         exists.
 
         :param filename: (optional) the name to give to the downloaded quicklook.
-        :type filename: str (Python 3) or unicode (Python 2)
+        :type filename: str
         :param base_dir: (optional) the absolute path of the directory where to store
                          the quicklooks in the filesystem. If it is not given, it
                          defaults to the `quicklooks` directory under this EO product
                          downloader's ``outputs_prefix`` config param
-        :type base_dir: str (Python 3) or unicode (Python 2)
+        :type base_dir: str
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -404,7 +395,7 @@ class EOProduct(object):
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
-        :rtype: str (Python 3) or unicode (Python 2)
+        :rtype: str
 
         .. versionchanged::
             1.0

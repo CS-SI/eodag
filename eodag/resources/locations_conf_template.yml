@@ -15,12 +15,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from eodag.plugins.base import PluginTopic
 
+shapefiles:
 
-class Authentication(PluginTopic):
-    """Plugins authentication Base plugin"""
+  - name: country
+    path: /path/to/locations/ne_110m_admin_0_map_units.shp
+    attr: ISO_A2
 
-    def authenticate(self):
-        """Authenticate"""
-        raise NotImplementedError
+  # - name: department
+  #   path: /path/to/locations/departements-20140528-100m.shp
+  #   attr: code_insee
+  #   parent:
+  #     name: country
+  #     attr: FR

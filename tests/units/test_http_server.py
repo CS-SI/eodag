@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import json
 import unittest
@@ -66,7 +65,7 @@ class RequestTestCase(unittest.TestCase):
                                     "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
                                 ),
                                 "eodag_provider": "peps",
-                                "eodag_product_type": "S1_OCN",
+                                "eodag_product_type": "S1_SAR_OCN",
                                 "platformSerialIdentifier": "S1A",
                                 "cloudCover": 0,
                                 "title": "S1A_WV_OCN__2SSV_20180215T235323_"
@@ -132,8 +131,8 @@ class RequestTestCase(unittest.TestCase):
         response_content = json.loads(response.data.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
-        self.assertIn("error", response_content)
-        self.assertIn("invalid", response_content["error"])
+        self.assertIn("description", response_content)
+        self.assertIn("invalid", response_content["description"])
 
     def _request_not_found(self, url):
         response = self.app.get(url, follow_redirects=True)
@@ -141,27 +140,39 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
         self.assertIn("error", response_content)
-        self.assertIn("Not Found", response_content["error"])
+        self.assertIn("not found", response_content["error"])
 
     def test_request_params(self):
-        self._request_not_valid("{}?box=1".format(self.tested_product_type))
-        self._request_not_valid("{}?box=0,43,1".format(self.tested_product_type))
-        self._request_not_valid("{}?box=0,,1".format(self.tested_product_type))
-        self._request_not_valid("{}?box=a,43,1,44".format(self.tested_product_type))
+        self._request_not_valid(
+            "search?collections={}&bbox=1".format(self.tested_product_type)
+        )
+        self._request_not_valid(
+            "search?collections={}&bbox=0,43,1".format(self.tested_product_type)
+        )
+        self._request_not_valid(
+            "search?collections={}&bbox=0,,1".format(self.tested_product_type)
+        )
+        self._request_not_valid(
+            "search?collections={}&bbox=a,43,1,44".format(self.tested_product_type)
+        )
 
-        self._request_valid("{}".format(self.tested_product_type))
-        self._request_valid("{}?box=0,43,1,44".format(self.tested_product_type))
+        self._request_valid("search?collections={}".format(self.tested_product_type))
+        self._request_valid(
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
+        )
 
     def test_not_found(self):
         """A request to eodag server with a not supported product type must return a 404 HTTP error code"""  # noqa
-        self._request_not_found("/ZZZ/?box=0,43,1,44")
+        self._request_not_found("search?collections=ZZZ&bbox=0,43,1,44")
 
     def test_filter(self):
         result1 = self._request_valid(
-            "{}?box=0,43,1,44".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
         )
         result2 = self._request_valid(
-            "{}?box=0,43,1,44&filter=latestIntersect".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44&filter=latestIntersect".format(
+                self.tested_product_type
+            )
         )
         self.assertGreaterEqual(len(result1.features), len(result2.features))
 
@@ -181,31 +192,71 @@ class RequestTestCase(unittest.TestCase):
 
     def test_date_search(self):
         result1 = self._request_valid(
-            "{}?box=0,43,1,44".format(self.tested_product_type)
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
         )
         result2 = self._request_valid(
-            "{}?box=0,43,1,44&dtstart=2018-01-20&dtend=2018-01-25".format(
+            "search?collections={}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
                 self.tested_product_type
             )
         )
         self.assertGreaterEqual(len(result1.features), len(result2.features))
 
-    def test_cloud_cover_search(self):
+    def test_date_search_from_items(self):
         result1 = self._request_valid(
-            "{}?box=0,43,1,44".format(self.tested_product_type)
+            "collections/{}/items?bbox=0,43,1,44".format(self.tested_product_type)
         )
         result2 = self._request_valid(
-            "{}?box=0,43,1,44&cloudCover=10".format(self.tested_product_type)
+            "collections/{}/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
+                self.tested_product_type
+            )
+        )
+        self.assertGreaterEqual(len(result1.features), len(result2.features))
+
+    def test_date_search_from_catalog_items(self):
+        result1 = self._request_valid(
+            "{}/year/2018/month/01/items?bbox=0,43,1,44".format(
+                self.tested_product_type
+            )
+        )
+        result2 = self._request_valid(
+            "{}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
+                self.tested_product_type
+            )
+        )
+        self.assertGreaterEqual(len(result1.features), len(result2.features))
+
+    def test_catalog_browse(self):
+        result = self._request_valid(
+            "{}/year/2018/month/01/day".format(self.tested_product_type)
+        )
+        self.assertListEqual(
+            [str(i) for i in range(1, 32)],
+            [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
+        )
+
+    def test_cloud_cover_search(self):
+        result1 = self._request_valid(
+            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
+        )
+        result2 = self._request_valid(
+            "search?collections={}&bbox=0,43,1,44&cloudCover=10".format(
+                self.tested_product_type
+            )
         )
         self.assertGreaterEqual(len(result1.features), len(result2.features))
 
     def test_search_response_contains_pagination_info(self):
         """Responses to valid search requests must return a geojson with pagination info in properties"""  # noqa
-        response = self._request_valid("{}".format(self.tested_product_type))
-        self.assertIn("properties", response)
-        self.assertEqual(1, response["properties"]["page"])
-        self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response["properties"]["itemsPerPage"])
-        self.assertIn("totalResults", response["properties"])
+        response = self._request_valid(
+            "search?collections={}".format(self.tested_product_type)
+        )
+        self.assertIn("numberMatched", response)
+        self.assertIn("numberReturned", response)
+        self.assertIn("context", response)
+        self.assertEqual(1, response["context"]["page"])
+        self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response["context"]["limit"])
+        self.assertIn("matched", response["context"])
+        self.assertIn("returned", response["context"])
 
     @mock.patch(
         "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]
@@ -217,24 +268,33 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_list_product_types_ok(self, list_pt, guess_pt):
         """A simple request for product types with(out) a provider must succeed"""
-        for url in ("/product-types/", "/product-types/peps"):
+        for url in ("/collections",):
             r = self.app.get(url)
             self.assertTrue(guess_pt.called)
             self.assertTrue(list_pt.called)
             self.assertEqual(200, r.status_code)
             self.assertListEqual(
                 ["S2_MSI_L1C", "S2_MSI_L2A"],
-                [it["ID"] for it in json.loads(r.data.decode("utf-8"))],
+                [
+                    it["title"]
+                    for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                    if it["rel"] == "child"
+                ],
             )
 
         guess_pt.return_value = ["S2_MSI_L1C"]
-        url = "/product-types/?instrument=MSI"
+        url = "/collections?instrument=MSI"
         r = self.app.get(url)
         self.assertTrue(guess_pt.called)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
         self.assertListEqual(
-            ["S2_MSI_L1C"], [it["ID"] for it in json.loads(r.data.decode("utf-8"))]
+            ["S2_MSI_L1C"],
+            [
+                it["title"]
+                for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                if it["rel"] == "child"
+            ],
         )
 
     @mock.patch(
@@ -244,11 +304,25 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_list_product_types_nok(self, list_pt):
         """A request for product types with a not supported filter must return all product types"""  # noqa
-        url = "/product-types/?platform=gibberish"
+        url = "/collections?platform=gibberish"
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
         self.assertListEqual(
             ["S2_MSI_L1C", "S2_MSI_L2A"],
-            [it["ID"] for it in json.loads(r.data.decode("utf-8"))],
+            [
+                it["title"]
+                for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                if it["rel"] == "child"
+            ],
         )
+
+    def test_conformance(self):
+        self._request_valid("conformance")
+
+    def test_service_desc(self):
+        self._request_valid("service-desc")
+
+    def test_service_doc(self):
+        response = self.app.get("service-doc", follow_redirects=True)
+        self.assertEqual(200, response.status_code)

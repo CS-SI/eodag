@@ -19,6 +19,10 @@
 !provider
   name: usgs
   priority: 0
+  description: U.S geological survey catalog for Landsat products
+  roles:
+    - host
+  url: https://earthexplorer.usgs.gov/
   api: !plugin
     type: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
@@ -42,6 +46,10 @@
 !provider
   name: aws_eos
   priority: 0
+  description: EOS search for Amazon public datasets
+  roles:
+    - host
+  url: https://developers.eos.com/datasets_description.html
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
@@ -59,11 +67,11 @@
       geometry:
         - |
           {{"search":{{"shape":{{"coordinates":
-          [[[{geometry[lonmin]},{geometry[latmin]}],
-          [{geometry[lonmax]},{geometry[latmin]}],
-          [{geometry[lonmax]},{geometry[latmax]}],
-          [{geometry[lonmin]},{geometry[latmax]}],
-          [{geometry[lonmin]},{geometry[latmin]}]]], "type": "Polygon"}} }} }}
+          [[[{geometry.bounds[0]},{geometry.bounds[1]}],
+          [{geometry.bounds[2]},{geometry.bounds[1]}],
+          [{geometry.bounds[2]},{geometry.bounds[3]}],
+          [{geometry.bounds[0]},{geometry.bounds[3]}],
+          [{geometry.bounds[0]},{geometry.bounds[1]}]]], "type": "Polygon"}} }} }}
         - '$.dataGeometry'
   products:
     CBERS4_PAN10M_L2:
@@ -487,6 +495,10 @@
 !provider
   name: theia
   priority: 0
+  description: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
+  roles:
+    - host
+  url: https://theia.cnes.fr/atdistrib/rocket/
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
@@ -567,7 +579,7 @@
       id: '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -646,6 +658,12 @@
 !provider
   name: peps
   priority: 1
+  description: |
+    The PEPS platform, the French "mirror site", redistributes the products of Sentinel satellites,
+    S1A, S1B, S2A and S2B, S3A and S3B from COPERNICUS, the European system for the Earth monitoring.
+  roles:
+    - host
+  url: https://peps.cnes.fr
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
@@ -737,7 +755,7 @@
         - '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -804,9 +822,15 @@
 !provider
   name: sobloo
   priority: 0
+  description: Airbus DIAS
+  roles:
+    - host
+  url: https://sobloo.eu/
   products:
     S2_MSI_L1C:
       product_type: S2MSI1C
+    S2_MSI_L2A:
+      product_type: S2MSI2A
     S1_SAR_RAW:
       product_type: RAW
     S1_SAR_GRD:
@@ -815,14 +839,14 @@
       product_type: SLC
     S1_SAR_OCN:
       product_type: OCN
-    S3_LAN:
-      product_type: SR_2_LAN___
-    S3_SRA:
-      product_type: SR_1_SRA___
-    S3_SRA_BS:
-      product_type: SR_1_SRA_BS
-    S3_SRA_A_BS:
-      product_type: SR_1_SRA_A_
+    # S3_LAN:
+    #   product_type: SR_2_LAN___
+    # S3_SRA:
+    #   product_type: SR_1_SRA___
+    # S3_SRA_BS:
+    #   product_type: SR_1_SRA_BS
+    # S3_SRA_A_BS:
+    #   product_type: SR_1_SRA_A_
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/search'
@@ -879,7 +903,7 @@
         - '$.data.identification.externalId'
       # The geographic extent of the product
       geometry:
-        - 'gintersect={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'gintersect={geometry#to_wkt_convex_hull}'
         - '$.md.geometry'
       # The url of the quicklook
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{uid}'
@@ -907,6 +931,10 @@
 !provider
   name: creodias
   priority: 0
+  description: CloudFerro DIAS
+  roles:
+    - host
+  url: https://creodias.eu/
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
@@ -965,7 +993,7 @@
         - '{$.properties.title#remove_extension}'
       # The geographic extent of the product
       geometry:
-        - 'box={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '{thumbnail}'
@@ -1048,6 +1076,10 @@
 !provider
   name: mundi
   priority: 0
+  description: Atos DIAS
+  roles:
+    - host
+  url: https://mundiwebservices.com/
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/{collection}/opensearch'
@@ -1159,7 +1191,7 @@
         - 'dc:identifier/text()'
       # The geographic extent of the product
       geometry:
-        - 'bbox={geometry[lonmin]},{geometry[latmin]},{geometry[lonmax]},{geometry[latmax]}'
+        - 'geometry={geometry#to_wkt_convex_hull}'
         - 'georss:box/text()'
       # The url of the quicklook
       quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
@@ -1206,6 +1238,7 @@
 !provider
   name: wekeo
   priority: 0
+  description: Wekeo
   search: !plugin
     type: CSWSearch
     api_endpoint: 'https://www.wekeo.eu/elastic-csw/service'
@@ -1257,6 +1290,10 @@
 !provider
   name: onda
   priority: 0
+  description: Serco DIAS
+  roles:
+    - host
+  url: https://www.onda-dias.eu/cms/
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
@@ -1279,7 +1316,7 @@
         wrapper: '"{}"'
         operations:
           AND:
-            - 'footprint:"Intersects({geometry#to_wkt})"'
+            - 'footprint:"Intersects({geometry#to_wkt_convex_hull})"'
             - 'productType:{productType}'
             - 'platformName:{platform}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
@@ -1387,3 +1424,29 @@
       Content-Type: application/json
   auth: !plugin
     type: GenericAuth
+
+---
+!provider
+  name: astraea_eod
+  priority: 0
+  url: https://earthondemand.astraea.earth
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
+  products:
+    S2_MSI_L1C:
+      product_type: sentinel2_l1c
+    S2_MSI_L2A:
+      product_type: sentinel2_l2a
+    L8_OLI_TIRS_C1L1:
+      product_type: landsat8_l1tp
+    MODIS_MCD43A4:
+      product_type: mcd43a4
+    NAIP:
+      product_type: naip
+  download: !plugin
+    type: AwsDownload
+    base_uri: https://eod-catalog-svc-prod.astraea.earth
+    flatten_top_dirs: True
+  auth: !plugin
+    type: OAuth

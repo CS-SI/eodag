@@ -1,0 +1,453 @@
+# -*- coding: utf-8 -*-
+# Copyright 2020, CS Systemes d'Information, http://www.c-s.fr
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+stac_version: 1.0.0-beta.2
+
+# Capabilities ----------------------------------------------------------------
+
+# https://stacspec.org/STAC-api.html#operation/getLandingPage
+
+landing_page:
+  title: "EODAG"
+  description: "STAC API provided by EODAG"
+  links:
+    - rel: self
+      href: "{catalog[root]}"
+    - rel: service-desc
+      href: "{catalog[root]}/service-desc"
+    - rel: service-doc
+      href: "{catalog[root]}/service-doc"
+    - rel: conformance
+      href: "{catalog[root]}/conformance"
+    - rel: data
+      href: "{catalog[root]}/collections"
+    - rel: search
+      href: "{catalog[root]}/search"
+      method: GET
+  stac_version: "{stac_version}"
+  stac_extensions: []
+  id: eodag-stac-api
+
+# https://stacspec.org/STAC-api.html#operation/getConformanceDeclaration
+conformance:
+  conformsTo:
+    - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core
+    # - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
+    - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html
+    - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson
+
+# https://stacspec.org/STAC-api.html#operation/getCollections
+collections:
+  links:
+    - rel: self
+      title: collections
+      href: /collections
+    - rel: root
+      href: /
+    - rel: parent
+      href: /
+  collections:
+    - "{collection}"
+  stac_version: "{stac_version}"
+
+# https://stacspec.org/STAC-api.html#operation/describeCollection
+collection:
+  id: '$.product_type.ID'
+  title: '$.product_type.title'
+  description: '$.product_type.abstract'
+  links:
+    - rel: self
+      title: "{collection[id]}"
+      href: "{collection[root]}/collections/{collection[id]}"
+    - rel: root
+      href: "{collection[root]}"
+    - rel: items
+      title: "items"
+      href: "{collection[root]}/collections/{collection[id]}/items"
+  extent:
+    spatial:
+      bbox:
+        - - -180
+          - -90
+          - 180
+          - 90
+      # crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
+    temporal:
+      interval:
+        - - '$.product_type.missionStartDate'
+          - '$.product_type.missionEndDate'
+      # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+  properties:
+    eo:bands: '$.product_type.bands'
+  item_type: feature
+  crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
+  stac_version: "{stac_version}"
+  keywords:
+    - '$.product_type.instrument'
+    - '$.product_type.platform'
+    - '$.product_type.platformSerialIdentifier'
+    - '$.product_type.processingLevel'
+    - '$.product_type.sensorType'
+  license: '$.product_type.license'
+  providers:
+    - name: '$.provider.name'
+      description: '$.provider.description'
+      # one or more of "producer" "licensor" "processor" "host"
+      roles: '$.provider.roles'
+      url: '$.provider.url'
+  summaries:
+    platform:
+      - '$.product_type.platform'
+    platformSerialIdentifier:
+      - '$.product_type.platformSerialIdentifier'
+    intruments:
+      - '$.product_type.instrument'
+
+# Data ------------------------------------------------------------------------
+
+# https://stacspec.org/STAC-api.html#operation/getFeatures
+items:
+  type: FeatureCollection
+  stac_version: "{stac_version}"
+  stac_extensions: []
+  features:
+    - "{item}"
+  links:
+    - rel: self
+      title: "items"
+      href: "{catalog[url]}/items"
+    - rel: root
+      href: /
+    - rel: parent
+      title: "{catalog[id]}"
+      href: "{catalog[url]}"
+    # implement next/prev page links
+    # https://github.com/radiantearth/stac-spec/blob/master/api-spec/api-spec.md#paging-extension
+    - rel: next
+      href: '$.search_results.next'
+      title: Next page
+      type: application/geo+json
+      method: GET
+  # time and date when the response was generated
+  timeStamp: '$.search_results.timeStamp'
+  # count request result
+  numberMatched: '$.search_results.numberMatched'
+  # len(features)
+  numberReturned: '$.search_results.numberReturned'
+  # 0.7.0 stac-browser compatibility
+  context:
+    page: '$.search_results.properties.page'
+    limit: '$.search_results.properties.itemsPerPage'
+    matched: '$.search_results.properties.totalResults'
+    returned: '$.search_results.numberReturned'
+
+# https://stacspec.org/STAC-api.html#operation/getFeature
+item:
+  stac_version: "{stac_version}"
+  stac_extensions:
+    - eo
+    - sar
+    - sat
+    - sci
+    - view
+    - "{catalog[root]}/extensions/oseo/json-schema/schema.json"
+  id: '$.product.properties.title'
+  bbox:
+    - '{item[geometry].bounds[0]}'
+    - '{item[geometry].bounds[1]}'
+    - '{item[geometry].bounds[2]}'
+    - '{item[geometry].bounds[3]}'
+  geometry: '$.product.geometry'
+  type: "Feature"
+  collection: '$.product.product_type'
+  properties:
+    datetime: '$.product.properties.startTimeFromAscendingNode'
+    start_datetime: '$.product.properties.startTimeFromAscendingNode'
+    end_datetime: '$.product.properties.completionTimeFromAscendingNode'
+    description: '$.product.properties.abstract'
+    license: '{catalog[license]}'
+    constellation: '$.product.properties.platform'
+    platform: '$.product.properties.platformSerialIdentifier'
+    intruments:
+      - '$.product.properties.instrument'
+    eo:cloud_cover: '$.product.properties.cloudCover'
+    eo:gsd: '$.product.properties.resolution'
+    sat:orbit_state: '$.product.properties.orbitDirection'
+    sat:relative_orbit: '$.product.properties.relativeOrbitNumber'
+    sar:product_type: '$.product.properties.productType'
+    sar:instrument_mode: '$.product.properties.sensorMode'
+    sar:polarizations: '$.product.properties.polarisationChannels'
+    sar:frequency_band: '$.product.properties.dopplerFrequency'
+    sci:doi: '$.product.properties.doi'
+    view:sun_elevation: '$.product.properties.illuminationElevationAngle'
+    view:sun_azimuth: '$.product.properties.illuminationAzimuthAngle'
+  links:
+    - rel: self
+      title: "{item[id]}"
+      href: "{catalog[url]}/{item[id]}"
+      # href: "{catalog[url]}/items/{item[id]}"
+    - rel: root
+      href: /
+    - rel: parent
+      title: "{catalog[id]}"
+      href: "{catalog[url]}"
+    - rel: collection
+      title: "{item[collection]}"
+      href: "/collections/{item[collection]}"
+  assets:
+    downloadLink:
+        title: 'Download link'
+        href: "{catalog[url]}/items/{item[id]}/download"
+        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
+        type: 'application/zip'
+    thumbnail:
+        title: 'Thumbnail'
+        href: '$.product.properties.quicklook'
+        type: 'image/jpeg'
+        role: thumbnail
+        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
+
+# product properties not needed in items
+metadata_ignore:
+  - title
+  - id
+  - keyword
+  - quicklook
+  - downloadLink
+  - custom
+
+# Catalogs --------------------------------------------------------------------
+
+catalog:
+  parent_key: root
+  model:
+    item_type: catalog
+    id: "{catalog[id]}"
+    title: "{catalog[title]}"
+    description: "{catalog[description]}"
+    links:
+      - rel: self
+        href: "{catalog[url]}"
+      - rel: root
+        href: "{catalog[root]}"
+    stac_version: "{stac_version}"
+    stac_extensions: "{catalog[stac_extensions]}"
+
+
+# nested catalogs for filtering
+catalogs:
+
+  product_types_list:
+    parent_key: root
+    child_key: product_type
+    model:
+      id: "product_types"
+      description: Available product types
+
+  product_type:
+    parent_key: product_types_list
+    model:
+      id: "{collection[id]}"
+      title: "{collection[title]}"
+      description: "{collection[description]}"
+      extent:
+        spatial:
+          bbox:
+            - - "{collection[extent][spatial][bbox][0][0]}"
+              - "{collection[extent][spatial][bbox][0][1]}"
+              - "{collection[extent][spatial][bbox][0][2]}"
+              - "{collection[extent][spatial][bbox][0][3]}"
+          # crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
+        temporal:
+          interval:
+            - - "{collection[extent][temporal][interval][0][0]}"
+              - "{collection[extent][temporal][interval][0][1]}"
+          # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+      item_type: feature
+      crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
+      keywords:
+        - "{collection[keywords][0]}"
+        - "{collection[keywords][1]}"
+        - "{collection[keywords][2]}"
+        - "{collection[keywords][3]}"
+        - "{collection[keywords][4]}"
+      license: "{collection[license]}"
+      properties: "{collection[properties]}"
+      providers:
+        - name: "{collection[providers][0][name]}"
+          description: "{collection[providers][0][description]}"
+          # one or more of "producer" "licensor" "processor" "host"
+          roles:
+            - "{collection[providers][0][roles][0]}"
+          url: "{collection[providers][0][url]}"
+      summaries: "{collection[summaries]}"
+
+  years_list:
+    child_key: year
+    model:
+      id: year
+      title: year
+      # description: "Filter by year"
+
+  year:
+    parent_key: years_list
+    model:
+      id: "{date[year]}"
+      title: "{date[year]}"
+      description: "Filter by year"
+      extent:
+        spatial:
+          bbox:
+            - - "{catalog[extent][spatial][bbox][0][0]}"
+              - "{catalog[extent][spatial][bbox][0][1]}"
+              - "{catalog[extent][spatial][bbox][0][2]}"
+              - "{catalog[extent][spatial][bbox][0][3]}"
+        temporal:
+          interval:
+            - - "{date[min]}"
+              - "{date[max]}"
+
+  months_list:
+    child_key: month
+    parent_key: year
+    model:
+      id: month
+      title: month
+      description: "Filter by month"
+
+  month:
+    parent_key: months_list
+    model:
+      id: "{date[month]}"
+      title: "{date[month]}"
+      description: "Filter by month"
+      extent:
+        spatial:
+          bbox:
+            - - "{catalog[extent][spatial][bbox][0][0]}"
+              - "{catalog[extent][spatial][bbox][0][1]}"
+              - "{catalog[extent][spatial][bbox][0][2]}"
+              - "{catalog[extent][spatial][bbox][0][3]}"
+        temporal:
+          interval:
+            - - "{date[min]}"
+              - "{date[max]}"
+
+  days_list:
+    child_key: day
+    parent_key: month
+    model:
+      id: day
+      title: day
+      description: "Filter by day"
+
+  day:
+    parent_key: days_list
+    model:
+      id: "{date[day]}"
+      title: "{date[day]}"
+      description: "Filter by day"
+      extent:
+        spatial:
+          bbox:
+            - - "{catalog[extent][spatial][bbox][0][0]}"
+              - "{catalog[extent][spatial][bbox][0][1]}"
+              - "{catalog[extent][spatial][bbox][0][2]}"
+              - "{catalog[extent][spatial][bbox][0][3]}"
+        temporal:
+          interval:
+            - - "{date[min]}"
+              - "{date[max]}"
+
+  cloud_covers_list:
+    child_key: cloud_cover
+    model:
+      id: cloud_cover
+      title: Max cloud cover
+      description: "Filter by maximum cloud cover %"
+
+  cloud_cover:
+    parent_key: cloud_covers_list
+    model:
+      id: "{cloud_cover}"
+      title: "{cloud_cover}%"
+      description: "Filter by maximum cloud cover %"
+
+
+locations_catalogs:
+
+  locations_list:
+    catalog_type: location_list
+    child_key: "$.shp_location.name"
+    path: "$.shp_location.path"
+    attr: "$.shp_location.attr"
+    parent_key: "$.shp_location.parent.name"
+    parent:
+      key: "$.shp_location.parent.name"
+      attr: "$.shp_location.parent.attr"
+    model:
+      id: "$.shp_location.name"
+      title: "$.shp_location.name"
+      description: "$.shp_location.description"
+
+  location:
+    catalog_type: location
+    parent_key: "{locations_list}"
+    model:
+      id: "{feature[id]}"
+      title: "{feature[id]}"
+      description: "Filter by country"
+      extent:
+        spatial:
+          bbox:
+            - - '{feature[geometry].bounds[0]}'
+              - '{feature[geometry].bounds[1]}'
+              - '{feature[geometry].bounds[2]}'
+              - '{feature[geometry].bounds[3]}'
+        temporal:
+          interval:
+            - - "{catalog[extent][temporal][interval][0][0]}"
+              - "{catalog[extent][temporal][interval][0][1]}"
+
+
+# Extensions ------------------------------------------------------------------
+extensions:
+  oseo:
+    $schema: "http://json-schema.org/draft-07/schema#"
+    $id: "{extension[url]}#"
+    title: OpenSearch for Earth Observation
+    description: OpenSearch-EO STAC extension to a STAC Item https://www.ogc.org/standards/opensearch-eo
+    allOf:
+      - $ref: "#/definitions/oseo"
+      - $ref: "https://schemas.stacspec.org/v{stac_version}/item-spec/json-schema/item.json"
+    definitions:
+      oseo:
+        type: object
+        required:
+          - stac_extensions
+          - properties
+        properties:
+          stac_extensions:
+            type: array
+            contains:
+              enum:
+                - oseo
+                - "{extension[url]}"
+          properties:
+            type: object
+            properties: "{extension[properties]}"

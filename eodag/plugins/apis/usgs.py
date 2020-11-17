@@ -15,8 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
-
 import copy
 import hashlib
 import logging
@@ -65,7 +63,17 @@ class UsgsApi(Api):
         usgs_catalog_node = self.config.products[product_type]["catalog_node"]
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
         end_date = kwargs.pop("completionTimeFromAscendingNode", None)
-        footprint = kwargs.pop("geometry", None)
+        geom = kwargs.pop("geometry", None)
+        footprint = {}
+        if hasattr(geom, "bounds"):
+            (
+                footprint["lonmin"],
+                footprint["latmin"],
+                footprint["lonmax"],
+                footprint["latmax"],
+            ) = geom.bounds
+        else:
+            footprint = geom
 
         # Configuration to generate the download url of search results
         result_summary_pattern = re.compile(

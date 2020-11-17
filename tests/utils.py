@@ -15,20 +15,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 # All tests files should import mock from this place
-try:  # PY3
-    from unittest import mock  # noqa
-except ImportError:  # PY2
-    import mock  # noqa
+from unittest import mock  # noqa
 
 
 def no_blanks(string):
     """Removes all the blanks in string
 
     :param string: A string to remove blanks from
-    :type string: str | unicode (PY2 only)
+    :type string: str
 
     :returns the same string with all blank characters removed
     """

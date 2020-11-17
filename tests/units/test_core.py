@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import glob
 import os
@@ -31,13 +30,7 @@ class TestCore(unittest.TestCase):
     SUPPORTED_PRODUCT_TYPES = {
         "L8_REFLECTANCE": ["theia"],
         "L57_REFLECTANCE": ["theia"],
-        "L5_L1T": [],
-        "L5_L1G": [],
-        "L5_L1GT": [],
-        "L7_L1G": [],
-        "L7_L1T": [],
-        "L7_L1GT": [],
-        "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos"],
+        "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos", "astraea_eod"],
         "S1_SAR_GRD": [
             "peps",
             "sobloo",
@@ -50,7 +43,15 @@ class TestCore(unittest.TestCase):
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
         "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
-        "S2_MSI_L2A": ["onda", "mundi", "creodias", "peps", "aws_eos"],
+        "S2_MSI_L2A": [
+            "onda",
+            "mundi",
+            "creodias",
+            "peps",
+            "aws_eos",
+            "sobloo",
+            "astraea_eod",
+        ],
         "S2_MSI_L2A_MAJA": ["theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
@@ -63,13 +64,14 @@ class TestCore(unittest.TestCase):
             "wekeo",
             "mundi",
             "creodias",
+            "astraea_eod",
         ],
         "S3_ERR": ["peps", "onda", "wekeo", "creodias"],
         "S3_EFR": ["peps", "onda", "wekeo", "creodias"],
-        "S3_LAN": ["peps", "sobloo", "onda", "wekeo", "creodias"],
-        "S3_SRA": ["sobloo", "onda", "wekeo", "creodias"],
-        "S3_SRA_BS": ["sobloo", "onda", "wekeo", "creodias"],
-        "S3_SRA_A_BS": ["sobloo", "onda", "creodias"],
+        "S3_LAN": ["peps", "onda", "wekeo", "creodias"],
+        "S3_SRA": ["onda", "wekeo", "creodias"],
+        "S3_SRA_BS": ["onda", "wekeo", "creodias"],
+        "S3_SRA_A_BS": ["onda", "creodias"],
         "S3_WAT": ["onda", "wekeo", "creodias"],
         "S3_OLCI_L2LFR": ["peps", "onda", "wekeo", "creodias", "mundi"],
         "S3_OLCI_L2LRR": ["peps", "onda", "wekeo", "creodias"],
@@ -79,7 +81,6 @@ class TestCore(unittest.TestCase):
         "PLD_XS": ["theia"],
         "PLD_BUNDLE": ["theia"],
         "PLD_PANSHARPENED": ["theia"],
-        "ES_FRS": [],
         "CBERS4_PAN10M_L2": ["aws_eos"],
         "CBERS4_PAN10M_L4": ["aws_eos"],
         "CBERS4_PAN5M_L2": ["aws_eos"],
@@ -88,8 +89,8 @@ class TestCore(unittest.TestCase):
         "CBERS4_MUX_L4": ["aws_eos"],
         "CBERS4_AWFI_L2": ["aws_eos"],
         "CBERS4_AWFI_L4": ["aws_eos"],
-        "MODIS_MCD43A4": ["aws_eos"],
-        "NAIP": ["aws_eos"],
+        "MODIS_MCD43A4": ["aws_eos", "astraea_eod"],
+        "NAIP": ["aws_eos", "astraea_eod"],
         "SPOT_SWH": ["theia"],
         "SPOT_SWH_OLD": ["theia"],
         "SPOT5_SPIRIT": ["theia"],
@@ -108,6 +109,7 @@ class TestCore(unittest.TestCase):
         "onda",
         "wekeo",
         "aws_eos",
+        "astraea_eod",
     ]
 
     def setUp(self):

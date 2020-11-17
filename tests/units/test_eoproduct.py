@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import io
 import itertools
@@ -77,12 +76,14 @@ class TestEOProduct(EODagTestCase):
             self.provider,
             self.eoproduct_props,
             productType=self.product_type,
-            geometry={
-                "lonmin": 10.469970703124998,
-                "latmin": 3.9957805129630373,
-                "lonmax": 12.227783203124998,
-                "latmax": 4.740675384778385,
-            },
+            geometry=geometry.Polygon(
+                (
+                    (10.469970703124998, 3.9957805129630373),
+                    (10.469970703124998, 4.740675384778385),
+                    (12.227783203124998, 4.740675384778385),
+                    (12.227783203124998, 3.9957805129630373),
+                )
+            ),
         )
         self.assertIsNone(product.search_intersection)
 

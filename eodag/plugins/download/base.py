@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import logging
@@ -44,7 +43,7 @@ class Download(PluginTopic):
     :param provider: An eodag providers configuration dictionary
     :type provider: dict
     :param config: Path to the user configuration file
-    :type config: str or unicode
+    :type config: str
     """
 
     def __init__(self, provider, config):
@@ -142,7 +141,7 @@ class Download(PluginTopic):
         """Finalize the download process.
 
         :param fs_path: The path to the local zip archive downloaded or already present
-        :type fs_path: str or unicode
+        :type fs_path: str
         :return: the absolute path to the product
         """
         if not getattr(self.config, "extract", False):

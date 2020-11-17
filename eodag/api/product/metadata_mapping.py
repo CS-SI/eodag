@@ -15,8 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
-
 import logging
 import re
 from datetime import datetime
@@ -26,8 +24,6 @@ import jsonpath_rw as jsonpath
 from dateutil.tz import tzutc
 from lxml import etree
 from lxml.etree import XPathEvalError
-from shapely import geometry
-from six import string_types
 
 from eodag.utils import get_timestamp
 
@@ -77,16 +73,25 @@ def get_metadata_path(map_value):
                       in the provider search config. For example, it is the list
                       `['productType', '$.properties.productType']` with the sample
                       above
-    :type map_value: str (Python 3) or unicode (Python 2) or list(str or unicode)
+    :type map_value: str or list(str)
     :return: The value of the path to the metadata value in the provider search result
-    :rtype: str (Python 3) or unicode (Python 2)
+    :rtype: str
     """
-    path = map_value[1] if isinstance(map_value, list) else map_value
-    match = INGEST_CONVERSION_REGEX.match(path)
+    path = get_metadata_path_value(map_value)
+    try:
+        match = INGEST_CONVERSION_REGEX.match(path)
+    except TypeError as e:
+        logger.error("Could not match regex on metadata path '%s'" % str(path))
+        raise e
     if match:
         g = match.groupdict()
         return [g["converter"], g["args"]], g["path"]
     return None, path
+
+
+def get_metadata_path_value(map_value):
+    """ Get raw metadata path without converter """
+    return map_value[1] if isinstance(map_value, list) else map_value
 
 
 def get_search_param(map_value):
@@ -96,7 +101,7 @@ def get_search_param(map_value):
                       in the provider search config
     :type map_value: list
     :return: The value of the search parameter as defined in the provider config
-    :rtype: str (Python 3) or unicode (Python 2)
+    :rtype: str
     """
     # Assume that caller will pass in the value as a list
     return map_value[0]
@@ -118,13 +123,13 @@ def format_metadata(search_param, *args, **kwargs):
           part of the list obtained by splitting the string on dots
 
     :param search_param: The string to be formatted
-    :type search_param: str or unicode
+    :type search_param: str
     :param args: (optional) Additional arguments to use in the formatting process
     :type args: tuple
     :param kwargs: (optional) Additional named-arguments to use when formatting
     :type kwargs: dict
     :returns: The formatted string
-    :rtype: str or unicode
+    :rtype: str
 
     .. versionadded::
         1.0
@@ -179,15 +184,31 @@ def format_metadata(search_param, *args, **kwargs):
                 return int(1e3 * get_timestamp(value))
 
         @staticmethod
-        def convert_to_wkt(value):
-            return geometry.box(
-                *[
-                    float(v)
-                    for v in "{lonmin} {latmin} {lonmax} {latmax}".format(
-                        **value
-                    ).split()
-                ]
-            ).to_wkt()
+        def convert_to_wkt_convex_hull(value):
+            if hasattr(value, "convex_hull"):
+                return value.convex_hull.to_wkt()
+            else:
+                logger.warning("Could not get wkt_convex_hull from %s", value)
+                return value
+
+        @staticmethod
+        def convert_to_bbox_dict(value):
+            if hasattr(value, "bounds"):
+                bbox_dict = {}
+                (
+                    bbox_dict["lonmin"],
+                    bbox_dict["latmin"],
+                    bbox_dict["lonmax"],
+                    bbox_dict["latmax"],
+                ) = value.bounds
+                return bbox_dict
+            else:
+                logger.warning("Could not get bbox_dict from %s", value)
+                return value
+
+        @staticmethod
+        def convert_csv_list(values_list):
+            return ",".join([str(x) for x in values_list])
 
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
@@ -312,7 +333,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
             conversion_or_none, path_or_text = value[1]
         else:
             conversion_or_none, path_or_text = value
-        if isinstance(path_or_text, string_types):
+        if isinstance(path_or_text, str):
             if re.search(r"({[^{}]+})+", path_or_text):
                 templates[metadata] = path_or_text
             else:
@@ -375,7 +396,7 @@ def properties_from_xml(
     """Extract properties from a provider xml result.
 
     :param xml_as_text: the representation of a provider result as xml
-    :type xml_as_text: str or unicode
+    :type xml_as_text: str
     :param mapping: a mapping between :class:`~eodag.api.product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the xml
                     representation, expressed as a
@@ -385,7 +406,7 @@ def properties_from_xml(
                             not supporting empty namespace prefix (default: ns). The
                             xpath in `mapping` must use this value to be able to
                             correctly reach empty-namespace prefixed elements
-    :type empty_ns_prefix: str or unicode
+    :type empty_ns_prefix: str
     :return: the metadata of the :class:`~eodag.api.product.EOProduct`
     :rtype: dict
     """
@@ -517,11 +538,11 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
     return dest_dict
 
 
-# Keys taken from http://docs.opengeospatial.org/is/13-026r8/13-026r8.html
+# Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html
 # For a metadata to be queryable, The way to query it must be specified in the
 # provider metadata_mapping configuration parameter. It will be automatically
 # detected as queryable by eodag when this is done
-DEFAULT_METADATA_MAPPING = {
+OSEO_METADATA_MAPPING = {
     # Opensearch resource identifier within the search engine context (in our case
     # within the context of the data provider)
     "uid": "$.uid",
@@ -595,17 +616,22 @@ DEFAULT_METADATA_MAPPING = {
     "maximumIncidenceAngle": "$.properties.maximumIncidenceAngle",
     "dopplerFrequency": "$.properties.dopplerFrequency",
     "incidenceAngleVariation": "$.properties.incidenceAngleVariation",
-    # Custom parameters (not defined in the base document referenced above)
-    # id differs from uid. The id is an identifier by which a product which is
-    # distributed by many providers can be retrieved (a property that it has in common
-    # in the catalogues of all the providers on which it is referenced)
-    "id": "$.id",
-    # The geographic extent of the product
-    "geometry": "$.geometry",
-    # The url of the quicklook
-    "quicklook": "$.properties.quicklook",
-    # The url to download the product "as is" (literal or as a template to be completed
-    # either after the search result is obtained from the provider or during the eodag
-    # download phase)
-    "downloadLink": "$.properties.downloadLink",
 }
+DEFAULT_METADATA_MAPPING = dict(
+    OSEO_METADATA_MAPPING,
+    **{
+        # Custom parameters (not defined in the base document referenced above)
+        # id differs from uid. The id is an identifier by which a product which is
+        # distributed by many providers can be retrieved (a property that it has in common
+        # in the catalogues of all the providers on which it is referenced)
+        "id": "$.id",
+        # The geographic extent of the product
+        "geometry": "$.geometry",
+        # The url of the quicklook
+        "quicklook": "$.properties.quicklook",
+        # The url to download the product "as is" (literal or as a template to be completed
+        # either after the search result is obtained from the provider or during the eodag
+        # download phase)
+        "downloadLink": "$.properties.downloadLink",
+    }
+)

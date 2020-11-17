@@ -39,8 +39,6 @@ Commands:
 
   noqa: D103
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import json
 import os
 import shutil
@@ -53,9 +51,6 @@ from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGat
 from eodag.utils import parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
-
-# disable warning on Python 2
-click.disable_unicode_literals_warning = True
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = ["FilterLatestByName", "FilterLatestIntersect", "FilterOverlap"]
@@ -100,6 +95,14 @@ def version():
     "--conf",
     help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
     type=click.Path(exists=True),
+)
+@click.option(
+    "-l",
+    "--loc",
+    type=click.Path(exists=True, resolve_path=True),
+    required=False,
+    help="File path to a location shapefile, followed by the location attribute "
+    "used for filtering, and its value (e.g.: --loc /path/to/countries.shp ISO2 FR)",
 )
 @click.option(
     "-b",
@@ -361,7 +364,7 @@ def list_pt(ctx, **kwargs):
                         text_wrapper.initial_indent
                     )
                     if value is not None:
-                        click.echo(text_wrapper.fill(value))
+                        click.echo(text_wrapper.fill(str(value)))
     except UnsupportedProvider:
         click.echo("Unsupported provider. You may have a typo")
         click.echo(
@@ -461,6 +464,13 @@ def serve_rpc(ctx, host, port, conf):
     help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
 )
 @click.option(
+    "-l",
+    "--locs",
+    type=click.Path(exists=True, resolve_path=True),
+    required=False,
+    help="File path to the location shapefiles configuration file",
+)
+@click.option(
     "-d", "--daemon", is_flag=True, show_default=True, help="run in daemon mode"
 )
 @click.option(
@@ -489,7 +499,7 @@ def serve_rpc(ctx, host, port, conf):
     help="Run in debug mode (for development purpose)",
 )
 @click.pass_context
-def serve_rest(ctx, daemon, world, port, config, debug):
+def serve_rest(ctx, daemon, world, port, config, locs, debug):
     """Serve EODAG functionalities through a WEB interface"""
     setup_logging(verbose=ctx.obj["verbosity"])
     # Set the settings of the app
@@ -498,6 +508,11 @@ def serve_rest(ctx, daemon, world, port, config, debug):
     # the app initialization)
     if config:
         os.environ["EODAG_CFG_FILE"] = config
+
+    if config:
+        os.environ["EODAG_CFG_FILE"] = config
+    if locs:
+        os.environ["EODAG_LOCS_CFG_FILE"] = locs
 
     from eodag.rest.server import app
 

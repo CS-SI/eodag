@@ -15,8 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 import os
 import shutil
@@ -34,12 +32,13 @@ from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
     load_default_config,
+    load_yml_config,
     override_config_from_env,
     override_config_from_file,
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import makedirs, utf8_everywhere
+from eodag.utils import get_geometry_from_various, makedirs
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
@@ -58,10 +57,12 @@ class EODataAccessGateway(object):
     from different types of providers.
 
     :param user_conf_file_path: Path to the user configuration file
-    :type user_conf_file_path: str or unicode
+    :type user_conf_file_path: str
+    :param locations_conf_path: Path to the locations configuration file
+    :type locations_conf_path: str
     """
 
-    def __init__(self, user_conf_file_path=None):
+    def __init__(self, user_conf_file_path=None, locations_conf_path=None):
         self.product_types_config = SimpleYamlProxyConfig(
             resource_filename("eodag", os.path.join("resources/", "product_types.yml"))
         )
@@ -94,6 +95,14 @@ class EODataAccessGateway(object):
         # Build a search index for product types
         self._product_types_index = None
         self.build_index()
+
+        # set locations configuration
+        if locations_conf_path is None:
+            locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
+            if locations_conf_path is None:
+                # empty string will set empty conf without error
+                locations_conf_path = ""
+        self.set_locations_conf(locations_conf_path)
 
     def build_index(self):
         """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_
@@ -131,7 +140,9 @@ class EODataAccessGateway(object):
                     create_index = True
 
         except ValueError as ve:
-            if "unsupported pickle protocol" in ve.message:
+            if "unsupported pickle protocol" in (
+                ve.message if hasattr(ve, "message") else str(ve)
+            ):
                 shutil.rmtree(index_dir)
                 create_index = True
             else:
@@ -149,19 +160,26 @@ class EODataAccessGateway(object):
                 processingLevel=fields.ID,
                 sensorType=fields.ID,
                 eodagVersion=fields.ID,
+                license=fields.ID,
+                title=fields.ID,
+                missionStartDate=fields.ID,
+                missionEndDate=fields.ID,
             )
+            non_indexable_fields = ["bands"]
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types():
                 versioned_product_type = dict(
                     product_type, **{"eodagVersion": eodag_version}
                 )
-                # py27: encode items except ID
-                product_type_id = versioned_product_type.pop("ID")
-                utf8_everywhere(versioned_product_type)
-                versioned_product_type["ID"] = product_type_id
                 # add to index
-                ix_writer.add_document(**versioned_product_type)
+                ix_writer.add_document(
+                    **{
+                        k: v
+                        for k, v in versioned_product_type.items()
+                        if k not in non_indexable_fields
+                    }
+                )
             ix_writer.commit()
         else:
             if self._product_types_index is None:
@@ -200,7 +218,7 @@ class EODataAccessGateway(object):
 
         :param provider: The name of the provider that should be considered as the
                          preferred provider to be used for this instance
-        :type provider: str or unicode
+        :type provider: str
         """
         if provider not in self.available_providers():
             raise UnsupportedProvider("This provider is not recognised by eodag")
@@ -223,12 +241,48 @@ class EODataAccessGateway(object):
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
 
+    def set_locations_conf(self, locations_conf_path):
+        """Set locations configuration.
+        This configuration (YML format) will contain a shapefile list associated
+        to a name and attribute parameters needed to identify the needed geometry.
+        You can also configure parent attributes, which can be used for creating
+        a catalogs path when using eodag as a REST server.
+        Example of locations configuration file content:
+        ```yml
+        shapefiles:
+            - name: country
+                path: /path/to/countries_list.shp
+                attr: ISO2
+            - name: department
+                path: /path/to/FR_departments.shp
+                attr: code_insee
+                parent:
+                    name: country
+                    attr: FR
+        ```
+        :param locations_conf_path: Path to the locations configuration file
+        :type locations_conf_path: str
+        """
+        if os.path.isfile(locations_conf_path):
+            locations_config = load_yml_config(locations_conf_path)
+
+            main_key = next(iter(locations_config))
+            locations_config = locations_config[main_key]
+
+            logger.info("Locations configuration loaded from %s" % locations_conf_path)
+            self.locations_config = locations_config
+        else:
+            logger.info(
+                "Could not load locations configuration from %s" % locations_conf_path
+            )
+            self.locations_config = []
+
     def list_product_types(self, provider=None):
         """Lists supported product types.
 
         :param provider: The name of a provider that must support the product
                          types we are about to list
-        :type provider: str or unicode
+        :type provider: str
         :returns: The list of the product types that can be accessed using eodag.
         :rtype: list(dict)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
@@ -283,7 +337,7 @@ class EODataAccessGateway(object):
 
         :param kwargs: A set of search parameters as keywords arguments
         :return: The best match for the given parameters
-        :rtype: str or unicode
+        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
 
         .. versionadded:: 1.0
@@ -327,7 +381,7 @@ class EODataAccessGateway(object):
         raise_errors=False,
         start=None,
         end=None,
-        box=None,
+        geom=None,
         **kwargs
     ):
         """Look for products matching criteria on known providers.
@@ -346,14 +400,26 @@ class EODataAccessGateway(object):
                               True, the error is raised (default: False)
         :type raise_errors: bool
         :param start: Start sensing time in iso format
-        :type start: str or unicode
+        :type start: str
         :param end: End sensing time in iso format
-        :type end: str or unicode
-        :param box: A bounding box delimiting the AOI (as a dict with keys: "lonmin",
-                    "latmin", "lonmax", "latmax")
-        :type box: dict
+        :type end: str
+        :param geom: Dictionnary defining the AOI. Information can be defined in different ways:
+
+                    * with a Shapely geometry object ("obj" as key):
+                      ``{"obj": :class:`shapely.geometry.base.BaseGeometry`}``
+                    * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
+                      ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
+                    * with a bounding box as list of float:
+                      ``[lonmin, latmin, lonmax, latmax]``
+                    * with a WKT str
+                    The geometry can also be passed as ``<location_name>="<attr_value>"`` in kwargs
+        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
         :param dict kwargs: some other criteria that will be used to do the search,
-                            using paramaters compatibles with the provider
+                            using paramaters compatibles with the provider, or also
+                            location filtering by name using locations configuration
+                            ``<location_name>="<attr_value>"`` (e.g.: ``country="FR"`` will use
+                            the geometry of the feature having the property ISO2=FR in the shapefile
+                            configured with name=country and attr=ISO2)
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -425,8 +491,10 @@ class EODataAccessGateway(object):
             kwargs["startTimeFromAscendingNode"] = start
         if end is not None:
             kwargs["completionTimeFromAscendingNode"] = end
-        if box is not None:
-            kwargs["geometry"] = box
+        if geom is not None:
+            kwargs["geometry"] = geom
+
+        kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
 
         plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
@@ -469,11 +537,11 @@ class EODataAccessGateway(object):
         perform the search, if this information is available
 
         :param uid: The uid of the EO product
-        :type uid: str (Python 3) or unicode (Python 2)
+        :type uid: str
         :param provider: (optional) The provider on which to search the product.
                          This may be useful for performance reasons when the user
                          knows this product is available on the given provider
-        :type provider: str (Python 3) or unicode (Python 2)
+        :type provider: str
         :returns: A search result with one EO product or None at all, and the number
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -675,9 +743,9 @@ class EODataAccessGateway(object):
         :param search_result: A collection of EO products resulting from a search
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
         :param filename: The name of the file to generate
-        :type filename: str or unicode
+        :type filename: str
         :returns: The name of the created file
-        :rtype: str or unicode
+        :rtype: str
         """
         with open(filename, "w") as fh:
             geojson.dump(search_result, fh)
@@ -688,7 +756,7 @@ class EODataAccessGateway(object):
         """Loads results of a search from a geojson file.
 
         :param filename: A filename containing a search result encoded as a geojson
-        :type filename: str or unicode
+        :type filename: str
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
@@ -735,7 +803,7 @@ class EODataAccessGateway(object):
                         before stop retrying to download (default=20')
         :type timeout: int
         :returns: The absolute path to the downloaded product in the local filesystem
-        :rtype: str or unicode
+        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
@@ -757,7 +825,7 @@ class EODataAccessGateway(object):
         """Build a crunch plugin from a configuration
 
         :param name: The name of the cruncher to build
-        :type name: str of unicode
+        :type name: str
         :param options: The configuration options of the cruncher
         :type options: dict
         :return: The cruncher named ``name``

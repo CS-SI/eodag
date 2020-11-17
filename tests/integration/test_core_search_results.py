@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import json
 import os
@@ -47,7 +46,7 @@ class TestCoreSearchResults(unittest.TestCase):
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
                         ),
                         "eodag_provider": "peps",
-                        "eodag_product_type": "S1_OCN",
+                        "eodag_product_type": "S1_SAR_OCN",
                         "platformSerialIdentifier": "S1A",
                         "cloudCover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_"

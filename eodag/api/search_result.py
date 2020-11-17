@@ -15,14 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
+from collections import UserList
 
 from eodag.api.product import EOProduct
-
-try:  # PY3
-    from collections import UserList
-except ImportError:  # PY2
-    from UserList import UserList
 
 
 class SearchResult(UserList):

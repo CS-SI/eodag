@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import logging
@@ -63,7 +62,7 @@ class S3RestDownload(AwsDownload):
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :return: The absolute path to the downloaded product in the local filesystem
-        :rtype: str or unicode
+        :rtype: str
         """
         # get bucket urls
         bucket_name, prefix = self.get_bucket_name_and_prefix(product)

@@ -26,6 +26,9 @@ CBERS4_MUX_L2:
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 MUX Level-2
 
 CBERS4_AWFI_L2:
   abstract: |
@@ -36,6 +39,9 @@ CBERS4_AWFI_L2:
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 AWFI Level-2
 
 CBERS4_PAN5M_L2:
   abstract: |
@@ -46,6 +52,9 @@ CBERS4_PAN5M_L2:
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 PAN5M Level-2
 
 CBERS4_PAN10M_L2:
   abstract: |
@@ -56,6 +65,9 @@ CBERS4_PAN10M_L2:
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 PAN10M Level-2
 
 CBERS4_MUX_L4:
   abstract: |
@@ -66,99 +78,51 @@ CBERS4_MUX_L4:
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 MUX Level-4
 
 CBERS4_AWFI_L4:
   abstract: |
-    CBERS-4 MUX camera Level-4 product. Orthorectified with ground control
+    CBERS-4 AWFI camera Level-4 product. Orthorectified with ground control
     points.
   instrument: AWFI
   platform: China-Brazil Earth Resources Satellite
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 AWFI Level-4
 
 CBERS4_PAN5M_L4:
   abstract: |
-    CBERS-4 MUX camera Level-4 product. Orthorectified with ground control
+    CBERS-4 PAN5M camera Level-4 product. Orthorectified with ground control
     points.
   instrument: PAN5M
   platform: China-Brazil Earth Resources Satellite
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 PAN5M Level-4
 
 CBERS4_PAN10M_L4:
   abstract: |
-    CBERS-4 MUX camera Level-4 product. Orthorectified with ground control
+    CBERS-4 PAN10M camera Level-4 product. Orthorectified with ground control
     points.
   instrument: PAN10M
   platform: China-Brazil Earth Resources Satellite
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
   sensorType: OPTICAL
-
-# -----------------------------------------------------------------------------
-ES_FRS:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel:
-  sensorType:
+  license: proprietary
+  missionStartDate: "2014-12-07T00:00:00Z"
+  title: CBERS-4 PAN10M Level-4
 
 # Landasat --------------------------------------------------------------------
 # https://www.usgs.gov/faqs/what-naming-convention-landsat-collections-level-1-scenes
-L5_L1GT:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
-
-L5_L1G:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
-
-L5_L1T:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
-
-L7_L1GT:
-  abstract: |
-    Radiometrically calibrated and orthorectified using ground control points
-    and digital elevation model (DEM) data to correct for relief displacement.
-    Highest quality Level 1 products suitable for pixel-level time series analysis.
-  instrument:
-  platform:
-  platformSerialIdentifier: L7
-  processingLevel: L1
-  sensorType:
-
-L7_L1G:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
-
-L7_L1T:
-  abstract: ""
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L1
-  sensorType:
-
 L57_REFLECTANCE:
   abstract: |
     Landsat 5,7,8 L2A data (old format) distributed by Theia (2014 to 2017-03-20) using MUSCATE prototype,
@@ -168,6 +132,10 @@ L57_REFLECTANCE:
   platformSerialIdentifier: L5,L7,L8
   processingLevel: L2A
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2014-01-01T00:00:00Z"
+  missionEndDate: "2017-03-20T00:00:00Z"
+  title: Landsat 5,7,8 Level-2A
 
 L8_REFLECTANCE:
   abstract: |
@@ -178,6 +146,9 @@ L8_REFLECTANCE:
   platformSerialIdentifier: L8
   processingLevel: L2A
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2013-02-11T00:00:00Z"
+  title: Landsat 8 Level-2A
 
 L8_OLI_TIRS_C1L1:
   abstract: |
@@ -188,6 +159,9 @@ L8_OLI_TIRS_C1L1:
   platformSerialIdentifier: L8
   processingLevel: L1
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2013-02-11T00:00:00Z"
+  title: Landsat 8 Level-1
 
 # MODIS -----------------------------------------------------------------------
 MODIS_MCD43A4:
@@ -203,6 +177,9 @@ MODIS_MCD43A4:
   platformSerialIdentifier: EOS AM-1+PM-1
   processingLevel: L3
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2000-03-05T00:00:00Z"
+  title: MODIS MCD43A4
 
 # OSO -------------------------------------------------------------------------
 OSO:
@@ -215,6 +192,9 @@ OSO:
   platformSerialIdentifier:
   processingLevel: L3B
   sensorType:
+  license: proprietary
+  missionStartDate:
+  title: OSO Land Cover
 
 # NAIP -----------------------------------------------------------------------
 NAIP:
@@ -231,6 +211,9 @@ NAIP:
   platformSerialIdentifier: NAIP
   processingLevel: N/A
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2003-01-01T00:00:00Z"
+  title: National Agriculture Imagery Program
 
 # Pleiades - ------------------------------------------------------------------
 PLD_PAN:
@@ -240,6 +223,9 @@ PLD_PAN:
   platformSerialIdentifier: P1A,P1B
   processingLevel: PRIMARY
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2011-12-17T00:00:00Z"
+  title: Pleiades Panchromatic
 
 PLD_XS:
   abstract: Pleiades Multispectral (XS)
@@ -248,6 +234,9 @@ PLD_XS:
   platformSerialIdentifier: P1A,P1B
   processingLevel: PRIMARY
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2011-12-17T00:00:00Z"
+  title: Pleiades Multispectral
 
 PLD_BUNDLE:
   abstract: Pleiades Bundle (Pan, XS)
@@ -256,6 +245,9 @@ PLD_BUNDLE:
   platformSerialIdentifier: P1A,P1B
   processingLevel: PRIMARY
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2011-12-17T00:00:00Z"
+  title: Pleiades Bundle
 
 PLD_PANSHARPENED:
   abstract: Pleiades Pansharpened (Pan+XS)
@@ -264,6 +256,9 @@ PLD_PANSHARPENED:
   platformSerialIdentifier: P1A,P1B
   processingLevel: PRIMARY
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2011-12-17T00:00:00Z"
+  title: Pleiades Pansharpened
 
 # Sentinel 1 ------------------------------------------------------------------
 S1_SAR_OCN:
@@ -282,6 +277,9 @@ S1_SAR_OCN:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L2
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 Level-2 OCN
+  missionStartDate: "2014-04-03T00:00:00Z"
 
 S1_SAR_GRD:
   abstract: |
@@ -300,6 +298,9 @@ S1_SAR_GRD:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 Level-1 Ground Range Detected
+  missionStartDate: "2014-04-03T00:00:00Z"
 
 S1_SAR_SLC:
   abstract: |
@@ -312,6 +313,9 @@ S1_SAR_SLC:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 Level-1 Single Look Complex
+  missionStartDate: "2014-04-03T00:00:00Z"
 
 S1_SAR_RAW:
   abstract: |
@@ -323,6 +327,9 @@ S1_SAR_RAW:
   platformSerialIdentifier: S1A,S1B
   processingLevel: L0
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 SAR Level-0
+  missionStartDate: "2014-04-03T00:00:00Z"
 
 # Sentinel 2 ------------------------------------------------------------------
 S2_MSI_L1C:
@@ -339,6 +346,70 @@ S2_MSI_L1C:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L1
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2015-06-23T00:00:00Z"
+  title: SENTINEL2 Level-1C
+  bands:
+    - name: B01
+      common_name: coastal
+      center_wavelength: 0.4439
+      full_width_half_max: 0.027
+      gsd: 60
+    - name: B02
+      common_name: blue
+      center_wavelength: 0.4966
+      full_width_half_max: 0.098
+      gsd: 10
+    - name: B03
+      common_name: green
+      center_wavelength: 0.56
+      full_width_half_max: 0.045
+      gsd: 10
+    - name: B04
+      common_name: red
+      center_wavelength: 0.6645
+      full_width_half_max: 0.038
+      gsd: 10
+    - name: B05
+      center_wavelength: 0.7039
+      full_width_half_max: 0.019
+      gsd: 20
+    - name: B06
+      center_wavelength: 0.7402
+      full_width_half_max: 0.018
+      gsd: 20
+    - name: B07
+      center_wavelength: 0.7825
+      full_width_half_max: 0.028
+      gsd: 20
+    - name: B08
+      common_name: nir
+      center_wavelength: 0.8351
+      full_width_half_max: 0.145
+      gsd: 10
+    - name: B8A
+      center_wavelength: 0.8648
+      full_width_half_max: 0.033
+      gsd: 20
+    - name: B09
+      center_wavelength: 0.945
+      full_width_half_max: 0.026
+      gsd: 60
+    - name: B10
+      common_name: cirrus
+      center_wavelength: 0.13735
+      full_width_half_max: 0.075
+      gsd: 60
+    - name: B11
+      common_name: swir16
+      center_wavelength: 0.16137
+      full_width_half_max: 0.075
+      gsd: 20
+    - name: B12
+      common_name: swir22
+      center_wavelength: 0.22024
+      full_width_half_max: 0.242
+      gsd: 20
 
 S2_MSI_L2A:
   abstract: |
@@ -349,6 +420,9 @@ S2_MSI_L2A:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL2 Level-2A
+  missionStartDate: "2015-06-23T00:00:00Z"
 
 S2_MSI_L2A_MAJA:
   abstract: |
@@ -361,6 +435,9 @@ S2_MSI_L2A_MAJA:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL2 Level-2A
+  missionStartDate: "2015-06-23T00:00:00Z"
 
 S2_MSI_L2B_MAJA_SNOW:
   abstract: |
@@ -373,6 +450,9 @@ S2_MSI_L2B_MAJA_SNOW:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2015-06-23T00:00:00Z"
+  title: SENTINEL2 snow product
 
 S2_MSI_L2B_MAJA_WATER:
   abstract: |
@@ -383,6 +463,9 @@ S2_MSI_L2B_MAJA_WATER:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2015-06-23T00:00:00Z"
+  title: SENTINEL2 L2B-WATER
 
 S2_MSI_L3A_WASP:
   abstract: |
@@ -396,6 +479,9 @@ S2_MSI_L3A_WASP:
   platformSerialIdentifier: S2A,S2B
   processingLevel: L3
   sensorType: OPTICAL
+  license: proprietary
+  missionStartDate: "2015-06-23T00:00:00Z"
+  title: SENTINEL2 Level-3A
 
 # Sentinel 3 ------------------------------------------------------------------
 S3_SRA_BS:
@@ -405,6 +491,9 @@ S3_SRA_BS:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_SRA_A_BS:
   abstract: ""
@@ -413,6 +502,9 @@ S3_SRA_A_BS:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 # See examples of product type namings for sentinel 3 here:
 # https://www.onda-dias.eu/cms/data/catalogue/sentinel-3/
@@ -423,6 +515,9 @@ S3_EFR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 EFR
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_ERR:
   abstract: ""
@@ -431,6 +526,9 @@ S3_ERR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1,L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 ERR
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_SLSTR_L1RBT:
   abstract: |
@@ -445,6 +543,9 @@ S3_SLSTR_L1RBT:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-1
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_SRA:
   abstract: ""
@@ -453,6 +554,9 @@ S3_SRA:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_WAT:
   abstract: ""
@@ -461,6 +565,9 @@ S3_WAT:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 WAT
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_LAN:
   abstract: LAN or SR_2_LAN___ (peps)
@@ -469,6 +576,9 @@ S3_LAN:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 LAN
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_SLSTR_L2LST:
   abstract: |
@@ -480,6 +590,9 @@ S3_SLSTR_L2LST:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2 LST
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_OLCI_L2LRR:
   abstract: |
@@ -493,6 +606,9 @@ S3_OLCI_L2LRR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Land Reduced Resolution
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_OLCI_L2LFR:
   abstract: |
@@ -506,6 +622,9 @@ S3_OLCI_L2LFR:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Land Full Resolution
+  missionStartDate: "2016-02-16T00:00:00Z"
 
 # SPOT ------------------------------------------------------------------------
 SPOT_SWH:
@@ -518,6 +637,10 @@ SPOT_SWH:
   platformSerialIdentifier: SPOT1-5
   processingLevel: L1C
   sensorType: OPTICAL
+  license: proprietary
+  title: Spot World Heritage
+  missionStartDate: "1986-02-22T00:00:00Z"
+
 SPOT_SWH_OLD:
   abstract: |
     Spot world heritage Old format.
@@ -526,6 +649,10 @@ SPOT_SWH_OLD:
   platformSerialIdentifier: SPOT1-5
   processingLevel: L1C
   sensorType: OPTICAL
+  license: proprietary
+  title: Spot World Heritage
+  missionStartDate: "1986-02-22T00:00:00Z"
+
 SPOT5_SPIRIT:
   abstract: |
     SPOT 5 stereoscopic survey of Polar Ice.
@@ -534,6 +661,9 @@ SPOT5_SPIRIT:
   platformSerialIdentifier: SPOT5
   processingLevel: L1A
   sensorType: OPTICAL
+  license: proprietary
+  title: Spot 5 SPIRIT
+  missionStartDate: "2002-05-04T00:00:00Z"
 
 # VENUS ------------------------------------------------------------------------
 VENUS_L1C:
@@ -544,6 +674,9 @@ VENUS_L1C:
   platformSerialIdentifier: VENUS
   processingLevel: L1C
   sensorType: OPTICAL
+  license: proprietary
+  title: Venus Level1-C
+  missionStartDate: "2017-08-02T00:00:00Z"
 
 VENUS_L2A_MAJA:
   abstract: |
@@ -554,6 +687,9 @@ VENUS_L2A_MAJA:
   platformSerialIdentifier: VENUS
   processingLevel: L2A
   sensorType: OPTICAL
+  license: proprietary
+  title: Venus Level2-A
+  missionStartDate: "2017-08-02T00:00:00Z"
 
 VENUS_L3A_MAJA:
   abstract: ""
@@ -562,3 +698,6 @@ VENUS_L3A_MAJA:
   platformSerialIdentifier: VENUS
   processingLevel: L3A
   sensorType: OPTICAL
+  license: proprietary
+  title: Venus Level3-A
+  missionStartDate: "2017-08-02T00:00:00Z"

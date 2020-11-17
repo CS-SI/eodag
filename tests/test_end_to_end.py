@@ -15,22 +15,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import glob
 import multiprocessing
 import os
 import shutil
 import unittest
+from pathlib import Path
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import EODataAccessGateway
-
-try:  # py3
-    from pathlib import Path
-except ImportError:  # py2
-    from pathlib2 import Path
 
 
 class TestEODagEndToEnd(unittest.TestCase):
@@ -92,7 +87,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         except OSError:
             pass
 
-    def execute_search(self, provider, product_type, start, end, bbox, offline=False):
+    def execute_search(self, provider, product_type, start, end, geom, offline=False):
         """Search products on provider:
 
         - First set the preferred provider as the one given in parameter
@@ -103,12 +98,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         search_criteria = {
             "startTimeFromAscendingNode": start,
             "completionTimeFromAscendingNode": end,
-            "geometry": {
-                "lonmin": bbox[0],
-                "latmin": bbox[1],
-                "lonmax": bbox[2],
-                "latmax": bbox[3],
-            },
+            "geom": geom,
         }
         self.eodag.set_preferred_provider(provider)
         results, nb_results = self.eodag.search(
@@ -186,14 +176,14 @@ class TestEODagEndToEnd(unittest.TestCase):
         product = self.execute_search(
             "sobloo",
             "S2_MSI_L1C",
-            "2019-05-01",
-            "2019-06-01",
-            (
+            "2020-05-01",
+            "2020-06-01",
+            [
                 0.2563590566012408,
                 43.19555008715042,
                 2.379835675499976,
                 43.907759172380565,
-            ),
+            ],
         )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
@@ -219,7 +209,7 @@ class TestEODagEndToEnd(unittest.TestCase):
             "S2_MSI_L1C",
             "2020-08-08",
             "2020-08-16",
-            (137.772897, 13.134202, 153.749135, 23.885986),
+            [137.772897, 13.134202, 153.749135, 23.885986],
         )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)

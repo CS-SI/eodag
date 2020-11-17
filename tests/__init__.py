@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import os
 import random
@@ -23,17 +22,13 @@ import shutil
 import unittest
 from collections import OrderedDict, namedtuple
 from io import StringIO
+from unittest import mock  # PY3
 
 from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
-
-try:
-    from unittest import mock  # PY3
-except ImportError:
-    import mock  # PY2
 
 jp = os.path.join
 dirn = os.path.dirname

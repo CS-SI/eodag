@@ -15,11 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import unicode_literals
 
 import json
 import logging
 import re
+from urllib.error import HTTPError as urllib_HTTPError
+from urllib.request import urlopen
 
 import jsonpath_rw as jsonpath
 import requests
@@ -30,21 +31,15 @@ from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     format_metadata,
     get_metadata_path,
+    get_metadata_path_value,
     get_search_param,
     properties_from_json,
     properties_from_xml,
 )
+from eodag.config import load_stac_provider_config
 from eodag.plugins.search.base import Search
 from eodag.utils import dict_items_recursive_apply, quote, update_nested_dict, urlencode
 from eodag.utils.exceptions import RequestError
-
-try:  # py3
-    from urllib.error import HTTPError as urllib_HTTPError
-    from urllib.request import urlopen
-except ImportError:  # py2
-    from urllib2 import HTTPError as urllib_HTTPError
-    from urllib2 import urlopen
-
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -678,28 +673,33 @@ class PostJsonSearch(QueryStringSearch):
         """
         self.config.metadata_mapping.update(metadata_mapping)
         for metadata in metadata_mapping:
-            conversion, path = get_metadata_path(self.config.metadata_mapping[metadata])
-            try:
-                # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
-                if len(self.config.metadata_mapping[metadata]) == 2:
-                    self.config.metadata_mapping[metadata][1] = (
-                        conversion,
-                        jsonpath.parse(path),
-                    )
-                else:
-                    self.config.metadata_mapping[metadata] = (
-                        conversion,
-                        jsonpath.parse(path),
-                    )
-            except Exception:  # jsonpath_rw does not provide a proper exception
-                # Assume the mapping is to be passed as is.
-                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                # it further
-                _, text = get_metadata_path(self.config.metadata_mapping[metadata])
-                if len(self.config.metadata_mapping[metadata]) == 2:
-                    self.config.metadata_mapping[metadata][1] = (None, text)
-                else:
-                    self.config.metadata_mapping[metadata] = (None, text)
+            path = get_metadata_path_value(self.config.metadata_mapping[metadata])
+            # check if path has already been parsed
+            if isinstance(path, str):
+                conversion, path = get_metadata_path(
+                    self.config.metadata_mapping[metadata]
+                )
+                try:
+                    # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
+                    if len(self.config.metadata_mapping[metadata]) == 2:
+                        self.config.metadata_mapping[metadata][1] = (
+                            conversion,
+                            jsonpath.parse(path),
+                        )
+                    else:
+                        self.config.metadata_mapping[metadata] = (
+                            conversion,
+                            jsonpath.parse(path),
+                        )
+                except Exception:  # jsonpath_rw does not provide a proper exception
+                    # Assume the mapping is to be passed as is.
+                    # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
+                    # it further
+                    _, text = get_metadata_path(self.config.metadata_mapping[metadata])
+                    if len(self.config.metadata_mapping[metadata]) == 2:
+                        self.config.metadata_mapping[metadata][1] = (None, text)
+                    else:
+                        self.config.metadata_mapping[metadata] = (None, text)
 
     def query(self, items_per_page=None, page=None, *args, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
@@ -869,3 +869,49 @@ class PostJsonSearch(QueryStringSearch):
                 )
             raise RequestError(str(err))
         return response
+
+
+class StacSearch(QueryStringSearch):
+    """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
+
+    def __init__(self, provider, config):
+        stac_provider_config = load_stac_provider_config()
+        config.__dict__.setdefault(
+            "pagination", stac_provider_config.get("search", {}).get("pagination", {})
+        )
+        config.__dict__.setdefault(
+            "discover_metadata",
+            stac_provider_config.get("search", {}).get("discover_metadata", {}),
+        )
+        config.__dict__.setdefault(
+            "metadata_mapping",
+            stac_provider_config.get("search", {}).get("metadata_mapping", {}),
+        )
+
+        super(QueryStringSearch, self).__init__(provider, config)
+        self.config.__dict__.setdefault("result_type", "json")
+        self.config.__dict__.setdefault("results_entry", "features")
+        self.config.__dict__.setdefault("free_text_search_operations", {})
+        self.search_urls = []
+        self.query_params = dict()
+        self.query_string = ""
+
+        # TODO: fetch /collections to add dynamically product types
+        # response = self._request(
+        #     config.api_endpoint.replace("/search", "/collections"),
+        # )
+        # collections = [c["id"] for c in response.json().get("collections", {}) if "id" in c.keys()]
+        # for c in collections:
+        #     if c not in str(self.config.products):
+        #         self.config.products[c] = {"product_type": c}
+
+    def normalize_results(self, results, *args, **kwargs):
+        """Build EOProducts from provider results"""
+
+        products = super(StacSearch, self).normalize_results(results, *args, **kwargs)
+
+        # move assets from properties to product's attr
+        for product in products:
+            product.assets = product.properties.pop("assets", [])
+
+        return products
