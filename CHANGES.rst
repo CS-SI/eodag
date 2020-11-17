@@ -1,6 +1,15 @@
 Release history
 ---------------
 
+2.0b1 (2020-11-17)
+++++++++++++++++++
+
+- STAC API compliant REST server
+- Common configuration for STAC providers
+- astraea_eod as new STAC provider
+- Search by geometry / bbox / location name, fixes `#49 <https://github.com/CS-SI/eodag/issues/49>`_
+- removed Python 2.7 support
+
 1.6.0 (2020-08-24)
 ++++++++++++++++++
 

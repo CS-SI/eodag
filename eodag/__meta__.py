@@ -17,7 +17,7 @@
 # limitations under the License.
 __title__ = "eodag"
 __description__ = "Earth Observation Data Access Gateway"
-__version__ = "1.6.0"
+__version__ = "2.0b1"
 __author__ = "CS GROUP - France (CSSI)"
 __author_email__ = "admin@geostorm.eu"
 __url__ = "https://github.com/CS-SI/eodag"
