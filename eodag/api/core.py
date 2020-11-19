@@ -100,8 +100,26 @@ class EODataAccessGateway(object):
         if locations_conf_path is None:
             locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
             if locations_conf_path is None:
-                # empty string will set empty conf without error
-                locations_conf_path = ""
+                locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
+                if not os.path.isfile(locations_conf_path):
+                    # copy locations conf file and replace path example
+                    locations_conf_template = resource_filename(
+                        "eodag",
+                        os.path.join("resources", "locations_conf_template.yml"),
+                    )
+                    with open(locations_conf_template) as infile, open(
+                        locations_conf_path, "w"
+                    ) as outfile:
+                        for line in infile:
+                            line = line.replace(
+                                "/path/to/locations", os.path.join(self.conf_dir, "shp")
+                            )
+                            outfile.write(line)
+                    # copy sample shapefile dir
+                    shutil.copytree(
+                        resource_filename("eodag", os.path.join("resources", "shp")),
+                        os.path.join(self.conf_dir, "shp"),
+                    )
         self.set_locations_conf(locations_conf_path)
 
     def build_index(self):
