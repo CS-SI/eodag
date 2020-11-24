@@ -158,6 +158,73 @@ class TestEodagCli(unittest.TestCase):
                 id=None,
             )
 
+    def test_eodag_search_geom_wkt_invalid(self):
+        """Calling eodag search with -g | --geom set with invalit WKT geometry string"""  # noqa
+        with self.user_conf() as conf_file:
+            result = self.runner.invoke(
+                eodag,
+                ["search", "--conf", conf_file, "-p", "whatever", "-g", "not a wkt"],
+            )
+            self.assertIn("WKTReadingError", str(result))
+            self.assertNotEqual(result.exit_code, 0)
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_geom_wkt_valid(self, dag):
+        """Calling eodag search with --geom WKT argument valid"""
+        with self.user_conf() as conf_file:
+            product_type = "whatever"
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    product_type,
+                    "-g",
+                    "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+                ],
+            )
+            api_obj = dag.return_value
+            api_obj.search.assert_called_once_with(
+                items_per_page=20,
+                page=1,
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None,
+                cloudCover=None,
+                geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                productType=product_type,
+                id=None,
+            )
+
+    def test_eodag_search_bbox_geom_mutually_exclusive(self):
+        """Calling eodag search with both --geom and --box"""  # noqa
+        with self.user_conf() as conf_file:
+            result = self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    "whatever",
+                    "-b",
+                    1,
+                    2,
+                    3,
+                    4,
+                    "-g",
+                    "a wkt",
+                ],
+            )
+            self.assertIn("Illegal usage", result.output)
+            self.assertNotEqual(result.exit_code, 0)
+
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_storage_arg(self, dag):
         """Calling eodag search with specified result filename without .geojson extension"""  # noqa
@@ -211,7 +278,9 @@ class TestEodagCli(unittest.TestCase):
             crunch_results = api_obj.crunch.return_value
 
             # Assertions
-            dag.assert_called_once_with(user_conf_file_path=conf_file)
+            dag.assert_called_once_with(
+                user_conf_file_path=conf_file, locations_conf_path=None
+            )
             api_obj.search.assert_called_once_with(
                 items_per_page=20, page=1, **criteria
             )

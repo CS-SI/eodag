@@ -98,6 +98,7 @@ docs/tutorials/eodag_workspace/search_results.geojson
 docs/tutorials/eodag_workspace/.downloaded
 examples/eodag_workspace
 tests/resources/user_conf.yml
+search_results.geojson
 
 # IDE
 # Pycharm

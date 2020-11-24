@@ -56,6 +56,33 @@ from eodag.utils.logging import setup_logging
 CRUNCHERS = ["FilterLatestByName", "FilterLatestIntersect", "FilterOverlap"]
 
 
+class MutuallyExclusiveOption(click.Option):
+    """Mutually Exclusive Options for Click
+    from https://gist.github.com/jacobtolar/fb80d5552a9a9dfc32b12a829fa21c0c
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
+        help = kwargs.get("help", "")
+        if self.mutually_exclusive:
+            ex_str = ", ".join(self.mutually_exclusive)
+            kwargs["help"] = help + (
+                " NOTE: This argument is mutually exclusive with "
+                " arguments: [" + ex_str + "]."
+            )
+        super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
+
+    def handle_parse_result(self, ctx, opts, args):
+        """Raise error or use parent handle_parse_result()"""
+        if self.mutually_exclusive.intersection(opts) and self.name in opts:
+            raise click.UsageError(
+                "Illegal usage: `{}` is mutually exclusive with "
+                "arguments `{}`.".format(self.name, ", ".join(self.mutually_exclusive))
+            )
+
+        return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
+
+
 @click.group()
 @click.option(
     "-v",
@@ -98,19 +125,27 @@ def version():
 )
 @click.option(
     "-l",
-    "--loc",
-    type=click.Path(exists=True, resolve_path=True),
-    required=False,
-    help="File path to a location shapefile, followed by the location attribute "
-    "used for filtering, and its value (e.g.: --loc /path/to/countries.shp ISO2 FR)",
+    "--locs",
+    help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml,"
+    " and may be used with custom query-string argument (e.g.: -q country=FR)",
+    type=click.Path(exists=True),
 )
 @click.option(
     "-b",
     "--box",
     type=(float,) * 4,
     default=(None,) * 4,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["geom"],
     help="Search for a product on a bounding box, providing its minlon, minlat, "
-    "maxlon and maxlat (in this order)",
+    "maxlon and maxlat (in this order).",
+)
+@click.option(
+    "-g",
+    "--geom",
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["bbox"],
+    help="Search for a product on a geometry, providing its WKT representation.",
 )
 @click.option(
     "-s",
@@ -184,9 +219,10 @@ def version():
     help="Retrieve the given page",
 )
 @click.option(
-    "--custom",
+    "-q",
+    "--query",
     type=str,
-    help="Custom fields for query string. Format :'key1=value1&key2=value2'",
+    help="Custom query-string argument(s). Format :'key1=value1&key2=value2'",
 )
 @click.pass_context
 def search_crunch(ctx, **kwargs):
@@ -199,7 +235,7 @@ def search_crunch(ctx, **kwargs):
     processing_level = kwargs.pop("processinglevel")
     sensor_type = kwargs.pop("sensortype")
     id_ = kwargs.pop("id")
-    custom = kwargs.pop("custom")
+    custom = kwargs.pop("query")
     if not any(
         [
             product_type,
@@ -218,6 +254,7 @@ def search_crunch(ctx, **kwargs):
 
     kwargs["verbose"] = ctx.obj["verbosity"]
     setup_logging(**kwargs)
+
     if kwargs["box"] != (None,) * 4:
         rect = kwargs.pop("box")
         footprint = {
@@ -227,7 +264,8 @@ def search_crunch(ctx, **kwargs):
             "latmax": rect[3],
         }
     else:
-        footprint = None
+        footprint = kwargs.pop("geom")
+
     start_date = kwargs.pop("start")
     stop_date = kwargs.pop("end")
     criteria = {
@@ -257,6 +295,9 @@ def search_crunch(ctx, **kwargs):
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
+    locs_file = kwargs.pop("locs")
+    if locs_file:
+        locs_file = click.format_filename(locs_file)
 
     # Process inputs for crunch
     cruncher_names = set(kwargs.pop("cruncher") or [])
@@ -269,7 +310,9 @@ def search_crunch(ctx, **kwargs):
     items_per_page = kwargs.pop("items")
     page = kwargs.pop("page") or 1
 
-    gateway = EODataAccessGateway(user_conf_file_path=conf_file)
+    gateway = EODataAccessGateway(
+        user_conf_file_path=conf_file, locations_conf_path=locs_file
+    )
 
     # Search
     results, total = gateway.search(
