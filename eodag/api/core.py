@@ -781,6 +781,26 @@ class EODataAccessGateway(object):
         with open(filename, "r") as fh:
             return SearchResult.from_geojson(geojson.load(fh))
 
+    def deserialize_and_register(self, filename):
+        """Loads results of a search from a geojson file and register
+        products with the information needed to download itself
+
+        :param filename: A filename containing a search result encoded as a geojson
+        :type filename: str
+        :returns: The search results encoded in `filename`
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
+        products = self.deserialize(filename)
+        for i, product in enumerate(products):
+            if product.downloader is None:
+                auth = product.downloader_auth
+                if auth is None:
+                    auth = self._plugins_manager.get_auth_plugin(product.provider)
+                products[i].register_downloader(
+                    self._plugins_manager.get_download_plugin(product), auth
+                )
+        return products
+
     def download(
         self,
         product,
