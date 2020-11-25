@@ -38,7 +38,7 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import get_geometry_from_various, makedirs
+from eodag.utils import MockResponse, get_geometry_from_various, makedirs
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
@@ -799,6 +799,51 @@ class EODataAccessGateway(object):
                 products[i].register_downloader(
                     self._plugins_manager.get_download_plugin(product), auth
                 )
+        return products
+
+    def load_features(self, filename, provider=None, productType=None, **kwargs):
+        """Loads features from a geojson file and convert to SearchResult.
+
+        Features are parsed using eodag provider configuration, as if they were
+        the response content to an API request.
+
+        :param filename: A filename containing features encoded as a geojson
+        :type filename: str
+        :param provider: data provider
+        :type provider: str
+        :param productType: data product type
+        :type productType: str
+        :param dict kwargs: parameters that will be stored in the result as
+                            search criteria
+        :returns: The search results encoded in `filename`
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
+        product_type = productType
+
+        with open(filename, "r") as fh:
+            features = geojson.load(fh)
+
+        plugin = next(
+            self._plugins_manager.get_search_plugins(
+                product_type=product_type, provider=provider
+            )
+        )
+        # save plugin._request and mock it to make return loaded static results
+        plugin_request = plugin._request
+        plugin._request = lambda url, info_message=None, exception_message=None: MockResponse(
+            features, 200
+        )
+
+        # save preferred_provider and use provided one instead
+        preferred_provider, _ = self.get_preferred_provider()
+        self.set_preferred_provider(provider)
+        products, _ = self.search(productType=product_type, **kwargs)
+        # restore preferred_provider
+        self.set_preferred_provider(preferred_provider)
+
+        # restore plugin._request
+        plugin._request = plugin_request
+
         return products
 
     def download(

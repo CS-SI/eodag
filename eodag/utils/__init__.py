@@ -558,3 +558,16 @@ def get_geometry_from_various(locations_config=[], **query_args):
                             geom = new_geom.intersection(geom)
 
     return geom
+
+
+class MockResponse(object):
+    """Fake requests response"""
+
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
+        self.content = json_data
+
+    def json(self):
+        """Return json data"""
+        return self.json_data
