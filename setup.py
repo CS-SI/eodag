@@ -59,6 +59,7 @@ setup(
         "rasterio",
         "protobuf",
         "grpcio",
+        "pyjq",
         "flasgger",
         "jsonpath-rw",
         "lxml",

@@ -38,7 +38,12 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import MockResponse, get_geometry_from_various, makedirs
+from eodag.utils import (
+    MockResponse,
+    fetch_stac_items,
+    get_geometry_from_various,
+    makedirs,
+)
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
@@ -801,14 +806,26 @@ class EODataAccessGateway(object):
                 )
         return products
 
-    def load_features(self, filename, provider=None, productType=None, **kwargs):
-        """Loads features from a geojson file and convert to SearchResult.
+    def load_stac_items(
+        self,
+        filename,
+        recursive=False,
+        max_connections=100,
+        provider=None,
+        productType=None,
+        **kwargs
+    ):
+        """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
 
         Features are parsed using eodag provider configuration, as if they were
         the response content to an API request.
 
         :param filename: A filename containing features encoded as a geojson
         :type filename: str
+        :param recursive: Brownse recursively in child nodes if True
+        :type recursive: bool
+        :param max_connections: max connections for http requests
+        :type max_connections: int
         :param provider: data provider
         :type provider: str
         :param productType: data product type
@@ -818,26 +835,32 @@ class EODataAccessGateway(object):
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
-        product_type = productType
-
-        with open(filename, "r") as fh:
-            features = geojson.load(fh)
+        features = fetch_stac_items(
+            filename, recursive=recursive, max_connections=max_connections
+        )
+        nb_features = len(features)
+        feature_collection = geojson.FeatureCollection(features)
+        feature_collection["context"] = {
+            "limit": nb_features,
+            "matched": nb_features,
+            "returned": nb_features,
+        }
 
         plugin = next(
             self._plugins_manager.get_search_plugins(
-                product_type=product_type, provider=provider
+                product_type=productType, provider=provider
             )
         )
         # save plugin._request and mock it to make return loaded static results
         plugin_request = plugin._request
         plugin._request = lambda url, info_message=None, exception_message=None: MockResponse(
-            features, 200
+            feature_collection, 200
         )
 
         # save preferred_provider and use provided one instead
         preferred_provider, _ = self.get_preferred_provider()
         self.set_preferred_provider(provider)
-        products, _ = self.search(productType=product_type, **kwargs)
+        products, _ = self.search(productType=productType, **kwargs)
         # restore preferred_provider
         self.set_preferred_provider(preferred_provider)
 
