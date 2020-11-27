@@ -518,6 +518,10 @@ class EODataAccessGateway(object):
             kwargs["geometry"] = geom
 
         kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
+        # remove locations_args from kwargs now that they have been used
+        locations_dict = {loc["name"]: loc for loc in self.locations_config}
+        for arg in locations_dict.keys():
+            kwargs.pop(arg, None)
 
         plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
