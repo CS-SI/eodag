@@ -29,6 +29,7 @@ from shapely.geometry import shape
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
     dict_items_recursive_apply,
     format_dict_items,
     jsonpath_parse_dict_items,
@@ -489,7 +490,7 @@ class StacCollection(StacCommon):
             ]
         else:
             product_types = self.eodag_api.list_product_types(provider=self.provider)
-        return product_types
+        return [pt for pt in product_types if pt["ID"] != GENERIC_PRODUCT_TYPE]
 
     def __get_collection_list(self, filters=None):
         """Build STAC collections list
@@ -1079,9 +1080,11 @@ class StacCatalog(StacCommon):
             )
 
             # build children : product_types
-            product_types_list = self.eodag_api.list_product_types(
-                provider=self.provider
-            )
+            product_types_list = [
+                pt
+                for pt in self.eodag_api.list_product_types(provider=self.provider)
+                if pt["ID"] != GENERIC_PRODUCT_TYPE
+            ]
             self.set_children(
                 [
                     {

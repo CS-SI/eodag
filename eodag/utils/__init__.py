@@ -59,6 +59,8 @@ from urllib.parse import (  # noqa; noqa
 
 logger = logging.getLogger("eodag.utils")
 
+GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+
 
 if sys.version_info.minor < 5:
     # Explicitly redefining urlencode the way it is defined in Python 3.5

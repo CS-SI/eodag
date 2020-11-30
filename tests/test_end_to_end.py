@@ -28,6 +28,7 @@ from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import EODataAccessGateway
 
 
+# @unittest.skip("skip auto run")
 class TestEODagEndToEnd(unittest.TestCase):
     """Make real case tests. This assume the existence of a user conf file in resources folder named user_conf.yml"""  # noqa
 

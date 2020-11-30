@@ -21,7 +21,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
-from eodag.utils import dict_items_recursive_apply
+from eodag.utils import GENERIC_PRODUCT_TYPE, dict_items_recursive_apply
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -58,7 +58,11 @@ def get_detailled_collections_list(provider=None):
     :returns: list of config dicts
     :rtype: list
     """
-    return eodag_api.list_product_types(provider=provider)
+    return [
+        pt
+        for pt in eodag_api.list_product_types(provider=provider)
+        if pt["ID"] != GENERIC_PRODUCT_TYPE
+    ]
 
 
 def get_home_page_content(base_url, ipp=None):

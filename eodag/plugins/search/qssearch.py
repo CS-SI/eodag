@@ -38,7 +38,14 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.config import load_stac_provider_config
 from eodag.plugins.search.base import Search
-from eodag.utils import dict_items_recursive_apply, quote, update_nested_dict, urlencode
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    dict_items_recursive_apply,
+    format_dict_items,
+    quote,
+    update_nested_dict,
+    urlencode,
+)
 from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
@@ -149,17 +156,26 @@ class QueryStringSearch(Search):
     def query(self, items_per_page=None, page=None, *args, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
+        if product_type == GENERIC_PRODUCT_TYPE:
+            logger.warning(
+                "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
+            )
+            return [], 0
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
-        keywords["productType"] = provider_product_type
+        keywords["productType"] = (
+            provider_product_type
+            if (provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE)
+            else product_type
+        )
         # Add to the query, the queryable parameters set in the provider product type definition
-        product_type_def_params = self.get_product_type_def_params(
+        self.product_type_def_params = self.get_product_type_def_params(
             product_type, *args, **kwargs
         )
         keywords.update(
             {
                 k: v
-                for k, v in product_type_def_params.items()
+                for k, v in self.product_type_def_params.items()
                 if k not in keywords.keys()
                 and k in self.config.metadata_mapping.keys()
                 and isinstance(self.config.metadata_mapping[k], list)
@@ -167,11 +183,7 @@ class QueryStringSearch(Search):
         )
 
         qp, qs = self.build_query_string(product_type, *args, **keywords)
-        # If we were not able to build query params but have search criteria, this means
-        # the provider does not support the search criteria given. If so, stop searching
-        # right away
-        if not qp and keywords:
-            return [], 0
+
         self.query_params = qp
         self.query_string = qs
         self.search_urls, total_items = self.collect_search_urls(
@@ -339,6 +351,9 @@ class QueryStringSearch(Search):
         urls = []
         total_results = 0
         for collection in self.get_collections(*args, **kwargs):
+            # skip empty collection if one is required in api_endpoint
+            if "{collection}" in self.config.api_endpoint and not collection:
+                continue
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 collection=collection
             )
@@ -484,13 +499,20 @@ class QueryStringSearch(Search):
         # /asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         product_type = kwargs.get("productType")
-        if product_type is None:
+        if product_type is None and not self.product_type_def_params:
             collections = set()
             collection = getattr(self.config, "collection", None)
             if collection is None:
                 try:
                     for product_type, product_config in self.config.products.items():
-                        collections.add(product_config["collection"])
+                        if product_type != GENERIC_PRODUCT_TYPE:
+                            collections.add(product_config["collection"])
+                        else:
+                            collections.add(
+                                format_dict_items(product_config, **kwargs).get(
+                                    "collection", ""
+                                )
+                            )
                 except KeyError:
                     collections.add("")
             else:
@@ -517,13 +539,13 @@ class QueryStringSearch(Search):
                     else:
                         collections = ("S2", "S2ST")
             else:
-                collections = (
-                    self.config.products[product_type].get("collection", ""),
-                )
+                collections = (self.product_type_def_params.get("collection", ""),)
         else:
             collection = getattr(self.config, "collection", None)
             if collection is None:
-                collection = self.config.products[product_type].get("collection", "")
+                collection = (
+                    self.product_type_def_params.get("collection", None) or product_type
+                )
             collections = (
                 (collection,) if not isinstance(collection, list) else tuple(collection)
             )
@@ -534,14 +556,33 @@ class QueryStringSearch(Search):
         if product_type is None:
             return
         logger.debug("Mapping eodag product type to provider product type")
-        return self.config.products[product_type].get("product_type", None)
+        return self.config.products.get(product_type, {}).get(
+            "product_type", GENERIC_PRODUCT_TYPE
+        )
 
     def get_product_type_def_params(self, product_type, *args, **kwargs):
         """Get the provider product type definition parameters"""
-        if product_type is None:
-            return
-        logger.debug("Getting provider product type definition parameters")
-        return self.config.products[product_type]
+        if product_type in self.config.products.keys():
+            logger.debug(
+                "Getting provider product type definition parameters for %s",
+                product_type,
+            )
+            return self.config.products[product_type]
+        elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
+            logger.debug(
+                "Getting genric provider product type definition parameters for %s",
+                product_type,
+            )
+            return {
+                k: v
+                for k, v in format_dict_items(
+                    self.config.products[GENERIC_PRODUCT_TYPE], **kwargs
+                ).items()
+                if v
+            }
+
+        else:
+            return {}
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
@@ -707,17 +748,19 @@ class PostJsonSearch(QueryStringSearch):
         provider_product_type = self.map_product_type(product_type, *args, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = (
-            provider_product_type if provider_product_type else product_type
+            provider_product_type
+            if (provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE)
+            else product_type
         )
 
         # provider product type specific conf
-        product_type_def_params = self.get_product_type_def_params(
+        self.product_type_def_params = self.get_product_type_def_params(
             product_type, *args, **kwargs
         )
 
         # update config using provider product type definition metadata_mapping
         # from another product
-        other_product_for_mapping = product_type_def_params.get(
+        other_product_for_mapping = self.product_type_def_params.get(
             "metadata_mapping_from_product", ""
         )
         if other_product_for_mapping:
@@ -729,14 +772,14 @@ class PostJsonSearch(QueryStringSearch):
             )
         # from current product
         self.update_metadata_mapping(
-            product_type_def_params.get("metadata_mapping", {})
+            self.product_type_def_params.get("metadata_mapping", {})
         )
 
         # Add to the query, the queryable parameters set in the provider product type definition
         keywords.update(
             {
                 k: v
-                for k, v in product_type_def_params.items()
+                for k, v in self.product_type_def_params.items()
                 if k not in keywords.keys()
                 and k in self.config.metadata_mapping.keys()
                 and isinstance(self.config.metadata_mapping[k], list)

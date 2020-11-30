@@ -507,7 +507,7 @@
       total_items_nb_key_path: '$.properties.totalResults'
     discover_metadata:
       auto_discovery: true
-      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
     metadata_mapping:
@@ -642,6 +642,10 @@
       product_type: Pansharpened (Pan+XS)
     OSO:
       collection: OSO
+    GENERIC_PRODUCT_TYPE:
+      product_type: '{productType}'
+      collection: '{collection}'
+      processingLevel: '{processingLevel}'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
@@ -672,7 +676,7 @@
       total_items_nb_key_path: '$.properties.totalResults'
     discover_metadata:
       auto_discovery: true
-      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
     metadata_mapping:
@@ -805,6 +809,9 @@
     S3_LAN:
       product_type: SR_2_LAN___
       collection: S3
+    GENERIC_PRODUCT_TYPE:
+      product_type: '{productType}'
+      collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://peps.cnes.fr/resto'
@@ -839,6 +846,8 @@
       product_type: SLC
     S1_SAR_OCN:
       product_type: OCN
+    GENERIC_PRODUCT_TYPE:
+      product_type: '{productType}'
     # S3_LAN:
     #   product_type: SR_2_LAN___
     # S3_SRA:
@@ -943,7 +952,7 @@
       total_items_nb_key_path: '$.properties.totalResults'
     discover_metadata:
       auto_discovery: true
-      metadata_pattern: '^[a-zA-Z0-9]+$'
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
     metadata_mapping:
@@ -1071,7 +1080,9 @@
     S3_SLSTR_L1RBT:
       product_type: RBT
       collection: Sentinel3
-
+    GENERIC_PRODUCT_TYPE:
+      product_type: '{productType}'
+      collection: '{collection}'
 ---
 !provider
   name: mundi
@@ -1093,7 +1104,7 @@
       total_items_nb_key_path: '//os:totalResults/text()'
     discover_metadata:
       auto_discovery: true
-      metadata_pattern: '^[a-zA-Z0-9]+$'
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '*'
     metadata_mapping:
@@ -1233,11 +1244,18 @@
       product_type: OL_2_LFR___
       instrument: OLCI
       collection: Sentinel3
-
+    GENERIC_PRODUCT_TYPE:
+      product_type: '{productType}'
+      collection: '{collection}'
+      instrument: '{instrument}'
+      processingLevel: '{processingLevel}'
 ---
 !provider
   name: wekeo
   priority: 0
+  roles:
+    - host
+  url: https://www.wekeo.eu
   description: Wekeo
   search: !plugin
     type: CSWSearch
@@ -1285,7 +1303,6 @@
       product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LFR___"
     S3_SLSTR_L1RBT:
       product_type: "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"
-
 ---
 !provider
   name: onda
@@ -1413,6 +1430,9 @@
       product_type: SR_2_WAT___
     L8_OLI_TIRS_C1L1:
       platform: 'Landsat-*'
+    GENERIC_PRODUCT_TYPE:
+      product_type: '{productType}'
+      platform: '{platform}'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
@@ -1429,6 +1449,9 @@
 !provider
   name: astraea_eod
   priority: 0
+  roles:
+    - host
+  description: Astraea Earth OnDemand
   url: https://earthondemand.astraea.earth
   search: !plugin
     type: StacSearch
@@ -1444,6 +1467,8 @@
       product_type: mcd43a4
     NAIP:
       product_type: naip
+    GENERIC_PRODUCT_TYPE:
+      product_type: '{productType}'
   download: !plugin
     type: AwsDownload
     base_uri: https://eod-catalog-svc-prod.astraea.earth

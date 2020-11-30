@@ -38,7 +38,12 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import MockResponse, get_geometry_from_various, makedirs
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    MockResponse,
+    get_geometry_from_various,
+    makedirs,
+)
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
@@ -496,14 +501,12 @@ class EODataAccessGateway(object):
             except NoMatchingProductType:
                 queried_id = kwargs.get("id", None)
                 if queried_id is None:
-                    logger.error("Unable to satisfy search query: %s", kwargs)
-                    logger.error(
+                    logger.info(
                         "No product type could be guessed with provided arguments"
                     )
                 else:
                     provider = kwargs.get("provider", None)
                     return self._search_by_id(kwargs["id"], provider=provider)
-                return SearchResult([]), 0
 
         kwargs["productType"] = product_type
         if start is not None:
@@ -526,14 +529,24 @@ class EODataAccessGateway(object):
             "Searching product type '%s' on provider: %s", product_type, plugin.provider
         )
         # add product_types_config to plugin config
-        plugin.config.product_type_config = dict(
-            [
-                p
-                for p in self.list_product_types(plugin.provider)
-                if p["ID"] == product_type
-            ][0],
-            **{"productType": product_type}
-        )
+        try:
+            plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(plugin.provider)
+                    if p["ID"] == product_type
+                ][0],
+                **{"productType": product_type}
+            )
+        except IndexError:
+            plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(plugin.provider)
+                    if p["ID"] == GENERIC_PRODUCT_TYPE
+                ][0],
+                **{"productType": product_type}
+            )
         plugin.config.product_type_config.pop("ID", None)
 
         logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)

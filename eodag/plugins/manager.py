@@ -26,7 +26,8 @@ from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils.exceptions import UnsupportedProductType, UnsupportedProvider
+from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils.exceptions import UnsupportedProvider
 
 logger = logging.getLogger("eodag.plugins.manager")
 
@@ -144,7 +145,13 @@ class PluginManager(object):
             for config in self.product_type_to_provider_config_map[product_type]:
                 yield get_plugin()
         except KeyError:
-            raise UnsupportedProductType(product_type)
+            logger.info(
+                "UnsupportedProductType: %s, using generic settings", product_type
+            )
+            for config in self.product_type_to_provider_config_map[
+                GENERIC_PRODUCT_TYPE
+            ]:
+                yield get_plugin()
 
     def get_download_plugin(self, product):
         """Build and return the download plugin capable of downloading the given

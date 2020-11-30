@@ -25,6 +25,7 @@ import click
 from click.testing import CliRunner
 from faker import Faker
 
+from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import download, eodag, search_crunch
 from tests.units.test_core import TestCore
@@ -320,7 +321,7 @@ class TestEodagCli(unittest.TestCase):
         all_supported_product_types = [
             pt
             for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items()
-            if len(provs) != 0
+            if len(provs) != 0 and pt != GENERIC_PRODUCT_TYPE
         ]
         result = self.runner.invoke(eodag, ["list"])
         self.assertEqual(result.exit_code, 0)
@@ -334,6 +335,7 @@ class TestEodagCli(unittest.TestCase):
             pt
             for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items()
             if provider in provs
+            if pt != GENERIC_PRODUCT_TYPE
         ]
         result = self.runner.invoke(eodag, ["list", "-p", provider])
         self.assertEqual(result.exit_code, 0)
