@@ -28,7 +28,7 @@ from dateutil.relativedelta import relativedelta
 from shapely.geometry import shape
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
-from eodag.config import (
+from eodag.utils import (
     dict_items_recursive_apply,
     format_dict_items,
     jsonpath_parse_dict_items,

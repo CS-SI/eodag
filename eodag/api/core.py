@@ -38,17 +38,13 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import (
-    MockResponse,
-    fetch_stac_items,
-    get_geometry_from_various,
-    makedirs,
-)
+from eodag.utils import MockResponse, get_geometry_from_various, makedirs
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
     UnsupportedProvider,
 )
+from eodag.utils.stac_reader import fetch_stac_items
 
 logger = logging.getLogger("eodag.core")
 
