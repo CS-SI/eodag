@@ -102,7 +102,7 @@ class TestEodagCli(unittest.TestCase):
             eodag, ["search", "--conf", conf_file, "-p", "whatever"]
         )
         self.assertIn(
-            'Error: Invalid value for "-f" / "--conf": Path "{}" does not exist.'.format(  # noqa
+            "Error: Invalid value for '-f' / '--conf': Path '{}' does not exist.".format(  # noqa
                 conf_file
             ),
             result.output,
@@ -118,7 +118,7 @@ class TestEodagCli(unittest.TestCase):
                     ["search", "--conf", conf_file, "-p", "whatever", "-c", max_cloud],
                 )
                 self.assertIn(
-                    'Error: Invalid value for "-c" / "--cloudCover": {} is not in the'
+                    "Error: Invalid value for '-c' / '--cloudCover': {} is not in the"
                     " valid range of 0 to 100.".format(max_cloud),
                     result.output,
                 )
