@@ -170,6 +170,11 @@ class EODataAccessGateway(object):
                 shutil.rmtree(index_dir)
                 create_index = True
             else:
+                logger.error(
+                    "Error while building index using whoosh, "
+                    "please report this issue and try to delete %s manually",
+                    index_dir,
+                )
                 raise
 
         if create_index:
