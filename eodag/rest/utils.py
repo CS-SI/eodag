@@ -477,10 +477,12 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
     """
     collections = arguments.get("collections", None)
 
+    catalog_url = url.replace("/items", "")
+
     # use catalogs from path or if it is empty, collections from args
     if catalogs:
         result_catalog = StacCatalog(
-            url=url,
+            url=catalog_url,
             stac_config=stac_config,
             root=root,
             provider=provider,
@@ -495,7 +497,7 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
             raise ValidationError("Collections argument type should be Array")
 
         result_catalog = StacCatalog(
-            url=url,
+            url=catalog_url,
             stac_config=stac_config,
             root=root,
             provider=provider,

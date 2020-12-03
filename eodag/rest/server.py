@@ -248,11 +248,14 @@ def stac_catalogs_items(catalogs):
     '"""
 
     catalogs = catalogs.strip("/").split("/")
+    arguments = request.args.to_dict()
+    provider = arguments.pop("provider", None)
     response = search_stac_items(
-        url=request.url.split("?")[0],
-        arguments=request.args.to_dict(),
+        url=request.url,
+        arguments=arguments,
         root=request.url_root,
         catalogs=catalogs,
+        provider=provider,
     )
     return app.response_class(
         response=geojson.dumps(response), status=200, mimetype="application/json"
@@ -340,9 +343,13 @@ def collections():
 
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
     """
-
+    arguments = request.args.to_dict()
+    provider = arguments.pop("provider", None)
     response = get_stac_collections(
-        url=request.url, root=request.url_root, arguments=request.args.to_dict()
+        url=request.url.split("?")[0],
+        root=request.url_root,
+        arguments=arguments,
+        provider=provider,
     )
 
     return jsonify(response), 200
@@ -368,10 +375,13 @@ def collection_by_id(collection_id):
 def stac_collections_items(collection_id):
     """STAC collections items"""
 
+    arguments = request.args.to_dict()
+    provider = arguments.pop("provider", None)
     response = search_stac_items(
-        url=request.url.split("?")[0],
-        arguments=request.args.to_dict(),
+        url=request.url,
+        arguments=arguments,
         root=request.url_root,
+        provider=provider,
         catalogs=[collection_id],
     )
     return app.response_class(
@@ -389,8 +399,9 @@ def stac_search():
     else:
         arguments = request.args.to_dict()
 
+    provider = arguments.pop("provider", None)
     response = search_stac_items(
-        url=request.url, arguments=arguments, root=request.url_root
+        url=request.url, arguments=arguments, root=request.url_root, provider=provider
     )
     return app.response_class(
         response=geojson.dumps(response), status=200, mimetype="application/json"

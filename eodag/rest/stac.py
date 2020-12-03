@@ -18,6 +18,7 @@
 import copy
 import datetime
 import logging
+import os
 import re
 from collections import defaultdict
 
@@ -241,24 +242,26 @@ class StacItem(StacCommon):
         search_results.numberReturned = len(search_results)
 
         # next page link
-        if "?" in catalog["url"]:
-            # search endpoint: use catalog url as self link
+        if "?" in self.url:
+            # search endpoint: use page url as self link
             for i, _ in enumerate(items_model["links"]):
                 if items_model["links"][i]["rel"] == "self":
                     items_model["links"][i]["href"] = catalog["url"]
-            if "page=" not in catalog["url"]:
-                search_results.next = "{catalog[url]}&page=%s" % (
-                    search_results.properties["page"] + 1
+            if "page=" not in self.url:
+                search_results.next = "%s&page=%s" % (
+                    self.url,
+                    search_results.properties["page"] + 1,
                 )
             else:
                 search_results.next = re.sub(
                     r"^(.*)(page=[0-9]+)(.*)$",
                     r"\1page=%s\3" % (search_results.properties["page"] + 1),
-                    catalog["url"],
+                    self.url,
                 )
         else:
-            search_results.next = "{catalog[url]}?page=%s" % (
-                search_results.properties["page"] + 1
+            search_results.next = "%s?page=%s" % (
+                self.url,
+                search_results.properties["page"] + 1,
             )
 
         search_results.timeStamp = (
@@ -285,6 +288,13 @@ class StacItem(StacCommon):
         ):
             items["links"] = [link for link in items["links"] if link["rel"] != "next"]
 
+        # provide static catalog to build features
+        if "search?" in catalog["url"]:
+            catalog["url"] = os.path.join(
+                catalog["url"].split("search?")[0], "collections", catalog["id"],
+            )
+        else:
+            catalog["url"] = catalog["url"].split("?")[0]
         items["features"] = self.__get_item_list(search_results, catalog)
 
         self.update_data(items)

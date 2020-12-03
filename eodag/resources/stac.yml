@@ -199,8 +199,7 @@ item:
   links:
     - rel: self
       title: "{item[id]}"
-      href: "{catalog[url]}/{item[id]}"
-      # href: "{catalog[url]}/items/{item[id]}"
+      href: "{catalog[url]}/items/{item[id]}"
     - rel: root
       href: /
     - rel: parent
