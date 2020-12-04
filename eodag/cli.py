@@ -495,7 +495,12 @@ def download(ctx, **kwargs):
 def serve_rpc(ctx, host, port, conf):
     """Serve EODAG functionalities through a RPC interface"""
     setup_logging(verbose=ctx.obj["verbosity"])
-    from eodag.rpc.server import EODAGRPCServer
+    try:
+        from eodag_cube.rpc.server import EODAGRPCServer
+    except ImportError:
+        raise NotImplementedError(
+            "eodag-cube needed for this functionnality, install using `pip install eodag-cube`"
+        )
 
     server = EODAGRPCServer(host, port, conf)
     server.serve()

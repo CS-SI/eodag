@@ -398,12 +398,3 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(
             "A file may have been downloaded but we cannot locate it\n", result.output
         )
-
-    @mock.patch("eodag.rpc.server.EODAGRPCServer", autospec=True)
-    def test_eodag_serve_rpc_ok(self, rpc_server):
-        """Calling eodag serve-rpc serve eodag methods as RPC server"""
-        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
-        self.runner.invoke(eodag, ["serve-rpc", "-f", config_path])
-        rpc_server.assert_called_once_with("localhost", 50051, config_path)
-        rpc_server.return_value.serve.assert_any_call()
-        self.assertEqual(rpc_server.return_value.serve.call_count, 1)

@@ -38,7 +38,6 @@ import click
 import fiona
 import jsonpath_rw as jsonpath
 import shapely.wkt
-from rasterio.crs import CRS
 from requests.auth import AuthBase
 from shapely.geometry import MultiPolygon, Polygon, shape
 from shapely.geometry.base import BaseGeometry
@@ -56,6 +55,15 @@ from urllib.parse import (  # noqa; noqa
     urlunparse,
 )
 
+try:
+    # eodag_cube installed
+    from rasterio.crs import CRS
+
+    DEFAULT_PROJ = CRS.from_epsg(4326)
+except ImportError:
+    import pyproj
+
+    DEFAULT_PROJ = pyproj.Proj("EPSG:4326")
 
 logger = logging.getLogger("eodag.utils")
 
@@ -370,9 +378,6 @@ def maybe_generator(obj):
             yield elt
     else:
         yield obj
-
-
-DEFAULT_PROJ = CRS.from_epsg(4326)
 
 
 def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S"):

@@ -29,7 +29,6 @@ from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
-from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.plugins.authentication.base import Authentication
@@ -37,7 +36,7 @@ from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.rest import server as eodag_http_server
 from eodag.rest.utils import eodag_api, get_date
-from eodag.utils import DEFAULT_PROJ, makedirs
+from eodag.utils import makedirs
 from eodag.utils.exceptions import (
     AddressNotFound,
     DownloadError,

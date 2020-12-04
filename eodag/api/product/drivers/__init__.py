@@ -17,6 +17,8 @@
 # limitations under the License.
 """EODAG drivers package"""
 from eodag.api.product.drivers.base import NoDriver  # noqa
-from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
 
-DRIVERS = {"S2_MSI_L1C": Sentinel2L1C()}
+try:
+    from eodag_cube.api.product.drivers import DRIVERS
+except ImportError:
+    DRIVERS = {}

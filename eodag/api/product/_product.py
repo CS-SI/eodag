@@ -19,12 +19,7 @@ import logging
 import os
 import re
 
-import numpy
-import rasterio
 import requests
-import xarray as xr
-from rasterio.enums import Resampling
-from rasterio.vrt import WarpedVRT
 from requests import HTTPError
 from shapely import geometry, geos, wkb, wkt
 
@@ -32,7 +27,7 @@ from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.utils import ProgressCallback, get_geometry_from_various
-from eodag.utils.exceptions import DownloadError, UnsupportedDatasetAddressScheme
+from eodag.utils.exceptions import DownloadError
 
 try:
     from shapely.errors import TopologicalError
@@ -128,65 +123,6 @@ class EOProduct(object):
         self.downloader = None
         self.downloader_auth = None
 
-    def get_data(self, crs, resolution, band, extent):
-        """Retrieves all or part of the raster data abstracted by the :class:`EOProduct`
-
-        :param crs: The coordinate reference system in which the dataset should be
-                    returned
-        :type crs: str
-        :param resolution: The resolution in which the dataset should be returned
-                           (given in the unit of the crs)
-        :type resolution: float
-        :param band: The band of the dataset to retrieve (e.g.: 'B01')
-        :type band: str
-        :param extent: The coordinates on which to zoom as a tuple
-                       (min_x, min_y, max_x, max_y) in the given `crs`
-        :type extent: (float, float, float, float)
-        :returns: The numeric matrix corresponding to the sub dataset or an empty
-                  array if unable to get the data
-        :rtype: xarray.DataArray
-        """
-        fail_value = xr.DataArray(numpy.empty(0))
-        try:
-            dataset_address = self.driver.get_data_address(self, band)
-        except UnsupportedDatasetAddressScheme:
-            logger.warning(
-                "Eodag does not support getting data from distant sources by now. "
-                "Falling back to first downloading the product and then getting the "
-                "data..."
-            )
-            try:
-                path_of_downloaded_file = self.download()
-            except (RuntimeError, DownloadError):
-                import traceback
-
-                logger.warning(
-                    "Error while trying to download the product:\n %s",
-                    traceback.format_exc(),
-                )
-                logger.warning(
-                    "There might be no download plugin registered for this EO product. "
-                    "Try performing: product.register_downloader(download_plugin, "
-                    "auth_plugin) before trying to call product.get_data(...)"
-                )
-                return fail_value
-            if not path_of_downloaded_file:
-                return fail_value
-            dataset_address = self.driver.get_data_address(self, band)
-        min_x, min_y, max_x, max_y = extent
-        height = int((max_y - min_y) / resolution)
-        width = int((max_x - min_x) / resolution)
-        out_shape = (width, height)
-        with rasterio.open(dataset_address) as src:
-            with WarpedVRT(src, crs=crs, resampling=Resampling.bilinear) as vrt:
-                array = vrt.read(
-                    1,
-                    window=vrt.window(*extent),
-                    out_shape=out_shape,
-                    resampling=Resampling.bilinear,
-                )
-                return xr.DataArray(array)
-
     def as_dict(self):
         """Builds a representation of EOProduct as a dictionary to enable its geojson
         serialization
@@ -247,49 +183,6 @@ class EOProduct(object):
         return "{}(id={}, provider={})".format(
             self.__class__.__name__, self.properties["id"], self.provider
         )
-
-    def encode(self, raster, encoding="protobuf"):
-        """Encode the subset to a network-compatible format.
-
-        :param raster: The raster data to encode
-        :type raster: xarray.DataArray
-        :param encoding: The encoding of the export
-        :type encoding: str
-        :return: The data encoded in the specified encoding
-        :rtype: bytes
-        """
-        # If no encoding return an empty byte
-        if not encoding:
-            logger.warning("Trying to encode a raster without specifying an encoding")
-            return b""
-        strategy = getattr(self, "_{encoding}".format(**locals()), None)
-        if strategy:
-            return strategy(raster)
-        logger.error("Unknown encoding: %s", encoding)
-        return b""
-
-    def _protobuf(self, raster):
-        """Google's Protocol buffers encoding strategy.
-
-        :param raster: The raster to encode
-        :type raster: xarray.DataArray
-        :returns: The raster data represented by this subset in protocol buffers
-                  encoding
-        :rtype: bytes
-        """
-        from eodag.api.product.protobuf import eo_product_pb2
-
-        subdataset = eo_product_pb2.EOProductSubdataset()
-        subdataset.id = self.properties["id"]
-        subdataset.producer = self.provider
-        subdataset.product_type = self.product_type
-        subdataset.platform = self.properties["platformSerialIdentifier"]
-        subdataset.sensor = self.properties["instrument"]
-        data = subdataset.data
-        data.array.extend(list(raster.values.flatten().astype(int)))
-        data.shape.extend(list(raster.values.shape))
-        data.dtype = raster.values.dtype.name
-        return subdataset.SerializeToString()
 
     def register_downloader(self, downloader, authenticator):
         """Give to the product the information needed to download itself.
