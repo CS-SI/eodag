@@ -87,6 +87,38 @@ def get_templates_path():
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
+def get_product_types(provider=None, filters=None):
+    """Returns a list of supported product types
+    :param provider: provider name
+    :type provider: str
+    :param filters: additional filters for product types search
+    :type filters: dict
+    :returns: a list of corresponding product types
+    :rtype: list
+    """
+    if filters is None:
+        filters = {}
+    try:
+        guessed_product_types = eodag_api.guess_product_type(
+            instrument=filters.get("instrument"),
+            platform=filters.get("platform"),
+            platformSerialIdentifier=filters.get("platformSerialIdentifier"),
+            sensorType=filters.get("sensorType"),
+            processingLevel=filters.get("processingLevel"),
+        )
+    except NoMatchingProductType:
+        guessed_product_types = []
+    if guessed_product_types:
+        product_types = [
+            pt
+            for pt in eodag_api.list_product_types(provider=provider)
+            if pt["ID"] in guessed_product_types
+        ]
+    else:
+        product_types = eodag_api.list_product_types(provider=provider)
+    return product_types
+
+
 def search_bbox(request_bbox):
     """Transform request bounding box as a bbox suitable for eodag search"""
 
@@ -183,9 +215,9 @@ def get_geometry(arguments):
 
     geom = None
 
-    if "bbox" in arguments:
+    if "bbox" in arguments or "box" in arguments:
         # get bbox
-        request_bbox = arguments.pop("bbox", None)
+        request_bbox = arguments.pop("bbox", None) or arguments.pop("box", None)
         if request_bbox and isinstance(request_bbox, str):
             request_bbox = request_bbox.split(",")
         elif request_bbox and not isinstance(request_bbox, list):

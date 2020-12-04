@@ -520,6 +520,10 @@ class EODataAccessGateway(object):
             kwargs["completionTimeFromAscendingNode"] = end
         if geom is not None:
             kwargs["geometry"] = geom
+        box = kwargs.pop("box", None)
+        box = kwargs.pop("bbox", box)
+        if geom is None and box is not None:
+            kwargs["geometry"] = box
 
         kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
         # remove locations_args from kwargs now that they have been used
