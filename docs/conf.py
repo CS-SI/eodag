@@ -133,6 +133,8 @@ html_theme_options = {
     "github_user": "CS-SI",
     "github_repo": "eodag",
     "github_banner": True,
+    "page_width": "1140px",
+    "pre_bg": "#eeffcc",
 }
 
 # html_logo = 'https://img.shields.io/badge/style-git%20repo-blue?logo=bitbucket&label=bitbucket'
