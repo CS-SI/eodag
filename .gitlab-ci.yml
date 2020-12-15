@@ -16,6 +16,7 @@ build-doc:
   script:
     - apt-get update
     - apt-get install -y make pandoc
+    - python -m pip install --upgrade pip
     - python -m pip install -r requirements-docs.txt
     - (cd docs && /usr/bin/make html)
   rules:
@@ -25,6 +26,7 @@ build-doc:
 py35:unit-tests:
   stage: test
   script:
+    - python -m pip install --upgrade pip
     - python -m pip install -r requirements-dev.txt
     - mkdir -p test-reports
     - |
