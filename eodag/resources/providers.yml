@@ -294,7 +294,7 @@
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
     S1_SAR_GRD:
-      product_type: GRD
+      productType: GRD
       collection: sentinel1
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
@@ -624,26 +624,26 @@
       processingLevel: LEVEL3A
     L8_REFLECTANCE:
       collection: LANDSAT
-      product_type: REFLECTANCE
+      productType: REFLECTANCE
     L57_REFLECTANCE:
       collection: Landsat57
-      product_type: REFLECTANCE
+      productType: REFLECTANCE
     PLD_PAN:
       collection: Pleiades
-      product_type: Panchromatique (Pan)
+      productType: Panchromatique+(Pan)
     PLD_XS:
       collection: Pleiades
-      product_type: Multispectral (XS)
+      productType: Multispectral+(XS)
     PLD_BUNDLE:
       collection: Pleiades
-      product_type: Bundle (Pan, XS)
+      productType: Bundle+(Pan,+XS)
     PLD_PANSHARPENED:
       collection: Pleiades
-      product_type: Pansharpened (Pan+XS)
+      productType: Pansharpened+(Pan%2BXS)
     OSO:
       collection: OSO
     GENERIC_PRODUCT_TYPE:
-      product_type: '{productType}'
+      productType: '{productType}'
       collection: '{collection}'
       processingLevel: '{processingLevel}'
   download: !plugin
@@ -774,43 +774,43 @@
 
   products:
     S1_SAR_OCN:
-      product_type: OCN
+      productType: OCN
       collection: S1
     S1_SAR_GRD:
-      product_type: GRD
+      productType: GRD
       collection: S1
     S1_SAR_SLC:
-      product_type: SLC
+      productType: SLC
       collection: S1
     S2_MSI_L1C:
       collection: S2ST
-      product_type: S2MSI1C
+      productType: S2MSI1C
     S2_MSI_L2A:
       collection: S2ST
-      product_type: S2MSI2A
+      productType: S2MSI2A
     S3_EFR:
-      product_type: OL_1_EFR___
+      productType: OL_1_EFR___
       collection: S3
     S3_ERR:
-      product_type: OL_1_ERR___
+      productType: OL_1_ERR___
       collection: S3
     S3_OLCI_L2LFR:
-      product_type: OL_2_LFR___
+      productType: OL_2_LFR___
       collection: S3
     S3_OLCI_L2LRR:
-      product_type: OL_2_LRR___
+      productType: OL_2_LRR___
       collection: S3
     S3_SLSTR_L1RBT:
-      product_type: SL_1_RBT___
+      productType: SL_1_RBT___
       collection: S3
     S3_SLSTR_L2LST:
-      product_type: SL_2_LST___
+      productType: SL_2_LST___
       collection: S3
     S3_LAN:
-      product_type: SR_2_LAN___
+      productType: SR_2_LAN___
       collection: S3
     GENERIC_PRODUCT_TYPE:
-      product_type: '{productType}'
+      productType: '{productType}'
       collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -835,27 +835,27 @@
   url: https://sobloo.eu/
   products:
     S2_MSI_L1C:
-      product_type: S2MSI1C
+      productType: S2MSI1C
     S2_MSI_L2A:
-      product_type: S2MSI2A
+      productType: S2MSI2A
     S1_SAR_RAW:
-      product_type: RAW
+      productType: RAW
     S1_SAR_GRD:
-      product_type: GRD
+      productType: GRD
     S1_SAR_SLC:
-      product_type: SLC
+      productType: SLC
     S1_SAR_OCN:
-      product_type: OCN
+      productType: OCN
     GENERIC_PRODUCT_TYPE:
-      product_type: '{productType}'
+      productType: '{productType}'
     # S3_LAN:
-    #   product_type: SR_2_LAN___
+    #   productType: SR_2_LAN___
     # S3_SRA:
-    #   product_type: SR_1_SRA___
+    #   productType: SR_1_SRA___
     # S3_SRA_BS:
-    #   product_type: SR_1_SRA_BS
+    #   productType: SR_1_SRA_BS
     # S3_SRA_A_BS:
-    #   product_type: SR_1_SRA_A_
+    #   productType: SR_1_SRA_A_
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://sobloo.eu/api/v1/services/search'
@@ -1030,58 +1030,58 @@
     auth_error_code: 401
   products:
     S2_MSI_L1C:
-      product_type: L1C
+      productType: L1C
       collection: Sentinel2
     S2_MSI_L2A:
-      product_type: L2A
+      productType: L2A
       collection: Sentinel2
     S1_SAR_RAW:
-      product_type: RAW
+      productType: RAW
       collection: Sentinel1
     S1_SAR_GRD:
-      product_type: GRD
+      productType: GRD
       collection: Sentinel1
     S1_SAR_SLC:
-      product_type: SLC
+      productType: SLC
       collection: Sentinel1
     S1_SAR_OCN:
-      product_type: OCN
+      productType: OCN
       collection: Sentinel1
     S3_LAN:
-      product_type: LAN
+      productType: LAN
       collection: Sentinel3
     S3_SRA:
-      product_type: SRA
+      productType: SRA
       collection: Sentinel3
     S3_SRA_BS:
-      product_type: SRA_BS
+      productType: SRA_BS
       collection: Sentinel3
     S3_SRA_A_BS:
-      product_type: SRA_A
+      productType: SRA_A
       collection: Sentinel3
     S3_EFR:
-      product_type: EFR
+      productType: EFR
       collection: Sentinel3
     S3_ERR:
-      product_type: ERR
+      productType: ERR
       collection: Sentinel3
     S3_WAT:
-      product_type: WAT
+      productType: WAT
       collection: Sentinel3
     S3_SLSTR_L2LST:
-      product_type: LST
+      productType: LST
       collection: Sentinel3
     S3_OLCI_L2LRR:
-      product_type: LRR
+      productType: LRR
       collection: Sentinel3
     S3_OLCI_L2LFR:
-      product_type: LFR
+      productType: LFR
       collection: Sentinel3
     S3_SLSTR_L1RBT:
-      product_type: RBT
+      productType: RBT
       collection: Sentinel3
     GENERIC_PRODUCT_TYPE:
-      product_type: '{productType}'
+      productType: '{productType}'
       collection: '{collection}'
 ---
 !provider
@@ -1225,27 +1225,27 @@
       Cookie: "seeedtoken={apikey}"
   products:
     S1_SAR_GRD:
-      product_type: GRD
+      productType: GRD
       processingLevel: L1_
       collection: Sentinel1
     S1_SAR_SLC:
-      product_type: SLC
+      productType: SLC
       processingLevel: L1_
       collection: Sentinel1
     S2_MSI_L1C:
-      product_type: IMAGE
+      productType: IMAGE
       processingLevel: L1C
       collection: Sentinel2
     S2_MSI_L2A:
-      product_type: IMAGE
+      productType: IMAGE
       processingLevel: L2A
       collection: Sentinel2
     S3_OLCI_L2LFR:
-      product_type: OL_2_LFR___
+      productType: OL_2_LFR___
       instrument: OLCI
       collection: Sentinel3
     GENERIC_PRODUCT_TYPE:
-      product_type: '{productType}'
+      productType: '{productType}'
       collection: '{collection}'
       instrument: '{instrument}'
       processingLevel: '{processingLevel}'
@@ -1278,31 +1278,31 @@
     type: GenericAuth
   products:
     S1_SAR_GRD:
-      product_type: "EO:ESA:DAT:SENTINEL-1:L1_GRD"
+      productType: "EO:ESA:DAT:SENTINEL-1:L1_GRD"
     S1_SAR_SLC:
-      product_type: "EO:ESA:DAT:SENTINEL-1:L1_SLC"
+      productType: "EO:ESA:DAT:SENTINEL-1:L1_SLC"
     S2_MSI_L1C:
-      product_type: "EO:ESA:DAT:SENTINEL-2:MSI1C"
+      productType: "EO:ESA:DAT:SENTINEL-2:MSI1C"
     S3_LAN:
-      product_type: "EO:ESA:DAT:SENTINEL-3:SR_2_LAN___"
+      productType: "EO:ESA:DAT:SENTINEL-3:SR_2_LAN___"
     S3_SRA:
-      product_type: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"
+      productType: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"
     S3_SRA_BS:
-      product_type: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS___"
+      productType: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS___"
     S3_EFR:
-      product_type: "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"
+      productType: "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"
     S3_ERR:
-      product_type: "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"
+      productType: "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"
     S3_WAT:
-      product_type: "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"
+      productType: "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"
     S3_SLSTR_L2LST:
-      product_type: "EO:ESA:DAT:SENTINEL-3:SL_2_LST___"
+      productType: "EO:ESA:DAT:SENTINEL-3:SL_2_LST___"
     S3_OLCI_L2LRR:
-      product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LRR___"
+      productType: "EO:ESA:DAT:SENTINEL-3:OL_2_LRR___"
     S3_OLCI_L2LFR:
-      product_type: "EO:ESA:DAT:SENTINEL-3:OL_2_LFR___"
+      productType: "EO:ESA:DAT:SENTINEL-3:OL_2_LFR___"
     S3_SLSTR_L1RBT:
-      product_type: "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"
+      productType: "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"
 ---
 !provider
   name: onda
@@ -1355,7 +1355,9 @@
       # within the context of the data provider)
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
-      productType: '$.productType'
+      productType:
+        - 'productType'
+        - '$.productType'
       platform:
         - platform
         - '$.platformName'
@@ -1395,43 +1397,43 @@
       orderLink: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
   products:
     S1_SAR_OCN:
-      product_type: '*OCN*'
+      productType: '*OCN*'
     S1_SAR_GRD:
-      product_type: '*GRD*'
+      productType: '*GRD*'
     S1_SAR_SLC:
-      product_type: '*SLC*'
+      productType: '*SLC*'
     S1_SAR_RAW:
-      product_type: '*RAW*'
+      productType: '*RAW*'
     S2_MSI_L1C:
-      product_type: S2MSI1C
+      productType: S2MSI1C
     S2_MSI_L2A:
-      product_type: S2MSI2A
+      productType: S2MSI2A
     S3_EFR:
-      product_type: OL_1_EFR___
+      productType: OL_1_EFR___
     S3_ERR:
-      product_type: OL_1_ERR___
+      productType: OL_1_ERR___
     S3_OLCI_L2LFR:
-      product_type: OL_2_LFR___
+      productType: OL_2_LFR___
     S3_OLCI_L2LRR:
-      product_type: OL_2_LRR___
+      productType: OL_2_LRR___
     S3_SLSTR_L1RBT:
-      product_type: SL_1_RBT___
+      productType: SL_1_RBT___
     S3_SLSTR_L2LST:
-      product_type: SL_2_LST___
+      productType: SL_2_LST___
     S3_LAN:
-      product_type: SR_2_LAN___
+      productType: SR_2_LAN___
     S3_SRA:
-      product_type: SR_1_SRA_A_
+      productType: SR_1_SRA_A_
     S3_SRA_BS:
-      product_type: SR_1_SRA_BS
+      productType: SR_1_SRA_BS
     S3_SRA_A_BS:
-      product_type: SR_1_SRA___
+      productType: SR_1_SRA___
     S3_WAT:
-      product_type: SR_2_WAT___
+      productType: SR_2_WAT___
     L8_OLI_TIRS_C1L1:
       platform: 'Landsat-*'
     GENERIC_PRODUCT_TYPE:
-      product_type: '{productType}'
+      productType: '{productType}'
       platform: '{platform}'
   download: !plugin
     type: HTTPDownload
@@ -1458,17 +1460,17 @@
     api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
   products:
     S2_MSI_L1C:
-      product_type: sentinel2_l1c
+      productType: sentinel2_l1c
     S2_MSI_L2A:
-      product_type: sentinel2_l2a
+      productType: sentinel2_l2a
     L8_OLI_TIRS_C1L1:
-      product_type: landsat8_l1tp
+      productType: landsat8_l1tp
     MODIS_MCD43A4:
-      product_type: mcd43a4
+      productType: mcd43a4
     NAIP:
-      product_type: naip
+      productType: naip
     GENERIC_PRODUCT_TYPE:
-      product_type: '{productType}'
+      productType: '{productType}'
   download: !plugin
     type: AwsDownload
     base_uri: https://eod-catalog-svc-prod.astraea.earth

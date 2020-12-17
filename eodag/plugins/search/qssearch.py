@@ -172,6 +172,9 @@ class QueryStringSearch(Search):
         self.product_type_def_params = self.get_product_type_def_params(
             product_type, *args, **kwargs
         )
+        # if product_type_def_params is set, remove product_type as it may conflict with this conf
+        if self.product_type_def_params:
+            keywords.pop("productType", None)
         keywords.update(
             {
                 k: v
