@@ -221,7 +221,12 @@ class TestEODagEndToEnd(unittest.TestCase):
             "S2_MSI_L1C",
             "2019-11-08",
             "2019-11-16",
-            (137.772897, 13.134202, 153.749135, 23.885986),
+            [
+                0.2563590566012408,
+                43.19555008715042,
+                2.379835675499976,
+                43.907759172380565,
+            ],
         )
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
