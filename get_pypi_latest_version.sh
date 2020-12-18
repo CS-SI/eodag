@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
 
-pip search eodag \
-| grep -P \
-"^eodag[[:space:]]\([0-9]\.[0-9]\.[0-9](.*)\)[[:space:]]*-[[:space:]]Earth[[:space:]]Observation[[:space:]]"\
-"Data[[:space:]]Access[[:space:]]Gateway$" \
-| cut -d' ' -f2 | sed 's/[()]//g'
+curl https://pypi.org/pypi/eodag/json | python -c \
+"import sys, json; v = list(json.load(sys.stdin)['releases'].keys()); v.sort(); print(v[-1]);"
