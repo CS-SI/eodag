@@ -62,7 +62,8 @@ pypi:deploy:
         then
           # Build the distribution
           python setup.py sdist bdist_wheel
-          twine upload dist/*
+          TWINE_REPOSITORY_URL=$TWINE_REPOSITORY_URL TWINE_USERNAME=$TWINE_USERNAME TWINE_PASSWORD=$TWINE_PASSWORD \
+            twine upload dist/*
         else
           echo "Long description is incompatible with PyPI reST renderer. Check README.rst"
           cat error.log
@@ -75,4 +76,4 @@ pypi:deploy:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: never
-    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+.*/ && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+.*/'
