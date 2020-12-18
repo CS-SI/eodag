@@ -701,3 +701,15 @@ VENUS_L3A_MAJA:
   license: proprietary
   title: Venus Level3-A
   missionStartDate: "2017-08-02T00:00:00Z"
+
+# GENERIC----------------------------------------------------------------------
+GENERIC_PRODUCT_TYPE:
+  abstract:
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  sensorType:
+  license:
+  title:
+  missionStartDate:

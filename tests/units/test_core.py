@@ -21,6 +21,7 @@ import os
 import shutil
 import unittest
 
+from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, UnsupportedProvider, makedirs
 from tests.utils import mock
@@ -98,6 +99,15 @@ class TestCore(unittest.TestCase):
         "VENUS_L2A_MAJA": ["theia"],
         "VENUS_L3A_MAJA": ["theia"],
         "OSO": ["theia"],
+        GENERIC_PRODUCT_TYPE: [
+            "theia",
+            "peps",
+            "sobloo",
+            "onda",
+            "mundi",
+            "creodias",
+            "astraea_eod",
+        ],
     }
     SUPPORTED_PROVIDERS = [
         "peps",

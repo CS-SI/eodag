@@ -179,7 +179,7 @@ class Download(PluginTopic):
                 "Extraction cancelled, destination directory already exists and is not empty: %s"
                 % product_path
             )
-            return fs_path
+            return product_path
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
             with zipfile.ZipFile(fs_path, "r") as zfile:

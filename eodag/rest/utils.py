@@ -16,11 +16,12 @@ import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
-from eodag.config import dict_items_recursive_apply, load_stac_config
+from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
+from eodag.utils import GENERIC_PRODUCT_TYPE, dict_items_recursive_apply
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -57,7 +58,11 @@ def get_detailled_collections_list(provider=None):
     :returns: list of config dicts
     :rtype: list
     """
-    return eodag_api.list_product_types(provider=provider)
+    return [
+        pt
+        for pt in eodag_api.list_product_types(provider=provider)
+        if pt["ID"] != GENERIC_PRODUCT_TYPE
+    ]
 
 
 def get_home_page_content(base_url, ipp=None):
@@ -80,6 +85,38 @@ def get_home_page_content(base_url, ipp=None):
 def get_templates_path():
     """Returns Jinja templates path"""
     return os.path.join(os.path.dirname(__file__), "templates")
+
+
+def get_product_types(provider=None, filters=None):
+    """Returns a list of supported product types
+    :param provider: provider name
+    :type provider: str
+    :param filters: additional filters for product types search
+    :type filters: dict
+    :returns: a list of corresponding product types
+    :rtype: list
+    """
+    if filters is None:
+        filters = {}
+    try:
+        guessed_product_types = eodag_api.guess_product_type(
+            instrument=filters.get("instrument"),
+            platform=filters.get("platform"),
+            platformSerialIdentifier=filters.get("platformSerialIdentifier"),
+            sensorType=filters.get("sensorType"),
+            processingLevel=filters.get("processingLevel"),
+        )
+    except NoMatchingProductType:
+        guessed_product_types = []
+    if guessed_product_types:
+        product_types = [
+            pt
+            for pt in eodag_api.list_product_types(provider=provider)
+            if pt["ID"] in guessed_product_types
+        ]
+    else:
+        product_types = eodag_api.list_product_types(provider=provider)
+    return product_types
 
 
 def search_bbox(request_bbox):
@@ -178,9 +215,9 @@ def get_geometry(arguments):
 
     geom = None
 
-    if "bbox" in arguments:
+    if "bbox" in arguments or "box" in arguments:
         # get bbox
-        request_bbox = arguments.pop("bbox", None)
+        request_bbox = arguments.pop("bbox", None) or arguments.pop("box", None)
         if request_bbox and isinstance(request_bbox, str):
             request_bbox = request_bbox.split(",")
         elif request_bbox and not isinstance(request_bbox, list):
@@ -472,10 +509,12 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
     """
     collections = arguments.get("collections", None)
 
+    catalog_url = url.replace("/items", "")
+
     # use catalogs from path or if it is empty, collections from args
     if catalogs:
         result_catalog = StacCatalog(
-            url=url,
+            url=catalog_url,
             stac_config=stac_config,
             root=root,
             provider=provider,
@@ -490,7 +529,7 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
             raise ValidationError("Collections argument type should be Array")
 
         result_catalog = StacCatalog(
-            url=url,
+            url=catalog_url,
             stac_config=stac_config,
             root=root,
             provider=provider,

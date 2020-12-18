@@ -38,12 +38,18 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
-from eodag.utils import get_geometry_from_various, makedirs
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    MockResponse,
+    get_geometry_from_various,
+    makedirs,
+)
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
     UnsupportedProvider,
 )
+from eodag.utils.stac_reader import fetch_stac_items
 
 logger = logging.getLogger("eodag.core")
 
@@ -100,8 +106,26 @@ class EODataAccessGateway(object):
         if locations_conf_path is None:
             locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
             if locations_conf_path is None:
-                # empty string will set empty conf without error
-                locations_conf_path = ""
+                locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
+                if not os.path.isfile(locations_conf_path):
+                    # copy locations conf file and replace path example
+                    locations_conf_template = resource_filename(
+                        "eodag",
+                        os.path.join("resources", "locations_conf_template.yml"),
+                    )
+                    with open(locations_conf_template) as infile, open(
+                        locations_conf_path, "w"
+                    ) as outfile:
+                        for line in infile:
+                            line = line.replace(
+                                "/path/to/locations", os.path.join(self.conf_dir, "shp")
+                            )
+                            outfile.write(line)
+                    # copy sample shapefile dir
+                    shutil.copytree(
+                        resource_filename("eodag", os.path.join("resources", "shp")),
+                        os.path.join(self.conf_dir, "shp"),
+                    )
         self.set_locations_conf(locations_conf_path)
 
     def build_index(self):
@@ -146,6 +170,11 @@ class EODataAccessGateway(object):
                 shutil.rmtree(index_dir)
                 create_index = True
             else:
+                logger.error(
+                    "Error while building index using whoosh, "
+                    "please report this issue and try to delete %s manually",
+                    index_dir,
+                )
                 raise
 
         if create_index:
@@ -477,14 +506,12 @@ class EODataAccessGateway(object):
             except NoMatchingProductType:
                 queried_id = kwargs.get("id", None)
                 if queried_id is None:
-                    logger.error("Unable to satisfy search query: %s", kwargs)
-                    logger.error(
+                    logger.info(
                         "No product type could be guessed with provided arguments"
                     )
                 else:
                     provider = kwargs.get("provider", None)
                     return self._search_by_id(kwargs["id"], provider=provider)
-                return SearchResult([]), 0
 
         kwargs["productType"] = product_type
         if start is not None:
@@ -493,8 +520,16 @@ class EODataAccessGateway(object):
             kwargs["completionTimeFromAscendingNode"] = end
         if geom is not None:
             kwargs["geometry"] = geom
+        box = kwargs.pop("box", None)
+        box = kwargs.pop("bbox", box)
+        if geom is None and box is not None:
+            kwargs["geometry"] = box
 
         kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
+        # remove locations_args from kwargs now that they have been used
+        locations_dict = {loc["name"]: loc for loc in self.locations_config}
+        for arg in locations_dict.keys():
+            kwargs.pop(arg, None)
 
         plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
@@ -503,14 +538,24 @@ class EODataAccessGateway(object):
             "Searching product type '%s' on provider: %s", product_type, plugin.provider
         )
         # add product_types_config to plugin config
-        plugin.config.product_type_config = dict(
-            [
-                p
-                for p in self.list_product_types(plugin.provider)
-                if p["ID"] == product_type
-            ][0],
-            **{"productType": product_type}
-        )
+        try:
+            plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(plugin.provider)
+                    if p["ID"] == product_type
+                ][0],
+                **{"productType": product_type}
+            )
+        except IndexError:
+            plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(plugin.provider)
+                    if p["ID"] == GENERIC_PRODUCT_TYPE
+                ][0],
+                **{"productType": product_type}
+            )
         plugin.config.product_type_config.pop("ID", None)
 
         logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
@@ -762,6 +807,89 @@ class EODataAccessGateway(object):
         """
         with open(filename, "r") as fh:
             return SearchResult.from_geojson(geojson.load(fh))
+
+    def deserialize_and_register(self, filename):
+        """Loads results of a search from a geojson file and register
+        products with the information needed to download itself
+
+        :param filename: A filename containing a search result encoded as a geojson
+        :type filename: str
+        :returns: The search results encoded in `filename`
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
+        products = self.deserialize(filename)
+        for i, product in enumerate(products):
+            if product.downloader is None:
+                auth = product.downloader_auth
+                if auth is None:
+                    auth = self._plugins_manager.get_auth_plugin(product.provider)
+                products[i].register_downloader(
+                    self._plugins_manager.get_download_plugin(product), auth
+                )
+        return products
+
+    def load_stac_items(
+        self,
+        filename,
+        recursive=False,
+        max_connections=100,
+        provider=None,
+        productType=None,
+        **kwargs
+    ):
+        """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
+
+        Features are parsed using eodag provider configuration, as if they were
+        the response content to an API request.
+
+        :param filename: A filename containing features encoded as a geojson
+        :type filename: str
+        :param recursive: Brownse recursively in child nodes if True
+        :type recursive: bool
+        :param max_connections: max connections for http requests
+        :type max_connections: int
+        :param provider: data provider
+        :type provider: str
+        :param productType: data product type
+        :type productType: str
+        :param dict kwargs: parameters that will be stored in the result as
+                            search criteria
+        :returns: The search results encoded in `filename`
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
+        """
+        features = fetch_stac_items(
+            filename, recursive=recursive, max_connections=max_connections
+        )
+        nb_features = len(features)
+        feature_collection = geojson.FeatureCollection(features)
+        feature_collection["context"] = {
+            "limit": nb_features,
+            "matched": nb_features,
+            "returned": nb_features,
+        }
+
+        plugin = next(
+            self._plugins_manager.get_search_plugins(
+                product_type=productType, provider=provider
+            )
+        )
+        # save plugin._request and mock it to make return loaded static results
+        plugin_request = plugin._request
+        plugin._request = lambda url, info_message=None, exception_message=None: MockResponse(
+            feature_collection, 200
+        )
+
+        # save preferred_provider and use provided one instead
+        preferred_provider, _ = self.get_preferred_provider()
+        self.set_preferred_provider(provider)
+        products, _ = self.search(productType=productType, **kwargs)
+        # restore preferred_provider
+        self.set_preferred_provider(preferred_provider)
+
+        # restore plugin._request
+        plugin._request = plugin_request
+
+        return products
 
     def download(
         self,

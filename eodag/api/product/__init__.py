@@ -16,4 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG product package"""
-from ._product import EOProduct  # noqa
+try:
+    from eodag_cube.api.product import EOProduct  # noqa
+except ImportError:
+    from ._product import EOProduct  # noqa

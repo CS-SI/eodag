@@ -20,22 +20,24 @@
 Everything that does not fit into one of the specialised categories of utilities in
 this package should go here
 """
-
+import ast
 import copy
 import errno
+import logging
 import os
 import re
 import string
 import sys
 import types
 import unicodedata
+from collections import defaultdict
 from datetime import datetime
 from itertools import repeat, starmap
 
 import click
 import fiona
+import jsonpath_rw as jsonpath
 import shapely.wkt
-from rasterio.crs import CRS
 from requests.auth import AuthBase
 from shapely.geometry import MultiPolygon, Polygon, shape
 from shapely.geometry.base import BaseGeometry
@@ -52,6 +54,20 @@ from urllib.parse import (  # noqa; noqa
     urlparse,
     urlunparse,
 )
+
+try:
+    # eodag_cube installed
+    from rasterio.crs import CRS
+
+    DEFAULT_PROJ = CRS.from_epsg(4326)
+except ImportError:
+    import pyproj
+
+    DEFAULT_PROJ = pyproj.Proj("EPSG:4326")
+
+logger = logging.getLogger("eodag.utils")
+
+GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 
 
 if sys.version_info.minor < 5:
@@ -364,9 +380,6 @@ def maybe_generator(obj):
         yield obj
 
 
-DEFAULT_PROJ = CRS.from_epsg(4326)
-
-
 def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S"):
     """Returns the given date_time string formatted with date_format as timestamp
 
@@ -430,8 +443,59 @@ def makedirs(dirpath):
             raise
 
 
+def format_dict_items(config_dict, **format_variables):
+    """Recursive apply string.format(**format_variables) to dict elements
+
+    >>> format_dict_items(
+    ...     {"foo": {"bar": "{a}"}, "baz": ["{b}?", "{b}!"]},
+    ...     **{"a": "qux", "b":"quux"},
+    ... ) == {"foo": {"bar": "qux"}, "baz": ["quux?", "quux!"]}
+    True
+
+    :param config_dict: dictionnary having values that need to be parsed
+    :type config_dict: dict
+    :param format_variables: variables used as args for parsing
+    :type format_variables: dict
+    :returns: updated dict
+    :rtype: dict
+    """
+    return dict_items_recursive_apply(config_dict, format_string, **format_variables)
+
+
+def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
+    """Recursive parse jsonpath elements in dict
+
+    >>> import jsonpath_rw as jsonpath
+    >>> jsonpath_parse_dict_items(
+    ...     {"foo": {"bar": jsonpath.parse("$.a.b")}, "qux": [jsonpath.parse("$.c"), jsonpath.parse("$.c")]},
+    ...     {"a":{"b":"baz"}, "c":"quux"}
+    ... ) == {'foo': {'bar': 'baz'}, 'qux': ['quux', 'quux']}
+    True
+
+    :param jsonpath_dict: dictionnary having values that need to be parsed
+    :type jsonpath_dict: dict
+    :param values_dict: values dict used as args for parsing
+    :type values_dict: dict
+    :returns: updated dict
+    :rtype: dict
+    """
+    return dict_items_recursive_apply(jsonpath_dict, parse_jsonpath, **values_dict)
+
+
 def update_nested_dict(old_dict, new_dict, extend_list_values=False):
     """Update recursively old_dict items with new_dict ones
+
+    >>> update_nested_dict(
+    ...     {"a": {"a.a": 1, "a.b": 2}, "b": 3},
+    ...     {"a": {"a.a": 10}}
+    ... ) == {'a': {'a.a': 10, 'a.b': 2}, 'b': 3}
+    True
+    >>> update_nested_dict(
+    ...     {"a": {"a.a": [1, 2]}},
+    ...     {"a": {"a.a": [10]}},
+    ...     extend_list_values=True
+    ... ) == {'a': {'a.a': [1, 2, 10]}}
+    True
 
     :param old_dict: dict to be updated
     :type old_dict: dict
@@ -464,6 +528,12 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
 def dict_items_recursive_apply(config_dict, apply_method, **apply_method_parameters):
     """Recursive apply method to dict elements
 
+    >>> dict_items_recursive_apply(
+    ...     {"foo": {"bar":"baz"}, "qux": ["a","b"]},
+    ...     lambda k,v,x: v.upper()+x, **{"x":"!"}
+    ... ) == {'foo': {'bar': 'BAZ!'}, 'qux': ['A!', 'B!']}
+    True
+
     :param config_dict: input nested dictionnary
     :type config_dict: dict
     :param apply_method: method to be applied to dict elements
@@ -473,28 +543,134 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
     :returns: updated dict
     :rtype: dict
     """
-    jsonpath_dict = copy.deepcopy(config_dict)
-    for dict_k, dict_v in jsonpath_dict.items():
+    result_dict = copy.deepcopy(config_dict)
+    for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
-            jsonpath_dict[dict_k] = dict_items_recursive_apply(
+            result_dict[dict_k] = dict_items_recursive_apply(
                 dict_v, apply_method, **apply_method_parameters
             )
         elif any(isinstance(dict_v, t) for t in (list, tuple)):
-            for list_idx, list_v in enumerate(dict_v):
-                if isinstance(list_v, dict):
-                    jsonpath_dict[dict_k][list_idx] = dict_items_recursive_apply(
-                        list_v, apply_method, **apply_method_parameters
-                    )
-                else:
-                    jsonpath_dict[dict_k][list_idx] = apply_method(
-                        dict_k, list_v, **apply_method_parameters
-                    )
+            result_dict[dict_k] = list_items_recursive_apply(
+                dict_v, apply_method, **apply_method_parameters
+            )
         else:
-            jsonpath_dict[dict_k] = apply_method(
+            result_dict[dict_k] = apply_method(
                 dict_k, dict_v, **apply_method_parameters
             )
 
-    return jsonpath_dict
+    return result_dict
+
+
+def list_items_recursive_apply(config_list, apply_method, **apply_method_parameters):
+    """Recursive apply method to list elements
+
+    >>> list_items_recursive_apply(
+    ...     [{"foo": {"bar":"baz"}}, "qux"],
+    ...     lambda k,v,x: v.upper()+x,
+    ...     **{"x":"!"})
+    [{'foo': {'bar': 'BAZ!'}}, 'QUX!']
+
+    :param config_list: input list containing nested lists/dicts
+    :type config_list: list
+    :param apply_method: method to be applied to list elements
+    :type apply_method: :func:`apply_method`
+    :param apply_method_parameters: optional parameters passed to the method
+    :type apply_method_parameters: dict
+    :returns: updated list
+    :rtype: list
+    """
+    result_list = copy.deepcopy(config_list)
+    for list_idx, list_v in enumerate(result_list):
+        if isinstance(list_v, dict):
+            result_list[list_idx] = dict_items_recursive_apply(
+                list_v, apply_method, **apply_method_parameters
+            )
+        elif any(isinstance(list_v, t) for t in (list, tuple)):
+            result_list[list_idx] = list_items_recursive_apply(
+                list_v, apply_method, **apply_method_parameters
+            )
+        else:
+            result_list[list_idx] = apply_method(
+                list_idx, list_v, **apply_method_parameters
+            )
+
+    return result_list
+
+
+def string_to_jsonpath(key, str_value):
+    """Get jsonpath for "$.foo.bar" like string
+
+    >>> string_to_jsonpath(None, "$.foo.bar")
+    Child(Child(Root(), Fields('foo')), Fields('bar'))
+
+    :param key: input item key
+    :type key: str
+    :param str_value: input item value, to be converted
+    :type str_value: str
+    :returns: parsed value
+    :rtype: str
+    """
+    if "$." in str(str_value):
+        try:
+            return jsonpath.parse(str_value)
+        except Exception:  # jsonpath_rw does not provide a proper exception
+            # If str_value does not contain a jsonpath, return it as is
+            return str_value
+    else:
+        return str_value
+
+
+def format_string(key, str_to_format, **format_variables):
+    """Format "{foo}" like string
+
+    >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})
+    'foo qux, quux ?'
+
+    :param key: input item key
+    :type key: str
+    :param str_to_format: input item value, to be parsed
+    :type str_to_format: str
+    :returns: parsed value
+    :rtype: str
+    """
+    if isinstance(str_to_format, str):
+        # defaultdict usage will return "" for missing keys in format_args
+        try:
+            result = str_to_format.format_map(defaultdict(str, **format_variables))
+        except TypeError:
+            logger.error("Unable to format str=%s" % str_to_format)
+            raise
+
+        # try to convert string to python object
+        try:
+            return ast.literal_eval(result)
+        except (SyntaxError, ValueError):
+            return result
+    else:
+        return str_to_format
+
+
+def parse_jsonpath(key, jsonpath_obj, **values_dict):
+    """Parse jsonpah in jsonpath_obj using values_dict
+
+    >>> import jsonpath_rw as jsonpath
+    >>> parse_jsonpath(None, jsonpath.parse("$.foo.bar"), **{"foo":{"bar":"baz"}})
+    'baz'
+
+    :param key: input item key
+    :type key: str
+    :param jsonpath_obj: input item value, to be parsed
+    :type jsonpath_obj: str
+    :param values_dict: values used as args for parsing
+    :type values_dict: dict
+    :returns: parsed value
+    :rtype: str
+    """
+    if isinstance(jsonpath_obj, jsonpath.jsonpath.Child):
+        match = jsonpath_obj.find(values_dict)
+        return match[0].value if len(match) == 1 else None
+    else:
+        return jsonpath_obj
 
 
 def get_geometry_from_various(locations_config=[], **query_args):
@@ -558,3 +734,16 @@ def get_geometry_from_various(locations_config=[], **query_args):
                             geom = new_geom.intersection(geom)
 
     return geom
+
+
+class MockResponse(object):
+    """Fake requests response"""
+
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
+        self.content = json_data
+
+    def json(self):
+        """Return json data"""
+        return self.json_data

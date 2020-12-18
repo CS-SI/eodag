@@ -1,6 +1,16 @@
 Release history
 ---------------
 
+2.0b2 (2020-12-18)
+++++++++++++++++++
+
+- New method deserialize_and_register, fixes `GH-140 <https://github.com/CS-SI/eodag/issues/140>`_
+- Load static stac catalogs as SearchResult
+- Search on unknown product types using GENERIC_PRODUCT_TYPE
+- get_data, drivers and rpc server moved to `eodag-cube <https://github.com/CS-SI/eodag-cube>`_
+- Removed fixed dependencies, fixes `GH-82 <https://github.com/CS-SI/eodag/issues/82>`_
+- Use locations conf template by default
+
 2.0b1 (2020-11-17)
 ++++++++++++++++++
 

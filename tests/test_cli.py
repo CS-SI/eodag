@@ -25,6 +25,7 @@ import click
 from click.testing import CliRunner
 from faker import Faker
 
+from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import download, eodag, search_crunch
 from tests.units.test_core import TestCore
@@ -101,7 +102,7 @@ class TestEodagCli(unittest.TestCase):
             eodag, ["search", "--conf", conf_file, "-p", "whatever"]
         )
         self.assertIn(
-            'Error: Invalid value for "-f" / "--conf": Path "{}" does not exist.'.format(  # noqa
+            "Error: Invalid value for '-f' / '--conf': Path '{}' does not exist.".format(  # noqa
                 conf_file
             ),
             result.output,
@@ -117,7 +118,7 @@ class TestEodagCli(unittest.TestCase):
                     ["search", "--conf", conf_file, "-p", "whatever", "-c", max_cloud],
                 )
                 self.assertIn(
-                    'Error: Invalid value for "-c" / "--cloudCover": {} is not in the'
+                    "Error: Invalid value for '-c' / '--cloudCover': {} is not in the"
                     " valid range of 0 to 100.".format(max_cloud),
                     result.output,
                 )
@@ -157,6 +158,73 @@ class TestEodagCli(unittest.TestCase):
                 productType=product_type,
                 id=None,
             )
+
+    def test_eodag_search_geom_wkt_invalid(self):
+        """Calling eodag search with -g | --geom set with invalit WKT geometry string"""  # noqa
+        with self.user_conf() as conf_file:
+            result = self.runner.invoke(
+                eodag,
+                ["search", "--conf", conf_file, "-p", "whatever", "-g", "not a wkt"],
+            )
+            self.assertIn("WKTReadingError", str(result))
+            self.assertNotEqual(result.exit_code, 0)
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_geom_wkt_valid(self, dag):
+        """Calling eodag search with --geom WKT argument valid"""
+        with self.user_conf() as conf_file:
+            product_type = "whatever"
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    product_type,
+                    "-g",
+                    "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+                ],
+            )
+            api_obj = dag.return_value
+            api_obj.search.assert_called_once_with(
+                items_per_page=20,
+                page=1,
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None,
+                cloudCover=None,
+                geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                productType=product_type,
+                id=None,
+            )
+
+    def test_eodag_search_bbox_geom_mutually_exclusive(self):
+        """Calling eodag search with both --geom and --box"""  # noqa
+        with self.user_conf() as conf_file:
+            result = self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    "whatever",
+                    "-b",
+                    1,
+                    2,
+                    3,
+                    4,
+                    "-g",
+                    "a wkt",
+                ],
+            )
+            self.assertIn("Illegal usage", result.output)
+            self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_storage_arg(self, dag):
@@ -211,7 +279,9 @@ class TestEodagCli(unittest.TestCase):
             crunch_results = api_obj.crunch.return_value
 
             # Assertions
-            dag.assert_called_once_with(user_conf_file_path=conf_file)
+            dag.assert_called_once_with(
+                user_conf_file_path=conf_file, locations_conf_path=None
+            )
             api_obj.search.assert_called_once_with(
                 items_per_page=20, page=1, **criteria
             )
@@ -251,7 +321,7 @@ class TestEodagCli(unittest.TestCase):
         all_supported_product_types = [
             pt
             for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items()
-            if len(provs) != 0
+            if len(provs) != 0 and pt != GENERIC_PRODUCT_TYPE
         ]
         result = self.runner.invoke(eodag, ["list"])
         self.assertEqual(result.exit_code, 0)
@@ -265,6 +335,7 @@ class TestEodagCli(unittest.TestCase):
             pt
             for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items()
             if provider in provs
+            if pt != GENERIC_PRODUCT_TYPE
         ]
         result = self.runner.invoke(eodag, ["list", "-p", provider])
         self.assertEqual(result.exit_code, 0)
@@ -327,12 +398,3 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(
             "A file may have been downloaded but we cannot locate it\n", result.output
         )
-
-    @mock.patch("eodag.rpc.server.EODAGRPCServer", autospec=True)
-    def test_eodag_serve_rpc_ok(self, rpc_server):
-        """Calling eodag serve-rpc serve eodag methods as RPC server"""
-        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
-        self.runner.invoke(eodag, ["serve-rpc", "-f", config_path])
-        rpc_server.assert_called_once_with("localhost", 50051, config_path)
-        rpc_server.return_value.serve.assert_any_call()
-        self.assertEqual(rpc_server.return_value.serve.call_count, 1)
