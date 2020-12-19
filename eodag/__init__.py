@@ -25,6 +25,7 @@
 import warnings
 
 from .api.core import EODataAccessGateway  # noqa
+from .__meta__ import __version__  # noqa
 
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
