@@ -127,7 +127,7 @@ def version():
     "-l",
     "--locs",
     help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml,"
-    " and may be used with custom query-string argument (e.g.: -q country=FR)",
+    " and may be used with custom query-string argument (e.g.: -q country=FRA)",
     type=click.Path(exists=True),
 )
 @click.option(

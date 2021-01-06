@@ -281,13 +281,13 @@ class EODataAccessGateway(object):
         shapefiles:
             - name: country
                 path: /path/to/countries_list.shp
-                attr: ISO2
+                attr: ISO3
             - name: department
                 path: /path/to/FR_departments.shp
                 attr: code_insee
                 parent:
                     name: country
-                    attr: FR
+                    attr: FRA
         ```
         :param locations_conf_path: Path to the locations configuration file
         :type locations_conf_path: str
@@ -446,9 +446,9 @@ class EODataAccessGateway(object):
         :param dict kwargs: some other criteria that will be used to do the search,
                             using paramaters compatibles with the provider, or also
                             location filtering by name using locations configuration
-                            ``<location_name>="<attr_value>"`` (e.g.: ``country="FR"`` will use
-                            the geometry of the feature having the property ISO2=FR in the shapefile
-                            configured with name=country and attr=ISO2)
+                            ``<location_name>="<attr_value>"`` (e.g.: ``country="FRA"`` will use
+                            the geometry of the feature having the property ISO3=FRA in the shapefile
+                            configured with name=country and attr=ISO3)
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
