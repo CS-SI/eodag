@@ -727,12 +727,8 @@ def get_geometry_from_various(locations_config=[], **query_args):
                 for feat in features:
                     if feat["properties"][attr] == query_args[arg]:
                         new_geom = shape(feat["geometry"])
-                        if not geom:
-                            geom = new_geom
-                        # get geoms intersection if intersects or keep original
-                        elif new_geom.intersects(geom):
-                            geom = new_geom.intersection(geom)
-
+                        # get geoms union
+                        geom = new_geom.union(geom) if geom else new_geom
     return geom
 
 
