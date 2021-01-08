@@ -47,7 +47,7 @@ setup(
         "PyYAML",
         "tqdm",
         "shapely",
-        "fiona",
+        "pyshp",
         "owslib",
         "geojson",
         "pyproj",

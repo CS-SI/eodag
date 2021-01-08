@@ -23,9 +23,9 @@ import re
 from collections import defaultdict
 
 import dateutil.parser
-import fiona
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
+import shapefile
 from shapely.geometry import shape
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
@@ -973,8 +973,8 @@ class StacCatalog(StacCommon):
         path = location_config["path"]
         attr = location_config["attr"]
 
-        with fiona.open(path) as features:
-            countries_list = [f["properties"][attr] for f in features]
+        with shapefile.Reader(path) as shp:
+            countries_list = [rec[attr] for rec in shp.records()]
 
         countries_list.sort()
 
@@ -1010,18 +1010,20 @@ class StacCatalog(StacCommon):
         path = location_config["path"]
         attr = location_config["attr"]
 
-        with fiona.open(path) as features:
-            hits = list(
-                filter(lambda f: f["properties"].get(attr, None) == location, features)
-            )
+        with shapefile.Reader(path) as shp:
+            geom_hits = [
+                shape(shaperec.shape)
+                for shaperec in shp.shapeRecords()
+                if shaperec.record.as_dict().get(attr, None) == location
+            ]
 
-        if len(hits) == 0:
+        if len(geom_hits) == 0:
             logger.warning(
                 "no feature found in %s matching %s=%s" % (path, attr, location)
             )
             return {}
 
-        geom = shape(hits[0]["geometry"])
+        geom = geom_hits[0]
 
         cat_model = copy.deepcopy(self.stac_config["catalogs"]["country"]["model"])
         # parse f-strings

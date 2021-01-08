@@ -35,8 +35,8 @@ from datetime import datetime
 from itertools import repeat, starmap
 
 import click
-import fiona
 import jsonpath_rw as jsonpath
+import shapefile
 import shapely.wkt
 from requests.auth import AuthBase
 from shapely.geometry import MultiPolygon, Polygon, shape
@@ -723,10 +723,10 @@ def get_geometry_from_various(locations_config=[], **query_args):
     for arg in query_args.keys():
         if arg in locations_dict.keys():
             attr = locations_dict[arg]["attr"]
-            with fiona.open(locations_dict[arg]["path"]) as features:
-                for feat in features:
-                    if feat["properties"][attr] == query_args[arg]:
-                        new_geom = shape(feat["geometry"])
+            with shapefile.Reader(locations_dict[arg]["path"]) as shp:
+                for shaperec in shp.shapeRecords():
+                    if shaperec.record[attr] == query_args[arg]:
+                        new_geom = shape(shaperec.shape)
                         # get geoms union
                         geom = new_geom.union(geom) if geom else new_geom
     return geom
