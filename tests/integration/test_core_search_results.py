@@ -25,7 +25,7 @@ import unittest
 from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH
-from tests.context import EODataAccessGateway, SearchResult
+from tests.context import EODataAccessGateway, EOProduct, SearchResult
 
 
 class TestCoreSearchResults(unittest.TestCase):
@@ -153,3 +153,72 @@ class TestCoreSearchResults(unittest.TestCase):
                     self.assertEqual(value, feature["properties"][key])
             else:
                 self.assertEqual(value, feature[key])
+
+    @staticmethod
+    def _minimal_eoproduct_geojson_repr(eo_id, geom_coords, geom_type="Polygon"):
+        return {
+            "properties": {
+                "eodag_provider": "peps",
+                "eodag_product_type": "S1_SAR_OCN",
+                "eodag_search_intersection": {
+                    "coordinates": geom_coords,
+                    "type": geom_type,
+                },
+            },
+            "id": eo_id,
+            "geometry": {
+                "coordinates": geom_coords,
+                "type": geom_type,
+            },
+        }
+
+    def test_group_by_extent(self):
+        geom_coords_1 = [[
+            [89, 2],
+            [90, 2],
+            [90, 3],
+            [89, 3],
+            [89, 2],
+        ]]
+        geom_coords_2 = [[
+            [90, 3],
+            [91, 3],
+            [91, 4],
+            [90, 4],
+            [90, 3],
+        ]]
+        geom_coords_3 = [[
+            [92, 4],
+            [92, 4],
+            [92, 5],
+            [91, 5],
+            [91, 4],
+        ]]
+
+        eo_geom1 = EOProduct.from_geojson(
+            self._minimal_eoproduct_geojson_repr("1", geom_coords_1)
+        )
+        eo_geom2 = EOProduct.from_geojson(
+            self._minimal_eoproduct_geojson_repr("2", geom_coords_2)
+        )
+        eo_geom3 = EOProduct.from_geojson(
+            self._minimal_eoproduct_geojson_repr("3", geom_coords_3)
+        )
+        first_search = SearchResult([eo_geom1])
+        second_search = SearchResult([eo_geom1, eo_geom2])
+        third_search = SearchResult([eo_geom1, eo_geom2, eo_geom3])
+
+        grouped_searches = EODataAccessGateway.group_by_extent([first_search, second_search, third_search])
+
+        # The returned value is a List[SearchResult]
+        self.assertIsInstance(grouped_searches, list)
+        self.assertTrue(all(isinstance(sr, SearchResult) for sr in grouped_searches))
+        # We expect three groups because we have given products that have
+        # three different geometry bounds.
+        self.assertEqual(len(grouped_searches), 3)
+        # Given how the search results were constructed the resulting groups
+        # must have these 3 different lengths.
+        ss_len = [len(sr) for sr in grouped_searches]
+        self.assertIn(1, ss_len)
+        self.assertIn(2, ss_len)
+        self.assertIn(3, ss_len)

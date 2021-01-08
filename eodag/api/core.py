@@ -729,14 +729,22 @@ class EODataAccessGateway(object):
         return results
 
     @staticmethod
-    def sort_by_extent(searches):
-        """Combines multiple SearchResults and return a list of SearchResults sorted
-        by extent.
+    def group_by_extent(searches):
+        """Combines multiple SearchResults and return a list of SearchResults grouped
+        by extent (i.e. bounding box).
 
         :param searches: List of eodag SearchResult
         :type searches: list
         :return: list of :class:`~eodag.api.search_result.SearchResult`
+
+        .. versionchanged::
+           2.0
+
+                * Renamed from sort_by_extent to group_by_extent to reflect its
+                  actual behaviour.
         """
+        # Dict with extents as keys, each extent being defined by a str
+        # "{minx}{miny}{maxx}{maxy}" (each float rounded to 2 dec).
         products_grouped_by_extent = {}
 
         for search in searches:
@@ -747,8 +755,8 @@ class EODataAccessGateway(object):
                 same_geom.append(product)
 
         return [
-            SearchResult(products_grouped_by_extent[extent_as_wkb_hex])
-            for extent_as_wkb_hex in products_grouped_by_extent
+            SearchResult(products_grouped_by_extent[extent_as_str])
+            for extent_as_str in products_grouped_by_extent
         ]
 
     def download_all(
