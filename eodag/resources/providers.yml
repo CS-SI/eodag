@@ -579,7 +579,7 @@
       id: '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -759,7 +759,7 @@
         - '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -912,7 +912,7 @@
         - '$.data.identification.externalId'
       # The geographic extent of the product
       geometry:
-        - 'gintersect={geometry#to_wkt_convex_hull}'
+        - 'gintersect={geometry#to_rounded_wkt}'
         - '$.md.geometry'
       # The url of the quicklook
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{uid}'
@@ -1002,7 +1002,7 @@
         - '{$.properties.title#remove_extension}'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '{thumbnail}'
@@ -1202,7 +1202,7 @@
         - 'dc:identifier/text()'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - 'georss:box/text()'
       # The url of the quicklook
       quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
@@ -1333,7 +1333,7 @@
         wrapper: '"{}"'
         operations:
           AND:
-            - 'footprint:"Intersects({geometry#to_wkt_convex_hull})"'
+            - 'footprint:"Intersects({geometry#to_rounded_wkt})"'
             - 'productType:{productType}'
             - 'platformName:{platform}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'

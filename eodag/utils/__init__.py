@@ -39,7 +39,7 @@ import jsonpath_rw as jsonpath
 import shapefile
 import shapely.wkt
 from requests.auth import AuthBase
-from shapely.geometry import MultiPolygon, Polygon, shape
+from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
@@ -634,12 +634,20 @@ def format_string(key, str_to_format, **format_variables):
     :rtype: str
     """
     if isinstance(str_to_format, str):
-        # defaultdict usage will return "" for missing keys in format_args
-        try:
-            result = str_to_format.format_map(defaultdict(str, **format_variables))
-        except TypeError:
-            logger.error("Unable to format str=%s" % str_to_format)
-            raise
+        # eodag mappings function usage, e.g. '{foo#to_bar}'
+        COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
+        if COMPLEX_QS_REGEX.match(str_to_format) and "#" in str_to_format:
+            from eodag.api.product.metadata_mapping import format_metadata
+
+            result = format_metadata(str_to_format, **format_variables)
+
+        else:
+            # defaultdict usage will return "" for missing keys in format_args
+            try:
+                result = str_to_format.format_map(defaultdict(str, **format_variables))
+            except TypeError:
+                logger.error("Unable to format str=%s" % str_to_format)
+                raise
 
         # try to convert string to python object
         try:
@@ -712,9 +720,6 @@ def get_geometry_from_various(locations_config=[], **query_args):
         elif isinstance(geom_arg, str):
             # WKT geometry
             geom = shapely.wkt.loads(geom_arg)
-        elif isinstance(geom_arg, MultiPolygon):
-            # MultiPolygon: extract first Polygon
-            geom = geom_arg[0]
         elif isinstance(geom_arg, BaseGeometry):
             geom = geom_arg
 

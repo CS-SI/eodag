@@ -413,11 +413,7 @@ locations_catalogs:
       description: "Filter by country"
       extent:
         spatial:
-          bbox:
-            - - '{feature[geometry].bounds[0]}'
-              - '{feature[geometry].bounds[1]}'
-              - '{feature[geometry].bounds[2]}'
-              - '{feature[geometry].bounds[3]}'
+          bbox: '{feature[geometry]#to_bounds_lists}'
         temporal:
           interval:
             - - "{catalog[extent][temporal][interval][0][0]}"

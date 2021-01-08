@@ -23,10 +23,11 @@ import re
 from collections import defaultdict
 
 import dateutil.parser
+import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
-import shapefile
 from shapely.geometry import shape
+from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import (
@@ -976,6 +977,9 @@ class StacCatalog(StacCommon):
         with shapefile.Reader(path) as shp:
             countries_list = [rec[attr] for rec in shp.records()]
 
+        # remove duplicates
+        countries_list = list(set(countries_list))
+
         countries_list.sort()
 
         return countries_list
@@ -1023,7 +1027,7 @@ class StacCatalog(StacCommon):
             )
             return {}
 
-        geom = geom_hits[0]
+        geom = unary_union(geom_hits)
 
         cat_model = copy.deepcopy(self.stac_config["catalogs"]["country"]["model"])
         # parse f-strings
