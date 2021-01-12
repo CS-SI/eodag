@@ -44,4 +44,5 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
 )
+from eodag.utils.stac_reader import fetch_stac_items
 from tests import TEST_RESOURCES_PATH

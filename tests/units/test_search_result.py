@@ -17,15 +17,11 @@
 # limitations under the License.
 
 import unittest
+from collections import UserList
 
 import geojson
 
 from tests.context import SearchResult
-
-try:
-    from UserList import UserList
-except ImportError:
-    from collections import UserList
 
 
 class TestSearchResult(unittest.TestCase):
