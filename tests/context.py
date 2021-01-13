@@ -32,6 +32,9 @@ from eodag.api.product.drivers.base import NoDriver
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.crunch.filter_date import FilterDate
+from eodag.plugins.crunch.filter_property import FilterProperty
+from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.rest import server as eodag_http_server
