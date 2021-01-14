@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import glob
 import multiprocessing
 import os
@@ -265,11 +266,15 @@ class TestEODagEndToEnd(unittest.TestCase):
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_onda(self):
+        # As of 2021-01-14 the products previously required in 2020-08 were offline.
+        # Trying here to retrieve the most recent products which are more likely to be online.
+        today = datetime.date.today()
+        week_span = datetime.timedelta(days=7)
         product = self.execute_search(
             "onda",
             "S2_MSI_L1C",
-            "2020-08-01",
-            "2020-08-15",
+            (today - week_span).isoformat(),
+            today.isoformat(),
             [
                 0.2563590566012408,
                 43.19555008715042,
