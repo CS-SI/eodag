@@ -168,7 +168,7 @@ class TestEODagEndToEnd(unittest.TestCase):
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(
-            "usgs", "L8_OLI_TIRS_C1L1", "2017-03-01", "2017-03-15", (50, 50, 50.3, 50.3)
+            "usgs", "L8_OLI_TIRS_C1L1", "2017-03-01", "2017-03-15", [50, 50, 50.3, 50.3]
         )
         expected_filename = "{}.tar.bz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
@@ -197,7 +197,7 @@ class TestEODagEndToEnd(unittest.TestCase):
             "S2_MSI_L1C",
             "2016-06-05",
             "2016-06-16",
-            (137.772897, -37.134202, 153.749135, 73.885986),
+            [137.772897, -37.134202, 153.749135, 73.885986],
             offline=True,
         )
         expected_filename = "{}.zip".format(product.properties["title"])
@@ -238,12 +238,12 @@ class TestEODagEndToEnd(unittest.TestCase):
             "S2_MSI_L2A_MAJA",
             "2019-03-01",
             "2019-03-15",
-            (
+            [
                 0.2563590566012408,
                 43.19555008715042,
                 2.379835675499976,
                 43.907759172380565,
-            ),
+            ],
         )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
@@ -254,12 +254,12 @@ class TestEODagEndToEnd(unittest.TestCase):
             "S2_MSI_L1C",
             "2019-03-01",
             "2019-03-15",
-            (
+            [
                 0.2563590566012408,
                 43.19555008715042,
                 2.379835675499976,
                 43.907759172380565,
-            ),
+            ],
         )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
@@ -270,12 +270,12 @@ class TestEODagEndToEnd(unittest.TestCase):
             "S2_MSI_L1C",
             "2020-08-01",
             "2020-08-15",
-            (
+            [
                 0.2563590566012408,
                 43.19555008715042,
                 2.379835675499976,
                 43.907759172380565,
-            ),
+            ],
         )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
@@ -286,12 +286,12 @@ class TestEODagEndToEnd(unittest.TestCase):
             "S2_MSI_L1C",
             "2020-01-01",
             "2020-01-15",
-            (
+            [
                 0.2563590566012408,
                 43.19555008715042,
                 2.379835675499976,
                 43.907759172380565,
-            ),
+            ],
         )
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
@@ -299,7 +299,7 @@ class TestEODagEndToEnd(unittest.TestCase):
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
         product = self.execute_search(
-            "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", (50, 50, 50.3, 50.3)
+            "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", [50, 50, 50.3, 50.3]
         )
         quicklook_file_path = product.get_quicklook(filename="peps_quicklook")
         # TearDown will remove quicklook_file_path on end

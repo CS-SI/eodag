@@ -707,7 +707,7 @@ def get_geometry_from_various(locations_config=[], **query_args):
                     (geom_arg["lonmax"], geom_arg["latmin"]),
                 )
             )
-        elif isinstance(geom_arg, list) and len(geom_arg) >= 4:
+        elif isinstance(geom_arg, (list, tuple)) and len(geom_arg) >= 4:
             # bbox list
             geom = Polygon(
                 (
@@ -722,6 +722,8 @@ def get_geometry_from_various(locations_config=[], **query_args):
             geom = shapely.wkt.loads(geom_arg)
         elif isinstance(geom_arg, BaseGeometry):
             geom = geom_arg
+        else:
+            raise TypeError("Unexpected geometry type: {}".format(type(geom_arg)))
 
     # look for location name in locations configuration
     locations_dict = {loc["name"]: loc for loc in locations_config}
