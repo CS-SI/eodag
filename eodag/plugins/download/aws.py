@@ -208,7 +208,7 @@ class AwsDownload(Download):
             )
 
         # prepare download & create dirs
-        product_local_path, record_filename = self._prepare_download(product)
+        product_local_path, record_filename = self._prepare_download(product, **kwargs)
         if not product_local_path or not record_filename:
             return product_local_path
         product_local_path = product_local_path.replace(".zip", "")
@@ -566,5 +566,5 @@ class AwsDownload(Download):
         download_all using parent (base plugin) method
         """
         super(AwsDownload, self).download_all(
-            products, auth=auth, progress_callback=progress_callback
+            products, auth=auth, progress_callback=progress_callback, **kwargs
         )

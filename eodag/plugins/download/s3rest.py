@@ -137,7 +137,8 @@ class S3RestDownload(AwsDownload):
             )
 
         # destination product path
-        abs_outputs_prefix = os.path.abspath(self.config.outputs_prefix)
+        outputs_prefix = kwargs.pop("ouputs_prefix", None) or self.config.outputs_prefix
+        abs_outputs_prefix = os.path.abspath(outputs_prefix)
         product_local_path = os.path.join(abs_outputs_prefix, prefix.split("/")[-1])
 
         # .downloaded cache record directory

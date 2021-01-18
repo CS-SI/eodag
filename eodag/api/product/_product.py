@@ -212,6 +212,7 @@ class EOProduct(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """Download the EO product using the provided download plugin and the
         authenticator if necessary.
@@ -226,6 +227,16 @@ class EOProduct(object):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param wait: (optional) If download fails, wait time in minutes between
+                    two download tries (default=2')
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes
+                        before stop retrying to download (default=20')
+        :type timeout: int
+        :param dict kwargs: `outputs_prefix` (str), `extract` (bool) and
+                            `dl_url_params` (dict) can be provided as additional kwargs
+                            and will override any other values defined in a configuration
+                            file or with environment variables.
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
@@ -250,6 +261,7 @@ class EOProduct(object):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
+            **kwargs
         )
         if fs_location is None:
             raise DownloadError(

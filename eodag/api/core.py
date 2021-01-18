@@ -765,6 +765,7 @@ class EODataAccessGateway(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """Download all products resulting from a search.
 
@@ -782,6 +783,10 @@ class EODataAccessGateway(object):
         :param timeout: (optional) If download fails, maximum time in minutes
                     before stop retrying to download (default=20')
         :type timeout: int
+        :param dict kwargs: `outputs_prefix` (str), `extract` (bool) and
+                            `dl_url_params` (dict) can be provided here and will
+                            override any other values defined in a configuration file
+                            or with environment variables.
         :returns: A collection of the absolute paths to the downloaded products
         :rtype: list
         """
@@ -798,6 +803,7 @@ class EODataAccessGateway(object):
                 progress_callback=progress_callback,
                 wait=wait,
                 timeout=timeout,
+                **kwargs
             )
         else:
             logger.info("Empty search result, nothing to be downloaded !")
@@ -919,6 +925,7 @@ class EODataAccessGateway(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """Download a single product.
 
@@ -952,6 +959,10 @@ class EODataAccessGateway(object):
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download (default=20')
         :type timeout: int
+        :param dict kwargs: `outputs_prefix` (str), `extract` (bool) and
+                            `dl_url_params` (dict) can be provided as additional kwargs
+                            and will override any other values defined in a configuration
+                            file or with environment variables.
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
@@ -968,7 +979,7 @@ class EODataAccessGateway(object):
                 self._plugins_manager.get_download_plugin(product), auth
             )
         return product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout
+            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
         )
 
     def get_cruncher(self, name, **options):

@@ -36,6 +36,7 @@ from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.base import Download
+from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.rest import server as eodag_http_server
 from eodag.rest.utils import eodag_api, get_date

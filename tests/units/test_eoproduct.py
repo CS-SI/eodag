@@ -18,14 +18,17 @@
 
 import io
 import os
+import pathlib
+import shutil
 import tempfile
+import zipfile
 
 import geojson
 import requests
 from shapely import geometry
 
 from tests import EODagTestCase
-from tests.context import Download, EOProduct, NoDriver, config
+from tests.context import Download, EOProduct, HTTPDownload, NoDriver, config
 from tests.utils import mock
 
 
@@ -261,6 +264,154 @@ class TestEOProduct(EODagTestCase):
             @staticmethod
             def iter_content(**kwargs):
                 with io.BytesIO(b"a" * 2 ** 5) as fh:
+                    while True:
+                        chunk = fh.read(kwargs["chunk_size"])
+                        if not chunk:
+                            break
+                        yield chunk
+
+            def raise_for_status(response):
+                pass
+
+        return Response()
+
+    def test_eoproduct_download_http_default(self):
+        """eoproduct.download must save the product at outputs_prefix and create a .downloaded dir"""  # noqa
+        # Setup
+        product = EOProduct(
+            self.provider, self.eoproduct_props, productType=self.product_type
+        )
+        self.requests_http_get.return_value = self._download_response_archive()
+        dl_config = config.PluginConfig.from_mapping({
+            "base_uri": "fake_base_uri",
+            "outputs_prefix": tempfile.gettempdir(),
+        })
+        downloader = HTTPDownload(provider=self.provider, config=dl_config)
+        product.register_downloader(downloader, None)
+
+        # Download
+        product_file_path = product.download()
+
+        # Check that the mocked request was properly called.
+        self.requests_http_get.assert_called_with(
+            self.download_url, stream=True, auth=None, params={}
+        )
+        product_file_path = product_file_path[len("file://"):]
+        download_records_dir = pathlib.Path(product_file_path).parent / ".downloaded"
+        # A .downloaded folder should be created, including a text file that
+        # lists the downloaded product by their url
+        self.assertTrue(download_records_dir.is_dir())
+        files_in_records_dir = list(download_records_dir.iterdir())
+        self.assertEqual(len(files_in_records_dir), 1)
+        records_file = files_in_records_dir[0]
+        actual_download_url = records_file.read_text()
+        self.assertEqual(actual_download_url, self.download_url)
+        # Check that the downloaded product is a zipfile
+        self.assertTrue(zipfile.is_zipfile(product_file_path))
+
+        # Teardown
+        os.remove(product_file_path)
+        os.remove(str(records_file))
+        os.rmdir(str(download_records_dir))
+
+    def test_eoproduct_download_http_extract(self):
+        """eoproduct.download over must be able to extract a product"""
+        # Setup
+        product = EOProduct(
+            self.provider, self.eoproduct_props, productType=self.product_type
+        )
+        self.requests_http_get.return_value = self._download_response_archive()
+        dl_config = config.PluginConfig.from_mapping({
+            "base_uri": "fake_base_uri",
+            "outputs_prefix": tempfile.gettempdir(),
+            "extract": True
+        })
+        downloader = HTTPDownload(provider=self.provider, config=dl_config)
+        product.register_downloader(downloader, None)
+
+        # Download
+        product_dir_path = product.download()
+        product_dir_path = pathlib.Path(product_dir_path[len("file://"):])
+        # The returned path must be a directory.
+        self.assertTrue(product_dir_path.is_dir())
+        # Check that the extracted dir has at least one file, there are more
+        # but that should be enough.
+        self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
+        # The zip file should is around
+        product_zip_file = product_dir_path.with_suffix(".SAFE.zip")
+        self.assertTrue(product_zip_file.is_file)
+
+        download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
+
+        # Teardown
+        shutil.rmtree(str(product_dir_path))
+        os.remove(str(product_zip_file))
+        shutil.rmtree(str(download_records_dir))
+
+    def test_eoproduct_download_http_dynamic_options(self):
+        """eoproduct.download must accept the download options to be set automatically"""
+        # Setup
+        product = EOProduct(
+            self.provider, self.eoproduct_props, productType=self.product_type
+        )
+        self.requests_http_get.return_value = self._download_response_archive()
+        dl_config = config.PluginConfig.from_mapping({
+            "base_uri": "fake_base_uri",
+            "outputs_prefix": "will_be_overriden",
+        })
+        downloader = HTTPDownload(provider=self.provider, config=dl_config)
+        product.register_downloader(downloader, None)
+
+        output_dir_name = "_testeodag"
+        output_dir = pathlib.Path(tempfile.gettempdir()) / output_dir_name
+        if output_dir.is_dir():
+            shutil.rmtree(str(output_dir))
+        output_dir.mkdir()
+
+        # Download
+        product_dir_path = product.download(
+            outputs_prefix=str(output_dir),
+            extract=True,
+            dl_url_params={"fakeparam": "dummy"}
+        )
+        # Check that dl_url_params are properly passed to the GET request
+        self.requests_http_get.assert_called_with(
+            self.download_url, stream=True, auth=None, params={"fakeparam": "dummy"}
+        )
+        # Check that "outputs_prefix" is respected.
+        product_dir_path = pathlib.Path(product_dir_path[len("file://"):])
+        self.assertEqual(product_dir_path.parent.name, output_dir_name)
+        # We've asked to extract the product so there should be a directory.
+        self.assertTrue(product_dir_path.is_dir())
+        # Check that the extracted dir has at least one file, there are more
+        # but that should be enough.
+        self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
+        # The downloaded zip file is still around
+        product_zip_file = product_dir_path.with_suffix(".SAFE.zip")
+        self.assertTrue(product_zip_file.is_file)
+
+        # Teardown (all the created files are within outputs_prefix)
+        shutil.rmtree(str(output_dir))
+
+    def _download_response_archive(self):
+        class Response(object):
+            """Emulation of a response to requests.get method for a zipped product"""
+
+            def __init__(response):
+                # Using a zipped product file
+                with open(self.local_product_as_archive_path, "rb") as fh:
+                    response.__zip_buffer = io.BytesIO(fh.read())
+                cl = response.__zip_buffer.getbuffer().nbytes
+                response.headers = {"content-length": cl}
+
+            def __enter__(response):
+                return response
+
+            def __exit__(response, *args):
+                pass
+
+            def iter_content(response, **kwargs):
+                with response.__zip_buffer as fh:
                     while True:
                         chunk = fh.read(kwargs["chunk_size"])
                         if not chunk:
