@@ -25,16 +25,15 @@ from dateutil import tz
 
 from eodag.plugins.crunch.base import Crunch
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_latest")
+logger = logging.getLogger("eodag.plugins.crunch.filter_date")
 
 
 class FilterDate(Crunch):
     """FilterDate cruncher: filter products by date
 
-    :param start: (optional) Start sensing time in iso format
-    :type start: str
-    :param end: (optional) End sensing time in iso format
-    :type end: str
+    :param dict config: crunch configuration, may contain :
+            - `start`: (optional) start sensing time in iso format
+            - `end`: (optional) end sensing time in iso format
     """
 
     @staticmethod
@@ -48,8 +47,12 @@ class FilterDate(Crunch):
         return dateutil.parser.parse(start_date)
 
     def proceed(self, products, **search_params):
-        """Execute crunch:
-        Filter products between start and end dates.
+        """Execute crunch: Filter products between start and end dates.
+
+        :param products: A list of products resulting from a search
+        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :returns: The filtered products
+        :rtype: list(:class:`~eodag.api.product.EOProduct`)
         """
         logger.debug("Start filtering by date")
         if not products:

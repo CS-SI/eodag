@@ -22,6 +22,7 @@ from tests import TEST_RESOURCES_PATH
 from tests.context import (
     EODataAccessGateway,
     FilterDate,
+    FilterLatestByName,
     FilterOverlap,
     FilterProperty,
     SearchResult,
@@ -166,3 +167,20 @@ class TestSearchStacStatic(unittest.TestCase):
             FilterProperty({"cloudCover": 10, "operator": "lt"})
         )
         self.assertEqual(len(filtered_items), 1)
+
+    def test_search_stac_static_crunch_filter_lastest_by_name(self):
+        """load_stac_items from root and filter by name"""
+        items = self.dag.load_stac_items(
+            self.root_cat,
+            recursive=True,
+            provider=self.stac_provider,
+            productType=self.product_type,
+        )
+        self.assertEqual(len(items), self.root_cat_len)
+
+        filtered_items = items.crunch(
+            FilterLatestByName(
+                {"name_pattern": r"S2[AB]_MSIL1C_20(?P<tileid>\d{6}).*T21NY.*"}
+            )
+        )
+        self.assertEqual(len(filtered_items), 2)

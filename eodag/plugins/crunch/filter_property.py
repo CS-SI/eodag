@@ -36,6 +36,11 @@ class FilterProperty(Crunch):
 
     def proceed(self, products, **search_params):
         """Execute crunch: Filter products, retaining only those that match property filtering
+
+        :param products: A list of products resulting from a search
+        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :returns: The filtered products
+        :rtype: list(:class:`~eodag.api.product.EOProduct`)
         """
         operator_name = self.config.pop("operator", "eq")
         try:

@@ -23,7 +23,7 @@ class Crunch(PluginTopic):
     """Base cruncher"""
 
     def __init__(self, config):
-        self.config = config
+        self.config = config if config is not None else {}
 
     def proceed(self, product_list, **search_params):
         """Implementation of how the results must be crunched"""

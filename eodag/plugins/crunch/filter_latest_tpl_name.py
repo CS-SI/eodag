@@ -22,13 +22,16 @@ import re
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import MisconfiguredError
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_latest")
+logger = logging.getLogger("eodag.plugins.crunch.filter_latest_tpl_name")
 
 
 class FilterLatestByName(Crunch):
     """FilterLatestByName cruncher
 
     Filter Search results to get only the latest product, based on the name of the product
+
+    :param dict config: crunch configuration, must contain :
+            - `name_pattern` : product name pattern
     """
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")
@@ -45,7 +48,13 @@ class FilterLatestByName(Crunch):
         self.name_pattern = re.compile(name_pattern)
 
     def proceed(self, product_list, **search_params):
-        """Execute crunch: Filter Search results to get only the latest product, based on the name of the product"""
+        """Execute crunch: Filter Search results to get only the latest product, based on the name of the product
+
+        :param products: A list of products resulting from a search
+        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :returns: The filtered products
+        :rtype: list(:class:`~eodag.api.product.EOProduct`)
+        """
         logger.debug("Starting products filtering")
         processed = []
         filtered = []
@@ -69,7 +78,7 @@ class FilterLatestByName(Crunch):
                     "pattern expected by the cruncher %s. Name of the product: %s. Name pattern expected: "
                     "%s",
                     product,
-                    self.name,
+                    self.__class__.__name__,
                     product.properties["title"],
                     self.name_pattern,
                 )

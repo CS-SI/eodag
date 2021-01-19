@@ -47,7 +47,7 @@ class FilterOverlap(Crunch):
 
         :param products: A list of products resulting from a search
         :type products: list(:class:`~eodag.api.product.EOProduct`)
-        :param dict search_params: search criteria (should contain `geometry`)
+        :param dict search_params: search criteria that must contain `geometry`
         :returns: The filtered products
         :rtype: list(:class:`~eodag.api.product.EOProduct`)
         """

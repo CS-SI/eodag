@@ -99,6 +99,8 @@ setup(
             "FilterLatestIntersect = eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect",
             "FilterLatestByName = eodag.plugins.crunch.filter_latest_tpl_name:FilterLatestByName",
             "FilterOverlap = eodag.plugins.crunch.filter_overlap:FilterOverlap",
+            "FilterProperty = eodag.plugins.crunch.filter_property:FilterProperty",
+            "FilterDate = eodag.plugins.crunch.filter_date:FilterDate",
         ],
         "eodag.plugins.download": [
             "AwsDownload = eodag.plugins.download.aws:AwsDownload",

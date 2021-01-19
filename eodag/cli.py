@@ -53,7 +53,13 @@ from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
-CRUNCHERS = ["FilterLatestByName", "FilterLatestIntersect", "FilterOverlap"]
+CRUNCHERS = [
+    "FilterLatestByName",
+    "FilterLatestIntersect",
+    "FilterOverlap",
+    "FilterProperty",
+    "FilterDate",
+]
 
 
 class MutuallyExclusiveOption(click.Option):
