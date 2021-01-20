@@ -441,14 +441,15 @@ class EODataAccessGateway(object):
                     * with a bounding box as list of float:
                       ``[lonmin, latmin, lonmax, latmax]``
                     * with a WKT str
-                    The geometry can also be passed as ``<location_name>="<attr_value>"`` in kwargs
+                    The geometry can also be passed as ``<location_name>="<attr_regex>"`` in kwargs
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
         :param dict kwargs: some other criteria that will be used to do the search,
                             using paramaters compatibles with the provider, or also
                             location filtering by name using locations configuration
-                            ``<location_name>="<attr_value>"`` (e.g.: ``country="FRA"`` will use
-                            the geometry of the feature having the property ISO3=FRA in the shapefile
-                            configured with name=country and attr=ISO3)
+                            ``<location_name>="<attr_regex>"`` (e.g.: ``country="PA.`` will use
+                            the geometry of the features having the property ISO3 starting with
+                            'PA' such as Panama and Pakistan in the shapefile configured with
+                            name=country and attr=ISO3)
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
