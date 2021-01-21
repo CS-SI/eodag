@@ -22,6 +22,7 @@ from operator import itemgetter
 
 import geojson
 import pkg_resources
+import yaml.parser
 from pkg_resources import resource_filename
 from whoosh import fields
 from whoosh.fields import Schema
@@ -35,6 +36,8 @@ from eodag.config import (
     load_yml_config,
     override_config_from_env,
     override_config_from_file,
+    override_config_from_mapping,
+    provider_config_init,
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
@@ -269,6 +272,36 @@ class EODataAccessGateway(object):
         ]
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
+
+    def update_providers_config(self, yaml_conf):
+        """Update providers configuration with given input.
+        Can be used to add a provider to existing configuration or update
+        an existing one.
+
+        >>> from eodag import EODataAccessGateway
+        >>> dag = EODataAccessGateway()
+        >>> dag.update_providers_config('''
+        ...     my_new_provider:
+        ...         search:
+        ...             type: StacSearch
+        ...             api_endpoint: https://api.my_new_provider/search
+        ...         products:
+        ...             GENERIC_PRODUCT_TYPE:
+        ...                 productType: '{productType}'
+        ... ''')
+        >>> type(dag.providers_config["my_new_provider"])
+        <class 'eodag.config.ProviderConfig'>
+        >>> dag.providers_config["my_new_provider"].priority
+        0
+
+        :param yaml_conf: YAML formated provider configuration
+        :type yaml_conf: str
+        """
+        conf_update = yaml.safe_load(yaml_conf)
+        override_config_from_mapping(self.providers_config, conf_update)
+        for provider in conf_update.keys():
+            provider_config_init(self.providers_config[provider])
+        self._plugins_manager = PluginManager(self.providers_config)
 
     def set_locations_conf(self, locations_conf_path):
         """Set locations configuration.
