@@ -444,7 +444,7 @@ def makedirs(dirpath):
 
 
 def format_dict_items(config_dict, **format_variables):
-    """Recursive apply string.format(**format_variables) to dict elements
+    r"""Recursive apply string.format(\**format_variables) to dict elements
 
     >>> format_dict_items(
     ...     {"foo": {"bar": "{a}"}, "baz": ["{b}?", "{b}!"]},
