@@ -49,7 +49,7 @@ search:
     acquisitionSubType: '$.properties.acquisitionSubType'
     startTimeFromAscendingNode: '$.properties.datetime'
     completionTimeFromAscendingNode:
-      - 'datetime={startTimeFromAscendingNode}Z/{completionTimeFromAscendingNode}Z'
+      - 'datetime={startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}'
       - '$.properties.end_datetime'
     illuminationAzimuthAngle: '$.properties."view:sun_azimuth"'
     illuminationElevationAngle: '$.properties."view:sun_elevation"'
