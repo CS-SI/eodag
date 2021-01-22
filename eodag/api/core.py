@@ -310,20 +310,18 @@ class EODataAccessGateway(object):
         You can also configure parent attributes, which can be used for creating
         a catalogs path when using eodag as a REST server.
         Example of locations configuration file content:
-
-        .. code-block:: yaml
-
-            shapefiles:
-                - name: country
-                    path: /path/to/countries_list.shp
-                    attr: ISO3
-                - name: department
-                    path: /path/to/FR_departments.shp
-                    attr: code_insee
-                    parent:
-                        name: country
-                        attr: FRA
-
+        ```yml
+        shapefiles:
+        - name: country
+            path: /path/to/countries_list.shp
+            attr: ISO3
+        - name: department
+            path: /path/to/FR_departments.shp
+            attr: code_insee
+            parent:
+            name: country
+            attr: FRA
+        ```
         :param locations_conf_path: Path to the locations configuration file
         :type locations_conf_path: str
         """
@@ -467,10 +465,10 @@ class EODataAccessGateway(object):
         :type start: str
         :param end: End sensing time in iso format
         :type end: str
-        :param geom: Dictionnary defining the AOI. Information can be defined in different ways:
+        :param geom: Search area that can be defined in different ways:
 
-                    * with a Shapely geometry object ("obj" as key):
-                      ``{"obj": :class:`shapely.geometry.base.BaseGeometry`}``
+                    * with a Shapely geometry object:
+                      ``class:`shapely.geometry.base.BaseGeometry```
                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
                     * with a bounding box as list of float:

@@ -29,6 +29,7 @@ This first series of tutorials gradually introduces you to the various capabilit
 
    tutorials/tuto_basics.nblink
    tutorials/tuto_advanced.nblink
+   tutorials/tuto_search_area.nblink
    tutorials/tuto_bandmath.nblink
 
 This second series of tutorials shows how to include `eodag` in more involved scenarios that post-process EO products:
@@ -46,6 +47,8 @@ link (only for those that don't require any additional software) to run them dir
     * :download:`tuto_basics.ipynb <../examples/tuto_basics.ipynb>` :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 
     * :download:`tuto_advanced.ipynb <../examples/tuto_advanced.ipynb>` :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_advanced.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
+
+    * :download:`tuto_search_area.ipynb <../examples/tuto_search_area.ipynb>` :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_search_area.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 
     * :download:`tuto_bandmath.ipynb <../examples/tuto_bandmath.ipynb>` :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_bandmath.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 
