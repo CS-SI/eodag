@@ -101,11 +101,11 @@ class TestEodagCli(unittest.TestCase):
         result = self.runner.invoke(
             eodag, ["search", "--conf", conf_file, "-p", "whatever"]
         )
-        self.assertIn(
-            "Error: Invalid value for '-f' / '--conf': Path '{}' does not exist.".format(  # noqa
-                conf_file
-            ),
-            result.output,
+        expect_output = "Error: Invalid value for '-f' / '--conf': Path '{}' does not exist.".format(  # noqa
+            conf_file
+        )
+        self.assertTrue(
+            expect_output in result.output or expect_output.replace("'", '"')
         )
         self.assertNotEqual(result.exit_code, 0)
 
@@ -117,10 +117,12 @@ class TestEodagCli(unittest.TestCase):
                     eodag,
                     ["search", "--conf", conf_file, "-p", "whatever", "-c", max_cloud],
                 )
-                self.assertIn(
+                expect_output = (
                     "Error: Invalid value for '-c' / '--cloudCover': {} is not in the"
-                    " valid range of 0 to 100.".format(max_cloud),
-                    result.output,
+                    " valid range of 0 to 100."
+                ).format(max_cloud)
+                self.assertTrue(
+                    expect_output in result.output or expect_output.replace("'", '"')
                 )
                 self.assertNotEqual(result.exit_code, 0)
 
