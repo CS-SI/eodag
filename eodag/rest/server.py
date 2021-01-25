@@ -91,7 +91,7 @@ stac_api_config["title"] = root_catalog["title"] + " - service-doc"
 stac_api_config["specs"] = [
     {
         "endpoint": "service-desc",
-        "route": "/service-desc",
+        "route": "/api",
         "rule_filter": lambda rule: True,  # all in
         "model_filter": lambda tag: True,  # all in
     }

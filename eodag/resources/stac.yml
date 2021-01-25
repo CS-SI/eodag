@@ -17,6 +17,8 @@
 # limitations under the License.
 
 stac_version: 1.0.0-beta.2
+stac_api_version: 1.0.0-beta.2
+# different versions raise error with stac-browser
 
 # Capabilities ----------------------------------------------------------------
 
@@ -27,19 +29,24 @@ landing_page:
   description: "STAC API provided by EODAG"
   links:
     - rel: self
+      type: "application/json"
       href: "{catalog[root]}"
     - rel: service-desc
-      href: "{catalog[root]}/service-desc"
+      type: "application/vnd.oai.openapi+json;version=3.0"
+      href: "{catalog[root]}/api"
     - rel: service-doc
+      type: "text/html"
       href: "{catalog[root]}/service-doc"
     - rel: conformance
+      type: "application/json"
       href: "{catalog[root]}/conformance"
     - rel: data
+      type: "application/json"
       href: "{catalog[root]}/collections"
     - rel: search
       href: "{catalog[root]}/search"
       method: GET
-  stac_version: "{stac_version}"
+  stac_version: "{stac_api_version}"
   stac_extensions: []
   id: eodag-stac-api
 
@@ -165,7 +172,7 @@ item:
     - sat
     - sci
     - view
-    - "{catalog[root]}/extensions/oseo/json-schema/schema.json"
+    # - "{catalog[root]}/extensions/oseo/json-schema/schema.json"
   id: '$.product.properties.title'
   bbox:
     - '{item[geometry].bounds[0]}'

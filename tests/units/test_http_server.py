@@ -321,7 +321,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid("conformance")
 
     def test_service_desc(self):
-        self._request_valid("service-desc")
+        self._request_valid("api")
 
     def test_service_doc(self):
         response = self.app.get("service-doc", follow_redirects=True)
