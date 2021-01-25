@@ -20,7 +20,7 @@ import re
 from datetime import datetime
 from string import Formatter
 
-import jsonpath_rw as jsonpath
+import jsonpath_ng as jsonpath
 from dateutil.tz import tzutc
 from lxml import etree
 from lxml.etree import XPathEvalError
@@ -560,7 +560,7 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
                     dest_dict[metadata][1] = (conversion, jsonpath.parse(path))
                 else:
                     dest_dict[metadata] = (conversion, jsonpath.parse(path))
-            except Exception:  # jsonpath_rw does not provide a proper exception
+            except Exception:  # jsonpath_ng does not provide a proper exception
                 # Assume the mapping is to be passed as is.
                 # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
                 # it further

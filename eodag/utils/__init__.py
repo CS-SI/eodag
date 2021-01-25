@@ -35,7 +35,7 @@ from datetime import datetime
 from itertools import repeat, starmap
 
 import click
-import jsonpath_rw as jsonpath
+import jsonpath_ng as jsonpath
 import shapefile
 import shapely.wkt
 from requests.auth import AuthBase
@@ -465,7 +465,7 @@ def format_dict_items(config_dict, **format_variables):
 def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
     """Recursive parse jsonpath elements in dict
 
-    >>> import jsonpath_rw as jsonpath
+    >>> import jsonpath_ng as jsonpath
     >>> jsonpath_parse_dict_items(
     ...     {"foo": {"bar": jsonpath.parse("$.a.b")}, "qux": [jsonpath.parse("$.c"), jsonpath.parse("$.c")]},
     ...     {"a":{"b":"baz"}, "c":"quux"}
@@ -613,7 +613,7 @@ def string_to_jsonpath(key, str_value):
     if "$." in str(str_value):
         try:
             return jsonpath.parse(str_value)
-        except Exception:  # jsonpath_rw does not provide a proper exception
+        except Exception:  # jsonpath_ng does not provide a proper exception
             # If str_value does not contain a jsonpath, return it as is
             return str_value
     else:
@@ -661,7 +661,7 @@ def format_string(key, str_to_format, **format_variables):
 def parse_jsonpath(key, jsonpath_obj, **values_dict):
     """Parse jsonpah in jsonpath_obj using values_dict
 
-    >>> import jsonpath_rw as jsonpath
+    >>> import jsonpath_ng as jsonpath
     >>> parse_jsonpath(None, jsonpath.parse("$.foo.bar"), **{"foo":{"bar":"baz"}})
     'baz'
 

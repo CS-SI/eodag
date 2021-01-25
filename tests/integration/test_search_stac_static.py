@@ -37,6 +37,7 @@ class TestSearchStacStatic(unittest.TestCase):
 
         self.cat_dir_path = self.root_cat = os.path.join(TEST_RESOURCES_PATH, "stac")
         # paths are relative in this test catalog, chdir needed
+        self._currentdir = os.getcwd()
         os.chdir(self.cat_dir_path)
 
         self.root_cat = os.path.join(self.cat_dir_path, "catalog.json")
@@ -51,6 +52,9 @@ class TestSearchStacStatic(unittest.TestCase):
 
         self.extent_big = {"lonmin": -55, "lonmax": -53, "latmin": 2, "latmax": 5}
         self.extent_small = {"lonmin": -55, "lonmax": -54.5, "latmin": 2, "latmax": 2.5}
+
+    def tearDown(self):
+        os.chdir(self._currentdir)
 
     def test_search_stac_static_load_child(self):
         """load_stac_items from child catalog must provide items"""

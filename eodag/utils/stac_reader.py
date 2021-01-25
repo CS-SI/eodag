@@ -22,7 +22,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 import concurrent.futures
-import pyjq
+from jsonpath_ng.ext import parse
 
 logger = logging.getLogger("eodag.utils.stac_reader")
 
@@ -55,7 +55,7 @@ def read_http_remote_json(url):
 
 
 class CatalogOpener(object):
-    """Opener manager for pyjq
+    """Opener manager
     """
 
     def __init__(self, opener_list):
@@ -71,7 +71,7 @@ class CatalogOpener(object):
                 available_openers = self.opener_list.copy()
             return available_openers[0](url)
         # reading errors for used openers: add more if needed
-        except (FileNotFoundError, pyjq._pyjq.ScriptRuntimeError):
+        except FileNotFoundError:
             # set lowest priority to current opener
             oldindex = self.opener_list.index(available_openers[0])
             newindex = len(self.opener_list) - 1
@@ -124,73 +124,41 @@ def fetch_stac_items(catalog_path, recursive=False, max_connections=100, opener=
     return items
 
 
+def _fetch_stac_with_jsonpath(catalog_path, opener, expression):
+    """Fetch JSON elements with a JSONPath expression.
+    """
+    json_data = opener(catalog_path)
+    jsonpath_expression = parse(expression)
+    res_jp = [match.value for match in jsonpath_expression.find(json_data)]
+    return res_jp
+
+
 def _fetch_stac_item_links(catalog_path, opener):
     """Fetch STAC item links from given catalog
     """
-    try:
-        return pyjq.all(
-            ".links[] | select(.rel == $rel) | .href",
-            url=catalog_path,
-            opener=opener,
-            vars={"rel": "item"},
-        )
-    except pyjq._pyjq.ScriptRuntimeError as e:
-        # no item link available
-        if "Cannot iterate over null" in str(e):
-            return []
-        else:
-            raise e
+    return _fetch_stac_with_jsonpath(catalog_path, opener, 'links[?rel = "item"].href')
 
 
 def _fetch_stac_child_links(catalog_path, opener):
     """Fetch STAC child links from given catalog
     """
-    try:
-        return pyjq.all(
-            ".links[] | select(.rel == $rel) | .href",
-            url=catalog_path,
-            opener=opener,
-            vars={"rel": "child"},
-        )
-    except pyjq._pyjq.ScriptRuntimeError as e:
-        # no child link available
-        if "Cannot iterate over null" in str(e):
-            return []
-        else:
-            raise e
+    return _fetch_stac_with_jsonpath(catalog_path, opener, 'links[?rel = "child"].href')
 
 
 def _fetch_stac_items_from_content(catalog_path, opener):
     """Fetch STAC items from given FeatureCollection
     """
-    try:
-        return pyjq.all(
-            ".features[] | select(.type == $type)",
-            url=catalog_path,
-            opener=opener,
-            vars={"type": "Feature"},
-        )
-    except pyjq._pyjq.ScriptRuntimeError as e:
-        # no feature available in feature collection
-        if "Cannot iterate over null" in str(e):
-            return []
-        else:
-            raise e
+    return _fetch_stac_with_jsonpath(catalog_path, opener, 'links[?type = "Feature"]')
 
 
 def _fetch_stac_item_from_content(catalog_path, opener):
     """Fetch STAC item from given feature
     """
-    try:
-        return pyjq.all(
-            ". | select(.type == $type)",
-            url=catalog_path,
-            opener=opener,
-            vars={"type": "Feature"},
-        )
-    except pyjq._pyjq.ScriptRuntimeError as e:
-        # no feature available in geojson feature
-        if "Cannot iterate over null" in str(e):
-            return []
-        else:
-            raise e
+    # This JSONPATH '$[?($.type == "Feature")]' didn't work (returned [])
+    # with jsonpath-ng while it should indeed return the object if it
+    # has "type": "Feature". It's actually just a simple key:value check.
+    json_content = opener(catalog_path)
+    if json_content.get("type") == "Feature":
+        return [json_content]
+    else:
+        return []

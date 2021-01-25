@@ -22,7 +22,7 @@ import re
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
-import jsonpath_rw as jsonpath
+import jsonpath_ng as jsonpath
 import requests
 from lxml import etree
 
@@ -735,7 +735,7 @@ class PostJsonSearch(QueryStringSearch):
                             conversion,
                             jsonpath.parse(path),
                         )
-                except Exception:  # jsonpath_rw does not provide a proper exception
+                except Exception:  # jsonpath_ng does not provide a proper exception
                     # Assume the mapping is to be passed as is.
                     # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
                     # it further

@@ -28,6 +28,7 @@ class TestStacReader(unittest.TestCase):
 
         self.cat_dir_path = self.root_cat = os.path.join(TEST_RESOURCES_PATH, "stac")
         # paths are relative in this test catalog, chdir needed
+        self._currentdir = os.getcwd()
         os.chdir(self.cat_dir_path)
 
         self.root_cat = os.path.join(self.cat_dir_path, "catalog.json")
@@ -36,6 +37,9 @@ class TestStacReader(unittest.TestCase):
             self.cat_dir_path, "country", "FRA", "year", "2018", "2018.json"
         )
         self.child_cat_len = 2
+
+    def tearDown(self):
+        os.chdir(self._currentdir)
 
     def test_stac_reader_fetch_child(self):
         """fetch_stac_items from child catalog must provide items"""
