@@ -20,6 +20,7 @@ import os
 import random
 import unittest
 from contextlib import contextmanager
+from pkg_resources import resource_filename
 
 import click
 from click.testing import CliRunner
@@ -27,7 +28,13 @@ from faker import Faker
 
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
-from tests.context import download, eodag, search_crunch
+from tests.context import (
+    AuthenticationError,
+    download,
+    eodag,
+    MisconfiguredError,
+    search_crunch,
+)
 from tests.units.test_core import TestCore
 from tests.utils import mock, no_blanks
 
@@ -400,3 +407,42 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(
             "A file may have been downloaded but we cannot locate it\n", result.output
         )
+
+    def test_eodag_download_missingcredentials(self):
+        """Calling eodag download with missing credentials must raise MisconfiguredError"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        default_conf_file = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+        result = self.runner.invoke(
+            eodag,
+            ["download", "--search-results", search_results_path, "-f", default_conf_file],
+        )
+        self.assertEqual(result.exit_code, 1)
+        self.assertIsInstance(result.exception, MisconfiguredError)
+
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.download", autospec=True)
+    def test_eodag_download_wrongcredentials(self, download):
+        """Calling eodag download with wrong credentials must raise AuthenticationError"""
+        # This is not an end-to-end test so we have to manually raise the error down
+        # to HTTPDownload.download. This is indeed the download plugin of PEPS which
+        # is used here since the GeoJSON results were obtained from this provider.
+        download.side_effect = AuthenticationError
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        result = self.runner.invoke(
+            eodag,
+            ["download", "--search-results", search_results_path],
+            # We override the default (empty) credentials with dummy values not
+            # to raise a MisconfiguredError.
+            env={
+                "EODAG__PEPS__AUTH__CREDENTIALS__USERNAME": "dummy",
+                "EODAG__PEPS__AUTH__CREDENTIALS__PASSWORD": "dummy"
+            }
+        )
+        self.assertEqual(result.exit_code, 1)
+        self.assertIsInstance(result.exception, AuthenticationError)
+        self.assertEqual(download.call_count, 1)

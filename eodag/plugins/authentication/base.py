@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from eodag.plugins.base import PluginTopic
+from eodag.utils.exceptions import MisconfiguredError
 
 
 class Authentication(PluginTopic):
@@ -24,3 +25,29 @@ class Authentication(PluginTopic):
     def authenticate(self):
         """Authenticate"""
         raise NotImplementedError
+
+    def validate_config_credentials(self):
+        # No credentials dict in the config
+        try:
+            credentials = self.config.credentials
+        except AttributeError:
+            raise MisconfiguredError(
+                "Missing credentials configuration for provider: %s", self.provider
+            )
+        # Empty credentials dict
+        if not credentials:
+            raise MisconfiguredError(
+                "Missing credentials for provider: %s", self.provider
+            )
+        # Credentials keys but values are None.
+        missing_credentials = [
+            cred_name
+            for cred_name, cred_value in credentials.items()
+            if cred_value is None
+        ]
+        if missing_credentials:
+            raise MisconfiguredError(
+                "The following credentials are missing for provider {}: {}".format(
+                    self.provider, ", ".join(missing_credentials)
+                )
+            )

@@ -35,7 +35,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
-from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.exceptions import AuthenticationError, NotAvailableError
 
 logger = logging.getLogger("eodag.plugins.apis.usgs")
 
@@ -54,11 +54,14 @@ class UsgsApi(Api):
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
-        api.login(
-            self.config.credentials["username"],
-            self.config.credentials["password"],
-            save=True,
-        )
+        try:
+            api.login(
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+                save=True,
+            )
+        except USGSError:
+            raise AuthenticationError("Please check your USGS credentials.") from None
         usgs_dataset = self.config.products[product_type]["dataset"]
         usgs_catalog_node = self.config.products[product_type]["catalog_node"]
         start_date = kwargs.pop("startTimeFromAscendingNode", None)

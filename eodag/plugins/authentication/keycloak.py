@@ -37,6 +37,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
         """
         Makes authentication request
         """
+        self.validate_config_credentials()
         response = self.session.post(
             self.TOKEN_URL_TEMPLATE.format(
                 auth_base_uri=self.config.auth_base_uri.rstrip("/"),

@@ -163,6 +163,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
     def authenticate_user(self, state):
         """Authenticate user"""
+        self.validate_config_credentials()
         params = {
             "client_id": self.config.client_id,
             "response_type": self.RESPONSE_TYPE,
@@ -176,30 +177,24 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
         login_document = etree.HTML(authorization_response.text)
         login_form = login_document.xpath(self.config.login_form_xpath)[0]
-        try:
-            # Get the form data to pass to the login form from config or from the login form
-            login_data = {
-                key: self._constant_or_xpath_extracted(value, login_form)
-                for key, value in getattr(
-                    self.config, "additional_login_form_data", {}
-                ).items()
-            }
-            # Add the credentials
-            login_data.update(self.config.credentials)
-            auth_uri = getattr(self.config, "authentication_uri", None)
-            # Retrieve the authentication_uri from the login form if so configured
-            if self.config.authentication_uri_source == "login-form":
-                # Given that the login_form_xpath resolves to an HTML element, if suffices to add '/@action' to get
-                # the value of its action attribute to this xpath
-                auth_uri = login_form.xpath(
-                    self.config.login_form_xpath.rstrip("/") + "/@action"
-                )[0]
-            return self.session.post(auth_uri, data=login_data)
-        except AttributeError as err:
-            if "credentials" in err.args:
-                raise MisconfiguredError(
-                    "Missing Credentials for provider: %s", self.provider
-                )
+        # Get the form data to pass to the login form from config or from the login form
+        login_data = {
+            key: self._constant_or_xpath_extracted(value, login_form)
+            for key, value in getattr(
+                self.config, "additional_login_form_data", {}
+            ).items()
+        }
+        # Add the credentials
+        login_data.update(self.config.credentials)
+        auth_uri = getattr(self.config, "authentication_uri", None)
+        # Retrieve the authentication_uri from the login form if so configured
+        if self.config.authentication_uri_source == "login-form":
+            # Given that the login_form_xpath resolves to an HTML element, if suffices to add '/@action' to get
+            # the value of its action attribute to this xpath
+            auth_uri = login_form.xpath(
+                self.config.login_form_xpath.rstrip("/") + "/@action"
+            )[0]
+        return self.session.post(auth_uri, data=login_data)
 
     def grant_user_consent(self, authentication_response):
         """Grant user consent"""

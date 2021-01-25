@@ -27,7 +27,7 @@ from tqdm import tqdm
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import ProgressCallback, sanitize
-from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, NotAvailableError
 from eodag.utils.notebook import NotebookWidgets
 
 logger = logging.getLogger("eodag.plugins.download.base")
@@ -283,6 +283,13 @@ class Download(PluginTopic):
                         except NotAvailableError as e:
                             logger.info(e)
                             continue
+
+                        except (AuthenticationError, MisconfiguredError):
+                            logger.exception(
+                                "Stopped because of credentials problems with provider %s",
+                                self.provider
+                            )
+                            raise
 
                         except RuntimeError:
                             import traceback as tb

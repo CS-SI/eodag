@@ -30,7 +30,7 @@ from tqdm import tqdm
 from eodag.api.product.metadata_mapping import mtd_cfg_as_jsonpath, properties_from_json
 from eodag.plugins.download.base import Download
 from eodag.utils import urlparse
-from eodag.utils.exceptions import DownloadError
+from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
 
@@ -269,6 +269,17 @@ class AwsDownload(Download):
                                 Callback=progress_callback,
                             )
                 except ClientError as e:
+                    err = e.response["Error"]
+                    auth_messages = ["InvalidAccessKeyId", "SignatureDoesNotMatch"]
+                    if err["Code"] in auth_messages and "key" in err["Message"].lower():
+                        raise AuthenticationError(
+                            "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                                e.response["ResponseMetadata"]["HTTPStatusCode"],
+                                err["Code"],
+                                err["Message"],
+                                self.provider
+                            )
+                        )
                     logger.warning("Unexpected error: %s" % e)
                     logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 bar.update(1)

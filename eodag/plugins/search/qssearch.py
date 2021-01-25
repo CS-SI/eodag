@@ -46,7 +46,7 @@ from eodag.utils import (
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import RequestError
+from eodag.utils.exceptions import AuthenticationError, RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -904,6 +904,18 @@ class PostJsonSearch(QueryStringSearch):
             response = requests.post(url, json=self.query_params)
             response.raise_for_status()
         except (requests.HTTPError, urllib_HTTPError) as err:
+            # check if error is identified as auth_error in provider conf
+            auth_errors = getattr(self.config, "auth_error_code", [None])
+            if not isinstance(auth_errors, list):
+                auth_errors = [auth_errors]
+            if err.response.status_code in auth_errors:
+                raise AuthenticationError(
+                    "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
+                        err.response.status_code,
+                        err.response.text.strip(),
+                        self.provider,
+                    )
+                )
             if exception_message:
                 logger.exception(exception_message)
             else:

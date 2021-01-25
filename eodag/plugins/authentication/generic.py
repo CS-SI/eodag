@@ -19,7 +19,6 @@
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils.exceptions import MisconfiguredError
 
 
 class GenericAuth(Authentication):
@@ -27,22 +26,17 @@ class GenericAuth(Authentication):
 
     def authenticate(self):
         """Authenticate"""
+        self.validate_config_credentials()
         method = getattr(self.config, "method", None)
-        try:
-            if not method:
-                method = "basic"
-            if method == "basic":
-                return HTTPBasicAuth(
-                    self.config.credentials["username"],
-                    self.config.credentials["password"],
-                )
-            if method == "digest":
-                return HTTPDigestAuth(
-                    self.config.credentials["username"],
-                    self.config.credentials["password"],
-                )
-        except AttributeError as err:
-            if "credentials" in err.args:
-                raise MisconfiguredError(
-                    "Missing Credentials for provider: %s", self.provider
-                )
+        if not method:
+            method = "basic"
+        if method == "basic":
+            return HTTPBasicAuth(
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+            )
+        if method == "digest":
+            return HTTPDigestAuth(
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+            )

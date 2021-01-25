@@ -53,6 +53,7 @@
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
+    auth_error_code: 403
     pagination:
       next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
       total_items_nb_key_path: '$.meta.found'
@@ -929,6 +930,7 @@
     order_enabled: true
     auth_error_code:
       - 401
+      - 403
       - 500
     extract: true
   auth: !plugin

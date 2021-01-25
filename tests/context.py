@@ -44,7 +44,9 @@ from eodag.rest.utils import eodag_api, get_date
 from eodag.utils import get_geometry_from_various, makedirs
 from eodag.utils.exceptions import (
     AddressNotFound,
+    AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     UnsupportedDatasetAddressScheme,
     UnsupportedProvider,
     ValidationError,
