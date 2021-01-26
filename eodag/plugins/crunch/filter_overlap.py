@@ -51,7 +51,7 @@ class FilterOverlap(Crunch):
         :returns: The filtered products
         :rtype: list(:class:`~eodag.api.product.EOProduct`)
         """
-        logger.info("Start filtering for overlapping products")
+        logger.debug("Start filtering for overlapping products")
         filtered = []
         add_to_filtered = filtered.append
 
@@ -73,16 +73,16 @@ class FilterOverlap(Crunch):
                 "minimum_overlap will be ignored because of contains/within usage"
             )
         elif not contains and not within:
-            logger.info("Minimum overlap is: {} %".format(minimum_overlap))
+            logger.debug("Minimum overlap is: {} %".format(minimum_overlap))
 
-        logger.info("Initial requested extent area: %s", search_geom.area)
+        logger.debug("Initial requested extent area: %s", search_geom.area)
         if search_geom.area == 0:
-            logger.info(
+            logger.debug(
                 "No product can overlap a requested extent that is not a polygon (i.e with area=0)"
             )
         else:
             for product in products:
-                logger.info("Uncovered extent area: %s", search_geom.area)
+                logger.debug("Uncovered extent area: %s", search_geom.area)
                 if product.search_intersection:
                     intersection = product.search_intersection
                     product_geometry = product.geometry
@@ -119,12 +119,12 @@ class FilterOverlap(Crunch):
 
                 ipos = (intersection.area / search_geom.area) * 100
                 ipop = (intersection.area / product_geometry.area) * 100
-                logger.info(
+                logger.debug(
                     "Intersection of product extent and search extent covers %f percent of the search extent "
                     "area",
                     ipos,
                 )
-                logger.info(
+                logger.debug(
                     "Intersection of product extent and search extent covers %f percent of the product extent "
                     "area",
                     ipop,
@@ -136,17 +136,17 @@ class FilterOverlap(Crunch):
                         ipop >= minimum_overlap,
                     )
                 ):
-                    logger.info(
+                    logger.debug(
                         "Product %r overlaps the search extent by the specified constraint. Adding it to "
                         "filtered results",
                         product,
                     )
                     add_to_filtered(product)
                 else:
-                    logger.info(
+                    logger.debug(
                         "Product %r does not overlaps the search extent by the specified constraint. "
                         "Skipping it",
                         product,
                     )
-        logger.info("Finished filtering products. Resulting products: %r", filtered)
+        logger.info("Finished filtering products. %s resulting products", len(filtered))
         return filtered

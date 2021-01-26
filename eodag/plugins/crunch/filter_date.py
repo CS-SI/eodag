@@ -112,4 +112,5 @@ class FilterDate(Crunch):
                 continue
 
             filtered.append(product)
+        logger.info("Finished filtering products. %s resulting products", len(filtered))
         return filtered

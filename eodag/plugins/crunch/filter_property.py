@@ -59,7 +59,7 @@ class FilterProperty(Crunch):
         property_key = next(iter(self.config))
         property_value = self.config.get(property_key, None)
 
-        logger.info(
+        logger.debug(
             "Start filtering for products matching operator.%s(product.properties['%s'], %s)",
             operator_name,
             property_key,
@@ -78,5 +78,5 @@ class FilterProperty(Crunch):
             if operator_method(product.properties[property_key], property_value):
                 add_to_filtered(product)
 
-        logger.info("Finished filtering products. Resulting products: %r", filtered)
+        logger.info("Finished filtering products. %s resulting products", len(filtered))
         return filtered

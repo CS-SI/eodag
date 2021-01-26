@@ -88,5 +88,5 @@ class FilterLatestIntersect(Crunch):
                     "The requested extent is now entirely covered by the search result"
                 )
                 break
-        logger.debug("Finished filtering products. Resulting products: %r", filtered)
+        logger.info("Finished filtering products. %s resulting products", len(filtered))
         return filtered

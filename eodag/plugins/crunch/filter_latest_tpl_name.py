@@ -82,5 +82,5 @@ class FilterLatestByName(Crunch):
                     product.properties["title"],
                     self.name_pattern,
                 )
-        logger.debug("Ending products filtering. Filtered products: %r", filtered)
+        logger.info("Finished filtering products. %s resulting products", len(filtered))
         return filtered
