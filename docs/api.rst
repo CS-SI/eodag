@@ -37,16 +37,14 @@ constructed (these methods are therefore to be used primarily in search plugins)
 Data access drivers
 ^^^^^^^^^^^^^^^^^^^
 
+Only minimal driver comes with eodag. For more drivers, install `EODAG-cube <https://github.com/CS-SI/eodag-cube>`_.
+
 .. autoclass:: eodag.api.product.drivers.base.DatasetDriver
    :members:
    :show-inheritance:
    :undoc-members:
 
 .. autoclass:: eodag.api.product.drivers.base.NoDriver
-   :show-inheritance:
-   :undoc-members:
-
-.. autoclass:: eodag.api.product.drivers.sentinel2_l1c.Sentinel2L1C
    :show-inheritance:
    :undoc-members:
 
@@ -174,6 +172,14 @@ Search Plugins
    :show-inheritance:
    :undoc-members:
 
+.. autoclass:: eodag.plugins.search.qssearch.PostJsonSearch
+   :show-inheritance:
+   :undoc-members:
+
+.. autoclass:: eodag.plugins.search.qssearch.StacSearch
+   :show-inheritance:
+   :undoc-members:
+
 .. module:: eodag.plugins.download
 
 Download Plugins
@@ -187,10 +193,18 @@ Download Plugins
    :show-inheritance:
    :undoc-members:
 
+.. autoclass:: eodag.plugins.download.s3rest.S3RestDownload
+   :show-inheritance:
+   :undoc-members:
+
 .. module:: eodag.plugins.crunch
 
 Crunch Plugins
 ^^^^^^^^^^^^^^
+
+.. autoclass:: eodag.plugins.crunch.filter_date.FilterDate
+   :show-inheritance:
+   :undoc-members:
 
 .. autoclass:: eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect
    :show-inheritance:
@@ -201,6 +215,10 @@ Crunch Plugins
    :undoc-members:
 
 .. autoclass:: eodag.plugins.crunch.filter_overlap.FilterOverlap
+   :show-inheritance:
+   :undoc-members:
+
+.. autoclass:: eodag.plugins.crunch.filter_property.FilterProperty
    :show-inheritance:
    :undoc-members:
 
@@ -340,18 +358,18 @@ Call graphs
 * `Main API calls graph <_static/eodag_main_calls_graph.svg>`_
 * `Advanced calls graph (main API + search and authentication plugins) <_static/eodag_advanced_calls_graph.svg>`_
 
-These call graphs are generated using `Pyan3 <https://github.com/davidfraser/pyan>`_
+These call graphs are generated using *graphviz* and `Pyan3 <https://github.com/davidfraser/pyan>`_
 
 .. code-block:: bash
 
    cd eodag_working_copy/eodag
    # main api
-   pyan.py `find ./api -name "*.py"` \
+   pyan3 `find ./api -name "*.py"` \
    --uses --colored --grouped-alt --nested-groups --annotated --dot --dot-rankdir=LR \
    >/tmp/eodag_main_calls_graph.dot
    dot -Tsvg /tmp/eodag_main_calls_graph.dot >../docs/_static/eodag_main_calls_graph.svg
    # advanced api
-   pyan.py `find ./api ./plugins/search/ ./plugins/authentication/ -name "*.py"` \
+   pyan3 `find ./api ./plugins/search/ ./plugins/authentication/ -name "*.py"` \
    --uses --colored --grouped-alt --nested-groups --annotated --dot --dot-rankdir=LR \
    >/tmp/eodag_advanced_calls_graph.dot
    dot -Tsvg /tmp/eodag_advanced_calls_graph.dot >../docs/_static/eodag_advanced_calls_graph.svg

@@ -32,6 +32,7 @@ class FilterDate(Crunch):
     """FilterDate cruncher: filter products by date
 
     :param dict config: crunch configuration, may contain :
+
             - `start`: (optional) start sensing time in iso format
             - `end`: (optional) end sensing time in iso format
     """

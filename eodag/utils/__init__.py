@@ -258,6 +258,7 @@ def slugify(value, allow_unicode=False):
 
 def sanitize(value):
     """Sanitize string to be used as a name of a directory.
+
     >>> sanitize('productName')
     'productName'
     >>> sanitize('name with multiple  spaces')

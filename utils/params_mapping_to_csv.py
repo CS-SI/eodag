@@ -23,12 +23,13 @@ import requests
 from lxml import html
 
 from eodag.api.core import EODataAccessGateway
+from eodag.config import load_stac_provider_config
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.INFO)
 
-OPENSEARCH_DOC_URL = "http://docs.opengeospatial.org/is/13-026r8/13-026r8.html"
+OPENSEARCH_DOC_URL = "http://docs.opengeospatial.org/is/13-026r9/13-026r9.html"
 DEFAULT_CSV_FILE_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../docs/_static/params_mapping.csv"
 )
@@ -50,12 +51,27 @@ def params_mapping_to_csv(
     page = requests.get(ogc_doc_url)
     tree = html.fromstring(page.content.decode("utf8"))
 
+    # update stac providers metadata_mapping
+    stac_mapping = load_stac_provider_config()["search"]["metadata_mapping"]
+    for p in dag.providers_config.keys():
+        if (
+            hasattr(dag.providers_config[p], "search")
+            and getattr(dag.providers_config[p].search, "type", None) == "StacSearch"
+        ):
+            dag.providers_config[p].search.metadata_mapping = dict(
+                stac_mapping,
+                **dag.providers_config[p].search.__dict__.get("metadata_mapping", {})
+            )
+
     # list of lists of all parameters per provider
-    params_list_of_lists = [
-        list(dag.providers_config[p].search.__dict__["metadata_mapping"].keys())
-        for p in dag.providers_config.keys()
-        if hasattr(dag.providers_config[p], "search")
-    ]
+    params_list_of_lists = []
+    for p in dag.providers_config.keys():
+        if hasattr(dag.providers_config[p], "search") and hasattr(
+            dag.providers_config[p].search, "metadata_mapping"
+        ):
+            params_list_of_lists.append(
+                list(dag.providers_config[p].search.__dict__["metadata_mapping"].keys())
+            )
 
     # union of params_list_of_lists
     global_keys = sorted(list(set().union(*(params_list_of_lists))))
@@ -112,7 +128,9 @@ def params_mapping_to_csv(
 
             # write metadata mapping
             for provider in dag.providers_config.keys():
-                if hasattr(dag.providers_config[provider], "search"):
+                if hasattr(dag.providers_config[provider], "search") and hasattr(
+                    dag.providers_config[provider].search, "metadata_mapping"
+                ):
                     mapping_dict = dag.providers_config[provider].search.__dict__[
                         "metadata_mapping"
                     ]

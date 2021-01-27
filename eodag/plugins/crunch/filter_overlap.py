@@ -36,9 +36,11 @@ class FilterOverlap(Crunch):
     Filter products, retaining only those that are overlapping with the search_extent
 
     :param dict config: crunch configuration, may contain :
+
             - `minimum_overlap` : minimal overlap percentage
             - `contains` : True if product geometry contains the search area
             - `within` : True if product geometry is within the search area
+
         These configuration parameters are mutually exclusive.
     """
 

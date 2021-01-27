@@ -123,14 +123,20 @@ to the provider. For instance, if you want to add foo=1 and bar=2 to the previou
         eodag list -p sobloo
 
 
-HTTP Rest Interface
+STAC REST Interface
 ===================
 
-EODAG has a REST API implementing OpenSearch Geo interface. To run the server, do:
+.. image:: _static/eodag_stac_server.png
+   :width: 800
+   :alt: EODAG as STAC server
+   :class: no-scaled-link
+
+EODAG has a STAC compliant REST API. It can serve configured providers data through
+this STAC API. To run the server, do:
 
 .. code-block:: console
 
-    eodag serve-rest -f <configuration-file>
+    eodag serve-rest
 
 Below is the content of the help message of this command (`eodag serve-rest --help`):
 
@@ -142,7 +148,7 @@ Below is the content of the help message of this command (`eodag serve-rest --he
 
     Options:
       -f, --config PATH   File path to the user configuration file with its
-                          credentials  [required]
+                          credentials, default is ~/.config/eodag/eodag.yml
       -d, --daemon        run in daemon mode  [default: False]
       -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
                           otherwise bind to 127.0.0.1 (localhost). This maybe
@@ -158,48 +164,58 @@ Searching
 
 After you have launched the server, navigate to its home page. For example, for a local
 development server launched with `eodag serve-rest -f <config> --debug`, go to
-http://127.0.0.1:5000/. You will see a documentation of the interface.
+http://127.0.0.1:5000/service-doc. You will see a documentation of the interface.
 
-The supported operations are:
+Available operations are:
 
-* List product types::
+* List product types as collections::
 
     # All supported product types
-    http://127.0.0.1:5000/product-types
+    http://127.0.0.1:5000/collections
+
     # <provider> only supported product types
-    http://127.0.0.1:5000/product-types/<provider>
+    http://127.0.0.1:5000/collections/?provider=<provider>
 
 * Search product::
 
-    http://127.0.0.1:5000/<product_type>/?param=value
+    http://127.0.0.1:5000/search/?param=value
 
-The supported request parameters are:
+The supported request parameters are (from STAC API):
 
-* `box`: the search bounding box defined by: min_lon,min_lat,max_lon,max_lat.
-* `dtstart`: the start date
-* `dtend`: the end date
-* `cloudCover`: cloud cover
+* `collections`: the product type
+* `bbox`: the search bounding box defined by: min_lon,min_lat,max_lon,max_lat.
+* `datetime`: RFC 3339 format datetime. Single, or as interval `start/stop`.
+* `limit`: items returned per page
 
-Example URL::
+EODAG additional query parameters:
 
-    http://127.0.0.1:5000/S2_MSI_L1C/?box=0,43,1,44
+* `provider`: preferred provider
+* `customParameter`: any custom querry parameter supported by the provider
 
-Filtering
+Example URL:
+
+* http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25&cloudCover=20
+
+Browsing
 ---------
 
-The service provides ability to filter search results by the crunchers available
-to EODAG. To activate a filter, add the `filter` request parameter.
+EODAG provides additional catalogs that extend browsing/filtering capabilities:
 
-Available filters and their matching EODAG cruncher are:
+* `country` -> filters items on a specific area defined by selected country
+* `year`
+        * `month`
+                * `day` -> filters items using specified time interval
+* `cloud_cover` -> filters items with specified maximum cloud cover
 
-* `latestIntersect` -> FilterLatestIntersect
-* `latestByName` -> FilterLatestByName
-* `overlap` -> FilterOverlap
+Example URLs:
 
-Some filters may require additional configuration parameters
-which can be set as request parameters.
-For example, overlap filter requires adding a `minimum_overlap` parameter to the request.
+* http://127.0.0.1:5000/S2_MSI_L1C/country : lists available countries
+* http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2019/month/10/cloud_cover/10 : catalog referencing S2_MSI_L1C
+  products over France, aquired during October 2019, and having 10% maximum cloud cover
 
-Example URL::
+Browsing over catalogs can be experienced connecting EODAG STAC API to
+`STAC-Browser <https://github.com/radiantearth/stac-browser>`_:
 
-    http://127.0.0.1:5000/S2_MSI_L1C/?box=0,43,1,44&filter=overlap&minimum_overlap=0
+.. image:: _static/stac_browser_example.png
+   :width: 800
+   :alt: STAC browser example

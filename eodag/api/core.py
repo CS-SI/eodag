@@ -314,18 +314,20 @@ class EODataAccessGateway(object):
         You can also configure parent attributes, which can be used for creating
         a catalogs path when using eodag as a REST server.
         Example of locations configuration file content:
-        ```yml
-        shapefiles:
-        - name: country
-            path: /path/to/countries_list.shp
-            attr: ISO3
-        - name: department
-            path: /path/to/FR_departments.shp
-            attr: code_insee
-            parent:
-            name: country
-            attr: FRA
-        ```
+
+        .. code-block:: yaml
+
+            shapefiles:
+                - name: country
+                  path: /path/to/countries_list.shp
+                  attr: ISO3
+                - name: department
+                  path: /path/to/FR_departments.shp
+                  attr: code_insee
+                  parent:
+                    name: country
+                    attr: FRA
+
         :param locations_conf_path: Path to the locations configuration file
         :type locations_conf_path: str
         """
@@ -478,6 +480,7 @@ class EODataAccessGateway(object):
                     * with a bounding box as list of float:
                       ``[lonmin, latmin, lonmax, latmax]``
                     * with a WKT str
+
                     The geometry can also be passed as ``<location_name>="<attr_regex>"`` in kwargs
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
         :param dict kwargs: some other criteria that will be used to do the search,

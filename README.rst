@@ -168,12 +168,6 @@ To run the default test suite (which excludes end-to-end tests)::
 
     tox
 
-.. note::
-
-    You may encounter a Python `RuntimeWarning` saying that `numpy.dtype` size changed. If this is the case,
-    you can suppress it by doing this on the command line before running the tests or eodag cli:
-    `export PYTHONWARNINGS="ignore:numpy.dtype size changed"`
-
 To only run end-to-end test::
 
     tox -- tests.test_end_to_end
