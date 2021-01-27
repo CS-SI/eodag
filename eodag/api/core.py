@@ -280,7 +280,7 @@ class EODataAccessGateway(object):
 
         >>> from eodag import EODataAccessGateway
         >>> dag = EODataAccessGateway()
-        >>> dag.update_providers_config('''
+        >>> new_config = '''
         ...     my_new_provider:
         ...         search:
         ...             type: StacSearch
@@ -288,11 +288,15 @@ class EODataAccessGateway(object):
         ...         products:
         ...             GENERIC_PRODUCT_TYPE:
         ...                 productType: '{productType}'
-        ... ''')
+        ... '''
+        >>> # add new provider
+        >>> dag.update_providers_config(new_config)
         >>> type(dag.providers_config["my_new_provider"])
         <class 'eodag.config.ProviderConfig'>
         >>> dag.providers_config["my_new_provider"].priority
         0
+        >>> # run 2nd time (update provider)
+        >>> dag.update_providers_config(new_config)
 
         :param yaml_conf: YAML formated provider configuration
         :type yaml_conf: str

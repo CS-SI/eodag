@@ -356,12 +356,18 @@ def merge_mappings(mapping1, mapping2):
                         # => eval(value.capitalize())=True.
                         # str.capitalize() transforms the first character of the string
                         # to a capital letter
-                        mapping1[m1_keys_lowercase[key]] = eval(value.capitalize())
+                        mapping1[m1_keys_lowercase.get(key, key)] = eval(
+                            value.capitalize()
+                        )
                     else:
-                        mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
+                            value
+                        )
                 else:
                     try:
-                        mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
+                            value
+                        )
                     except TypeError:
                         # Ignore any override value that does not have the same type
                         # as the default value
