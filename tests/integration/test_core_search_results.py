@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -166,34 +166,13 @@ class TestCoreSearchResults(unittest.TestCase):
                 },
             },
             "id": eo_id,
-            "geometry": {
-                "coordinates": geom_coords,
-                "type": geom_type,
-            },
+            "geometry": {"coordinates": geom_coords, "type": geom_type},
         }
 
     def test_group_by_extent(self):
-        geom_coords_1 = [[
-            [89, 2],
-            [90, 2],
-            [90, 3],
-            [89, 3],
-            [89, 2],
-        ]]
-        geom_coords_2 = [[
-            [90, 3],
-            [91, 3],
-            [91, 4],
-            [90, 4],
-            [90, 3],
-        ]]
-        geom_coords_3 = [[
-            [92, 4],
-            [92, 4],
-            [92, 5],
-            [91, 5],
-            [91, 4],
-        ]]
+        geom_coords_1 = [[[89, 2], [90, 2], [90, 3], [89, 3], [89, 2]]]
+        geom_coords_2 = [[[90, 3], [91, 3], [91, 4], [90, 4], [90, 3]]]
+        geom_coords_3 = [[[92, 4], [92, 4], [92, 5], [91, 5], [91, 4]]]
 
         eo_geom1 = EOProduct.from_geojson(
             self._minimal_eoproduct_geojson_repr("1", geom_coords_1)
@@ -208,7 +187,9 @@ class TestCoreSearchResults(unittest.TestCase):
         second_search = SearchResult([eo_geom1, eo_geom2])
         third_search = SearchResult([eo_geom1, eo_geom2, eo_geom3])
 
-        grouped_searches = EODataAccessGateway.group_by_extent([first_search, second_search, third_search])
+        grouped_searches = EODataAccessGateway.group_by_extent(
+            [first_search, second_search, third_search]
+        )
 
         # The returned value is a List[SearchResult]
         self.assertIsInstance(grouped_searches, list)

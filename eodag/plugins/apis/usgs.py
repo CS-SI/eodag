@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -175,7 +175,9 @@ class UsgsApi(Api):
         logger.info("Download url: %s", url)
 
         filename = product.properties["title"] + ".tar.bz"
-        outputs_prefix = kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        outputs_prefix = (
+            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        )
         local_file_path = os.path.join(outputs_prefix, filename)
         download_records = os.path.join(outputs_prefix, ".downloaded")
         if not os.path.exists(download_records):
@@ -195,7 +197,9 @@ class UsgsApi(Api):
             )
             logger.debug("Removing record file : %s", record_filename)
             os.remove(record_filename)
-        params = kwargs.pop("dl_url_params", None) or getattr(self.config, "dl_url_params", {})
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
+        )
         with requests.get(
             url,
             stream=True,
@@ -240,9 +244,7 @@ class UsgsApi(Api):
                             desc="Extracting files from {}".format(local_file_path),
                         ) as progressbar:
                             for fileinfo in progressbar:
-                                zfile.extract(
-                                    fileinfo, path=outputs_prefix
-                                )
+                                zfile.extract(fileinfo, path=outputs_prefix)
                     return local_file_path[: local_file_path.index(".tar.bz")]
                 else:
                     return local_file_path

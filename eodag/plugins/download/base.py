@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -27,7 +27,11 @@ from tqdm import tqdm
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import ProgressCallback, sanitize
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, NotAvailableError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    NotAvailableError,
+)
 from eodag.utils.notebook import NotebookWidgets
 
 logger = logging.getLogger("eodag.plugins.download.base")
@@ -93,7 +97,9 @@ class Download(PluginTopic):
             return None, None
         logger.info("Download url: %s", url)
 
-        outputs_prefix = kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        outputs_prefix = (
+            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        )
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
         prefix = os.path.abspath(outputs_prefix)
@@ -147,7 +153,9 @@ class Download(PluginTopic):
         :return: the absolute path to the product
         """
         extract = kwargs.pop("extract", None)
-        extract = extract if extract is not None else getattr(self.config, "extract", False)
+        extract = (
+            extract if extract is not None else getattr(self.config, "extract", False)
+        )
         if not extract:
             logger.info("Extraction not activated. The product is available as is.")
             return fs_path
@@ -184,7 +192,9 @@ class Download(PluginTopic):
                 % product_path
             )
             return product_path
-        outputs_prefix = kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        outputs_prefix = (
+            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        )
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
             with zipfile.ZipFile(fs_path, "r") as zfile:
@@ -196,8 +206,7 @@ class Download(PluginTopic):
                 ) as progressbar:
                     for fileinfo in progressbar:
                         zfile.extract(
-                            fileinfo,
-                            path=os.path.join(outputs_prefix, product_path),
+                            fileinfo, path=os.path.join(outputs_prefix, product_path),
                         )
         # Handle depth levels in the product archive. For example, if the downloaded archive was
         # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
@@ -287,7 +296,7 @@ class Download(PluginTopic):
                         except (AuthenticationError, MisconfiguredError):
                             logger.exception(
                                 "Stopped because of credentials problems with provider %s",
-                                self.provider
+                                self.provider,
                             )
                             raise
 

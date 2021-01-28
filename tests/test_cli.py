@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -20,19 +20,19 @@ import os
 import random
 import unittest
 from contextlib import contextmanager
-from pkg_resources import resource_filename
 
 import click
 from click.testing import CliRunner
 from faker import Faker
+from pkg_resources import resource_filename
 
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     AuthenticationError,
+    MisconfiguredError,
     download,
     eodag,
-    MisconfiguredError,
     search_crunch,
 )
 from tests.units.test_core import TestCore
@@ -418,7 +418,13 @@ class TestEodagCli(unittest.TestCase):
         )
         result = self.runner.invoke(
             eodag,
-            ["download", "--search-results", search_results_path, "-f", default_conf_file],
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                default_conf_file,
+            ],
         )
         self.assertEqual(result.exit_code, 1)
         self.assertIsInstance(result.exception, MisconfiguredError)
@@ -440,8 +446,8 @@ class TestEodagCli(unittest.TestCase):
             # to raise a MisconfiguredError.
             env={
                 "EODAG__PEPS__AUTH__CREDENTIALS__USERNAME": "dummy",
-                "EODAG__PEPS__AUTH__CREDENTIALS__PASSWORD": "dummy"
-            }
+                "EODAG__PEPS__AUTH__CREDENTIALS__PASSWORD": "dummy",
+            },
         )
         self.assertEqual(result.exit_code, 1)
         self.assertIsInstance(result.exception, AuthenticationError)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -28,30 +28,19 @@ from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import AuthenticationError, EODataAccessGateway
 
-
 THEIA_SEARCH_ARGS = [
     "theia",
     "S2_MSI_L2A_MAJA",
     "2019-03-01",
     "2019-03-15",
-    [
-        0.2563590566012408,
-        43.19555008715042,
-        2.379835675499976,
-        43.907759172380565,
-    ],
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 SOBLOO_SEARCH_ARGS = [
     "sobloo",
     "S2_MSI_L1C",
     "2020-05-01",
     "2020-06-01",
-    [
-        0.2563590566012408,
-        43.19555008715042,
-        2.379835675499976,
-        43.907759172380565,
-    ],
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 PEPS_BEFORE_20161205_SEARCH_ARGS = [
     "peps",
@@ -73,36 +62,21 @@ AWSEOS_SEARCH_ARGS = [
     "S2_MSI_L1C",
     "2020-01-01",
     "2020-01-15",
-    [
-        0.2563590566012408,
-        43.19555008715042,
-        2.379835675499976,
-        43.907759172380565,
-    ],
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 CREODIAS_SEARCH_ARGS = [
     "creodias",
     "S2_MSI_L1C",
     "2019-03-01",
     "2019-03-15",
-    [
-        0.2563590566012408,
-        43.19555008715042,
-        2.379835675499976,
-        43.907759172380565,
-    ],
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 MUNDI_SEARCH_ARGS = [
     "mundi",
     "S2_MSI_L1C",
     "2019-11-08",
     "2019-11-16",
-    [
-        0.2563590566012408,
-        43.19555008715042,
-        2.379835675499976,
-        43.907759172380565,
-    ],
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 # As of 2021-01-14 the products previously required in 2020-08 were offline.
 # Trying here to retrieve the most recent products which are more likely to be online.
@@ -113,24 +87,18 @@ ONDA_SEARCH_ARGS = [
     "S2_MSI_L1C",
     (today - week_span).isoformat(),
     today.isoformat(),
-    [
-        0.2563590566012408,
-        43.19555008715042,
-        2.379835675499976,
-        43.907759172380565,
-    ],
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 USGS_SEARCH_ARGS = [
     "usgs",
     "L8_OLI_TIRS_C1L1",
     "2017-03-01",
     "2017-03-15",
-    [50, 50, 50.3, 50.3]
+    [50, 50, 50.3, 50.3],
 ]
 
 
 class EndToEndBase(unittest.TestCase):
-
     def execute_search(self, provider, product_type, start, end, geom, offline=False):
         """Search products on provider:
 
@@ -338,7 +306,9 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     @classmethod
     def setUpClass(cls):
-        tests_wrong_conf = os.path.join(TEST_RESOURCES_PATH, "wrong_credentials_conf.yml")
+        tests_wrong_conf = os.path.join(
+            TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
+        )
         cls.eodag = EODataAccessGateway(user_conf_file_path=tests_wrong_conf)
 
     def test_end_to_end_wrong_credentials_theia(self):
@@ -361,10 +331,9 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
-                **dict(zip(
-                    ["productType", "start", "end", "geom"],
-                    AWSEOS_SEARCH_ARGS[1:]
-                ))
+                **dict(
+                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                )
             )
 
     def test_end_to_end_good_apikey_wrong_credentials_aws_eos(self):
@@ -375,8 +344,12 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.skipTest("user_conf.yml file with credentials not found.")
         # But we set the access key id and the secret to wrong values
         try:
-            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"] = "badaccessid"
-            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"] = "badsecret"
+            os.environ[
+                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
+            ] = "badaccessid"
+            os.environ[
+                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
+            ] = "badsecret"
 
             eodag = EODataAccessGateway(
                 user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
@@ -384,10 +357,9 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
             results, nb_results = eodag.search(
                 raise_errors=True,
-                **dict(zip(
-                    ["productType", "start", "end", "geom"],
-                    AWSEOS_SEARCH_ARGS[1:]
-                ))
+                **dict(
+                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                )
             )
             self.assertGreater(len(results), 0)
             one_product = results[0]
@@ -420,8 +392,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
-                **dict(zip(
-                    ["productType", "start", "end", "geom"],
-                    USGS_SEARCH_ARGS[1:]
-                ))
+                **dict(
+                    zip(["productType", "start", "end", "geom"], USGS_SEARCH_ARGS[1:])
+                )
             )

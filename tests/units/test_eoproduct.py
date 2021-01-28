@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -282,10 +282,9 @@ class TestEOProduct(EODagTestCase):
             self.provider, self.eoproduct_props, productType=self.product_type
         )
         self.requests_http_get.return_value = self._download_response_archive()
-        dl_config = config.PluginConfig.from_mapping({
-            "base_uri": "fake_base_uri",
-            "outputs_prefix": tempfile.gettempdir(),
-        })
+        dl_config = config.PluginConfig.from_mapping(
+            {"base_uri": "fake_base_uri", "outputs_prefix": tempfile.gettempdir()}
+        )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         product.register_downloader(downloader, None)
 
@@ -296,7 +295,7 @@ class TestEOProduct(EODagTestCase):
         self.requests_http_get.assert_called_with(
             self.download_url, stream=True, auth=None, params={}
         )
-        product_file_path = product_file_path[len("file://"):]
+        product_file_path = product_file_path[len("file://") :]
         download_records_dir = pathlib.Path(product_file_path).parent / ".downloaded"
         # A .downloaded folder should be created, including a text file that
         # lists the downloaded product by their url
@@ -321,17 +320,19 @@ class TestEOProduct(EODagTestCase):
             self.provider, self.eoproduct_props, productType=self.product_type
         )
         self.requests_http_get.return_value = self._download_response_archive()
-        dl_config = config.PluginConfig.from_mapping({
-            "base_uri": "fake_base_uri",
-            "outputs_prefix": tempfile.gettempdir(),
-            "extract": True
-        })
+        dl_config = config.PluginConfig.from_mapping(
+            {
+                "base_uri": "fake_base_uri",
+                "outputs_prefix": tempfile.gettempdir(),
+                "extract": True,
+            }
+        )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         product.register_downloader(downloader, None)
 
         # Download
         product_dir_path = product.download()
-        product_dir_path = pathlib.Path(product_dir_path[len("file://"):])
+        product_dir_path = pathlib.Path(product_dir_path[len("file://") :])
         # The returned path must be a directory.
         self.assertTrue(product_dir_path.is_dir())
         # Check that the extracted dir has at least one file, there are more
@@ -355,10 +356,9 @@ class TestEOProduct(EODagTestCase):
             self.provider, self.eoproduct_props, productType=self.product_type
         )
         self.requests_http_get.return_value = self._download_response_archive()
-        dl_config = config.PluginConfig.from_mapping({
-            "base_uri": "fake_base_uri",
-            "outputs_prefix": "will_be_overriden",
-        })
+        dl_config = config.PluginConfig.from_mapping(
+            {"base_uri": "fake_base_uri", "outputs_prefix": "will_be_overriden"}
+        )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         product.register_downloader(downloader, None)
 
@@ -372,14 +372,14 @@ class TestEOProduct(EODagTestCase):
         product_dir_path = product.download(
             outputs_prefix=str(output_dir),
             extract=True,
-            dl_url_params={"fakeparam": "dummy"}
+            dl_url_params={"fakeparam": "dummy"},
         )
         # Check that dl_url_params are properly passed to the GET request
         self.requests_http_get.assert_called_with(
             self.download_url, stream=True, auth=None, params={"fakeparam": "dummy"}
         )
         # Check that "outputs_prefix" is respected.
-        product_dir_path = pathlib.Path(product_dir_path[len("file://"):])
+        product_dir_path = pathlib.Path(product_dir_path[len("file://") :])
         self.assertEqual(product_dir_path.parent.name, output_dir_name)
         # We've asked to extract the product so there should be a directory.
         self.assertTrue(product_dir_path.is_dir())

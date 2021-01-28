@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -17,11 +17,12 @@
 # limitations under the License.
 
 import os
-from pkg_resources import resource_filename
 import unittest
 
+from pkg_resources import resource_filename
+
 from tests import TEST_RESOURCES_PATH
-from tests.context import MisconfiguredError, EODataAccessGateway
+from tests.context import EODataAccessGateway, MisconfiguredError
 
 
 class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
@@ -39,7 +40,9 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         self.eodag = EODataAccessGateway(user_conf_file_path=default_conf_file)
 
     def test_eodag_download_missing_credentials_theia(self):
-        search_resuls = os.path.join(TEST_RESOURCES_PATH, "eodag_search_result_theia.geojson")
+        search_resuls = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_theia.geojson"
+        )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
             self.eodag.download(products[0])
@@ -47,7 +50,9 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
             self.eodag.download_all(products)
 
     def test_eodag_download_missing_credentials_sobloo(self):
-        search_resuls = os.path.join(TEST_RESOURCES_PATH, "eodag_search_result_sobloo.geojson")
+        search_resuls = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_sobloo.geojson"
+        )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
             self.eodag.download(products[0])
@@ -55,7 +60,9 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
             self.eodag.download_all(products)
 
     def test_eodag_download_missing_credentials_peps(self):
-        search_resuls = os.path.join(TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson")
+        search_resuls = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+        )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
             self.eodag.download(products[0])
@@ -63,7 +70,9 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
             self.eodag.download_all(products)
 
     def test_eodag_download_missing_credentials_aws_eos(self):
-        search_resuls = os.path.join(TEST_RESOURCES_PATH, "eodag_search_result_awseos.geojson")
+        search_resuls = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_awseos.geojson"
+        )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
             self.eodag.download(products[0])
@@ -71,7 +80,9 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
             self.eodag.download_all(products)
 
     def test_eodag_download_missing_credentials_creodias(self):
-        search_resuls = os.path.join(TEST_RESOURCES_PATH, "eodag_search_result_creodias.geojson")
+        search_resuls = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_creodias.geojson"
+        )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
             self.eodag.download(products[0])
@@ -79,7 +90,9 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
             self.eodag.download_all(products)
 
     def test_eodag_download_missing_credentials_mundi(self):
-        search_resuls = os.path.join(TEST_RESOURCES_PATH, "eodag_search_result_mundi.geojson")
+        search_resuls = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_mundi.geojson"
+        )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
             self.eodag.download(products[0])
@@ -87,7 +100,9 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
             self.eodag.download_all(products)
 
     def test_eodag_download_missing_credentials_onda(self):
-        search_resuls = os.path.join(TEST_RESOURCES_PATH, "eodag_search_result_onda.geojson")
+        search_resuls = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_onda.geojson"
+        )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
             self.eodag.download(products[0])

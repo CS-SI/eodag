@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -112,12 +112,11 @@ class HTTPDownload(Download):
             if datetime.now() >= product.next_try:
                 product.next_try += timedelta(minutes=wait)
                 try:
-                    params = kwargs.pop("dl_url_params", None) or getattr(self.config, "dl_url_params", {})
+                    params = kwargs.pop("dl_url_params", None) or getattr(
+                        self.config, "dl_url_params", {}
+                    )
                     with requests.get(
-                        url,
-                        stream=True,
-                        auth=auth,
-                        params=params,
+                        url, stream=True, auth=auth, params=params,
                     ) as stream:
                         try:
                             stream.raise_for_status()

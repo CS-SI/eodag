@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -21,16 +21,16 @@ import os
 import shutil
 import unittest
 
-from shapely.geometry import LineString, MultiPolygon
 from shapely import wkt
+from shapely.geometry import LineString, MultiPolygon
 
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     EODataAccessGateway,
+    UnsupportedProvider,
     get_geometry_from_various,
     makedirs,
-    UnsupportedProvider,
 )
 from tests.utils import mock
 
@@ -272,7 +272,7 @@ class TestCore(unittest.TestCase):
         self.assertIsInstance(dag.locations_config, list)
         self.assertEqual(
             dag.locations_config,
-            [dict(attr="ADM0_A3_US", name="country", path=default_shpfile)]
+            [dict(attr="ADM0_A3_US", name="country", path=default_shpfile)],
         )
 
     def test_core_object_locations_file_not_found(self):
@@ -288,7 +288,7 @@ class TestCore(unittest.TestCase):
         dag = EODataAccessGateway()
         self.assertEqual(
             dag.locations_config,
-            [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")]
+            [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
         )
 
     def test_get_geometry_from_various_no_locations(self):
@@ -306,10 +306,7 @@ class TestCore(unittest.TestCase):
         # Bad dict with a missing key
         del geometry["lonmin"]
         self.assertRaises(
-            TypeError,
-            get_geometry_from_various,
-            [],
-            geometry=geometry,
+            TypeError, get_geometry_from_various, [], geometry=geometry,
         )
         # Tuple
         geometry = (0, 50, 2, 52)
@@ -320,17 +317,16 @@ class TestCore(unittest.TestCase):
         # List without 4 items
         geometry.pop()
         self.assertRaises(
-            TypeError,
-            get_geometry_from_various,
-            [],
-            geometry=geometry,
+            TypeError, get_geometry_from_various, [], geometry=geometry,
         )
         # WKT
         geometry = ref_geom_as_wkt
         self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
         # Some other shapely geom
         geometry = LineString([[0, 0], [1, 1]])
-        self.assertIsInstance(get_geometry_from_various([], geometry=geometry), LineString)
+        self.assertIsInstance(
+            get_geometry_from_various([], geometry=geometry), LineString
+        )
 
     def test_get_geometry_from_various_only_locations(self):
         """The search geometry can be set from a locations config file query"""
@@ -339,13 +335,17 @@ class TestCore(unittest.TestCase):
         self.assertIsNone(get_geometry_from_various(locations_config))
         # Bad query arg
         # 'country' is the expected name here
-        self.assertIsNone(get_geometry_from_various(locations_config, bad_query_arg="dummy"))
+        self.assertIsNone(
+            get_geometry_from_various(locations_config, bad_query_arg="dummy")
+        )
         # France
         geom_france = get_geometry_from_various(locations_config, country="FRA")
         self.assertIsInstance(geom_france, MultiPolygon)
         self.assertEquals(len(geom_france), 3)  # France + Guyana + Corsica
         # Not defined
-        self.assertIsNone(get_geometry_from_various(locations_config, country="bad_query_value"))
+        self.assertIsNone(
+            get_geometry_from_various(locations_config, country="bad_query_value")
+        )
 
     def test_get_geometry_from_various_only_locations_regex(self):
         """The search geometry can be set from a locations config file query and a regex"""
@@ -364,15 +364,23 @@ class TestCore(unittest.TestCase):
             "latmax": 52,
         }
         locations_config = self.dag.locations_config
-        geom_combined = get_geometry_from_various(locations_config, country="FRA", geometry=geometry)
+        geom_combined = get_geometry_from_various(
+            locations_config, country="FRA", geometry=geometry
+        )
         self.assertIsInstance(geom_combined, MultiPolygon)
-        self.assertEquals(len(geom_combined), 4)  # France + Guyana + Corsica + somewhere over Poland
+        self.assertEquals(
+            len(geom_combined), 4
+        )  # France + Guyana + Corsica + somewhere over Poland
         geometry = {
             "lonmin": 0,
             "latmin": 50,
             "lonmax": 2,
             "latmax": 52,
         }
-        geom_combined = get_geometry_from_various(locations_config, country="FRA", geometry=geometry)
+        geom_combined = get_geometry_from_various(
+            locations_config, country="FRA", geometry=geometry
+        )
         self.assertIsInstance(geom_combined, MultiPolygon)
-        self.assertEquals(len(geom_combined), 3)  # The bounding box overlaps with France inland
+        self.assertEquals(
+            len(geom_combined), 3
+        )  # The bounding box overlaps with France inland
