@@ -66,13 +66,7 @@
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
-        - |
-          {{"search":{{"shape":{{"coordinates":
-          [[[{geometry.bounds[0]},{geometry.bounds[1]}],
-          [{geometry.bounds[2]},{geometry.bounds[1]}],
-          [{geometry.bounds[2]},{geometry.bounds[3]}],
-          [{geometry.bounds[0]},{geometry.bounds[3]}],
-          [{geometry.bounds[0]},{geometry.bounds[1]}]]], "type": "Polygon"}} }} }}
+        - '{{"search":{{"shape": {geometry#to_geo_interface} }} }}'
         - '$.dataGeometry'
   products:
     CBERS4_PAN10M_L2:

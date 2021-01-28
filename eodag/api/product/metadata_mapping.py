@@ -20,6 +20,7 @@ import re
 from datetime import datetime
 from string import Formatter
 
+import geojson
 import jsonpath_ng as jsonpath
 from dateutil.tz import tzutc
 from lxml import etree
@@ -224,6 +225,10 @@ def format_metadata(search_param, *args, **kwargs):
                 return [list(x.bounds[0:4]) for x in geoms]
             else:
                 return [list(input_geom.bounds[0:4])]
+
+        @staticmethod
+        def convert_to_geo_interface(geom):
+            return geojson.dumps(geom.__geo_interface__)
 
         @staticmethod
         def convert_to_bbox_dict(value):
