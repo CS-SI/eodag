@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -91,7 +91,7 @@ stac_api_config["title"] = root_catalog["title"] + " - service-doc"
 stac_api_config["specs"] = [
     {
         "endpoint": "service-desc",
-        "route": "/service-desc",
+        "route": "/api",
         "rule_filter": lambda rule: True,  # all in
         "model_filter": lambda tag: True,  # all in
     }

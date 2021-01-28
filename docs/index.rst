@@ -23,7 +23,10 @@ Command line tool and a plugin-oriented Python framework for searching,
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
 data provider.
 
--------------------------------------------------------------------------------
+.. image:: _static/eodag_stac_client.png
+   :width: 800
+   :alt: EODAG as STAC client
+   :class: no-scaled-link
 
 .. toctree::
    :maxdepth: 3

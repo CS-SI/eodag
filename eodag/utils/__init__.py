@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -35,11 +35,11 @@ from datetime import datetime
 from itertools import repeat, starmap
 
 import click
-import fiona
-import jsonpath_rw as jsonpath
+import jsonpath_ng as jsonpath
+import shapefile
 import shapely.wkt
 from requests.auth import AuthBase
-from shapely.geometry import MultiPolygon, Polygon, shape
+from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
@@ -55,15 +55,7 @@ from urllib.parse import (  # noqa; noqa
     urlunparse,
 )
 
-try:
-    # eodag_cube installed
-    from rasterio.crs import CRS
-
-    DEFAULT_PROJ = CRS.from_epsg(4326)
-except ImportError:
-    import pyproj
-
-    DEFAULT_PROJ = pyproj.Proj("EPSG:4326")
+DEFAULT_PROJ = "EPSG:4326"
 
 logger = logging.getLogger("eodag.utils")
 
@@ -258,6 +250,7 @@ def slugify(value, allow_unicode=False):
 
 def sanitize(value):
     """Sanitize string to be used as a name of a directory.
+
     >>> sanitize('productName')
     'productName'
     >>> sanitize('name with multiple  spaces')
@@ -356,12 +349,18 @@ def merge_mappings(mapping1, mapping2):
                         # => eval(value.capitalize())=True.
                         # str.capitalize() transforms the first character of the string
                         # to a capital letter
-                        mapping1[m1_keys_lowercase[key]] = eval(value.capitalize())
+                        mapping1[m1_keys_lowercase.get(key, key)] = eval(
+                            value.capitalize()
+                        )
                     else:
-                        mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
+                            value
+                        )
                 else:
                     try:
-                        mapping1[m1_keys_lowercase[key]] = current_value_type(value)
+                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
+                            value
+                        )
                     except TypeError:
                         # Ignore any override value that does not have the same type
                         # as the default value
@@ -444,7 +443,7 @@ def makedirs(dirpath):
 
 
 def format_dict_items(config_dict, **format_variables):
-    """Recursive apply string.format(**format_variables) to dict elements
+    r"""Recursive apply string.format(\**format_variables) to dict elements
 
     >>> format_dict_items(
     ...     {"foo": {"bar": "{a}"}, "baz": ["{b}?", "{b}!"]},
@@ -465,7 +464,7 @@ def format_dict_items(config_dict, **format_variables):
 def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
     """Recursive parse jsonpath elements in dict
 
-    >>> import jsonpath_rw as jsonpath
+    >>> import jsonpath_ng as jsonpath
     >>> jsonpath_parse_dict_items(
     ...     {"foo": {"bar": jsonpath.parse("$.a.b")}, "qux": [jsonpath.parse("$.c"), jsonpath.parse("$.c")]},
     ...     {"a":{"b":"baz"}, "c":"quux"}
@@ -613,7 +612,7 @@ def string_to_jsonpath(key, str_value):
     if "$." in str(str_value):
         try:
             return jsonpath.parse(str_value)
-        except Exception:  # jsonpath_rw does not provide a proper exception
+        except Exception:  # jsonpath_ng does not provide a proper exception
             # If str_value does not contain a jsonpath, return it as is
             return str_value
     else:
@@ -634,12 +633,20 @@ def format_string(key, str_to_format, **format_variables):
     :rtype: str
     """
     if isinstance(str_to_format, str):
-        # defaultdict usage will return "" for missing keys in format_args
-        try:
-            result = str_to_format.format_map(defaultdict(str, **format_variables))
-        except TypeError:
-            logger.error("Unable to format str=%s" % str_to_format)
-            raise
+        # eodag mappings function usage, e.g. '{foo#to_bar}'
+        COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
+        if COMPLEX_QS_REGEX.match(str_to_format) and "#" in str_to_format:
+            from eodag.api.product.metadata_mapping import format_metadata
+
+            result = format_metadata(str_to_format, **format_variables)
+
+        else:
+            # defaultdict usage will return "" for missing keys in format_args
+            try:
+                result = str_to_format.format_map(defaultdict(str, **format_variables))
+            except TypeError:
+                logger.error("Unable to format str=%s" % str_to_format)
+                raise
 
         # try to convert string to python object
         try:
@@ -653,7 +660,7 @@ def format_string(key, str_to_format, **format_variables):
 def parse_jsonpath(key, jsonpath_obj, **values_dict):
     """Parse jsonpah in jsonpath_obj using values_dict
 
-    >>> import jsonpath_rw as jsonpath
+    >>> import jsonpath_ng as jsonpath
     >>> parse_jsonpath(None, jsonpath.parse("$.foo.bar"), **{"foo":{"bar":"baz"}})
     'baz'
 
@@ -699,7 +706,7 @@ def get_geometry_from_various(locations_config=[], **query_args):
                     (geom_arg["lonmax"], geom_arg["latmin"]),
                 )
             )
-        elif isinstance(geom_arg, list) and len(geom_arg) >= 4:
+        elif isinstance(geom_arg, (list, tuple)) and len(geom_arg) >= 4:
             # bbox list
             geom = Polygon(
                 (
@@ -712,27 +719,23 @@ def get_geometry_from_various(locations_config=[], **query_args):
         elif isinstance(geom_arg, str):
             # WKT geometry
             geom = shapely.wkt.loads(geom_arg)
-        elif isinstance(geom_arg, MultiPolygon):
-            # MultiPolygon: extract first Polygon
-            geom = geom_arg[0]
         elif isinstance(geom_arg, BaseGeometry):
             geom = geom_arg
+        else:
+            raise TypeError("Unexpected geometry type: {}".format(type(geom_arg)))
 
     # look for location name in locations configuration
     locations_dict = {loc["name"]: loc for loc in locations_config}
     for arg in query_args.keys():
         if arg in locations_dict.keys():
+            pattern = query_args[arg]
             attr = locations_dict[arg]["attr"]
-            with fiona.open(locations_dict[arg]["path"]) as features:
-                for feat in features:
-                    if feat["properties"][attr] == query_args[arg]:
-                        new_geom = shape(feat["geometry"])
-                        if not geom:
-                            geom = new_geom
-                        # get geoms intersection if intersects or keep original
-                        elif new_geom.intersects(geom):
-                            geom = new_geom.intersection(geom)
-
+            with shapefile.Reader(locations_dict[arg]["path"]) as shp:
+                for shaperec in shp.shapeRecords():
+                    if re.search(pattern, shaperec.record[attr]):
+                        new_geom = shape(shaperec.shape)
+                        # get geoms union
+                        geom = new_geom.union(geom) if geom else new_geom
     return geom
 
 

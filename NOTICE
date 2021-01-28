@@ -1,4 +1,4 @@
-Earth Observation Data Access Gateway (EODAG) Copyright 2020 CS GROUP - France
+Earth Observation Data Access Gateway (EODAG) Copyright 2021 CS GROUP - France
 
 This software is distributed under the Apache Software License (ASL) v2.0, see LICENSE
 file or http://www.apache.org/licenses/LICENSE-2.0 for details.
@@ -19,8 +19,10 @@ https://github.com/requests/requests
 https://github.com/dateutil/dateutil
 https://github.com/boto/boto3
 https://grpc.io/
-https://github.com/kennknowles/python-jsonpath-rw
+https://github.com/h2non/jsonpath-ng
 https://github.com/pydata/xarray
+https://github.com/CS-SI/eodag-cube
+
 
 ================================================================
 The MIT License
@@ -31,10 +33,23 @@ See project link for details.
 
 https://pyyaml.org/wiki/PyYAML
 https://github.com/tqdm/tqdm
-https://github.com/benjaminp/six
 https://github.com/jswhit/pyproj
 https://github.com/kapadia/usgs
 https://github.com/jupyter-widgets/ipyleaflet
+https://github.com/GeospatialPython/pyshp
+https://github.com/flasgger/flasgger
+https://github.com/python-visualization/folium
+
+
+================================================================
+The BSD-2-Clause Licence
+================================================================
+
+The following components are provided under the  BSD-3-Clause License  (https://opensource.org/licenses/BSD-2-Clause).
+See project link for details.
+
+https://github.com/mchaput/whoosh
+https://github.com/imageio/imageio
 
 
 ================================================================
@@ -55,10 +70,22 @@ https://github.com/google/protobuf
 https://github.com/lxml/lxml
 https://github.com/jupyter-widgets/ipywidgets
 https://github.com/jupyter/jupyter
+https://github.com/pallets/flask
+https://github.com/Python-Markdown/markdown
 
 The function slugify, located at eodag/utils/__init__.py is a modified version of the function with the same name from
 the Django Project, licensed under the BSD-3-Clause Licence. Follow project link below for more information:
 https://github.com/django/django/
+
+
+================================================================
+The GNU General Public License v2.0
+================================================================
+
+The following components are provided under the  BSD-3-Clause License  (https://opensource.org/licenses/GPL-2.0).
+See project link for details.
+
+https://github.com/avian2/unidecode
 
 
 ================================================================
@@ -68,5 +95,4 @@ The Python-2.0 License
 The following components are provided under the  Python-2.0 License  (https://opensource.org/licenses/Python-2.0).
 See project link for details.
 
-https://github.com/agronholm/pythonfutures
 https://github.com/matplotlib/

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -216,16 +216,25 @@ def load_default_config():
             logger.error("Unable to load configuration")
             raise e
         for provider_config in providers_configs:
-            # For all providers, set the default outputs_prefix of its download plugin
-            # as tempdir in a portable way
-            for param_name in ("download", "api"):
-                if param_name in vars(provider_config):
-                    param_value = getattr(provider_config, param_name)
-                    param_value.outputs_prefix = tempfile.gettempdir()
-            # Set default priority to 0
-            provider_config.__dict__.setdefault("priority", 0)
+            provider_config_init(provider_config)
             config[provider_config.name] = provider_config
         return config
+
+
+def provider_config_init(provider_config):
+    """Applies some default values to provider config
+
+    :param provider_config: An eodag provider configuration
+    :type file_path: str
+    """
+    # For the provider, set the default outputs_prefix of its download plugin
+    # as tempdir in a portable way
+    for param_name in ("download", "api"):
+        if param_name in vars(provider_config):
+            param_value = getattr(provider_config, param_name)
+            param_value.outputs_prefix = tempfile.gettempdir()
+    # Set default priority to 0
+    provider_config.__dict__.setdefault("priority", 0)
 
 
 def override_config_from_file(config, file_path):
@@ -303,13 +312,14 @@ def override_config_from_mapping(config, mapping):
         if old_conf is not None:
             old_conf.update(new_conf)
         else:
-            logger.warning(
+            logger.info(
                 "%s: unknown provider found in user conf, trying to use provided configuration",
                 provider,
             )
             try:
-                mapping[provider] = ProviderConfig.from_mapping(new_conf)
-            except ValidationError as e:
+                new_conf["name"] = new_conf.get("name", provider)
+                config[provider] = ProviderConfig.from_mapping(new_conf)
+            except (AttributeError, ValidationError) as e:
                 logger.warning("%s skipped: %s", provider, e)
 
 

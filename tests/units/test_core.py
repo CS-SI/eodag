@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -21,9 +21,17 @@ import os
 import shutil
 import unittest
 
+from shapely import wkt
+from shapely.geometry import LineString, MultiPolygon
+
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
-from tests.context import EODataAccessGateway, UnsupportedProvider, makedirs
+from tests.context import (
+    EODataAccessGateway,
+    UnsupportedProvider,
+    get_geometry_from_various,
+    makedirs,
+)
 from tests.utils import mock
 
 
@@ -139,6 +147,8 @@ class TestCore(unittest.TestCase):
                     shutil.rmtree(old_path)
         if os.getenv("EODAG_CFG_FILE") is not None:
             os.environ.pop("EODAG_CFG_FILE")
+        if os.getenv("EODAG_LOCS_CFG_FILE") is not None:
+            os.environ.pop("EODAG_LOCS_CFG_FILE")
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""  # noqa
@@ -224,17 +234,153 @@ class TestCore(unittest.TestCase):
         self.assertEqual(dag.providers_config["peps"].download.outputs_prefix, "/data")
 
     def execution_involving_conf_dir(self, inspect=None):
+        """Check that the path(s) inspected (str, list) are created after the instantation
+        of EODataAccessGateway. If they were already there, rename them (.old), instantiate,
+        check, delete the new files, and restore the existing files to there previous name."""
         if inspect is not None:
+            if isinstance(inspect, str):
+                inspect = [inspect]
             conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
-            old = current = os.path.join(conf_dir, inspect)
-            if os.path.exists(current):
-                old = os.path.join(conf_dir, "{}.old".format(inspect))
-                shutil.move(current, old)
+            olds = []
+            currents = []
+            for inspected in inspect:
+                old = current = os.path.join(conf_dir, inspected)
+                if os.path.exists(current):
+                    old = os.path.join(conf_dir, "{}.old".format(inspected))
+                    shutil.move(current, old)
+                olds.append(old)
+                currents.append(current)
             EODataAccessGateway()
-            self.assertTrue(os.path.exists(current))
-            if old != current:
-                try:
-                    shutil.rmtree(current)
-                except OSError:
-                    os.unlink(current)
-                shutil.move(old, current)
+            for old, current in zip(olds, currents):
+                self.assertTrue(os.path.exists(current))
+                if old != current:
+                    try:
+                        shutil.rmtree(current)
+                    except OSError:
+                        os.unlink(current)
+                    shutil.move(old, current)
+
+    def test_core_object_creates_locations_standard_location(self):
+        """The core object must create a locations config file and a shp dir in standard user config location on instantiation"""  # noqa
+        self.execution_involving_conf_dir(inspect=["locations.yml", "shp"])
+
+    def test_core_object_set_default_locations_config(self):
+        """The core object must set the default locations config on instantiation"""  # noqa
+        dag = EODataAccessGateway()
+        conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+        default_shpfile = os.path.join(conf_dir, "shp", "ne_110m_admin_0_map_units.shp")
+        self.assertIsInstance(dag.locations_config, list)
+        self.assertEqual(
+            dag.locations_config,
+            [dict(attr="ADM0_A3_US", name="country", path=default_shpfile)],
+        )
+
+    def test_core_object_locations_file_not_found(self):
+        """The core object must set the locations to an empty list when the file is not found"""  # noqa
+        dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
+        self.assertEqual(dag.locations_config, [])
+
+    def test_core_object_prioritize_locations_file_in_envvar(self):
+        """The core object must use the locations file pointed to by the EODEODAG_LOCS_CFG_FILEAG_CFG_FILE env var"""  # noqa
+        os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_locations_override.yml"
+        )
+        dag = EODataAccessGateway()
+        self.assertEqual(
+            dag.locations_config,
+            [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
+        )
+
+    def test_get_geometry_from_various_no_locations(self):
+        """The search geometry can be set from a dict, list, tuple, WKT string or shapely geom"""
+        ref_geom_as_wkt = "POLYGON ((0 50, 0 52, 2 52, 2 50, 0 50))"
+        ref_geom = wkt.loads(ref_geom_as_wkt)
+        # Good dict
+        geometry = {
+            "lonmin": 0,
+            "latmin": 50,
+            "lonmax": 2,
+            "latmax": 52,
+        }
+        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        # Bad dict with a missing key
+        del geometry["lonmin"]
+        self.assertRaises(
+            TypeError, get_geometry_from_various, [], geometry=geometry,
+        )
+        # Tuple
+        geometry = (0, 50, 2, 52)
+        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        # List
+        geometry = list(geometry)
+        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        # List without 4 items
+        geometry.pop()
+        self.assertRaises(
+            TypeError, get_geometry_from_various, [], geometry=geometry,
+        )
+        # WKT
+        geometry = ref_geom_as_wkt
+        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        # Some other shapely geom
+        geometry = LineString([[0, 0], [1, 1]])
+        self.assertIsInstance(
+            get_geometry_from_various([], geometry=geometry), LineString
+        )
+
+    def test_get_geometry_from_various_only_locations(self):
+        """The search geometry can be set from a locations config file query"""
+        locations_config = self.dag.locations_config
+        # No query args
+        self.assertIsNone(get_geometry_from_various(locations_config))
+        # Bad query arg
+        # 'country' is the expected name here
+        self.assertIsNone(
+            get_geometry_from_various(locations_config, bad_query_arg="dummy")
+        )
+        # France
+        geom_france = get_geometry_from_various(locations_config, country="FRA")
+        self.assertIsInstance(geom_france, MultiPolygon)
+        self.assertEquals(len(geom_france), 3)  # France + Guyana + Corsica
+        # Not defined
+        self.assertIsNone(
+            get_geometry_from_various(locations_config, country="bad_query_value")
+        )
+
+    def test_get_geometry_from_various_only_locations_regex(self):
+        """The search geometry can be set from a locations config file query and a regex"""
+        locations_config = self.dag.locations_config
+        # Pakistan + Panama (each has a unique polygon) => Multypolygon of len 2
+        geom_regex_pa = get_geometry_from_various(locations_config, country="PA[A-Z]")
+        self.assertIsInstance(geom_regex_pa, MultiPolygon)
+        self.assertEquals(len(geom_regex_pa), 2)
+
+    def test_get_geometry_from_various_geometry_and_locations(self):
+        """The search geometry can be set from a given geometry and a locations config file query"""
+        geometry = {
+            "lonmin": 20,
+            "latmin": 50,
+            "lonmax": 22,
+            "latmax": 52,
+        }
+        locations_config = self.dag.locations_config
+        geom_combined = get_geometry_from_various(
+            locations_config, country="FRA", geometry=geometry
+        )
+        self.assertIsInstance(geom_combined, MultiPolygon)
+        self.assertEquals(
+            len(geom_combined), 4
+        )  # France + Guyana + Corsica + somewhere over Poland
+        geometry = {
+            "lonmin": 0,
+            "latmin": 50,
+            "lonmax": 2,
+            "latmax": 52,
+        }
+        geom_combined = get_geometry_from_various(
+            locations_config, country="FRA", geometry=geometry
+        )
+        self.assertIsInstance(geom_combined, MultiPolygon)
+        self.assertEquals(
+            len(geom_combined), 3
+        )  # The bounding box overlaps with France inland

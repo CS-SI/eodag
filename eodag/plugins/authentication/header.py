@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -19,7 +19,6 @@
 import requests.auth
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils.exceptions import MisconfiguredError
 
 
 class HTTPHeaderAuth(Authentication):
@@ -57,17 +56,12 @@ class HTTPHeaderAuth(Authentication):
 
     def authenticate(self):
         """Authenticate"""
-        try:
-            headers = {
-                header: value.format(**self.config.credentials)
-                for header, value in self.config.headers.items()
-            }
-            return HeaderAuth(headers)
-        except AttributeError as err:
-            if "credentials" in err:
-                raise MisconfiguredError(
-                    "Missing Credentials for provider: %s", self.provider
-                )
+        self.validate_config_credentials()
+        headers = {
+            header: value.format(**self.config.credentials)
+            for header, value in self.config.headers.items()
+        }
+        return HeaderAuth(headers)
 
 
 class HeaderAuth(requests.auth.AuthBase):

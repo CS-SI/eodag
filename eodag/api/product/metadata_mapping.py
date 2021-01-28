@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -20,10 +20,13 @@ import re
 from datetime import datetime
 from string import Formatter
 
-import jsonpath_rw as jsonpath
+import geojson
+import jsonpath_ng as jsonpath
 from dateutil.tz import tzutc
 from lxml import etree
 from lxml.etree import XPathEvalError
+from shapely import wkt
+from shapely.geometry import MultiPolygon
 
 from eodag.utils import get_timestamp
 
@@ -38,6 +41,8 @@ NOT_MAPPED = "Not Mapped"
 ONLINE_STATUS = "ONLINE"
 STAGING_STATUS = "STAGING"
 OFFLINE_STATUS = "OFFLINE"
+COORDS_ROUNDING_PRECISION = 4
+WKT_MAX_LEN = 1600
 
 
 def get_metadata_path(map_value):
@@ -190,6 +195,40 @@ def format_metadata(search_param, *args, **kwargs):
             else:
                 logger.warning("Could not get wkt_convex_hull from %s", value)
                 return value
+
+        @staticmethod
+        def convert_to_rounded_wkt(value):
+            wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
+            # If needed, simplify WKT to prevent too long request failure
+            tolerance = 0.1
+            while len(wkt_value) > WKT_MAX_LEN and tolerance <= 1:
+                logger.debug(
+                    "Geometry WKT is too long (%s), trying to simplify it with tolerance %s",
+                    len(wkt_value),
+                    tolerance,
+                )
+                wkt_value = wkt.dumps(
+                    value.simplify(tolerance),
+                    rounding_precision=COORDS_ROUNDING_PRECISION,
+                )
+                tolerance += 0.1
+            if len(wkt_value) > WKT_MAX_LEN and tolerance > 1:
+                logger.warning("Failed to reduce WKT length lower than %s", WKT_MAX_LEN)
+            return wkt_value
+
+        @staticmethod
+        def convert_to_bounds_lists(input_geom):
+            if isinstance(input_geom, MultiPolygon):
+                geoms = [geom for geom in input_geom]
+                # sort with larger one at first (stac-browser only plots first one)
+                geoms.sort(key=lambda x: x.area, reverse=True)
+                return [list(x.bounds[0:4]) for x in geoms]
+            else:
+                return [list(input_geom.bounds[0:4])]
+
+        @staticmethod
+        def convert_to_geo_interface(geom):
+            return geojson.dumps(geom.__geo_interface__)
 
         @staticmethod
         def convert_to_bbox_dict(value):
@@ -526,7 +565,7 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
                     dest_dict[metadata][1] = (conversion, jsonpath.parse(path))
                 else:
                     dest_dict[metadata] = (conversion, jsonpath.parse(path))
-            except Exception:  # jsonpath_rw does not provide a proper exception
+            except Exception:  # jsonpath_ng does not provide a proper exception
                 # Assume the mapping is to be passed as is.
                 # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
                 # it further

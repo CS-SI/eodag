@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -27,7 +27,11 @@ from tqdm import tqdm
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import ProgressCallback, sanitize
-from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    NotAvailableError,
+)
 from eodag.utils.notebook import NotebookWidgets
 
 logger = logging.getLogger("eodag.plugins.download.base")
@@ -57,6 +61,7 @@ class Download(PluginTopic):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """
         Base download method. Not available, should be defined for each plugin
@@ -65,7 +70,7 @@ class Download(PluginTopic):
             "A Download plugin must implement a method named download"
         )
 
-    def _prepare_download(self, product):
+    def _prepare_download(self, product, **kwargs):
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
@@ -92,9 +97,12 @@ class Download(PluginTopic):
             return None, None
         logger.info("Download url: %s", url)
 
+        outputs_prefix = (
+            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        )
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
-        prefix = os.path.abspath(self.config.outputs_prefix)
+        prefix = os.path.abspath(outputs_prefix)
         sanitized_title = sanitize(product.properties["title"])
         if sanitized_title == product.properties["title"]:
             collision_avoidance_suffix = ""
@@ -123,10 +131,10 @@ class Download(PluginTopic):
         record_filename = os.path.join(download_records_dir, url_hash)
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info("Product already downloaded: %s", fs_path)
-            return self._finalize(fs_path), None
+            return self._finalize(fs_path, **kwargs), None
         elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
             logger.info("Product already downloaded: %s", fs_dir_path)
-            return self._finalize(fs_dir_path), None
+            return self._finalize(fs_dir_path, **kwargs), None
         # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
         elif os.path.isfile(record_filename):
             logger.debug(
@@ -137,14 +145,18 @@ class Download(PluginTopic):
 
         return fs_path, record_filename
 
-    def _finalize(self, fs_path):
+    def _finalize(self, fs_path, **kwargs):
         """Finalize the download process.
 
         :param fs_path: The path to the local zip archive downloaded or already present
         :type fs_path: str
         :return: the absolute path to the product
         """
-        if not getattr(self.config, "extract", False):
+        extract = kwargs.pop("extract", None)
+        extract = (
+            extract if extract is not None else getattr(self.config, "extract", False)
+        )
+        if not extract:
             logger.info("Extraction not activated. The product is available as is.")
             return fs_path
         product_path = (
@@ -180,6 +192,9 @@ class Download(PluginTopic):
                 % product_path
             )
             return product_path
+        outputs_prefix = (
+            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        )
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
             with zipfile.ZipFile(fs_path, "r") as zfile:
@@ -191,8 +206,7 @@ class Download(PluginTopic):
                 ) as progressbar:
                     for fileinfo in progressbar:
                         zfile.extract(
-                            fileinfo,
-                            path=os.path.join(self.config.outputs_prefix, product_path),
+                            fileinfo, path=os.path.join(outputs_prefix, product_path),
                         )
         # Handle depth levels in the product archive. For example, if the downloaded archive was
         # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
@@ -212,6 +226,7 @@ class Download(PluginTopic):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """
         A sequential download_all implementation
@@ -263,6 +278,7 @@ class Download(PluginTopic):
                                     progress_callback=progress_callback,
                                     wait=wait,
                                     timeout=-1,
+                                    **kwargs
                                 )
                             )
 
@@ -276,6 +292,13 @@ class Download(PluginTopic):
                         except NotAvailableError as e:
                             logger.info(e)
                             continue
+
+                        except (AuthenticationError, MisconfiguredError):
+                            logger.exception(
+                                "Stopped because of credentials problems with provider %s",
+                                self.provider,
+                            )
+                            raise
 
                         except RuntimeError:
                             import traceback as tb

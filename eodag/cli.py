@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -53,7 +53,13 @@ from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
-CRUNCHERS = ["FilterLatestByName", "FilterLatestIntersect", "FilterOverlap"]
+CRUNCHERS = [
+    "FilterLatestByName",
+    "FilterLatestIntersect",
+    "FilterOverlap",
+    "FilterProperty",
+    "FilterDate",
+]
 
 
 class MutuallyExclusiveOption(click.Option):
@@ -127,7 +133,7 @@ def version():
     "-l",
     "--locs",
     help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml,"
-    " and may be used with custom query-string argument (e.g.: -q country=FR)",
+    " and may be used with custom query-string argument (e.g.: -q country=FRA)",
     type=click.Path(exists=True),
 )
 @click.option(

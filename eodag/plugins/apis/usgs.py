@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -35,7 +35,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
-from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.exceptions import AuthenticationError, NotAvailableError
 
 logger = logging.getLogger("eodag.plugins.apis.usgs")
 
@@ -54,11 +54,14 @@ class UsgsApi(Api):
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
-        api.login(
-            self.config.credentials["username"],
-            self.config.credentials["password"],
-            save=True,
-        )
+        try:
+            api.login(
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+                save=True,
+            )
+        except USGSError:
+            raise AuthenticationError("Please check your USGS credentials.") from None
         usgs_dataset = self.config.products[product_type]["dataset"]
         usgs_catalog_node = self.config.products[product_type]["catalog_node"]
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
@@ -172,8 +175,11 @@ class UsgsApi(Api):
         logger.info("Download url: %s", url)
 
         filename = product.properties["title"] + ".tar.bz"
-        local_file_path = os.path.join(self.config.outputs_prefix, filename)
-        download_records = os.path.join(self.config.outputs_prefix, ".downloaded")
+        outputs_prefix = (
+            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+        )
+        local_file_path = os.path.join(outputs_prefix, filename)
+        download_records = os.path.join(outputs_prefix, ".downloaded")
         if not os.path.exists(download_records):
             os.makedirs(download_records)
         url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
@@ -191,12 +197,14 @@ class UsgsApi(Api):
             )
             logger.debug("Removing record file : %s", record_filename)
             os.remove(record_filename)
-
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
+        )
         with requests.get(
             url,
             stream=True,
             auth=auth,
-            params=getattr(self.config, "dl_url_params", {}),
+            params=params,
             verify=False,
             hooks={"response": lambda r, *args, **kwargs: print("\n", r.url)},
         ) as stream:
@@ -224,7 +232,9 @@ class UsgsApi(Api):
                 with open(record_filename, "w") as fh:
                     fh.write(url)
                 logger.debug("Download recorded in %s", record_filename)
-                if self.config.extract and zipfile.is_zipfile(local_file_path):
+                extract = kwargs.pop("extract", None)
+                extract = extract if extract is not None else self.config.extract
+                if extract and zipfile.is_zipfile(local_file_path):
                     logger.info("Extraction activated")
                     with zipfile.ZipFile(local_file_path, "r") as zfile:
                         fileinfos = zfile.infolist()
@@ -234,9 +244,7 @@ class UsgsApi(Api):
                             desc="Extracting files from {}".format(local_file_path),
                         ) as progressbar:
                             for fileinfo in progressbar:
-                                zfile.extract(
-                                    fileinfo, path=self.config["outputs_prefix"]
-                                )
+                                zfile.extract(fileinfo, path=outputs_prefix)
                     return local_file_path[: local_file_path.index(".tar.bz")]
                 else:
                     return local_file_path

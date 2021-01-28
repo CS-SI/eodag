@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -59,6 +59,7 @@ class HTTPDownload(Download):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """Download a product using HTTP protocol.
 
@@ -66,7 +67,7 @@ class HTTPDownload(Download):
         the user is warned, it is renamed to remove the zip extension and
         no further treatment is done (no extraction)
         """
-        fs_path, record_filename = self._prepare_download(product)
+        fs_path, record_filename = self._prepare_download(product, **kwargs)
         if not fs_path or not record_filename:
             return fs_path
 
@@ -111,11 +112,11 @@ class HTTPDownload(Download):
             if datetime.now() >= product.next_try:
                 product.next_try += timedelta(minutes=wait)
                 try:
+                    params = kwargs.pop("dl_url_params", None) or getattr(
+                        self.config, "dl_url_params", {}
+                    )
                     with requests.get(
-                        url,
-                        stream=True,
-                        auth=auth,
-                        params=getattr(self.config, "dl_url_params", {}),
+                        url, stream=True, auth=auth, params=params,
                     ) as stream:
                         try:
                             stream.raise_for_status()
@@ -193,7 +194,7 @@ class HTTPDownload(Download):
                                 new_fs_path = fs_path[: fs_path.index(".zip")]
                                 shutil.move(fs_path, new_fs_path)
                                 return new_fs_path
-                            return self._finalize(fs_path)
+                            return self._finalize(fs_path, **kwargs)
 
                 except NotAvailableError as e:
                     if not getattr(self.config, "order_enabled", False):
@@ -240,6 +241,7 @@ class HTTPDownload(Download):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """
         download_all using parent (base plugin) method
@@ -250,4 +252,5 @@ class HTTPDownload(Download):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
+            **kwargs
         )

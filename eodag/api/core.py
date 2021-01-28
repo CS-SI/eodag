@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -22,6 +22,7 @@ from operator import itemgetter
 
 import geojson
 import pkg_resources
+import yaml.parser
 from pkg_resources import resource_filename
 from whoosh import fields
 from whoosh.fields import Schema
@@ -35,6 +36,8 @@ from eodag.config import (
     load_yml_config,
     override_config_from_env,
     override_config_from_file,
+    override_config_from_mapping,
+    provider_config_init,
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
@@ -270,6 +273,40 @@ class EODataAccessGateway(object):
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
 
+    def update_providers_config(self, yaml_conf):
+        """Update providers configuration with given input.
+        Can be used to add a provider to existing configuration or update
+        an existing one.
+
+        >>> from eodag import EODataAccessGateway
+        >>> dag = EODataAccessGateway()
+        >>> new_config = '''
+        ...     my_new_provider:
+        ...         search:
+        ...             type: StacSearch
+        ...             api_endpoint: https://api.my_new_provider/search
+        ...         products:
+        ...             GENERIC_PRODUCT_TYPE:
+        ...                 productType: '{productType}'
+        ... '''
+        >>> # add new provider
+        >>> dag.update_providers_config(new_config)
+        >>> type(dag.providers_config["my_new_provider"])
+        <class 'eodag.config.ProviderConfig'>
+        >>> dag.providers_config["my_new_provider"].priority
+        0
+        >>> # run 2nd time (update provider)
+        >>> dag.update_providers_config(new_config)
+
+        :param yaml_conf: YAML formated provider configuration
+        :type yaml_conf: str
+        """
+        conf_update = yaml.safe_load(yaml_conf)
+        override_config_from_mapping(self.providers_config, conf_update)
+        for provider in conf_update.keys():
+            provider_config_init(self.providers_config[provider])
+        self._plugins_manager = PluginManager(self.providers_config)
+
     def set_locations_conf(self, locations_conf_path):
         """Set locations configuration.
         This configuration (YML format) will contain a shapefile list associated
@@ -277,18 +314,20 @@ class EODataAccessGateway(object):
         You can also configure parent attributes, which can be used for creating
         a catalogs path when using eodag as a REST server.
         Example of locations configuration file content:
-        ```yml
-        shapefiles:
-            - name: country
-                path: /path/to/countries_list.shp
-                attr: ISO2
-            - name: department
-                path: /path/to/FR_departments.shp
-                attr: code_insee
-                parent:
+
+        .. code-block:: yaml
+
+            shapefiles:
+                - name: country
+                  path: /path/to/countries_list.shp
+                  attr: ISO3
+                - name: department
+                  path: /path/to/FR_departments.shp
+                  attr: code_insee
+                  parent:
                     name: country
-                    attr: FR
-        ```
+                    attr: FRA
+
         :param locations_conf_path: Path to the locations configuration file
         :type locations_conf_path: str
         """
@@ -432,23 +471,25 @@ class EODataAccessGateway(object):
         :type start: str
         :param end: End sensing time in iso format
         :type end: str
-        :param geom: Dictionnary defining the AOI. Information can be defined in different ways:
+        :param geom: Search area that can be defined in different ways:
 
-                    * with a Shapely geometry object ("obj" as key):
-                      ``{"obj": :class:`shapely.geometry.base.BaseGeometry`}``
+                    * with a Shapely geometry object:
+                      ``class:`shapely.geometry.base.BaseGeometry```
                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
                     * with a bounding box as list of float:
                       ``[lonmin, latmin, lonmax, latmax]``
                     * with a WKT str
-                    The geometry can also be passed as ``<location_name>="<attr_value>"`` in kwargs
+
+                    The geometry can also be passed as ``<location_name>="<attr_regex>"`` in kwargs
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
         :param dict kwargs: some other criteria that will be used to do the search,
                             using paramaters compatibles with the provider, or also
                             location filtering by name using locations configuration
-                            ``<location_name>="<attr_value>"`` (e.g.: ``country="FR"`` will use
-                            the geometry of the feature having the property ISO2=FR in the shapefile
-                            configured with name=country and attr=ISO2)
+                            ``<location_name>="<attr_regex>"`` (e.g.: ``country="PA.`` will use
+                            the geometry of the features having the property ISO3 starting with
+                            'PA' such as Panama and Pakistan in the shapefile configured with
+                            name=country and attr=ISO3)
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -681,6 +722,20 @@ class EODataAccessGateway(object):
             logger.info(
                 "Found %s result(s) on provider '%s'", nb_res, search_plugin.provider
             )
+            # Hitting for instance
+            # https://theia.cnes.fr/atdistrib/resto2/api/collections/SENTINEL2/
+            #   search.json?startDate=2019-03-01&completionDate=2019-06-15
+            #   &processingLevel=LEVEL2A&maxRecords=1&page=1
+            # returns a number (properties.totalResults) that is the number of
+            # products in the collection (here SENTINEL2) instead of the estimated
+            # total number of products matching the search criteria (start/end date).
+            # Remove this warning when this is fixed upstream by THEIA.
+            if search_plugin.provider == "theia":
+                logger.warning(
+                    "Results found on provider 'theia' is the total number of products "
+                    "available in the searched collection (e.g. SENTINEL2) instead of "
+                    "the total number of products matching the search criteria"
+                )
         except Exception:
             logger.info(
                 "No result from provider '%s' due to an error during search. Raise "
@@ -715,14 +770,22 @@ class EODataAccessGateway(object):
         return results
 
     @staticmethod
-    def sort_by_extent(searches):
-        """Combines multiple SearchResults and return a list of SearchResults sorted
-        by extent.
+    def group_by_extent(searches):
+        """Combines multiple SearchResults and return a list of SearchResults grouped
+        by extent (i.e. bounding box).
 
         :param searches: List of eodag SearchResult
         :type searches: list
         :return: list of :class:`~eodag.api.search_result.SearchResult`
+
+        .. versionchanged::
+           2.0
+
+                * Renamed from sort_by_extent to group_by_extent to reflect its
+                  actual behaviour.
         """
+        # Dict with extents as keys, each extent being defined by a str
+        # "{minx}{miny}{maxx}{maxy}" (each float rounded to 2 dec).
         products_grouped_by_extent = {}
 
         for search in searches:
@@ -733,8 +796,8 @@ class EODataAccessGateway(object):
                 same_geom.append(product)
 
         return [
-            SearchResult(products_grouped_by_extent[extent_as_wkb_hex])
-            for extent_as_wkb_hex in products_grouped_by_extent
+            SearchResult(products_grouped_by_extent[extent_as_str])
+            for extent_as_str in products_grouped_by_extent
         ]
 
     def download_all(
@@ -743,6 +806,7 @@ class EODataAccessGateway(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """Download all products resulting from a search.
 
@@ -760,6 +824,10 @@ class EODataAccessGateway(object):
         :param timeout: (optional) If download fails, maximum time in minutes
                     before stop retrying to download (default=20')
         :type timeout: int
+        :param dict kwargs: `outputs_prefix` (str), `extract` (bool) and
+                            `dl_url_params` (dict) can be provided here and will
+                            override any other values defined in a configuration file
+                            or with environment variables.
         :returns: A collection of the absolute paths to the downloaded products
         :rtype: list
         """
@@ -776,6 +844,7 @@ class EODataAccessGateway(object):
                 progress_callback=progress_callback,
                 wait=wait,
                 timeout=timeout,
+                **kwargs
             )
         else:
             logger.info("Empty search result, nothing to be downloaded !")
@@ -897,6 +966,7 @@ class EODataAccessGateway(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ):
         """Download a single product.
 
@@ -930,6 +1000,10 @@ class EODataAccessGateway(object):
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download (default=20')
         :type timeout: int
+        :param dict kwargs: `outputs_prefix` (str), `extract` (bool) and
+                            `dl_url_params` (dict) can be provided as additional kwargs
+                            and will override any other values defined in a configuration
+                            file or with environment variables.
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
@@ -946,7 +1020,7 @@ class EODataAccessGateway(object):
                 self._plugins_manager.get_download_plugin(product), auth
             )
         return product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout
+            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
         )
 
     def get_cruncher(self, name, **options):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -17,7 +17,6 @@
 # limitations under the License.
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils.exceptions import MisconfiguredError
 
 
 class OAuth(Authentication):
@@ -30,12 +29,7 @@ class OAuth(Authentication):
 
     def authenticate(self):
         """Authenticate"""
-        try:
-            self.access_key = self.config.credentials["aws_access_key_id"]
-            self.secret_key = self.config.credentials["aws_secret_access_key"]
-            return self.access_key, self.secret_key
-        except AttributeError as err:
-            if "credentials" in err:
-                raise MisconfiguredError(
-                    "Missing Credentials for provider: %s", self.provider
-                )
+        self.validate_config_credentials()
+        self.access_key = self.config.credentials["aws_access_key_id"]
+        self.secret_key = self.config.credentials["aws_secret_access_key"]
+        return self.access_key, self.secret_key

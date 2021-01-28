@@ -1,6 +1,22 @@
 Release history
 ---------------
 
+2.0 (2021-01-28)
+++++++++++++++++++
+
+- Add a new provider dynamically
+- Allow to dynamically set download options, fixes `GH-145 <https://github.com/CS-SI/eodag/issues/145>`_ and
+  `GH-112 <https://github.com/CS-SI/eodag/issues/112>`_
+- New tutorials for STAC and search by geometry, fixes `GH-139 <https://github.com/CS-SI/eodag/issues/139>`_
+- New crunches FilterDate, FilterProperty and updated FilterOverlap, fixes `GH-137 <https://github.com/CS-SI/eodag/issues/137>`_
+- Use jsonpath-ng instead of jsonpath-rw and pyjq, pyshp instead of fiona
+- Better wrong or missing credentials handling
+- Add warning for the total number of results returned by theia
+- Support regex query from locations configuration
+- sort_by_extent renamed to group_by_extent
+- Documentation and tutorials update
+- Various minor fixes, code refactorization, and tests update
+
 2.0b2 (2020-12-18)
 ++++++++++++++++++
 

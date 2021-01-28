@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -32,16 +32,24 @@ from eodag.api.product.drivers.base import NoDriver
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.crunch.filter_date import FilterDate
+from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
+from eodag.plugins.crunch.filter_property import FilterProperty
+from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.base import Download
+from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.rest import server as eodag_http_server
 from eodag.rest.utils import eodag_api, get_date
-from eodag.utils import makedirs
+from eodag.utils import get_geometry_from_various, makedirs
 from eodag.utils.exceptions import (
     AddressNotFound,
+    AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     UnsupportedDatasetAddressScheme,
     UnsupportedProvider,
     ValidationError,
 )
+from eodag.utils.stac_reader import fetch_stac_items
 from tests import TEST_RESOURCES_PATH

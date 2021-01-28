@@ -1,0 +1,131 @@
+{
+    "stac_version": "1.0.0-beta.2",
+    "stac_extensions": [
+        "eo",
+        "sat",
+        "http://127.0.0.1:5000/extensions/oseo/json-schema/schema.json"
+    ],
+    "id": "S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143",
+    "bbox": [
+        -5.2491149227172,
+        52.238444344839,
+        -4.3214559349905,
+        53.241963547644
+    ],
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -5.249115,
+                    52.238444
+                ],
+                [
+                    -5.241286,
+                    52.257001
+                ],
+                [
+                    -5.179327,
+                    52.402573
+                ],
+                [
+                    -5.117318,
+                    52.548093
+                ],
+                [
+                    -5.055075,
+                    52.693647
+                ],
+                [
+                    -4.992019,
+                    52.839203
+                ],
+                [
+                    -4.928295,
+                    52.984752
+                ],
+                [
+                    -4.86429,
+                    53.130357
+                ],
+                [
+                    -4.818507,
+                    53.233446
+                ],
+                [
+                    -4.351658,
+                    53.241964
+                ],
+                [
+                    -4.321456,
+                    52.255151
+                ],
+                [
+                    -5.249115,
+                    52.238444
+                ]
+            ]
+        ]
+    },
+    "type": "Feature",
+    "collection": "S2_MSI_L1C",
+    "properties": {
+        "datetime": "2019-12-31T11:24:51.024Z",
+        "start_datetime": "2019-12-31T11:24:51.024Z",
+        "end_datetime": "2019-12-31T11:24:51.024Z",
+        "license": "proprietary",
+        "constellation": "S2ST",
+        "platform": "S2A",
+        "intruments": [
+            "MSI"
+        ],
+        "eo:cloud_cover": 98.7187,
+        "sat:orbit_state": "descending",
+        "sat:relative_orbit": 37,
+        "oseo:productType": "S2MSI1C",
+        "oseo:instrument": "MSI",
+        "oseo:sensorType": "OPTICAL",
+        "oseo:processingLevel": "LEVEL1C",
+        "oseo:organisationName": "ESA",
+        "oseo:publicationDate": "2019-12-31T15:57:11.553Z",
+        "oseo:parentIdentifier": "urn:ogc:def:EOP:ESA::SENTINEL-2:",
+        "oseo:orbitNumber": 23629,
+        "oseo:creationDate": "2019-12-31T15:54:49.708Z",
+        "oseo:modificationDate": "2019-12-31T15:57:11.553Z",
+        "oseo:sensorMode": "INS-NOBS"
+    },
+    "links": [
+        {
+            "rel": "self",
+            "title": "S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143",
+            "href": "./country/GBR/year/2019/items/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143"
+        },
+        {
+            "rel": "root",
+            "href": "/"
+        },
+        {
+            "rel": "parent",
+            "title": "S2_MSI_L1C",
+            "href": "./country/GBR/year/2019/2019.json"
+        },
+        {
+            "rel": "collection",
+            "title": "S2_MSI_L1C",
+            "href": "/collections/S2_MSI_L1C"
+        }
+    ],
+    "assets": {
+        "downloadLink": {
+            "title": "Download link",
+            "href": "http://127.0.0.1:5000/S2_MSI_L1C/country/GBR/year/2019/items/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143/download",
+            "type": "application/zip"
+        },
+        "thumbnail": {
+            "title": "Thumbnail",
+            "href": "https://peps.cnes.fr/quicklook/2019/12/31/S2A/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143_quicklook.jpg",
+            "type": "image/jpeg",
+            "role": "thumbnail"
+        }
+    }
+}

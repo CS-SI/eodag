@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -53,6 +53,7 @@
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
+    auth_error_code: 403
     pagination:
       next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
       total_items_nb_key_path: '$.meta.found'
@@ -65,13 +66,7 @@
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
-        - |
-          {{"search":{{"shape":{{"coordinates":
-          [[[{geometry.bounds[0]},{geometry.bounds[1]}],
-          [{geometry.bounds[2]},{geometry.bounds[1]}],
-          [{geometry.bounds[2]},{geometry.bounds[3]}],
-          [{geometry.bounds[0]},{geometry.bounds[3]}],
-          [{geometry.bounds[0]},{geometry.bounds[1]}]]], "type": "Polygon"}} }} }}
+        - '{{"search":{{"shape": {geometry#to_geo_interface} }} }}'
         - '$.dataGeometry'
   products:
     CBERS4_PAN10M_L2:
@@ -579,7 +574,7 @@
       id: '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -759,7 +754,7 @@
         - '$.properties.productIdentifier'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
@@ -912,7 +907,7 @@
         - '$.data.identification.externalId'
       # The geographic extent of the product
       geometry:
-        - 'gintersect={geometry#to_wkt_convex_hull}'
+        - 'gintersect={geometry#to_rounded_wkt}'
         - '$.md.geometry'
       # The url of the quicklook
       quicklook: 'https://sobloo.eu/api/v1/services/quicklook/{uid}'
@@ -929,6 +924,7 @@
     order_enabled: true
     auth_error_code:
       - 401
+      - 403
       - 500
     extract: true
   auth: !plugin
@@ -1002,7 +998,7 @@
         - '{$.properties.title#remove_extension}'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
       quicklook: '{thumbnail}'
@@ -1202,7 +1198,7 @@
         - 'dc:identifier/text()'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_wkt_convex_hull}'
+        - 'geometry={geometry#to_rounded_wkt}'
         - 'georss:box/text()'
       # The url of the quicklook
       quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
@@ -1333,7 +1329,7 @@
         wrapper: '"{}"'
         operations:
           AND:
-            - 'footprint:"Intersects({geometry#to_wkt_convex_hull})"'
+            - 'footprint:"Intersects({geometry#to_rounded_wkt})"'
             - 'productType:{productType}'
             - 'platformName:{platform}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'

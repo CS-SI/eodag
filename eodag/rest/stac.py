@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2021, CS Systemes d'Information, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -23,10 +23,11 @@ import re
 from collections import defaultdict
 
 import dateutil.parser
-import fiona
+import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
 from shapely.geometry import shape
+from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import (
@@ -973,8 +974,11 @@ class StacCatalog(StacCommon):
         path = location_config["path"]
         attr = location_config["attr"]
 
-        with fiona.open(path) as features:
-            countries_list = [f["properties"][attr] for f in features]
+        with shapefile.Reader(path) as shp:
+            countries_list = [rec[attr] for rec in shp.records()]
+
+        # remove duplicates
+        countries_list = list(set(countries_list))
 
         countries_list.sort()
 
@@ -1010,18 +1014,20 @@ class StacCatalog(StacCommon):
         path = location_config["path"]
         attr = location_config["attr"]
 
-        with fiona.open(path) as features:
-            hits = list(
-                filter(lambda f: f["properties"].get(attr, None) == location, features)
-            )
+        with shapefile.Reader(path) as shp:
+            geom_hits = [
+                shape(shaperec.shape)
+                for shaperec in shp.shapeRecords()
+                if shaperec.record.as_dict().get(attr, None) == location
+            ]
 
-        if len(hits) == 0:
+        if len(geom_hits) == 0:
             logger.warning(
                 "no feature found in %s matching %s=%s" % (path, attr, location)
             )
             return {}
 
-        geom = shape(hits[0]["geometry"])
+        geom = unary_union(geom_hits)
 
         cat_model = copy.deepcopy(self.stac_config["catalogs"]["country"]["model"])
         # parse f-strings

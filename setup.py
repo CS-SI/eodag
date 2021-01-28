@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -47,15 +47,14 @@ setup(
         "PyYAML",
         "tqdm",
         "shapely",
-        "fiona",
+        "pyshp",
         "owslib",
         "geojson",
         "pyproj",
         "usgs",
         "boto3",
-        "pyjq",
         "flasgger",
-        "jsonpath-rw",
+        "jsonpath-ng",
         "lxml",
         "flask >= 1.0.2",
         "markdown >= 3.0.1",
@@ -75,12 +74,14 @@ setup(
             "pre-commit",
         ],
         "tutorials": [
+            "eodag-cube",
             "jupyter",
             "ipyleaflet >= 0.10.0",
             "ipywidgets",
             "matplotlib",
             "folium",
             "imageio",
+            "rasterio",
         ],
         "docs": ["sphinx", "nbsphinx", "nbsphinx-link"],
     },
@@ -99,6 +100,8 @@ setup(
             "FilterLatestIntersect = eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect",
             "FilterLatestByName = eodag.plugins.crunch.filter_latest_tpl_name:FilterLatestByName",
             "FilterOverlap = eodag.plugins.crunch.filter_overlap:FilterOverlap",
+            "FilterProperty = eodag.plugins.crunch.filter_property:FilterProperty",
+            "FilterDate = eodag.plugins.crunch.filter_date:FilterDate",
         ],
         "eodag.plugins.download": [
             "AwsDownload = eodag.plugins.download.aws:AwsDownload",

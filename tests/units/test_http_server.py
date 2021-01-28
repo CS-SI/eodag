@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -321,7 +321,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid("conformance")
 
     def test_service_desc(self):
-        self._request_valid("service-desc")
+        self._request_valid("api")
 
     def test_service_doc(self):
         response = self.app.get("service-doc", follow_redirects=True)

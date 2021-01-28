@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -25,7 +25,7 @@ from shapely import geometry
 
 from eodag.plugins.crunch.base import Crunch
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_latest")
+logger = logging.getLogger("eodag.plugins.crunch.filter_latest_intersect")
 
 
 class FilterLatestIntersect(Crunch):
@@ -47,6 +47,12 @@ class FilterLatestIntersect(Crunch):
     def proceed(self, products, **search_params):
         """Execute crunch:
         Filter latest products (the ones with a the highest start date) that intersect search extent.
+
+        :param products: A list of products resulting from a search
+        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :param dict search_params: search criteria that must contain `geometry` (dict)
+        :returns: The filtered products
+        :rtype: list(:class:`~eodag.api.product.EOProduct`)
         """
         logger.debug("Start filtering for latest products")
         if not products:
@@ -55,8 +61,11 @@ class FilterLatestIntersect(Crunch):
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered = []
         add_to_filtered = filtered.append
-        footprint = search_params.get("footprint")
+        footprint = search_params.get("geometry")
         if not footprint:
+            logger.warning(
+                "geometry not found in cruncher arguments, filtering disabled."
+            )
             return products
         search_extent = geometry.box(
             footprint["lonmin"],
@@ -79,5 +88,5 @@ class FilterLatestIntersect(Crunch):
                     "The requested extent is now entirely covered by the search result"
                 )
                 break
-        logger.debug("Finished filtering products. Resulting products: %r", filtered)
+        logger.info("Finished filtering products. %s resulting products", len(filtered))
         return filtered

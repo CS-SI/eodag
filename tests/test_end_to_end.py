@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import glob
 import multiprocessing
 import os
@@ -25,11 +26,110 @@ from pathlib import Path
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
-from tests.context import EODataAccessGateway
+from tests.context import AuthenticationError, EODataAccessGateway
+
+THEIA_SEARCH_ARGS = [
+    "theia",
+    "S2_MSI_L2A_MAJA",
+    "2019-03-01",
+    "2019-03-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+SOBLOO_SEARCH_ARGS = [
+    "sobloo",
+    "S2_MSI_L1C",
+    "2020-05-01",
+    "2020-06-01",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+PEPS_BEFORE_20161205_SEARCH_ARGS = [
+    "peps",
+    "S2_MSI_L1C",
+    "2016-06-05",
+    "2016-06-16",
+    [137.772897, -37.134202, 153.749135, 73.885986],
+    True,
+]
+PEPS_AFTER_20161205_SEARCH_ARGS = [
+    "peps",
+    "S2_MSI_L1C",
+    "2020-08-08",
+    "2020-08-16",
+    [137.772897, 13.134202, 153.749135, 23.885986],
+]
+AWSEOS_SEARCH_ARGS = [
+    "aws_eos",
+    "S2_MSI_L1C",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+CREODIAS_SEARCH_ARGS = [
+    "creodias",
+    "S2_MSI_L1C",
+    "2019-03-01",
+    "2019-03-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+MUNDI_SEARCH_ARGS = [
+    "mundi",
+    "S2_MSI_L1C",
+    "2019-11-08",
+    "2019-11-16",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+# As of 2021-01-14 the products previously required in 2020-08 were offline.
+# Trying here to retrieve the most recent products which are more likely to be online.
+today = datetime.date.today()
+week_span = datetime.timedelta(days=7)
+ONDA_SEARCH_ARGS = [
+    "onda",
+    "S2_MSI_L1C",
+    (today - week_span).isoformat(),
+    today.isoformat(),
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+USGS_SEARCH_ARGS = [
+    "usgs",
+    "L8_OLI_TIRS_C1L1",
+    "2017-03-01",
+    "2017-03-15",
+    [50, 50, 50.3, 50.3],
+]
+
+
+class EndToEndBase(unittest.TestCase):
+    def execute_search(self, provider, product_type, start, end, geom, offline=False):
+        """Search products on provider:
+
+        - First set the preferred provider as the one given in parameter
+        - Then do the search
+        - Then ensure that at least the first result originates from the provider
+        - Return one product to be downloaded
+        """
+        search_criteria = {
+            "startTimeFromAscendingNode": start,
+            "completionTimeFromAscendingNode": end,
+            "geom": geom,
+        }
+        self.eodag.set_preferred_provider(provider)
+        results, nb_results = self.eodag.search(
+            productType=product_type, **search_criteria
+        )
+        if offline:
+            results = [
+                prod
+                for prod in results
+                if prod.properties.get("storageStatus", "") != ONLINE_STATUS
+            ]
+        self.assertGreater(len(results), 0)
+        one_product = results[0]
+        self.assertEqual(one_product.provider, provider)
+        return one_product
 
 
 # @unittest.skip("skip auto run")
-class TestEODagEndToEnd(unittest.TestCase):
+class TestEODagEndToEnd(EndToEndBase):
     """Make real case tests. This assume the existence of a user conf file in resources folder named user_conf.yml"""  # noqa
 
     @classmethod
@@ -48,12 +148,7 @@ class TestEODagEndToEnd(unittest.TestCase):
         if not os.path.exists(TESTS_DOWNLOAD_PATH):
             os.makedirs(TESTS_DOWNLOAD_PATH)
 
-        # Ensure that we will be able to make search requests on only one provider, by
-        # setting partial to False by
-        # default for all the supported product types of all the providers
         for provider, conf in cls.eodag.providers_config.items():
-            for product_type, pt_conf in conf.products.items():
-                pt_conf["partial"] = False
             # Change download directory to TESTS_DOWNLOAD_PATH for tests
             if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
                 conf.download.outputs_prefix = TESTS_DOWNLOAD_PATH
@@ -87,34 +182,6 @@ class TestEODagEndToEnd(unittest.TestCase):
                 os.remove(self.downloaded_file_path)
         except OSError:
             pass
-
-    def execute_search(self, provider, product_type, start, end, geom, offline=False):
-        """Search products on provider:
-
-        - First set the preferred provider as the one given in parameter
-        - Then do the search
-        - Then ensure that at least the first result originates from the provider
-        - Return one product to be downloaded
-        """
-        search_criteria = {
-            "startTimeFromAscendingNode": start,
-            "completionTimeFromAscendingNode": end,
-            "geom": geom,
-        }
-        self.eodag.set_preferred_provider(provider)
-        results, nb_results = self.eodag.search(
-            productType=product_type, **search_criteria
-        )
-        if offline:
-            results = [
-                prod
-                for prod in results
-                if prod.properties.get("storageStatus", "") != ONLINE_STATUS
-            ]
-        self.assertGreater(len(results), 0)
-        one_product = results[0]
-        self.assertEqual(one_product.provider, provider)
-        return one_product
 
     def execute_download(
         self, product, expected_filename, wait_sec=10, timeout_sec=120
@@ -167,139 +234,58 @@ class TestEODagEndToEnd(unittest.TestCase):
         self.assertGreaterEqual(downloaded_size, 10 * 2 ** 10)
 
     def test_end_to_end_search_download_usgs(self):
-        product = self.execute_search(
-            "usgs", "L8_OLI_TIRS_C1L1", "2017-03-01", "2017-03-15", (50, 50, 50.3, 50.3)
-        )
+        product = self.execute_search(*USGS_SEARCH_ARGS)
         expected_filename = "{}.tar.bz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_airbus(self):
-        product = self.execute_search(
-            "sobloo",
-            "S2_MSI_L1C",
-            "2020-05-01",
-            "2020-06-01",
-            [
-                0.2563590566012408,
-                43.19555008715042,
-                2.379835675499976,
-                43.907759172380565,
-            ],
-        )
+        product = self.execute_search(*SOBLOO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     # may take up to 10 minutes
     @unittest.skip("Long test skipped")
     def test_end_to_end_search_download_peps_before_20161205(self):
-        product = self.execute_search(
-            "peps",
-            "S2_MSI_L1C",
-            "2016-06-05",
-            "2016-06-16",
-            (137.772897, -37.134202, 153.749135, 73.885986),
-            offline=True,
-        )
+        product = self.execute_search(*PEPS_BEFORE_20161205_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename, wait_sec=30, timeout_sec=600)
 
     # @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_peps_after_20161205(self):
-        product = self.execute_search(
-            "peps",
-            "S2_MSI_L1C",
-            "2020-08-08",
-            "2020-08-16",
-            [137.772897, 13.134202, 153.749135, 23.885986],
-        )
+        product = self.execute_search(*PEPS_AFTER_20161205_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_mundi(self):
-        product = self.execute_search(
-            "mundi",
-            "S2_MSI_L1C",
-            "2019-11-08",
-            "2019-11-16",
-            [
-                0.2563590566012408,
-                43.19555008715042,
-                2.379835675499976,
-                43.907759172380565,
-            ],
-        )
+        product = self.execute_search(*MUNDI_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_theia(self):
-        product = self.execute_search(
-            "theia",
-            "S2_MSI_L2A_MAJA",
-            "2019-03-01",
-            "2019-03-15",
-            (
-                0.2563590566012408,
-                43.19555008715042,
-                2.379835675499976,
-                43.907759172380565,
-            ),
-        )
+        product = self.execute_search(*THEIA_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_creodias(self):
-        product = self.execute_search(
-            "creodias",
-            "S2_MSI_L1C",
-            "2019-03-01",
-            "2019-03-15",
-            (
-                0.2563590566012408,
-                43.19555008715042,
-                2.379835675499976,
-                43.907759172380565,
-            ),
-        )
+        product = self.execute_search(*CREODIAS_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_onda(self):
-        product = self.execute_search(
-            "onda",
-            "S2_MSI_L1C",
-            "2020-08-01",
-            "2020-08-15",
-            (
-                0.2563590566012408,
-                43.19555008715042,
-                2.379835675499976,
-                43.907759172380565,
-            ),
-        )
+        product = self.execute_search(*ONDA_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_aws_eos(self):
-        product = self.execute_search(
-            "aws_eos",
-            "S2_MSI_L1C",
-            "2020-01-01",
-            "2020-01-15",
-            (
-                0.2563590566012408,
-                43.19555008715042,
-                2.379835675499976,
-                43.907759172380565,
-            ),
-        )
+        product = self.execute_search(*AWSEOS_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
         product = self.execute_search(
-            "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", (50, 50, 50.3, 50.3)
+            "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", [50, 50, 50.3, 50.3]
         )
         quicklook_file_path = product.get_quicklook(filename="peps_quicklook")
         # TearDown will remove quicklook_file_path on end
@@ -312,3 +298,101 @@ class TestEODagEndToEnd(unittest.TestCase):
             os.path.join(product.downloader.config.outputs_prefix, "quicklooks"),
         )
         self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2 ** 5)
+
+
+class TestEODagEndToEndWrongCredentials(EndToEndBase):
+    """Make real case tests with wrong credentials. This assumes the existence of a
+    wrong_credentials_cong.yml file in resources folder named user_conf.yml"""
+
+    @classmethod
+    def setUpClass(cls):
+        tests_wrong_conf = os.path.join(
+            TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
+        )
+        cls.eodag = EODataAccessGateway(user_conf_file_path=tests_wrong_conf)
+
+    def test_end_to_end_wrong_credentials_theia(self):
+        product = self.execute_search(*THEIA_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)
+
+    def test_end_to_end_wrong_credentials_sobloo(self):
+        product = self.execute_search(*SOBLOO_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)
+
+    def test_end_to_end_wrong_credentials_peps(self):
+        product = self.execute_search(*PEPS_AFTER_20161205_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)
+
+    def test_end_to_end_wrong_apikey_search_aws_eos(self):
+        self.eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
+        with self.assertRaises(AuthenticationError):
+            results, _ = self.eodag.search(
+                raise_errors=True,
+                **dict(
+                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                )
+            )
+
+    def test_end_to_end_good_apikey_wrong_credentials_aws_eos(self):
+        # Setup
+        # We retrieve correct credentials from the user_conf.yml file
+        tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
+        if not os.path.isfile(tests_user_conf):
+            self.skipTest("user_conf.yml file with credentials not found.")
+        # But we set the access key id and the secret to wrong values
+        try:
+            os.environ[
+                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
+            ] = "badaccessid"
+            os.environ[
+                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
+            ] = "badsecret"
+
+            eodag = EODataAccessGateway(
+                user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
+            )
+            eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
+            results, nb_results = eodag.search(
+                raise_errors=True,
+                **dict(
+                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                )
+            )
+            self.assertGreater(len(results), 0)
+            one_product = results[0]
+            self.assertEqual(one_product.provider, AWSEOS_SEARCH_ARGS[0])
+            with self.assertRaises(AuthenticationError):
+                self.eodag.download(one_product)
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID")
+            os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY")
+
+    def test_end_to_end_wrong_credentials_creodias(self):
+        product = self.execute_search(*CREODIAS_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)
+
+    def test_end_to_end_wrong_credentials_mundi(self):
+        product = self.execute_search(*MUNDI_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)
+
+    def test_end_to_end_wrong_credentials_onda(self):
+        product = self.execute_search(*ONDA_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)
+
+    def test_end_to_end_wrong_credentials_search_usgs(self):
+        # It should already fail while searching for the products.
+        self.eodag.set_preferred_provider(USGS_SEARCH_ARGS[0])
+        with self.assertRaises(AuthenticationError):
+            results, _ = self.eodag.search(
+                raise_errors=True,
+                **dict(
+                    zip(["productType", "start", "end", "geom"], USGS_SEARCH_ARGS[1:])
+                )
+            )

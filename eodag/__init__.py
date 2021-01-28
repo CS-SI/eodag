@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -24,6 +24,7 @@
 """EODAG package"""
 import warnings
 
+from .__meta__ import __version__  # noqa
 from .api.core import EODataAccessGateway  # noqa
 
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")

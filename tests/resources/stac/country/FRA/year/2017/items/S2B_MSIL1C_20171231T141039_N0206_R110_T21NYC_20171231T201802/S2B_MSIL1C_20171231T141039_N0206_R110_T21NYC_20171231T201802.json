@@ -1,0 +1,102 @@
+{
+    "stac_version": "1.0.0-beta.2",
+    "stac_extensions": [
+        "eo",
+        "sat",
+        "http://127.0.0.1:5000/extensions/oseo/json-schema/schema.json"
+    ],
+    "id": "S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802",
+    "bbox": [
+        -55.202501808647,
+        1.7187506083792,
+        -54.214267703869,
+        2.7128294056505
+    ],
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    -55.201303,
+                    2.712829
+                ],
+                [
+                    -54.214268,
+                    2.71095
+                ],
+                [
+                    -54.216122,
+                    1.718751
+                ],
+                [
+                    -55.202502,
+                    1.719942
+                ],
+                [
+                    -55.201303,
+                    2.712829
+                ]
+            ]
+        ]
+    },
+    "type": "Feature",
+    "collection": "S2_MSI_L1C",
+    "properties": {
+        "datetime": "2017-12-31T14:10:39.027Z",
+        "start_datetime": "2017-12-31T14:10:39.027Z",
+        "end_datetime": "2017-12-31T14:10:39.027Z",
+        "license": "proprietary",
+        "constellation": "S2ST",
+        "platform": "S2B",
+        "intruments": [
+            "MSI"
+        ],
+        "eo:cloud_cover": 37.6233,
+        "sat:orbit_state": "descending",
+        "sat:relative_orbit": 110,
+        "oseo:productType": "S2MSI1C",
+        "oseo:instrument": "MSI",
+        "oseo:sensorType": "OPTICAL",
+        "oseo:processingLevel": "LEVEL1C",
+        "oseo:publicationDate": "2017-12-31T21:28:04.574Z",
+        "oseo:parentIdentifier": "urn:ogc:def:EOP:ESA::SENTINEL-2:",
+        "oseo:orbitNumber": 4283,
+        "oseo:creationDate": "2017-12-31T21:22:16.562Z",
+        "oseo:modificationDate": "2017-12-31T21:28:04.574Z",
+        "oseo:sensorMode": "INS-NOBS"
+    },
+    "links": [
+        {
+            "rel": "self",
+            "title": "S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802",
+            "href": "./country/FRA/year/2017/items/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802"
+        },
+        {
+            "rel": "root",
+            "href": "./catalog.json"
+        },
+        {
+            "rel": "parent",
+            "title": "S2_MSI_L1C",
+            "href": "./country/FRA/year/2017/2017.json"
+        },
+        {
+            "rel": "collection",
+            "title": "S2_MSI_L1C",
+            "href": "/collections/S2_MSI_L1C"
+        }
+    ],
+    "assets": {
+        "downloadLink": {
+            "title": "Download link",
+            "href": "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2017/items/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802/download",
+            "type": "application/zip"
+        },
+        "thumbnail": {
+            "title": "Thumbnail",
+            "href": "https://peps.cnes.fr/quicklook/2017/12/31/S2B/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802_quicklook.jpg",
+            "type": "image/jpeg",
+            "role": "thumbnail"
+        }
+    }
+}

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -30,7 +30,7 @@ from tqdm import tqdm
 from eodag.api.product.metadata_mapping import mtd_cfg_as_jsonpath, properties_from_json
 from eodag.plugins.download.base import Download
 from eodag.utils import urlparse
-from eodag.utils.exceptions import DownloadError
+from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
 
@@ -208,7 +208,7 @@ class AwsDownload(Download):
             )
 
         # prepare download & create dirs
-        product_local_path, record_filename = self._prepare_download(product)
+        product_local_path, record_filename = self._prepare_download(product, **kwargs)
         if not product_local_path or not record_filename:
             return product_local_path
         product_local_path = product_local_path.replace(".zip", "")
@@ -269,6 +269,17 @@ class AwsDownload(Download):
                                 Callback=progress_callback,
                             )
                 except ClientError as e:
+                    err = e.response["Error"]
+                    auth_messages = ["InvalidAccessKeyId", "SignatureDoesNotMatch"]
+                    if err["Code"] in auth_messages and "key" in err["Message"].lower():
+                        raise AuthenticationError(
+                            "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                                e.response["ResponseMetadata"]["HTTPStatusCode"],
+                                err["Code"],
+                                err["Message"],
+                                self.provider,
+                            )
+                        )
                     logger.warning("Unexpected error: %s" % e)
                     logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 bar.update(1)
@@ -566,5 +577,5 @@ class AwsDownload(Download):
         download_all using parent (base plugin) method
         """
         super(AwsDownload, self).download_all(
-            products, auth=auth, progress_callback=progress_callback
+            products, auth=auth, progress_callback=progress_callback, **kwargs
         )

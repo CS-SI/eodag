@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -203,6 +203,45 @@ class TestConfigFunctions(unittest.TestCase):
             else:
                 self.assertEqual(value.priority, 0)
 
+    def test_override_config_from_str(self):
+        """Default configuration must be overridden from a yaml conf str"""
+        default_config = config.load_default_config()
+        conf_update = yaml.safe_load(
+            """
+            my_new_provider:
+                priority: 4
+                search:
+                    type: StacSearch
+                    api_endpoint: https://api.my_new_provider/search
+                products:
+                    S2_MSI_L1C:
+                        productType: sentinel2_l1c
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+                download:
+                    type: AwsDownload
+                    base_uri: https://api.my_new_provider
+                    flatten_top_dirs: True
+                auth:
+                    type: OAuth
+                    credentials:
+                        aws_access_key_id: access-key-id
+                        aws_secret_access_key: secret-access-key
+            """
+        )
+        config.override_config_from_mapping(default_config, conf_update)
+
+        my_new_provider_conf = default_config["my_new_provider"]
+        self.assertEqual(my_new_provider_conf.priority, 4)
+        self.assertIsInstance(my_new_provider_conf.search, config.PluginConfig)
+        self.assertEqual(
+            my_new_provider_conf.products["S2_MSI_L1C"]["productType"], "sentinel2_l1c"
+        )
+        self.assertEqual(
+            my_new_provider_conf.auth.credentials["aws_secret_access_key"],
+            "secret-access-key",
+        )
+
     def test_override_config_from_file(self):
         """Default configuration must be overridden from a conf file"""
         default_config = config.load_default_config()
@@ -234,6 +273,26 @@ class TestConfigFunctions(unittest.TestCase):
         # theia:
         #     download:
         #         outputs_prefix:
+        #
+        # my_new_provider:
+        #     priority: 4
+        #     search:
+        # noqa: F821      type: StacSearch
+        #         api_endpoint: https://api.my_new_provider/search
+        #     products:
+        #         S2_MSI_L1C:
+        #           productType: sentinel2_l1c
+        #         GENERIC_PRODUCT_TYPE:
+        #           productType: '{productType}'
+        #     download:
+        # noqa: F821      type: AwsDownload
+        #         base_uri: https://api.my_new_provider
+        #         flatten_top_dirs: True
+        #     auth:
+        # noqa: F821      type: OAuth
+        #         credentials:
+        #           aws_access_key_id: access-key-id
+        #           aws_secret_access_key: secret-access-key
         config.override_config_from_file(default_config, file_path_override)
         usgs_conf = default_config["usgs"]
         self.assertEqual(usgs_conf.priority, 5)
@@ -256,6 +315,38 @@ class TestConfigFunctions(unittest.TestCase):
 
         theia_conf = default_config["theia"]
         self.assertEqual(theia_conf.download.outputs_prefix, "/tmp")
+
+        my_new_provider_conf = default_config["my_new_provider"]
+        self.assertEqual(my_new_provider_conf.priority, 4)
+        self.assertIsInstance(my_new_provider_conf.search, config.PluginConfig)
+        self.assertEqual(my_new_provider_conf.search.type, "StacSearch")
+        self.assertEqual(
+            my_new_provider_conf.search.api_endpoint,
+            "https://api.my_new_provider/search",
+        )
+        self.assertIsInstance(my_new_provider_conf.products, dict)
+        self.assertEqual(
+            my_new_provider_conf.products["S2_MSI_L1C"]["productType"], "sentinel2_l1c"
+        )
+        self.assertEqual(
+            my_new_provider_conf.products["GENERIC_PRODUCT_TYPE"]["productType"],
+            "{productType}",
+        )
+        self.assertIsInstance(my_new_provider_conf.download, config.PluginConfig)
+        self.assertEqual(my_new_provider_conf.download.type, "AwsDownload")
+        self.assertEqual(
+            my_new_provider_conf.download.base_uri, "https://api.my_new_provider"
+        )
+        self.assertTrue(my_new_provider_conf.download.flatten_top_dirs)
+        self.assertIsInstance(my_new_provider_conf.auth, config.PluginConfig)
+        self.assertEqual(my_new_provider_conf.auth.type, "OAuth")
+        self.assertEqual(
+            my_new_provider_conf.auth.credentials["aws_access_key_id"], "access-key-id"
+        )
+        self.assertEqual(
+            my_new_provider_conf.auth.credentials["aws_secret_access_key"],
+            "secret-access-key",
+        )
 
     def test_override_config_from_env(self):
         """Default configuration must be overridden by environment variables"""

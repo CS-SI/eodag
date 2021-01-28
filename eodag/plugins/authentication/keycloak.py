@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -37,6 +37,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
         """
         Makes authentication request
         """
+        self.validate_config_credentials()
         response = self.session.post(
             self.TOKEN_URL_TEMPLATE.format(
                 auth_base_uri=self.config.auth_base_uri.rstrip("/"),

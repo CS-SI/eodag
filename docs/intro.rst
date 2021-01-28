@@ -39,6 +39,30 @@ types of plugins compose the tool:
     * Authentication plugins, which are used to authenticate the user on the
       external services used (JSON Token, Basic Auth, OAUTH, ...).
 
+STAC client and server
+----------------------
+
+EODAG's interfaces are compliant with the `SpatioTemporal Asset Catalog <https://github.com/radiantearth/stac-spec>`_
+(STAC) specification:
+
+    * `STAC client <tutorials/tuto_stac_client.nblink>`_: STAC API providers can be configured to be used for `search` and `download` using EODAG. One
+      provider (astraea_eod) is already implemented. New providers can be dynamically added by the user. Static
+      catalogs can also be fetched by EODAG. *The search plugin for static catalogs is under development, but some
+      methods are already available to enable working with these catalogs.* See
+      `STAC client tutorial <tutorials/tuto_stac_client.nblink>`_.
+
+
+    * `STAC server <use.html#stac-rest-interface>`_: EODAG can run as STAC API REST server and give access to configured
+      providers data through a STAC compliant search API. See `usage section <use.html#stac-rest-interface>`_
+      for more details.
+
+EODAG-cube
+----------
+
+Data access functionalities have been split to a separate project to avoid conflicts with unneeded libraries when
+using only EODAG basic functionalities. EODAG-cube is available on `github <https://github.com/CS-SI/eodag-cube>`_
+and `pypi <https://pypi.org/project/eodag-cube>`_.
+
 Available providers
 -------------------
 
@@ -48,17 +72,19 @@ There are currently 9 available providers implemented on eodag:
 
 * `usgs <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
 
-* `aws_eos <https://developers.eos.com/datasets_description.html>`_: EOS search for Amazon public datasets
-
 * `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
 
 * `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Copernicus (Sentinel 1, 2, 3) products
+
+* `aws_eos <https://developers.eos.com/datasets_description.html>`_: EOS search for Amazon public datasets
 
 * `creodias <https://creodias.eu/>`_: CloudFerro DIAS
 
 * `mundi <https://mundiwebservices.com/>`_: Atos DIAS
 
 * `onda <https://www.onda-dias.eu/cms/>`_: Serco DIAS
+
+* `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
 
 .. note::
 
@@ -94,37 +120,6 @@ Create a configuration file containing your credentials for each provider.  You 
             credentials:
                 username:
                 password:
-    theia:
-        priority: # Lower value means lower priority (Default: 0)
-        search:   # Search parameters configuration
-        download:
-            extract:
-            outputs_prefix:
-            dl_url_params:
-        auth:
-            credentials:
-                ident:
-                pass:
-    usgs:
-        priority: # Lower value means lower priority (Default: 0)
-        api:
-            extract:
-            outputs_prefix:
-            dl_url_params:
-            product_location_scheme:
-            credentials:
-                username:
-                password:
-    aws_eos:
-        priority: # Lower value means lower priority (Default: 0)
-        search:   # Search parameters configuration
-        auth:
-            credentials:
-                apikey:
-                aws_access_key_id:
-                aws_secret_access_key:
-        download:
-            outputs_prefix:
     sobloo:
         priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
@@ -135,35 +130,16 @@ Create a configuration file containing your credentials for each provider.  You 
         auth:
             credentials:
                 apikey:
-    creodias:
+
+    astraea_eod:
         priority: # Lower value means lower priority (Default: 0)
         search:   # Search parameters configuration
-        download:
-            extract:
-            outputs_prefix:
         auth:
             credentials:
-                username:
-                password:
-    mundi:
-        priority: # Lower value means lower priority (Default: 0)
-        search:   # Search parameters configuration
+                aws_access_key_id:
+                aws_secret_access_key:
         download:
-            extract:
             outputs_prefix:
-        auth:
-            credentials:
-                apikey:
-    onda:
-        priority: # Lower value means lower priority (Default: 0)
-        search:   # Search parameters configuration
-        download:
-            extract:
-            outputs_prefix:
-        auth:
-            credentials:
-                username:
-                password:
 
 .. warning::
 
@@ -188,7 +164,8 @@ For theia, you only need to register once here: https://sso.theia-land.fr/theia/
 
 For peps, create an account here: https://peps.cnes.fr/rocket/#/register
 
-For aws_eos, you need credentials for both EOS (search) and AWS (download):
+For aws_eos, you need credentials for both EOS (search) and AWS (download). Beware, EOS free account is
+limited to 100 requests:
 
     * Create an account on EOS: https://auth.eos.com
     * Get your EOS api key from https://console.eos.com
@@ -209,6 +186,14 @@ Then use as apikey the Web Token provided in https://mundiwebservices.com/accoun
 
 For onda, create an account here: https://www.onda-dias.eu/crm/
 
+For astraea_eod, you need AWS credentials for download:
+    * Create an account on AWS website: https://aws.amazon.com/fr/ (warning:
+      A credit card number must be given because fees apply after a given
+      amount of downloaded data).
+    * Once the account is activated go to the identity and access management console: https://console.aws.amazon.com/iam/home#/home
+    * Click on user, then on your user name and then on security credentials.
+    * In access keys, click on create access key.
+    * Add these credentials to the user conf file.
 
 Storage status handle
 ---------------------
@@ -232,6 +217,9 @@ See `download() <https://eodag.readthedocs.io/en/latest/api.html#eodag.api.core.
 
 Parameters mapping
 ------------------
+
+EODAG maps each provider specific metadata parameters to a common model using `OGC OpenSearch Extension for Earth
+Observation <http://docs.opengeospatial.org/is/13-026r9/13-026r9.html>`_.
 
 The list of parameters mapped for available providers can be found in this
 `CSV file <_static/params_mapping.csv>`_.

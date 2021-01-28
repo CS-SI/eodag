@@ -1,0 +1,163 @@
+{
+    "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+    "description": "Filter by country",
+    "extent": {
+        "spatial": {
+            "bbox": [
+                [
+                    -54.524754197799716,
+                    2.0533891870159806,
+                    -51.65779741067889,
+                    5.756548163267765
+                ]
+            ]
+        },
+        "temporal": {
+            "interval": [
+                [
+                    "2015-06-23T00:00:00Z",
+                    null
+                ]
+            ]
+        }
+    },
+    "id": "FRA",
+    "item_type": "catalog",
+    "keywords": [
+        "MSI",
+        "SENTINEL2",
+        "S2A,S2B",
+        "L1",
+        "OPTICAL"
+    ],
+    "license": "proprietary",
+    "links": [
+        {
+            "href": "./country/FRA/FRA.json",
+            "rel": "self"
+        },
+        {
+            "href": "./catalog.json",
+            "rel": "root"
+        },
+        {
+            "href": "./country/FRA/year/year.json",
+            "rel": "child",
+            "title": "year"
+        }
+    ],
+    "properties": {
+        "eo:bands": [
+            {
+                "center_wavelength": 0.4439,
+                "common_name": "coastal",
+                "full_width_half_max": 0.027,
+                "gsd": 60,
+                "name": "B01"
+            },
+            {
+                "center_wavelength": 0.4966,
+                "common_name": "blue",
+                "full_width_half_max": 0.098,
+                "gsd": 10,
+                "name": "B02"
+            },
+            {
+                "center_wavelength": 0.56,
+                "common_name": "green",
+                "full_width_half_max": 0.045,
+                "gsd": 10,
+                "name": "B03"
+            },
+            {
+                "center_wavelength": 0.6645,
+                "common_name": "red",
+                "full_width_half_max": 0.038,
+                "gsd": 10,
+                "name": "B04"
+            },
+            {
+                "center_wavelength": 0.7039,
+                "full_width_half_max": 0.019,
+                "gsd": 20,
+                "name": "B05"
+            },
+            {
+                "center_wavelength": 0.7402,
+                "full_width_half_max": 0.018,
+                "gsd": 20,
+                "name": "B06"
+            },
+            {
+                "center_wavelength": 0.7825,
+                "full_width_half_max": 0.028,
+                "gsd": 20,
+                "name": "B07"
+            },
+            {
+                "center_wavelength": 0.8351,
+                "common_name": "nir",
+                "full_width_half_max": 0.145,
+                "gsd": 10,
+                "name": "B08"
+            },
+            {
+                "center_wavelength": 0.8648,
+                "full_width_half_max": 0.033,
+                "gsd": 20,
+                "name": "B8A"
+            },
+            {
+                "center_wavelength": 0.945,
+                "full_width_half_max": 0.026,
+                "gsd": 60,
+                "name": "B09"
+            },
+            {
+                "center_wavelength": 0.13735,
+                "common_name": "cirrus",
+                "full_width_half_max": 0.075,
+                "gsd": 60,
+                "name": "B10"
+            },
+            {
+                "center_wavelength": 0.16137,
+                "common_name": "swir16",
+                "full_width_half_max": 0.075,
+                "gsd": 20,
+                "name": "B11"
+            },
+            {
+                "center_wavelength": 0.22024,
+                "common_name": "swir22",
+                "full_width_half_max": 0.242,
+                "gsd": 20,
+                "name": "B12"
+            }
+        ]
+    },
+    "providers": [
+        {
+            "description": "The PEPS platform, the French \"mirror site\", redistributes the products of Sentinel satellites, S1A, S1B, S2A and S2B, S3A and S3B from COPERNICUS, the European system for the Earth monitoring. ",
+            "name": "peps",
+            "roles": [
+                "host"
+            ],
+            "url": "https://peps.cnes.fr"
+        }
+    ],
+    "stac_extensions": [],
+    "stac_version": "1.0.0-beta.2",
+    "summaries": {
+        "intruments": [
+            "MSI"
+        ],
+        "platform": [
+            "SENTINEL2"
+        ],
+        "platformSerialIdentifier": [
+            "S2A,S2B"
+        ]
+    },
+    "title": "FRA"
+}

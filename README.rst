@@ -44,7 +44,13 @@ integrate new data providers. Three types of plugins compose the tool:
 
     * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
 
+Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/latest/intro.html#stac-client-and-server>`_.
+
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
+
+.. image:: docs/_static/eodag_stac_client.png
+   :alt: EODAG as STAC client
+   :class: no-scaled-link
 
 Installation
 ============
@@ -111,10 +117,10 @@ of this bbox"
   verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
 
 
-REST API
---------
+STAC REST API
+-------------
 
-An eodag installation can be exposed through a REST api from the command line::
+An eodag installation can be exposed through a STAC compliant REST api from the command line::
 
     # eodag serve-rest --help
     Usage: eodag serve-rest [OPTIONS]
@@ -123,7 +129,7 @@ An eodag installation can be exposed through a REST api from the command line::
 
     Options:
       -f, --config PATH   File path to the user configuration file with its
-                          credentials  [required]
+                          credentials
       -d, --daemon TEXT   run in daemon mode
       -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
                           otherwise bind to 127.0.0.1 (localhost). This maybe
@@ -147,8 +153,8 @@ Example usage for interacting with the api in your Python code:
     dag = EODataAccessGateway()
     product_type = 'S2_MSI_L1C'
     footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
-    start, end = '2018-01-01', '2018-01-31'
-    search_results = dag.search(productType=product_type, box=footprint, start=start, end=end)
+    start, end = '2021-01-01', '2021-01-15'
+    search_results = dag.search(productType=product_type, geom=footprint, start=start, end=end)
     product_paths = dag.download_all(search_results)
     for path in product_paths:
         print('Downloaded : {}'.format(path))
@@ -168,12 +174,6 @@ To run the default test suite (which excludes end-to-end tests)::
 
     tox
 
-.. note::
-
-    You may encounter a Python `RuntimeWarning` saying that `numpy.dtype` size changed. If this is the case,
-    you can suppress it by doing this on the command line before running the tests or eodag cli:
-    `export PYTHONWARNINGS="ignore:numpy.dtype size changed"`
-
 To only run end-to-end test::
 
     tox -- tests.test_end_to_end
@@ -185,18 +185,19 @@ To run the entire tests (units, integration and end-to-end)::
 
 .. note::
 
-    Running the `tox` command will also build the docs. As The documentation
-    includes some notebooks (for the turorials), the build process will need
-    `pandoc <http://pandoc.org>`_ to succeed. If the build process fails for
-    you, please `install <http://pandoc.org/installing.html>`_ pandoc and try
-    again.
+    * Running the `tox` command will also build the docs. As The documentation
+      includes some notebooks (for the turorials), the build process will need
+      `pandoc <http://pandoc.org>`_ to succeed. If the build process fails for
+      you, please `install <http://pandoc.org/installing.html>`_ pandoc and try
+      again.
 
-.. note::
+    * When contributing to tutorials, you will need to keep notebook outputs
+      and save widget state. Otherwise outputs will not be visible in documentation.
 
-    eodag is tested against python versions 2.7, 3.5 and 3.6. Ensure you have
-    these versions installed before you run tox. You can use
-    `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
-    of python
+    * eodag is tested against python versions 3.5, 3.6, 3.7, 3.8 and 3.9. Ensure you have
+      these versions installed before you run tox. You can use
+      `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
+      of python
 
 Releases are made by tagging a commit on the master branch. To make a new release,
 

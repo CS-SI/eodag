@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -23,7 +23,7 @@ class Crunch(PluginTopic):
     """Base cruncher"""
 
     def __init__(self, config):
-        self.config = config
+        self.config = config if config is not None else {}
 
     def proceed(self, product_list, **search_params):
         """Implementation of how the results must be crunched"""

@@ -1,30 +1,18 @@
-usgs_search_results.json is results from https://earthexplorer.usgs.gov/ catalog and contains the following results:
-
-LC81680252017074LGN00:
-    Originator:  U.S. Geological Survey (USGS) Earth Resources Observation and Science (EROS) Center
-    Publication_Date:  2013
-    Title:  LANDSAT 8 OLI/TIRS Collection 1 - Path:  169 Row:  25 for Scene:  LC08_L1TP_169025_20170306_20170316_01_T1
-    Geospatial_Data_Presentation_Form:  Remote-Sensing Image
-    Publication_Information:
-        Publication_Place:  Sioux Falls, South Dakota, USA
-        Publisher:  U.S. Geological Survey (USGS) Earth Resources Observation and Science (EROS) Center
-    Online_Linkage:  https://lta.cr.usgs.gov/L8
-
-LC81690252017065LGN00:
-    Originator:  U.S. Geological Survey (USGS) Earth Resources Observation and Science (EROS) Center
-    Publication_Date:  2013
-    Title:  LANDSAT 8 OLI/TIRS Collection 1 - Path:  169 Row:  25 for Scene:  LC08_L1TP_169025_20170306_20170316_01_T1
-    Geospatial_Data_Presentation_Form:  Remote-Sensing Image
-    Publication_Information:
-        Publication_Place:  Sioux Falls, South Dakota, USA
-        Publisher:  U.S. Geological Survey (USGS) Earth Resources Observation and Science (EROS) Center
-    Online_Linkage:  https://lta.cr.usgs.gov/L8
-
-Information and data authored or produced by USGS are in the U.S. Public Domain. You can find the Copyrights and Credits here:
-https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits
-
-
 eodag_search_result.geojson is derived from results from https://peps.cnes.fr/ catalog.
+
+eodag_search_result_awseos.geojson is derived from AWS EOS catalog.
+
+eodag_search_result_creodias.geojson is derived from results from https://creodias.eu/ catalog.
+
+eodag_search_result_mundi.geojson is derived from results from https://mundiwebservices.com/ catalog.
+
+eodag_search_result_onda.geojson is derived from results from https://www.onda-dias.eu/cms/ catalog.
+
+eodag_search_result_peps.geojson is derived from results from https://peps.cnes.fr/ catalog.
+
+eodag_search_result_sobloo.geojson is derived from results from https://sobloo.eu/ catalog.
+
+eodag_search_result_theia.geojson is derived from results from https://theia.cnes.fr/ catalog.
 
 
 The product S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE found under products and under products/as_archive

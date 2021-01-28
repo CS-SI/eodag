@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -22,7 +22,7 @@ import re
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
-import jsonpath_rw as jsonpath
+import jsonpath_ng as jsonpath
 import requests
 from lxml import etree
 
@@ -46,7 +46,7 @@ from eodag.utils import (
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import RequestError
+from eodag.utils.exceptions import AuthenticationError, RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -735,7 +735,7 @@ class PostJsonSearch(QueryStringSearch):
                             conversion,
                             jsonpath.parse(path),
                         )
-                except Exception:  # jsonpath_rw does not provide a proper exception
+                except Exception:  # jsonpath_ng does not provide a proper exception
                     # Assume the mapping is to be passed as is.
                     # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
                     # it further
@@ -904,6 +904,18 @@ class PostJsonSearch(QueryStringSearch):
             response = requests.post(url, json=self.query_params)
             response.raise_for_status()
         except (requests.HTTPError, urllib_HTTPError) as err:
+            # check if error is identified as auth_error in provider conf
+            auth_errors = getattr(self.config, "auth_error_code", [None])
+            if not isinstance(auth_errors, list):
+                auth_errors = [auth_errors]
+            if err.response.status_code in auth_errors:
+                raise AuthenticationError(
+                    "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
+                        err.response.status_code,
+                        err.response.text.strip(),
+                        self.provider,
+                    )
+                )
             if exception_message:
                 logger.exception(exception_message)
             else:
