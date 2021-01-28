@@ -55,15 +55,7 @@ from urllib.parse import (  # noqa; noqa
     urlunparse,
 )
 
-try:
-    # eodag_cube installed
-    from rasterio.crs import CRS
-
-    DEFAULT_PROJ = CRS.from_epsg(4326)
-except ImportError:
-    import pyproj
-
-    DEFAULT_PROJ = pyproj.Proj("EPSG:4326")
+DEFAULT_PROJ = "EPSG:4326"
 
 logger = logging.getLogger("eodag.utils")
 
