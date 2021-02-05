@@ -384,3 +384,23 @@ class TestCore(unittest.TestCase):
         self.assertEquals(
             len(geom_combined), 3
         )  # The bounding box overlaps with France inland
+
+    def test_rebuild_index(self):
+        """Change eodag version and check that whoosh index is rebuilt"""
+
+        index_dir = os.path.join(self.dag.conf_dir, ".index")
+        index_dir_mtime = os.path.getmtime(index_dir)
+
+        self.assertNotEqual(self.dag.get_version(), "fake-version")
+
+        with mock.patch(
+            "eodag.api.core.EODataAccessGateway.get_version",
+            autospec=True,
+            return_value="fake-version",
+        ):
+            self.assertEqual(self.dag.get_version(), "fake-version")
+
+            self.dag.build_index()
+
+            # check that index_dir has beeh re-created
+            self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)

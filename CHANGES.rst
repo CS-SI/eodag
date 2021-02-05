@@ -1,8 +1,14 @@
 Release history
 ---------------
 
-2.0 (2021-01-28)
+2.0.1 (2021-02-05)
 ++++++++++++++++++
+
+- Fixes issue when rebuilding index on NFS, see `GH-151 <https://github.com/CS-SI/eodag/issues/151>`_
+- Tests can be run in parallel mode, fixes `GH-103 <https://github.com/CS-SI/eodag/issues/103>`_
+
+2.0 (2021-01-28)
+++++++++++++++++
 
 - Add a new provider dynamically
 - Allow to dynamically set download options, fixes `GH-145 <https://github.com/CS-SI/eodag/issues/145>`_ and

@@ -131,6 +131,10 @@ class EODataAccessGateway(object):
                     )
         self.set_locations_conf(locations_conf_path)
 
+    def get_version(self):
+        """Get eodag package version"""
+        return pkg_resources.get_distribution("eodag").version
+
     def build_index(self):
         """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_
         index for product types searches.
@@ -140,45 +144,24 @@ class EODataAccessGateway(object):
         index_dir = os.path.join(self.conf_dir, ".index")
 
         # use eodag_version to help keeping index up-to-date
-        eodag_version = pkg_resources.get_distribution("eodag").version
+        eodag_version = self.get_version()
 
-        # Handle Python 2/3 compatibility: if index_dir exists and contains a whoosh
-        # index, it means it was potentially created with a previous Python 3 eodag
-        # session, thus using pickle highest protocol version (version 4 at the time of
-        # writing for Python 3). In that case, if the current eodag session is in Python
-        # 2 a ValueError will be raised saying that the pickle protocol used to
-        # serialized the previous index is incompatible with the current Python version.
-        # If that's the case, we first remove the problematic index and create another
-        # one from scratch
-        try:
-            create_index = not exists_in(index_dir)
-            # check index version
-            if not create_index:
-                if self._product_types_index is None:
-                    logger.debug("Opening product types index in %s", index_dir)
-                    self._product_types_index = open_dir(index_dir)
-                try:
-                    self.guess_product_type(eodagVersion=eodag_version)
-                except NoMatchingProductType:
+        create_index = not exists_in(index_dir)
+        # check index version
+        if not create_index:
+            if self._product_types_index is None:
+                logger.debug("Opening product types index in %s", index_dir)
+                self._product_types_index = open_dir(index_dir)
+            try:
+                self.guess_product_type(eodagVersion=eodag_version)
+            except NoMatchingProductType:
+                create_index = True
+            finally:
+                if create_index:
+                    shutil.rmtree(index_dir)
                     logger.debug(
                         "Out-of-date product types index removed from %s", index_dir
                     )
-                    shutil.rmtree(index_dir)
-                    create_index = True
-
-        except ValueError as ve:
-            if "unsupported pickle protocol" in (
-                ve.message if hasattr(ve, "message") else str(ve)
-            ):
-                shutil.rmtree(index_dir)
-                create_index = True
-            else:
-                logger.error(
-                    "Error while building index using whoosh, "
-                    "please report this issue and try to delete %s manually",
-                    index_dir,
-                )
-                raise
 
         if create_index:
             logger.debug("Creating product types index in %s", index_dir)
