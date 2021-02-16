@@ -194,7 +194,7 @@ To run the entire tests (units, integration and end-to-end)::
     * When contributing to tutorials, you will need to keep notebook outputs
       and save widget state. Otherwise outputs will not be visible in documentation.
 
-    * eodag is tested against python versions 3.5, 3.6, 3.7, 3.8 and 3.9. Ensure you have
+    * eodag is tested against python versions 3.6, 3.7, 3.8 and 3.9. Ensure you have
       these versions installed before you run tox. You can use
       `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
       of python

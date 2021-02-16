@@ -1,4 +1,4 @@
-image: python:3.5
+image: python:3.6
 
 stages:
   - build
@@ -23,7 +23,7 @@ build-doc:
     - if: $CI_COMMIT_BRANCH == 'master'   # Execute jobs when a new commit is pushed to master branch
     - if: $CI_MERGE_REQUEST_ID            # Execute jobs in merge request context
 
-py35:unit-tests:
+py36:unit-tests:
   stage: test
   script:
     - python -m pip install --upgrade pip
@@ -31,8 +31,8 @@ py35:unit-tests:
     - mkdir -p test-reports
     - |
       nosetests -v --cover-package=eodag\
-                    --with-xunit --xunit-file test-reports/eodag_test_report_py35.xml\
-                    --with-coverage --cover-xml --cover-xml-file test-reports/eodag_test_coverage_report_py35.xml\
+                    --with-xunit --xunit-file test-reports/eodag_test_report_py36.xml\
+                    --with-coverage --cover-xml --cover-xml-file test-reports/eodag_test_coverage_report_py36.xml\
                     --with-doctest\
                     --cover-erase\
                     --cover-inclusive\
@@ -41,8 +41,8 @@ py35:unit-tests:
   artifacts:
     when: always
     reports:
-      junit: test-reports/eodag_test_report_py35.xml
-      cobertura: test-reports/eodag_test_coverage_report_py35.xml
+      junit: test-reports/eodag_test_report_py36.xml
+      cobertura: test-reports/eodag_test_coverage_report_py36.xml
   rules:
     - if: $CI_COMMIT_BRANCH == 'master'   # Execute jobs when a new commit is pushed to master branch
     - if: $CI_MERGE_REQUEST_ID            # Execute jobs in merge request context
