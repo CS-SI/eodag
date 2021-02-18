@@ -63,5 +63,7 @@ search:
       - 'bbox={geometry.bounds#csv_list}'
       - '$.geometry'
     downloadLink: '%(base_uri)s/collections/{productType}/items/{id}'
+    quicklook: '$.assets.quicklook.href'
+    thumbnail: '$.assets.thumbnail.href'
     # Normalization code moves assets from properties to product's attr
     assets: '$.assets'
