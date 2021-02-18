@@ -33,22 +33,22 @@
     "license": "proprietary",
     "links": [
         {
-            "href": "./country/country.json",
-            "rel": "self"
-        },
-        {
-            "href": "./catalog.json",
+            "href": "../catalog.json",
             "rel": "root"
         },
         {
-            "href": "./country/FRA/FRA.json",
+            "href": "./FRA/FRA.json",
             "rel": "child",
             "title": "FRA"
         },
         {
-            "href": "./country/GBR/GBR.json",
+            "href": "./GBR/GBR.json",
             "rel": "child",
             "title": "GBR"
+        },
+        {
+            "rel": "parent",
+            "href": "../catalog.json"
         }
     ],
     "properties": {

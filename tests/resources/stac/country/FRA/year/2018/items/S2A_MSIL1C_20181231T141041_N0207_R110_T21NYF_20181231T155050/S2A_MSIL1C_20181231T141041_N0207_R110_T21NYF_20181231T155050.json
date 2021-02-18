@@ -67,11 +67,6 @@
     },
     "links": [
         {
-            "rel": "self",
-            "title": "S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050",
-            "href": "./country/FRA/year/2018/items/S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050"
-        },
-        {
             "rel": "root",
             "href": "./catalog.json"
         },

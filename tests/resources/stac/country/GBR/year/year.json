@@ -33,17 +33,17 @@
     "license": "proprietary",
     "links": [
         {
-            "href": "./country/GBR/year/year.json",
-            "rel": "self"
-        },
-        {
-            "href": "./catalog.json",
+            "href": "../../../catalog.json",
             "rel": "root"
         },
         {
-            "href": "./country/GBR/year/2019/2019.json",
+            "href": "./2019/2019.json",
             "rel": "child",
             "title": "2019"
+        },
+        {
+            "rel": "parent",
+            "href": "../GBR.json"
         }
     ],
     "properties": {

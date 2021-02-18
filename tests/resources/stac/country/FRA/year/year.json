@@ -33,22 +33,22 @@
     "license": "proprietary",
     "links": [
         {
-            "href": "./country/FRA/year/year.json",
-            "rel": "self"
-        },
-        {
-            "href": "./catalog.json",
+            "href": "../../../catalog.json",
             "rel": "root"
         },
         {
-            "href": "./country/FRA/year/2017/2017.json",
+            "href": "./2017/2017.json",
             "rel": "child",
             "title": "2017"
         },
         {
-            "href": "./country/FRA/year/2018/2018.json",
+            "href": "./2018/2018.json",
             "rel": "child",
             "title": "2018"
+        },
+        {
+            "rel": "parent",
+            "href": "../FRA.json"
         }
     ],
     "properties": {

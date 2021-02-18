@@ -1,0 +1,798 @@
+{
+    "id": "sentinel-stac",
+    "stac_version": "1.0.0-beta.2",
+    "description": "STAC for Sentinel data",
+    "links": [],
+    "stac_extensions": [
+        "single-file-stac"
+    ],
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0-beta.2",
+            "id": "S2B_9VXK_20171013_0",
+            "properties": {
+                "collection": "sentinel-2-l1c",
+                "datetime": "2017-10-13T20:03:46.461000Z",
+                "eo:cloud_cover": 41.52,
+                "sentinel:utm_zone": 9,
+                "sentinel:latitude_band": "V",
+                "sentinel:grid_square": "XK",
+                "sentinel:sequence": "0",
+                "sentinel:product_id": "S2B_MSIL1C_20171013T200349_N0205_R128_T09VXK_20171013T200346",
+                "eo:bands": [
+                    {
+                        "name": "B01",
+                        "common_name": "coastal",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.4439,
+                        "full_width_half_max": 0.027
+                    },
+                    {
+                        "name": "B02",
+                        "common_name": "blue",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.4966,
+                        "full_width_half_max": 0.098
+                    },
+                    {
+                        "name": "B03",
+                        "common_name": "green",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.56,
+                        "full_width_half_max": 0.045
+                    },
+                    {
+                        "name": "B04",
+                        "common_name": "red",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.6645,
+                        "full_width_half_max": 0.038
+                    },
+                    {
+                        "name": "B05",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7039,
+                        "full_width_half_max": 0.019
+                    },
+                    {
+                        "name": "B06",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7402,
+                        "full_width_half_max": 0.018
+                    },
+                    {
+                        "name": "B07",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7825,
+                        "full_width_half_max": 0.028
+                    },
+                    {
+                        "name": "B08",
+                        "common_name": "nir",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.8351,
+                        "full_width_half_max": 0.145
+                    },
+                    {
+                        "name": "B8A",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.8648,
+                        "full_width_half_max": 0.033
+                    },
+                    {
+                        "name": "B09",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.945,
+                        "full_width_half_max": 0.026
+                    },
+                    {
+                        "name": "B10",
+                        "common_name": "cirrus",
+                        "gsd": 60.0,
+                        "center_wavelength": 1.3735,
+                        "full_width_half_max": 0.075
+                    },
+                    {
+                        "name": "B11",
+                        "common_name": "swir16",
+                        "gsd": 20.0,
+                        "center_wavelength": 1.6137,
+                        "full_width_half_max": 0.143
+                    },
+                    {
+                        "name": "B12",
+                        "common_name": "swir22",
+                        "gsd": 20.0,
+                        "center_wavelength": 2.22024,
+                        "full_width_half_max": 0.242
+                    }
+                ],
+                "platform": "sentinel-2b",
+                "instruments": [
+                    "MSI"
+                ],
+                "view:off_nadir": 0,
+                "gsd": 10
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ],
+                        [
+                            -127.08233512601228,
+                            62.130709043745
+                        ],
+                        [
+                            -127.01766656739149,
+                            63.115660018589715
+                        ],
+                        [
+                            -124.8461819572611,
+                            63.068619032002935
+                        ],
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ]
+                    ]
+                ]
+            },
+            "links": [],
+            "assets": {
+                "thumbnail": {
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/9/V/XK/2017/10/13/0/preview.jpg",
+                    "title": "Thumbnail"
+                }
+            },
+            "bbox": [
+                -127.08233512601228,
+                62.08559605596175,
+                -124.8461819572611,
+                63.115660018589715
+            ],
+            "stac_extensions": [
+                "eo",
+                "view"
+            ]
+        },
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0-beta.2",
+            "id": "S2A_9VXK_20171015_0",
+            "properties": {
+                "collection": "sentinel-2-l1c",
+                "datetime": "2017-10-15T19:54:08.461000Z",
+                "eo:cloud_cover": 95.78,
+                "sentinel:utm_zone": 9,
+                "sentinel:latitude_band": "V",
+                "sentinel:grid_square": "XK",
+                "sentinel:sequence": "0",
+                "sentinel:product_id": "S2A_MSIL1C_20171015T195411_N0205_R085_T09VXK_20171015T195408",
+                "eo:bands": [
+                    {
+                        "name": "B01",
+                        "common_name": "coastal",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.4439,
+                        "full_width_half_max": 0.027
+                    },
+                    {
+                        "name": "B02",
+                        "common_name": "blue",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.4966,
+                        "full_width_half_max": 0.098
+                    },
+                    {
+                        "name": "B03",
+                        "common_name": "green",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.56,
+                        "full_width_half_max": 0.045
+                    },
+                    {
+                        "name": "B04",
+                        "common_name": "red",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.6645,
+                        "full_width_half_max": 0.038
+                    },
+                    {
+                        "name": "B05",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7039,
+                        "full_width_half_max": 0.019
+                    },
+                    {
+                        "name": "B06",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7402,
+                        "full_width_half_max": 0.018
+                    },
+                    {
+                        "name": "B07",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7825,
+                        "full_width_half_max": 0.028
+                    },
+                    {
+                        "name": "B08",
+                        "common_name": "nir",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.8351,
+                        "full_width_half_max": 0.145
+                    },
+                    {
+                        "name": "B8A",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.8648,
+                        "full_width_half_max": 0.033
+                    },
+                    {
+                        "name": "B09",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.945,
+                        "full_width_half_max": 0.026
+                    },
+                    {
+                        "name": "B10",
+                        "common_name": "cirrus",
+                        "gsd": 60.0,
+                        "center_wavelength": 1.3735,
+                        "full_width_half_max": 0.075
+                    },
+                    {
+                        "name": "B11",
+                        "common_name": "swir16",
+                        "gsd": 20.0,
+                        "center_wavelength": 1.6137,
+                        "full_width_half_max": 0.143
+                    },
+                    {
+                        "name": "B12",
+                        "common_name": "swir22",
+                        "gsd": 20.0,
+                        "center_wavelength": 2.22024,
+                        "full_width_half_max": 0.242
+                    }
+                ],
+                "platform": "sentinel-2a",
+                "instruments": [
+                    "MSI"
+                ],
+                "view:off_nadir": 0,
+                "gsd": 10
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ],
+                        [
+                            -127.08233512601228,
+                            62.130709043745
+                        ],
+                        [
+                            -127.01766656739149,
+                            63.115660018589715
+                        ],
+                        [
+                            -124.8461819572611,
+                            63.068619032002935
+                        ],
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ]
+                    ]
+                ]
+            },
+            "links": [],
+            "assets": {
+                "thumbnail": {
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/9/V/XK/2017/10/15/0/preview.jpg",
+                    "title": "Thumbnail"
+                }
+            },
+            "bbox": [
+                -127.08233512601228,
+                62.08559605596175,
+                -124.8461819572611,
+                63.115660018589715
+            ],
+            "stac_extensions": [
+                "eo",
+                "view"
+            ]
+        },
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0-beta.2",
+            "id": "S2B_9VXK_20171016_0",
+            "properties": {
+                "collection": "sentinel-2-l1c",
+                "datetime": "2017-10-16T20:16:16.730000Z",
+                "eo:cloud_cover": 74.99,
+                "sentinel:utm_zone": 9,
+                "sentinel:latitude_band": "V",
+                "sentinel:grid_square": "XK",
+                "sentinel:sequence": "0",
+                "sentinel:product_id": "S2B_MSIL1C_20171016T201409_N0205_R028_T09VXK_20171016T201616",
+                "eo:bands": [
+                    {
+                        "name": "B01",
+                        "common_name": "coastal",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.4439,
+                        "full_width_half_max": 0.027
+                    },
+                    {
+                        "name": "B02",
+                        "common_name": "blue",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.4966,
+                        "full_width_half_max": 0.098
+                    },
+                    {
+                        "name": "B03",
+                        "common_name": "green",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.56,
+                        "full_width_half_max": 0.045
+                    },
+                    {
+                        "name": "B04",
+                        "common_name": "red",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.6645,
+                        "full_width_half_max": 0.038
+                    },
+                    {
+                        "name": "B05",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7039,
+                        "full_width_half_max": 0.019
+                    },
+                    {
+                        "name": "B06",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7402,
+                        "full_width_half_max": 0.018
+                    },
+                    {
+                        "name": "B07",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7825,
+                        "full_width_half_max": 0.028
+                    },
+                    {
+                        "name": "B08",
+                        "common_name": "nir",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.8351,
+                        "full_width_half_max": 0.145
+                    },
+                    {
+                        "name": "B8A",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.8648,
+                        "full_width_half_max": 0.033
+                    },
+                    {
+                        "name": "B09",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.945,
+                        "full_width_half_max": 0.026
+                    },
+                    {
+                        "name": "B10",
+                        "common_name": "cirrus",
+                        "gsd": 60.0,
+                        "center_wavelength": 1.3735,
+                        "full_width_half_max": 0.075
+                    },
+                    {
+                        "name": "B11",
+                        "common_name": "swir16",
+                        "gsd": 20.0,
+                        "center_wavelength": 1.6137,
+                        "full_width_half_max": 0.143
+                    },
+                    {
+                        "name": "B12",
+                        "common_name": "swir22",
+                        "gsd": 20.0,
+                        "center_wavelength": 2.22024,
+                        "full_width_half_max": 0.242
+                    }
+                ],
+                "platform": "sentinel-2b",
+                "instruments": [
+                    "MSI"
+                ],
+                "view:off_nadir": 0,
+                "gsd": 10
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -127.06231012491143,
+                            62.443700740677976
+                        ],
+                        [
+                            -127.01766656739149,
+                            63.115660018589715
+                        ],
+                        [
+                            -126.43157865653814,
+                            63.106253589615626
+                        ],
+                        [
+                            -127.06231012491143,
+                            62.443700740677976
+                        ]
+                    ]
+                ]
+            },
+            "links": [],
+            "assets": {
+                "thumbnail": {
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/9/V/XK/2017/10/16/0/preview.jpg",
+                    "title": "Thumbnail"
+                }
+            },
+            "bbox": [
+                -127.06231012491143,
+                62.443700740677976,
+                -126.43157865653814,
+                63.115660018589715
+            ],
+            "stac_extensions": [
+                "eo",
+                "view"
+            ]
+        },
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0-beta.2",
+            "id": "S2B_9VXK_20171017_0",
+            "properties": {
+                "collection": "sentinel-2-l1c",
+                "datetime": "2017-10-17T19:44:04.459000Z",
+                "eo:cloud_cover": 94.45,
+                "sentinel:utm_zone": 9,
+                "sentinel:latitude_band": "V",
+                "sentinel:grid_square": "XK",
+                "sentinel:sequence": "0",
+                "sentinel:product_id": "S2B_MSIL1C_20171017T194409_N0205_R042_T09VXK_20171017T194404",
+                "eo:bands": [
+                    {
+                        "name": "B01",
+                        "common_name": "coastal",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.4439,
+                        "full_width_half_max": 0.027
+                    },
+                    {
+                        "name": "B02",
+                        "common_name": "blue",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.4966,
+                        "full_width_half_max": 0.098
+                    },
+                    {
+                        "name": "B03",
+                        "common_name": "green",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.56,
+                        "full_width_half_max": 0.045
+                    },
+                    {
+                        "name": "B04",
+                        "common_name": "red",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.6645,
+                        "full_width_half_max": 0.038
+                    },
+                    {
+                        "name": "B05",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7039,
+                        "full_width_half_max": 0.019
+                    },
+                    {
+                        "name": "B06",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7402,
+                        "full_width_half_max": 0.018
+                    },
+                    {
+                        "name": "B07",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7825,
+                        "full_width_half_max": 0.028
+                    },
+                    {
+                        "name": "B08",
+                        "common_name": "nir",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.8351,
+                        "full_width_half_max": 0.145
+                    },
+                    {
+                        "name": "B8A",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.8648,
+                        "full_width_half_max": 0.033
+                    },
+                    {
+                        "name": "B09",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.945,
+                        "full_width_half_max": 0.026
+                    },
+                    {
+                        "name": "B10",
+                        "common_name": "cirrus",
+                        "gsd": 60.0,
+                        "center_wavelength": 1.3735,
+                        "full_width_half_max": 0.075
+                    },
+                    {
+                        "name": "B11",
+                        "common_name": "swir16",
+                        "gsd": 20.0,
+                        "center_wavelength": 1.6137,
+                        "full_width_half_max": 0.143
+                    },
+                    {
+                        "name": "B12",
+                        "common_name": "swir22",
+                        "gsd": 20.0,
+                        "center_wavelength": 2.22024,
+                        "full_width_half_max": 0.242
+                    }
+                ],
+                "platform": "sentinel-2b",
+                "instruments": [
+                    "MSI"
+                ],
+                "view:off_nadir": 0,
+                "gsd": 10
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ],
+                        [
+                            -125.85684334576122,
+                            62.10828910052791
+                        ],
+                        [
+                            -125.69796244603874,
+                            62.34410714131995
+                        ],
+                        [
+                            -125.59977650679747,
+                            62.48719362488951
+                        ],
+                        [
+                            -125.3004037925111,
+                            62.91636637406713
+                        ],
+                        [
+                            -125.18198192630497,
+                            63.078079378299506
+                        ],
+                        [
+                            -124.8461819572611,
+                            63.068619032002935
+                        ],
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ]
+                    ]
+                ]
+            },
+            "links": [],
+            "assets": {
+                "thumbnail": {
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/9/V/XK/2017/10/17/0/preview.jpg",
+                    "title": "Thumbnail"
+                }
+            },
+            "bbox": [
+                -125.85684334576122,
+                62.08559605596175,
+                -124.8461819572611,
+                63.078079378299506
+            ],
+            "stac_extensions": [
+                "eo",
+                "view"
+            ]
+        },
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0-beta.2",
+            "id": "S2A_9VXK_20171002_0",
+            "properties": {
+                "collection": "sentinel-2-l1c",
+                "datetime": "2017-10-02T19:42:34.456000Z",
+                "eo:cloud_cover": 100.0,
+                "sentinel:utm_zone": 9,
+                "sentinel:latitude_band": "V",
+                "sentinel:grid_square": "XK",
+                "sentinel:sequence": "0",
+                "sentinel:product_id": "S2A_MSIL1C_20171002T194231_N0205_R042_T09VXK_20171002T194234",
+                "eo:bands": [
+                    {
+                        "name": "B01",
+                        "common_name": "coastal",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.4439,
+                        "full_width_half_max": 0.027
+                    },
+                    {
+                        "name": "B02",
+                        "common_name": "blue",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.4966,
+                        "full_width_half_max": 0.098
+                    },
+                    {
+                        "name": "B03",
+                        "common_name": "green",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.56,
+                        "full_width_half_max": 0.045
+                    },
+                    {
+                        "name": "B04",
+                        "common_name": "red",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.6645,
+                        "full_width_half_max": 0.038
+                    },
+                    {
+                        "name": "B05",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7039,
+                        "full_width_half_max": 0.019
+                    },
+                    {
+                        "name": "B06",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7402,
+                        "full_width_half_max": 0.018
+                    },
+                    {
+                        "name": "B07",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.7825,
+                        "full_width_half_max": 0.028
+                    },
+                    {
+                        "name": "B08",
+                        "common_name": "nir",
+                        "gsd": 10.0,
+                        "center_wavelength": 0.8351,
+                        "full_width_half_max": 0.145
+                    },
+                    {
+                        "name": "B8A",
+                        "gsd": 20.0,
+                        "center_wavelength": 0.8648,
+                        "full_width_half_max": 0.033
+                    },
+                    {
+                        "name": "B09",
+                        "gsd": 60.0,
+                        "center_wavelength": 0.945,
+                        "full_width_half_max": 0.026
+                    },
+                    {
+                        "name": "B10",
+                        "common_name": "cirrus",
+                        "gsd": 60.0,
+                        "center_wavelength": 1.3735,
+                        "full_width_half_max": 0.075
+                    },
+                    {
+                        "name": "B11",
+                        "common_name": "swir16",
+                        "gsd": 20.0,
+                        "center_wavelength": 1.6137,
+                        "full_width_half_max": 0.143
+                    },
+                    {
+                        "name": "B12",
+                        "common_name": "swir22",
+                        "gsd": 20.0,
+                        "center_wavelength": 2.22024,
+                        "full_width_half_max": 0.242
+                    }
+                ],
+                "platform": "sentinel-2a",
+                "instruments": [
+                    "MSI"
+                ],
+                "view:off_nadir": 0,
+                "gsd": 10
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ],
+                        [
+                            -125.87361762816938,
+                            62.10866949262195
+                        ],
+                        [
+                            -125.64482210139558,
+                            62.444476344537364
+                        ],
+                        [
+                            -125.44447137617125,
+                            62.73024099557124
+                        ],
+                        [
+                            -125.24250184755236,
+                            63.01613198247617
+                        ],
+                        [
+                            -125.19744425261071,
+                            63.07849568540475
+                        ],
+                        [
+                            -124.8461819572611,
+                            63.068619032002935
+                        ],
+                        [
+                            -124.98134083358437,
+                            62.08559605596175
+                        ]
+                    ]
+                ]
+            },
+            "links": [],
+            "assets": {
+                "thumbnail": {
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/9/V/XK/2017/10/2/0/preview.jpg",
+                    "title": "Thumbnail"
+                }
+            },
+            "bbox": [
+                -125.87361762816938,
+                62.08559605596175,
+                -124.8461819572611,
+                63.07849568540475
+            ],
+            "stac_extensions": [
+                "eo",
+                "view"
+            ]
+        }
+    ],
+    "collections": []
+}

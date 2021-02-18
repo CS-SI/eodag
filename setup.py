@@ -60,6 +60,7 @@ setup(
         "markdown >= 3.0.1",
         "unidecode",
         "whoosh",
+        "pystac",
     ],
     python_requires=">=3.6",
     extras_require={

@@ -896,7 +896,7 @@ class EODataAccessGateway(object):
 
         :param filename: A filename containing features encoded as a geojson
         :type filename: str
-        :param recursive: Brownse recursively in child nodes if True
+        :param recursive: Browse recursively in child nodes if True
         :type recursive: bool
         :param max_connections: max connections for http requests
         :type max_connections: int

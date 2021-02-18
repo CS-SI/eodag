@@ -67,18 +67,13 @@
     },
     "links": [
         {
-            "rel": "self",
-            "title": "S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802",
-            "href": "./country/FRA/year/2017/items/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802"
-        },
-        {
             "rel": "root",
-            "href": "./catalog.json"
+            "href": "../../../../../catalog.json"
         },
         {
             "rel": "parent",
             "title": "S2_MSI_L1C",
-            "href": "./country/FRA/year/2017/2017.json"
+            "href": "../2017.json"
         },
         {
             "rel": "collection",

@@ -77,3 +77,7 @@ class RequestError(Exception):
 class NoMatchingProductType(Exception):
     """An error indicating that eodag was unable to derive a product type from a set
     of search parameters"""
+
+
+class STACOpenerError(Exception):
+    """An error indicating that a STAC file could not be opened"""

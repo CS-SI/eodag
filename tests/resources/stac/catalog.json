@@ -34,10 +34,6 @@
     "links": [
         {
             "href": "./catalog.json",
-            "rel": "self"
-        },
-        {
-            "href": "./catalog.json",
             "rel": "root"
         },
         {

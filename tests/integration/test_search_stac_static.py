@@ -36,25 +36,26 @@ class TestSearchStacStatic(unittest.TestCase):
         self.dag = EODataAccessGateway()
 
         self.cat_dir_path = self.root_cat = os.path.join(TEST_RESOURCES_PATH, "stac")
-        # paths are relative in this test catalog, chdir needed
-        self._currentdir = os.getcwd()
-        os.chdir(self.cat_dir_path)
-
         self.root_cat = os.path.join(self.cat_dir_path, "catalog.json")
         self.root_cat_len = 5
         self.child_cat = os.path.join(
             self.cat_dir_path, "country", "FRA", "year", "2018", "2018.json"
         )
         self.child_cat_len = 2
+        self.item = os.path.join(
+            os.path.dirname(self.child_cat),
+            "items",
+            "S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050",
+            "S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050.json",
+        )
+        self.singlefile_cat = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")
+        self.singlefile_cat_len = 5
 
         self.stac_provider = "astraea_eod"
         self.product_type = "S2_MSI_L1C"
 
         self.extent_big = {"lonmin": -55, "lonmax": -53, "latmin": 2, "latmax": 5}
         self.extent_small = {"lonmin": -55, "lonmax": -54.5, "latmin": 2, "latmax": 2.5}
-
-    def tearDown(self):
-        os.chdir(self._currentdir)
 
     def test_search_stac_static_load_child(self):
         """load_stac_items from child catalog must provide items"""
@@ -86,6 +87,26 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in items:
             self.assertEqual(item.provider, self.stac_provider)
             self.assertEqual(item.product_type, self.product_type)
+
+    def test_search_stac_static_load_item(self):
+        """load_stac_items from a single item must provide it"""
+        item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
+        self.assertIsInstance(item, SearchResult)
+        self.assertEqual(len(item), 1)
+        self.assertEqual(item[0].provider, self.stac_provider)
+        # if no product_type is provided, product_type is None
+        self.assertIsNone(item[0].product_type)
+
+    def test_search_stac_static_load_singlefile_catalog(self):
+        """load_stac_items from child catalog must provide items"""
+        items = self.dag.load_stac_items(
+            self.singlefile_cat, provider=self.stac_provider
+        )
+        self.assertIsInstance(items, SearchResult)
+        self.assertEqual(len(items), self.singlefile_cat_len)
+        self.assertEqual(items[0].provider, self.stac_provider)
+        # if no product_type is provided, product_type is None
+        self.assertIsNone(items[0].product_type)
 
     def test_search_stac_static_crunch_filter_date(self):
         """load_stac_items from root and filter by date"""
