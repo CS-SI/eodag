@@ -52,7 +52,7 @@ from eodag.utils.exceptions import (
     PluginImplementationError,
     UnsupportedProvider,
 )
-from eodag.utils.stac_reader import fetch_stac_items
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT, fetch_stac_items
 
 logger = logging.getLogger("eodag.core")
 
@@ -887,6 +887,7 @@ class EODataAccessGateway(object):
         max_connections=100,
         provider=None,
         productType=None,
+        timeout=HTTP_REQ_TIMEOUT,
         **kwargs
     ):
         """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
@@ -898,19 +899,24 @@ class EODataAccessGateway(object):
         :type filename: str
         :param recursive: Browse recursively in child nodes if True
         :type recursive: bool
-        :param max_connections: max connections for http requests
+        :param max_connections: Maximum number of connections for HTTP requests
         :type max_connections: int
-        :param provider: data provider
+        :param provider: Data provider
         :type provider: str
-        :param productType: data product type
+        :param productType: Data product type
         :type productType: str
-        :param dict kwargs: parameters that will be stored in the result as
+        :param timeout: (optional) Timeout in seconds for each internal HTTP request
+        :type timeout: float
+        :param dict kwargs: Parameters that will be stored in the result as
                             search criteria
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         features = fetch_stac_items(
-            filename, recursive=recursive, max_connections=max_connections
+            filename,
+            recursive=recursive,
+            max_connections=max_connections,
+            timeout=timeout,
         )
         nb_features = len(features)
         feature_collection = geojson.FeatureCollection(features)

@@ -18,6 +18,7 @@
 import json
 import logging
 import re
+import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
@@ -35,8 +36,10 @@ class _TextOpener:
     """Exhaust read methods for pystac.STAC_IO in the order defined
     in the openers list"""
 
-    def __init__(self):
+    def __init__(self, timeout):
         self.openers = [self.read_local_json, self.read_http_remote_json]
+        # Only used by read_http_remote_json
+        self.timeout = timeout
 
     @staticmethod
     def read_local_json(url, as_json):
@@ -49,14 +52,14 @@ class _TextOpener:
                 else:
                     return f.read()
         except FileNotFoundError:
+            logger.debug("read_local_json is not the right STAC opener")
             raise STACOpenerError
 
-    @staticmethod
-    def read_http_remote_json(url, as_json):
+    def read_http_remote_json(self, url, as_json):
         """Read JSON remote HTTP file
         """
         try:
-            res = urlopen(url, timeout=HTTP_REQ_TIMEOUT)
+            res = urlopen(url, timeout=self.timeout)
             content_type = res.getheader("Content-Type")
             if content_type is None:
                 encoding = "utf-8"
@@ -68,8 +71,17 @@ class _TextOpener:
                     encoding = m.group(1)
             content = res.read().decode(encoding)
             return json.loads(content) if as_json else content
-        except (HTTPError, URLError) as e:
-            logger.error("%s: %s", url, e)
+        except URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                logger.error("%s: %s", url, e)
+                raise socket.timeout(
+                    f"{url} with a timeout of {self.timeout} seconds"
+                ) from None
+            else:
+                logger.debug("read_http_remote_json is not the right STAC opener")
+                raise STACOpenerError
+        except HTTPError:
+            logger.debug("read_http_remote_json is not the right STAC opener")
             raise STACOpenerError
 
     def __call__(self, url, as_json=False):
@@ -87,34 +99,42 @@ class _TextOpener:
         return res
 
 
-_text_opener = _TextOpener()
-pystac.STAC_IO.read_text_method = _text_opener
-
-
-def fetch_stac_items(stac_path, recursive=False, max_connections=100):
+def fetch_stac_items(
+    stac_path, recursive=False, max_connections=100, timeout=HTTP_REQ_TIMEOUT
+):
     """Fetch STAC item from a single item file or items from a catalog.
 
     :param stac_path: A STAC object filepath
     :type filename: str
-    :param recursive: Browse recursively in child nodes if True
+    :param recursive: (optional) Browse recursively in child nodes if True
     :type recursive: bool
-    :param max_connections: max connections for http requests
+    :param max_connections: Maximum number of connections for HTTP requests
     :type max_connections: int
+    :param timeout: (optional) Timeout in seconds for each internal HTTP request
+    :type timeout: float
     :returns: The items found in `stac_path`
     :rtype: :class:`list`
     """
+
+    # URI opener used by PySTAC internally, instantiated here
+    # to retrieve the timeout.
+    _text_opener = _TextOpener(timeout)
+    pystac.STAC_IO.read_text_method = _text_opener
+
     stac_obj = pystac.read_file(stac_path)
     # Single STAC item
     if isinstance(stac_obj, pystac.Item):
         return [stac_obj.to_dict()]
     # STAC catalog
     elif isinstance(stac_obj, pystac.Catalog):
-        return _fetch_stac_items_from_catalog(stac_obj, recursive, max_connections)
+        return _fetch_stac_items_from_catalog(
+            stac_obj, recursive, max_connections, _text_opener
+        )
     else:
         raise STACOpenerError(f"{stac_path} must be a STAC catalog or a STAC item")
 
 
-def _fetch_stac_items_from_catalog(cat, recursive, max_connections):
+def _fetch_stac_items_from_catalog(cat, recursive, max_connections, _text_opener):
     """Fetch items from a STAC catalog"""
     # pystac cannot yet return links from a single file catalog, see:
     # https://github.com/stac-utils/pystac/issues/256
