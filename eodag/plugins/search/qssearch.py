@@ -934,16 +934,19 @@ class StacSearch(QueryStringSearch):
 
     def __init__(self, provider, config):
         stac_provider_config = load_stac_provider_config()
-        config.__dict__.setdefault(
-            "pagination", stac_provider_config.get("search", {}).get("pagination", {})
+
+        # search config set to stac defaults overriden with provider config
+        config.__dict__["pagination"] = dict(
+            stac_provider_config.get("search", {}).get("pagination", {}),
+            **config.__dict__.get("pagination", {})
         )
-        config.__dict__.setdefault(
-            "discover_metadata",
+        config.__dict__["discover_metadata"] = dict(
             stac_provider_config.get("search", {}).get("discover_metadata", {}),
+            **config.__dict__.get("discover_metadata", {})
         )
-        config.__dict__.setdefault(
-            "metadata_mapping",
+        config.__dict__["metadata_mapping"] = dict(
             stac_provider_config.get("search", {}).get("metadata_mapping", {}),
+            **config.__dict__.get("metadata_mapping", {})
         )
 
         super(QueryStringSearch, self).__init__(provider, config)

@@ -97,6 +97,43 @@ class TestSearchStacStatic(unittest.TestCase):
         # if no product_type is provided, product_type is None
         self.assertIsNone(item[0].product_type)
 
+    def test_search_stac_static_load_item_updated_provider(self):
+        """load_stac_items from a single item using updated provider"""
+        item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
+
+        self.assertEqual(item[0].properties["license"], "proprietary")
+        self.assertEqual(item[0].properties["platform"], "S2ST")
+        self.assertEqual(item[0].properties["orbitDirection"], "descending")
+        self.assertNotIn("foo", item[0].properties)
+
+        # fake provider with mixed metadata_mapping
+        self.dag.update_providers_config(
+            """
+            fake_provider:
+                search:
+                    type: StacSearch
+                    api_endpoint: 'https://fake-endpoint'
+                    metadata_mapping:
+                        license: '{platform}'
+                        foo: '{orbitDirection}'
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+                download:
+                    type: HTTPDownload
+                    base_uri: 'https://fake-uri'
+        """
+        )
+
+        item = self.dag.load_stac_items(
+            self.item, provider="fake_provider", raise_errors=True
+        )
+        self.assertEqual(item[0].properties["platform"], "S2ST")
+        self.assertEqual(item[0].properties["license"], "S2ST")
+        self.assertEqual(item[0].properties["orbitDirection"], "descending")
+        self.assertIn("foo", item[0].properties)
+        self.assertEqual(item[0].properties["foo"], "descending")
+
     def test_search_stac_static_load_singlefile_catalog(self):
         """load_stac_items from child catalog must provide items"""
         items = self.dag.load_stac_items(
