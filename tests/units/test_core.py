@@ -281,7 +281,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(dag.locations_config, [])
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
-        """The core object must use the locations file pointed to by the EODEODAG_LOCS_CFG_FILEAG_CFG_FILE env var"""  # noqa
+        """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa
         os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_locations_override.yml"
         )
@@ -333,27 +333,55 @@ class TestCore(unittest.TestCase):
         locations_config = self.dag.locations_config
         # No query args
         self.assertIsNone(get_geometry_from_various(locations_config))
-        # Bad query arg
-        # 'country' is the expected name here
-        self.assertIsNone(
-            get_geometry_from_various(locations_config, bad_query_arg="dummy")
-        )
         # France
-        geom_france = get_geometry_from_various(locations_config, country="FRA")
+        geom_france = get_geometry_from_various(
+            locations_config, locations=dict(country="FRA")
+        )
         self.assertIsInstance(geom_france, MultiPolygon)
         self.assertEquals(len(geom_france), 3)  # France + Guyana + Corsica
-        # Not defined
+
+    def test_get_geometry_from_various_locations_with_wrong_location_name_in_kwargs(
+        self,
+    ):
+        """The search geometry is world wide if the location name is wrong"""
+        locations_config = self.dag.locations_config
+        # Bad location name in kwargs
+        # 'country' is the expected name here, but kwargs are passed
+        # to get_geometry_from_various so we can't detect a bad location name
         self.assertIsNone(
-            get_geometry_from_various(locations_config, country="bad_query_value")
+            get_geometry_from_various(locations_config, bad_query_arg="FRA")
         )
+
+    def test_get_geometry_from_various_locations_with_wrong_location_name_in_locations_dict(
+        self,
+    ):
+        """If the location search has a wrong location name then a ValueError must be raised"""
+        locations_config = self.dag.locations_config
+        # Bad location name in kwargs
+        # 'country' is the expected name here, but kwargs are passed
+        # to get_geometry_from_various so we can't detect a bad location name
+        with self.assertRaisesRegex(ValueError, "bad_query_arg"):
+            get_geometry_from_various(
+                locations_config, locations=dict(bad_query_arg="FRA")
+            )
 
     def test_get_geometry_from_various_only_locations_regex(self):
         """The search geometry can be set from a locations config file query and a regex"""
         locations_config = self.dag.locations_config
         # Pakistan + Panama (each has a unique polygon) => Multypolygon of len 2
-        geom_regex_pa = get_geometry_from_various(locations_config, country="PA[A-Z]")
+        geom_regex_pa = get_geometry_from_various(
+            locations_config, locations=dict(country="PA[A-Z]")
+        )
         self.assertIsInstance(geom_regex_pa, MultiPolygon)
         self.assertEquals(len(geom_regex_pa), 2)
+
+    def test_get_geometry_from_various_locations_no_match_raises_error(self):
+        """If the location search doesn't match any of the feature attribute a ValueError must be raised"""
+        locations_config = self.dag.locations_config
+        with self.assertRaisesRegex(ValueError, "country.*regexmatchingnothing"):
+            get_geometry_from_various(
+                locations_config, locations=dict(country="regexmatchingnothing")
+            )
 
     def test_get_geometry_from_various_geometry_and_locations(self):
         """The search geometry can be set from a given geometry and a locations config file query"""
@@ -365,7 +393,7 @@ class TestCore(unittest.TestCase):
         }
         locations_config = self.dag.locations_config
         geom_combined = get_geometry_from_various(
-            locations_config, country="FRA", geometry=geometry
+            locations_config, locations=dict(country="FRA"), geometry=geometry
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         self.assertEquals(
@@ -378,7 +406,7 @@ class TestCore(unittest.TestCase):
             "latmax": 52,
         }
         geom_combined = get_geometry_from_various(
-            locations_config, country="FRA", geometry=geometry
+            locations_config, locations=dict(country="FRA"), geometry=geometry
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         self.assertEquals(

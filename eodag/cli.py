@@ -132,8 +132,7 @@ def version():
 @click.option(
     "-l",
     "--locs",
-    help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml,"
-    " and may be used with custom query-string argument (e.g.: -q country=FRA)",
+    help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml",
     type=click.Path(exists=True),
 )
 @click.option(
@@ -225,6 +224,12 @@ def version():
     help="Retrieve the given page",
 )
 @click.option(
+    "--locations",
+    type=str,
+    help="Custom query-string argument(s) to select locations. "
+    "Format :'key1=value1&key2=value2'. Example: --locations country=FRA&continent=Africa",
+)
+@click.option(
     "-q",
     "--query",
     type=str,
@@ -241,6 +246,7 @@ def search_crunch(ctx, **kwargs):
     processing_level = kwargs.pop("processinglevel")
     sensor_type = kwargs.pop("sensortype")
     id_ = kwargs.pop("id")
+    locations_qs = kwargs.pop("locations")
     custom = kwargs.pop("query")
     if not any(
         [
@@ -294,6 +300,12 @@ def search_crunch(ctx, **kwargs):
                 criteria[k] = v[0]
             else:
                 criteria[k] = v
+    if locations_qs is not None:
+        locations = parse_qs(locations_qs)
+        locations = {key: val[0] for key, val in locations.items()}
+    else:
+        locations = None
+    criteria["locations"] = locations
     if start_date:
         criteria["startTimeFromAscendingNode"] = start_date.isoformat()
     if stop_date:

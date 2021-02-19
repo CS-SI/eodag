@@ -599,6 +599,7 @@ def get_geometry_from_various(locations_config=[], **query_args):
     :type query_args: dict
     :returns: shapely geometry found
     :rtype: :class:`shapely.geometry.BaseGeometry`
+    :raises: :class:`ValueError`
     """
     geom = None
 
@@ -631,21 +632,46 @@ def get_geometry_from_various(locations_config=[], **query_args):
             geom = shapely.wkt.loads(geom_arg)
         elif isinstance(geom_arg, BaseGeometry):
             geom = geom_arg
+        elif geom_arg is None:
+            pass
         else:
             raise TypeError("Unexpected geometry type: {}".format(type(geom_arg)))
 
     # look for location name in locations configuration
     locations_dict = {loc["name"]: loc for loc in locations_config}
-    for arg in query_args.keys():
+    # The location query kwargs can either be in query_args or in query_args["locations"],
+    # support for which were added in 2.0.0 and 2.1.0 respectively.
+    # The location query kwargs in query_args is supported for backward compatibility,
+    # the recommended usage is that they are in query_args["locations"]
+    locations = query_args.get("locations")
+    locations = locations if locations is not None else {}
+    # In query_args["locations"] we can check that the location_names are correct
+    locations = locations if locations is not None else {}
+    for location_name in locations:
+        if location_name not in locations_dict:
+            raise ValueError(
+                f"The location name {location_name} is wrong. "
+                f"It must be one of: {locations_dict.keys()}"
+            )
+    query_locations = {**query_args, **locations}
+    for arg in query_locations.keys():
         if arg in locations_dict.keys():
-            pattern = query_args[arg]
+            found = False
+            pattern = query_locations[arg]
             attr = locations_dict[arg]["attr"]
             with shapefile.Reader(locations_dict[arg]["path"]) as shp:
                 for shaperec in shp.shapeRecords():
                     if re.search(pattern, shaperec.record[attr]):
+                        found = True
                         new_geom = shape(shaperec.shape)
                         # get geoms union
                         geom = new_geom.union(geom) if geom else new_geom
+            if not found:
+                raise ValueError(
+                    f"No match found for the search location '{arg}' "
+                    f"with the pattern '{pattern}'."
+                )
+
     return geom
 
 

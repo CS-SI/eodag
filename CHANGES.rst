@@ -5,6 +5,8 @@ Release history
 ++++++++++++++++++
 
 - Drop support of Python 3.5
+- Raise a ValueError when a location search doesn't match any record and add a new ``locations``
+  parameter to ``EODataAccessGateway.search``.
 
 2.0.1 (2021-02-05)
 ++++++++++++++++++

@@ -433,6 +433,7 @@ class EODataAccessGateway(object):
         start=None,
         end=None,
         geom=None,
+        locations=None,
         **kwargs
     ):
         """Look for products matching criteria on known providers.
@@ -464,20 +465,33 @@ class EODataAccessGateway(object):
                       ``[lonmin, latmin, lonmax, latmax]``
                     * with a WKT str
 
-                    The geometry can also be passed as ``<location_name>="<attr_regex>"`` in kwargs
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
+        :param locations: Location filtering by name using locations configuration
+                          ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
+                          the geometry of the features having the property ISO3 starting with
+                          'PA' such as Panama and Pakistan in the shapefile configured with
+                          name=country and attr=ISO3
+        :type locations: dict
         :param dict kwargs: some other criteria that will be used to do the search,
-                            using paramaters compatibles with the provider, or also
-                            location filtering by name using locations configuration
-                            ``<location_name>="<attr_regex>"`` (e.g.: ``country="PA.`` will use
-                            the geometry of the features having the property ISO3 starting with
-                            'PA' such as Panama and Pakistan in the shapefile configured with
-                            name=country and attr=ISO3)
+                            using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
 
         .. versionchanged::
+
+           2.1.0
+
+                * A new parameter ``locations`` is added to be more explicit about
+                how to pass a location search (with one or more selections). It also
+                fixes an issue when a wrong location_name would be provided as kwargs
+                with no other geometry, resulting in a worldwide search.
+
+           2.0.0
+
+                * A location search based on a local Shapefile can be made through
+                kwargs with ``<location_name>="<attr_regex>"``.
+
            1.6
 
                 * Any search parameter supported by the provider can be passed as
@@ -549,6 +563,7 @@ class EODataAccessGateway(object):
         if geom is None and box is not None:
             kwargs["geometry"] = box
 
+        kwargs["locations"] = locations
         kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
         # remove locations_args from kwargs now that they have been used
         locations_dict = {loc["name"]: loc for loc in self.locations_config}

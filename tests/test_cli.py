@@ -166,6 +166,7 @@ class TestEodagCli(unittest.TestCase):
                 sensorType=None,
                 productType=product_type,
                 id=None,
+                locations=None,
             )
 
     def test_eodag_search_geom_wkt_invalid(self):
@@ -210,6 +211,7 @@ class TestEodagCli(unittest.TestCase):
                 sensorType=None,
                 productType=product_type,
                 id=None,
+                locations=None,
             )
 
     def test_eodag_search_bbox_geom_mutually_exclusive(self):
@@ -278,6 +280,7 @@ class TestEodagCli(unittest.TestCase):
                 sensorType=None,
                 productType=product_type,
                 id=None,
+                locations=None,
             )
             self.runner.invoke(
                 eodag,
