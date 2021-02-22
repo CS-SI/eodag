@@ -35,6 +35,8 @@
       startTimeFromAscendingNode: '$.startTime'
       completionTimeFromAscendingNode: '$.endTime'
       quicklook: '$.browseUrl'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
     extract: True
   products:
     # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt
@@ -68,6 +70,8 @@
       geometry:
         - '{{"search":{{"shape": {geometry#to_geo_interface} }} }}'
         - '$.dataGeometry'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
   products:
     CBERS4_PAN10M_L2:
       instrument: PAN10M
@@ -108,7 +112,7 @@
           - '$.downloadUrl'
         downloadLink: 's3://cbers-pds/{awsPath}'
         metaDownloadLink: 's3://cbers-meta-pds/{awsPath}'
-        previewBaseName: '{$.sceneID#replace_str(_L2,)}'
+        previewBaseName: '{$.sceneID#replace_str("_L2","")}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
         id:
@@ -121,7 +125,7 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_PAN5M_L2:
@@ -136,7 +140,7 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_MUX_L2:
@@ -151,7 +155,7 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_AWFI_L2:
@@ -166,7 +170,7 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str(_L4,)}'
+        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     L8_OLI_TIRS_C1L1:
@@ -360,13 +364,13 @@
           - '{{"search":{{"zenithAngle":"{illuminationZenithAngle}" }} }}'
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
-        originalTileMeta: '{$.originalTileMeta#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
-        thumbnail: '{$.thumbnail#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        originalTileMeta: '{$.originalTileMeta#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+        thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
           - '$.awsPath'
         downloadLink: 's3://sentinel-s2-l1c/{awsPath}'
-        productMetaLink: '{$.productMetaLink#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        productMetaLink: '{$.productMetaLink#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         productPath:
           - '{{"search":{{"productPath":"{productPath}" }} }}'
           - '$.productPath'
@@ -429,8 +433,8 @@
           - '{{"search":{{"zenithAngle":"{illuminationZenithAngle}" }} }}'
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
-        originalTileMeta: '{$.originalTileMeta#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l2a)}'
-        thumbnail: '{$.thumbnail#replace_str(sentinel-s2-l1c.s3.amazonaws.com, roda.sentinel-hub.com/sentinel-s2-l1c)}'
+        originalTileMeta: '{$.originalTileMeta#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l2a")}'
+        thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         quicklook: '{thumbnail}'
         downloadLink: 's3://sentinel-s2-l2a/{awsPathL2A}'
         awsPath: '$.null'
@@ -563,7 +567,7 @@
       illuminationZenithAngle: '$.properties.illuminationZenithAngle'
       illuminationElevationAngle: '$.properties.illuminationElevationAngle'
       polarizationMode: '$.properties.polarizationMode'
-      polarisationChannels: '$.properties.polarisationChannels'
+      polarizationChannels: '$.properties.polarisationChannels'
       antennaLookDirection: '$.properties.antennaLookDirection'
       minimumIncidenceAngle: '$.properties.minimumIncidenceAngle'
       maximumIncidenceAngle: '$.properties.maximumIncidenceAngle'
@@ -585,6 +589,9 @@
       # Additional metadata provided by the providers but that don't appear in the reference spec
       # Or has a different signification for the provider
       thumbnail: '$.properties.thumbnail'
+
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
 
   products:
     S2_MSI_L2A_MAJA:
@@ -898,7 +905,7 @@
       completionTimeFromAscendingNode:
         - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#to_timestamp_milliseconds}'
         - '{$.data.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
-      polarisationChannels: '$.data.acquisition.polarization'
+      polarizationChannels: '$.data.acquisition.polarization'
       sensorMode: '$.data.acquisition.sensorMode'
 
       # Custom parameters (not defined in the base document referenced above)
@@ -991,6 +998,7 @@
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
+      polarizationChannels: '$.properties.polarisation'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
@@ -1185,7 +1193,7 @@
       illuminationZenithAngle: 'eo:illuminationZenithAngle/text()'
       illuminationElevationAngle: 'eo:illuminationElevationAngle/text()'
       polarizationMode: 'eo:polarizationMode/text()'
-      polarisationChannels: 'eo:polarisationChannels/text()'
+      polarizationChannels: '{eo:polarisationChannels/text()#replace_str("/"," ")}'
       antennaLookDirection: 'eo:antennaLookDirection/text()'
       minimumIncidenceAngle: 'eo:minimumIncidenceAngle/text()'
       maximumIncidenceAngle: 'eo:maximumIncidenceAngle/text()'
@@ -1377,6 +1385,7 @@
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode: '$.beginPosition'
       completionTimeFromAscendingNode: '$.endPosition'
+      polarizationChannels: '{$.polarisationChannels#replace_str(","," ")}'
 
       # Custom parameters (not defined in the base document referenced above)
       id: '{$.filename#remove_extension}'

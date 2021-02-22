@@ -198,7 +198,7 @@ item:
     sat:relative_orbit: '$.product.properties.relativeOrbitNumber'
     sar:product_type: '$.product.properties.productType'
     sar:instrument_mode: '$.product.properties.sensorMode'
-    sar:polarizations: '$.product.properties.polarisationChannels'
+    sar:polarizations: '$.product.properties.polarizationChannels'
     sar:frequency_band: '$.product.properties.dopplerFrequency'
     sci:doi: '$.product.properties.doi'
     view:sun_elevation: '$.product.properties.illuminationElevationAngle'
