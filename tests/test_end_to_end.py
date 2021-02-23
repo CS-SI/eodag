@@ -99,7 +99,18 @@ USGS_SEARCH_ARGS = [
 
 
 class EndToEndBase(unittest.TestCase):
-    def execute_search(self, provider, product_type, start, end, geom, offline=False):
+    def execute_search(
+        self,
+        provider,
+        product_type,
+        start,
+        end,
+        geom,
+        offline=False,
+        page=None,
+        items_per_page=None,
+        check_product=True,
+    ):
         """Search products on provider:
 
         - First set the preferred provider as the one given in parameter
@@ -114,7 +125,10 @@ class EndToEndBase(unittest.TestCase):
         }
         self.eodag.set_preferred_provider(provider)
         results, nb_results = self.eodag.search(
-            productType=product_type, **search_criteria
+            productType=product_type,
+            page=page,
+            items_per_page=items_per_page,
+            **search_criteria
         )
         if offline:
             results = [
@@ -122,10 +136,13 @@ class EndToEndBase(unittest.TestCase):
                 for prod in results
                 if prod.properties.get("storageStatus", "") != ONLINE_STATUS
             ]
-        self.assertGreater(len(results), 0)
-        one_product = results[0]
-        self.assertEqual(one_product.provider, provider)
-        return one_product
+        if check_product:
+            self.assertGreater(len(results), 0)
+            one_product = results[0]
+            self.assertEqual(one_product.provider, provider)
+            return one_product
+        else:
+            return results
 
 
 # @unittest.skip("skip auto run")
@@ -242,6 +259,15 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*SOBLOO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_airbus_noresult(self):
+        """Requesting a page on sobloo with no results must return an empty SearchResult"""
+        # As of 2021-02-23 this search at page 1 returns 68 products, so at page 2 there
+        # are no products available and sobloo returns a response without products (`hits`).
+        product = self.execute_search(
+            *SOBLOO_SEARCH_ARGS, page=2, items_per_page=100, check_product=False
+        )
+        self.assertEqual(len(product), 0)
 
     # may take up to 10 minutes
     @unittest.skip("Long test skipped")

@@ -426,9 +426,7 @@ class QueryStringSearch(Search):
                         )
                     ]
                 else:
-                    result = response.json().get(
-                        self.config.results_entry, [response.json()]
-                    )
+                    result = response.json().get(self.config.results_entry, [])
                 if getattr(self.config, "merge_responses", False):
                     results = (
                         [dict(r, **result[i]) for i, r in enumerate(results)]
