@@ -78,7 +78,8 @@ class QueryStringSearch(Search):
             Python format string which will be resolved using the following keywords:
             ``url`` (the base url of the search endpoint), ``search`` (the query string
             corresponding to the search request), ``items_per_page`` (the number of
-            items to return per page), ``skip`` (the number of items to skip) and
+            items to return per page), ``skip`` (the number of items to skip) or
+            ``skip_base_1`` (the number of items to skip, starting from 1) and
             ``page`` (which page to return).
 
           - *total_items_nb_key_path*: (optional) An XPath or JsonPath leading to the
@@ -379,6 +380,7 @@ class QueryStringSearch(Search):
                         items_per_page=1,
                         page=1,
                         skip=0,
+                        skip_base_1=1,
                     )
                     _total_results = self.count_hits(
                         count_url, result_type=self.config.result_type
@@ -390,6 +392,7 @@ class QueryStringSearch(Search):
                     items_per_page=items_per_page,
                     page=page,
                     skip=(page - 1) * items_per_page,
+                    skip_base_1=(page - 1) * items_per_page + 1,
                 )
             else:
                 next_url = "{}?{}".format(search_endpoint, self.query_string)
@@ -858,7 +861,9 @@ class PostJsonSearch(QueryStringSearch):
                     # request to schedule the pagination)
 
                     # update query params with pagination
-                    unmapped_pagination_params = dict(items_per_page=1, page=1, skip=0)
+                    unmapped_pagination_params = dict(
+                        items_per_page=1, page=1, skip=0, skip_base_1=1
+                    )
                     pagination_params = {}
                     for (
                         eodag_pagination_key,
@@ -889,6 +894,7 @@ class PostJsonSearch(QueryStringSearch):
                     items_per_page=items_per_page,
                     page=page,
                     skip=(page - 1) * items_per_page,
+                    skip_base_1=(page - 1) * items_per_page + 1,
                 )
                 update_nested_dict(self.query_params, json.loads(next_page_query_obj))
 

@@ -1104,7 +1104,7 @@
       format: atom
       relation: intersects
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
       total_items_nb_key_path: '//os:totalResults/text()'
     discover_metadata:
       auto_discovery: true
