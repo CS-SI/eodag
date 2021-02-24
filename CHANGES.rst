@@ -5,6 +5,7 @@ Release history
 ++++++++++++++++++
 
 - Locations must now be passed to ``search()`` method as a dictionnary
+- New plugin AwsAuth, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
 - Metadata mapping update and uniformization, fixes `GH-154 <https://github.com/CS-SI/eodag/issues/154>`_
 - Raise a ValueError when a location search doesn't match any record and add a new ``locations``
   parameter to ``EODataAccessGateway.search``.

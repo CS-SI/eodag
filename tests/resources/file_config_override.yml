@@ -38,7 +38,7 @@ my_new_provider:
         base_uri: https://api.my_new_provider
         flatten_top_dirs: True
     auth:
-        type: OAuth
+        type: AwsAuth
         credentials:
           aws_access_key_id: access-key-id
           aws_secret_access_key: secret-access-key

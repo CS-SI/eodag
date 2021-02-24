@@ -23,7 +23,8 @@ import shutil
 
 import boto3
 import requests
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ProfileNotFound
+from botocore.handlers import disable_signing
 from lxml import etree
 from tqdm import tqdm
 
@@ -224,30 +225,20 @@ class AwsDownload(Download):
             unit="parts",
             desc="Downloading product parts",
         ) as bar:
-
+            # store already auth buckets in dict(bucket_name=objects,)
+            authenticated_objects = {}
             for bucket_name, prefix in bucket_names_and_prefixes:
                 try:
-                    # connect to aws s3
-                    access_key, access_secret = auth
-                    s3 = boto3.resource(
-                        "s3",
-                        aws_access_key_id=access_key,
-                        aws_secret_access_key=access_secret,
-                    )
-                    bucket = s3.Bucket(bucket_name)
+                    if bucket_name not in authenticated_objects:
+                        # connect to aws s3 and get bucket auhenticated objects
+                        s3_objects = self.get_authenticated_objects(bucket_name, auth)
+                        authenticated_objects[bucket_name] = s3_objects
+                    else:
+                        s3_objects = authenticated_objects[bucket_name]
 
-                    total_size = sum(
-                        [
-                            p.size
-                            for p in bucket.objects.filter(
-                                Prefix=prefix, RequestPayer="requester"
-                            )
-                        ]
-                    )
+                    total_size = sum([p.size for p in s3_objects.filter(Prefix=prefix)])
                     progress_callback.max_size = total_size
-                    for product_chunk in bucket.objects.filter(
-                        Prefix=prefix, RequestPayer="requester"
-                    ):
+                    for product_chunk in s3_objects.filter(Prefix=prefix,):
                         chunck_rel_path = self.get_chunck_dest_path(
                             product,
                             product_chunk,
@@ -262,15 +253,22 @@ class AwsDownload(Download):
                             os.makedirs(chunck_abs_path_dir)
 
                         if not os.path.isfile(chunck_abs_path):
-                            bucket.download_file(
+                            product_chunk.Bucket().download_file(
                                 product_chunk.key,
                                 chunck_abs_path,
-                                ExtraArgs={"RequestPayer": "requester"},
+                                ExtraArgs=s3_objects._params,
                                 Callback=progress_callback,
                             )
+                except AuthenticationError as e:
+                    logger.warning("Unexpected error: %s" % e)
+                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 except ClientError as e:
                     err = e.response["Error"]
-                    auth_messages = ["InvalidAccessKeyId", "SignatureDoesNotMatch"]
+                    auth_messages = [
+                        "AccessDenied",
+                        "InvalidAccessKeyId",
+                        "SignatureDoesNotMatch",
+                    ]
                     if err["Code"] in auth_messages and "key" in err["Message"].lower():
                         raise AuthenticationError(
                             "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
@@ -303,6 +301,100 @@ class AwsDownload(Download):
         logger.debug("Download recorded in %s", record_filename)
 
         return product_local_path
+
+    def get_authenticated_objects(self, bucket_name, auth_dict):
+        """Get boto3 authenticated objects for the given bucket using
+        the most adapted auth strategy
+
+        :param bucket_name: bucket containg objects
+        :type bucket_name: str
+        :param auth_dict: dictionnary containing authentication keys
+        :type auth_dict: dict
+        :return: boto3 authenticated objects
+        :rtype: :class:`~boto3.resources.collection.s3.Bucket.objectsCollection`
+        """
+        for try_auth_method in [
+            self._get_authenticated_objects_unsigned,
+            self._get_authenticated_objects_from_auth_profile,
+            self._get_authenticated_objects_from_auth_keys,
+            self._get_authenticated_objects_from_env,
+        ]:
+            try:
+                s3_objects = try_auth_method(bucket_name, auth_dict)
+                if s3_objects:
+                    logger.debug("Auth using %s succeeded", try_auth_method.__name__)
+                    return s3_objects
+            except ClientError as e:
+                if e.response.get("Error", {}).get("Code", {}) in [
+                    "AccessDenied",
+                    "InvalidAccessKeyId",
+                    "SignatureDoesNotMatch",
+                ]:
+                    pass
+                else:
+                    raise e
+            except ProfileNotFound:
+                pass
+            logger.debug("Auth using %s failed", try_auth_method.__name__)
+
+        raise AuthenticationError(
+            "Unable do authenticate on s3://%s using any available credendials configuration"
+            % bucket_name
+        )
+
+    def _get_authenticated_objects_unsigned(self, bucket_name, auth_dict):
+        """Auth strategy using no-sign-request"""
+
+        s3_resource = boto3.resource("s3")
+        s3_resource.meta.client.meta.events.register(
+            "choose-signer.s3.*", disable_signing
+        )
+        objects = s3_resource.Bucket(bucket_name).objects
+        list(objects.limit(1))
+        return objects
+
+    def _get_authenticated_objects_from_auth_profile(self, bucket_name, auth_dict):
+        """Auth strategy using RequestPayer=requester and ``aws_profile`` from provided credentials"""
+
+        if "profile_name" in auth_dict.keys():
+            s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
+            s3_resource = s3_session.resource("s3")
+            objects = s3_resource.Bucket(bucket_name).objects.filter(
+                RequestPayer="requester"
+            )
+            list(objects.limit(1))
+            return objects
+        else:
+            return None
+
+    def _get_authenticated_objects_from_auth_keys(self, bucket_name, auth_dict):
+        """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
+        from provided credentials"""
+
+        if all(k in auth_dict for k in ("aws_access_key_id", "aws_secret_access_key")):
+            s3_session = boto3.session.Session(
+                aws_access_key_id=auth_dict["aws_access_key_id"],
+                aws_secret_access_key=auth_dict["aws_secret_access_key"],
+            )
+            s3_resource = s3_session.resource("s3")
+            objects = s3_resource.Bucket(bucket_name).objects.filter(
+                RequestPayer="requester"
+            )
+            list(objects.limit(1))
+            return objects
+        else:
+            return None
+
+    def _get_authenticated_objects_from_env(self, bucket_name, auth_dict):
+        """Auth strategy using RequestPayer=requester and current environment"""
+
+        s3_session = boto3.session.Session()
+        s3_resource = s3_session.resource("s3")
+        objects = s3_resource.Bucket(bucket_name).objects.filter(
+            RequestPayer="requester"
+        )
+        list(objects.limit(1))
+        return objects
 
     def get_bucket_name_and_prefix(self, product, url=None):
         """Extract bucket name and prefix from product URL

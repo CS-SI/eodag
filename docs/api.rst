@@ -239,6 +239,10 @@ Authentication Plugins
    :show-inheritance:
    :undoc-members:
 
+.. autoclass:: eodag.plugins.authentication.aws_auth.AwsAuth
+   :show-inheritance:
+   :undoc-members:
+
 .. autoclass:: eodag.plugins.authentication.oauth.OAuth
    :show-inheritance:
    :undoc-members:

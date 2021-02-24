@@ -93,6 +93,7 @@ setup(
         "eodag.plugins.auth": [
             "GenericAuth = eodag.plugins.authentication.generic:GenericAuth",
             "HTTPHeaderAuth = eodag.plugins.authentication.header:HTTPHeaderAuth",
+            "AwsAuth = eodag.plugins.authentication.aws_auth:AwsAuth",
             "OAuth = eodag.plugins.authentication.oauth:OAuth",
             "TokenAuth = eodag.plugins.authentication.token:TokenAuth",
             "OIDCAuthorizationCodeFlowAuth = eodag.plugins.authentication.openid_connect:OIDCAuthorizationCodeFlowAuth",  # noqa

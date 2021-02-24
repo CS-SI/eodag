@@ -488,7 +488,7 @@
         complementary_url_key:
           - productPath
   auth: !plugin
-    type: OAuth
+    type: AwsAuth
 
 ---
 !provider
@@ -1481,4 +1481,4 @@
     base_uri: https://eod-catalog-svc-prod.astraea.earth
     flatten_top_dirs: True
   auth: !plugin
-    type: OAuth
+    type: AwsAuth
