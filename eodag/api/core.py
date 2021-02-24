@@ -363,9 +363,23 @@ class EODataAccessGateway(object):
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
 
-    def available_providers(self):
-        """Gives the list of the available providers"""
-        return sorted(tuple(self.providers_config.keys()))
+    def available_providers(self, product_type=None):
+        """Gives the sorted list of the available providers
+
+        :param product_type: (optional) only list providers configured for this product_type
+        :type product_type: str
+        :returns: the sorted list of the available providers
+        :rtype: list
+        """
+
+        if product_type:
+            return sorted(
+                k
+                for k, v in self.providers_config.items()
+                if product_type in getattr(v, "products", {}).keys()
+            )
+        else:
+            return sorted(tuple(self.providers_config.keys()))
 
     def guess_product_type(self, **kwargs):
         """Find the eodag product type code that best matches a set of search params
