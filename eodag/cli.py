@@ -156,13 +156,13 @@ def version():
     "-s",
     "--start",
     type=click.DateTime(),
-    help="Maximum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
+    help="Start sensing UTC time of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
 )
 @click.option(
     "-e",
     "--end",
     type=click.DateTime(),
-    help="Minimum age of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
+    help="End sensing UTC time of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
 )
 @click.option(
     "-c",

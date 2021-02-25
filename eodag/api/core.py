@@ -465,9 +465,9 @@ class EODataAccessGateway(object):
         :param raise_errors:  When an error occurs when searching, if this is set to
                               True, the error is raised (default: False)
         :type raise_errors: bool
-        :param start: Start sensing time in iso format
+        :param start: Start sensing UTC time in iso format
         :type start: str
-        :param end: End sensing time in iso format
+        :param end: End sensing UTC time in iso format
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
@@ -493,19 +493,20 @@ class EODataAccessGateway(object):
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
 
         .. versionchanged::
-
            2.1.0
 
                 * A new parameter ``locations`` is added to be more explicit about
-                how to pass a location search (with one or more selections). It also
-                fixes an issue when a wrong location_name would be provided as kwargs
-                with no other geometry, resulting in a worldwide search.
+                  how to pass a location search (with one or more selections). It also
+                  fixes an issue when a wrong location_name would be provided as kwargs
+                  with no other geometry, resulting in a worldwide search.
 
+        .. versionchanged::
            2.0.0
 
                 * A location search based on a local Shapefile can be made through
-                kwargs with ``<location_name>="<attr_regex>"``.
+                  kwargs with ``<location_name>="<attr_regex>"``.
 
+        .. versionchanged::
            1.6
 
                 * Any search parameter supported by the provider can be passed as

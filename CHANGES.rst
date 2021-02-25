@@ -4,6 +4,7 @@ Release history
 2.1.0 (2021-xx-xx)
 ++++++++++++++++++
 
+- Start/end dates passed to sobloo are now in UTC, and make it clear that search dates must be in UTC
 - Locations must now be passed to ``search()`` method as a dictionnary
 - New plugin AwsAuth, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
 - Metadata mapping update and uniformization, fixes `GH-154 <https://github.com/CS-SI/eodag/issues/154>`_

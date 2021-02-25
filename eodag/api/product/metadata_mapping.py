@@ -117,7 +117,7 @@ def format_metadata(search_param, *args, **kwargs):
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
-        - ``to_timestamp_milliseconds``: converts a utc date string to a timestamp in
+        - ``utc_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
           milliseconds
         - ``to_wkt``: converts a geometry to its well known text representation
         - ``to_iso_utc_datetime_from_milliseconds``: converts a utc timestamp in given
@@ -183,11 +183,13 @@ def format_metadata(search_param, *args, **kwargs):
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
-        def convert_to_timestamp_milliseconds(value):
+        def convert_utc_to_timestamp_milliseconds(value):
             if len(value) == 10:
-                return int(1e3 * get_timestamp(value, date_format="%Y-%m-%d"))
+                return int(
+                    1e3 * get_timestamp(value, date_format="%Y-%m-%d", as_utc=True)
+                )
             else:
-                return int(1e3 * get_timestamp(value))
+                return int(1e3 * get_timestamp(value, as_utc=True))
 
         @staticmethod
         def convert_to_wkt_convex_hull(value):
