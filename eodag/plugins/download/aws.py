@@ -230,8 +230,34 @@ class AwsDownload(Download):
             for bucket_name, prefix in bucket_names_and_prefixes:
                 try:
                     if bucket_name not in authenticated_objects:
+                        # get Prefixes longest common base path
+                        common_prefix = ""
+                        prefix_split = prefix.split("/")
+                        prefixes_in_bucket = len(
+                            [
+                                p
+                                for b, p in bucket_names_and_prefixes
+                                if b == bucket_name
+                            ]
+                        )
+                        for i in range(1, len(prefix_split)):
+                            common_prefix = "/".join(prefix_split[0:i])
+                            if (
+                                len(
+                                    [
+                                        p
+                                        for b, p in bucket_names_and_prefixes
+                                        if b == bucket_name and common_prefix in p
+                                    ]
+                                )
+                                < prefixes_in_bucket
+                            ):
+                                common_prefix = "/".join(prefix_split[0 : i - 1])
+                                break
                         # connect to aws s3 and get bucket auhenticated objects
-                        s3_objects = self.get_authenticated_objects(bucket_name, auth)
+                        s3_objects = self.get_authenticated_objects(
+                            bucket_name, common_prefix, auth
+                        )
                         authenticated_objects[bucket_name] = s3_objects
                     else:
                         s3_objects = authenticated_objects[bucket_name]
@@ -302,12 +328,15 @@ class AwsDownload(Download):
 
         return product_local_path
 
-    def get_authenticated_objects(self, bucket_name, auth_dict):
+    def get_authenticated_objects(self, bucket_name, prefix, auth_dict):
         """Get boto3 authenticated objects for the given bucket using
         the most adapted auth strategy
 
         :param bucket_name: bucket containg objects
         :type bucket_name: str
+        :param prefix: prefix used to filter objects on auth try
+                       (not used to filter returned objects)
+        :type prefix: str
         :param auth_dict: dictionnary containing authentication keys
         :type auth_dict: dict
         :return: boto3 authenticated objects
@@ -320,7 +349,7 @@ class AwsDownload(Download):
             self._get_authenticated_objects_from_env,
         ]:
             try:
-                s3_objects = try_auth_method(bucket_name, auth_dict)
+                s3_objects = try_auth_method(bucket_name, prefix, auth_dict)
                 if s3_objects:
                     logger.debug("Auth using %s succeeded", try_auth_method.__name__)
                     return s3_objects
@@ -342,7 +371,7 @@ class AwsDownload(Download):
             % bucket_name
         )
 
-    def _get_authenticated_objects_unsigned(self, bucket_name, auth_dict):
+    def _get_authenticated_objects_unsigned(self, bucket_name, prefix, auth_dict):
         """Auth strategy using no-sign-request"""
 
         s3_resource = boto3.resource("s3")
@@ -350,10 +379,12 @@ class AwsDownload(Download):
             "choose-signer.s3.*", disable_signing
         )
         objects = s3_resource.Bucket(bucket_name).objects
-        list(objects.limit(1))
+        list(objects.filter(Prefix=prefix).limit(1))
         return objects
 
-    def _get_authenticated_objects_from_auth_profile(self, bucket_name, auth_dict):
+    def _get_authenticated_objects_from_auth_profile(
+        self, bucket_name, prefix, auth_dict
+    ):
         """Auth strategy using RequestPayer=requester and ``aws_profile`` from provided credentials"""
 
         if "profile_name" in auth_dict.keys():
@@ -362,12 +393,12 @@ class AwsDownload(Download):
             objects = s3_resource.Bucket(bucket_name).objects.filter(
                 RequestPayer="requester"
             )
-            list(objects.limit(1))
+            list(objects.filter(Prefix=prefix).limit(1))
             return objects
         else:
             return None
 
-    def _get_authenticated_objects_from_auth_keys(self, bucket_name, auth_dict):
+    def _get_authenticated_objects_from_auth_keys(self, bucket_name, prefix, auth_dict):
         """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
         from provided credentials"""
 
@@ -380,12 +411,12 @@ class AwsDownload(Download):
             objects = s3_resource.Bucket(bucket_name).objects.filter(
                 RequestPayer="requester"
             )
-            list(objects.limit(1))
+            list(objects.filter(Prefix=prefix).limit(1))
             return objects
         else:
             return None
 
-    def _get_authenticated_objects_from_env(self, bucket_name, auth_dict):
+    def _get_authenticated_objects_from_env(self, bucket_name, prefix, auth_dict):
         """Auth strategy using RequestPayer=requester and current environment"""
 
         s3_session = boto3.session.Session()
@@ -393,7 +424,7 @@ class AwsDownload(Download):
         objects = s3_resource.Bucket(bucket_name).objects.filter(
             RequestPayer="requester"
         )
-        list(objects.limit(1))
+        list(objects.filter(Prefix=prefix).limit(1))
         return objects
 
     def get_bucket_name_and_prefix(self, product, url=None):

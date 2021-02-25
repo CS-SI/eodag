@@ -64,6 +64,20 @@ AWSEOS_SEARCH_ARGS = [
     "2020-01-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
+ASTRAE_EOD_SEARCH_ARGS = [
+    "astraea_eod",
+    "S2_MSI_L1C",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+USGS_SATAPI_AWS_SEARCH_ARGS = [
+    "usgs_satapi_aws",
+    "LANDSAT_C2L1",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 CREODIAS_SEARCH_ARGS = [
     "creodias",
     "S2_MSI_L1C",
@@ -247,8 +261,8 @@ class TestEODagEndToEnd(EndToEndBase):
             )
         else:
             downloaded_size = os.stat(self.downloaded_file_path).st_size
-        # The partially downloaded file should be greater or equal to 10 KB
-        self.assertGreaterEqual(downloaded_size, 10 * 2 ** 10)
+        # The partially downloaded file should be greater or equal to 5 KB
+        self.assertGreaterEqual(downloaded_size, 5 * 2 ** 10)
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(*USGS_SEARCH_ARGS)
@@ -305,6 +319,16 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_aws_eos(self):
         product = self.execute_search(*AWSEOS_SEARCH_ARGS)
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_astraea_eod(self):
+        product = self.execute_search(*ASTRAE_EOD_SEARCH_ARGS)
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_usgs_satapi_aws(self):
+        product = self.execute_search(*USGS_SATAPI_AWS_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 

@@ -1482,3 +1482,49 @@
     flatten_top_dirs: True
   auth: !plugin
     type: AwsAuth
+
+---
+!provider
+  name: usgs_satapi_aws
+  priority: 0
+  roles:
+    - host
+  description: USGS Landsatlook SAT API
+  url: https://landsatlook.usgs.gov/sat-api/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://landsatlook.usgs.gov/sat-api/collections/{collection}/items
+    pagination:
+      total_items_nb_key_path: '$.meta.found'
+    metadata_mapping:
+      productType: '$.collection'
+      completionTimeFromAscendingNode:
+        - 'time={startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - '$.properties.end_datetime'
+      geometry:
+        - 'bbox=[{geometry.bounds#csv_list}]'
+        - '$.geometry'
+      assets: '{$.assets#recursive_sub_str(r"https?(.*)landsatlook.usgs.gov/data/",r"s3\1usgs-landsat/")}'
+  products:
+    LANDSAT_C2L1:
+      collection: landsat-c2l1
+    LANDSAT_C2L2_SR:
+      collection: landsat-c2l2-sr
+    LANDSAT_C2L2_ST:
+      collection: landsat-c2l2-st
+    LANDSAT_C2L2ALB_BT:
+      collection: landsat-c2l2alb-bt
+    LANDSAT_C2L2ALB_SR:
+      collection: landsat-c2l2alb-sr
+    LANDSAT_C2L2ALB_ST:
+      collection: landsat-c2l2alb-st
+    LANDSAT_C2L2ALB_TA:
+      collection: landsat-c2l2alb-ta
+    GENERIC_PRODUCT_TYPE:
+      collection: '{productType}'
+  download: !plugin
+    type: AwsDownload
+    base_uri: https://landsatlook.usgs.gov/sat-api/
+    flatten_top_dirs: True
+  auth: !plugin
+    type: AwsAuth

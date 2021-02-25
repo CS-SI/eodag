@@ -40,6 +40,13 @@ class TestCore(unittest.TestCase):
         "L8_REFLECTANCE": ["theia"],
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos", "astraea_eod"],
+        "LANDSAT_C2L1": ["usgs_satapi_aws"],
+        "LANDSAT_C2L2_SR": ["usgs_satapi_aws"],
+        "LANDSAT_C2L2_ST": ["usgs_satapi_aws"],
+        "LANDSAT_C2L2ALB_BT": ["usgs_satapi_aws"],
+        "LANDSAT_C2L2ALB_SR": ["usgs_satapi_aws"],
+        "LANDSAT_C2L2ALB_ST": ["usgs_satapi_aws"],
+        "LANDSAT_C2L2ALB_TA": ["usgs_satapi_aws"],
         "S1_SAR_GRD": [
             "peps",
             "sobloo",
@@ -115,6 +122,7 @@ class TestCore(unittest.TestCase):
             "mundi",
             "creodias",
             "astraea_eod",
+            "usgs_satapi_aws",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -128,6 +136,7 @@ class TestCore(unittest.TestCase):
         "wekeo",
         "aws_eos",
         "astraea_eod",
+        "usgs_satapi_aws",
     ]
 
     def setUp(self):

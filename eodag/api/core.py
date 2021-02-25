@@ -479,7 +479,7 @@ class EODataAccessGateway(object):
                       ``[lonmin, latmin, lonmax, latmax]``
                     * with a WKT str
 
-        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
+        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
         :param locations: Location filtering by name using locations configuration
                           ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
                           the geometry of the features having the property ISO3 starting with

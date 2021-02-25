@@ -86,6 +86,8 @@ There are currently 9 available providers implemented on eodag:
 
 * `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
 
+* `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_: USGS Landsatlook SAT API
+
 .. note::
 
     For developers, there are 2 ways for adding support for a new provider:
@@ -138,6 +140,7 @@ Create a configuration file containing your credentials for each provider.  You 
             credentials:
                 aws_access_key_id:
                 aws_secret_access_key:
+                aws_profile:
         download:
             outputs_prefix:
 

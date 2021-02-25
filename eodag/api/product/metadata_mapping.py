@@ -29,7 +29,7 @@ from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon
 
-from eodag.utils import get_timestamp
+from eodag.utils import get_timestamp, items_recursive_apply
 
 logger = logging.getLogger("eodag.api.product.metadata_mapping")
 
@@ -304,6 +304,15 @@ def format_metadata(search_param, *args, **kwargs):
             return string.replace(old, new)
 
         @staticmethod
+        def convert_recursive_sub_str(input_obj, args):
+            old, new = ast.literal_eval(args)
+            return items_recursive_apply(
+                input_obj,
+                lambda k, v, x, y: re.sub(x, y, v) if isinstance(v, str) else v,
+                **{"x": old, "y": new}
+            )
+
+        @staticmethod
         def convert_slice_str(string, args):
             cmin, cmax, cstep = [x.strip() for x in args.split(",")]
             return string[int(cmin) : int(cmax) : int(cstep)]
@@ -413,6 +422,12 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value}
                     )
+        # properties as python objects when possible (format_metadata returns only strings)
+        try:
+            properties[metadata] = ast.literal_eval(properties[metadata])
+        except Exception:
+            pass
+
     # Resolve templates
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)

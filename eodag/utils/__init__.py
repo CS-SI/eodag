@@ -445,6 +445,47 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
     return old_dict
 
 
+def items_recursive_apply(input_obj, apply_method, **apply_method_parameters):
+    """Recursive apply method to items contained in input object (dict or list)
+
+    >>> items_recursive_apply(
+    ...     {"foo": {"bar":"baz"}, "qux": ["a","b"]},
+    ...     lambda k,v,x: v.upper()+x, **{"x":"!"}
+    ... ) == {'foo': {'bar': 'BAZ!'}, 'qux': ['A!', 'B!']}
+    True
+    >>> items_recursive_apply(
+    ...     [{"foo": {"bar":"baz"}}, "qux"],
+    ...     lambda k,v,x: v.upper()+x,
+    ...     **{"x":"!"})
+    [{'foo': {'bar': 'BAZ!'}}, 'QUX!']
+    >>> items_recursive_apply(
+    ...     "foo",
+    ...     lambda k,v,x: v.upper()+x,
+    ...     **{"x":"!"})
+    'foo'
+
+    :param input_obj: input object (dict or list)
+    :type input_obj: Union[dict,list]
+    :param apply_method: method to be applied to dict elements
+    :type apply_method: :func:`apply_method`
+    :param apply_method_parameters: optional parameters passed to the method
+    :type apply_method_parameters: dict
+    :returns: updated object
+    :rtype: Union[dict,list]
+    """
+    if isinstance(input_obj, dict):
+        return dict_items_recursive_apply(
+            input_obj, apply_method, **apply_method_parameters
+        )
+    elif isinstance(input_obj, list):
+        return list_items_recursive_apply(
+            input_obj, apply_method, **apply_method_parameters
+        )
+    else:
+        logger.warning("Could not use items_recursive_apply on %s" % type(input_obj))
+        return input_obj
+
+
 def dict_items_recursive_apply(config_dict, apply_method, **apply_method_parameters):
     """Recursive apply method to dict elements
 
