@@ -154,7 +154,7 @@ class QueryStringSearch(Search):
         self.query_params = dict()
         self.query_string = ""
 
-    def query(self, items_per_page=None, page=None, *args, **kwargs):
+    def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
         if product_type == GENERIC_PRODUCT_TYPE:
@@ -162,7 +162,7 @@ class QueryStringSearch(Search):
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
             return [], 0
-        provider_product_type = self.map_product_type(product_type, *args, **kwargs)
+        provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = (
             provider_product_type
@@ -171,7 +171,7 @@ class QueryStringSearch(Search):
         )
         # Add to the query, the queryable parameters set in the provider product type definition
         self.product_type_def_params = self.get_product_type_def_params(
-            product_type, *args, **kwargs
+            product_type, **kwargs
         )
         # if product_type_def_params is set, remove product_type as it may conflict with this conf
         if self.product_type_def_params:
@@ -186,22 +186,19 @@ class QueryStringSearch(Search):
             }
         )
 
-        qp, qs = self.build_query_string(product_type, *args, **keywords)
+        qp, qs = self.build_query_string(product_type, **keywords)
 
         self.query_params = qp
         self.query_string = qs
         self.search_urls, total_items = self.collect_search_urls(
-            page=page, items_per_page=items_per_page, *args, **kwargs
+            page=page, items_per_page=items_per_page, count=count, **kwargs
         )
-        provider_results = self.do_search(
-            items_per_page=items_per_page, *args, **kwargs
-        )
-        eo_products = self.normalize_results(
-            provider_results, product_type, provider_product_type, *args, **kwargs
-        )
-        return eo_products, (total_items or len(eo_products))
+        provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
+        eo_products = self.normalize_results(provider_results, **kwargs)
+        total_items = len(eo_products) if total_items == 0 else total_items
+        return eo_products, total_items
 
-    def build_query_string(self, *args, **kwargs):
+    def build_query_string(self, product_type, **kwargs):
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
 
@@ -222,7 +219,7 @@ class QueryStringSearch(Search):
                 parts = provider_search_key.split("=")
                 if len(parts) == 1:
                     formatted_query_param = format_metadata(
-                        provider_search_key, *args, **kwargs
+                        provider_search_key, product_type, **kwargs
                     )
                     if "{{" in provider_search_key:
                         # json query string (for POST request)
@@ -234,7 +231,7 @@ class QueryStringSearch(Search):
                 else:
                     provider_search_key, provider_value = parts
                     query_params.setdefault(provider_search_key, []).append(
-                        format_metadata(provider_value, *args, **kwargs)
+                        format_metadata(provider_value, product_type, **kwargs)
                     )
             else:
                 query_params[provider_search_key] = user_input
@@ -350,11 +347,11 @@ class QueryStringSearch(Search):
                                 )
         return queryables
 
-    def collect_search_urls(self, page=None, items_per_page=None, *args, **kwargs):
+    def collect_search_urls(self, page=None, items_per_page=None, count=True, **kwargs):
         """Build paginated urls"""
         urls = []
-        total_results = 0
-        for collection in self.get_collections(*args, **kwargs):
+        total_results = 0 if count else None
+        for collection in self.get_collections(**kwargs):
             # skip empty collection if one is required in api_endpoint
             if "{collection}" in self.config.api_endpoint and not collection:
                 continue
@@ -362,30 +359,31 @@ class QueryStringSearch(Search):
                 collection=collection
             )
             if page is not None and items_per_page is not None:
-                count_endpoint = self.config.pagination.get(
-                    "count_endpoint", ""
-                ).format(collection=collection)
-                if count_endpoint:
-                    count_url = "{}?{}".format(count_endpoint, self.query_string)
-                    _total_results = self.count_hits(
-                        count_url, result_type=self.config.result_type
-                    )
-                else:
-                    # First do one request querying only one element (lightweight
-                    # request to schedule the pagination)
-                    next_url_tpl = self.config.pagination["next_page_url_tpl"]
-                    count_url = next_url_tpl.format(
-                        url=search_endpoint,
-                        search=self.query_string,
-                        items_per_page=1,
-                        page=1,
-                        skip=0,
-                        skip_base_1=1,
-                    )
-                    _total_results = self.count_hits(
-                        count_url, result_type=self.config.result_type
-                    )
-                total_results += _total_results or 0
+                if count:
+                    count_endpoint = self.config.pagination.get(
+                        "count_endpoint", ""
+                    ).format(collection=collection)
+                    if count_endpoint:
+                        count_url = "{}?{}".format(count_endpoint, self.query_string)
+                        _total_results = self.count_hits(
+                            count_url, result_type=self.config.result_type
+                        )
+                    else:
+                        # First do one request querying only one element (lightweight
+                        # request to schedule the pagination)
+                        next_url_tpl = self.config.pagination["next_page_url_tpl"]
+                        count_url = next_url_tpl.format(
+                            url=search_endpoint,
+                            search=self.query_string,
+                            items_per_page=1,
+                            page=1,
+                            skip=0,
+                            skip_base_1=1,
+                        )
+                        _total_results = self.count_hits(
+                            count_url, result_type=self.config.result_type
+                        )
+                    total_results += _total_results or 0
                 next_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=self.query_string,
@@ -399,7 +397,7 @@ class QueryStringSearch(Search):
             urls.append(next_url)
         return urls, total_results
 
-    def do_search(self, items_per_page=None, *args, **kwargs):
+    def do_search(self, items_per_page=None, **kwargs):
         """Perform the actual search request.
 
         If there is a specified number of items per page, return the results as soon
@@ -442,7 +440,7 @@ class QueryStringSearch(Search):
                 return results
         return results
 
-    def normalize_results(self, results, *args, **kwargs):
+    def normalize_results(self, results, **kwargs):
         """Build EOProducts from provider results"""
         logger.debug("Adapting plugin results to eodag product representation")
         products = []
@@ -459,7 +457,6 @@ class QueryStringSearch(Search):
                         "metadata_path", "null"
                     ),
                 ),
-                *args,
                 **kwargs
             )
             # use product_type_config as default properties
@@ -497,7 +494,7 @@ class QueryStringSearch(Search):
                 total_results = int(count_results)
         return total_results
 
-    def get_collections(self, *args, **kwargs):
+    def get_collections(self, **kwargs):
         """Get the collection to which the product belongs"""
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-
         # /asset_publisher/Ac0d/content/change-of
@@ -555,16 +552,16 @@ class QueryStringSearch(Search):
             )
         return collections
 
-    def map_product_type(self, product_type, *args, **kwargs):
+    def map_product_type(self, product_type, **kwargs):
         """Map the eodag product type to the provider product type"""
         if product_type is None:
             return
         logger.debug("Mapping eodag product type to provider product type")
         return self.config.products.get(product_type, {}).get(
-            "product_type", GENERIC_PRODUCT_TYPE
+            "productType", GENERIC_PRODUCT_TYPE
         )
 
-    def get_product_type_def_params(self, product_type, *args, **kwargs):
+    def get_product_type_def_params(self, product_type, **kwargs):
         """Get the provider product type definition parameters"""
         if product_type in self.config.products.keys():
             logger.debug(
@@ -642,7 +639,7 @@ class AwsSearch(QueryStringSearch):
     """A specialisation of RestoSearch that modifies the way the EOProducts are built
     from the search results"""
 
-    def normalize_results(self, results, *args, **kwargs):
+    def normalize_results(self, results, **kwargs):
         """Transform metadata from provider representation to eodag representation"""
         normalized = []
         logger.debug("Adapting plugin results to eodag product representation")
@@ -660,7 +657,7 @@ class AwsSearch(QueryStringSearch):
                 "s3://tiles/{ref[1]}{ref[2]}/{ref[3]}/{ref[4]}{ref[5]}/{year}/"
                 "{month}/{day}/0/"
             ).format(**locals())
-            normalized.append(EOProduct(self.provider, properties, *args, **kwargs))
+            normalized.append(EOProduct(self.provider, properties, **kwargs))
         return normalized
 
 
@@ -684,6 +681,7 @@ class ODataV4Search(QueryStringSearch):
             }
             metadata_url = self.get_metadata_search_url(entity)
             try:
+                logger.debug("Sending metadata request: %s", metadata_url)
                 response = requests.get(metadata_url)
                 response.raise_for_status()
             except requests.HTTPError:
@@ -714,8 +712,7 @@ class PostJsonSearch(QueryStringSearch):
         self.config.results_entry = "results"
 
     def update_metadata_mapping(self, metadata_mapping):
-        """Update plugin metadata_mapping with input metadata_mapping configuration
-        """
+        """Update plugin metadata_mapping with input metadata_mapping configuration"""
         self.config.metadata_mapping.update(metadata_mapping)
         for metadata in metadata_mapping:
             path = get_metadata_path_value(self.config.metadata_mapping[metadata])
@@ -746,10 +743,10 @@ class PostJsonSearch(QueryStringSearch):
                     else:
                         self.config.metadata_mapping[metadata] = (None, text)
 
-    def query(self, items_per_page=None, page=None, *args, **kwargs):
+    def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
-        provider_product_type = self.map_product_type(product_type, *args, **kwargs)
+        provider_product_type = self.map_product_type(product_type, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = (
             provider_product_type
@@ -759,7 +756,7 @@ class PostJsonSearch(QueryStringSearch):
 
         # provider product type specific conf
         self.product_type_def_params = self.get_product_type_def_params(
-            product_type, *args, **kwargs
+            product_type, **kwargs
         )
 
         # update config using provider product type definition metadata_mapping
@@ -769,7 +766,7 @@ class PostJsonSearch(QueryStringSearch):
         )
         if other_product_for_mapping:
             other_product_type_def_params = self.get_product_type_def_params(
-                other_product_for_mapping, *args, **kwargs
+                other_product_for_mapping, **kwargs
             )
             self.update_metadata_mapping(
                 other_product_type_def_params.get("metadata_mapping", {})
@@ -790,7 +787,7 @@ class PostJsonSearch(QueryStringSearch):
             }
         )
 
-        qp, _ = self.build_query_string(product_type, *args, **keywords)
+        qp, _ = self.build_query_string(product_type, **keywords)
 
         for query_param, query_value in qp.items():
             if (
@@ -818,7 +815,7 @@ class PostJsonSearch(QueryStringSearch):
                 self.count_hits = lambda *x, **y: 1
                 self._request = super(PostJsonSearch, self)._request
                 return super(PostJsonSearch, self).query(
-                    items_per_page=items_per_page, page=page, *args, **kwargs
+                    items_per_page=items_per_page, page=page, **kwargs
                 )
 
         # If we were not able to build query params but have search criteria, this means
@@ -828,66 +825,53 @@ class PostJsonSearch(QueryStringSearch):
             return [], 0
         self.query_params = qp
         self.search_urls, total_items = self.collect_search_urls(
-            page=page, items_per_page=items_per_page, *args, **kwargs
+            page=page, items_per_page=items_per_page, count=count, **kwargs
         )
-        provider_results = self.do_search(
-            items_per_page=items_per_page, *args, **kwargs
-        )
-        eo_products = self.normalize_results(
-            provider_results, product_type, *args, **kwargs
-        )
-        return eo_products, (total_items or len(eo_products))
+        provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
+        eo_products = self.normalize_results(provider_results, **kwargs)
+        total_items = len(eo_products) if total_items == 0 else total_items
+        return eo_products, total_items
 
-    def collect_search_urls(self, page=None, items_per_page=None, *args, **kwargs):
+    def collect_search_urls(self, page=None, items_per_page=None, count=True, **kwargs):
         """Adds pagination to query parameters, and auth to url"""
         urls = []
-        total_results = 0
-        for collection in self.get_collections(*args, **kwargs):
+        total_results = 0 if count else None
+        for collection in self.get_collections(**kwargs):
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 **dict(collection=collection, **kwargs["auth"].config.credentials)
             )
             if page is not None and items_per_page is not None:
-                count_endpoint = self.config.pagination.get(
-                    "count_endpoint", ""
-                ).format(
-                    **dict(collection=collection, **kwargs["auth"].config.credentials)
-                )
-                if count_endpoint:
-                    _total_results = self.count_hits(
-                        count_endpoint, result_type=self.config.result_type
+                if count:
+                    count_endpoint = self.config.pagination.get(
+                        "count_endpoint", ""
+                    ).format(
+                        **dict(
+                            collection=collection, **kwargs["auth"].config.credentials
+                        )
                     )
-                else:
-                    # First do one request querying only one element (lightweight
-                    # request to schedule the pagination)
-
-                    # update query params with pagination
-                    unmapped_pagination_params = dict(
-                        items_per_page=1, page=1, skip=0, skip_base_1=1
-                    )
-                    pagination_params = {}
-                    for (
-                        eodag_pagination_key,
-                        user_input,
-                    ) in unmapped_pagination_params.items():
-                        if user_input is not None:
-                            pagination_mapping = self.config.pagination.get(
-                                eodag_pagination_key, None
+                    if count_endpoint:
+                        _total_results = self.count_hits(
+                            count_endpoint, result_type=self.config.result_type
+                        )
+                    else:
+                        # Update the query params with a pagination requesting 1 product only
+                        # which is enough to obtain the count hits.
+                        count_pagination_params = dict(
+                            items_per_page=1, page=1, skip=0, skip_base_1=1
+                        )
+                        count_params = json.loads(
+                            self.config.pagination["next_page_query_obj"].format(
+                                **count_pagination_params
                             )
-                            if pagination_mapping is not None and isinstance(
-                                pagination_mapping, list
-                            ):
-                                pagination_key = pagination_mapping[0]
-                                if pagination_key is not None:
-                                    pagination_params[pagination_key] = user_input
-
-                    self.query_params.update(pagination_params)
-                    _total_results = self.count_hits(
-                        search_endpoint, result_type=self.config.result_type
-                    )
-                if getattr(self.config, "merge_responses", False):
-                    total_results = _total_results or 0
-                else:
-                    total_results += _total_results or 0
+                        )
+                        update_nested_dict(self.query_params, count_params)
+                        _total_results = self.count_hits(
+                            search_endpoint, result_type=self.config.result_type
+                        )
+                    if getattr(self.config, "merge_responses", False):
+                        total_results = _total_results or 0
+                    else:
+                        total_results += _total_results or 0
                 next_page_query_obj = self.config.pagination[
                     "next_page_query_obj"
                 ].format(
@@ -968,12 +952,12 @@ class StacSearch(QueryStringSearch):
         # collections = [c["id"] for c in response.json().get("collections", {}) if "id" in c.keys()]
         # for c in collections:
         #     if c not in str(self.config.products):
-        #         self.config.products[c] = {"product_type": c}
+        #         self.config.products[c] = {"productType": c}
 
-    def normalize_results(self, results, *args, **kwargs):
+    def normalize_results(self, results, **kwargs):
         """Build EOProducts from provider results"""
 
-        products = super(StacSearch, self).normalize_results(results, *args, **kwargs)
+        products = super(StacSearch, self).normalize_results(results, **kwargs)
 
         # move assets from properties to product's attr
         for product in products:

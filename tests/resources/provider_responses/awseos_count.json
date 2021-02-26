@@ -1,0 +1,113 @@
+{
+  "results": [
+    {
+      "sceneID": "S2A_tile_20200815_55PBS_0",
+      "satelliteName": "Sentinel-2A",
+      "sunElevation": 67.5880996572313,
+      "productPath": "products/2020/8/15/S2A_MSIL1C_20200815T005251_N0209_R002_T55PBS_20200815T023440",
+      "offsetXmlKey": "",
+      "cloudCoverage": 0.0,
+      "dataCoveragePercentage": 5.76,
+      "gridSquare": "BS",
+      "originalTileMeta": "http://sentinel-s2-l1c.s3.amazonaws.com/tiles/55/P/BS/2020/8/15/0/tileInfo.json",
+      "tileGeometry": {
+        "crs": {
+          "type": "name",
+          "properties": {
+            "name": "urn:ogc:def:crs:EPSG:8.9:4326"
+          }
+        },
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              144.20554290877752,
+              15.35960880080154
+            ],
+            [
+              144.21827918856238,
+              14.36805229433732
+            ],
+            [
+              145.23587862690346,
+              14.377826199027965
+            ],
+            [
+              145.22779384208908,
+              15.370088377261496
+            ],
+            [
+              144.20554290877752,
+              15.35960880080154
+            ]
+          ]
+        ]
+      },
+      "IndexingTime": "2020-08-15T13:00:36.645241",
+      "utmZone": 55,
+      "awsPath": "tiles/55/P/BS/2020/8/15/0",
+      "date": "2020-08-15",
+      "productMetaLink": "http://sentinel-s2-l1c.s3.amazonaws.com/products/2020/8/15/S2A_MSIL1C_20200815T005251_N0209_R002_T55PBS_20200815T023440/metadata.xml",
+      "productName": "S2A_MSIL1C_20200815T005251_N0209_R002_T55PBS_20200815T023440",
+      "dataGeometry": {
+        "crs": {
+          "type": "name",
+          "properties": {
+            "name": "urn:ogc:def:crs:EPSG:8.9:4326"
+          }
+        },
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              145.23016858375976,
+              15.085062647772945
+            ],
+            [
+              145.07126909596374,
+              14.37655077570332
+            ],
+            [
+              145.23586928501638,
+              14.37783516731116
+            ],
+            [
+              145.23016858375976,
+              15.085062647772945
+            ]
+          ]
+        ]
+      },
+      "timestamp": "2020-08-15T00:53:08.370Z",
+      "zenithAngle": 22.4119003427687,
+      "thumbnail": "http://sentinel-s2-l1c.s3.amazonaws.com/tiles/55/P/BS/2020/8/15/0/preview.jpg",
+      "awsPathL2A": "tiles/55/P/BS/2020/8/15/0",
+      "azimuthAngle": 89.3845100383855,
+      "processedL2A": true,
+      "tileOrigin": {
+        "crs": {
+          "type": "name",
+          "properties": {
+            "name": "urn:ogc:def:crs:EPSG:8.9:4326"
+          }
+        },
+        "type": "Point",
+        "coordinates": [
+          144.20554290877752,
+          15.35960880080154
+        ]
+      },
+      "originalSceneID": "S2A_OPER_MSI_L1C_DS_EPAE_20200815T023440_S20200815T005250_N02.09",
+      "tms": "https://gate.eos.com/api/render/S2/55/P/BS/2020/8/15/0/{band}/{z}/{x}/{y}",
+      "view_id": "S2/55/P/BS/2020/8/15/0",
+      "archivingTime": "2020-08-15",
+      "latitudeBand": "P"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "found": 44,
+    "limit": 1,
+    "name": "satellite-meta-service"
+  }
+}

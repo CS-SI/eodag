@@ -43,7 +43,7 @@ logger = logging.getLogger("eodag.plugins.apis.usgs")
 class UsgsApi(Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
 
-    def query(self, product_type=None, **kwargs):
+    def query(self, product_type=None, count=True, **kwargs):
         """Search for data on USGS catalogues
 
         .. versionchanged::
@@ -162,7 +162,8 @@ class UsgsApi(Api):
             )
             logger.debug("Skipping error: %s", e)
         api.logout()
-        return final, len(final)
+        total_results = len(final) if count else None
+        return final, total_results
 
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download data from USGS catalogues"""
