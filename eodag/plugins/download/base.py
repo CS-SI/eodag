@@ -23,10 +23,8 @@ import zipfile
 from datetime import datetime, timedelta
 from time import sleep
 
-from tqdm import tqdm
-
 from eodag.plugins.base import PluginTopic
-from eodag.utils import ProgressCallback, sanitize
+from eodag.utils import get_progress_callback, sanitize
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -199,15 +197,19 @@ class Download(PluginTopic):
             logger.info("Extraction activated")
             with zipfile.ZipFile(fs_path, "r") as zfile:
                 fileinfos = zfile.infolist()
-                with tqdm(
-                    fileinfos,
-                    unit="file",
-                    desc="Extracting files from {}".format(os.path.basename(fs_path)),
-                ) as progressbar:
-                    for fileinfo in progressbar:
+                with get_progress_callback() as bar:
+                    bar.max_size = len(fileinfos)
+                    bar.unit = "file"
+                    bar.desc = "Extracting files from {}".format(
+                        os.path.basename(fs_path)
+                    )
+                    bar.unit_scale = False
+                    bar.position = 2
+                    for fileinfo in fileinfos:
                         zfile.extract(
                             fileinfo, path=os.path.join(outputs_prefix, product_path),
                         )
+                        bar(1)
         # Handle depth levels in the product archive. For example, if the downloaded archive was
         # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
         # location will be /top_level/product_base_dir.
@@ -244,17 +246,19 @@ class Download(PluginTopic):
         for product in products:
             product.next_try = start_time
 
-        with tqdm(
-            total=len(products), unit="product", desc="Downloading products"
-        ) as bar:
+        with get_progress_callback() as bar:
+            bar.max_size = nb_products
+            bar.unit = "product"
+            bar.desc = "Downloaded products"
+            bar.unit_scale = False
+            bar(0)
+
             while "Loop until all products are download or timeout is reached":
                 # try downloading each product before retry
                 for idx, product in enumerate(products):
                     if datetime.now() >= product.next_try:
                         products[idx].next_try += timedelta(minutes=wait)
                         try:
-                            if progress_callback is None:
-                                progress_callback = ProgressCallback()
                             if product.downloader is None:
                                 raise RuntimeError(
                                     "EO product is unable to download itself due to lacking of a "
@@ -284,7 +288,7 @@ class Download(PluginTopic):
 
                             # product downloaded, to not retry it
                             products.remove(product)
-                            bar.update(1)
+                            bar(1)
 
                             # reset stop time for next product
                             stop_time = datetime.now() + timedelta(minutes=timeout)
@@ -351,5 +355,8 @@ class Download(PluginTopic):
                     break
                 elif len(products) == 0:
                     break
+
+        if hasattr(progress_callback, "pb") and hasattr(progress_callback.pb, "close"):
+            progress_callback.pb.close()
 
         return paths

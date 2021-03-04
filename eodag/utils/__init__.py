@@ -44,6 +44,8 @@ from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
 from unidecode import unidecode
 
+from eodag.utils.notebook import check_ipython
+
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
     parse_qs,
@@ -320,6 +322,10 @@ class ProgressCallback(object):
     def __init__(self, max_size=None):
         self.pb = None
         self.max_size = max_size
+        self.unit = "B"
+        self.unit_scale = True
+        self.desc = ""
+        self.position = 0
 
     def __call__(self, current_size, max_size=None):
         """Update the progress bar.
@@ -332,8 +338,33 @@ class ProgressCallback(object):
         if max_size is not None:
             self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm(total=self.max_size, unit="B", unit_scale=True)
+            self.pb = tqdm(
+                total=self.max_size,
+                unit=self.unit,
+                unit_scale=self.unit_scale,
+                desc=self.desc,
+                position=self.position,
+                dynamic_ncols=True,
+            )
         self.pb.update(current_size)
+
+    def reset(self):
+        """Reset progress bar"""
+        if hasattr(self.pb, "reset"):
+            self.pb.reset(self.max_size)
+            self.pb.total = self.max_size
+            self.pb.unit = self.unit
+            self.pb.unit_scale = self.unit_scale
+            self.pb.desc = self.desc
+            self.pb.position = self.position
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        if hasattr(self.pb, "close"):
+            self.pb.close()
+        return False
 
 
 class NotebookProgressCallback(ProgressCallback):
@@ -344,8 +375,24 @@ class NotebookProgressCallback(ProgressCallback):
         if max_size is not None:
             self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm_notebook(total=self.max_size, unit="B", unit_scale=True)
+            self.pb = tqdm_notebook(
+                total=self.max_size,
+                unit=self.unit,
+                unit_scale=self.unit_scale,
+                desc=self.desc,
+                position=self.position,
+                dynamic_ncols=True,
+            )
         self.pb.update(current_size)
+
+
+def get_progress_callback():
+    """Get progress_callback"""
+
+    if check_ipython():
+        return NotebookProgressCallback()
+    else:
+        return ProgressCallback()
 
 
 def repeatfunc(func, n, *args):

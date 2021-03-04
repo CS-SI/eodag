@@ -859,6 +859,11 @@ class EODataAccessGateway(object):
                 timeout=timeout,
                 **kwargs
             )
+            # close progress_bar when finished
+            if hasattr(progress_callback, "pb") and hasattr(
+                progress_callback.pb, "close"
+            ):
+                progress_callback.pb.close()
         else:
             logger.info("Empty search result, nothing to be downloaded !")
         return paths
@@ -1038,9 +1043,14 @@ class EODataAccessGateway(object):
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )
-        return product.download(
+        path = product.download(
             progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
         )
+        # close progress_bar when finished
+        if hasattr(progress_callback, "pb") and hasattr(progress_callback.pb, "close"):
+            progress_callback.pb.close()
+
+        return path
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration

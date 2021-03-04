@@ -32,6 +32,7 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
+from eodag.utils import get_progress_callback
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -104,8 +105,13 @@ class HTTPDownload(Download):
         product.next_try = start_time
         retry_count = 0
         not_available_info = "The product could not be downloaded"
-        # another output for notbooks
+        # another output for notebooks
         nb_info = NotebookWidgets()
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = get_progress_callback()
+        progress_callback.desc = product.properties.get("id", "")
+        progress_callback.position = 1
 
         while "Loop until products download succeeds or timeout is reached":
 

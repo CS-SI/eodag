@@ -442,7 +442,11 @@ class QueryStringSearch(Search):
 
     def normalize_results(self, results, **kwargs):
         """Build EOProducts from provider results"""
-        logger.debug("Adapting plugin results to eodag product representation")
+        normalize_remaining_count = len(results)
+        logger.debug(
+            "Adapting %s plugin results to eodag product representation"
+            % normalize_remaining_count
+        )
         products = []
         for result in results:
             product = EOProduct(
