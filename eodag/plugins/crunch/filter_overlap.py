@@ -39,6 +39,7 @@ class FilterOverlap(Crunch):
 
             - `minimum_overlap` : minimal overlap percentage
             - `contains` : True if product geometry contains the search area
+            - `intersects` : True if product geometry intersects the search area
             - `within` : True if product geometry is within the search area
 
         These configuration parameters are mutually exclusive.
@@ -65,16 +66,23 @@ class FilterOverlap(Crunch):
             return products
         minimum_overlap = float(self.config.get("minimum_overlap", "0"))
         contains = self.config.get("contains", False)
+        intersects = self.config.get("intersects", False)
         within = self.config.get("within", False)
 
-        if contains and within:
-            logger.warning("contains and within parameters are mutually exclusive")
-            return products
-        elif minimum_overlap > 0 and minimum_overlap < 100 and (contains or within):
+        if contains and (within or intersects) or (within and intersects):
             logger.warning(
-                "minimum_overlap will be ignored because of contains/within usage"
+                "contains, intersects and within parameters are mutually exclusive"
             )
-        elif not contains and not within:
+            return products
+        elif (
+            minimum_overlap > 0
+            and minimum_overlap < 100
+            and (contains or within or intersects)
+        ):
+            logger.warning(
+                "minimum_overlap will be ignored because of contains/intersects/within usage"
+            )
+        elif not contains and not within and not intersects:
             logger.debug("Minimum overlap is: {} %".format(minimum_overlap))
 
         logger.debug("Initial requested extent area: %s", search_geom.area)
@@ -111,12 +119,14 @@ class FilterOverlap(Crunch):
                         product_geometry = product.geometry
                         intersection = search_geom.intersection(product_geometry)
 
-                if (contains and product_geometry.contains(search_geom)) or (
-                    within and product_geometry.within(search_geom)
+                if (
+                    (contains and product_geometry.contains(search_geom))
+                    or (within and product_geometry.within(search_geom))
+                    or (intersects and product_geometry.intersects(search_geom))
                 ):
                     add_to_filtered(product)
                     continue
-                elif contains or within:
+                elif contains or within or intersects:
                     continue
 
                 ipos = (intersection.area / search_geom.area) * 100
