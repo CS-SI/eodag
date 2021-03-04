@@ -228,11 +228,7 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         dl_process.start()
         try:
-            # It is assumed that after 5 seconds, we should have already get at least 10
-            # Kilobytes of data from provider
-            # Consider changing this to fit a lower internet bandwidth
-            dl_process.join(timeout=5)
-            # added this timeout loop, to handle long download start times
+            # timeout loop, to handle long download start times
             max_wait_time = timeout_sec
             while (
                 dl_process.is_alive()
@@ -330,7 +326,7 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_end_to_end_search_download_usgs_satapi_aws(self):
         product = self.execute_search(*USGS_SATAPI_AWS_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
+        self.execute_download(product, expected_filename, wait_sec=15)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
@@ -400,6 +396,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             os.environ[
                 "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
             ] = "badsecret"
+            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_PROFILE"] = "badsecret"
 
             eodag = EODataAccessGateway(
                 user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
@@ -420,6 +417,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         finally:
             os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID")
             os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY")
+            os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_PROFILE")
 
     def test_end_to_end_wrong_credentials_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)

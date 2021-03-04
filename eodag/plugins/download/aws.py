@@ -26,11 +26,10 @@ import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
-from tqdm import tqdm
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_jsonpath, properties_from_json
 from eodag.plugins.download.base import Download
-from eodag.utils import urlparse
+from eodag.utils import get_progress_callback, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
@@ -220,93 +219,131 @@ class AwsDownload(Download):
         if not os.path.isdir(product_local_path):
             os.makedirs(product_local_path)
 
-        with tqdm(
-            total=len(bucket_names_and_prefixes),
-            unit="parts",
-            desc="Downloading product parts",
-        ) as bar:
-            # store already auth buckets in dict(bucket_name=objects,)
-            authenticated_objects = {}
-            for bucket_name, prefix in bucket_names_and_prefixes:
-                try:
-                    if bucket_name not in authenticated_objects:
-                        # get Prefixes longest common base path
-                        common_prefix = ""
-                        prefix_split = prefix.split("/")
-                        prefixes_in_bucket = len(
-                            [
-                                p
-                                for b, p in bucket_names_and_prefixes
-                                if b == bucket_name
-                            ]
-                        )
-                        for i in range(1, len(prefix_split)):
-                            common_prefix = "/".join(prefix_split[0:i])
-                            if (
-                                len(
-                                    [
-                                        p
-                                        for b, p in bucket_names_and_prefixes
-                                        if b == bucket_name and common_prefix in p
-                                    ]
-                                )
-                                < prefixes_in_bucket
-                            ):
-                                common_prefix = "/".join(prefix_split[0 : i - 1])
-                                break
-                        # connect to aws s3 and get bucket auhenticated objects
-                        s3_objects = self.get_authenticated_objects(
-                            bucket_name, common_prefix, auth
-                        )
-                        authenticated_objects[bucket_name] = s3_objects
-                    else:
-                        s3_objects = authenticated_objects[bucket_name]
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = get_progress_callback()
+        progress_callback.desc = product.properties.get("id", "")
+        progress_callback.position = 1
 
-                    total_size = sum([p.size for p in s3_objects.filter(Prefix=prefix)])
-                    progress_callback.max_size = total_size
-                    for product_chunk in s3_objects.filter(Prefix=prefix,):
-                        chunck_rel_path = self.get_chunck_dest_path(
-                            product,
-                            product_chunk,
-                            build_safe=build_safe,
-                            dir_prefix=prefix,
-                        )
-                        chunck_abs_path = os.path.join(
-                            product_local_path, chunck_rel_path
-                        )
-                        chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
-                        if not os.path.isdir(chunck_abs_path_dir):
-                            os.makedirs(chunck_abs_path_dir)
+        # authenticate & get product size
+        authenticated_objects = {}
+        total_size = 0
+        auth_error_messages = set()
+        for idx, pack in enumerate(bucket_names_and_prefixes):
+            try:
+                bucket_name, prefix = pack
+                if bucket_name not in authenticated_objects:
+                    # get Prefixes longest common base path
+                    common_prefix = ""
+                    prefix_split = prefix.split("/")
+                    prefixes_in_bucket = len(
+                        [p for b, p in bucket_names_and_prefixes if b == bucket_name]
+                    )
+                    for i in range(1, len(prefix_split)):
+                        common_prefix = "/".join(prefix_split[0:i])
+                        if (
+                            len(
+                                [
+                                    p
+                                    for b, p in bucket_names_and_prefixes
+                                    if b == bucket_name and common_prefix in p
+                                ]
+                            )
+                            < prefixes_in_bucket
+                        ):
+                            common_prefix = "/".join(prefix_split[0 : i - 1])
+                            break
+                    # connect to aws s3 and get bucket auhenticated objects
+                    s3_objects = self.get_authenticated_objects(
+                        bucket_name, common_prefix, auth
+                    )
+                    authenticated_objects[bucket_name] = s3_objects
+                else:
+                    s3_objects = authenticated_objects[bucket_name]
 
-                        if not os.path.isfile(chunck_abs_path):
-                            product_chunk.Bucket().download_file(
-                                product_chunk.key,
-                                chunck_abs_path,
-                                ExtraArgs=s3_objects._params,
-                                Callback=progress_callback,
-                            )
-                except AuthenticationError as e:
-                    logger.warning("Unexpected error: %s" % e)
-                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                except ClientError as e:
-                    err = e.response["Error"]
-                    auth_messages = [
-                        "AccessDenied",
-                        "InvalidAccessKeyId",
-                        "SignatureDoesNotMatch",
-                    ]
-                    if err["Code"] in auth_messages and "key" in err["Message"].lower():
-                        raise AuthenticationError(
-                            "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
-                                e.response["ResponseMetadata"]["HTTPStatusCode"],
-                                err["Code"],
-                                err["Message"],
-                                self.provider,
-                            )
+                total_size += sum([p.size for p in s3_objects.filter(Prefix=prefix)])
+
+            except AuthenticationError as e:
+                logger.warning("Unexpected error: %s" % e)
+                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+                auth_error_messages.add(str(e))
+            except ClientError as e:
+                err = e.response["Error"]
+                auth_messages = [
+                    "AccessDenied",
+                    "InvalidAccessKeyId",
+                    "SignatureDoesNotMatch",
+                ]
+                if err["Code"] in auth_messages and "key" in err["Message"].lower():
+                    raise AuthenticationError(
+                        "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                            e.response["ResponseMetadata"]["HTTPStatusCode"],
+                            err["Code"],
+                            err["Message"],
+                            self.provider,
                         )
-                    logger.warning("Unexpected error: %s" % e)
-                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                bar.update(1)
+                    )
+                logger.warning("Unexpected error: %s" % e)
+                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+                auth_error_messages.add(str(e))
+
+        # could not auth on any bucket
+        if not authenticated_objects:
+            raise AuthenticationError(", ".join(auth_error_messages))
+
+        # bucket_names_and_prefixes with unauthenticated items filtered out
+        auth_bucket_names_and_prefixes = [
+            p for p in bucket_names_and_prefixes if p[0] in authenticated_objects.keys()
+        ]
+
+        # download
+        progress_callback.max_size = total_size
+        progress_callback.reset()
+        for bucket_name, prefix in auth_bucket_names_and_prefixes:
+            try:
+                s3_objects = authenticated_objects[bucket_name]
+
+                for product_chunk in s3_objects.filter(Prefix=prefix,):
+                    chunck_rel_path = self.get_chunck_dest_path(
+                        product,
+                        product_chunk,
+                        build_safe=build_safe,
+                        dir_prefix=prefix,
+                    )
+                    chunck_abs_path = os.path.join(product_local_path, chunck_rel_path)
+                    chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
+                    if not os.path.isdir(chunck_abs_path_dir):
+                        os.makedirs(chunck_abs_path_dir)
+
+                    if not os.path.isfile(chunck_abs_path):
+                        product_chunk.Bucket().download_file(
+                            product_chunk.key,
+                            chunck_abs_path,
+                            ExtraArgs=getattr(s3_objects, "_params", {}),
+                            Callback=progress_callback,
+                        )
+
+            except AuthenticationError as e:
+                logger.warning("Unexpected error: %s" % e)
+                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+            except ClientError as e:
+                err = e.response["Error"]
+                auth_messages = [
+                    "AccessDenied",
+                    "InvalidAccessKeyId",
+                    "SignatureDoesNotMatch",
+                ]
+                if err["Code"] in auth_messages and "key" in err["Message"].lower():
+                    raise AuthenticationError(
+                        "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                            e.response["ResponseMetadata"]["HTTPStatusCode"],
+                            err["Code"],
+                            err["Message"],
+                            self.provider,
+                        )
+                    )
+                logger.warning("Unexpected error: %s" % e)
+                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
 
         # finalize safe product
         if build_safe and "S2_MSI" in product.product_type:
@@ -342,12 +379,17 @@ class AwsDownload(Download):
         :return: boto3 authenticated objects
         :rtype: :class:`~boto3.resources.collection.s3.Bucket.objectsCollection`
         """
-        for try_auth_method in [
+        auth_methods = [
             self._get_authenticated_objects_unsigned,
             self._get_authenticated_objects_from_auth_profile,
             self._get_authenticated_objects_from_auth_keys,
             self._get_authenticated_objects_from_env,
-        ]:
+        ]
+        # skip _get_authenticated_objects_from_env if credentials were filled in eodag conf
+        if auth_dict:
+            del auth_methods[-1]
+
+        for try_auth_method in auth_methods:
             try:
                 s3_objects = try_auth_method(bucket_name, prefix, auth_dict)
                 if s3_objects:
@@ -699,6 +741,6 @@ class AwsDownload(Download):
         """
         download_all using parent (base plugin) method
         """
-        super(AwsDownload, self).download_all(
+        return super(AwsDownload, self).download_all(
             products, auth=auth, progress_callback=progress_callback, **kwargs
         )
