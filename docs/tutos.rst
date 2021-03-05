@@ -32,6 +32,7 @@ This first series of tutorials gradually introduces you to the various capabilit
    tutorials/tuto_search_area.nblink
    tutorials/tuto_stac_client.nblink
    tutorials/tuto_bandmath.nblink
+   tutorials/tuto_cop_dem.nblink
 
 This second series of tutorials shows how to include `eodag` in more involved scenarios that post-process EO products:
 
@@ -54,6 +55,8 @@ link (only for those that don't require any additional software) to run them dir
     * :download:`tuto_stac_client.ipynb <../examples/tuto_stac_client.ipynb>` :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_stac_client.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 
     * :download:`tuto_bandmath.ipynb <../examples/tuto_bandmath.ipynb>` :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_bandmath.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
+
+    * :download:`tuto_cop_dem.ipynb <../examples/tuto_cop_dem.ipynb>` :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_cop_dem.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 
     * :download:`tuto_burnt_areas_gpt.ipynb <../examples/tuto_burnt_areas_gpt.ipynb>`
 
