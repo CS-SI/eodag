@@ -42,7 +42,6 @@ from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
-from unidecode import unidecode
 
 from eodag.utils.notebook import check_ipython
 
@@ -173,7 +172,7 @@ def sanitize(value):
     'replace_ponctuation_signs_byunderscorekeeping-hyphen.dot_and_underscore'
     """
     # remove accents
-    rv = unidecode(value)
+    rv = strip_accents(value)
     # replace punctuation signs and spaces by underscore
     # keep hyphen, dot and underscore from punctuation
     tobereplaced = re.sub(r"[-_.]", "", string.punctuation)
@@ -182,6 +181,22 @@ def sanitize(value):
 
     rv = re.sub(r"[" + tobereplaced + r"]+", "_", rv)
     return str(rv)
+
+
+def strip_accents(s):
+    """Strip accents of a string.
+
+    >>> strip_accents('productName')
+    'productName'
+    >>> strip_accents('génèse')
+    'genese'
+    >>> strip_accents('preserve-punct-special-chars:;,?!§%$£œ')
+    'preserve-punct-special-chars:;,?!§%$£œ'
+    """
+    # Mn stands for a nonspacing combining mark (e.g. '́')
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
+    )
 
 
 def mutate_dict_in_place(func, mapping):
@@ -785,3 +800,9 @@ class MockResponse(object):
     def json(self):
         """Return json data"""
         return self.json_data
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()

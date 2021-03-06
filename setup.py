@@ -58,7 +58,6 @@ setup(
         "lxml",
         "flask >= 1.0.2",
         "markdown >= 3.0.1",
-        "unidecode",
         "whoosh",
         "pystac",
     ],
