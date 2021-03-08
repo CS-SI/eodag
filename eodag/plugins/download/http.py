@@ -299,6 +299,7 @@ class HTTPDownload(Download):
         )
         progress_callback.max_size = total_size
         progress_callback.reset()
+        error_messages = set()
 
         for asset_url in assets_urls:
 
@@ -327,6 +328,7 @@ class HTTPDownload(Download):
                     else:
                         logger.warning("Unexpected error: %s" % e)
                         logger.warning("Skipping %s" % asset_url)
+                    error_messages.add(str(e))
                 else:
                     asset_rel_path = (
                         asset_url.replace(product.location, "")
@@ -344,6 +346,10 @@ class HTTPDownload(Download):
                                 if chunk:
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
+
+        # could not download any file
+        if len(os.listdir(fs_dir_path)) == 0:
+            raise HTTPError(", ".join(error_messages))
 
         # flatten directory structure
         if flatten_top_dirs:

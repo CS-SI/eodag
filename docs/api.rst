@@ -180,6 +180,10 @@ Search Plugins
    :show-inheritance:
    :undoc-members:
 
+.. autoclass:: eodag.plugins.search.static_stac_search.StaticStacSearch
+   :show-inheritance:
+   :undoc-members:
+
 .. module:: eodag.plugins.download
 
 Download Plugins

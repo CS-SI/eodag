@@ -4,12 +4,16 @@ Release history
 2.1.0 (2021-xx-xx)
 ++++++++++++++++++
 
+- New search plugin ``StaticStacSearch`` and updated
+  `STAC client tutorial <https://eodag.readthedocs.io/en/latest/tutorials/tuto_stac_client.html>`_
+- Updated ``HTTPDownload`` plugin, handling products with multiple assets
+- New plugin ``AwsAuth``, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
+- New tutorial for `Copernicus DEM<https://eodag.readthedocs.io/en/latest/tutorials/tuto_cop_dem.html>`_
 - Remove ``unidecode`` dependency
 - Start/end dates passed to sobloo are now in UTC, and make it clear that search dates must be in UTC
 - Locations must now be passed to ``search()`` method as a dictionnary
-- New plugin AwsAuth, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
 - Metadata mapping update and uniformization, fixes `GH-154 <https://github.com/CS-SI/eodag/issues/154>`_
-- Raise a ValueError when a location search doesn't match any record and add a new ``locations``
+- Raise a ``ValueError`` when a location search doesn't match any record and add a new ``locations``
   parameter to ``EODataAccessGateway.search``.
 - Drop support of Python 3.5
 
@@ -26,7 +30,8 @@ Release history
 - Allow to dynamically set download options, fixes `GH-145 <https://github.com/CS-SI/eodag/issues/145>`_ and
   `GH-112 <https://github.com/CS-SI/eodag/issues/112>`_
 - New tutorials for STAC and search by geometry, fixes `GH-139 <https://github.com/CS-SI/eodag/issues/139>`_
-- New crunches ``FilterDate``, ``FilterProperty`` and updated ``FilterOverlap``, fixes `GH-137 <https://github.com/CS-SI/eodag/issues/137>`_
+- New crunches ``FilterDate``, ``FilterProperty`` and updated ``FilterOverlap``, fixes
+  `GH-137 <https://github.com/CS-SI/eodag/issues/137>`_
 - Use ``jsonpath-ng`` instead of ``jsonpath-rw`` and ``pyjq``, ``pyshp`` instead of ``fiona``
 - Better wrong or missing credentials handling
 - Add warning for the total number of results returned by theia

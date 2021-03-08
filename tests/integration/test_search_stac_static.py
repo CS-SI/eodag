@@ -57,6 +57,24 @@ class TestSearchStacStatic(unittest.TestCase):
         self.extent_big = {"lonmin": -55, "lonmax": -53, "latmin": 2, "latmax": 5}
         self.extent_small = {"lonmin": -55, "lonmax": -54.5, "latmin": 2, "latmax": 2.5}
 
+        self.static_stac_provider = "foo_static"
+        self.dag.update_providers_config(
+            f"""
+            {self.static_stac_provider}:
+                search:
+                    type: StaticStacSearch
+                    api_endpoint: {self.root_cat}
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{{productType}}'
+                download:
+                    type: HTTPDownload
+                    base_uri: https://fake-endpoint
+                    flatten_top_dirs: True
+        """
+        )
+        self.dag.set_preferred_provider(self.static_stac_provider)
+
     def test_search_stac_static_load_child(self):
         """load_stac_items from child catalog must provide items"""
         items = self.dag.load_stac_items(
@@ -87,6 +105,14 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in items:
             self.assertEqual(item.provider, self.stac_provider)
             self.assertEqual(item.product_type, self.product_type)
+
+    def test_search_stac_static(self):
+        """Use StaticStacSearch plugin to search all items"""
+        items, nb = self.dag.search()
+        self.assertEqual(len(items), self.root_cat_len)
+        self.assertEqual(nb, self.root_cat_len)
+        for item in items:
+            self.assertEqual(item.provider, self.static_stac_provider)
 
     def test_search_stac_static_load_item(self):
         """load_stac_items from a single item must provide it"""
@@ -160,6 +186,14 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in filtered_items:
             self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
 
+    def test_search_stac_static_by_date(self):
+        """Use StaticStacSearch plugin to search by date"""
+        filtered_items, nb = self.dag.search(start="2018-01-01", end="2019-01-01")
+        self.assertEqual(len(filtered_items), self.child_cat_len)
+        self.assertEqual(nb, self.child_cat_len)
+        for item in filtered_items:
+            self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
+
     def test_search_stac_static_crunch_filter_overlap(self):
         """load_stac_items from root and filter by overlap"""
         # tests over extent_big search geometry
@@ -192,6 +226,11 @@ class TestSearchStacStatic(unittest.TestCase):
         )
         self.assertEqual(len(filtered_items), 0)
 
+        filtered_items = items.crunch(
+            FilterOverlap({"intersects": True}), geometry=self.extent_big
+        )
+        self.assertEqual(len(filtered_items), 3)
+
         # tests over extent_small search geometry
         items = self.dag.load_stac_items(
             self.root_cat,
@@ -206,6 +245,12 @@ class TestSearchStacStatic(unittest.TestCase):
             FilterOverlap({"contains": True}), geometry=self.extent_small
         )
         self.assertEqual(len(filtered_items), 1)
+
+    def test_search_stac_static_by_geom(self):
+        """Use StaticStacSearch plugin to search by geometry"""
+        items, nb = self.dag.search(geom=self.extent_big,)
+        self.assertEqual(len(items), 3)
+        self.assertEqual(nb, 3)
 
     def test_search_stac_static_crunch_filter_property(self):
         """load_stac_items from root and filter by property"""
@@ -229,6 +274,18 @@ class TestSearchStacStatic(unittest.TestCase):
             FilterProperty({"cloudCover": 10, "operator": "lt"})
         )
         self.assertEqual(len(filtered_items), 1)
+
+    def test_search_stac_static_by_property(self):
+        """Use StaticStacSearch plugin to search by property"""
+        items, nb = self.dag.search(orbitNumber=110)
+        self.assertEqual(len(items), 3)
+        self.assertEqual(nb, 3)
+
+    def test_search_stac_static_by_cloudcover(self):
+        """Use StaticStacSearch plugin to search by cloud cover"""
+        items, nb = self.dag.search(cloudCover=10)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(nb, 1)
 
     def test_search_stac_static_crunch_filter_lastest_by_name(self):
         """load_stac_items from root and filter by name"""

@@ -113,6 +113,11 @@ setup(
         "eodag.plugins.search": [
             "CSWSearch = eodag.plugins.search.csw:CSWSearch",
             "QueryStringSearch = eodag.plugins.search.qssearch:QueryStringSearch",
+            "AwsSearch = eodag.plugins.search.qssearch:AwsSearch",
+            "ODataV4Search = eodag.plugins.search.qssearch:ODataV4Search",
+            "PostJsonSearch = eodag.plugins.search.qssearch:PostJsonSearch",
+            "StacSearch = eodag.plugins.search.qssearch:StacSearch",
+            "StaticStacSearch = eodag.plugins.search.static_stac_search:StaticStacSearch",
         ],
     },
     project_urls={
