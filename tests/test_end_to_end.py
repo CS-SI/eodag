@@ -64,6 +64,27 @@ AWSEOS_SEARCH_ARGS = [
     "2020-01-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
+ASTRAE_EOD_SEARCH_ARGS = [
+    "astraea_eod",
+    "S2_MSI_L1C",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+EARTH_SEARCH_SEARCH_ARGS = [
+    "earth_search",
+    "S2_MSI_L1C",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+USGS_SATAPI_AWS_SEARCH_ARGS = [
+    "usgs_satapi_aws",
+    "LANDSAT_C2L1",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 CREODIAS_SEARCH_ARGS = [
     "creodias",
     "S2_MSI_L1C",
@@ -99,7 +120,18 @@ USGS_SEARCH_ARGS = [
 
 
 class EndToEndBase(unittest.TestCase):
-    def execute_search(self, provider, product_type, start, end, geom, offline=False):
+    def execute_search(
+        self,
+        provider,
+        product_type,
+        start,
+        end,
+        geom,
+        offline=False,
+        page=None,
+        items_per_page=None,
+        check_product=True,
+    ):
         """Search products on provider:
 
         - First set the preferred provider as the one given in parameter
@@ -114,7 +146,10 @@ class EndToEndBase(unittest.TestCase):
         }
         self.eodag.set_preferred_provider(provider)
         results, nb_results = self.eodag.search(
-            productType=product_type, **search_criteria
+            productType=product_type,
+            page=page,
+            items_per_page=items_per_page,
+            **search_criteria
         )
         if offline:
             results = [
@@ -122,10 +157,13 @@ class EndToEndBase(unittest.TestCase):
                 for prod in results
                 if prod.properties.get("storageStatus", "") != ONLINE_STATUS
             ]
-        self.assertGreater(len(results), 0)
-        one_product = results[0]
-        self.assertEqual(one_product.provider, provider)
-        return one_product
+        if check_product:
+            self.assertGreater(len(results), 0)
+            one_product = results[0]
+            self.assertEqual(one_product.provider, provider)
+            return one_product
+        else:
+            return results
 
 
 # @unittest.skip("skip auto run")
@@ -197,11 +235,7 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         dl_process.start()
         try:
-            # It is assumed that after 5 seconds, we should have already get at least 10
-            # Kilobytes of data from provider
-            # Consider changing this to fit a lower internet bandwidth
-            dl_process.join(timeout=5)
-            # added this timeout loop, to handle long download start times
+            # timeout loop, to handle long download start times
             max_wait_time = timeout_sec
             while (
                 dl_process.is_alive()
@@ -230,8 +264,8 @@ class TestEODagEndToEnd(EndToEndBase):
             )
         else:
             downloaded_size = os.stat(self.downloaded_file_path).st_size
-        # The partially downloaded file should be greater or equal to 10 KB
-        self.assertGreaterEqual(downloaded_size, 10 * 2 ** 10)
+        # The partially downloaded file should be greater or equal to 5 KB
+        self.assertGreaterEqual(downloaded_size, 5 * 2 ** 10)
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(*USGS_SEARCH_ARGS)
@@ -242,6 +276,15 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*SOBLOO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_airbus_noresult(self):
+        """Requesting a page on sobloo with no results must return an empty SearchResult"""
+        # As of 2021-02-23 this search at page 1 returns 68 products, so at page 2 there
+        # are no products available and sobloo returns a response without products (`hits`).
+        product = self.execute_search(
+            *SOBLOO_SEARCH_ARGS, page=2, items_per_page=100, check_product=False
+        )
+        self.assertEqual(len(product), 0)
 
     # may take up to 10 minutes
     @unittest.skip("Long test skipped")
@@ -281,6 +324,21 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*AWSEOS_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_astraea_eod(self):
+        product = self.execute_search(*ASTRAE_EOD_SEARCH_ARGS)
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_earth_search(self):
+        product = self.execute_search(*EARTH_SEARCH_SEARCH_ARGS)
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_usgs_satapi_aws(self):
+        product = self.execute_search(*USGS_SATAPI_AWS_SEARCH_ARGS)
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename, wait_sec=15)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
@@ -350,6 +408,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             os.environ[
                 "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
             ] = "badsecret"
+            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_PROFILE"] = "badsecret"
 
             eodag = EODataAccessGateway(
                 user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
@@ -370,6 +429,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         finally:
             os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID")
             os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY")
+            os.environ.pop("EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_PROFILE")
 
     def test_end_to_end_wrong_credentials_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)

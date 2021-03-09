@@ -33,12 +33,12 @@ class Authentication(PluginTopic):
             credentials = self.config.credentials
         except AttributeError:
             raise MisconfiguredError(
-                "Missing credentials configuration for provider: %s", self.provider
+                f"Missing credentials configuration for provider {self.provider}"
             )
         # Empty credentials dict
         if not credentials:
             raise MisconfiguredError(
-                "Missing credentials for provider: %s", self.provider
+                f"Missing credentials for provider {self.provider}"
             )
         # Credentials keys but values are None.
         missing_credentials = [

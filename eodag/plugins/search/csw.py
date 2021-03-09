@@ -49,7 +49,7 @@ class CSWSearch(Search):
         super(CSWSearch, self).__init__(provider, config)
         self.catalog = None
 
-    def query(self, product_type=None, auth=None, **kwargs):
+    def query(self, product_type=None, auth=None, count=True, **kwargs):
         """Perform a search on a OGC/CSW-like interface
 
         .. versionchanged::
@@ -66,7 +66,7 @@ class CSWSearch(Search):
             self.__init_catalog()
         results = []
         if self.catalog:
-            provider_product_type = self.config.products[product_type]["product_type"]
+            provider_product_type = self.config.products[product_type]["productType"]
             for product_type_def in self.config.search_definition["product_type_tags"]:
                 product_type_search_tag = product_type_def["name"]
                 logger.debug(
@@ -103,7 +103,8 @@ class CSWSearch(Search):
                 )
                 results.extend(partial_results)
         logger.info("Found %s overall results", len(results))
-        return results, len(results)
+        total_results = len(results) if count else None
+        return results, total_results
 
     def __init_catalog(self, username=None, password=None):
         """Initializes a catalogue by performing a GetCapabilities request on the url"""
@@ -137,7 +138,7 @@ class CSWSearch(Search):
                 if resource_filter.pattern and resource_filter.search(ref["url"]):
                     download_url = ref["url"]
                 else:
-                    download_url = ref["url"]
+                    download_url = ref["url"]  # noqa
                 break
         properties = properties_from_xml(rec.xml, self.config.metadata_mapping)
         if not properties["geometry"]:
@@ -163,7 +164,10 @@ class CSWSearch(Search):
         return EOProduct(
             product_type,
             self.provider,
-            download_url,
+            # TODO: EOProduct has no more *args in its __init__ (search_args attribute removed)
+            # Not sure why download_url was here in the first place, needs to be updated,
+            # possibly by having instead 'downloadLink' in the properties
+            # download_url,
             properties,
             searched_bbox=kwargs.get("footprints"),
         )

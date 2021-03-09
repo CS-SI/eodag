@@ -1,6 +1,24 @@
 Release history
 ---------------
 
+2.1.0 (2021-03-09)
+++++++++++++++++++
+
+- `earth_search <https://www.element84.com/earth-search>`_ and
+  `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api>`_ as new providers
+- Updated ``HTTPDownload`` plugin, handling products with multiple assets
+- New plugin ``AwsAuth``, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
+- New search plugin ``StaticStacSearch`` and updated
+  `STAC client tutorial <https://eodag.readthedocs.io/en/latest/tutorials/tuto_stac_client.html>`_
+- New tutorial for `Copernicus DEM <https://eodag.readthedocs.io/en/latest/tutorials/tuto_cop_dem.html>`_
+- Remove ``unidecode`` dependency
+- Start/end dates passed to sobloo are now in UTC, and make it clear that search dates must be in UTC
+- Locations must now be passed to ``search()`` method as a dictionnary
+- Metadata mapping update and uniformization, fixes `GH-154 <https://github.com/CS-SI/eodag/issues/154>`_
+- Raise a ``ValueError`` when a location search doesn't match any record and add a new ``locations``
+  parameter to ``EODataAccessGateway.search``.
+- Drop support of Python 3.5
+
 2.0.1 (2021-02-05)
 ++++++++++++++++++
 
@@ -14,8 +32,9 @@ Release history
 - Allow to dynamically set download options, fixes `GH-145 <https://github.com/CS-SI/eodag/issues/145>`_ and
   `GH-112 <https://github.com/CS-SI/eodag/issues/112>`_
 - New tutorials for STAC and search by geometry, fixes `GH-139 <https://github.com/CS-SI/eodag/issues/139>`_
-- New crunches FilterDate, FilterProperty and updated FilterOverlap, fixes `GH-137 <https://github.com/CS-SI/eodag/issues/137>`_
-- Use jsonpath-ng instead of jsonpath-rw and pyjq, pyshp instead of fiona
+- New crunches ``FilterDate``, ``FilterProperty`` and updated ``FilterOverlap``, fixes
+  `GH-137 <https://github.com/CS-SI/eodag/issues/137>`_
+- Use ``jsonpath-ng`` instead of ``jsonpath-rw`` and ``pyjq``, ``pyshp`` instead of ``fiona``
 - Better wrong or missing credentials handling
 - Add warning for the total number of results returned by theia
 - Support regex query from locations configuration
@@ -26,10 +45,10 @@ Release history
 2.0b2 (2020-12-18)
 ++++++++++++++++++
 
-- New method deserialize_and_register, fixes `GH-140 <https://github.com/CS-SI/eodag/issues/140>`_
-- Load static stac catalogs as SearchResult
-- Search on unknown product types using GENERIC_PRODUCT_TYPE
-- get_data, drivers and rpc server moved to `eodag-cube <https://github.com/CS-SI/eodag-cube>`_
+- New method ``deserialize_and_register``, fixes `GH-140 <https://github.com/CS-SI/eodag/issues/140>`_
+- Load static stac catalogs as ``SearchResult``
+- Search on unknown product types using ``GENERIC_PRODUCT_TYPE``
+- ``get_data``, drivers and rpc server moved to `eodag-cube <https://github.com/CS-SI/eodag-cube>`_
 - Removed fixed dependencies, fixes `GH-82 <https://github.com/CS-SI/eodag/issues/82>`_
 - Use locations conf template by default
 

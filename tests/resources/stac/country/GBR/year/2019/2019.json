@@ -33,22 +33,22 @@
     "license": "proprietary",
     "links": [
         {
-            "href": "./country/GBR/year/2019/2019.json",
-            "rel": "self"
-        },
-        {
-            "href": "./catalog.json",
+            "href": "../../../../catalog.json",
             "rel": "root"
         },
         {
-            "href": "./country/GBR/year/2019/items/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143.json",
+            "href": "./items/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143.json",
             "rel": "item",
             "title": "S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143"
         },
         {
-            "href": "./country/GBR/year/2019/items/S2A_MSIL1C_20191231T112451_N0208_R037_T30VVH_20191231T115143/S2A_MSIL1C_20191231T112451_N0208_R037_T30VVH_20191231T115143.json",
+            "href": "./items/S2A_MSIL1C_20191231T112451_N0208_R037_T30VVH_20191231T115143/S2A_MSIL1C_20191231T112451_N0208_R037_T30VVH_20191231T115143.json",
             "rel": "item",
             "title": "S2A_MSIL1C_20191231T112451_N0208_R037_T30VVH_20191231T115143"
+        },
+        {
+            "rel": "parent",
+            "href": "../year.json"
         }
     ],
     "properties": {

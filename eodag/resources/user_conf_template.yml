@@ -55,6 +55,7 @@ aws_eos:
             apikey:
             aws_access_key_id:
             aws_secret_access_key:
+            aws_profile:
     download:
         outputs_prefix:
 sobloo:
@@ -96,3 +97,33 @@ onda:
         credentials:
             username:
             password:
+astraea_eod:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+            aws_profile:
+    download:
+        outputs_prefix:
+usgs_satapi_aws:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+            aws_profile:
+    download:
+        outputs_prefix:
+earth_search:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+            aws_profile:
+    download:
+        outputs_prefix:

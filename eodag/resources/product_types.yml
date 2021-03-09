@@ -163,6 +163,94 @@ L8_OLI_TIRS_C1L1:
   missionStartDate: "2013-02-11T00:00:00Z"
   title: Landsat 8 Level-1
 
+LANDSAT_C2L1:
+  abstract: |
+    The Landsat Level-1 product is a top of atmosphere product distributed as scaled and calibrated digital numbers.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L1,L2,L3,L4,L5,L6,L7,L8
+  processingLevel: L1
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat Collection 2 Level-1 Product
+  missionStartDate: "1972-07-25T00:00:00Z"
+
+LANDSAT_C2L2_SR:
+  abstract: |
+    The Landsat Surface Reflectance (SR) product measures the fraction of incoming solar radiation that is reflected
+    from Earth's surface to the Landsat sensor.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5,L7,L8
+  processingLevel: L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat Collection 2 Level-2 UTM Surface Reflectance (SR) Product
+  missionStartDate: "1982-08-22T00:00:00Z"
+
+LANDSAT_C2L2_ST:
+  abstract: |
+    The Landsat Surface Temperature (ST) product represents the temperature of the Earth's surface in Kelvin (K).
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5,L7,L8
+  processingLevel: L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat Collection 2 Level-2 UTM Surface Temperature (ST) Product
+  missionStartDate: "1982-08-22T00:00:00Z"
+
+LANDSAT_C2L2ALB_BT:
+  abstract: |
+    The Landsat Top of Atmosphere Brightness Temperature (BT) product is a top of atmosphere product with radiance
+    calculated 'at-sensor', not atmospherically corrected, and expressed in units of Kelvin.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5,L7,L8
+  processingLevel: L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat Collection 2 Level-2 Albers Top of Atmosphere Brightness Temperature (BT) Product
+  missionStartDate: "1982-08-22T00:00:00Z"
+
+LANDSAT_C2L2ALB_SR:
+  abstract: |
+    The Landsat Surface Reflectance (SR) product measures the fraction of incoming solar radiation that is reflected
+    from Earth's surface to the Landsat sensor.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5,L7,L8
+  processingLevel: L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat Collection 2 Level-2 Albers Surface Reflectance (SR) Product
+  missionStartDate: "1982-08-22T00:00:00Z"
+
+LANDSAT_C2L2ALB_ST:
+  abstract: |
+    The Landsat Surface Temperature (ST) product represents the temperature of the Earth's surface in Kelvin (K).
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5,L7,L8
+  processingLevel: L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat Collection 2 Level-2 Albers Surface Temperature (ST) Product
+  missionStartDate: "1982-08-22T00:00:00Z"
+
+LANDSAT_C2L2ALB_TA:
+  abstract: |
+    The Landsat Top of Atmosphere (TA) Reflectance product applies per pixel angle band corrections to the Level-1
+    radiance product.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5,L7,L8
+  processingLevel: L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat Collection 2 Level-2 Albers Top of Atmosphere (TA) Reflectance Product
+  missionStartDate: "1982-08-22T00:00:00Z"
+
 # MODIS -----------------------------------------------------------------------
 MODIS_MCD43A4:
   abstract: |

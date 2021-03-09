@@ -27,19 +27,20 @@ class TestStacReader(unittest.TestCase):
         super(TestStacReader, self).setUp()
 
         self.cat_dir_path = self.root_cat = os.path.join(TEST_RESOURCES_PATH, "stac")
-        # paths are relative in this test catalog, chdir needed
-        self._currentdir = os.getcwd()
-        os.chdir(self.cat_dir_path)
-
         self.root_cat = os.path.join(self.cat_dir_path, "catalog.json")
         self.root_cat_len = 5
         self.child_cat = os.path.join(
             self.cat_dir_path, "country", "FRA", "year", "2018", "2018.json"
         )
         self.child_cat_len = 2
-
-    def tearDown(self):
-        os.chdir(self._currentdir)
+        self.item = os.path.join(
+            os.path.dirname(self.child_cat),
+            "items",
+            "S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050",
+            "S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050.json",
+        )
+        self.singlefile_cat = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")
+        self.singlefile_cat_len = 5
 
     def test_stac_reader_fetch_child(self):
         """fetch_stac_items from child catalog must provide items"""
@@ -63,3 +64,19 @@ class TestStacReader(unittest.TestCase):
             self.assertDictContainsSubset(
                 {"type": "Feature", "collection": "S2_MSI_L1C"}, item
             )
+
+    def test_stac_reader_fetch_item(self):
+        """fetch_stac_items from an item must return it"""
+        item = fetch_stac_items(self.item)
+        self.assertIsInstance(item, list)
+        self.assertEqual(len(item), 1)
+        self.assertDictContainsSubset(
+            {"type": "Feature", "collection": "S2_MSI_L1C"}, item[0],
+        )
+
+    def test_stact_reader_fetch_singlefile_catalog(self):
+        """fetch_stact_items must return all the items from a single file catalog"""
+        items = fetch_stac_items(self.singlefile_cat)
+        self.assertIsInstance(items, list)
+        self.assertEqual(len(items), self.singlefile_cat_len)
+        self.assertDictContainsSubset({"type": "Feature"}, items[0])

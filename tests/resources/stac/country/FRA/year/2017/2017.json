@@ -33,17 +33,17 @@
     "license": "proprietary",
     "links": [
         {
-            "href": "./country/FRA/year/2017/2017.json",
-            "rel": "self"
-        },
-        {
-            "href": "./catalog.json",
+            "href": "../../../../catalog.json",
             "rel": "root"
         },
         {
-            "href": "./country/FRA/year/2017/items/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802.json",
+            "href": "./items/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802/S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802.json",
             "rel": "item",
             "title": "S2B_MSIL1C_20171231T141039_N0206_R110_T21NYC_20171231T201802"
+        },
+        {
+            "rel": "parent",
+            "href": "../year.json"
         }
     ],
     "properties": {

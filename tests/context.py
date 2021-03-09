@@ -31,6 +31,7 @@ from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
+from eodag.config import load_default_config
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -38,10 +39,11 @@ from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.base import Download
 from eodag.plugins.download.http import HTTPDownload
+from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.rest import server as eodag_http_server
 from eodag.rest.utils import eodag_api, get_date
-from eodag.utils import get_geometry_from_various, makedirs
+from eodag.utils import get_geometry_from_various, get_timestamp, makedirs
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,

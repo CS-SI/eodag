@@ -18,147 +18,155 @@
 import json
 import logging
 import re
+import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 import concurrent.futures
-from jsonpath_ng.ext import parse
+import pystac
+
+from eodag.utils.exceptions import STACOpenerError
 
 logger = logging.getLogger("eodag.utils.stac_reader")
-
 
 HTTP_REQ_TIMEOUT = 5
 
 
-def read_local_json(json_path):
-    """Read JSON local file
-    """
-    with open(json_path, "r") as fh:
-        return json.load(fh)
+class _TextOpener:
+    """Exhaust read methods for pystac.STAC_IO in the order defined
+    in the openers list"""
 
+    def __init__(self, timeout):
+        self.openers = [self.read_local_json, self.read_http_remote_json]
+        # Only used by read_http_remote_json
+        self.timeout = timeout
 
-def read_http_remote_json(url):
-    """Read JSON remote HTTP file
-    """
-    res = urlopen(url, timeout=HTTP_REQ_TIMEOUT)
-    content_type = res.getheader("Content-Type")
-
-    if content_type is None:
-        encoding = "utf-8"
-    else:
-        m = re.search(r"charset\s*=\s*(\S+)", content_type, re.I)
-        if m is None:
-            encoding = "utf-8"
-        else:
-            encoding = m.group(1)
-    return json.loads(res.read().decode(encoding))
-
-
-class CatalogOpener(object):
-    """Opener manager
-    """
-
-    def __init__(self, opener_list):
-        self.opener_list = opener_list
-
-    def read(self, url, available_openers=[]):
-        """Read file using opener
-
-        Openers try priority is defined by order in list
+    @staticmethod
+    def read_local_json(url, as_json):
+        """Read JSON local file
         """
         try:
-            if not available_openers:
-                available_openers = self.opener_list.copy()
-            return available_openers[0](url)
-        # reading errors for used openers: add more if needed
+            with open(url) as f:
+                if as_json:
+                    return json.load(f)
+                else:
+                    return f.read()
         except FileNotFoundError:
-            # set lowest priority to current opener
-            oldindex = self.opener_list.index(available_openers[0])
-            newindex = len(self.opener_list) - 1
-            self.opener_list.insert(newindex, self.opener_list.pop(oldindex))
-            # do not use current downloader on next try
-            available_openers.remove(available_openers[0])
-            # try again
-            return self.read(url, available_openers=available_openers)
-        except IndexError:
-            logger.error("No opener available to open %s" % url)
-            return None
-        except (HTTPError, URLError) as e:
-            logger.error("%s: %s", url, e)
-            return None
+            logger.debug("read_local_json is not the right STAC opener")
+            raise STACOpenerError
+
+    def read_http_remote_json(self, url, as_json):
+        """Read JSON remote HTTP file
+        """
+        try:
+            res = urlopen(url, timeout=self.timeout)
+            content_type = res.getheader("Content-Type")
+            if content_type is None:
+                encoding = "utf-8"
+            else:
+                m = re.search(r"charset\s*=\s*(\S+)", content_type, re.I)
+                if m is None:
+                    encoding = "utf-8"
+                else:
+                    encoding = m.group(1)
+            content = res.read().decode(encoding)
+            return json.loads(content) if as_json else content
+        except URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                logger.error("%s: %s", url, e)
+                raise socket.timeout(
+                    f"{url} with a timeout of {self.timeout} seconds"
+                ) from None
+            else:
+                logger.debug("read_http_remote_json is not the right STAC opener")
+                raise STACOpenerError
+        except HTTPError:
+            logger.debug("read_http_remote_json is not the right STAC opener")
+            raise STACOpenerError
+
+    def __call__(self, url, as_json=False):
+        res = None
+        while self.openers:
+            try:
+                res = self.openers[0](url, as_json)
+            except STACOpenerError:
+                # Remove the opener that just failed
+                self.openers.pop(0)
+            if res is not None:
+                break
+        if res is None:
+            raise STACOpenerError(f"No opener available to open {url}")
+        return res
 
 
-def fetch_stac_items(catalog_path, recursive=False, max_connections=100, opener=None):
-    """Fetch STAC items from given catalog
+def fetch_stac_items(
+    stac_path, recursive=False, max_connections=100, timeout=HTTP_REQ_TIMEOUT
+):
+    """Fetch STAC item from a single item file or items from a catalog.
+
+    :param stac_path: A STAC object filepath
+    :type filename: str
+    :param recursive: (optional) Browse recursively in child nodes if True
+    :type recursive: bool
+    :param max_connections: Maximum number of connections for HTTP requests
+    :type max_connections: int
+    :param timeout: (optional) Timeout in seconds for each internal HTTP request
+    :type timeout: float
+    :returns: The items found in `stac_path`
+    :rtype: :class:`list`
     """
-    opener = CatalogOpener(opener_list=[read_local_json, read_http_remote_json]).read
+
+    # URI opener used by PySTAC internally, instantiated here
+    # to retrieve the timeout.
+    _text_opener = _TextOpener(timeout)
+    pystac.STAC_IO.read_text_method = _text_opener
+
+    stac_obj = pystac.read_file(stac_path)
+    # Single STAC item
+    if isinstance(stac_obj, pystac.Item):
+        return [stac_obj.to_dict()]
+    # STAC catalog
+    elif isinstance(stac_obj, pystac.Catalog):
+        return _fetch_stac_items_from_catalog(
+            stac_obj, recursive, max_connections, _text_opener
+        )
+    else:
+        raise STACOpenerError(f"{stac_path} must be a STAC catalog or a STAC item")
+
+
+def _fetch_stac_items_from_catalog(cat, recursive, max_connections, _text_opener):
+    """Fetch items from a STAC catalog"""
+    # pystac cannot yet return links from a single file catalog, see:
+    # https://github.com/stac-utils/pystac/issues/256
+    extensions = getattr(cat, "stac_extensions", None)
+    if extensions:
+        extensions = extensions if isinstance(extensions, list) else [extensions]
+        if "single-file-stac" in extensions:
+            items = [feature for feature in cat.to_dict()["features"]]
+            return items
+
+    # Making the links absolutes allow for both relative and absolute links
+    # to be handled.
+    if not recursive:
+        hrefs = [link.get_absolute_href() for link in cat.get_item_links()]
+    else:
+        hrefs = []
+        for parent_catalog, _, _ in cat.walk():
+            hrefs += [
+                link.get_absolute_href() for link in parent_catalog.get_item_links()
+            ]
 
     items = []
-    # fetch item in catalog_path
-    items += _fetch_stac_item_from_content(catalog_path, opener)
-
-    # fetch items in catalog_path
-    items += _fetch_stac_items_from_content(catalog_path, opener)
-
-    # fetch items from links
-    item_urls = _fetch_stac_item_links(catalog_path, opener=opener)
-    if item_urls:
-        logger.debug("Fetching %s items from %s", len(item_urls), catalog_path)
+    if hrefs:
+        logger.debug("Fetching %s items", len(hrefs))
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_connections
         ) as executor:
-            future_to_url = (executor.submit(opener, url) for url in item_urls)
-            for future in concurrent.futures.as_completed(future_to_url):
+            future_to_href = (
+                executor.submit(_text_opener, href, True) for href in hrefs
+            )
+            for future in concurrent.futures.as_completed(future_to_href):
                 item = future.result()
                 if item:
                     items.append(future.result())
-
-    # fetch items recursively in children
-    if recursive:
-        child_links = _fetch_stac_child_links(catalog_path, opener=opener)
-        for link in child_links:
-            items += fetch_stac_items(link, recursive=True, opener=opener)
-
-    logger.debug("Found %s items in %s", len(items), catalog_path)
-
     return items
-
-
-def _fetch_stac_with_jsonpath(catalog_path, opener, expression):
-    """Fetch JSON elements with a JSONPath expression.
-    """
-    json_data = opener(catalog_path)
-    jsonpath_expression = parse(expression)
-    res_jp = [match.value for match in jsonpath_expression.find(json_data)]
-    return res_jp
-
-
-def _fetch_stac_item_links(catalog_path, opener):
-    """Fetch STAC item links from given catalog
-    """
-    return _fetch_stac_with_jsonpath(catalog_path, opener, 'links[?rel = "item"].href')
-
-
-def _fetch_stac_child_links(catalog_path, opener):
-    """Fetch STAC child links from given catalog
-    """
-    return _fetch_stac_with_jsonpath(catalog_path, opener, 'links[?rel = "child"].href')
-
-
-def _fetch_stac_items_from_content(catalog_path, opener):
-    """Fetch STAC items from given FeatureCollection
-    """
-    return _fetch_stac_with_jsonpath(catalog_path, opener, 'links[?type = "Feature"]')
-
-
-def _fetch_stac_item_from_content(catalog_path, opener):
-    """Fetch STAC item from given feature
-    """
-    # This JSONPATH '$[?($.type == "Feature")]' didn't work (returned [])
-    # with jsonpath-ng while it should indeed return the object if it
-    # has "type": "Feature". It's actually just a simple key:value check.
-    json_content = opener(catalog_path)
-    if json_content.get("type") == "Feature":
-        return [json_content]
-    else:
-        return []

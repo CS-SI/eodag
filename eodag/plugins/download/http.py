@@ -16,8 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import hashlib
 import logging
+import os
 import shutil
 import zipfile
 from datetime import datetime, timedelta
@@ -32,6 +32,7 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
+from eodag.utils import get_progress_callback
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -71,6 +72,25 @@ class HTTPDownload(Download):
         if not fs_path or not record_filename:
             return fs_path
 
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = get_progress_callback()
+        progress_callback.desc = product.properties.get("id", "")
+        progress_callback.position = 1
+
+        # download assets if exist instead of remote_location
+        try:
+            return self._download_assets(
+                product,
+                fs_path.replace(".zip", ""),
+                record_filename,
+                auth,
+                progress_callback,
+                **kwargs
+            )
+        except NotAvailableError:
+            pass
+
         url = product.remote_location
 
         # order product if it is offline
@@ -104,7 +124,7 @@ class HTTPDownload(Download):
         product.next_try = start_time
         retry_count = 0
         not_available_info = "The product could not be downloaded"
-        # another output for notbooks
+        # another output for notebooks
         nb_info = NotebookWidgets()
 
         while "Loop until products download succeeds or timeout is reached":
@@ -176,6 +196,8 @@ class HTTPDownload(Download):
                                         stream.reason,
                                     )
                                 )
+                            progress_callback.max_size = stream_size
+                            progress_callback.reset()
                             with open(fs_path, "wb") as fhandle:
                                 for chunk in stream.iter_content(chunk_size=64 * 1024):
                                     if chunk:
@@ -233,6 +255,118 @@ class HTTPDownload(Download):
                 )
             elif datetime.now() >= stop_time:
                 raise NotAvailableError(not_available_info)
+
+    def _download_assets(
+        self,
+        product,
+        fs_dir_path,
+        record_filename,
+        auth=None,
+        progress_callback=None,
+        **kwargs
+    ):
+        """Download product assets if they exist
+        """
+        assets_urls = [
+            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
+
+        if not assets_urls:
+            raise NotAvailableError("No assets available for %s" % product)
+
+        # remove existing incomplete file
+        if os.path.isfile(fs_dir_path):
+            os.remove(fs_dir_path)
+        # create product dest dir
+        if not os.path.isdir(fs_dir_path):
+            os.makedirs(fs_dir_path)
+
+        # product conf overrides provider conf for "flatten_top_dirs"
+        product_conf = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        )
+        flatten_top_dirs = product_conf.get(
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+        )
+
+        total_size = sum(
+            [
+                int(
+                    requests.head(asset_url, auth=auth).headers.get("Content-length", 0)
+                )
+                for asset_url in assets_urls
+            ]
+        )
+        progress_callback.max_size = total_size
+        progress_callback.reset()
+        error_messages = set()
+
+        for asset_url in assets_urls:
+
+            params = kwargs.pop("dl_url_params", None) or getattr(
+                self.config, "dl_url_params", {}
+            )
+            with requests.get(
+                asset_url, stream=True, auth=auth, params=params,
+            ) as stream:
+                try:
+                    stream.raise_for_status()
+                except HTTPError as e:
+                    # check if error is identified as auth_error in provider conf
+                    auth_errors = getattr(self.config, "auth_error_code", [None])
+                    if not isinstance(auth_errors, list):
+                        auth_errors = [auth_errors]
+                    if e.response.status_code in auth_errors:
+                        raise AuthenticationError(
+                            "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                            % (
+                                e.response.status_code,
+                                e.response.text.strip(),
+                                self.provider,
+                            )
+                        )
+                    else:
+                        logger.warning("Unexpected error: %s" % e)
+                        logger.warning("Skipping %s" % asset_url)
+                    error_messages.add(str(e))
+                else:
+                    asset_rel_path = (
+                        asset_url.replace(product.location, "")
+                        .replace("https://", "")
+                        .replace("http://", "")
+                    )
+                    asset_abs_path = os.path.join(fs_dir_path, asset_rel_path)
+                    asset_abs_path_dir = os.path.dirname(asset_abs_path)
+                    if not os.path.isdir(asset_abs_path_dir):
+                        os.makedirs(asset_abs_path_dir)
+
+                    if not os.path.isfile(asset_abs_path):
+                        with open(asset_abs_path, "wb") as fhandle:
+                            for chunk in stream.iter_content(chunk_size=64 * 1024):
+                                if chunk:
+                                    fhandle.write(chunk)
+                                    progress_callback(len(chunk))
+
+        # could not download any file
+        if len(os.listdir(fs_dir_path)) == 0:
+            raise HTTPError(", ".join(error_messages))
+
+        # flatten directory structure
+        if flatten_top_dirs:
+            tmp_product_local_path = "%s-tmp" % fs_dir_path
+            for d, dirs, files in os.walk(fs_dir_path):
+                if len(files) != 0:
+                    shutil.copytree(d, tmp_product_local_path)
+                    shutil.rmtree(fs_dir_path)
+                    os.rename(tmp_product_local_path, fs_dir_path)
+                    break
+
+        # save hash/record file
+        with open(record_filename, "w") as fh:
+            fh.write(product.remote_location)
+        logger.debug("Download recorded in %s", record_filename)
+
+        return fs_dir_path
 
     def download_all(
         self,

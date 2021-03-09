@@ -180,6 +180,10 @@ Search Plugins
    :show-inheritance:
    :undoc-members:
 
+.. autoclass:: eodag.plugins.search.static_stac_search.StaticStacSearch
+   :show-inheritance:
+   :undoc-members:
+
 .. module:: eodag.plugins.download
 
 Download Plugins
@@ -236,6 +240,10 @@ Authentication Plugins
    :undoc-members:
 
 .. autoclass:: eodag.plugins.authentication.header.HTTPHeaderAuth
+   :show-inheritance:
+   :undoc-members:
+
+.. autoclass:: eodag.plugins.authentication.aws_auth.AwsAuth
    :show-inheritance:
    :undoc-members:
 

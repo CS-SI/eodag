@@ -66,7 +66,7 @@ and `pypi <https://pypi.org/project/eodag-cube>`_.
 Available providers
 -------------------
 
-There are currently 9 available providers implemented on eodag:
+There are currently 11 available providers implemented on eodag:
 
 * `sobloo <https://sobloo.eu/>`_: Airbus DIAS
 
@@ -85,6 +85,10 @@ There are currently 9 available providers implemented on eodag:
 * `onda <https://www.onda-dias.eu/cms/>`_: Serco DIAS
 
 * `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
+
+* `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_: USGS Landsatlook SAT API
+
+* `earth_search <https://www.element84.com/earth-search/>`_: Element84 Earth Search
 
 .. note::
 
@@ -138,6 +142,7 @@ Create a configuration file containing your credentials for each provider.  You 
             credentials:
                 aws_access_key_id:
                 aws_secret_access_key:
+                aws_profile:
         download:
             outputs_prefix:
 
@@ -186,7 +191,7 @@ Then use as apikey the Web Token provided in https://mundiwebservices.com/accoun
 
 For onda, create an account here: https://www.onda-dias.eu/crm/
 
-For astraea_eod, you need AWS credentials for download:
+For astraea_eod, earth_search, usgs_satapi_aws, you need AWS credentials for download:
     * Create an account on AWS website: https://aws.amazon.com/fr/ (warning:
       A credit card number must be given because fees apply after a given
       amount of downloaded data).

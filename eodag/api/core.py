@@ -52,7 +52,7 @@ from eodag.utils.exceptions import (
     PluginImplementationError,
     UnsupportedProvider,
 )
-from eodag.utils.stac_reader import fetch_stac_items
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT, fetch_stac_items
 
 logger = logging.getLogger("eodag.core")
 
@@ -363,9 +363,23 @@ class EODataAccessGateway(object):
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
 
-    def available_providers(self):
-        """Gives the list of the available providers"""
-        return sorted(tuple(self.providers_config.keys()))
+    def available_providers(self, product_type=None):
+        """Gives the sorted list of the available providers
+
+        :param product_type: (optional) only list providers configured for this product_type
+        :type product_type: str
+        :returns: the sorted list of the available providers
+        :rtype: list
+        """
+
+        if product_type:
+            return sorted(
+                k
+                for k, v in self.providers_config.items()
+                if product_type in getattr(v, "products", {}).keys()
+            )
+        else:
+            return sorted(tuple(self.providers_config.keys()))
 
     def guess_product_type(self, **kwargs):
         """Find the eodag product type code that best matches a set of search params
@@ -433,6 +447,7 @@ class EODataAccessGateway(object):
         start=None,
         end=None,
         geom=None,
+        locations=None,
         **kwargs
     ):
         """Look for products matching criteria on known providers.
@@ -450,9 +465,9 @@ class EODataAccessGateway(object):
         :param raise_errors:  When an error occurs when searching, if this is set to
                               True, the error is raised (default: False)
         :type raise_errors: bool
-        :param start: Start sensing time in iso format
+        :param start: Start sensing UTC time in iso format
         :type start: str
-        :param end: End sensing time in iso format
+        :param end: End sensing UTC time in iso format
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
@@ -464,18 +479,32 @@ class EODataAccessGateway(object):
                       ``[lonmin, latmin, lonmax, latmax]``
                     * with a WKT str
 
-                    The geometry can also be passed as ``<location_name>="<attr_regex>"`` in kwargs
-        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry])
+        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
+        :param locations: Location filtering by name using locations configuration
+                          ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
+                          the geometry of the features having the property ISO3 starting with
+                          'PA' such as Panama and Pakistan in the shapefile configured with
+                          name=country and attr=ISO3
+        :type locations: dict
         :param dict kwargs: some other criteria that will be used to do the search,
-                            using paramaters compatibles with the provider, or also
-                            location filtering by name using locations configuration
-                            ``<location_name>="<attr_regex>"`` (e.g.: ``country="PA.`` will use
-                            the geometry of the features having the property ISO3 starting with
-                            'PA' such as Panama and Pakistan in the shapefile configured with
-                            name=country and attr=ISO3)
+                            using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
+
+        .. versionchanged::
+           2.1.0
+
+                * A new parameter ``locations`` is added to be more explicit about
+                  how to pass a location search (with one or more selections). It also
+                  fixes an issue when a wrong location_name would be provided as kwargs
+                  with no other geometry, resulting in a worldwide search.
+
+        .. versionchanged::
+           2.0.0
+
+                * A location search based on a local Shapefile can be made through
+                  kwargs with ``<location_name>="<attr_regex>"``.
 
         .. versionchanged::
            1.6
@@ -549,6 +578,7 @@ class EODataAccessGateway(object):
         if geom is None and box is not None:
             kwargs["geometry"] = box
 
+        kwargs["locations"] = locations
         kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
         # remove locations_args from kwargs now that they have been used
         locations_dict = {loc["name"]: loc for loc in self.locations_config}
@@ -829,6 +859,11 @@ class EODataAccessGateway(object):
                 timeout=timeout,
                 **kwargs
             )
+            # close progress_bar when finished
+            if hasattr(progress_callback, "pb") and hasattr(
+                progress_callback.pb, "close"
+            ):
+                progress_callback.pb.close()
         else:
             logger.info("Empty search result, nothing to be downloaded !")
         return paths
@@ -887,6 +922,7 @@ class EODataAccessGateway(object):
         max_connections=100,
         provider=None,
         productType=None,
+        timeout=HTTP_REQ_TIMEOUT,
         **kwargs
     ):
         """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
@@ -896,21 +932,26 @@ class EODataAccessGateway(object):
 
         :param filename: A filename containing features encoded as a geojson
         :type filename: str
-        :param recursive: Brownse recursively in child nodes if True
+        :param recursive: Browse recursively in child nodes if True
         :type recursive: bool
-        :param max_connections: max connections for http requests
+        :param max_connections: Maximum number of connections for HTTP requests
         :type max_connections: int
-        :param provider: data provider
+        :param provider: Data provider
         :type provider: str
-        :param productType: data product type
+        :param productType: Data product type
         :type productType: str
-        :param dict kwargs: parameters that will be stored in the result as
+        :param timeout: (optional) Timeout in seconds for each internal HTTP request
+        :type timeout: float
+        :param dict kwargs: Parameters that will be stored in the result as
                             search criteria
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         features = fetch_stac_items(
-            filename, recursive=recursive, max_connections=max_connections
+            filename,
+            recursive=recursive,
+            max_connections=max_connections,
+            timeout=timeout,
         )
         nb_features = len(features)
         feature_collection = geojson.FeatureCollection(features)
@@ -1002,9 +1043,14 @@ class EODataAccessGateway(object):
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )
-        return product.download(
+        path = product.download(
             progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
         )
+        # close progress_bar when finished
+        if hasattr(progress_callback, "pb") and hasattr(progress_callback.pb, "close"):
+            progress_callback.pb.close()
+
+        return path
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration

@@ -96,11 +96,6 @@
     },
     "links": [
         {
-            "rel": "self",
-            "title": "S2A_MSIL1C_20191231T112451_N0208_R037_T30VVH_20191231T115143",
-            "href": "./country/GBR/year/2019/items/S2A_MSIL1C_20191231T112451_N0208_R037_T30VVH_20191231T115143"
-        },
-        {
             "rel": "root",
             "href": "/"
         },

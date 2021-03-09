@@ -17,6 +17,15 @@
 # limitations under the License.
 
 
+def check_ipython():
+    """Check if called from ipython / notebook"""
+    try:
+        __IPYTHON__
+        return True
+    except NameError:
+        return False
+
+
 class NotebookWidgets(object):
     """Display / handle ipython widgets"""
 
@@ -26,18 +35,16 @@ class NotebookWidgets(object):
     display = None
 
     def __init__(self):
-        try:
-            __IPYTHON__
-            self.ipython = True
+        self.ipython = check_ipython()
 
+        if self.ipython:
             from ipywidgets import HTML
             from IPython.display import display
 
             self.display = display
 
             self.html_box = HTML()
-
-        except NameError:
+        else:
             pass
 
     def display_html(self, html_value):

@@ -223,7 +223,7 @@ class TestConfigFunctions(unittest.TestCase):
                     base_uri: https://api.my_new_provider
                     flatten_top_dirs: True
                 auth:
-                    type: OAuth
+                    type: AwsAuth
                     credentials:
                         aws_access_key_id: access-key-id
                         aws_secret_access_key: secret-access-key
@@ -289,7 +289,7 @@ class TestConfigFunctions(unittest.TestCase):
         #         base_uri: https://api.my_new_provider
         #         flatten_top_dirs: True
         #     auth:
-        # noqa: F821      type: OAuth
+        # noqa: F821      type: AwsAuth
         #         credentials:
         #           aws_access_key_id: access-key-id
         #           aws_secret_access_key: secret-access-key
@@ -339,7 +339,7 @@ class TestConfigFunctions(unittest.TestCase):
         )
         self.assertTrue(my_new_provider_conf.download.flatten_top_dirs)
         self.assertIsInstance(my_new_provider_conf.auth, config.PluginConfig)
-        self.assertEqual(my_new_provider_conf.auth.type, "OAuth")
+        self.assertEqual(my_new_provider_conf.auth.type, "AwsAuth")
         self.assertEqual(
             my_new_provider_conf.auth.credentials["aws_access_key_id"], "access-key-id"
         )

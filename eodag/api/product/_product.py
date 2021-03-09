@@ -63,7 +63,7 @@ class EOProduct(object):
         mentioned CRS.
     """
 
-    def __init__(self, provider, properties, *args, **kwargs):
+    def __init__(self, provider, properties, **kwargs):
         self.provider = provider
         self.product_type = kwargs.get("productType")
         self.location = self.remote_location = properties.get("downloadLink", "")
@@ -103,7 +103,6 @@ class EOProduct(object):
                     # Giv up!
                     raise
         self.geometry = self.search_intersection = geometry.shape(product_geometry)
-        self.search_args = args
         self.search_kwargs = kwargs
         if self.search_kwargs.get("geometry") is not None:
             searched_geom = get_geometry_from_various(

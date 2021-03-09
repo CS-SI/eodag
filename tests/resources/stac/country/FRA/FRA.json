@@ -33,17 +33,17 @@
     "license": "proprietary",
     "links": [
         {
-            "href": "./country/FRA/FRA.json",
-            "rel": "self"
-        },
-        {
-            "href": "./catalog.json",
+            "href": "../../catalog.json",
             "rel": "root"
         },
         {
-            "href": "./country/FRA/year/year.json",
+            "href": "./year/year.json",
             "rel": "child",
             "title": "year"
+        },
+        {
+            "rel": "parent",
+            "href": "../country.json"
         }
     ],
     "properties": {

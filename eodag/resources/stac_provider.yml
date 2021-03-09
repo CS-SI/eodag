@@ -53,7 +53,7 @@ search:
       - '$.properties.end_datetime'
     illuminationAzimuthAngle: '$.properties."view:sun_azimuth"'
     illuminationElevationAngle: '$.properties."view:sun_elevation"'
-    polarisationChannels: '$.properties."sar:polarizations"'
+    polarizationChannels: '$.properties."sar:polarizations"'
     dopplerFrequency: '$.properties."sar:frequency_band"'
     # Custom parameters (not defined in the base document referenced above)
     id:
@@ -63,5 +63,9 @@ search:
       - 'bbox={geometry.bounds#csv_list}'
       - '$.geometry'
     downloadLink: '%(base_uri)s/collections/{productType}/items/{id}'
+    quicklook: '$.assets.quicklook.href'
+    thumbnail: '$.assets.thumbnail.href'
+    # storageStatus set to ONLINE for consistency between providers
+    storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
     # Normalization code moves assets from properties to product's attr
     assets: '$.assets'

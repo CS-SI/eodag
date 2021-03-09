@@ -232,7 +232,8 @@ def provider_config_init(provider_config):
     for param_name in ("download", "api"):
         if param_name in vars(provider_config):
             param_value = getattr(provider_config, param_name)
-            param_value.outputs_prefix = tempfile.gettempdir()
+            if not getattr(param_value, "outputs_prefix", None):
+                param_value.outputs_prefix = tempfile.gettempdir()
     # Set default priority to 0
     provider_config.__dict__.setdefault("priority", 0)
 

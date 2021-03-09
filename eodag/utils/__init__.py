@@ -27,11 +27,10 @@ import logging
 import os
 import re
 import string
-import sys
 import types
 import unicodedata
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import repeat, starmap
 
 import click
@@ -43,13 +42,14 @@ from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
-from unidecode import unidecode
+
+from eodag.utils.notebook import check_ipython
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
     parse_qs,
     quote,
-    quote_plus,
+    urlencode,
     urljoin,
     urlparse,
     urlunparse,
@@ -60,95 +60,6 @@ DEFAULT_PROJ = "EPSG:4326"
 logger = logging.getLogger("eodag.utils")
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
-
-
-if sys.version_info.minor < 5:
-    # Explicitly redefining urlencode the way it is defined in Python 3.5
-    def urlencode(
-        query, doseq=False, safe="", encoding=None, errors=None, quote_via=quote_plus,
-    ):  # noqa
-        """Encode a dict or sequence of two-element tuples into a URL query string.
-
-        If any values in the query arg are sequences and doseq is true, each
-        sequence element is converted to a separate parameter.
-
-        If the query arg is a sequence of two-element tuples, the order of the
-        parameters in the output will match the order of parameters in the
-        input.
-
-        The components of a query arg may each be either a string or a bytes type.
-
-        The safe, encoding, and errors parameters are passed down to the function
-        specified by quote_via (encoding and errors only if a component is a str).
-        """
-
-        if hasattr(query, "items"):
-            query = query.items()
-        else:
-            # It's a bother at times that strings and string-like objects are
-            # sequences.
-            try:
-                # non-sequence items should not work with len()
-                # non-empty strings will fail this
-                if len(query) and not isinstance(query[0], tuple):
-                    raise TypeError
-                # Zero-length sequences of all types will get here and succeed,
-                # but that's a minor nit.  Since the original implementation
-                # allowed empty dicts that type of behavior probably should be
-                # preserved for consistency
-            except TypeError:
-                ty, va, tb = sys.exc_info()
-                raise TypeError(
-                    "not a valid non-string sequence " "or mapping object"
-                ).with_traceback(tb)
-
-        l = []  # noqa
-        if not doseq:
-            for k, v in query:
-                if isinstance(k, bytes):
-                    k = quote_via(k, safe)
-                else:
-                    k = quote_via(str(k), safe, encoding, errors)
-
-                if isinstance(v, bytes):
-                    v = quote_via(v, safe)
-                else:
-                    v = quote_via(str(v), safe, encoding, errors)
-                l.append(k + "=" + v)
-        else:
-            for k, v in query:
-                if isinstance(k, bytes):
-                    k = quote_via(k, safe)
-                else:
-                    k = quote_via(str(k), safe, encoding, errors)
-
-                if isinstance(v, bytes):
-                    v = quote_via(v, safe)
-                    l.append(k + "=" + v)
-                elif isinstance(v, str):
-                    v = quote_via(v, safe, encoding, errors)
-                    l.append(k + "=" + v)
-                else:
-                    try:
-                        # Is this a sufficient test for sequence-ness?
-                        x = len(v)  # noqa
-                    except TypeError:
-                        # not a sequence
-                        v = quote_via(str(v), safe, encoding, errors)
-                        l.append(k + "=" + v)
-                    else:
-                        # loop over the sequence
-                        for elt in v:
-                            if isinstance(elt, bytes):
-                                elt = quote_via(elt, safe)
-                            else:
-                                elt = quote_via(str(elt), safe, encoding, errors)
-                            l.append(k + "=" + elt)
-        return "&".join(l)
-
-
-else:
-    from urllib.parse import urlencode
 
 
 class RequestsTokenAuth(AuthBase):
@@ -261,7 +172,7 @@ def sanitize(value):
     'replace_ponctuation_signs_byunderscorekeeping-hyphen.dot_and_underscore'
     """
     # remove accents
-    rv = unidecode(value)
+    rv = strip_accents(value)
     # replace punctuation signs and spaces by underscore
     # keep hyphen, dot and underscore from punctuation
     tobereplaced = re.sub(r"[-_.]", "", string.punctuation)
@@ -270,6 +181,22 @@ def sanitize(value):
 
     rv = re.sub(r"[" + tobereplaced + r"]+", "_", rv)
     return str(rv)
+
+
+def strip_accents(s):
+    """Strip accents of a string.
+
+    >>> strip_accents('productName')
+    'productName'
+    >>> strip_accents('génèse')
+    'genese'
+    >>> strip_accents('preserve-punct-special-chars:;,?!§%$£œ')
+    'preserve-punct-special-chars:;,?!§%$£œ'
+    """
+    # Mn stands for a nonspacing combining mark (e.g. '́')
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
+    )
 
 
 def mutate_dict_in_place(func, mapping):
@@ -379,18 +306,29 @@ def maybe_generator(obj):
         yield obj
 
 
-def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S"):
-    """Returns the given date_time string formatted with date_format as timestamp
+def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S", as_utc=False):
+    """Returns the given UTC date_time string formatted with date_format as timestamp
 
     :param date_time: the datetime string to return as timestamp
     :type date_time: str
     :param date_format: (optional) the date format in which date_time is given,
                         defaults to '%Y-%m-%dT%H:%M:%S'
     :type date_format: str
+    :param as_utc: (optional) if ``True``, consider the input ``date_time`` as UTC,
+                        defaults to ``False``
+    :type date_format: bool
     :returns: the timestamp corresponding to the date_time string in seconds
     :rtype: float
+
+    .. versionchanged::
+        2.1.0
+
+            * The optional parameter ``as_utc`` to consider the input date as UTC.
     """
-    return datetime.strptime(date_time, date_format).timestamp()
+    dt = datetime.strptime(date_time, date_format)
+    if as_utc:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
 
 
 class ProgressCallback(object):
@@ -399,6 +337,10 @@ class ProgressCallback(object):
     def __init__(self, max_size=None):
         self.pb = None
         self.max_size = max_size
+        self.unit = "B"
+        self.unit_scale = True
+        self.desc = ""
+        self.position = 0
 
     def __call__(self, current_size, max_size=None):
         """Update the progress bar.
@@ -411,8 +353,33 @@ class ProgressCallback(object):
         if max_size is not None:
             self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm(total=self.max_size, unit="B", unit_scale=True)
+            self.pb = tqdm(
+                total=self.max_size,
+                unit=self.unit,
+                unit_scale=self.unit_scale,
+                desc=self.desc,
+                position=self.position,
+                dynamic_ncols=True,
+            )
         self.pb.update(current_size)
+
+    def reset(self):
+        """Reset progress bar"""
+        if hasattr(self.pb, "reset"):
+            self.pb.reset(self.max_size)
+            self.pb.total = self.max_size
+            self.pb.unit = self.unit
+            self.pb.unit_scale = self.unit_scale
+            self.pb.desc = self.desc
+            self.pb.position = self.position
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        if hasattr(self.pb, "close"):
+            self.pb.close()
+        return False
 
 
 class NotebookProgressCallback(ProgressCallback):
@@ -423,8 +390,24 @@ class NotebookProgressCallback(ProgressCallback):
         if max_size is not None:
             self.max_size = max_size
         if self.pb is None:
-            self.pb = tqdm_notebook(total=self.max_size, unit="B", unit_scale=True)
+            self.pb = tqdm_notebook(
+                total=self.max_size,
+                unit=self.unit,
+                unit_scale=self.unit_scale,
+                desc=self.desc,
+                position=self.position,
+                dynamic_ncols=True,
+            )
         self.pb.update(current_size)
+
+
+def get_progress_callback():
+    """Get progress_callback"""
+
+    if check_ipython():
+        return NotebookProgressCallback()
+    else:
+        return ProgressCallback()
 
 
 def repeatfunc(func, n, *args):
@@ -522,6 +505,47 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
         else:
             old_dict[k] = v
     return old_dict
+
+
+def items_recursive_apply(input_obj, apply_method, **apply_method_parameters):
+    """Recursive apply method to items contained in input object (dict or list)
+
+    >>> items_recursive_apply(
+    ...     {"foo": {"bar":"baz"}, "qux": ["a","b"]},
+    ...     lambda k,v,x: v.upper()+x, **{"x":"!"}
+    ... ) == {'foo': {'bar': 'BAZ!'}, 'qux': ['A!', 'B!']}
+    True
+    >>> items_recursive_apply(
+    ...     [{"foo": {"bar":"baz"}}, "qux"],
+    ...     lambda k,v,x: v.upper()+x,
+    ...     **{"x":"!"})
+    [{'foo': {'bar': 'BAZ!'}}, 'QUX!']
+    >>> items_recursive_apply(
+    ...     "foo",
+    ...     lambda k,v,x: v.upper()+x,
+    ...     **{"x":"!"})
+    'foo'
+
+    :param input_obj: input object (dict or list)
+    :type input_obj: Union[dict,list]
+    :param apply_method: method to be applied to dict elements
+    :type apply_method: :func:`apply_method`
+    :param apply_method_parameters: optional parameters passed to the method
+    :type apply_method_parameters: dict
+    :returns: updated object
+    :rtype: Union[dict,list]
+    """
+    if isinstance(input_obj, dict):
+        return dict_items_recursive_apply(
+            input_obj, apply_method, **apply_method_parameters
+        )
+    elif isinstance(input_obj, list):
+        return list_items_recursive_apply(
+            input_obj, apply_method, **apply_method_parameters
+        )
+    else:
+        logger.warning("Could not use items_recursive_apply on %s" % type(input_obj))
+        return input_obj
 
 
 def dict_items_recursive_apply(config_dict, apply_method, **apply_method_parameters):
@@ -689,6 +713,7 @@ def get_geometry_from_various(locations_config=[], **query_args):
     :type query_args: dict
     :returns: shapely geometry found
     :rtype: :class:`shapely.geometry.BaseGeometry`
+    :raises: :class:`ValueError`
     """
     geom = None
 
@@ -721,21 +746,46 @@ def get_geometry_from_various(locations_config=[], **query_args):
             geom = shapely.wkt.loads(geom_arg)
         elif isinstance(geom_arg, BaseGeometry):
             geom = geom_arg
+        elif geom_arg is None:
+            pass
         else:
             raise TypeError("Unexpected geometry type: {}".format(type(geom_arg)))
 
     # look for location name in locations configuration
     locations_dict = {loc["name"]: loc for loc in locations_config}
-    for arg in query_args.keys():
+    # The location query kwargs can either be in query_args or in query_args["locations"],
+    # support for which were added in 2.0.0 and 2.1.0 respectively.
+    # The location query kwargs in query_args is supported for backward compatibility,
+    # the recommended usage is that they are in query_args["locations"]
+    locations = query_args.get("locations")
+    locations = locations if locations is not None else {}
+    # In query_args["locations"] we can check that the location_names are correct
+    locations = locations if locations is not None else {}
+    for location_name in locations:
+        if location_name not in locations_dict:
+            raise ValueError(
+                f"The location name {location_name} is wrong. "
+                f"It must be one of: {locations_dict.keys()}"
+            )
+    query_locations = {**query_args, **locations}
+    for arg in query_locations.keys():
         if arg in locations_dict.keys():
-            pattern = query_args[arg]
+            found = False
+            pattern = query_locations[arg]
             attr = locations_dict[arg]["attr"]
             with shapefile.Reader(locations_dict[arg]["path"]) as shp:
                 for shaperec in shp.shapeRecords():
                     if re.search(pattern, shaperec.record[attr]):
+                        found = True
                         new_geom = shape(shaperec.shape)
                         # get geoms union
                         geom = new_geom.union(geom) if geom else new_geom
+            if not found:
+                raise ValueError(
+                    f"No match found for the search location '{arg}' "
+                    f"with the pattern '{pattern}'."
+                )
+
     return geom
 
 
@@ -750,3 +800,9 @@ class MockResponse(object):
     def json(self):
         """Return json data"""
         return self.json_data
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()

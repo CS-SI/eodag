@@ -58,9 +58,10 @@ setup(
         "lxml",
         "flask >= 1.0.2",
         "markdown >= 3.0.1",
-        "unidecode",
         "whoosh",
+        "pystac",
     ],
+    python_requires=">=3.6",
     extras_require={
         "dev": [
             "nose",
@@ -91,6 +92,7 @@ setup(
         "eodag.plugins.auth": [
             "GenericAuth = eodag.plugins.authentication.generic:GenericAuth",
             "HTTPHeaderAuth = eodag.plugins.authentication.header:HTTPHeaderAuth",
+            "AwsAuth = eodag.plugins.authentication.aws_auth:AwsAuth",
             "OAuth = eodag.plugins.authentication.oauth:OAuth",
             "TokenAuth = eodag.plugins.authentication.token:TokenAuth",
             "OIDCAuthorizationCodeFlowAuth = eodag.plugins.authentication.openid_connect:OIDCAuthorizationCodeFlowAuth",  # noqa
@@ -111,6 +113,11 @@ setup(
         "eodag.plugins.search": [
             "CSWSearch = eodag.plugins.search.csw:CSWSearch",
             "QueryStringSearch = eodag.plugins.search.qssearch:QueryStringSearch",
+            "AwsSearch = eodag.plugins.search.qssearch:AwsSearch",
+            "ODataV4Search = eodag.plugins.search.qssearch:ODataV4Search",
+            "PostJsonSearch = eodag.plugins.search.qssearch:PostJsonSearch",
+            "StacSearch = eodag.plugins.search.qssearch:StacSearch",
+            "StaticStacSearch = eodag.plugins.search.static_stac_search:StaticStacSearch",
         ],
     },
     project_urls={
@@ -125,7 +132,6 @@ setup(
         "Natural Language :: English",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

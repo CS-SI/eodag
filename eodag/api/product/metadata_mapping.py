@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import ast
 import logging
 import re
 from datetime import datetime
@@ -28,7 +29,7 @@ from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon
 
-from eodag.utils import get_timestamp
+from eodag.utils import get_timestamp, items_recursive_apply
 
 logger = logging.getLogger("eodag.api.product.metadata_mapping")
 
@@ -116,7 +117,7 @@ def format_metadata(search_param, *args, **kwargs):
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
-        - ``to_timestamp_milliseconds``: converts a utc date string to a timestamp in
+        - ``utc_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
           milliseconds
         - ``to_wkt``: converts a geometry to its well known text representation
         - ``to_iso_utc_datetime_from_milliseconds``: converts a utc timestamp in given
@@ -182,11 +183,13 @@ def format_metadata(search_param, *args, **kwargs):
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
-        def convert_to_timestamp_milliseconds(value):
+        def convert_utc_to_timestamp_milliseconds(value):
             if len(value) == 10:
-                return int(1e3 * get_timestamp(value, date_format="%Y-%m-%d"))
+                return int(
+                    1e3 * get_timestamp(value, date_format="%Y-%m-%d", as_utc=True)
+                )
             else:
-                return int(1e3 * get_timestamp(value))
+                return int(1e3 * get_timestamp(value, as_utc=True))
 
         @staticmethod
         def convert_to_wkt_convex_hull(value):
@@ -252,7 +255,11 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
             try:
-                return datetime.fromtimestamp(timestamp / 1e3, tzutc()).isoformat()
+                return (
+                    datetime.fromtimestamp(timestamp / 1e3, tzutc())
+                    .isoformat(timespec="milliseconds")
+                    .replace("+00:00", "Z")
+                )
             except TypeError:
                 return timestamp
 
@@ -263,7 +270,7 @@ def format_metadata(search_param, *args, **kwargs):
                     return (
                         datetime.strptime(dt, fmt)
                         .replace(tzinfo=tzutc())
-                        .isoformat()
+                        .isoformat(timespec="milliseconds")
                         .replace("+00:00", "Z")
                     )
                 except ValueError:
@@ -293,8 +300,17 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_replace_str(string, args):
-            old, new = [x.strip() for x in args.split(",")]
+            old, new = ast.literal_eval(args)
             return string.replace(old, new)
+
+        @staticmethod
+        def convert_recursive_sub_str(input_obj, args):
+            old, new = ast.literal_eval(args)
+            return items_recursive_apply(
+                input_obj,
+                lambda k, v, x, y: re.sub(x, y, v) if isinstance(v, str) else v,
+                **{"x": old, "y": new}
+            )
 
         @staticmethod
         def convert_slice_str(string, args):
@@ -406,6 +422,12 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value}
                     )
+        # properties as python objects when possible (format_metadata returns only strings)
+        try:
+            properties[metadata] = ast.literal_eval(properties[metadata])
+        except Exception:
+            pass
+
     # Resolve templates
     for metadata, template in templates.items():
         properties[metadata] = template.format(**properties)
@@ -467,25 +489,36 @@ def properties_from_xml(
             if len(extracted_value) == 1:
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value[0]
-                    # store element tag in used_xpaths
-                    used_xpaths.append(
-                        getattr(
-                            root.xpath(
-                                path_or_text.replace("/text()", ""),
-                                namespaces={
-                                    k or empty_ns_prefix: v
-                                    for k, v in root.nsmap.items()
-                                },
-                            )[0],
-                            "tag",
-                            None,
-                        )
-                    )
                 else:
+                    # reformat conversion_or_none as metadata#converter(args) or metadata#converter
+                    if (
+                        len(conversion_or_none) > 1
+                        and isinstance(conversion_or_none, list)
+                        and conversion_or_none[1] is not None
+                    ):
+                        conversion_or_none = "%s(%s)" % (
+                            conversion_or_none[0],
+                            conversion_or_none[1],
+                        )
+                    elif isinstance(conversion_or_none, list):
+                        conversion_or_none = conversion_or_none[0]
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value[0]}
                     )
+                # store element tag in used_xpaths
+                used_xpaths.append(
+                    getattr(
+                        root.xpath(
+                            path_or_text.replace("/text()", ""),
+                            namespaces={
+                                k or empty_ns_prefix: v for k, v in root.nsmap.items()
+                            },
+                        )[0],
+                        "tag",
+                        None,
+                    )
+                )
             # If there are multiple matches, consider the result as a list, doing a
             # formatting if any
             elif len(extracted_value) > 1:
@@ -566,14 +599,11 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
                 else:
                     dest_dict[metadata] = (conversion, jsonpath.parse(path))
             except Exception:  # jsonpath_ng does not provide a proper exception
-                # Assume the mapping is to be passed as is.
-                # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                # it further
-                _, text = get_metadata_path(dest_dict[metadata])
+                # Keep path as this and its associated conversion
                 if len(dest_dict[metadata]) == 2:
-                    dest_dict[metadata][1] = (None, text)
+                    dest_dict[metadata][1] = (conversion, path)
                 else:
-                    dest_dict[metadata] = (None, text)
+                    dest_dict[metadata] = (conversion, path)
     return dest_dict
 
 
@@ -649,7 +679,7 @@ OSEO_METADATA_MAPPING = {
     "illuminationZenithAngle": "$.properties.illuminationZenithAngle",
     "illuminationElevationAngle": "$.properties.illuminationElevationAngle",
     "polarizationMode": "$.properties.polarizationMode",
-    "polarisationChannels": "$.properties.polarisationChannels",
+    "polarizationChannels": "$.properties.polarizationChannels",
     "antennaLookDirection": "$.properties.antennaLookDirection",
     "minimumIncidenceAngle": "$.properties.minimumIncidenceAngle",
     "maximumIncidenceAngle": "$.properties.maximumIncidenceAngle",
