@@ -4,7 +4,8 @@ Release history
 2.1.0 (2021-xx-xx)
 ++++++++++++++++++
 
-- ``earth_search`` and ``usgs_satapi_aws`` as new providers
+- `earth_search <https://www.element84.com/earth-search>`_ and
+  `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api>`_ as new providers
 - Updated ``HTTPDownload`` plugin, handling products with multiple assets
 - New plugin ``AwsAuth``, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
 - New search plugin ``StaticStacSearch`` and updated

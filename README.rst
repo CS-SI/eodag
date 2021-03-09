@@ -27,40 +27,132 @@ EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugi
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
 data provider. The EODAG SDK is structured around three functions:
 
-    * List product types: list of supported products and their description
+* List product types: list of supported products and their description
 
-    * Search products (by product type or uid) : searches products according to the search criteria provided
+* Search products (by product type or uid) : searches products according to the search criteria provided
 
-    * Download products : download product “as is"
+* Download products : download product “as is"
 
 EODAG is developed in Python. It is structured according to a modular plugin architecture, easily extensible and able to
 integrate new data providers. Three types of plugins compose the tool:
 
-    * Catalog search plugins, responsible for searching data (OpenSearch, CSW, ...), building paths, retrieving quicklook,
-      combining results
+* Catalog search plugins, responsible for searching data (OpenSearch, CSW, ...), building paths, retrieving quicklook,
+  combining results
 
-    * Download plugins, allowing to download and retrieve data locally (via FTP, HTTP, ..), always with the same directory
-      organization
+* Download plugins, allowing to download and retrieve data locally (via FTP, HTTP, ..), always with the same directory
+  organization
 
-    * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
+* Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
 
 Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/latest/intro.html#stac-client-and-server>`_.
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
-.. image:: docs/_static/eodag_stac_client.png
-   :alt: EODAG as STAC client
+.. image:: docs/_static/eodag_overview.png
+   :alt: EODAG overview
    :class: no-scaled-link
 
 Installation
 ============
 
-EODAG is on `PyPI <https://pypi.org/project/eodag/>`_::
+EODAG is on `PyPI <https://pypi.org/project/eodag/>`_:
+
+.. code-block:: bash
 
     python -m pip install eodag
 
+
 Usage
 =====
+
+For downloading you will need to fill your credentials for the desired providers in your
+`eodag user configuration file <https://eodag.readthedocs.io/en/latest/intro.html#how-to-configure-authentication-for-available-providers>`_.
+The file will automatically be created with empty values on the first run.
+
+Python API
+----------
+
+Example usage for interacting with the api in your Python code:
+
+.. code-block:: python
+
+    from eodag import EODataAccessGateway
+
+    dag = EODataAccessGateway()
+    product_type = 'S2_MSI_L1C'
+    footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
+    start, end = '2021-01-01', '2021-01-15'
+    search_results, found_nb = dag.search(productType=product_type, geom=footprint, start=start, end=end)
+    product_paths = dag.download_all(search_results)
+    for path in product_paths:
+      print('Downloaded : {}'.format(path))
+
+
+STAC REST API
+-------------
+
+An eodag installation can be exposed through a STAC compliant REST api from the command line:
+
+.. code-block:: bash
+
+    $ eodag serve-rest --help
+    Usage: eodag serve-rest [OPTIONS]
+
+      Start eodag HTTP server
+
+    Options:
+      -f, --config PATH   File path to the user configuration file with its
+                          credentials
+      -d, --daemon TEXT   run in daemon mode
+      -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
+                          otherwise bind to 127.0.0.1 (localhost). This maybe
+                          necessary in systems that only run Flask  [default:
+                          False]
+      -p, --port INTEGER  The port on which to listen  [default: 5000]
+      --debug             Run in debug mode (for development purpose)  [default:
+                          False]
+      --help              Show this message and exit.
+
+    # run server
+    $ eodag serve-rest
+
+    # list available product types for ``peps`` provider:
+    $ curl "http://127.0.0.1:5000/collections?provider=peps" | jq ".collections[].id"
+    "S1_SAR_GRD"
+    "S1_SAR_OCN"
+    "S1_SAR_SLC"
+    "S2_MSI_L1C"
+    "S2_MSI_L2A"
+    "S3_EFR"
+    "S3_ERR"
+    "S3_LAN"
+    "S3_OLCI_L2LFR"
+    "S3_OLCI_L2LRR"
+    "S3_SLSTR_L1RBT"
+    "S3_SLSTR_L2LST"
+
+    # search for items
+    $ curl "http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25" \
+    | jq ".context.matched"
+    6
+
+    # browse for items
+    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    | jq ".context.matched"
+    9
+
+    # get download link
+    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    | jq ".features[0].assets.downloadLink.href"
+    "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+
+    # download
+    $ wget "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+
+
+You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
+
+For more information, see `STAC REST interface usage <https://eodag.readthedocs.io/en/latest/use.html#stac-rest-interface>`_.
 
 Command line interface
 ----------------------
@@ -117,49 +209,6 @@ of this bbox"
   verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
 
 
-STAC REST API
--------------
-
-An eodag installation can be exposed through a STAC compliant REST api from the command line::
-
-    # eodag serve-rest --help
-    Usage: eodag serve-rest [OPTIONS]
-
-      Start eodag HTTP server
-
-    Options:
-      -f, --config PATH   File path to the user configuration file with its
-                          credentials
-      -d, --daemon TEXT   run in daemon mode
-      -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
-                          otherwise bind to 127.0.0.1 (localhost). This maybe
-                          necessary in systems that only run Flask  [default:
-                          False]
-      -p, --port INTEGER  The port on which to listen  [default: 5000]
-      --debug             Run in debug mode (for development purpose)  [default:
-                          False]
-      --help              Show this message and exit.
-
-
-Python API
-----------
-
-Example usage for interacting with the api in your Python code:
-
-.. code-block:: python
-
-    from eodag import EODataAccessGateway
-
-    dag = EODataAccessGateway()
-    product_type = 'S2_MSI_L1C'
-    footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
-    start, end = '2021-01-01', '2021-01-15'
-    search_results = dag.search(productType=product_type, geom=footprint, start=start, end=end)
-    product_paths = dag.download_all(search_results)
-    for path in product_paths:
-        print('Downloaded : {}'.format(path))
-
-
 Contribute
 ==========
 
@@ -201,14 +250,14 @@ To run the entire tests (units, integration and end-to-end)::
 
 Releases are made by tagging a commit on the master branch. To make a new release,
 
-    * Ensure you correctly updated `README.rst` and `CHANGES.rst` (and occasionally,
-      also `NOTICE` - in case a new dependency is added).
-    * Check that the version string in `eodag/__meta__.py` (the variable `__version__`)
-      is correctly updated
-    * Push your local master branch to remote.
-    * Tag the commit that represents the state of the release with a message. For example,
-      for version 1.0, do this: `git tag -a v1.0 -m 'version 1.0'`
-    * Push the tags to github: `git push --tags`.
+* Ensure you correctly updated `README.rst` and `CHANGES.rst` (and occasionally,
+  also `NOTICE` - in case a new dependency is added).
+* Check that the version string in `eodag/__meta__.py` (the variable `__version__`)
+  is correctly updated
+* Push your local master branch to remote.
+* Tag the commit that represents the state of the release with a message. For example,
+  for version 1.0, do this: `git tag -a v1.0 -m 'version 1.0'`
+* Push the tags to github: `git push --tags`.
 
 The documentation is managed by a webhook, and the latest documentation on readthedocs follows
 the documentation present in `master`. Therefore, there is nothing to do apart from updating
