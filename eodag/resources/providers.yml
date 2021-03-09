@@ -1528,3 +1528,37 @@
     flatten_top_dirs: True
   auth: !plugin
     type: AwsAuth
+
+---
+!provider
+  name: earth_search
+  priority: 0
+  roles:
+    - host
+  description: Earth Search
+  url: https://www.element84.com/earth-search/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    metadata_mapping:
+      productType:
+        - 'collections=["{productType}"]'
+        - '$.collection'
+      geometry:
+        - 'bbox=[{geometry.bounds#csv_list}]'
+        - '$.geometry'
+  products:
+    S2_MSI_L1C:
+      productType: sentinel-s2-l1c
+    S2_MSI_L2A:
+      productType: sentinel-s2-l2a
+    L8_OLI_TIRS_C1L1:
+      productType: landsat-8-l1-c1
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: AwsDownload
+    base_uri: https://earth-search.aws.element84.com/v0
+    flatten_top_dirs: True
+  auth: !plugin
+    type: AwsAuth

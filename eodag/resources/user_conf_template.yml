@@ -117,3 +117,13 @@ usgs_satapi_aws:
             aws_profile:
     download:
         outputs_prefix:
+earth_search:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+            aws_profile:
+    download:
+        outputs_prefix:

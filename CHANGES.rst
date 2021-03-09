@@ -4,11 +4,12 @@ Release history
 2.1.0 (2021-xx-xx)
 ++++++++++++++++++
 
-- New search plugin ``StaticStacSearch`` and updated
-  `STAC client tutorial <https://eodag.readthedocs.io/en/latest/tutorials/tuto_stac_client.html>`_
+- ``earth_search`` and ``usgs_satapi_aws`` as new providers
 - Updated ``HTTPDownload`` plugin, handling products with multiple assets
 - New plugin ``AwsAuth``, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
-- New tutorial for `Copernicus DEM<https://eodag.readthedocs.io/en/latest/tutorials/tuto_cop_dem.html>`_
+- New search plugin ``StaticStacSearch`` and updated
+  `STAC client tutorial <https://eodag.readthedocs.io/en/latest/tutorials/tuto_stac_client.html>`_
+- New tutorial for `Copernicus DEM <https://eodag.readthedocs.io/en/latest/tutorials/tuto_cop_dem.html>`_
 - Remove ``unidecode`` dependency
 - Start/end dates passed to sobloo are now in UTC, and make it clear that search dates must be in UTC
 - Locations must now be passed to ``search()`` method as a dictionnary

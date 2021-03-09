@@ -39,7 +39,7 @@ class TestCore(unittest.TestCase):
     SUPPORTED_PRODUCT_TYPES = {
         "L8_REFLECTANCE": ["theia"],
         "L57_REFLECTANCE": ["theia"],
-        "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos", "astraea_eod"],
+        "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos", "astraea_eod", "earth_search"],
         "LANDSAT_C2L1": ["usgs_satapi_aws"],
         "LANDSAT_C2L2_SR": ["usgs_satapi_aws"],
         "LANDSAT_C2L2_ST": ["usgs_satapi_aws"],
@@ -67,6 +67,7 @@ class TestCore(unittest.TestCase):
             "aws_eos",
             "sobloo",
             "astraea_eod",
+            "earth_search",
         ],
         "S2_MSI_L2A_MAJA": ["theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
@@ -81,6 +82,7 @@ class TestCore(unittest.TestCase):
             "mundi",
             "creodias",
             "astraea_eod",
+            "earth_search",
         ],
         "S3_ERR": ["peps", "onda", "wekeo", "creodias"],
         "S3_EFR": ["peps", "onda", "wekeo", "creodias"],
@@ -123,6 +125,7 @@ class TestCore(unittest.TestCase):
             "creodias",
             "astraea_eod",
             "usgs_satapi_aws",
+            "earth_search",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -137,6 +140,7 @@ class TestCore(unittest.TestCase):
         "aws_eos",
         "astraea_eod",
         "usgs_satapi_aws",
+        "earth_search",
     ]
 
     def setUp(self):
