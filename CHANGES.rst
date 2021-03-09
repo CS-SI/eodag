@@ -1,7 +1,7 @@
 Release history
 ---------------
 
-2.1.0 (2021-xx-xx)
+2.1.0 (2021-03-09)
 ++++++++++++++++++
 
 - `earth_search <https://www.element84.com/earth-search>`_ and
