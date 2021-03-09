@@ -48,7 +48,7 @@ Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
-.. image:: docs/_static/eodag_overview.png
+.. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/eodag_overview.png
    :alt: EODAG overview
    :class: no-scaled-link
 
@@ -150,7 +150,14 @@ An eodag installation can be exposed through a STAC compliant REST api from the 
     $ wget "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
 
 
-You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
+You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_
+with ``CATALOG_URL=http://127.0.0.1:5000`` :
+
+.. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/stac_browser_example_600.png
+   :target: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/stac_browser_example.png
+   :alt: STAC browser example
+   :width: 600px
+
 
 For more information, see `STAC REST interface usage <https://eodag.readthedocs.io/en/latest/use.html#stac-rest-interface>`_.
 
