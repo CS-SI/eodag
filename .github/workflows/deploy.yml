@@ -1,9 +1,10 @@
-name: Publish to PyPI / GitHub
+name: Publish to PyPI
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   build-n-publish:
@@ -20,7 +21,7 @@ jobs:
           python-version: "3.7"
 
       - name: Check that the current version isn't already on PyPi
-        run |
+        run: |
           if [ "$(./get_pypi_latest_version.sh)" != "$(python setup.py --version)" ]
           then
             echo "Current version is not on PyPI, proceed with bulding"
@@ -31,13 +32,13 @@ jobs:
 
       - name: Check long description is OK for PyPI with tox
         run: |
+          python -m pip install --upgrade pip
           python -m pip install tox
           tox -e pypi
 
       - name: Build a binary wheel and a source tarball
         run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel
+          python -m pip install setuptools wheel
           python setup.py sdist bdist_wheel
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
