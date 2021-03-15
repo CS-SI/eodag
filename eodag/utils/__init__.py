@@ -33,6 +33,16 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from itertools import repeat, starmap
 
+# All modules using these should import them from utils package
+from urllib.parse import (  # noqa; noqa
+    parse_qs,
+    quote,
+    urlencode,
+    urljoin,
+    urlparse,
+    urlunparse,
+)
+
 import click
 import jsonpath_ng as jsonpath
 import shapefile
@@ -44,16 +54,6 @@ from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm_notebook
 
 from eodag.utils.notebook import check_ipython
-
-# All modules using these should import them from utils package
-from urllib.parse import (  # noqa; noqa
-    parse_qs,
-    quote,
-    urlencode,
-    urljoin,
-    urlparse,
-    urlunparse,
-)
 
 DEFAULT_PROJ = "EPSG:4326"
 

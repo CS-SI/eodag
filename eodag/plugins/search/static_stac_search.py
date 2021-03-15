@@ -74,8 +74,10 @@ class StaticStacSearch(StacSearch):
 
         # save StaticStacSearch._request and mock it to make return loaded static results
         stacapi_request = self._request
-        self._request = lambda url, info_message=None, exception_message=None: MockResponse(
-            feature_collection, 200
+        self._request = (
+            lambda url, info_message=None, exception_message=None: MockResponse(
+                feature_collection, 200
+            )
         )
 
         # query on mocked StacSearch

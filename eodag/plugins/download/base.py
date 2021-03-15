@@ -59,7 +59,7 @@ class Download(PluginTopic):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """
         Base download method. Not available, should be defined for each plugin
@@ -207,7 +207,8 @@ class Download(PluginTopic):
                     bar.position = 2
                     for fileinfo in fileinfos:
                         zfile.extract(
-                            fileinfo, path=os.path.join(outputs_prefix, product_path),
+                            fileinfo,
+                            path=os.path.join(outputs_prefix, product_path),
                         )
                         bar(1)
         # Handle depth levels in the product archive. For example, if the downloaded archive was
@@ -228,7 +229,7 @@ class Download(PluginTopic):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """
         A sequential download_all implementation
@@ -282,7 +283,7 @@ class Download(PluginTopic):
                                     progress_callback=progress_callback,
                                     wait=wait,
                                     timeout=-1,
-                                    **kwargs
+                                    **kwargs,
                                 )
                             )
 
@@ -333,15 +334,8 @@ class Download(PluginTopic):
                     wait_seconds = (products[0].next_try - datetime.now()).seconds
                     retry_count += 1
                     info_message = (
-                        "[Retry #%s, %s/%s D/L] Waiting %ss until next download try (retry every %s' for %s')"
-                        % (
-                            retry_count,
-                            (nb_products - len(products)),
-                            nb_products,
-                            wait_seconds,
-                            wait,
-                            timeout,
-                        )
+                        f"[Retry #{retry_count}, {nb_products - len(products)}/{nb_products} D/L] "
+                        f"Waiting {wait_seconds}s until next download try (retry every {wait}' for {timeout}')"
                     )
                     logger.info(info_message)
                     nb_info.display_html(info_message)

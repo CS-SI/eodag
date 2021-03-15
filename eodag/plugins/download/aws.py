@@ -139,8 +139,7 @@ S1_IMG_NB_PER_POLAR = {
 
 
 class AwsDownload(Download):
-    """Download on AWS using S3 protocol
-    """
+    """Download on AWS using S3 protocol"""
 
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download method for AWS S3 API.
@@ -303,7 +302,9 @@ class AwsDownload(Download):
             try:
                 s3_objects = authenticated_objects[bucket_name]
 
-                for product_chunk in s3_objects.filter(Prefix=prefix,):
+                for product_chunk in s3_objects.filter(
+                    Prefix=prefix,
+                ):
                     chunck_rel_path = self.get_chunck_dest_path(
                         product,
                         product_chunk,
@@ -500,8 +501,7 @@ class AwsDownload(Download):
         return bucket, prefix
 
     def finalize_s2_safe_product(self, product_path):
-        """Add missing dirs to downloaded product
-        """
+        """Add missing dirs to downloaded product"""
         try:
             logger.debug("Finalize SAFE product")
             manifest_path = [
@@ -541,8 +541,7 @@ class AwsDownload(Download):
             raise DownloadError(e)
 
     def get_chunck_dest_path(self, product, chunk, dir_prefix, build_safe=False):
-        """Get chunck destination path
-        """
+        """Get chunck destination path"""
         if build_safe:
             # S2 common
             if "S2_MSI" in product.product_type:

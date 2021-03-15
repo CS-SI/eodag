@@ -30,17 +30,9 @@ from flasgger import Swagger
 from flask import abort, jsonify, make_response, request, send_file
 
 from eodag.config import load_stac_api_config
-from eodag.utils.exceptions import (
-    MisconfiguredError,
-    NoMatchingProductType,
-    NotAvailableError,
-    UnsupportedProductType,
-    UnsupportedProvider,
-    ValidationError,
-)
-
 from eodag.rest.utils import (  # get_stac_landing_page,; get_stac_product_types_catalog,; search_products,
     download_stac_item_by_id,
+    get_detailled_collections_list,
     get_stac_catalogs,
     get_stac_collection_by_id,
     get_stac_collections,
@@ -49,7 +41,14 @@ from eodag.rest.utils import (  # get_stac_landing_page,; get_stac_product_types
     get_stac_item_by_id,
     load_stac_config,
     search_stac_items,
-    get_detailled_collections_list,
+)
+from eodag.utils.exceptions import (
+    MisconfiguredError,
+    NoMatchingProductType,
+    NotAvailableError,
+    UnsupportedProductType,
+    UnsupportedProvider,
+    ValidationError,
 )
 
 logger = logging.getLogger("eodag.rest.server")
