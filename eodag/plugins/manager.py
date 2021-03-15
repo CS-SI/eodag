@@ -80,8 +80,10 @@ class PluginManager(object):
         self.product_type_to_provider_config_map = {}
         for provider_config in providers_config.values():
             for product_type in provider_config.products:
-                product_type_providers = self.product_type_to_provider_config_map.setdefault(  # noqa
-                    product_type, []
+                product_type_providers = (
+                    self.product_type_to_provider_config_map.setdefault(  # noqa
+                        product_type, []
+                    )
                 )
                 product_type_providers.append(provider_config)
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)

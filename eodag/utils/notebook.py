@@ -38,8 +38,8 @@ class NotebookWidgets(object):
         self.ipython = check_ipython()
 
         if self.ipython:
-            from ipywidgets import HTML
             from IPython.display import display
+            from ipywidgets import HTML
 
             self.display = display
 

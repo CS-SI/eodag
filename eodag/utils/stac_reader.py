@@ -43,8 +43,7 @@ class _TextOpener:
 
     @staticmethod
     def read_local_json(url, as_json):
-        """Read JSON local file
-        """
+        """Read JSON local file"""
         try:
             with open(url) as f:
                 if as_json:
@@ -56,8 +55,7 @@ class _TextOpener:
             raise STACOpenerError
 
     def read_http_remote_json(self, url, as_json):
-        """Read JSON remote HTTP file
-        """
+        """Read JSON remote HTTP file"""
         try:
             res = urlopen(url, timeout=self.timeout)
             content_type = res.getheader("Content-Type")
