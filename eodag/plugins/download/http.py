@@ -136,7 +136,10 @@ class HTTPDownload(Download):
                         self.config, "dl_url_params", {}
                     )
                     with requests.get(
-                        url, stream=True, auth=auth, params=params,
+                        url,
+                        stream=True,
+                        auth=auth,
+                        params=params,
                     ) as stream:
                         try:
                             stream.raise_for_status()
@@ -265,8 +268,7 @@ class HTTPDownload(Download):
         progress_callback=None,
         **kwargs
     ):
-        """Download product assets if they exist
-        """
+        """Download product assets if they exist"""
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
@@ -307,7 +309,10 @@ class HTTPDownload(Download):
                 self.config, "dl_url_params", {}
             )
             with requests.get(
-                asset_url, stream=True, auth=auth, params=params,
+                asset_url,
+                stream=True,
+                auth=auth,
+                params=params,
             ) as stream:
                 try:
                     stream.raise_for_status()

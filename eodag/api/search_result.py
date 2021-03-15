@@ -57,8 +57,7 @@ class SearchResult(UserList):
         )
 
     def as_geojson_object(self):
-        """GeoJSON representation of SearchResult
-        """
+        """GeoJSON representation of SearchResult"""
         return {
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],

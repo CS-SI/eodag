@@ -968,8 +968,10 @@ class EODataAccessGateway(object):
         )
         # save plugin._request and mock it to make return loaded static results
         plugin_request = plugin._request
-        plugin._request = lambda url, info_message=None, exception_message=None: MockResponse(
-            feature_collection, 200
+        plugin._request = (
+            lambda url, info_message=None, exception_message=None: MockResponse(
+                feature_collection, 200
+            )
         )
 
         # save preferred_provider and use provided one instead

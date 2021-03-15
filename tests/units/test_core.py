@@ -319,7 +319,10 @@ class TestCore(unittest.TestCase):
         # Bad dict with a missing key
         del geometry["lonmin"]
         self.assertRaises(
-            TypeError, get_geometry_from_various, [], geometry=geometry,
+            TypeError,
+            get_geometry_from_various,
+            [],
+            geometry=geometry,
         )
         # Tuple
         geometry = (0, 50, 2, 52)
@@ -330,7 +333,10 @@ class TestCore(unittest.TestCase):
         # List without 4 items
         geometry.pop()
         self.assertRaises(
-            TypeError, get_geometry_from_various, [], geometry=geometry,
+            TypeError,
+            get_geometry_from_various,
+            [],
+            geometry=geometry,
         )
         # WKT
         geometry = ref_geom_as_wkt
