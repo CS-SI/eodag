@@ -391,22 +391,6 @@ class EODataAccessGateway(object):
     def guess_product_type(self, **kwargs):
         """Find the eodag product type code that best matches a set of search params
 
-        >>> from eodag import EODataAccessGateway
-        >>> dag = EODataAccessGateway()
-        >>> dag.guess_product_type(
-        ...     instrument="MSI",
-        ...     platform="SENTINEL2",
-        ...     platformSerialIdentifier="S2A",
-        ... ) # doctest: +NORMALIZE_WHITESPACE
-        ['S2_MSI_L1C', 'S2_MSI_L2A', 'S2_MSI_L2A_MAJA', 'S2_MSI_L2B_MAJA_SNOW',
-            'S2_MSI_L2B_MAJA_WATER', 'S2_MSI_L3A_WASP']
-        >>> import eodag.utils.exceptions
-        >>> try:
-        ...     dag.guess_product_type()
-        ...     raise AssertionError(u"NoMatchingProductType exception not raised")
-        ... except eodag.utils.exceptions.NoMatchingProductType:
-        ...     pass
-
         :param kwargs: A set of search parameters as keywords arguments
         :return: The best match for the given parameters
         :rtype: str

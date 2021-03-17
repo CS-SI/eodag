@@ -49,6 +49,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     MisconfiguredError,
+    NoMatchingProductType,
     UnsupportedDatasetAddressScheme,
     UnsupportedProvider,
     ValidationError,

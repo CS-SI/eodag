@@ -28,6 +28,7 @@ from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     EODataAccessGateway,
+    NoMatchingProductType,
     UnsupportedProvider,
     get_geometry_from_various,
     makedirs,
@@ -471,3 +472,31 @@ class TestCoreGeometry(unittest.TestCase):
         self.assertEquals(
             len(geom_combined), 3
         )  # The bounding box overlaps with France inland
+
+
+class TestCoreSearch(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.dag = EODataAccessGateway()
+
+    def test_guess_product_type_with_kwargs(self):
+        kwargs = dict(
+            instrument="MSI",
+            platform="SENTINEL2",
+            platformSerialIdentifier="S2A",
+        )
+        actual = self.dag.guess_product_type(**kwargs)
+        expected = [
+            "S2_MSI_L1C",
+            "S2_MSI_L2A",
+            "S2_MSI_L2A_MAJA",
+            "S2_MSI_L2B_MAJA_SNOW",
+            "S2_MSI_L2B_MAJA_WATER",
+            "S2_MSI_L3A_WASP",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_guess_product_type_without_kwargs(self):
+        """guess_product_type must raise an exception when no kwargs are provided"""
+        with self.assertRaises(NoMatchingProductType):
+            self.dag.guess_product_type()
