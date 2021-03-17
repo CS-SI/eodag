@@ -643,6 +643,11 @@ class EODataAccessGateway(object):
             kwargs["startTimeFromAscendingNode"] = start
         if end is not None:
             kwargs["completionTimeFromAscendingNode"] = end
+        if "box" in kwargs or "bbox" in kwargs:
+            logger.warning(
+                "'box' or 'bbox' parameters are only supported for backwards "
+                " compatibility reasons. Usage of 'geom' is recommended."
+            )
         if geom is not None:
             kwargs["geometry"] = geom
         box = kwargs.pop("box", None)
