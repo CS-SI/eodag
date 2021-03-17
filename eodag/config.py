@@ -206,8 +206,19 @@ def load_default_config():
     :returns: The default provider's configuration
     :rtype: dict
     """
+    return load_config(resource_filename("eodag", "resources/providers.yml"))
+
+
+def load_config(config_path):
+    """Build providers configuration into a dictionnary from a given file
+
+    :param config_path: The path to the provider config file
+    :type config_path: str
+    :returns: The default provider's configuration
+    :rtype: dict
+    """
     config = {}
-    with open(resource_filename("eodag", "resources/providers.yml"), "r") as fh:
+    with open(config_path, "r") as fh:
         try:
             # Providers configs are stored in this file as separated yaml documents
             # Load all of it
@@ -225,7 +236,7 @@ def provider_config_init(provider_config):
     """Applies some default values to provider config
 
     :param provider_config: An eodag provider configuration
-    :type file_path: str
+    :type provider_config: :class:`~eodag.config.ProviderConfig`
     """
     # For the provider, set the default outputs_prefix of its download plugin
     # as tempdir in a portable way
