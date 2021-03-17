@@ -357,6 +357,17 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2 ** 5)
 
+    def test__search_by_id_sobloo(self):
+        # A single test with sobloo to check that _search_by_id returns
+        # correctly the exact product looked for.
+        uid = "S2A_MSIL1C_20200810T030551_N0209_R075_T53WPU_20200810T050611"
+        provider = "sobloo"
+
+        products, _ = self.eodag._search_by_id(uid=uid, provider=provider)
+        product = products[0]
+
+        self.assertEqual(product.properties["id"], uid)
+
 
 class TestEODagEndToEndWrongCredentials(EndToEndBase):
     """Make real case tests with wrong credentials. This assumes the existence of a
