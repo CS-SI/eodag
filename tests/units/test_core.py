@@ -22,7 +22,7 @@ import shutil
 import unittest
 
 from shapely import wkt
-from shapely.geometry import LineString, MultiPolygon
+from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
@@ -456,9 +456,8 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="FRA"), geometry=geometry
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
-        self.assertEquals(
-            len(geom_combined), 4
-        )  # France + Guyana + Corsica + somewhere over Poland
+        # France + Guyana + Corsica + somewhere over Poland
+        self.assertEquals(len(geom_combined), 4)
         geometry = {
             "lonmin": 0,
             "latmin": 50,
@@ -469,9 +468,8 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="FRA"), geometry=geometry
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
-        self.assertEquals(
-            len(geom_combined), 3
-        )  # The bounding box overlaps with France inland
+        # The bounding box overlaps with France inland
+        self.assertEquals(len(geom_combined), 3)
 
 
 class TestCoreSearch(unittest.TestCase):
@@ -480,6 +478,7 @@ class TestCoreSearch(unittest.TestCase):
         cls.dag = EODataAccessGateway()
 
     def test_guess_product_type_with_kwargs(self):
+        """guess_product_type must return the products matching the given kwargs"""
         kwargs = dict(
             instrument="MSI",
             platform="SENTINEL2",
@@ -500,3 +499,172 @@ class TestCoreSearch(unittest.TestCase):
         """guess_product_type must raise an exception when no kwargs are provided"""
         with self.assertRaises(NoMatchingProductType):
             self.dag.guess_product_type()
+
+    def test__prepare_search_no_parameters(self):
+        """_prepare_search must create some kwargs even when no parameter has been provided"""  # noqa
+        prepared_search = self.dag._prepare_search()
+        expected = {
+            "geometry": None,
+            "locations": None,
+            "productType": None,
+        }
+        self.assertDictContainsSubset(expected, prepared_search)
+
+    def test__prepare_search_dates(self):
+        """_prepare_search must handle start & end dates"""
+        base = {
+            "start": "2020-01-01",
+            "end": "2020-02-01",
+        }
+        prepared_search = self.dag._prepare_search(**base)
+        expected = {
+            "startTimeFromAscendingNode": base["start"],
+            "completionTimeFromAscendingNode": base["end"],
+        }
+        self.assertDictContainsSubset(expected, prepared_search)
+
+    def test__prepare_search_geom(self):
+        """_prepare_search must handle geom, box and bbox"""
+        # The default way to provide a geom is through the 'geom' argument.
+        base = {"geom": (0, 50, 2, 52)}
+        # "geom": "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))"
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertIn("geometry", prepared_search)
+        # 'box' and 'bbox' are supported for backwards compatibility,
+        # The priority is geom > bbox > box
+        base = {"box": (0, 50, 2, 52)}
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertIn("geometry", prepared_search)
+        base = {"bbox": (0, 50, 2, 52)}
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertIn("geometry", prepared_search)
+        base = {
+            "geom": "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+            "bbox": (0, 50, 2, 52),
+            "box": (0, 50, 1, 51),
+        }
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertIn("geometry", prepared_search)
+        self.assertNotIn("bbox", prepared_search)
+        self.assertNotIn("bbox", prepared_search)
+        self.assertIsInstance(prepared_search["geometry"], Polygon)
+
+    def test__prepare_search_locations(self):
+        """_prepare_search must handle a location search"""
+        # When locations where introduced they could be passed
+        # as regular kwargs. The new and recommended way to provide
+        # them is through the 'locations' parameter.
+        base = {"locations": {"country": "FRA"}}
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertIn("geometry", prepared_search)
+
+        # TODO: Remove this when support for locations kwarg is dropped.
+        base = {"country": "FRA"}
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertIn("geometry", prepared_search)
+        self.assertNotIn("country", prepared_search)
+
+    def test__prepare_search_product_type_provided(self):
+        """_prepare_search must handle when a product type is given"""
+        base = {"productType": "S2_MSI_L1C"}
+        prepared_search = self.dag._prepare_search(**base)
+        expected = {"productType": base["productType"]}
+        self.assertDictContainsSubset(expected, prepared_search)
+
+    def test__prepare_search_product_type_guess_it(self):
+        """_prepare_search must guess a product type when required to"""
+        # Uses guess_product_type to find the product matching
+        # the best the given params.
+        base = dict(
+            instrument="MSI",
+            platform="SENTINEL2",
+            platformSerialIdentifier="S2A",
+        )
+        prepared_search = self.dag._prepare_search(**base)
+        expected = {"productType": "S2_MSI_L1C", **base}
+        self.assertDictContainsSubset(expected, prepared_search)
+
+    def test__prepare_search_with_id(self):
+        """_prepare_search must handle a search by id"""
+        base = {"id": "dummy-id", "provider": "sobloo"}
+        prepared_search = self.dag._prepare_search(**base)
+        expected = base
+        self.assertDictEqual(expected, prepared_search)
+
+    def test__prepare_search_preserve_additional_kwargs(self):
+        """_prepare_search must preserve additional kwargs"""
+        base = {
+            "productType": "S2_MSI_L1C",
+            "cloudCover": 10,
+        }
+        prepared_search = self.dag._prepare_search(**base)
+        expected = base
+        self.assertDictContainsSubset(expected, prepared_search)
+
+    def test__prepare_search_search_plugin_has_known_product_properties(self):
+        """_prepare_search must attach the product properties to the search plugin"""
+        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        try:
+            self.dag.set_preferred_provider("peps")
+            base = {"productType": "S2_MSI_L1C"}
+            prepared_search = self.dag._prepare_search(**base)
+            # Just check that the title has been set correctly. There are more (e.g.
+            # abstract, platform, etc.) but this is sufficient to check that the
+            # product_type_config dict has been created and populated.
+            self.assertEqual(
+                prepared_search["search_plugin"].config.product_type_config["title"],
+                "SENTINEL2 Level-1C",
+            )
+        finally:
+            self.dag.set_preferred_provider(prev_fav_provider)
+
+    def test__prepare_search_search_plugin_has_generic_product_properties(self):
+        """_prepare_search must be able to attach the generic product properties to the search plugin"""  # noqa
+        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        try:
+            self.dag.set_preferred_provider("peps")
+            base = {"productType": "product_unknown_to_eodag"}
+            prepared_search = self.dag._prepare_search(**base)
+            # product_type_config is still created if the product is not known to eodag
+            # however it contains no data.
+            self.assertIsNone(
+                prepared_search["search_plugin"].config.product_type_config["title"],
+            )
+        finally:
+            self.dag.set_preferred_provider(prev_fav_provider)
+
+    def test__prepare_search_peps_plugins_product_available(self):
+        """_prepare_search must return the search and auth plugins when productType is defined"""  # noqa
+        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        try:
+            self.dag.set_preferred_provider("peps")
+            base = {"productType": "S2_MSI_L1C"}
+            prepared_search = self.dag._prepare_search(**base)
+            self.assertEqual(prepared_search["search_plugin"].provider, "peps")
+            self.assertEqual(prepared_search["auth"].provider, "peps")
+        finally:
+            self.dag.set_preferred_provider(prev_fav_provider)
+
+    def test__prepare_search_no_plugins_when_search_by_id(self):
+        """_prepare_search must not return the search and auth plugins for a search by id"""  # noqa
+        base = {"id": "some_id", "provider": "some_provider"}
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertNotIn("search_plugin", prepared_search)
+        self.assertNotIn("auth", prepared_search)
+
+    def test__prepare_search_peps_plugins_product_not_available(self):
+        """_prepare_search can use another set of search and auth plugins than the ones of the preferred provider"""  # noqa
+        # Document a special behaviour whereby the search and auth plugins don't
+        # correspond to the preferred one. This occurs whenever the searched product
+        # isn't available for the preferred provider but is made available by  another
+        # one. In that case peps provides it and happens to be the first one on the list
+        # of providers that make it available.
+        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        try:
+            self.dag.set_preferred_provider("theia")
+            base = {"productType": "S2_MSI_L1C"}
+            prepared_search = self.dag._prepare_search(**base)
+            self.assertEqual(prepared_search["search_plugin"].provider, "peps")
+            self.assertEqual(prepared_search["auth"].provider, "peps")
+        finally:
+            self.dag.set_preferred_provider(prev_fav_provider)
