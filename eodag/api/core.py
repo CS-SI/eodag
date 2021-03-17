@@ -541,79 +541,19 @@ class EODataAccessGateway(object):
             return a list as a result of their processing. This requirement is
             enforced here.
         """
-        product_type = kwargs.get("productType", None)
-        if product_type is None:
-            try:
-                guesses = self.guess_product_type(**kwargs)
-                # By now, only use the best bet
-                product_type = guesses[0]
-            except NoMatchingProductType:
-                queried_id = kwargs.get("id", None)
-                if queried_id is None:
-                    logger.info(
-                        "No product type could be guessed with provided arguments"
-                    )
-                else:
-                    provider = kwargs.get("provider", None)
-                    return self._search_by_id(kwargs["id"], provider=provider)
-
-        kwargs["productType"] = product_type
-        if start is not None:
-            kwargs["startTimeFromAscendingNode"] = start
-        if end is not None:
-            kwargs["completionTimeFromAscendingNode"] = end
-        if geom is not None:
-            kwargs["geometry"] = geom
-        box = kwargs.pop("box", None)
-        box = kwargs.pop("bbox", box)
-        if geom is None and box is not None:
-            kwargs["geometry"] = box
-
-        kwargs["locations"] = locations
-        kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
-        # remove locations_args from kwargs now that they have been used
-        locations_dict = {loc["name"]: loc for loc in self.locations_config}
-        for arg in locations_dict.keys():
-            kwargs.pop(arg, None)
-        del kwargs["locations"]
-
-        plugin = next(
-            self._plugins_manager.get_search_plugins(product_type=product_type)
+        search_kwargs = self._prepare_search(
+            start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        logger.info(
-            "Searching product type '%s' on provider: %s", product_type, plugin.provider
-        )
-        # add product_types_config to plugin config
-        try:
-            plugin.config.product_type_config = dict(
-                [
-                    p
-                    for p in self.list_product_types(plugin.provider)
-                    if p["ID"] == product_type
-                ][0],
-                **{"productType": product_type}
-            )
-        except IndexError:
-            plugin.config.product_type_config = dict(
-                [
-                    p
-                    for p in self.list_product_types(plugin.provider)
-                    if p["ID"] == GENERIC_PRODUCT_TYPE
-                ][0],
-                **{"productType": product_type}
-            )
-        plugin.config.product_type_config.pop("ID", None)
-
-        logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
-        auth = self._plugins_manager.get_auth_plugin(plugin.provider)
-        return self._do_search(
-            plugin,
-            auth=auth,
+        if "id" in search_kwargs:
+            provider = search_kwargs.get("provider")
+            return self._search_by_id(search_kwargs["id"], provider)
+        search_plugin = search_kwargs.pop("search_plugin")
+        search_kwargs.update(
             page=page,
             items_per_page=items_per_page,
             raise_errors=raise_errors,
-            **kwargs
         )
+        return self._do_search(search_plugin, count=True, **search_kwargs)
 
     def _search_by_id(self, uid, provider=None):
         """Internal method that enables searching a product by its id.
@@ -649,6 +589,113 @@ class EODataAccessGateway(object):
             if len(results) == 1:
                 return results, 1
         return SearchResult([]), 0
+
+    def _prepare_search(
+        self, start=None, end=None, geom=None, locations=None, **kwargs
+    ):
+        """Internal method to prepare the search kwargs and get the search
+        and auth plugins.
+
+        Product query:
+          * By id (plus optional 'provider')
+          * By search params:
+            * productType query:
+              * By product type (e.g. 'S2_MSI_L1C')
+              * By params (e.g. 'platform'), see guess_product_type
+            * dates: 'start' and/or 'end'
+            * geometry: 'geom' or 'bbox' or 'box'
+            * search locations
+            * TODO: better expose cloudCover
+            * other search params are passed to Searchplugin.query()
+
+        :param start: Start sensing UTC time in iso format
+        :type start: str
+        :param end: End sensing UTC time in iso format
+        :type end: str
+        :param geom: Search area that can be defined in different ways (see search)
+        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
+        :param locations: Location filtering by name using locations configuration
+        :type locations: dict
+        :param dict kwargs: Some other criteria
+                            * id and/or a provider for a search by
+                            * search criteria to guess the product type
+                            * other criteria compatible with the provider
+
+        .. versionadded:: 2.2
+        """
+        product_type = kwargs.get("productType", None)
+        if product_type is None:
+            try:
+                guesses = self.guess_product_type(**kwargs)
+                # By now, only use the best bet
+                product_type = guesses[0]
+            except NoMatchingProductType:
+                queried_id = kwargs.get("id", None)
+                if queried_id is None:
+                    logger.info(
+                        "No product type could be guessed with provided arguments"
+                    )
+                else:
+                    return kwargs
+
+        kwargs["productType"] = product_type
+        if start is not None:
+            kwargs["startTimeFromAscendingNode"] = start
+        if end is not None:
+            kwargs["completionTimeFromAscendingNode"] = end
+        if geom is not None:
+            kwargs["geometry"] = geom
+        box = kwargs.pop("box", None)
+        box = kwargs.pop("bbox", box)
+        if geom is None and box is not None:
+            kwargs["geometry"] = box
+
+        kwargs["locations"] = locations
+        kwargs["geometry"] = get_geometry_from_various(self.locations_config, **kwargs)
+        # remove locations_args from kwargs now that they have been used
+        locations_dict = {loc["name"]: loc for loc in self.locations_config}
+        for arg in locations_dict.keys():
+            kwargs.pop(arg, None)
+        del kwargs["locations"]
+
+        search_plugin = next(
+            self._plugins_manager.get_search_plugins(product_type=product_type)
+        )
+        logger.info(
+            "Searching product type '%s' on provider: %s",
+            product_type,
+            search_plugin.provider,
+        )
+        # Add product_types_config to plugin config. This dict contains product
+        # type metadata that will also be stored in each product's properties.
+        try:
+            search_plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(search_plugin.provider)
+                    if p["ID"] == product_type
+                ][0],
+                **{"productType": product_type}
+            )
+        # If the product isn't in the catalog, it's a generic product type.
+        except IndexError:
+            search_plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(search_plugin.provider)
+                    if p["ID"] == GENERIC_PRODUCT_TYPE
+                ][0],
+                **{"productType": product_type}
+            )
+        # Remove the ID since this is equal to productType.
+        search_plugin.config.product_type_config.pop("ID", None)
+
+        logger.debug(
+            "Using plugin class for search: %s", search_plugin.__class__.__name__
+        )
+        auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
+
+        return dict(search_plugin=search_plugin, auth=auth_plugin, **kwargs)
 
     def _do_search(self, search_plugin, **kwargs):
         """Internal method that performs a search on a given provider.
