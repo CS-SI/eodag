@@ -115,6 +115,7 @@ html_theme_options = {
     "show_powered_by": False,
     "github_user": "CS-SI",
     "github_repo": "eodag",
+    "github_type": "star",
     "github_banner": True,
     "page_width": "1140px",
     "pre_bg": "#eeffcc",
