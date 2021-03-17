@@ -143,25 +143,10 @@ class TestCore(unittest.TestCase):
         "earth_search",
     ]
 
-    def setUp(self):
-        super(TestCore, self).setUp()
-        self.dag = EODataAccessGateway()
-
-    def tearDown(self):
-        super(TestCore, self).tearDown()
-        for old in glob.glob1(self.dag.conf_dir, "*.old") + glob.glob1(
-            self.dag.conf_dir, ".*.old"
-        ):
-            old_path = os.path.join(self.dag.conf_dir, old)
-            if os.path.exists(old_path):
-                try:
-                    os.remove(old_path)
-                except OSError:
-                    shutil.rmtree(old_path)
-        if os.getenv("EODAG_CFG_FILE") is not None:
-            os.environ.pop("EODAG_CFG_FILE")
-        if os.getenv("EODAG_LOCS_CFG_FILE") is not None:
-            os.environ.pop("EODAG_LOCS_CFG_FILE")
+    @classmethod
+    def setUpClass(cls):
+        cls.dag = EODataAccessGateway()
+        cls.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""  # noqa
@@ -216,24 +201,74 @@ class TestCore(unittest.TestCase):
         self.assertIn("sensorType", structure)
         self.assertIn(structure["ID"], self.SUPPORTED_PRODUCT_TYPES)
 
-    def test_core_object_creates_config_standard_location(self):
-        """The core object must create a user config file in standard user config location on instantiation"""  # noqa
-        self.execution_involving_conf_dir(inspect="eodag.yml")
-
-    def test_core_object_creates_index_if_not_exist(self):
-        """The core object must create an index in user config directory"""
-        self.execution_involving_conf_dir(inspect=".index")
-
     @mock.patch("eodag.api.core.open_dir", autospec=True)
     @mock.patch("eodag.api.core.exists_in", autospec=True, return_value=True)
     def test_core_object_open_index_if_exists(self, exists_in_mock, open_dir_mock):
         """The core object must use the existing index dir if any"""
-        conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
-        index_dir = os.path.join(conf_dir, ".index")
+        index_dir = os.path.join(self.conf_dir, ".index")
         if not os.path.exists(index_dir):
             makedirs(index_dir)
         EODataAccessGateway()
         open_dir_mock.assert_called_with(index_dir)
+
+    def test_core_object_set_default_locations_config(self):
+        """The core object must set the default locations config on instantiation"""  # noqa
+        default_shpfile = os.path.join(
+            self.conf_dir, "shp", "ne_110m_admin_0_map_units.shp"
+        )
+        self.assertIsInstance(self.dag.locations_config, list)
+        self.assertEqual(
+            self.dag.locations_config,
+            [dict(attr="ADM0_A3_US", name="country", path=default_shpfile)],
+        )
+
+    def test_core_object_locations_file_not_found(self):
+        """The core object must set the locations to an empty list when the file is not found"""  # noqa
+        dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
+        self.assertEqual(dag.locations_config, [])
+
+    def test_rebuild_index(self):
+        """Change eodag version and check that whoosh index is rebuilt"""
+        index_dir = os.path.join(self.dag.conf_dir, ".index")
+        index_dir_mtime = os.path.getmtime(index_dir)
+
+        self.assertNotEqual(self.dag.get_version(), "fake-version")
+
+        with mock.patch(
+            "eodag.api.core.EODataAccessGateway.get_version",
+            autospec=True,
+            return_value="fake-version",
+        ):
+            self.assertEqual(self.dag.get_version(), "fake-version")
+
+            self.dag.build_index()
+
+            # check that index_dir has beeh re-created
+            self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
+
+
+class TestCoreConfWithEnvVar(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.dag = EODataAccessGateway()
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.getenv("EODAG_CFG_FILE") is not None:
+            os.environ.pop("EODAG_CFG_FILE")
+        if os.getenv("EODAG_LOCS_CFG_FILE") is not None:
+            os.environ.pop("EODAG_LOCS_CFG_FILE")
+
+    def test_core_object_prioritize_locations_file_in_envvar(self):
+        """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa
+        os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_locations_override.yml"
+        )
+        dag = EODataAccessGateway()
+        self.assertEqual(
+            dag.locations_config,
+            [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
+        )
 
     def test_core_object_prioritize_config_file_in_envvar(self):
         """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""  # noqa
@@ -245,6 +280,24 @@ class TestCore(unittest.TestCase):
         self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
         # peps outputs prefix is set to /data
         self.assertEqual(dag.providers_config["peps"].download.outputs_prefix, "/data")
+
+
+class TestCoreInvolvingConfDir(unittest.TestCase):
+    def setUp(self):
+        super(TestCoreInvolvingConfDir, self).setUp()
+        self.dag = EODataAccessGateway()
+
+    def tearDown(self):
+        super(TestCoreInvolvingConfDir, self).tearDown()
+        for old in glob.glob1(self.dag.conf_dir, "*.old") + glob.glob1(
+            self.dag.conf_dir, ".*.old"
+        ):
+            old_path = os.path.join(self.dag.conf_dir, old)
+            if os.path.exists(old_path):
+                try:
+                    os.remove(old_path)
+                except OSError:
+                    shutil.rmtree(old_path)
 
     def execution_involving_conf_dir(self, inspect=None):
         """Check that the path(s) inspected (str, list) are created after the instantation
@@ -273,36 +326,23 @@ class TestCore(unittest.TestCase):
                         os.unlink(current)
                     shutil.move(old, current)
 
+    def test_core_object_creates_config_standard_location(self):
+        """The core object must create a user config file in standard user config location on instantiation"""  # noqa
+        self.execution_involving_conf_dir(inspect="eodag.yml")
+
+    def test_core_object_creates_index_if_not_exist(self):
+        """The core object must create an index in user config directory"""
+        self.execution_involving_conf_dir(inspect=".index")
+
     def test_core_object_creates_locations_standard_location(self):
         """The core object must create a locations config file and a shp dir in standard user config location on instantiation"""  # noqa
         self.execution_involving_conf_dir(inspect=["locations.yml", "shp"])
 
-    def test_core_object_set_default_locations_config(self):
-        """The core object must set the default locations config on instantiation"""  # noqa
-        dag = EODataAccessGateway()
-        conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
-        default_shpfile = os.path.join(conf_dir, "shp", "ne_110m_admin_0_map_units.shp")
-        self.assertIsInstance(dag.locations_config, list)
-        self.assertEqual(
-            dag.locations_config,
-            [dict(attr="ADM0_A3_US", name="country", path=default_shpfile)],
-        )
 
-    def test_core_object_locations_file_not_found(self):
-        """The core object must set the locations to an empty list when the file is not found"""  # noqa
-        dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
-        self.assertEqual(dag.locations_config, [])
-
-    def test_core_object_prioritize_locations_file_in_envvar(self):
-        """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa
-        os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_locations_override.yml"
-        )
-        dag = EODataAccessGateway()
-        self.assertEqual(
-            dag.locations_config,
-            [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
-        )
+class TestCoreGeometry(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.dag = EODataAccessGateway()
 
     def test_get_geometry_from_various_no_locations(self):
         """The search geometry can be set from a dict, list, tuple, WKT string or shapely geom"""
@@ -431,23 +471,3 @@ class TestCore(unittest.TestCase):
         self.assertEquals(
             len(geom_combined), 3
         )  # The bounding box overlaps with France inland
-
-    def test_rebuild_index(self):
-        """Change eodag version and check that whoosh index is rebuilt"""
-
-        index_dir = os.path.join(self.dag.conf_dir, ".index")
-        index_dir_mtime = os.path.getmtime(index_dir)
-
-        self.assertNotEqual(self.dag.get_version(), "fake-version")
-
-        with mock.patch(
-            "eodag.api.core.EODataAccessGateway.get_version",
-            autospec=True,
-            return_value="fake-version",
-        ):
-            self.assertEqual(self.dag.get_version(), "fake-version")
-
-            self.dag.build_index()
-
-            # check that index_dir has beeh re-created
-            self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
