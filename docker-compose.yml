@@ -1,6 +1,6 @@
 version: "3.7"
 
-networks: 
+networks:
   eodag.stac.net:
     driver: bridge
 
@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
     networks:
       - eodag.stac.net
-    ports: 
+    ports:
       - "5001:80"
   stac:
     build:
@@ -23,5 +23,5 @@ services:
     restart: unless-stopped
     networks:
       - eodag.stac.net
-    ports: 
+    ports:
       - "5000:5000"

@@ -43,7 +43,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     update-locale LANG=en_US.UTF-8
 
 ENV LC_ALL=en_US.UTF-8 \
-    LANG=en_US.UTF-8 
+    LANG=en_US.UTF-8
 
 # copy necessary files
 COPY setup.py setup.py

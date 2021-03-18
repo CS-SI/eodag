@@ -19,6 +19,9 @@ RUN CATALOG_URL=http://stac:5000 npm run build
 
 # production stage, self describing
 FROM nginx:stable-alpine as production-stage
+
 COPY --from=build-stage /stac-browser/dist /usr/share/nginx/html
+
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]

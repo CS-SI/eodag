@@ -3,4 +3,4 @@
 # some pre-start operation
 
 # start
-eodag serve-rest -w 
+eodag serve-rest -w
