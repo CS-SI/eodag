@@ -91,3 +91,34 @@ jobs:
         python -m pip install tox
     - name: Testing with tox
       run: python -m tox -e docs
+
+  check-pypi:
+    name: Long description check for PyPI
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.7"
+    - name: Update pip
+      run: python -m pip install --upgrade pip
+    - name: Get pip cache dir
+      id: pip-cache
+      run: |
+        echo "::set-output name=dir::$(pip cache dir)"
+    - name: Get current week number
+      id: get-week
+      shell: bash
+      run: echo "::set-output name=week::$(date +'%V')"
+    - name: Pip cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.pip-cache.outputs.dir }}
+        key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.week }}-${{ hashFiles('setup.py') }}
+    - name: Install tox and sphinx (to have rst2html.py utility available)
+      run: |
+        python -m pip install tox sphinx
+    - name: Testing with tox
+      run: python -m tox -e pypi
