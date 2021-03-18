@@ -33,7 +33,7 @@ jobs:
       - name: Check long description is OK for PyPI with tox
         run: |
           python -m pip install --upgrade pip
-          python -m pip install tox
+          python -m pip install tox sphinx
           tox -e pypi
 
       - name: Build a binary wheel and a source tarball
