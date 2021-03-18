@@ -556,6 +556,79 @@ class EODataAccessGateway(object):
             search_plugin, count=True, raise_errors=raise_errors, **search_kwargs
         )
 
+    def search_iter_page(
+        self,
+        items_per_page=DEFAULT_ITEMS_PER_PAGE,
+        start=None,
+        end=None,
+        geom=None,
+        locations=None,
+        **kwargs
+    ):
+        """Iterate over the pages of a product search.
+
+        :param items_per_page: The number of results that must appear in one single
+                               page (default: 20)
+        :type items_per_page: int
+        :param start: Start sensing UTC time in iso format
+        :type start: str
+        :param end: End sensing UTC time in iso format
+        :type end: str
+        :param geom: Search area that can be defined in different ways:
+
+                    * with a Shapely geometry object:
+                      ``class:`shapely.geometry.base.BaseGeometry```
+                    * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
+                      ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
+                    * with a bounding box as list of float:
+                      ``[lonmin, latmin, lonmax, latmax]``
+                    * with a WKT str
+
+        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
+        :param locations: Location filtering by name using locations configuration
+                          ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
+                          the geometry of the features having the property ISO3 starting with
+                          'PA' such as Panama and Pakistan in the shapefile configured with
+                          name=country and attr=ISO3
+        :type locations: dict
+        :param dict kwargs: some other criteria that will be used to do the search,
+                            using paramaters compatibles with the provider
+        :returns: An iterator that yields page per page a collection of EO products
+                  matching the criteria
+        :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
+
+        .. versionadded::
+            2.2.0
+        """
+        search_kwargs = self._prepare_search(
+            start=start, end=end, geom=geom, locations=locations, **kwargs
+        )
+        search_plugin = search_kwargs.pop("search_plugin")
+        search_kwargs.update(
+            page=1,
+            items_per_page=items_per_page,
+        )
+        while True:
+            logger.debug("Iterate over pages: search page %s", search_kwargs["page"])
+            products, _ = self._do_search(
+                search_plugin, count=False, raise_errors=True, **search_kwargs
+            )
+            if len(products) > 0:
+                yield products
+                # Prevent a last search if the current one returned less than the
+                # maximum number of items asked for.
+                if len(products) < items_per_page:
+                    last_page_with_products = search_kwargs["page"]
+                    break
+            else:
+                last_page_with_products = search_kwargs["page"] - 1
+                break
+            search_kwargs["page"] += 1
+        logger.debug(
+            "Iterate over pages: last products found on page %s",
+            last_page_with_products,
+        )
+
     def _search_by_id(self, uid, provider=None):
         """Internal method that enables searching a product by its id.
 

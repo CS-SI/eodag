@@ -812,8 +812,8 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_doest_not_register_downloader_if_no_search_intersection(
         self, search_plugin
-    ):  # noqa
-        """__do_search must not register downloaders if search_intersection is None"""  # noqa
+    ):
+        """__do_search must not register downloaders if search_intersection is None"""
 
         class DummyProduct:
             seach_intersecion = None
@@ -823,3 +823,67 @@ class TestCoreSearch(unittest.TestCase):
         sr, _ = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
             self.assertIsNone(product.downloader)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test_search_iter_page_returns_iterator(self, search_plugin, prepare_seach):
+        """search_iter_page must returns an iterator"""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (self.search_results.data, None)
+        prepare_seach.return_value = dict(search_plugin=search_plugin)
+        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        first_result_page = next(page_iterator)
+        self.assertIsInstance(first_result_page, SearchResult)
+        self.assertEqual(len(first_result_page), self.search_results_size)
+        second_result_page = next(page_iterator)
+        self.assertIsInstance(second_result_page, SearchResult)
+        self.assertEqual(len(second_result_page), self.search_results_size)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test_search_iter_page_exhaust_get_all_pages_and_quit_early(
+        self, search_plugin, prepare_seach
+    ):
+        """search_iter_page must stop as soon as less than items_per_page products were retrieved"""  # noqa
+        search_plugin.provider = "peps"
+        search_plugin.query.side_effect = [
+            (self.search_results.data, None),
+            (self.search_results.data, None),
+            ([self.search_results.data[0]], None),
+        ]
+        prepare_seach.return_value = dict(search_plugin=search_plugin)
+        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        all_page_results = list(page_iterator)
+        self.assertEqual(len(all_page_results), 3)
+        self.assertIsInstance(all_page_results[0], SearchResult)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test_search_iter_page_exhaust_get_all_pages_no_products_last_page(
+        self, search_plugin, prepare_seach
+    ):
+        """search_iter_page must stop if the page doesn't return any product"""
+        search_plugin.provider = "peps"
+        search_plugin.query.side_effect = [
+            (self.search_results.data, None),
+            (self.search_results.data, None),
+            ([], None),
+        ]
+        prepare_seach.return_value = dict(search_plugin=search_plugin)
+        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        all_page_results = list(page_iterator)
+        self.assertEqual(len(all_page_results), 2)
+        self.assertIsInstance(all_page_results[0], SearchResult)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test_search_iter_page_does_not_handle_query_errors(
+        self, search_plugin, prepare_seach
+    ):
+        """search_iter_page must propagate errors"""
+        search_plugin.provider = "peps"
+        search_plugin.query.side_effect = AttributeError()
+        prepare_seach.return_value = dict(search_plugin=search_plugin)
+        page_iterator = self.dag.search_iter_page()
+        with self.assertRaises(AttributeError):
+            next(page_iterator)
