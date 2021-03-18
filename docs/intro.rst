@@ -90,6 +90,11 @@ There are currently 11 available providers implemented on eodag:
 
 * `earth_search <https://www.element84.com/earth-search/>`_: Element84 Earth Search
 
+Providers available through an external plugin:
+
+* `SciHub / Copernicus Open Access Hub <https://scihub.copernicus.eu/userguide/WebHome>`_: available using
+  `eodag-sentinelsat <https://github.com/CS-SI/eodag-sentinelsat>`_
+
 .. note::
 
     For developers, there are 2 ways for adding support for a new provider:
