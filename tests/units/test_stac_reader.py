@@ -48,7 +48,8 @@ class TestStacReader(unittest.TestCase):
         self.assertIsInstance(items, list)
         self.assertEqual(len(items), self.child_cat_len)
         self.assertDictContainsSubset(
-            {"type": "Feature", "collection": "S2_MSI_L1C"}, items[0],
+            {"type": "Feature", "collection": "S2_MSI_L1C"},
+            items[0],
         )
 
     def test_stac_reader_fetch_root_not_recursive(self):
@@ -71,7 +72,8 @@ class TestStacReader(unittest.TestCase):
         self.assertIsInstance(item, list)
         self.assertEqual(len(item), 1)
         self.assertDictContainsSubset(
-            {"type": "Feature", "collection": "S2_MSI_L1C"}, item[0],
+            {"type": "Feature", "collection": "S2_MSI_L1C"},
+            item[0],
         )
 
     def test_stact_reader_fetch_singlefile_catalog(self):

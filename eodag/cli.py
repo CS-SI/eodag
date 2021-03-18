@@ -149,7 +149,7 @@ def version():
     "-g",
     "--geom",
     cls=MutuallyExclusiveOption,
-    mutually_exclusive=["bbox"],
+    mutually_exclusive=["box"],
     help="Search for a product on a geometry, providing its WKT representation.",
 )
 @click.option(

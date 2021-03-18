@@ -210,8 +210,7 @@ def get_pagination_info(arguments):
 
 
 def get_geometry(arguments):
-    """Get geometry from arguments
-    """
+    """Get geometry from arguments"""
 
     geom = None
 

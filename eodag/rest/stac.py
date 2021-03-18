@@ -292,7 +292,9 @@ class StacItem(StacCommon):
         # provide static catalog to build features
         if "search?" in catalog["url"]:
             catalog["url"] = os.path.join(
-                catalog["url"].split("search?")[0], "collections", catalog["id"],
+                catalog["url"].split("search?")[0],
+                "collections",
+                catalog["id"],
             )
         else:
             catalog["url"] = catalog["url"].split("?")[0]
@@ -674,7 +676,7 @@ class StacCatalog(StacCommon):
         return True
 
     def set_children(self, children=[]):
-        """ set catalog children / links
+        """set catalog children / links
 
         :param children: children list
         :type children: list

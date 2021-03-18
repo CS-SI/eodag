@@ -248,7 +248,9 @@ class TestSearchStacStatic(unittest.TestCase):
 
     def test_search_stac_static_by_geom(self):
         """Use StaticStacSearch plugin to search by geometry"""
-        items, nb = self.dag.search(geom=self.extent_big,)
+        items, nb = self.dag.search(
+            geom=self.extent_big,
+        )
         self.assertEqual(len(items), 3)
         self.assertEqual(nb, 3)
 

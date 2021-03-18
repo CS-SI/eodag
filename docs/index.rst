@@ -34,8 +34,8 @@ data provider.
    intro
    tutos
    install
-   use
    api
+   use
    contribute
    changelog
 
