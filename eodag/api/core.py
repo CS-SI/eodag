@@ -551,9 +551,10 @@ class EODataAccessGateway(object):
         search_kwargs.update(
             page=page,
             items_per_page=items_per_page,
-            raise_errors=raise_errors,
         )
-        return self._do_search(search_plugin, count=True, **search_kwargs)
+        return self._do_search(
+            search_plugin, count=True, raise_errors=raise_errors, **search_kwargs
+        )
 
     def _search_by_id(self, uid, provider=None):
         """Internal method that enables searching a product by its id.
@@ -620,6 +621,8 @@ class EODataAccessGateway(object):
                             * id and/or a provider for a search by
                             * search criteria to guess the product type
                             * other criteria compatible with the provider
+        :returns: The prepared kwargs to make a query.
+        :rtype: dict
 
         .. versionadded:: 2.2
         """
@@ -702,8 +705,20 @@ class EODataAccessGateway(object):
 
         return dict(search_plugin=search_plugin, auth=auth_plugin, **kwargs)
 
-    def _do_search(self, search_plugin, count=True, **kwargs):
+    def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
         """Internal method that performs a search on a given provider.
+
+        :param search_plugin: A search plugin
+        :type search_plugin: eodag.plugins.base.Search
+        :param count: Whether to run a query with a count request or not (default: True)
+        :type count: bool
+        :param raise_errors:  When an error occurs when searching, if this is set to
+                              True, the error is raised (default: False)
+        :type raise_errors: bool
+        :param dict kwargs: some other criteria that will be used to do the search
+        :returns: A collection of EO products matching the criteria and the total
+                  number of results found if count is True else None
+        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
 
         .. versionadded:: 1.0
         """
@@ -802,7 +817,7 @@ class EODataAccessGateway(object):
                 "verbosity of log messages for details",
                 search_plugin.provider,
             )
-            if kwargs.get("raise_errors"):
+            if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next
                 raise
