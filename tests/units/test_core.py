@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import glob
+import json
 import os
 import shutil
 import unittest
@@ -29,6 +30,8 @@ from tests import TEST_RESOURCES_PATH
 from tests.context import (
     EODataAccessGateway,
     NoMatchingProductType,
+    PluginImplementationError,
+    SearchResult,
     UnsupportedProvider,
     get_geometry_from_various,
     makedirs,
@@ -476,6 +479,14 @@ class TestCoreSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dag = EODataAccessGateway()
+        # Get a SearchResult obj with 2 S2_MSI_L1C peps products
+        search_results_file = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+        )
+        with open(search_results_file, encoding="utf-8") as f:
+            search_results_geojson = json.load(f)
+        cls.search_results = SearchResult.from_geojson(search_results_geojson)
+        cls.search_results_size = len(cls.search_results)
 
     def test_guess_product_type_with_kwargs(self):
         """guess_product_type must return the products matching the given kwargs"""
@@ -668,3 +679,147 @@ class TestCoreSearch(unittest.TestCase):
             self.assertEqual(prepared_search["auth"].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_counts_by_default(self, search_plugin):
+        """__do_search must create a count query by default"""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results.data,  # a list must be returned by .query
+            self.search_results_size,
+        )
+        sr, estimate = self.dag._do_search(search_plugin=search_plugin)
+        self.assertIsInstance(sr, SearchResult)
+        self.assertEqual(len(sr), self.search_results_size)
+        self.assertEqual(estimate, self.search_results_size)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_without_count(self, search_plugin):
+        """__do_search must be able to create a query without a count"""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results.data,
+            None,  # .query must return None if count is False
+        )
+        sr, estimate = self.dag._do_search(search_plugin=search_plugin, count=False)
+        self.assertIsNone(estimate)
+        self.assertEqual(len(sr), self.search_results_size)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
+        """__do_search must provide a best estimate when a provider doesn't return a count"""  # noqa
+        search_plugin.provider = "peps"
+        # If the provider doesn't return a count, .query returns 0
+        search_plugin.query.return_value = (self.search_results.data, 0)
+        page = 4
+        sr, estimate = self.dag._do_search(
+            search_plugin=search_plugin,
+            page=page,
+            items_per_page=2,
+        )
+        self.assertEqual(len(sr), self.search_results_size)
+        # The count guess is: page * number_of_products_returned
+        self.assertEqual(estimate, page * self.search_results_size)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_paginated_handle_fuzzy_count(self, search_plugin):
+        """__do_search must provide a best estimate when a provider returns a fuzzy count"""  # noqa
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results.data * 4,  # 8 products returned
+            22,  # fuzzy number, less than the real total count
+        )
+        page = 4
+        items_per_page = 10
+        sr, estimate = self.dag._do_search(
+            search_plugin=search_plugin,
+            page=page,
+            items_per_page=items_per_page,
+        )
+        # At page 4 with 10 items_per_page we should have a count of at least 30
+        # products available. However the provider returned 22. We know it's wrong.
+        # So we update the count with our current knowledge: 30 + 8
+        # Note that this estimate could still be largely inferior to the real total
+        # count.
+        expected_estimate = items_per_page * (page - 1) + len(sr)
+        self.assertEqual(len(sr), 8)
+        self.assertEqual(estimate, expected_estimate)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_paginated_handle_null_count(self, search_plugin):
+        """__do_search must provide a best estimate when a provider returns a null count"""  # noqa
+        # TODO: check the underlying implementation, it doesn't make so much sense since
+        # this case is already covered with nb_res = len(res) * page. This one uses
+        # nb_res = items_per_page * (page - 1) whick actually makes more sense. Choose
+        # one of them.
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = ([], 0)
+        page = 4
+        items_per_page = 10
+        sr, estimate = self.dag._do_search(
+            search_plugin=search_plugin,
+            page=page,
+            items_per_page=items_per_page,
+        )
+        expected_estimate = items_per_page * (page - 1)
+        self.assertEqual(len(sr), 0)
+        self.assertEqual(estimate, expected_estimate)
+
+    def test__do_search_does_not_raise_by_default(self):
+        """__do_search must not raise any error by default"""
+        # provider attribute required internally by __do_search for logging purposes.
+        class DummySearchPlugin:
+            provider = "peps"
+
+        sr, estimate = self.dag._do_search(search_plugin=DummySearchPlugin())
+        self.assertIsInstance(sr, SearchResult)
+        self.assertEqual(len(sr), 0)
+        self.assertEqual(estimate, 0)
+
+    def test__do_search_can_raise_errors(self):
+        """__do_search must not raise any error by default"""
+
+        class DummySearchPlugin:
+            provider = "peps"
+
+        # AttributeError raised when .query is tried to be accessed on the dummy plugin.
+        with self.assertRaises(AttributeError):
+            self.dag._do_search(search_plugin=DummySearchPlugin(), raise_errors=True)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_query_products_must_be_a_list(self, search_plugin):
+        """__do_search expects that each search plugin returns a list of products."""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results,
+            self.search_results_size,
+        )
+        with self.assertRaises(PluginImplementationError):
+            self.dag._do_search(search_plugin=search_plugin, raise_errors=True)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_register_downloader_if_search_intersection(self, search_plugin):
+        """__do_search must register each product's downloader if search_intersection is not None"""  # noqa
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results.data,
+            self.search_results_size,
+        )
+        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        for product in sr:
+            self.assertIsNotNone(product.downloader)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_doest_not_register_downloader_if_no_search_intersection(
+        self, search_plugin
+    ):  # noqa
+        """__do_search must not register downloaders if search_intersection is None"""  # noqa
+
+        class DummyProduct:
+            seach_intersecion = None
+
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = ([DummyProduct(), DummyProduct()], 2)
+        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        for product in sr:
+            self.assertIsNone(product.downloader)

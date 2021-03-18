@@ -702,7 +702,7 @@ class EODataAccessGateway(object):
 
         return dict(search_plugin=search_plugin, auth=auth_plugin, **kwargs)
 
-    def _do_search(self, search_plugin, **kwargs):
+    def _do_search(self, search_plugin, count=True, **kwargs):
         """Internal method that performs a search on a given provider.
 
         .. versionadded:: 1.0
@@ -710,14 +710,14 @@ class EODataAccessGateway(object):
         results = SearchResult([])
         total_results = 0
         try:
-            res, nb_res = search_plugin.query(**kwargs)
+            res, nb_res = search_plugin.query(count=count, **kwargs)
 
             # Only do the pagination computations when it makes sense. For example,
             # for a search by id, we can reasonably guess that the provider will return
             # At most 1 product, so we don't need such a thing as pagination
             page = kwargs.get("page")
             items_per_page = kwargs.get("items_per_page")
-            if page and items_per_page:
+            if page and items_per_page and count:
                 # Take into account the fact that a provider may not return the count of
                 # products (in that case, fallback to using the length of the results it
                 # returned and the page requested. As an example, check the result of
@@ -775,24 +775,27 @@ class EODataAccessGateway(object):
                     )
 
             results.extend(res)
-            total_results += nb_res
-            logger.info(
-                "Found %s result(s) on provider '%s'", nb_res, search_plugin.provider
-            )
-            # Hitting for instance
-            # https://theia.cnes.fr/atdistrib/resto2/api/collections/SENTINEL2/
-            #   search.json?startDate=2019-03-01&completionDate=2019-06-15
-            #   &processingLevel=LEVEL2A&maxRecords=1&page=1
-            # returns a number (properties.totalResults) that is the number of
-            # products in the collection (here SENTINEL2) instead of the estimated
-            # total number of products matching the search criteria (start/end date).
-            # Remove this warning when this is fixed upstream by THEIA.
-            if search_plugin.provider == "theia":
-                logger.warning(
-                    "Results found on provider 'theia' is the total number of products "
-                    "available in the searched collection (e.g. SENTINEL2) instead of "
-                    "the total number of products matching the search criteria"
+            total_results = None if nb_res is None else total_results + nb_res
+            if count:
+                logger.info(
+                    "Found %s result(s) on provider '%s'",
+                    nb_res,
+                    search_plugin.provider,
                 )
+                # Hitting for instance
+                # https://theia.cnes.fr/atdistrib/resto2/api/collections/SENTINEL2/
+                #   search.json?startDate=2019-03-01&completionDate=2019-06-15
+                #   &processingLevel=LEVEL2A&maxRecords=1&page=1
+                # returns a number (properties.totalResults) that is the number of
+                # products in the collection (here SENTINEL2) instead of the estimated
+                # total number of products matching the search criteria (start/end date).
+                # Remove this warning when this is fixed upstream by THEIA.
+                if search_plugin.provider == "theia":
+                    logger.warning(
+                        "Results found on provider 'theia' is the total number of products "
+                        "available in the searched collection (e.g. SENTINEL2) instead of "
+                        "the total number of products matching the search criteria"
+                    )
         except Exception:
             logger.info(
                 "No result from provider '%s' due to an error during search. Raise "

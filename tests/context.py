@@ -50,6 +50,7 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NoMatchingProductType,
+    PluginImplementationError,
     UnsupportedDatasetAddressScheme,
     UnsupportedProvider,
     ValidationError,
