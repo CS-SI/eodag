@@ -39,12 +39,12 @@ def params_mapping_to_csv(
     ogc_doc_url=OPENSEARCH_DOC_URL, csv_file_path=DEFAULT_CSV_FILE_PATH
 ):
     """Get providers metadata mapping, with corresponding description from OGC
-        documentation and writes it to a csv file
+    documentation and writes it to a csv file
 
-        :param ogc_doc_url: (Optional) URL to OGC OpenSearch documentation
-        :type ogc_doc_url: str
-        :param csv_file_path: (Optional) path to csv output file
-        :type csv_file_path: str
+    :param ogc_doc_url: (Optional) URL to OGC OpenSearch documentation
+    :type ogc_doc_url: str
+    :param csv_file_path: (Optional) path to csv output file
+    :type csv_file_path: str
     """
     dag = EODataAccessGateway()
 

@@ -1,0 +1,10 @@
+---
+!provider
+  name: fakeplugin_provider
+  priority: 0
+  api: !plugin
+    type: FakePluginAPI
+    endpoint: 'https://fakeplugin-endpoint'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'

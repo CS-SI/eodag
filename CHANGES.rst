@@ -1,6 +1,14 @@
 Release history
 ---------------
 
+2.1.1 (2021-03-18)
+++++++++++++++++++
+
+- Continuous Integration performed with GitHub actions
+- Providers config automatically loaded from EODAG external plugins, fixes
+  `GH-172 <https://github.com/CS-SI/eodag/issues/172>`_
+- Various minor fixes
+
 2.1.0 (2021-03-09)
 ++++++++++++++++++
 

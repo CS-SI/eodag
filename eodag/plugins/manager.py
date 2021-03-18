@@ -17,9 +17,11 @@
 # limitations under the License.
 import logging
 from operator import attrgetter
+from pathlib import Path
 
 import pkg_resources
 
+from eodag.config import load_config
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
@@ -77,11 +79,25 @@ class PluginManager(object):
                         "Check that the plugin module (%s) is importable",
                         entry_point.module_name,
                     )
+                if entry_point.dist.project_name != "eodag":
+                    # use plugin providers if any
+                    plugin_providers_config_path = [
+                        x
+                        for x in Path(entry_point.dist.location).rglob("providers.yml")
+                        if all(i not in str(x) for i in ["build", ".tox"])
+                    ]
+                    if plugin_providers_config_path:
+                        self.providers_config.update(
+                            load_config(plugin_providers_config_path[0])
+                        )
+
         self.product_type_to_provider_config_map = {}
-        for provider_config in providers_config.values():
+        for provider_config in self.providers_config.values():
             for product_type in provider_config.products:
-                product_type_providers = self.product_type_to_provider_config_map.setdefault(  # noqa
-                    product_type, []
+                product_type_providers = (
+                    self.product_type_to_provider_config_map.setdefault(  # noqa
+                        product_type, []
+                    )
                 )
                 product_type_providers.append(provider_config)
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)

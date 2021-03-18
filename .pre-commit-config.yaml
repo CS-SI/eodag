@@ -3,7 +3,7 @@ fail_fast: false
 repos:
 
 -   repo: https://github.com/pre-commit/pre-commit-hooks.git
-    rev: v2.1.0
+    rev: v3.4.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -15,28 +15,25 @@ repos:
     -   id: check-added-large-files
         args: ['--maxkb=1600']
     -   id: debug-statements
-    -   id: flake8
-        args: [--max-line-length=120]
-        language_version: python3.7
     -   id: check-merge-conflict
 
+-   repo: 'https://gitlab.com/pycqa/flake8'
+    rev: 3.9.0
+    hooks:
+    -   id: flake8
+
 -   repo: 'https://github.com/ambv/black'
-    # stable
-    rev: 19.10b0
+    rev: 20.8b1
     hooks:
     -   id: black
         args: ['--safe']
-        language_version: python3.7
 
 -   repo: 'https://github.com/chewse/pre-commit-mirrors-pydocstyle'
-    # 2.1.1
     rev: v2.1.1
     hooks:
     -   id: pydocstyle
-        language_version: python3.7
 
 -   repo: https://github.com/pre-commit/mirrors-isort
-    # v4.3.15
-    rev: v4.3.15
+    rev: v5.7.0
     hooks:
     -   id: isort
