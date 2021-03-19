@@ -247,7 +247,9 @@ class EODataAccessGateway(object):
         :type provider: str
         """
         if provider not in self.available_providers():
-            raise UnsupportedProvider("This provider is not recognised by eodag")
+            raise UnsupportedProvider(
+                f"This provider is not recognised by eodag: {provider}"
+            )
         preferred_provider, max_priority = self.get_preferred_provider()
         if preferred_provider != provider:
             new_priority = max_priority + 1
@@ -443,7 +445,7 @@ class EODataAccessGateway(object):
         end=None,
         geom=None,
         locations=None,
-        **kwargs
+        **kwargs,
     ):
         """Look for products matching criteria on known providers.
 
@@ -567,7 +569,7 @@ class EODataAccessGateway(object):
         end=None,
         geom=None,
         locations=None,
-        **kwargs
+        **kwargs,
     ):
         """Iterate over the pages of a products search.
 
@@ -657,7 +659,7 @@ class EODataAccessGateway(object):
         end=None,
         geom=None,
         locations=None,
-        **kwargs
+        **kwargs,
     ):
         """Search and return all the products matching the search criteria.
 
@@ -728,7 +730,7 @@ class EODataAccessGateway(object):
             end=end,
             geom=geom,
             locations=locations,
-            **kwargs
+            **kwargs,
         ):
             all_results.data.extend(page_results.data)
         logger.info(
@@ -865,7 +867,7 @@ class EODataAccessGateway(object):
                     for p in self.list_product_types(search_plugin.provider)
                     if p["ID"] == product_type
                 ][0],
-                **{"productType": product_type}
+                **{"productType": product_type},
             )
         # If the product isn't in the catalog, it's a generic product type.
         except IndexError:
@@ -875,7 +877,7 @@ class EODataAccessGateway(object):
                     for p in self.list_product_types(search_plugin.provider)
                     if p["ID"] == GENERIC_PRODUCT_TYPE
                 ][0],
-                **{"productType": product_type}
+                **{"productType": product_type},
             )
         # Remove the ID since this is equal to productType.
         search_plugin.config.product_type_config.pop("ID", None)
@@ -1063,7 +1065,7 @@ class EODataAccessGateway(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """Download all products resulting from a search.
 
@@ -1101,7 +1103,7 @@ class EODataAccessGateway(object):
                 progress_callback=progress_callback,
                 wait=wait,
                 timeout=timeout,
-                **kwargs
+                **kwargs,
             )
             # close progress_bar when finished
             if hasattr(progress_callback, "pb") and hasattr(
@@ -1167,7 +1169,7 @@ class EODataAccessGateway(object):
         provider=None,
         productType=None,
         timeout=HTTP_REQ_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
 
@@ -1236,7 +1238,7 @@ class EODataAccessGateway(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """Download a single product.
 
