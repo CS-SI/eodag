@@ -584,6 +584,7 @@ class EODataAccessGateway(object):
         locations_dict = {loc["name"]: loc for loc in self.locations_config}
         for arg in locations_dict.keys():
             kwargs.pop(arg, None)
+        del kwargs["locations"]
 
         plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
