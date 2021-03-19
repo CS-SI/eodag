@@ -59,6 +59,10 @@ logger = logging.getLogger("eodag.core")
 # pagination defaults
 DEFAULT_PAGE = 1
 DEFAULT_ITEMS_PER_PAGE = 20
+# Default maximum number of items per page requested by search_all. 50 instead of
+# 20 (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and currentminimum
+# value (mundi)
+DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
 
 class EODataAccessGateway(object):
@@ -567,8 +571,7 @@ class EODataAccessGateway(object):
     ):
         """Iterate over the pages of a product search.
 
-        :param items_per_page: The number of results that must appear in one single
-                               page (default: 20)
+        :param items_per_page: The number of results requested per page (default: 20)
         :type items_per_page: int
         :param start: Start sensing UTC time in iso format
         :type start: str
@@ -628,6 +631,94 @@ class EODataAccessGateway(object):
             "Iterate over pages: last products found on page %s",
             last_page_with_products,
         )
+
+    def search_all(
+        self,
+        items_per_page=None,
+        start=None,
+        end=None,
+        geom=None,
+        locations=None,
+        **kwargs
+    ):
+        """Search and return all the products matching the search criteria.
+
+        It iterates over the pages of a search query and collects all the returned
+        products into a single :class:`~eodag.api.search_result.SearchResult` instance.
+
+        :param items_per_page: (optional) The number of results requested internally per
+                               page. The maximum number of items than can be requested
+                               at once to a provider has been configured in EODAG for
+                               some of them. If items_per_page is None and this number
+                               is available for the searched provider, it is used to
+                               limit the number of requests made. This should also
+                               reduce the time required to collect all the products
+                               matching the search criteria. If this number is not
+                               available, a default value of 50 is used instead.
+                               items_per_page can also be set to any arbitrary value.
+        :type items_per_page: int
+        :param start: Start sensing UTC time in iso format
+        :type start: str
+        :param end: End sensing UTC time in iso format
+        :type end: str
+        :param geom: Search area that can be defined in different ways:
+
+                    * with a Shapely geometry object:
+                      ``class:`shapely.geometry.base.BaseGeometry```
+                    * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
+                      ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
+                    * with a bounding box as list of float:
+                      ``[lonmin, latmin, lonmax, latmax]``
+                    * with a WKT str
+
+        :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
+        :param locations: Location filtering by name using locations configuration
+                          ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
+                          the geometry of the features having the property ISO3 starting with
+                          'PA' such as Panama and Pakistan in the shapefile configured with
+                          name=country and attr=ISO3
+        :type locations: dict
+        :param dict kwargs: some other criteria that will be used to do the search,
+                            using paramaters compatibles with the provider
+        :returns: An iterator that yields page per page a collection of EO products
+                  matching the criteria
+        :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
+
+        .. versionadded::
+            2.2.0
+        """
+        # Prepare the search just to get the search plugin and the maximized value
+        # of items_per_page if defined for the provider used.
+        search_kwargs = self._prepare_search(
+            start=start, end=end, geom=geom, locations=locations, **kwargs
+        )
+        search_plugin = search_kwargs["search_plugin"]
+        if items_per_page is None:
+            items_per_page = search_plugin.config.pagination.get(
+                "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+            )
+        logger.debug(
+            "Searching for all the products with provider %s and a maximum of %s "
+            "items per page.",
+            search_plugin.provider,
+            items_per_page,
+        )
+        all_results = SearchResult([])
+        for page_results in self.search_iter_page(
+            items_per_page=items_per_page,
+            start=start,
+            end=end,
+            geom=geom,
+            locations=locations,
+            **kwargs
+        ):
+            all_results.data.extend(page_results.data)
+        logger.info(
+            "Found %s result(s) on provider '%s'",
+            len(all_results),
+            search_plugin.provider,
+        )
+        return all_results
 
     def _search_by_id(self, uid, provider=None):
         """Internal method that enables searching a product by its id.

@@ -28,6 +28,7 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
+    DEFAULT_MAX_ITEMS_PER_PAGE,
     EODataAccessGateway,
     NoMatchingProductType,
     PluginImplementationError,
@@ -827,7 +828,7 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_search_iter_page_returns_iterator(self, search_plugin, prepare_seach):
-        """search_iter_page must returns an iterator"""
+        """search_iter_page must return an iterator"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (self.search_results.data, None)
         prepare_seach.return_value = dict(search_plugin=search_plugin)
@@ -887,3 +888,100 @@ class TestCoreSearch(unittest.TestCase):
         page_iterator = self.dag.search_iter_page()
         with self.assertRaises(AttributeError):
             next(page_iterator)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test_search_all_must_collect_them_all(self, search_plugin, prepare_seach):
+        """search_all must return all the products available"""  # noqa
+        search_plugin.provider = "peps"
+        search_plugin.query.side_effect = [
+            (self.search_results.data, None),
+            (self.search_results.data, None),
+            ([self.search_results.data[0]], None),
+        ]
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
+        # Infinite generator her because passing directly the dict to
+        # prepare_search.return_value (or side_effect) didn't work. One function
+        # would do a dict.pop("search_plugin") that would remove the item from the
+        # mocked return value. Later calls would then break
+        def yield_search_plugin():
+            while True:
+                yield {"search_plugin": search_plugin}
+
+        prepare_seach.side_effect = yield_search_plugin()
+        all_results = self.dag.search_all(items_per_page=2)
+        self.assertIsInstance(all_results, SearchResult)
+        self.assertEqual(len(all_results), 5)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    def test_search_all_use_max_items_per_page(self, mocked_search_iter_page):
+        """search_all must use the configured parameter max_items_per_page if available"""  # noqa
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    max_items_per_page: 2
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        dag.update_providers_config(dummy_provider_config)
+        dag.set_preferred_provider("dummy_provider")
+        dag.search_all(productType="S2_MSI_L1C")
+        self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 2)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    def test_search_all_use_default_value(self, mocked_search_iter_page):
+        """search_all must use the DEFAULT_MAX_ITEMS_PER_PAGE if the provider's one wasn't configured"""  # noqa
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        dag.update_providers_config(dummy_provider_config)
+        dag.set_preferred_provider("dummy_provider")
+        dag.search_all(productType="S2_MSI_L1C")
+        self.assertEqual(
+            mocked_search_iter_page.call_args[1]["items_per_page"],
+            DEFAULT_MAX_ITEMS_PER_PAGE,
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    def test_search_all_user_items_per_page(self, mocked_search_iter_page):
+        """search_all must use the value of items_per_page provided by the user"""
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        dag.update_providers_config(dummy_provider_config)
+        dag.set_preferred_provider("dummy_provider")
+        dag.search_all(productType="S2_MSI_L1C", items_per_page=7)
+        self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
