@@ -524,10 +524,11 @@ class TestCoreSearch(unittest.TestCase):
         prepared_search = self.dag._prepare_search()
         expected = {
             "geometry": None,
-            "locations": None,
             "productType": None,
         }
         self.assertDictContainsSubset(expected, prepared_search)
+        expected = set(["geometry", "productType", "auth", "search_plugin"])
+        self.assertSetEqual(expected, set(prepared_search))
 
     def test__prepare_search_dates(self):
         """_prepare_search must handle start & end dates"""
