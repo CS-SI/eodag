@@ -21,6 +21,7 @@ import json
 import os
 import shutil
 import unittest
+from copy import deepcopy
 
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
@@ -488,6 +489,12 @@ class TestCoreSearch(unittest.TestCase):
             search_results_geojson = json.load(f)
         cls.search_results = SearchResult.from_geojson(search_results_geojson)
         cls.search_results_size = len(cls.search_results)
+        # Change the id of these products, to emulate different products
+        search_results_data_2 = deepcopy(cls.search_results.data)
+        search_results_data_2[0].properties["id"] = "a"
+        search_results_data_2[1].properties["id"] = "b"
+        cls.search_results_2 = SearchResult(search_results_data_2)
+        cls.search_results_size_2 = len(cls.search_results_2)
 
     def test_guess_product_type_with_kwargs(self):
         """guess_product_type must return the products matching the given kwargs"""
@@ -830,7 +837,10 @@ class TestCoreSearch(unittest.TestCase):
     def test_search_iter_page_returns_iterator(self, search_plugin, prepare_seach):
         """search_iter_page must return an iterator"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (self.search_results.data, None)
+        search_plugin.query.side_effect = [
+            (self.search_results.data, None),
+            (self.search_results_2.data, None),
+        ]
         prepare_seach.return_value = dict(search_plugin=search_plugin)
         page_iterator = self.dag.search_iter_page(items_per_page=2)
         first_result_page = next(page_iterator)
@@ -838,7 +848,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(len(first_result_page), self.search_results_size)
         second_result_page = next(page_iterator)
         self.assertIsInstance(second_result_page, SearchResult)
-        self.assertEqual(len(second_result_page), self.search_results_size)
+        self.assertEqual(len(second_result_page), self.search_results_size_2)
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
@@ -849,13 +859,12 @@ class TestCoreSearch(unittest.TestCase):
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = [
             (self.search_results.data, None),
-            (self.search_results.data, None),
-            ([self.search_results.data[0]], None),
+            ([self.search_results_2.data[0]], None),
         ]
         prepare_seach.return_value = dict(search_plugin=search_plugin)
         page_iterator = self.dag.search_iter_page(items_per_page=2)
         all_page_results = list(page_iterator)
-        self.assertEqual(len(all_page_results), 3)
+        self.assertEqual(len(all_page_results), 2)
         self.assertIsInstance(all_page_results[0], SearchResult)
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
@@ -867,7 +876,7 @@ class TestCoreSearch(unittest.TestCase):
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = [
             (self.search_results.data, None),
-            (self.search_results.data, None),
+            (self.search_results_2.data, None),
             ([], None),
         ]
         prepare_seach.return_value = dict(search_plugin=search_plugin)
@@ -896,8 +905,7 @@ class TestCoreSearch(unittest.TestCase):
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = [
             (self.search_results.data, None),
-            (self.search_results.data, None),
-            ([self.search_results.data[0]], None),
+            ([self.search_results_2.data[0]], None),
         ]
 
         class DummyConfig:
@@ -916,7 +924,7 @@ class TestCoreSearch(unittest.TestCase):
         prepare_seach.side_effect = yield_search_plugin()
         all_results = self.dag.search_all(items_per_page=2)
         self.assertIsInstance(all_results, SearchResult)
-        self.assertEqual(len(all_results), 5)
+        self.assertEqual(len(all_results), 3)
 
     @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
     def test_search_all_use_max_items_per_page(self, mocked_search_iter_page):

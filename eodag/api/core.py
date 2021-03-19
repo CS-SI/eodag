@@ -569,7 +569,7 @@ class EODataAccessGateway(object):
         locations=None,
         **kwargs
     ):
-        """Iterate over the pages of a product search.
+        """Iterate over the pages of a products search.
 
         :param items_per_page: The number of results requested per page (default: 20)
         :type items_per_page: int
@@ -611,13 +611,31 @@ class EODataAccessGateway(object):
             page=1,
             items_per_page=items_per_page,
         )
+        prev_product = None
         while True:
             logger.debug("Iterate over pages: search page %s", search_kwargs["page"])
             products, _ = self._do_search(
                 search_plugin, count=False, raise_errors=True, **search_kwargs
             )
             if len(products) > 0:
+                # The first products between two iterations are compared. If they
+                # are actually the same product, it means the iteration failed at
+                # progressing for some reason. This is implemented as a workaround
+                # to some search plugins/providers not handling pagination.
+                product = products[0]
+                if (
+                    prev_product
+                    and product.properties["id"] == prev_product.properties["id"]
+                    and product.provider == prev_product.provider
+                ):
+                    logger.debug(
+                        "Iterate over pages: stop iterating since the next page "
+                        "appears to have the same products as in the previous one.",
+                    )
+                    last_page_with_products = search_kwargs["page"] - 1
+                    break
                 yield products
+                prev_product = product
                 # Prevent a last search if the current one returned less than the
                 # maximum number of items asked for.
                 if len(products) < items_per_page:
