@@ -119,9 +119,13 @@ class EODataAccessGateway(object):
                     with open(locations_conf_template) as infile, open(
                         locations_conf_path, "w"
                     ) as outfile:
+                        # The template contains paths in the form of:
+                        # /path/to/locations/file.shp
+                        path_template = "/path/to/locations/"
                         for line in infile:
                             line = line.replace(
-                                "/path/to/locations", os.path.join(self.conf_dir, "shp")
+                                path_template,
+                                os.path.join(self.conf_dir, "shp") + os.path.sep,
                             )
                             outfile.write(line)
                     # copy sample shapefile dir
