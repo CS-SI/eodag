@@ -272,12 +272,12 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.tar.bz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_airbus(self):
+    def test_end_to_end_search_download_sobloo(self):
         product = self.execute_search(*SOBLOO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_airbus_noresult(self):
+    def test_end_to_end_search_download_sobloo_noresult(self):
         """Requesting a page on sobloo with no results must return an empty SearchResult"""
         # As of 2021-02-23 this search at page 1 returns 68 products, so at page 2 there
         # are no products available and sobloo returns a response without products (`hits`).
