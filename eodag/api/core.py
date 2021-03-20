@@ -205,7 +205,7 @@ class EODataAccessGateway(object):
         """Set max priority for the given provider.
 
         >>> import tempfile, os
-        >>> config = tempfile.NamedTemporaryFile(delete=True)
+        >>> config = tempfile.NamedTemporaryFile(delete=False)
         >>> dag = EODataAccessGateway(user_conf_file_path=os.path.join(
         ...     tempfile.gettempdir(), config.name))
         >>> # This also tests get_preferred_provider method by the way
@@ -230,6 +230,7 @@ class EODataAccessGateway(object):
         >>> dag.get_preferred_provider()
         ('usgs', 4)
         >>> config.close()
+        >>> os.unlink(config.name)
 
         :param provider: The name of the provider that should be considered as the
                          preferred provider to be used for this instance
