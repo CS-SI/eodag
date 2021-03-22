@@ -8,8 +8,7 @@ Please review the [guidelines for contributing](../CONTRIBUTING.md) to this repo
 ### Description
 Please describe your pull request.
 
-## Further comments
-
+### Further comments
 If this is a relatively large or complex change, kick off the discussion by explaining why you chose the solution you did and what alternatives you considered, etc...
 
 Thank you!
