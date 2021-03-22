@@ -335,6 +335,38 @@ def override_config_from_mapping(config, mapping):
                 logger.warning("%s skipped: %s", provider, e)
 
 
+def merge_configs(config, other_config):
+    """Override a configuration with the values of another configuration
+
+    :param dict config: An eodag providers configuration dictionary
+    :param dict other_config: An eodag providers configuration dictionary
+    """
+    # configs union with other_config values as default
+    other_config = dict(config, **other_config)
+
+    for provider, new_conf in other_config.items():
+        old_conf = config.get(provider, None)
+
+        if old_conf:
+            # update non-objects values
+            new_conf = dict(old_conf.__dict__, **new_conf.__dict__)
+
+            for conf_k, conf_v in new_conf.items():
+                old_conf_v = getattr(old_conf, conf_k, None)
+
+                if isinstance(conf_v, PluginConfig) and isinstance(
+                    old_conf_v, PluginConfig
+                ):
+                    old_conf_v.update(conf_v.__dict__)
+                    new_conf[conf_k] = old_conf_v
+                elif isinstance(old_conf_v, PluginConfig):
+                    new_conf[conf_k] = old_conf_v
+
+                setattr(config[provider], conf_k, new_conf[conf_k])
+        else:
+            config[provider] = new_conf
+
+
 def load_yml_config(yml_path):
     """Build a conf dictionnary from given yml absolute path
 

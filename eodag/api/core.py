@@ -100,6 +100,8 @@ class EODataAccessGateway(object):
         override_config_from_env(self.providers_config)
 
         self._plugins_manager = PluginManager(self.providers_config)
+        # use updated providers_config
+        self.providers_config = self._plugins_manager.providers_config
 
         # Build a search index for product types
         self._product_types_index = None
