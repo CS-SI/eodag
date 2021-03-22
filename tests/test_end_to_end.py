@@ -38,8 +38,8 @@ THEIA_SEARCH_ARGS = [
 SOBLOO_SEARCH_ARGS = [
     "sobloo",
     "S2_MSI_L1C",
-    "2020-05-01",
-    "2020-06-01",
+    "2021-01-01",
+    "2021-02-01",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 PEPS_BEFORE_20161205_SEARCH_ARGS = [
@@ -272,14 +272,14 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.tar.bz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_airbus(self):
+    def test_end_to_end_search_download_sobloo(self):
         product = self.execute_search(*SOBLOO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_airbus_noresult(self):
+    def test_end_to_end_search_download_sobloo_noresult(self):
         """Requesting a page on sobloo with no results must return an empty SearchResult"""
-        # As of 2021-02-23 this search at page 1 returns 68 products, so at page 2 there
+        # As of 2021-03-19 this search at page 1 returns 66 products, so at page 2 there
         # are no products available and sobloo returns a response without products (`hits`).
         product = self.execute_search(
             *SOBLOO_SEARCH_ARGS, page=2, items_per_page=100, check_product=False
