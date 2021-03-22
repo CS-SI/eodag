@@ -37,7 +37,7 @@ If you intend to contribute to eodag source code:
     git clone https://github.com/CS-SI/eodag.git
     cd eodag
     python -m pip install -r requirements-dev.txt
-    pre-commit isntall
+    pre-commit install
 
 To run the default test suite (which excludes end-to-end tests):
 
