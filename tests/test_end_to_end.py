@@ -140,17 +140,17 @@ class EndToEndBase(unittest.TestCase):
         - Return one product to be downloaded
         """
         search_criteria = {
+            "productType": product_type,
             "startTimeFromAscendingNode": start,
             "completionTimeFromAscendingNode": end,
             "geom": geom,
         }
+        if items_per_page:
+            search_criteria["items_per_page"] = items_per_page
+        if page:
+            search_criteria["page"] = page
         self.eodag.set_preferred_provider(provider)
-        results, nb_results = self.eodag.search(
-            productType=product_type,
-            page=page,
-            items_per_page=items_per_page,
-            **search_criteria
-        )
+        results, nb_results = self.eodag.search(**search_criteria)
         if offline:
             results = [
                 prod
