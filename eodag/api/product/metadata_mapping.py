@@ -22,8 +22,8 @@ from datetime import datetime
 from string import Formatter
 
 import geojson
-import jsonpath_ng as jsonpath
 from dateutil.tz import tzutc
+from jsonpath_ng.ext import parse
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
@@ -431,7 +431,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
 
     # adds missing discovered properties
     if discovery_pattern and discovery_path:
-        discovered_properties = jsonpath.parse(discovery_path).find(json)
+        discovered_properties = parse(discovery_path).find(json)
         for found_jsonpath in discovered_properties:
             found_key = found_jsonpath.path.fields[-1]
             if (
@@ -592,9 +592,9 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
             try:
                 # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
                 if len(dest_dict[metadata]) == 2:
-                    dest_dict[metadata][1] = (conversion, jsonpath.parse(path))
+                    dest_dict[metadata][1] = (conversion, parse(path))
                 else:
-                    dest_dict[metadata] = (conversion, jsonpath.parse(path))
+                    dest_dict[metadata] = (conversion, parse(path))
             except Exception:  # jsonpath_ng does not provide a proper exception
                 # Keep path as this and its associated conversion
                 if len(dest_dict[metadata]) == 2:
