@@ -22,8 +22,8 @@ import re
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
-import jsonpath_ng as jsonpath
 import requests
+from jsonpath_ng.ext import parse
 from lxml import etree
 
 from eodag.api.product import EOProduct
@@ -490,9 +490,7 @@ class QueryStringSearch(Search):
         else:
             count_results = response.json()
             if isinstance(count_results, dict):
-                path_parsed = jsonpath.parse(
-                    self.config.pagination["total_items_nb_key_path"]
-                )
+                path_parsed = parse(self.config.pagination["total_items_nb_key_path"])
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
@@ -730,12 +728,12 @@ class PostJsonSearch(QueryStringSearch):
                     if len(self.config.metadata_mapping[metadata]) == 2:
                         self.config.metadata_mapping[metadata][1] = (
                             conversion,
-                            jsonpath.parse(path),
+                            parse(path),
                         )
                     else:
                         self.config.metadata_mapping[metadata] = (
                             conversion,
-                            jsonpath.parse(path),
+                            parse(path),
                         )
                 except Exception:  # jsonpath_ng does not provide a proper exception
                     # Assume the mapping is to be passed as is.
