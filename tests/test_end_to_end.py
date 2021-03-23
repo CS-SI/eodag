@@ -165,6 +165,38 @@ class EndToEndBase(unittest.TestCase):
         else:
             return results
 
+    def execute_search_all(
+        self,
+        provider,
+        product_type,
+        start,
+        end,
+        geom,
+        items_per_page=None,
+        check_products=True,
+    ):
+        """Search all the products on provider:
+
+        - First set the preferred provider as the one given in parameter
+        - Then do the search_all
+        - Then ensure that at least the first result originates from the provider
+        - Return all the products
+        """
+        search_criteria = {
+            "startTimeFromAscendingNode": start,
+            "completionTimeFromAscendingNode": end,
+            "geom": geom,
+        }
+        self.eodag.set_preferred_provider(provider)
+        results = self.eodag.search_all(
+            productType=product_type, items_per_page=items_per_page, **search_criteria
+        )
+        if check_products:
+            self.assertGreater(len(results), 0)
+            one_product = results[0]
+            self.assertEqual(one_product.provider, provider)
+        return results
+
 
 # @unittest.skip("skip auto run")
 class TestEODagEndToEnd(EndToEndBase):
@@ -367,6 +399,21 @@ class TestEODagEndToEnd(EndToEndBase):
         product = products[0]
 
         self.assertEqual(product.properties["id"], uid)
+
+    def test_end_to_end_search_all_mundi_default(self):
+        # 23/03/2021: Got 16 products for this search
+        results = self.execute_search_all(*MUNDI_SEARCH_ARGS)
+        self.assertGreater(len(results), 10)
+
+    def test_end_to_end_search_all_mundi_iterate(self):
+        # 23/03/2021: Got 16 products for this search
+        results = self.execute_search_all(*MUNDI_SEARCH_ARGS, items_per_page=10)
+        self.assertGreater(len(results), 10)
+
+    def test_end_to_end_search_all_astraea_eod_iterate(self):
+        # 23/03/2021: Got 39 products for this search
+        results = self.execute_search_all(*ASTRAE_EOD_SEARCH_ARGS, items_per_page=10)
+        self.assertGreater(len(results), 10)
 
 
 class TestEODagEndToEndWrongCredentials(EndToEndBase):
