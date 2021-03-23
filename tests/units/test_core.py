@@ -842,6 +842,11 @@ class TestCoreSearch(unittest.TestCase):
             (self.search_results.data, None),
             (self.search_results_2.data, None),
         ]
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
         prepare_seach.return_value = dict(search_plugin=search_plugin)
         page_iterator = self.dag.search_iter_page(items_per_page=2)
         first_result_page = next(page_iterator)
@@ -862,6 +867,11 @@ class TestCoreSearch(unittest.TestCase):
             (self.search_results.data, None),
             ([self.search_results_2.data[0]], None),
         ]
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
         prepare_seach.return_value = dict(search_plugin=search_plugin)
         page_iterator = self.dag.search_iter_page(items_per_page=2)
         all_page_results = list(page_iterator)
@@ -880,6 +890,11 @@ class TestCoreSearch(unittest.TestCase):
             (self.search_results_2.data, None),
             ([], None),
         ]
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
         prepare_seach.return_value = dict(search_plugin=search_plugin)
         page_iterator = self.dag.search_iter_page(items_per_page=2)
         all_page_results = list(page_iterator)
@@ -898,6 +913,29 @@ class TestCoreSearch(unittest.TestCase):
         page_iterator = self.dag.search_iter_page()
         with self.assertRaises(AttributeError):
             next(page_iterator)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test_search_iter_page_support_next_page_mechanism(
+        self, search_plugin, prepare_seach
+    ):
+        """search_iter_page must query with the next page mechanism"""
+        search_plugin.provider = "peps"
+        search_plugin.query.side_effect = [
+            (self.search_results.data, None),
+            (self.search_results_2.data, None),
+            ([], None),
+        ]
+
+        class DummyConfig:
+            pagination = dict(next_page_url_key_path='$.links[?(@.rel="next")].href')
+
+        search_plugin.config = DummyConfig()
+        prepare_seach.return_value = dict(search_plugin=search_plugin)
+        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        next(page_iterator)
+        for call_args in search_plugin.query.call_args_list:
+            self.assertTrue(call_args[1]["set_next_page_url"])
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)

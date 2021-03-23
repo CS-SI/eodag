@@ -154,8 +154,31 @@ class QueryStringSearch(Search):
         self.query_params = dict()
         self.query_string = ""
 
-    def query(self, items_per_page=None, page=None, count=True, **kwargs):
-        """Perform a search on an OpenSearch-like interface"""
+    def query(
+        self,
+        items_per_page=None,
+        page=None,
+        count=True,
+        set_next_page_url=False,
+        **kwargs
+    ):
+        """Perform a search on an OpenSearch-like interface
+
+        :param page: The page number to retur (default: 1)
+        :type page: int
+        :param items_per_page: The number of results that must appear in one single
+                               page
+        :type items_per_page: int
+        :param count:  To trigger a count request (default: True)
+        :type count: bool
+        :param set_next_page_url: If True, the config key 'next_page_url_tpl' is
+                                  replaced after a response has been obtained by the
+                                  next page URL, which is fetched by using the key
+                                  'total_items_nb_key_path'. This allows to implement
+                                  pagination for interfaces that support 'next' but
+                                  not 'page'.
+        :type set_next_page_url: bool
+        """
         product_type = kwargs.get("productType", None)
         if product_type == GENERIC_PRODUCT_TYPE:
             logger.warning(
@@ -193,7 +216,9 @@ class QueryStringSearch(Search):
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
-        provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
+        provider_results = self.do_search(
+            items_per_page=items_per_page, set_next_page_url=set_next_page_url, **kwargs
+        )
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
@@ -397,13 +422,16 @@ class QueryStringSearch(Search):
             urls.append(next_url)
         return urls, total_results
 
-    def do_search(self, items_per_page=None, **kwargs):
+    def do_search(self, items_per_page=None, set_next_page_url=False, **kwargs):
         """Perform the actual search request.
 
         If there is a specified number of items per page, return the results as soon
         as this number is reached
 
         :param int items_per_page: (Optional) The number of items to return for one page
+        :param bool set_next_page_url: (Optional) Trigger the next page mechanism that
+                                       updates a search plugin with the next url found
+                                       in the current search.
         """
         results = []
         for search_url in self.search_urls:
@@ -426,8 +454,23 @@ class QueryStringSearch(Search):
                             self.config.results_entry, namespaces=namespaces
                         )
                     ]
+                    if set_next_page_url:
+                        raise NotImplementedError(
+                            "Setting the next page url from an XML response has not "
+                            "been implemented yet"
+                        )
                 else:
-                    result = response.json().get(self.config.results_entry, [])
+                    resp_as_json = response.json()
+                    if set_next_page_url:
+                        path_parsed = parse(
+                            self.config.pagination["next_page_url_key_path"]
+                        )
+                        next_page_url = path_parsed.find(resp_as_json)[0].value
+                        logger.debug(
+                            "Next page url collected and set for the next search",
+                        )
+                        self.config.pagination["next_page_url_tpl"] = next_page_url
+                    result = resp_as_json.get(self.config.results_entry, [])
                 if getattr(self.config, "merge_responses", False):
                     results = (
                         [dict(r, **result[i]) for i, r in enumerate(results)]

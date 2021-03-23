@@ -609,13 +609,21 @@ class EODataAccessGateway(object):
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
         search_plugin = search_kwargs.pop("search_plugin")
+        iteration = 1
+        # use_next to True indicates that getting the next page works by getting its URL
+        # from the current page.
+        pagination_config = getattr(search_plugin.config, "pagination", {})
+        if pagination_config.get("next_page_url_key_path"):
+            search_kwargs["set_next_page_url"] = True
+        # Page has to be set to a value even if use_next is True, this is required
+        # internally by the search plugin (see collect_search_urls)
         search_kwargs.update(
             page=1,
             items_per_page=items_per_page,
         )
         prev_product = None
         while True:
-            logger.debug("Iterate over pages: search page %s", search_kwargs["page"])
+            logger.debug("Iterate over pages: search page %s", iteration)
             products, _ = self._do_search(
                 search_plugin, count=False, raise_errors=True, **search_kwargs
             )
@@ -634,19 +642,24 @@ class EODataAccessGateway(object):
                         "Iterate over pages: stop iterating since the next page "
                         "appears to have the same products as in the previous one.",
                     )
-                    last_page_with_products = search_kwargs["page"] - 1
+                    last_page_with_products = iteration - 1
                     break
                 yield products
                 prev_product = product
                 # Prevent a last search if the current one returned less than the
                 # maximum number of items asked for.
                 if len(products) < items_per_page:
-                    last_page_with_products = search_kwargs["page"]
+                    last_page_with_products = iteration
                     break
             else:
-                last_page_with_products = search_kwargs["page"] - 1
+                last_page_with_products = iteration - 1
                 break
-            search_kwargs["page"] += 1
+            iteration += 1
+            # No need to update anything, this is done internally by the search plugin.
+            if "set_next_page_url" in search_kwargs:
+                pass
+            else:
+                search_kwargs["page"] = iteration
         logger.debug(
             "Iterate over pages: last products found on page %s",
             last_page_with_products,
