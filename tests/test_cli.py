@@ -29,6 +29,7 @@ from pkg_resources import resource_filename
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
+    DEFAULT_ITEMS_PER_PAGE,
     AuthenticationError,
     MisconfiguredError,
     download,
@@ -153,7 +154,7 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
-                items_per_page=20,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 page=1,
                 startTimeFromAscendingNode=None,
                 completionTimeFromAscendingNode=None,
@@ -198,7 +199,7 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
-                items_per_page=20,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 page=1,
                 startTimeFromAscendingNode=None,
                 completionTimeFromAscendingNode=None,
@@ -295,7 +296,7 @@ class TestEodagCli(unittest.TestCase):
                 user_conf_file_path=conf_file, locations_conf_path=None
             )
             api_obj.search.assert_called_once_with(
-                items_per_page=20, page=1, **criteria
+                items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
             )
             api_obj.crunch.assert_called_once_with(
                 search_results, search_criteria=criteria, **{cruncher: {}}
@@ -326,6 +327,41 @@ class TestEodagCli(unittest.TestCase):
                 search_results,
                 search_criteria=criteria,
                 **{cruncher: {"minimum_overlap": 10}}
+            )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_all(self, dag):
+        """Calling eodag search with --bbox argument valid"""
+        with self.user_conf() as conf_file:
+            product_type = "whatever"
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    product_type,
+                    "-g",
+                    "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+                    "--all",
+                ],
+            )
+            api_obj = dag.return_value
+            api_obj.search_all.assert_called_once_with(
+                items_per_page=None,
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None,
+                cloudCover=None,
+                geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                productType=product_type,
+                id=None,
+                locations=None,
             )
 
     def test_eodag_list_product_type_ok(self):
