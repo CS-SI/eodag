@@ -19,15 +19,17 @@
 import logging.config
 
 
-def setup_logging(**kwargs):
+def setup_logging(verbose):
     """Define logging level
 
-    :param kwargs: Accepted Keyword arguments:
-                    verbose=0-3 logging level (None to max)
-    :type kwargs: dict
+    :param verbose: Accepted values:
+
+                    * 0: no logging
+                    * 1 or 2: INFO level
+                    * 3: DEBUG level
+    :type verbose: int
     """
-    verbosity = kwargs.pop("verbose")
-    if verbosity == 0:
+    if verbose == 0:
         logging.config.dictConfig(
             {
                 "version": 1,
@@ -40,7 +42,7 @@ def setup_logging(**kwargs):
                 },
             }
         )
-    elif verbosity <= 2:
+    elif verbose <= 2:
         logging.config.dictConfig(
             {
                 "version": 1,
@@ -71,7 +73,7 @@ def setup_logging(**kwargs):
                 },
             }
         )
-    elif verbosity == 3:
+    elif verbose == 3:
         logging.config.dictConfig(
             {
                 "version": 1,
@@ -102,3 +104,5 @@ def setup_logging(**kwargs):
                 },
             }
         )
+    else:
+        raise ValueError("'verbose' must be one of: 0, 1, 2, 3")

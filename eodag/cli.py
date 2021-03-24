@@ -264,8 +264,7 @@ def search_crunch(ctx, **kwargs):
             click.echo(search_crunch.get_help(ctx))
         sys.exit(-1)
 
-    kwargs["verbose"] = ctx.obj["verbosity"]
-    setup_logging(**kwargs)
+    setup_logging(verbose=ctx.obj["verbosity"])
 
     if kwargs["box"] != (None,) * 4:
         rect = kwargs.pop("box")
@@ -457,8 +456,7 @@ def download(ctx, **kwargs):
             click.echo("Nothing to do (no search results file provided)")
             click.echo(download.get_help(ctx))
         sys.exit(1)
-    kwargs["verbose"] = ctx.obj["verbosity"]
-    setup_logging(**kwargs)
+    setup_logging(verbose=ctx.obj["verbosity"])
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
