@@ -31,6 +31,7 @@ from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
     EODataAccessGateway,
+    EOProduct,
     NoMatchingProductType,
     PluginImplementationError,
     SearchResult,
@@ -914,28 +915,57 @@ class TestCoreSearch(unittest.TestCase):
         with self.assertRaises(AttributeError):
             next(page_iterator)
 
-    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
-    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test_search_iter_page_support_next_page_mechanism(
-        self, search_plugin, prepare_seach
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
+    def test_search_iter_page_must_reset_next_attrs_if_next_mechanism(
+        self, normalize_results, _request
     ):
-        """search_iter_page must query with the next page mechanism"""
-        search_plugin.provider = "peps"
-        search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            (self.search_results_2.data, None),
-            ([], None),
-        ]
+        """search_iter_page must reset the search plugin if the next mechanism is used"""
+        # More specifically: next_page_url must be None and
+        # config.pagination["next_page_url_tpl"] must be equal to its original value.
+        _request.return_value.json.return_value = {
+            "features": [],
+            "links": [{"rel": "next", "href": "url/to/next/page"}],
+        }
 
-        class DummyConfig:
-            pagination = dict(next_page_url_key_path='$.links[?(@.rel="next")].href')
+        p1 = EOProduct("dummy", dict(geometry="POINT (0 0)", id="1"))
+        p1.search_intersection = None
+        p2 = EOProduct("dummy", dict(geometry="POINT (0 0)", id="2"))
+        p2.search_intersection = None
+        normalize_results.side_effect = [[p1], [p2]]
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: 'dummy_next_page_url_tpl'
+                    next_page_url_key_path: '$.links[?(@.rel="next")].href'
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        dag.set_preferred_provider("dummy_provider")
 
-        search_plugin.config = DummyConfig()
-        prepare_seach.return_value = dict(search_plugin=search_plugin)
-        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        page_iterator = dag.search_iter_page(productType="S2_MSI_L1C")
         next(page_iterator)
-        for call_args in search_plugin.query.call_args_list:
-            self.assertTrue(call_args[1]["set_next_page_url"])
+        search_plugin = next(
+            dag._plugins_manager.get_search_plugins(product_type="S2_MSI_L1C")
+        )
+        self.assertIsNone(search_plugin.next_page_url)
+        self.assertEqual(
+            search_plugin.config.pagination["next_page_url_tpl"],
+            "dummy_next_page_url_tpl",
+        )
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
