@@ -550,7 +550,7 @@ class EODataAccessGateway(object):
         search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        if "id" in search_kwargs:
+        if search_kwargs.get("id"):
             provider = search_kwargs.get("provider")
             return self._search_by_id(search_kwargs["id"], provider)
         search_plugin = search_kwargs.pop("search_plugin")
