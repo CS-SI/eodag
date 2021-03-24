@@ -178,7 +178,7 @@ Then you can start playing with it:
         --start 2018-01-01 \
         --end 2018-01-31 \
         --cloudCover 20 \
-        --productType S2_MSI_L1C
+        --productType S2_MSI_L1C \
         --cruncher FilterLatestIntersect \
         --storage my_search.geojson
 
