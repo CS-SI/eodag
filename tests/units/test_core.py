@@ -520,6 +520,19 @@ class TestCoreSearch(unittest.TestCase):
         with self.assertRaises(NoMatchingProductType):
             self.dag.guess_product_type()
 
+    def test_guess_product_type_has_no_limit(self):
+        """guess_product_type must run a whoosh search without any limit"""
+        # Filter that should give more than 10 products referenced in the catalog.
+        opt_prods = [
+            p for p in self.dag.list_product_types() if p["sensorType"] == "OPTICAL"
+        ]
+        if len(opt_prods) <= 10:
+            self.skipTest("This test requires that more than 10 products are 'OPTICAL'")
+        guesses = self.dag.guess_product_type(
+            sensorType="OPTICAL",
+        )
+        self.assertGreater(len(guesses), 10)
+
     def test__prepare_search_no_parameters(self):
         """_prepare_search must create some kwargs even when no parameter has been provided"""  # noqa
         prepared_search = self.dag._prepare_search()
