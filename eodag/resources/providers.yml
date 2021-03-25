@@ -26,23 +26,29 @@
   api: !plugin
     type: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
+    pagination:
+      max_items_per_page: 5000
+      total_items_nb_key_path: '$.totalHits'
     metadata_mapping:
       id: '$.entityId'
-      geometry: '$.geometry'
+      geometry: '$.spatialBounds'
       productType: '$.productType'
       title: '$.displayId'
       abstract: '$.summary'
-      startTimeFromAscendingNode: '$.startTime'
-      completionTimeFromAscendingNode: '$.endTime'
-      quicklook: '$.browseUrl'
+      cloudCover: '$.cloudCover'
+      startTimeFromAscendingNode: '$.temporalCoverage.startDate'
+      completionTimeFromAscendingNode: '$.temporalCoverage.endDate'
+      quicklook: '$.browse[0].thumbnailPath'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      downloadLink: 'https://dds.cr.usgs.gov/{id}'
     extract: True
   products:
     # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt
     L8_OLI_TIRS_C1L1:
       dataset: LANDSAT_8_C1
-      catalog_node: EE  # Possible values: CWIC, EE, HDDS, LPCS
+    GENERIC_PRODUCT_TYPE:
+      dataset: '{productType}'
 
 ---
 !provider
