@@ -428,7 +428,7 @@ class EODataAccessGateway(object):
                     kwargs[search_key]
                 )
                 if results is None:
-                    results = searcher.search(query)
+                    results = searcher.search(query, limit=None)
                 else:
                     results.upgrade_and_extend(searcher.search(query))
             guesses = [r["ID"] for r in results or []]
