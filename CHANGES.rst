@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+2.2.0 (2021-xx-xx)
+++++++++++++++++++
+
+- More explicit signature for ``setup_logging``, fixes `GH-197 <https://github.com/CS-SI/eodag/issues/197>`_
+
 2.1.1 (2021-03-18)
 ++++++++++++++++++
 
