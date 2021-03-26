@@ -301,7 +301,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(*USGS_SEARCH_ARGS)
-        expected_filename = "{}.tar.bz".format(product.properties["title"])
+        expected_filename = "{}.tar.gz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_sobloo(self):
@@ -416,6 +416,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertGreater(len(results), 10)
 
 
+# @unittest.skip("skip auto run")
 class TestEODagEndToEndWrongCredentials(EndToEndBase):
     """Make real case tests with wrong credentials. This assumes the existence of a
     wrong_credentials_cong.yml file in resources folder named user_conf.yml"""

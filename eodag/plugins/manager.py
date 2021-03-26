@@ -96,7 +96,16 @@ class PluginManager(object):
                         self.providers_config = plugin_providers_config
 
         self.product_type_to_provider_config_map = {}
-        for provider_config in self.providers_config.values():
+        for provider in list(self.providers_config):
+            provider_config = self.providers_config[provider]
+            if not hasattr(provider_config, "products"):
+                logger.info(
+                    "%s: provider has no product configured and will be skipped"
+                    % provider
+                )
+                providers_config.pop(provider)
+                continue
+
             for product_type in provider_config.products:
                 product_type_providers = (
                     self.product_type_to_provider_config_map.setdefault(  # noqa

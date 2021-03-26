@@ -129,6 +129,7 @@ class TestCore(unittest.TestCase):
             "sobloo",
             "onda",
             "mundi",
+            "usgs",
             "creodias",
             "astraea_eod",
             "usgs_satapi_aws",
