@@ -15,11 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-__title__ = "eodag"
-__description__ = "Earth Observation Data Access Gateway"
-__version__ = "2.2.0"
-__author__ = "CS GROUP - France (CSSI)"
-__author_email__ = "admin@geostorm.eu"
-__url__ = "https://github.com/CS-SI/eodag"
-__license__ = "Apache 2.0"
-__copyright__ = "Copyright 2021, CS GROUP - France, http://www.c-s.fr"
+# Filter Cython warnings
+# Apparently (see
+# https://stackoverflow.com/questions/40845304/runtimewarning-numpy-dtype-size-changed-may-indicate-binary-incompatibility     # noqa
+# and https://github.com/numpy/numpy/issues/11788) this is caused by Cython and affect pre-built Python packages that
+# depends on numpy and ship with a pre-built version of numpy that is older than 1.15.1 (where the warning is silenced
+# exactly as below)
+"""EODAG fake_ext_plugin."""
+
+
+class FakePluginAPI:
+    pass

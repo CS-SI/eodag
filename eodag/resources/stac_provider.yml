@@ -20,6 +20,7 @@ search:
   pagination:
     next_page_url_tpl: '{url}?{search}&limit={items_per_page}&page={page}'
     total_items_nb_key_path: '$.context.matched'
+    next_page_url_key_path: '$.links[?(@.rel="next")].href'
   discover_metadata:
     auto_discovery: true
     metadata_pattern: '^[a-zA-Z0-9_:-]+$'

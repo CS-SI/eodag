@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pkg_resources
 
-from eodag.config import load_config
+from eodag.config import load_config, merge_configs
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
@@ -79,20 +79,33 @@ class PluginManager(object):
                         "Check that the plugin module (%s) is importable",
                         entry_point.module_name,
                     )
-                if entry_point.dist.project_name != "eodag":
+                if entry_point.dist.key != "eodag":
                     # use plugin providers if any
                     plugin_providers_config_path = [
                         x
-                        for x in Path(entry_point.dist.location).rglob("providers.yml")
-                        if all(i not in str(x) for i in ["build", ".tox"])
+                        for x in Path(
+                            entry_point.dist.location,
+                            pkg_resources.to_filename(entry_point.dist.key),
+                        ).rglob("providers.yml")
                     ]
                     if plugin_providers_config_path:
-                        self.providers_config.update(
-                            load_config(plugin_providers_config_path[0])
+                        plugin_providers_config = load_config(
+                            plugin_providers_config_path[0]
                         )
+                        merge_configs(plugin_providers_config, self.providers_config)
+                        self.providers_config = plugin_providers_config
 
         self.product_type_to_provider_config_map = {}
-        for provider_config in self.providers_config.values():
+        for provider in list(self.providers_config):
+            provider_config = self.providers_config[provider]
+            if not hasattr(provider_config, "products"):
+                logger.info(
+                    "%s: provider has no product configured and will be skipped"
+                    % provider
+                )
+                providers_config.pop(provider)
+                continue
+
             for product_type in provider_config.products:
                 product_type_providers = (
                     self.product_type_to_provider_config_map.setdefault(  # noqa

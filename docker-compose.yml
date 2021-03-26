@@ -1,0 +1,27 @@
+version: "3.7"
+
+networks:
+  eodag-stac-network:
+    driver: bridge
+
+services:
+  browser:
+    build:
+      context: .
+      dockerfile: docker/stac-browser.dockerfile
+    container_name: stac_browser
+    restart: unless-stopped
+    networks:
+      - eodag-stac-network
+    ports:
+      - "5001:80"
+  stac:
+    build:
+      context: .
+      dockerfile: docker/stac-server.dockerfile
+    container_name: stac_server
+    restart: unless-stopped
+    networks:
+      - eodag-stac-network
+    ports:
+      - "5000:5000"

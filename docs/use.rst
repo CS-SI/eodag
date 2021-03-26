@@ -91,7 +91,16 @@ Example URLs:
   products over France, aquired during October 2019, and having 10% maximum cloud cover
 
 Browsing over catalogs can be experienced connecting EODAG STAC API to
-`STAC-Browser <https://github.com/radiantearth/stac-browser>`_:
+`STAC-Browser <https://github.com/radiantearth/stac-browser>`_. Simply run:
+
+.. code-block:: bash
+
+    git clone https://github.com/CS-SI/eodag.git
+    cd eodag
+    docker-compose up
+
+
+And browse http://127.0.0.1:5001:
 
 .. image:: _static/stac_browser_example.png
    :width: 800
@@ -172,23 +181,24 @@ Then you can start playing with it:
         --box 1 43 2 44 \
         --start 2018-01-01 --end 2018-01-31 \
         --productType S2_MSI_L1C \
-        --cruncher FilterLatestIntersect \
+        --all \
         --storage my_search.geojson
 
-The request above search for product types `S2_MSI_L1C` and will crunch the result using cruncher `FilterLatestIntersect`
-and storing the overall result to `my_search.geojson`.
+The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches internally all
+the products that match these criteria. Without `--all`, it would only fetch the products found on the first result page.
+It finally saves the results in a GeoJSON file.
 
 You can pass arguments to a cruncher on the command line by doing this (example with using `FilterOverlap` cruncher
 which takes `minimum_overlap` as argument):
 
 .. code-block:: console
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C --all \
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10
 
 The request above means : "Give me all the products of type `S2_MSI_L1C`, use `FilterOverlap` to keep only those products
-that are contained in the bbox I gave you, or whom spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
+that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
 of this bbox"
 
 You can use `eaodag search` with custom parameters. Custom parameters will be used as is in the query string search sent

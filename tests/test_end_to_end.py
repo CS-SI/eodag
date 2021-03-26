@@ -38,8 +38,8 @@ THEIA_SEARCH_ARGS = [
 SOBLOO_SEARCH_ARGS = [
     "sobloo",
     "S2_MSI_L1C",
-    "2020-05-01",
-    "2020-06-01",
+    "2021-01-01",
+    "2021-02-01",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 PEPS_BEFORE_20161205_SEARCH_ARGS = [
@@ -140,17 +140,17 @@ class EndToEndBase(unittest.TestCase):
         - Return one product to be downloaded
         """
         search_criteria = {
+            "productType": product_type,
             "startTimeFromAscendingNode": start,
             "completionTimeFromAscendingNode": end,
             "geom": geom,
         }
+        if items_per_page:
+            search_criteria["items_per_page"] = items_per_page
+        if page:
+            search_criteria["page"] = page
         self.eodag.set_preferred_provider(provider)
-        results, nb_results = self.eodag.search(
-            productType=product_type,
-            page=page,
-            items_per_page=items_per_page,
-            **search_criteria
-        )
+        results, nb_results = self.eodag.search(**search_criteria)
         if offline:
             results = [
                 prod
@@ -164,6 +164,38 @@ class EndToEndBase(unittest.TestCase):
             return one_product
         else:
             return results
+
+    def execute_search_all(
+        self,
+        provider,
+        product_type,
+        start,
+        end,
+        geom,
+        items_per_page=None,
+        check_products=True,
+    ):
+        """Search all the products on provider:
+
+        - First set the preferred provider as the one given in parameter
+        - Then do the search_all
+        - Then ensure that at least the first result originates from the provider
+        - Return all the products
+        """
+        search_criteria = {
+            "startTimeFromAscendingNode": start,
+            "completionTimeFromAscendingNode": end,
+            "geom": geom,
+        }
+        self.eodag.set_preferred_provider(provider)
+        results = self.eodag.search_all(
+            productType=product_type, items_per_page=items_per_page, **search_criteria
+        )
+        if check_products:
+            self.assertGreater(len(results), 0)
+            one_product = results[0]
+            self.assertEqual(one_product.provider, provider)
+        return results
 
 
 # @unittest.skip("skip auto run")
@@ -269,17 +301,17 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(*USGS_SEARCH_ARGS)
-        expected_filename = "{}.tar.bz".format(product.properties["title"])
+        expected_filename = "{}.tar.gz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_airbus(self):
+    def test_end_to_end_search_download_sobloo(self):
         product = self.execute_search(*SOBLOO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_airbus_noresult(self):
+    def test_end_to_end_search_download_sobloo_noresult(self):
         """Requesting a page on sobloo with no results must return an empty SearchResult"""
-        # As of 2021-02-23 this search at page 1 returns 68 products, so at page 2 there
+        # As of 2021-03-19 this search at page 1 returns 66 products, so at page 2 there
         # are no products available and sobloo returns a response without products (`hits`).
         product = self.execute_search(
             *SOBLOO_SEARCH_ARGS, page=2, items_per_page=100, check_product=False
@@ -357,7 +389,34 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2 ** 5)
 
+    def test__search_by_id_sobloo(self):
+        # A single test with sobloo to check that _search_by_id returns
+        # correctly the exact product looked for.
+        uid = "S2A_MSIL1C_20200810T030551_N0209_R075_T53WPU_20200810T050611"
+        provider = "sobloo"
 
+        products, _ = self.eodag._search_by_id(uid=uid, provider=provider)
+        product = products[0]
+
+        self.assertEqual(product.properties["id"], uid)
+
+    def test_end_to_end_search_all_mundi_default(self):
+        # 23/03/2021: Got 16 products for this search
+        results = self.execute_search_all(*MUNDI_SEARCH_ARGS)
+        self.assertGreater(len(results), 10)
+
+    def test_end_to_end_search_all_mundi_iterate(self):
+        # 23/03/2021: Got 16 products for this search
+        results = self.execute_search_all(*MUNDI_SEARCH_ARGS, items_per_page=10)
+        self.assertGreater(len(results), 10)
+
+    def test_end_to_end_search_all_astraea_eod_iterate(self):
+        # 23/03/2021: Got 39 products for this search
+        results = self.execute_search_all(*ASTRAE_EOD_SEARCH_ARGS, items_per_page=10)
+        self.assertGreater(len(results), 10)
+
+
+# @unittest.skip("skip auto run")
 class TestEODagEndToEndWrongCredentials(EndToEndBase):
     """Make real case tests with wrong credentials. This assumes the existence of a
     wrong_credentials_cong.yml file in resources folder named user_conf.yml"""

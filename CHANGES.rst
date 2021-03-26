@@ -1,6 +1,19 @@
 Release history
 ---------------
 
+2.2.0 (2021-03-26)
+++++++++++++++++++
+
+- New ``search_all`` and ``search_iter_page`` methods to simplify pagination handling
+  (`GH-190 <https://github.com/CS-SI/eodag/pull/190>`_)
+- Docker-compose files for STAC API server with STAC-browser (`GH-183 <https://github.com/CS-SI/eodag/pull/183>`_)
+- Fixed USGS plugin which now uses M2M API (`GH-209 <https://github.com/CS-SI/eodag/pull/209>`_)
+- Windows support added in Continuous Integration (`GH-192 <https://github.com/CS-SI/eodag/pull/192>`_)
+- Fixes issue with automatically load configution from EODAG external plugins, fixes
+  `GH-184 <https://github.com/CS-SI/eodag/issues/184>`_
+- More explicit signature for ``setup_logging``, fixes `GH-197 <https://github.com/CS-SI/eodag/issues/197>`_
+- Various minor fixes
+
 2.1.1 (2021-03-18)
 ++++++++++++++++++
 

@@ -111,7 +111,7 @@ html_theme_options = {
     "logo": "eodag_logo.png",
     "logo_name": False,
     "show_related": True,
-    "fixed_sidebar": False,
+    "fixed_sidebar": True,
     "show_powered_by": False,
     "github_user": "CS-SI",
     "github_repo": "eodag",
