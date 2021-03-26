@@ -19,6 +19,7 @@
 import hashlib
 import logging
 import os
+import tarfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
@@ -98,6 +99,8 @@ class Download(PluginTopic):
         outputs_prefix = (
             kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
         )
+        outputs_extension = kwargs.get("outputs_extension", ".zip")
+
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
         prefix = os.path.abspath(outputs_prefix)
@@ -108,11 +111,13 @@ class Download(PluginTopic):
             collision_avoidance_suffix = "-" + sanitize(product.properties["id"])
         fs_path = os.path.join(
             prefix,
-            "{}{}.zip".format(
-                sanitize(product.properties["title"]), collision_avoidance_suffix
+            "{}{}{}".format(
+                sanitize(product.properties["title"]),
+                collision_avoidance_suffix,
+                outputs_extension,
             ),
         )
-        fs_dir_path = fs_path.replace(".zip", "")
+        fs_dir_path = fs_path.replace(outputs_extension, "")
         download_records_dir = os.path.join(prefix, ".downloaded")
         try:
             os.makedirs(download_records_dir)
@@ -154,11 +159,15 @@ class Download(PluginTopic):
         extract = (
             extract if extract is not None else getattr(self.config, "extract", False)
         )
+        outputs_extension = kwargs.pop("outputs_extension", ".zip")
+
         if not extract:
             logger.info("Extraction not activated. The product is available as is.")
             return fs_path
         product_path = (
-            fs_path[: fs_path.index(".zip")] if ".zip" in fs_path else fs_path
+            fs_path[: fs_path.index(outputs_extension)]
+            if outputs_extension in fs_path
+            else fs_path
         )
         product_path_exists = os.path.exists(product_path)
         if product_path_exists and os.path.isfile(product_path):
@@ -195,22 +204,30 @@ class Download(PluginTopic):
         )
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
-            with zipfile.ZipFile(fs_path, "r") as zfile:
-                fileinfos = zfile.infolist()
-                with get_progress_callback() as bar:
-                    bar.max_size = len(fileinfos)
-                    bar.unit = "file"
-                    bar.desc = "Extracting files from {}".format(
-                        os.path.basename(fs_path)
-                    )
-                    bar.unit_scale = False
-                    bar.position = 2
-                    for fileinfo in fileinfos:
-                        zfile.extract(
-                            fileinfo,
-                            path=os.path.join(outputs_prefix, product_path),
+            if fs_path.endswith(".zip"):
+                with zipfile.ZipFile(fs_path, "r") as zfile:
+                    fileinfos = zfile.infolist()
+                    with get_progress_callback() as bar:
+                        bar.max_size = len(fileinfos)
+                        bar.unit = "file"
+                        bar.desc = "Extracting files from {}".format(
+                            os.path.basename(fs_path)
                         )
-                        bar(1)
+                        bar.unit_scale = False
+                        bar.position = 2
+                        for fileinfo in fileinfos:
+                            zfile.extract(
+                                fileinfo,
+                                path=os.path.join(outputs_prefix, product_path),
+                            )
+                            bar(1)
+            elif fs_path.endswith(".tar.gz"):
+                with tarfile.open(fs_path, "r:gz") as zfile:
+                    logger.info(
+                        "Extracting files from {}".format(os.path.basename(fs_path))
+                    )
+                    zfile.extractall(path=os.path.join(outputs_prefix, product_path))
+
         # Handle depth levels in the product archive. For example, if the downloaded archive was
         # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
         # location will be /top_level/product_base_dir.
