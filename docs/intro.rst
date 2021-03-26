@@ -45,12 +45,10 @@ STAC client and server
 EODAG's interfaces are compliant with the `SpatioTemporal Asset Catalog <https://github.com/radiantearth/stac-spec>`_
 (STAC) specification:
 
-    * `STAC client <tutorials/tuto_stac_client.nblink>`_: STAC API providers can be configured to be used for `search` and `download` using EODAG. One
-      provider (astraea_eod) is already implemented. New providers can be dynamically added by the user. Static
-      catalogs can also be fetched by EODAG. *The search plugin for static catalogs is under development, but some
-      methods are already available to enable working with these catalogs.* See
+    * `STAC client <tutorials/tuto_stac_client.nblink>`_: STAC API providers can be configured to be used for `search`
+      and `download` using EODAG. Some providers (astraea_eod, earth_search, usgs_satapi_aws) are already implemented
+      and new providers can be dynamically added by the user. Static catalogs can also be fetched by EODAG. See
       `STAC client tutorial <tutorials/tuto_stac_client.nblink>`_.
-
 
     * `STAC server <use.html#stac-rest-interface>`_: EODAG can run as STAC API REST server and give access to configured
       providers data through a STAC compliant search API. See `usage section <use.html#stac-rest-interface>`_

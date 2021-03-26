@@ -37,7 +37,9 @@ If you intend to contribute to eodag source code:
     git clone https://github.com/CS-SI/eodag.git
     cd eodag
     python -m pip install -r requirements-dev.txt
-    pre-commit isntall
+    pre-commit install
+
+We use ``pre-commit`` to run a suite of linters, formatters and pre-commit hooks (``black``, ``isort``, ``flake8``) to ensure the code base is homogeneously formatted and easier to read. It's important that you install it, since we run the exact same hooks in the Continuous Integration.
 
 To run the default test suite (which excludes end-to-end tests):
 

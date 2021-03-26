@@ -91,7 +91,16 @@ Example URLs:
   products over France, aquired during October 2019, and having 10% maximum cloud cover
 
 Browsing over catalogs can be experienced connecting EODAG STAC API to
-`STAC-Browser <https://github.com/radiantearth/stac-browser>`_:
+`STAC-Browser <https://github.com/radiantearth/stac-browser>`_. Simply run:
+
+.. code-block:: bash
+
+    git clone https://github.com/CS-SI/eodag.git
+    cd eodag
+    docker-compose up
+
+
+And browse http://127.0.0.1:5001:
 
 .. image:: _static/stac_browser_example.png
    :width: 800
