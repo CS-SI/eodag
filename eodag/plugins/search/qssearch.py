@@ -22,8 +22,8 @@ import re
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
-import jsonpath_ng as jsonpath
 import requests
+from jsonpath_ng.ext import parse
 from lxml import etree
 
 from eodag.api.product import EOProduct
@@ -92,6 +92,9 @@ class QueryStringSearch(Search):
           - *count_endpoint*: (optional) The endpoint for counting the number of items
             satisfying a request
 
+            *next_page_url_key_path: (optional) A JSONPATH expression used to retrieve
+            the URL of the next page in the response of the current page.
+
         - **free_text_search_operations**: (optional) A tree structure of the form::
 
             <search-param>:     # e.g: $search
@@ -153,9 +156,19 @@ class QueryStringSearch(Search):
         self.search_urls = []
         self.query_params = dict()
         self.query_string = ""
+        self.next_page_url = None
 
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
-        """Perform a search on an OpenSearch-like interface"""
+        """Perform a search on an OpenSearch-like interface
+
+        :param page: The page number to retur (default: 1)
+        :type page: int
+        :param items_per_page: The number of results that must appear in one single
+                               page
+        :type items_per_page: int
+        :param count:  To trigger a count request (default: True)
+        :type count: bool
+        """
         product_type = kwargs.get("productType", None)
         if product_type == GENERIC_PRODUCT_TYPE:
             logger.warning(
@@ -417,6 +430,9 @@ class QueryStringSearch(Search):
             except RequestError:
                 raise StopIteration
             else:
+                next_page_url_key_path = self.config.pagination.get(
+                    "next_page_url_key_path"
+                )
                 if self.config.result_type == "xml":
                     root_node = etree.fromstring(response.content)
                     namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
@@ -426,8 +442,24 @@ class QueryStringSearch(Search):
                             self.config.results_entry, namespaces=namespaces
                         )
                     ]
+                    if next_page_url_key_path:
+                        raise NotImplementedError(
+                            "Setting the next page url from an XML response has not "
+                            "been implemented yet"
+                        )
                 else:
-                    result = response.json().get(self.config.results_entry, [])
+                    resp_as_json = response.json()
+                    if next_page_url_key_path:
+                        path_parsed = parse(next_page_url_key_path)
+                        try:
+                            self.next_page_url = path_parsed.find(resp_as_json)[0].value
+                            logger.debug(
+                                "Next page URL collected and set for the next search",
+                            )
+                        except IndexError:
+                            logger.debug("Next page URL could not be collected")
+
+                    result = resp_as_json.get(self.config.results_entry, [])
                 if getattr(self.config, "merge_responses", False):
                     results = (
                         [dict(r, **result[i]) for i, r in enumerate(results)]
@@ -490,9 +522,7 @@ class QueryStringSearch(Search):
         else:
             count_results = response.json()
             if isinstance(count_results, dict):
-                path_parsed = jsonpath.parse(
-                    self.config.pagination["total_items_nb_key_path"]
-                )
+                path_parsed = parse(self.config.pagination["total_items_nb_key_path"])
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
@@ -730,12 +760,12 @@ class PostJsonSearch(QueryStringSearch):
                     if len(self.config.metadata_mapping[metadata]) == 2:
                         self.config.metadata_mapping[metadata][1] = (
                             conversion,
-                            jsonpath.parse(path),
+                            parse(path),
                         )
                     else:
                         self.config.metadata_mapping[metadata] = (
                             conversion,
-                            jsonpath.parse(path),
+                            parse(path),
                         )
                 except Exception:  # jsonpath_ng does not provide a proper exception
                     # Assume the mapping is to be passed as is.

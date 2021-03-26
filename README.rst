@@ -150,8 +150,17 @@ An eodag installation can be exposed through a STAC compliant REST api from the 
     $ wget "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
 
 
-You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_
-with ``CATALOG_URL=http://127.0.0.1:5000`` :
+You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
+Simply run:
+
+.. code-block:: bash
+
+    git clone https://github.com/CS-SI/eodag.git
+    cd eodag
+    docker-compose up
+
+
+And browse http://127.0.0.1:5001:
 
 .. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/stac_browser_example_600.png
    :target: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/stac_browser_example.png
@@ -178,22 +187,23 @@ Then you can start playing with it:
         --start 2018-01-01 \
         --end 2018-01-31 \
         --cloudCover 20 \
-        --productType S2_MSI_L1C
-        --cruncher FilterLatestIntersect \
+        --productType S2_MSI_L1C \
+        --all \
         --storage my_search.geojson
 
-The request above search for product types `S2_MSI_L1C` and will crunch the result using cruncher `FilterLatestIntersect`
-and storing the overall result to `my_search.geojson`.
+The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches internally all
+the products that match these criteria. Without `--all`, it would only fetch the products found on the first result page.
+It finally saves the results in a GeoJSON file.
 
 You can pass arguments to a cruncher on the command line by doing this (example with using `FilterOverlap` cruncher
 which takes `minimum_overlap` as argument)::
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C --all \
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10
 
 The request above means : "Give me all the products of type `S2_MSI_L1C`, use `FilterOverlap` to keep only those products
-that are contained in the bbox I gave you, or whom spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
+that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
 of this bbox"
 
 * To download the result of a previous call to `search`::
@@ -219,56 +229,11 @@ of this bbox"
 Contribute
 ==========
 
-If you intend to contribute to eodag source code::
+For guidance on setting up a development environment and how to make a
+contribution to eodag, see the `contributing guidelines`_.
 
-    git clone https://github.com/CS-SI/eodag.git
-    cd eodag
-    python -m pip install -r requirements-dev.txt
-    pre-commit install
+.. _contributing guidelines: https://github.com/CS-SI/eodag/blob/develop/CONTRIBUTING.rst
 
-To run the default test suite (which excludes end-to-end tests)::
-
-    tox
-
-To only run end-to-end test::
-
-    tox -- tests.test_end_to_end
-
-To run the entire tests (units, integration and end-to-end)::
-
-    tox -- tests eodag
-
-
-.. note::
-
-    * Running the `tox` command will also build the docs. As The documentation
-      includes some notebooks (for the turorials), the build process will need
-      `pandoc <http://pandoc.org>`_ to succeed. If the build process fails for
-      you, please `install <http://pandoc.org/installing.html>`_ pandoc and try
-      again.
-
-    * When contributing to tutorials, you will need to keep notebook outputs
-      and save widget state. Otherwise outputs will not be visible in documentation.
-
-    * eodag is tested against python versions 3.6, 3.7, 3.8 and 3.9. Ensure you have
-      these versions installed before you run tox. You can use
-      `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
-      of python
-
-Releases are made by tagging a commit on the master branch. To make a new release,
-
-* Ensure you correctly updated `README.rst` and `CHANGES.rst` (and occasionally,
-  also `NOTICE` - in case a new dependency is added).
-* Check that the version string in `eodag/__meta__.py` (the variable `__version__`)
-  is correctly updated
-* Push your local master branch to remote.
-* Tag the commit that represents the state of the release with a message. For example,
-  for version 1.0, do this: `git tag -a v1.0 -m 'version 1.0'`
-* Push the tags to github: `git push --tags`.
-
-The documentation is managed by a webhook, and the latest documentation on readthedocs follows
-the documentation present in `master`. Therefore, there is nothing to do apart from updating
-the `master` branch to publish the latest documentation.
 
 LICENSE
 =======

@@ -210,11 +210,12 @@ def version():
 @click.option(
     "--items",
     type=int,
-    default=DEFAULT_ITEMS_PER_PAGE,
-    show_default=True,
+    # default=DEFAULT_ITEMS_PER_PAGE,
+    show_default=False,
     help="The number of items to return. Eodag is bound to whatever limitation the "
     "providers have on the number of results they return. This option allows "
-    "to control how many items eodag should request",
+    "to control how many items eodag should request "
+    f"[default: {DEFAULT_ITEMS_PER_PAGE}]",
 )
 @click.option(
     "--page",
@@ -222,6 +223,15 @@ def version():
     default=DEFAULT_PAGE,
     show_default=True,
     help="Retrieve the given page",
+)
+@click.option(
+    "--all",
+    is_flag=True,
+    help="Retrieve ALL the products that match the search criteria. It collects "
+    "products by iterating over the results pages until no more products are available."
+    "At each iteration, the maximum number of items searched is either 'items' if set, "
+    "or a maximum value defined internally for the requested provider, or a default "
+    "maximum value equals to 50.",
 )
 @click.option(
     "--locations",
@@ -264,8 +274,7 @@ def search_crunch(ctx, **kwargs):
             click.echo(search_crunch.get_help(ctx))
         sys.exit(-1)
 
-    kwargs["verbose"] = ctx.obj["verbosity"]
-    setup_logging(**kwargs)
+    setup_logging(verbose=ctx.obj["verbosity"])
 
     if kwargs["box"] != (None,) * 4:
         rect = kwargs.pop("box")
@@ -333,10 +342,21 @@ def search_crunch(ctx, **kwargs):
     )
 
     # Search
-    results, total = gateway.search(
-        page=page, items_per_page=items_per_page, **criteria
-    )
-    click.echo("Found a total number of {} products".format(total))
+    get_all_products = kwargs.pop("all")
+    if get_all_products:
+        # search_all needs items_per_page to be None if the user lets eodag determines
+        # what value it should take.
+        items_per_page = None if items_per_page is None else items_per_page
+        results = gateway.search_all(items_per_page=items_per_page, **criteria)
+    else:
+        # search should better take a value that is not None
+        items_per_page = (
+            DEFAULT_ITEMS_PER_PAGE if items_per_page is None else items_per_page
+        )
+        results, total = gateway.search(
+            page=page, items_per_page=items_per_page, **criteria
+        )
+        click.echo("Found a total number of {} products".format(total))
     click.echo("Returned {} products".format(len(results)))
 
     # Crunch !
@@ -384,7 +404,7 @@ def list_pt(ctx, **kwargs):
             platformSerialIdentifier=kwargs.get("platformserialidentifier"),
             processingLevel=kwargs.get("processinglevel"),
             sensorType=kwargs.get("sensortype"),
-            **kwargs
+            **kwargs,
         )
     except NoMatchingProductType:
         if any(
@@ -457,8 +477,7 @@ def download(ctx, **kwargs):
             click.echo("Nothing to do (no search results file provided)")
             click.echo(download.get_help(ctx))
         sys.exit(1)
-    kwargs["verbose"] = ctx.obj["verbosity"]
-    setup_logging(**kwargs)
+    setup_logging(verbose=ctx.obj["verbosity"])
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)

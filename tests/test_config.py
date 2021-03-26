@@ -23,7 +23,7 @@ from io import StringIO
 
 import yaml.parser
 
-from tests.context import ValidationError, config
+from tests.context import ValidationError, config, merge_configs
 
 
 class TestProviderConfig(unittest.TestCase):
@@ -135,6 +135,48 @@ class TestProviderConfig(unittest.TestCase):
         self.assertEqual(provider_config.api.pluginParam2, "newVal")
         self.assertTrue(hasattr(provider_config.api, "newParam"))
         self.assertEqual(provider_config.api.newParam, "val")
+
+    def test_provider_config_merge(self):
+        """Merge 2 providers configs"""
+        config_stream1 = StringIO(
+            """!provider
+                name: provider1
+                provider_param: val
+                provider_param2: val2
+                api: !plugin
+                    type: MyPluginClass
+                    plugin_param1: value1
+                    pluginParam2: value2
+        """
+        )
+        config_stream2 = StringIO(
+            """!provider
+                name: provider1
+                provider_param: val1
+                provider_param3: val3
+                api: !plugin
+                    type: MyPluginClass
+                    pluginParam2: value3
+        """
+        )
+        provider_config1 = yaml.load(config_stream1, Loader=yaml.Loader)
+        provider_config2 = yaml.load(config_stream2, Loader=yaml.Loader)
+
+        providers_config = {
+            "provider1": provider_config1,
+            "provider2": provider_config1,
+        }
+
+        merge_configs(
+            providers_config,
+            {"provider1": provider_config2, "provider3": provider_config1},
+        )
+        self.assertEqual(len(providers_config), 3)
+        self.assertEqual(providers_config["provider1"].provider_param, "val1")
+        self.assertEqual(providers_config["provider1"].provider_param2, "val2")
+        self.assertEqual(providers_config["provider1"].provider_param3, "val3")
+        self.assertEqual(providers_config["provider1"].api.plugin_param1, "value1")
+        self.assertEqual(providers_config["provider1"].api.pluginParam2, "value3")
 
 
 class TestPluginConfig(unittest.TestCase):
@@ -314,7 +356,7 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(peps_conf.download.outputs_prefix, "/data")
 
         theia_conf = default_config["theia"]
-        self.assertEqual(theia_conf.download.outputs_prefix[-4:], "/tmp")
+        self.assertEqual(theia_conf.download.outputs_prefix, tempfile.gettempdir())
 
         my_new_provider_conf = default_config["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)

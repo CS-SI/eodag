@@ -26,23 +26,29 @@
   api: !plugin
     type: UsgsApi
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
+    pagination:
+      max_items_per_page: 5000
+      total_items_nb_key_path: '$.totalHits'
     metadata_mapping:
       id: '$.entityId'
-      geometry: '$.geometry'
+      geometry: '$.spatialBounds'
       productType: '$.productType'
       title: '$.displayId'
       abstract: '$.summary'
-      startTimeFromAscendingNode: '$.startTime'
-      completionTimeFromAscendingNode: '$.endTime'
-      quicklook: '$.browseUrl'
+      cloudCover: '$.cloudCover'
+      startTimeFromAscendingNode: '$.temporalCoverage.startDate'
+      completionTimeFromAscendingNode: '$.temporalCoverage.endDate'
+      quicklook: '$.browse[0].thumbnailPath'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      downloadLink: 'https://dds.cr.usgs.gov/{id}'
     extract: True
   products:
     # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt
     L8_OLI_TIRS_C1L1:
       dataset: LANDSAT_8_C1
-      catalog_node: EE  # Possible values: CWIC, EE, HDDS, LPCS
+    GENERIC_PRODUCT_TYPE:
+      dataset: '{productType}'
 
 ---
 !provider
@@ -504,6 +510,8 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+      # 2019/03/19: Returns a 400 error code if greater than 500.
+      max_items_per_page: 500
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
@@ -676,6 +684,8 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+      # 2019/03/19: 500 is the max, no error if greater
+      max_items_per_page: 500
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
@@ -866,6 +876,9 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={skip}'
       total_items_nb_key_path: '$.totalnb'
+      # 2019/03/19: It's not possible to get more than 10_000 products
+      # Returns a 400 Bad Request if more products are requested.
+      max_items_per_page: 10_000
     results_entry: 'hits'
     discover_metadata:
       auto_discovery: true
@@ -953,6 +966,8 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+      # 2019/03/19: 2000 is the max, 400 error if greater
+      max_items_per_page: 2_000
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
@@ -1106,6 +1121,8 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
       total_items_nb_key_path: '//os:totalResults/text()'
+      # 2019/03/19: 50 is the max, no error if greater
+      max_items_per_page: 50
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
@@ -1328,6 +1345,8 @@
     pagination:
       count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}'
+      # 2019/03/19: 2000 is the max, if greater 200 response but contains an error message
+      max_items_per_page: 2_000
     results_entry: 'value'
     literal_search_params:
       $format: json
@@ -1463,6 +1482,13 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
+    pagination:
+      # 2019/03/19: The docs (https://eod-catalog-svc-prod.astraea.earth/api.html#operation/getSearchSTAC)
+      # say the max is 10_000. In practice 1_000 products are returned if more are asked (even greater
+      # than 10_000), without any error.
+      # This provider doesn't implement any pagination, let's just try to get the maximum number of
+      # products available at once then, so we stick to 10_000.
+      max_items_per_page: 10_000
   products:
     S2_MSI_L1C:
       productType: sentinel2_l1c
@@ -1496,6 +1522,10 @@
     api_endpoint: https://landsatlook.usgs.gov/sat-api/collections/{collection}/items
     pagination:
       total_items_nb_key_path: '$.meta.found'
+      # 2019/03/19: no more than 10_000 (if greater, returns a 500 error code)
+      # but in practive if an Internal Server Error is returned for more than
+      # about 500 products.
+      max_items_per_page: 500
     metadata_mapping:
       productType: '$.collection'
       completionTimeFromAscendingNode:

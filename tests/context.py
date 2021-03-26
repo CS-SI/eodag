@@ -25,13 +25,13 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from eodag import EODataAccessGateway, api, config
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
-from eodag.config import load_default_config
+from eodag.config import load_default_config, merge_configs
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -49,6 +49,8 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     MisconfiguredError,
+    NoMatchingProductType,
+    PluginImplementationError,
     UnsupportedDatasetAddressScheme,
     UnsupportedProvider,
     ValidationError,

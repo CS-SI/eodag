@@ -44,9 +44,10 @@ from urllib.parse import (  # noqa; noqa
 )
 
 import click
-import jsonpath_ng as jsonpath
 import shapefile
 import shapely.wkt
+from jsonpath_ng import jsonpath
+from jsonpath_ng.ext import parse
 from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
@@ -447,9 +448,9 @@ def format_dict_items(config_dict, **format_variables):
 def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
     """Recursive parse jsonpath elements in dict
 
-    >>> import jsonpath_ng as jsonpath
+    >>> import jsonpath_ng.ext as jsonpath
     >>> jsonpath_parse_dict_items(
-    ...     {"foo": {"bar": jsonpath.parse("$.a.b")}, "qux": [jsonpath.parse("$.c"), jsonpath.parse("$.c")]},
+    ...     {"foo": {"bar": parse("$.a.b")}, "qux": [parse("$.c"), parse("$.c")]},
     ...     {"a":{"b":"baz"}, "c":"quux"}
     ... ) == {'foo': {'bar': 'baz'}, 'qux': ['quux', 'quux']}
     True
@@ -635,7 +636,7 @@ def string_to_jsonpath(key, str_value):
     """
     if "$." in str(str_value):
         try:
-            return jsonpath.parse(str_value)
+            return parse(str_value)
         except Exception:  # jsonpath_ng does not provide a proper exception
             # If str_value does not contain a jsonpath, return it as is
             return str_value
@@ -684,8 +685,8 @@ def format_string(key, str_to_format, **format_variables):
 def parse_jsonpath(key, jsonpath_obj, **values_dict):
     """Parse jsonpah in jsonpath_obj using values_dict
 
-    >>> import jsonpath_ng as jsonpath
-    >>> parse_jsonpath(None, jsonpath.parse("$.foo.bar"), **{"foo":{"bar":"baz"}})
+    >>> import jsonpath_ng.ext as jsonpath
+    >>> parse_jsonpath(None, parse("$.foo.bar"), **{"foo":{"bar":"baz"}})
     'baz'
 
     :param key: input item key
@@ -697,7 +698,7 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
     :returns: parsed value
     :rtype: str
     """
-    if isinstance(jsonpath_obj, jsonpath.jsonpath.Child):
+    if isinstance(jsonpath_obj, jsonpath.Child):
         match = jsonpath_obj.find(values_dict)
         return match[0].value if len(match) == 1 else None
     else:
