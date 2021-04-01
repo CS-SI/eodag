@@ -92,7 +92,7 @@
     "links": [
         {
             "rel": "root",
-            "href": "./catalog.json"
+            "href": "../../../../../../catalog.json"
         },
         {
             "rel": "parent",
