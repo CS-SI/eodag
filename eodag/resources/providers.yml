@@ -1490,6 +1490,14 @@
       # products available at once then, so we stick to 10_000.
       max_items_per_page: 10_000
   products:
+    S1_SAR_GRD:
+      productType: sentinel1_l1c_grd
+      metadata_mapping:
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+        awsPath: '$.assets.productInfo.href.`sub(/(.*)\/productInfo\.json/, \\1)`'
+        assets: |
+          {$.assets#dict_update([["manifest.safe",[["title","manifest.safe"],["href","{awsPath}/manifest.safe"],["roles",["metadata"]],["type","application/xml"]]]])}
     S2_MSI_L1C:
       productType: sentinel2_l1c
     S2_MSI_L2A:
@@ -1506,6 +1514,10 @@
     type: AwsDownload
     base_uri: https://eod-catalog-svc-prod.astraea.earth
     flatten_top_dirs: True
+    products:
+      S1_SAR_GRD:
+        default_bucket: 'sentinel-s1-l1c'
+        build_safe: true
   auth: !plugin
     type: AwsAuth
 
