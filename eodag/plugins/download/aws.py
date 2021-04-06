@@ -536,6 +536,19 @@ class AwsDownload(Download):
                 os.path.join(safe_path, "GRANULE/0"),
                 os.path.join(safe_path, "GRANULE", tile_id),
             )
+
+            # datastrip scene dirname
+            scene_id = os.path.basename(
+                os.path.dirname(
+                    root.xpath("//fileLocation[contains(@href,'MTD_DS.xml')]")[0].get(
+                        "href"
+                    )
+                )
+            )
+            os.rename(
+                os.path.join(safe_path, "DATASTRIP/0"),
+                os.path.join(safe_path, "DATASTRIP", scene_id),
+            )
         except Exception as e:
             logger.exception("Could not finalize SAFE product from downloaded data")
             raise DownloadError(e)
@@ -555,7 +568,7 @@ class AwsDownload(Download):
                     r"^.+_(DS_\w+_+\w+_\w+)_\w+.\w+$",
                     product.properties.get("originalSceneID", ""),
                 )
-                ds_dir = ds_dir_search.group(1) if ds_dir_search else None
+                ds_dir = ds_dir_search.group(1) if ds_dir_search else 0
                 s2_processing_level = product.product_type.split("_")[-1]
             # S1 common
             elif product.product_type == "S1_SAR_GRD":
