@@ -192,14 +192,6 @@ def format_metadata(search_param, *args, **kwargs):
                 return int(1e3 * get_timestamp(value, as_utc=True))
 
         @staticmethod
-        def convert_to_wkt_convex_hull(value):
-            if hasattr(value, "convex_hull"):
-                return value.convex_hull.to_wkt()
-            else:
-                logger.warning("Could not get wkt_convex_hull from %s", value)
-                return value
-
-        @staticmethod
         def convert_to_rounded_wkt(value):
             wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
             # If needed, simplify WKT to prevent too long request failure
