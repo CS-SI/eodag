@@ -38,11 +38,10 @@ class NotebookWidgets(object):
         self.ipython = check_ipython()
 
         if self.ipython:
-            from IPython.display import display
-            from ipywidgets import HTML
+            from IPython.display import HTML, display, update_display
 
             self.display = display
-
+            self._update_display = update_display
             self.html_box = HTML()
         else:
             pass
@@ -51,14 +50,19 @@ class NotebookWidgets(object):
         """Display HTML message"""
 
         if self.ipython:
-            self.html_box.value = html_value
+            self.html_box.data = html_value
 
             if not self.html_box_shown:
-                self.display(self.html_box)
+                self._html_handle = self.display(self.html_box, display_id=True)
                 self.html_box_shown = True
+            else:
+                self._update_display(
+                    self.html_box, display_id=self._html_handle.display_id
+                )
 
     def clear_html(self):
         """Clear HTML message"""
 
         if self.ipython:
-            self.html_box.value = ""
+            self.html_box.data = ""
+            self._update_display(self.html_box, display_id=self._html_handle.display_id)
