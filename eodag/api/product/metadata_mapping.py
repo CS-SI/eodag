@@ -226,21 +226,6 @@ def format_metadata(search_param, *args, **kwargs):
             return geojson.dumps(geom.__geo_interface__)
 
         @staticmethod
-        def convert_to_bbox_dict(value):
-            if hasattr(value, "bounds"):
-                bbox_dict = {}
-                (
-                    bbox_dict["lonmin"],
-                    bbox_dict["latmin"],
-                    bbox_dict["lonmax"],
-                    bbox_dict["latmax"],
-                ) = value.bounds
-                return bbox_dict
-            else:
-                logger.warning("Could not get bbox_dict from %s", value)
-                return value
-
-        @staticmethod
         def convert_csv_list(values_list):
             return ",".join([str(x) for x in values_list])
 
