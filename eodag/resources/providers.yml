@@ -1500,8 +1500,14 @@
           {$.assets#dict_update([["manifest.safe",[["title","manifest.safe"],["href","{awsPath}/manifest.safe"],["roles",["metadata"]],["type","application/xml"]]]])}
     S2_MSI_L1C:
       productType: sentinel2_l1c
+      metadata_mapping:
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        tileInfo: '{$.assets.tileInfo.href#replace_str(r"s3(.*)sentinel-s2-l1c/",r"https\1roda.sentinel-hub.com/sentinel-s2-l1c/")}'
     S2_MSI_L2A:
       productType: sentinel2_l2a
+      metadata_mapping:
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        tileInfo: '{$.assets.tileInfo.href#replace_str(r"s3(.*)sentinel-s2-l2a/",r"https\1roda.sentinel-hub.com/sentinel-s2-l2a/")}'
     L8_OLI_TIRS_C1L1:
       productType: landsat8_l1tp
     MODIS_MCD43A4:
@@ -1518,6 +1524,28 @@
       S1_SAR_GRD:
         default_bucket: 'sentinel-s1-l1c'
         build_safe: true
+      S2_MSI_L1C:
+        default_bucket: 'sentinel-s2-l1c'
+        build_safe: true
+        fetch_metadata:
+          fetch_url: '{tileInfo}'
+          fetch_format: json
+          update_metadata:
+            title: '$.productName'
+            productPath: '$.productPath'
+        complementary_url_key:
+          - productPath
+      S2_MSI_L2A:
+        default_bucket: 'sentinel-s2-l2a'
+        build_safe: true
+        fetch_metadata:
+          fetch_url: '{tileInfo}'
+          fetch_format: json
+          update_metadata:
+            title: '$.productName'
+            productPath: '$.productPath'
+        complementary_url_key:
+          - productPath
   auth: !plugin
     type: AwsAuth
 

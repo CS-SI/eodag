@@ -27,7 +27,11 @@ from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
 
-from eodag.api.product.metadata_mapping import mtd_cfg_as_jsonpath, properties_from_json
+from eodag.api.product.metadata_mapping import (
+    mtd_cfg_as_jsonpath,
+    properties_from_json,
+    properties_from_xml,
+)
 from eodag.plugins.download.base import Download
 from eodag.utils import get_progress_callback, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
@@ -175,12 +179,15 @@ class AwsDownload(Download):
             fetch_url = product_conf["fetch_metadata"]["fetch_url"].format(
                 **product.properties
             )
+            logger.info("Fetching extra metadata from %s" % fetch_url)
+            resp = requests.get(fetch_url)
+            update_metadata = mtd_cfg_as_jsonpath(update_metadata)
             if fetch_format == "json":
-                logger.info("Fetching extra metadata from %s" % fetch_url)
-                resp = requests.get(fetch_url)
                 json_resp = resp.json()
-                update_metadata = mtd_cfg_as_jsonpath(update_metadata)
                 update_metadata = properties_from_json(json_resp, update_metadata)
+                product.properties.update(update_metadata)
+            elif fetch_format == "xml":
+                update_metadata = properties_from_xml(resp.content, update_metadata)
                 product.properties.update(update_metadata)
             else:
                 logger.warning(

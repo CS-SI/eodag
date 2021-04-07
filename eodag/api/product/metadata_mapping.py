@@ -301,7 +301,7 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_replace_str(string, args):
             old, new = ast.literal_eval(args)
-            return string.replace(old, new)
+            return re.sub(old, new, string)
 
         @staticmethod
         def convert_recursive_sub_str(input_obj, args):
