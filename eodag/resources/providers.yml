@@ -1503,11 +1503,15 @@
       metadata_mapping:
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         tileInfo: '{$.assets.tileInfo.href#replace_str(r"s3(.*)sentinel-s2-l1c/",r"https\1roda.sentinel-hub.com/sentinel-s2-l1c/")}'
+        tilePath: |
+          $.assets.tileInfo.href.`sub(/.*\/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     S2_MSI_L2A:
       productType: sentinel2_l2a
       metadata_mapping:
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         tileInfo: '{$.assets.tileInfo.href#replace_str(r"s3(.*)sentinel-s2-l2a/",r"https\1roda.sentinel-hub.com/sentinel-s2-l2a/")}'
+        tilePath: |
+          $.assets.tileInfo.href.`sub(/.*\/sentinel-s2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     L8_OLI_TIRS_C1L1:
       productType: landsat8_l1tp
     MODIS_MCD43A4:
@@ -1535,6 +1539,7 @@
             productPath: '$.productPath'
         complementary_url_key:
           - productPath
+          - tilePath
       S2_MSI_L2A:
         default_bucket: 'sentinel-s2-l2a'
         build_safe: true
@@ -1546,6 +1551,7 @@
             productPath: '$.productPath'
         complementary_url_key:
           - productPath
+          - tilePath
   auth: !plugin
     type: AwsAuth
 
@@ -1629,6 +1635,8 @@
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
         productPath: |
           $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})(0?)([1-9]+)([0-9]{2})(T.*)/, products/\\2/\\4/\\5/\\1_MSIL1C_\\2\\3\\4\\5\\6)`
+        tilePath: |
+          $.assets.info.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     S2_MSI_L2A:
       productType: sentinel-s2-l2a
       metadata_mapping:
@@ -1637,6 +1645,8 @@
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
         productPath: |
           $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL2A_([0-9]{4})(0?)([1-9]+)([0-9]{2})(T.*)/, products/\\2/\\4/\\5/\\1_MSIL2A_\\2\\3\\4\\5\\6)`
+        tilePath: |
+          $.assets.info.href.`sub(/.*/sentinel-s2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     L8_OLI_TIRS_C1L1:
       productType: landsat-8-l1-c1
     GENERIC_PRODUCT_TYPE:
@@ -1651,10 +1661,12 @@
         build_safe: true
         complementary_url_key:
           - productPath
+          - tilePath
       S2_MSI_L2A:
         default_bucket: 'sentinel-s2-l2a'
         build_safe: true
         complementary_url_key:
           - productPath
+          - tilePath
   auth: !plugin
     type: AwsAuth

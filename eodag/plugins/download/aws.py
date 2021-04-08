@@ -50,6 +50,16 @@ S2L2A_TILE_AUX_DIR_REGEX = re.compile(
     r"^tiles/(?P<tile1>[0-9]+)/(?P<tile2>[A-Z]+)/(?P<tile3>[A-Z]+)/(?P<year>[0-9]+)/(?P<month>[0-9]+)/"
     + r"(?P<day>[0-9]+)/(?P<num>[0-9]+)/auxiliary/(?P<file>AUX_.+)$"
 )
+# S2 L2A QI Masks
+S2_TILE_QI_MSK_REGEX = re.compile(
+    r"^tiles/(?P<tile1>[0-9]+)/(?P<tile2>[A-Z]+)/(?P<tile3>[A-Z]+)/(?P<year>[0-9]+)/(?P<month>[0-9]+)/"
+    + r"(?P<day>[0-9]+)/(?P<num>[0-9]+)/qi/(?P<file_base>.+)_(?P<file_suffix>[0-9]+m\.jp2)$"
+)
+# S2 L2A QI PVI
+S2_TILE_QI_PVI_REGEX = re.compile(
+    r"^tiles/(?P<tile1>[0-9]+)/(?P<tile2>[A-Z]+)/(?P<tile3>[A-Z]+)/(?P<year>[0-9]+)/(?P<month>[0-9]+)/"
+    + r"(?P<day>[0-9]+)/(?P<num>[0-9]+)/qi/L2A_PVI\.jp2$"
+)
 # S2 Tile files ---------------------------------------------------------------
 S2_TILE_IMG_REGEX = re.compile(
     r"^tiles/(?P<tile1>[0-9]+)/(?P<tile2>[A-Z]+)/(?P<tile3>[A-Z]+)/(?P<year>[0-9]+)/(?P<month>[0-9]+)/"
@@ -91,6 +101,10 @@ S2_PROD_DS_MTD_REGEX = re.compile(
 S2_PROD_DS_QI_REGEX = re.compile(
     r"^products/(?P<year>[0-9]+)/(?P<month>[0-9]+)/(?P<day>[0-9]+)/(?P<title>[A-Z0-9_]+)/datastrip/"
     + r"(?P<num>.+)/qi/(?P<file>.+)$"
+)
+S2_PROD_DS_QI_REPORT_REGEX = re.compile(
+    r"^products/(?P<year>[0-9]+)/(?P<month>[0-9]+)/(?P<day>[0-9]+)/(?P<title>[A-Z0-9_]+)/datastrip/"
+    + r"(?P<num>.+)/qi/(?P<filename>.+)_report\.xml$"
 )
 S2_PROD_INSPIRE_REGEX = re.compile(
     r"^products/(?P<year>[0-9]+)/(?P<month>[0-9]+)/(?P<day>[0-9]+)/(?P<title>[A-Z0-9_]+)/"
@@ -588,12 +602,12 @@ class AwsDownload(Download):
         if build_safe:
             # S2 common
             if "S2_MSI" in product.product_type:
-                title_date1_search = re.search(
-                    r"^\w+_\w+_(\w+)_\w+_\w+_\w+_\w+$", product.properties["title"]
+                title_search = re.search(
+                    r"^\w+_\w+_(\w+)_(\w+)_(\w+)_(\w+)_(\w+)$",
+                    product.properties["title"],
                 )
-                title_date1 = (
-                    title_date1_search.group(1) if title_date1_search else None
-                )
+                title_date1 = title_search.group(1) if title_search else None
+                title_part3 = title_search.group(4) if title_search else None
                 ds_dir_search = re.search(
                     r"^.+_(DS_\w+_+\w+_\w+)_\w+.\w+$",
                     product.properties.get("originalSceneID", ""),
@@ -615,16 +629,19 @@ class AwsDownload(Download):
             # S2 L2A Tile files -----------------------------------------------
             if S2L2A_TILE_IMG_REGEX.match(chunk.key):
                 found_dict = S2L2A_TILE_IMG_REGEX.match(chunk.key).groupdict()
-                product_path = "%s.SAFE/GRANULE/%s/IMG_DATA/%s/T%s%s%s_%s_%s_%s.jp2" % (
-                    product.properties["title"],
-                    found_dict["num"],
-                    found_dict["res"],
-                    found_dict["tile1"],
-                    found_dict["tile2"],
-                    found_dict["tile3"],
-                    title_date1,
-                    found_dict["file"],
-                    found_dict["res"],
+                product_path = (
+                    "%s.SAFE/GRANULE/%s/IMG_DATA/R%s/T%s%s%s_%s_%s_%s.jp2"
+                    % (
+                        product.properties["title"],
+                        found_dict["num"],
+                        found_dict["res"],
+                        found_dict["tile1"],
+                        found_dict["tile2"],
+                        found_dict["tile3"],
+                        title_date1,
+                        found_dict["file"],
+                        found_dict["res"],
+                    )
                 )
             elif S2L2A_TILE_AUX_DIR_REGEX.match(chunk.key):
                 found_dict = S2L2A_TILE_AUX_DIR_REGEX.match(chunk.key).groupdict()
@@ -632,6 +649,24 @@ class AwsDownload(Download):
                     product.properties["title"],
                     found_dict["num"],
                     found_dict["file"],
+                )
+            # S2 L2A QI Masks
+            elif S2_TILE_QI_MSK_REGEX.match(chunk.key):
+                found_dict = S2_TILE_QI_MSK_REGEX.match(chunk.key).groupdict()
+                product_path = "%s.SAFE/GRANULE/%s/QI_DATA/MSK_%sPRB_%s" % (
+                    product.properties["title"],
+                    found_dict["num"],
+                    found_dict["file_base"],
+                    found_dict["file_suffix"],
+                )
+            # S2 L2A QI PVI
+            elif S2_TILE_QI_PVI_REGEX.match(chunk.key):
+                found_dict = S2_TILE_QI_PVI_REGEX.match(chunk.key).groupdict()
+                product_path = "%s.SAFE/GRANULE/%s/QI_DATA/%s_%s_PVI.jp2" % (
+                    product.properties["title"],
+                    found_dict["num"],
+                    title_part3,
+                    title_date1,
                 )
             # S2 Tile files ---------------------------------------------------
             elif S2_TILE_PREVIEW_DIR_REGEX.match(chunk.key):
@@ -693,6 +728,13 @@ class AwsDownload(Download):
                 product_path = "%s.SAFE/DATASTRIP/%s/MTD_DS.xml" % (
                     product.properties["title"],
                     ds_dir,
+                )
+            elif S2_PROD_DS_QI_REPORT_REGEX.match(chunk.key):
+                found_dict = S2_PROD_DS_QI_REPORT_REGEX.match(chunk.key).groupdict()
+                product_path = "%s.SAFE/DATASTRIP/%s/QI_DATA/%s.xml" % (
+                    product.properties["title"],
+                    ds_dir,
+                    found_dict["filename"],
                 )
             elif S2_PROD_DS_QI_REGEX.match(chunk.key):
                 found_dict = S2_PROD_DS_QI_REGEX.match(chunk.key).groupdict()
