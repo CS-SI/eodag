@@ -148,7 +148,7 @@ CBERS4_REGEX = re.compile(
 S1_IMG_NB_PER_POLAR = {
     "SH": {"HH": 1},
     "SV": {"VV": 1},
-    "DH": {"HH": 1, "VV": 2},
+    "DH": {"HH": 1, "HV": 2},
     "DV": {"VV": 1, "VH": 2},
     "HH": {"HH": 1},
     "HV": {"HV": 1},

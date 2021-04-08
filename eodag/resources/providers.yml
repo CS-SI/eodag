@@ -1528,6 +1528,8 @@
       S1_SAR_GRD:
         default_bucket: 'sentinel-s1-l1c'
         build_safe: true
+        complementary_url_key:
+          - awsPath
       S2_MSI_L1C:
         default_bucket: 'sentinel-s2-l1c'
         build_safe: true
