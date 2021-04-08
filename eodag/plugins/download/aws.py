@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import shutil
+from pathlib import Path
 
 import boto3
 import requests
@@ -231,9 +232,8 @@ class AwsDownload(Download):
         progress_callback.desc = product.properties.get("id", "")
         progress_callback.position = 1
 
-        # authenticate & get product size
+        # authenticate
         authenticated_objects = {}
-        total_size = 0
         auth_error_messages = set()
         for idx, pack in enumerate(bucket_names_and_prefixes):
             try:
@@ -267,8 +267,6 @@ class AwsDownload(Download):
                 else:
                     s3_objects = authenticated_objects[bucket_name]
 
-                total_size += sum([p.size for p in s3_objects.filter(Prefix=prefix)])
-
             except AuthenticationError as e:
                 logger.warning("Unexpected error: %s" % e)
                 logger.warning("Skipping %s/%s" % (bucket_name, prefix))
@@ -297,61 +295,64 @@ class AwsDownload(Download):
         if not authenticated_objects:
             raise AuthenticationError(", ".join(auth_error_messages))
 
-        # bucket_names_and_prefixes with unauthenticated items filtered out
-        auth_bucket_names_and_prefixes = [
-            p for p in bucket_names_and_prefixes if p[0] in authenticated_objects.keys()
-        ]
+        # downloadable files
+        product_chunks = []
+        for bucket_name, prefix in bucket_names_and_prefixes:
+            # unauthenticated items filtered out
+            if bucket_name in authenticated_objects.keys():
+                product_chunks.extend(
+                    authenticated_objects[bucket_name].filter(Prefix=prefix)
+                )
+
+        unique_product_chunks = set(product_chunks)
+
+        total_size = sum([p.size for p in unique_product_chunks])
 
         # download
         progress_callback.max_size = total_size
         progress_callback.reset()
-        for bucket_name, prefix in auth_bucket_names_and_prefixes:
-            try:
-                s3_objects = authenticated_objects[bucket_name]
+        try:
+            for product_chunk in unique_product_chunks:
+                chunck_rel_path = self.get_chunck_dest_path(
+                    product,
+                    product_chunk,
+                    build_safe=build_safe,
+                    dir_prefix=prefix,
+                )
+                chunck_abs_path = os.path.join(product_local_path, chunck_rel_path)
+                chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
+                if not os.path.isdir(chunck_abs_path_dir):
+                    os.makedirs(chunck_abs_path_dir)
 
-                for product_chunk in s3_objects.filter(
-                    Prefix=prefix,
-                ):
-                    chunck_rel_path = self.get_chunck_dest_path(
-                        product,
-                        product_chunk,
-                        build_safe=build_safe,
-                        dir_prefix=prefix,
+                if not os.path.isfile(chunck_abs_path):
+                    product_chunk.Bucket().download_file(
+                        product_chunk.key,
+                        chunck_abs_path,
+                        ExtraArgs=getattr(s3_objects, "_params", {}),
+                        Callback=progress_callback,
                     )
-                    chunck_abs_path = os.path.join(product_local_path, chunck_rel_path)
-                    chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
-                    if not os.path.isdir(chunck_abs_path_dir):
-                        os.makedirs(chunck_abs_path_dir)
 
-                    if not os.path.isfile(chunck_abs_path):
-                        product_chunk.Bucket().download_file(
-                            product_chunk.key,
-                            chunck_abs_path,
-                            ExtraArgs=getattr(s3_objects, "_params", {}),
-                            Callback=progress_callback,
-                        )
-
-            except AuthenticationError as e:
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-            except ClientError as e:
-                err = e.response["Error"]
-                auth_messages = [
-                    "AccessDenied",
-                    "InvalidAccessKeyId",
-                    "SignatureDoesNotMatch",
-                ]
-                if err["Code"] in auth_messages and "key" in err["Message"].lower():
-                    raise AuthenticationError(
-                        "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
-                            e.response["ResponseMetadata"]["HTTPStatusCode"],
-                            err["Code"],
-                            err["Message"],
-                            self.provider,
-                        )
+        except AuthenticationError as e:
+            logger.warning("Unexpected error: %s" % e)
+            logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+        except ClientError as e:
+            err = e.response["Error"]
+            auth_messages = [
+                "AccessDenied",
+                "InvalidAccessKeyId",
+                "SignatureDoesNotMatch",
+            ]
+            if err["Code"] in auth_messages and "key" in err["Message"].lower():
+                raise AuthenticationError(
+                    "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                        e.response["ResponseMetadata"]["HTTPStatusCode"],
+                        err["Code"],
+                        err["Message"],
+                        self.provider,
                     )
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+                )
+            logger.warning("Unexpected error: %s" % e)
+            logger.warning("Skipping %s/%s" % (bucket_name, prefix))
 
         # finalize safe product
         if build_safe and "S2_MSI" in product.product_type:
@@ -365,6 +366,9 @@ class AwsDownload(Download):
                     shutil.rmtree(product_local_path)
                     os.rename(tmp_product_local_path, product_local_path)
                     break
+
+        if build_safe:
+            self.check_manifest_file_list(product_local_path)
 
         # save hash/record file
         with open(record_filename, "w") as fh:
@@ -506,6 +510,25 @@ class AwsDownload(Download):
             parts = path.split("/")
             bucket, prefix = parts[1], "/{}".format("/".join(parts[2:]))
         return bucket, prefix
+
+    def check_manifest_file_list(self, product_path):
+        """Checks if products listed in manifest.safe exist"""
+        manifest_path = [
+            os.path.join(d, x)
+            for d, _, f in os.walk(product_path)
+            for x in f
+            if x == "manifest.safe"
+        ][0]
+        safe_path = os.path.dirname(manifest_path)
+
+        root = etree.parse(os.path.join(safe_path, "manifest.safe")).getroot()
+        for safe_file in root.xpath("//fileLocation"):
+            safe_file_path = os.path.join(safe_path, safe_file.get("href"))
+            if not os.path.isfile(safe_file_path) and "HTML" in safe_file.get("href"):
+                # add empty files for missing HTML/*
+                Path(safe_file_path).touch()
+            elif not os.path.isfile(safe_file_path):
+                logger.warning("SAFE build: %s is missing" % safe_file.get("href"))
 
     def finalize_s2_safe_product(self, product_path):
         """Add missing dirs to downloaded product"""
