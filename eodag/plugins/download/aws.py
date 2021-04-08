@@ -39,7 +39,7 @@ from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
 
-# AWS chunck path identify patterns
+# AWS chunk path identify patterns
 
 # S2 L2A Tile files -----------------------------------------------------------
 S2L2A_TILE_IMG_REGEX = re.compile(
@@ -327,21 +327,21 @@ class AwsDownload(Download):
         progress_callback.reset()
         try:
             for product_chunk in unique_product_chunks:
-                chunck_rel_path = self.get_chunck_dest_path(
+                chunk_rel_path = self.get_chunk_dest_path(
                     product,
                     product_chunk,
                     build_safe=build_safe,
                     dir_prefix=prefix,
                 )
-                chunck_abs_path = os.path.join(product_local_path, chunck_rel_path)
-                chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
-                if not os.path.isdir(chunck_abs_path_dir):
-                    os.makedirs(chunck_abs_path_dir)
+                chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
+                chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
+                if not os.path.isdir(chunk_abs_path_dir):
+                    os.makedirs(chunk_abs_path_dir)
 
-                if not os.path.isfile(chunck_abs_path):
+                if not os.path.isfile(chunk_abs_path):
                     product_chunk.Bucket().download_file(
                         product_chunk.key,
-                        chunck_abs_path,
+                        chunk_abs_path,
                         ExtraArgs=getattr(s3_objects, "_params", {}),
                         Callback=progress_callback,
                     )
@@ -589,16 +589,18 @@ class AwsDownload(Download):
                     )
                 )
             )
-            os.rename(
-                os.path.join(safe_path, "DATASTRIP/0"),
-                os.path.join(safe_path, "DATASTRIP", scene_id),
-            )
+            datastrip_folder = os.path.join(safe_path, "DATASTRIP/0")
+            if os.path.isdir(datastrip_folder):
+                os.rename(
+                    os.path.join(safe_path, "DATASTRIP/0"),
+                    os.path.join(safe_path, "DATASTRIP", scene_id),
+                )
         except Exception as e:
             logger.exception("Could not finalize SAFE product from downloaded data")
             raise DownloadError(e)
 
-    def get_chunck_dest_path(self, product, chunk, dir_prefix, build_safe=False):
-        """Get chunck destination path"""
+    def get_chunk_dest_path(self, product, chunk, dir_prefix, build_safe=False):
+        """Get chunk destination path"""
         if build_safe:
             # S2 common
             if "S2_MSI" in product.product_type:
