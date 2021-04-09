@@ -85,14 +85,20 @@ Example usage for interacting with the api in your Python code:
     from eodag import EODataAccessGateway
 
     dag = EODataAccessGateway()
+
     search_results, found_nb = dag.search(
         productType='S2_MSI_L1C',
         geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
         start='2021-01-01',
         end='2021-01-15'
     )
+
     product_paths = dag.download_all(search_results)
 
+
+This will search for Sentinel 2 level-1C products on the default provider and return the found products first page and
+an estimated total number of products matching the search criteria. And then it will download these products. Please
+check `tutorials <https://eodag.readthedocs.io/en/latest/tutos.html>`_ for more examples.
 
 STAC REST API
 -------------
