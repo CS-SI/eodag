@@ -812,9 +812,9 @@ def _deprecated(reason="", version=None):
     Warning: Does not work with staticmethods!
 
     @deprecate(reason="why", versoin="1.2")
-    >>> def foo():
-    >>>     pass
-    >>> foo()
+    def foo():
+        pass
+    foo()
     DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
     """
 
