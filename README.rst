@@ -6,8 +6,14 @@
 .. image:: https://badge.fury.io/py/eodag.svg
     :target: https://badge.fury.io/py/eodag
 
-.. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
+.. image:: https://img.shields.io/conda/vn/conda-forge/eodag
+    :target: https://anaconda.org/conda-forge/eodag
+
+.. image:: https://readthedocs.org/projects/eodag/badge/?version=latest&style=flat
     :target: https://eodag.readthedocs.io/en/latest/
+
+.. image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg
+    :target: https://github.com/CS-SI/eodag/actions
 
 .. image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
     :target: https://github.com/CS-SI/eodag/issues
