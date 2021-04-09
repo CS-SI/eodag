@@ -62,6 +62,7 @@ class TestCore(unittest.TestCase):
             "mundi",
             "creodias",
             "aws_eos",
+            "astraea_eod",
         ],
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],

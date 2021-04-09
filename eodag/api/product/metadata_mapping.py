@@ -29,7 +29,7 @@ from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon
 
-from eodag.utils import get_timestamp, items_recursive_apply
+from eodag.utils import get_timestamp, items_recursive_apply, nested_pairs2dict
 
 logger = logging.getLogger("eodag.api.product.metadata_mapping")
 
@@ -301,7 +301,7 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_replace_str(string, args):
             old, new = ast.literal_eval(args)
-            return string.replace(old, new)
+            return re.sub(old, new, string)
 
         @staticmethod
         def convert_recursive_sub_str(input_obj, args):
@@ -311,6 +311,15 @@ def format_metadata(search_param, *args, **kwargs):
                 lambda k, v, x, y: re.sub(x, y, v) if isinstance(v, str) else v,
                 **{"x": old, "y": new}
             )
+
+        @staticmethod
+        def convert_dict_update(input_dict, args):
+            """Converts"""
+            new_items_list = ast.literal_eval(args)
+
+            new_items_dict = nested_pairs2dict(new_items_list)
+
+            return dict(input_dict, **new_items_dict)
 
         @staticmethod
         def convert_slice_str(string, args):
@@ -415,6 +424,11 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
                         )
                     elif isinstance(conversion_or_none, list):
                         conversion_or_none = conversion_or_none[0]
+
+                    # check if conversion uses variables to format
+                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                        conversion_or_none = conversion_or_none.format(**properties)
+
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value}
