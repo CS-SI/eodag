@@ -12,7 +12,9 @@ eodag - documentation
 Earth Observation Data Access Gateway
 
 :raw-html:`<a class="reference external image-reference" href="https://badge.fury.io/py/eodag" rel="nofollow"><img src="https://badge.fury.io/py/eodag.svg" type="image/svg+xml"></a>`
-:raw-html:`<a class="reference external image-reference" href="https://eodag.readthedocs.io/en/latest/" rel="nofollow"><img alt="https://readthedocs.org/projects/pip/badge/?version=latest&amp;style=flat" src="https://readthedocs.org/projects/pip/badge/?version=latest&amp;style=flat"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://anaconda.org/conda-forge/eodag" rel="nofollow"><img src="https://img.shields.io/conda/vn/conda-forge/eodag type="image/svg+xml"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://eodag.readthedocs.io/en/latest/" rel="nofollow"><img alt="https://readthedocs.org/projects/pip/badge/?version=latest&amp;style=flat" src="https://readthedocs.org/projects/eodag/badge/?version=latest&amp;style=flat"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://github.com/CS-SI/eodag/actions" rel="nofollow"><img src="https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg" type="image/svg+xml"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://github.com/CS-SI/eodag/issues" rel="nofollow"><img src="https://img.shields.io/github/issues/CS-SI/eodag.svg" type="image/svg+xml"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 :raw-html:`<br>`

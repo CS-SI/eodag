@@ -6,8 +6,14 @@
 .. image:: https://badge.fury.io/py/eodag.svg
     :target: https://badge.fury.io/py/eodag
 
-.. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
+.. image:: https://img.shields.io/conda/vn/conda-forge/eodag
+    :target: https://anaconda.org/conda-forge/eodag
+
+.. image:: https://readthedocs.org/projects/eodag/badge/?version=latest&style=flat
     :target: https://eodag.readthedocs.io/en/latest/
+
+.. image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg
+    :target: https://github.com/CS-SI/eodag/actions
 
 .. image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
     :target: https://github.com/CS-SI/eodag/issues
@@ -79,14 +85,20 @@ Example usage for interacting with the api in your Python code:
     from eodag import EODataAccessGateway
 
     dag = EODataAccessGateway()
-    product_type = 'S2_MSI_L1C'
-    footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
-    start, end = '2021-01-01', '2021-01-15'
-    search_results, found_nb = dag.search(productType=product_type, geom=footprint, start=start, end=end)
-    product_paths = dag.download_all(search_results)
-    for path in product_paths:
-      print('Downloaded : {}'.format(path))
 
+    search_results, found_nb = dag.search(
+        productType='S2_MSI_L1C',
+        geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
+        start='2021-01-01',
+        end='2021-01-15'
+    )
+
+    product_paths = dag.download_all(search_results)
+
+
+This will search for Sentinel 2 level-1C products on the default provider and return the found products first page and
+an estimated total number of products matching the search criteria. And then it will download these products. Please
+check `tutorials <https://eodag.readthedocs.io/en/latest/tutos.html>`_ for more examples.
 
 STAC REST API
 -------------
