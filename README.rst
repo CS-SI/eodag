@@ -85,13 +85,13 @@ Example usage for interacting with the api in your Python code:
     from eodag import EODataAccessGateway
 
     dag = EODataAccessGateway()
-    product_type = 'S2_MSI_L1C'
-    footprint = {'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}
-    start, end = '2021-01-01', '2021-01-15'
-    search_results, found_nb = dag.search(productType=product_type, geom=footprint, start=start, end=end)
+    search_results, found_nb = dag.search(
+        productType='S2_MSI_L1C',
+        geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
+        start='2021-01-01',
+        end='2021-01-15'
+    )
     product_paths = dag.download_all(search_results)
-    for path in product_paths:
-      print('Downloaded : {}'.format(path))
 
 
 STAC REST API
