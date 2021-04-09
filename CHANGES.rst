@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+2.2.1 (2021-xx-xx)
+++++++++++++++++++
+
+- Deprecate ``EODataAccessGateway.load_stac_items``, use the ``StaticStacSearch`` search plugin instead
+
 2.2.0 (2021-03-26)
 ++++++++++++++++++
 
