@@ -37,6 +37,7 @@ from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
+from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.base import Download
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
@@ -56,4 +57,4 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 from eodag.utils.stac_reader import fetch_stac_items
-from tests import TEST_RESOURCES_PATH
+from tests import TESTS_DOWNLOAD_PATH, TEST_RESOURCES_PATH

@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+2.2.1 (XXXX-XX-XX)
+++++++++++++++++++
+
+- Build SAFE format for Sentinel products from AWS STAC API providers, fixes
+  `GH-171 <https://github.com/CS-SI/eodag/issues/171>`_
+
 2.2.0 (2021-03-26)
 ++++++++++++++++++
 
