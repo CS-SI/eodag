@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -92,7 +92,7 @@ class QueryStringSearch(Search):
           - *count_endpoint*: (optional) The endpoint for counting the number of items
             satisfying a request
 
-            *next_page_url_key_path: (optional) A JSONPATH expression used to retrieve
+          - *next_page_url_key_path*: (optional) A JSONPATH expression used to retrieve
             the URL of the next page in the response of the current page.
 
         - **free_text_search_operations**: (optional) A tree structure of the form::

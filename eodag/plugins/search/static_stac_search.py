@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -47,7 +47,7 @@ class StaticStacSearch(StacSearch):
 
     This plugin first loads all STAC items found in the catalog, and converts them to
     EOProducts using StacSearch.
-    Then it uses crunches to only keep products matching query parameters.
+    Then it uses crunchers to only keep products matching query parameters.
     """
 
     def __init__(self, provider, config):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -54,6 +54,20 @@ class EOProduct(object):
     :type provider: str
     :param properties: The metadata of the product
     :type properties: dict
+    :ivar product_type: The product type
+    :vartype product_type: str
+    :ivar location: The path to the product, either remote or local if downloaded
+    :vartype location: str
+    :ivar remote_location: The remote path to the product
+    :vartype remote_location: str
+    :ivar search_kwargs: The search kwargs used by eodag to search for the product
+    :vartype search_kwargs: dict
+    :ivar geometry: The geometry of the product
+    :vartype geometry: shapely.geometry.base.BaseGeometry
+    :ivar search_intersection: The intersection between the product's geometry
+                               and the search area.
+    :vartype search_intersection: :class:``shapely.geometry.base.BaseGeometry`` or None
+
 
     .. note::
         The geojson spec `enforces <https://github.com/geojson/draft-geojson/pull/6>`_

@@ -1,4 +1,4 @@
-.. image:: https://eodag.readthedocs.io/en/latest/_static/eodag_bycs.png
+.. image:: https://eodag.readthedocs.io/en/stable/_static/eodag_bycs.png
     :target: https://github.com/CS-SI/eodag
 
 |
@@ -19,7 +19,7 @@
     :target: https://github.com/CS-SI/eodag/issues
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
+    :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro.md
 
 |
 
@@ -50,9 +50,9 @@ integrate new data providers. Three types of plugins compose the tool:
 
 * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
 
-Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/latest/intro.html#stac-client-and-server>`_.
+Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/stable/stac.html>`_.
 
-Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
+Read `the documentation <https://eodag.readthedocs.io/en/stable/>`_ for more insights.
 
 .. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/eodag_overview.png
    :alt: EODAG overview
@@ -61,18 +61,23 @@ Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more ins
 Installation
 ============
 
-EODAG is on `PyPI <https://pypi.org/project/eodag/>`_:
+EODAG is available on `PyPI <https://pypi.org/project/eodag/>`_:
 
 .. code-block:: bash
 
-    python -m pip install eodag
+   python -m pip install eodag
 
+And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-forge/eodag>`_:
+
+.. code-block:: bash
+
+   conda install -c conda-forge eodag
 
 Usage
 =====
 
 For downloading you will need to fill your credentials for the desired providers in your
-`eodag user configuration file <https://eodag.readthedocs.io/en/latest/intro.html#how-to-configure-authentication-for-available-providers>`_.
+`eodag user configuration file <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html>`_.
 The file will automatically be created with empty values on the first run.
 
 Python API
@@ -98,7 +103,7 @@ Example usage for interacting with the api in your Python code:
 
 This will search for Sentinel 2 level-1C products on the default provider and return the found products first page and
 an estimated total number of products matching the search criteria. And then it will download these products. Please
-check `tutorials <https://eodag.readthedocs.io/en/latest/tutos.html>`_ for more examples.
+check the `API User Guide <https://eodag.readthedocs.io/en/stable/api_user_guide.html>`_ for more details.
 
 STAC REST API
 -------------
@@ -180,7 +185,7 @@ And browse http://127.0.0.1:5001:
    :width: 600px
 
 
-For more information, see `STAC REST interface usage <https://eodag.readthedocs.io/en/latest/use.html#stac-rest-interface>`_.
+For more information, see `STAC REST interface usage <https://eodag.readthedocs.io/en/stable/stac_rest.html>`_.
 
 Command line interface
 ----------------------
@@ -204,7 +209,7 @@ Then you can start playing with it:
         --storage my_search.geojson
 
 The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches internally all
-the products that match these criteria. Without `--all`, it would only fetch the products found on the first result page.
+the products that match these criteria. Without ``--all``, it would only fetch the products found on the first result page.
 It finally saves the results in a GeoJSON file.
 
 You can pass arguments to a cruncher on the command line by doing this (example with using `FilterOverlap` cruncher
@@ -214,11 +219,11 @@ which takes `minimum_overlap` as argument)::
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10
 
-The request above means : "Give me all the products of type `S2_MSI_L1C`, use `FilterOverlap` to keep only those products
-that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
+The request above means : "Give me all the products of type `S2_MSI_L1C`, use ``FilterOverlap`` to keep only those products
+that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (``minimum_overlap``) of the surface
 of this bbox"
 
-* To download the result of a previous call to `search`::
+* To download the result of a previous call to ``search``::
 
         eodag download --conf my_conf.yml --search-results my_search.geojson
 
@@ -234,12 +239,17 @@ of this bbox"
 
         eodag --help
 
-* To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given (up to 3), the more
+* To print log messages, add ``-v`` to `eodag` master command. e.g. ``eodag -v list``. The more ``v`` given (up to 3), the more
   verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
 
 
 Contribute
 ==========
+
+Have you spotted a typo in our documentation? Have you observed an unexpected behaviour while running EODAG?
+Do you have a suggestion for a new feature?
+
+Don't hesitate and open an issue or submit a pull request, contributions are most welcome!
 
 For guidance on setting up a development environment and how to make a
 contribution to eodag, see the `contributing guidelines`_.
@@ -247,20 +257,23 @@ contribution to eodag, see the `contributing guidelines`_.
 .. _contributing guidelines: https://github.com/CS-SI/eodag/blob/develop/CONTRIBUTING.rst
 
 
-LICENSE
+License
 =======
 
 EODAG is licensed under Apache License v2.0.
 See LICENSE file for details.
 
 
-AUTHORS
+Authors
 =======
 
-EODAG is developed by `CS GROUP - France <https://www.c-s.fr>`_.
+EODAG has been created and maintained by `CS GROUP - France <https://www.csgroup.eu/>`_.
+New contributors to EODAG are listed below, we hope to see it growing fast!
+
+* @apparell
 
 
-CREDITS
+Credits
 =======
 
 EODAG is built on top of amazingly useful open source projects. See NOTICE file for details about those projects and

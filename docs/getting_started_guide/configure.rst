@@ -1,0 +1,232 @@
+.. _configure:
+
+Configure EODAG
+===============
+
+Configuration in ``eodag`` plays an important role:
+
+* To provide credentials (e.g. login/password, API key, etc.) required to download (and search sometimes) products with a provider
+* To specify the search priority of a provider
+* To indicate where to download products, whether to extract them or not, etc.
+* To dynamically update a provider or a new one
+
+This page describes how to configure `eodag` both for interacting with its API or its command line interface.
+
+Automatic pre-configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``eodag`` comes bundled with the pre-configuration of numerous providers. It knows how to search
+for products in a provider's catalog, how to download products, etc. However, users are required
+to complete this configuration with additional settings, such as provider credentials. Users can
+also override pre-configured settings (e.g. the download folder).
+
+YAML configuration file
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The first time ``eodag`` is used after an install a default YAML configuration file is saved
+in a local directory (``~/.config/eodag/eodag.yml`` on Linux).
+
+This YAML file contains a template that shows how to complete the configuration of one or
+more providers. It allows to either **override** an existing setting or **add** a missing
+one (e.g. credentials). *PEPS*'s configuration template is shown below:
+
+.. code-block:
+
+   peps:
+       priority: # Lower value means lower priority (Default: 1)
+       search:  # Search parameters configuration
+       download:
+           extract:  # whether to extract the downloaded products (true or false).
+           outputs_prefix: # where to store downloaded products.
+           dl_url_params:  # additional parameters to pass over to the download url as an url parameter
+       auth:
+           credentials:
+               username:
+               password:
+
+.. raw:: html
+
+   <details>
+   <summary><a>Click here to display the content of the whole file</a></summary>
+
+.. include:: ../../eodag/resources/user_conf_template.yml
+   :start-line: 17
+   :code: yaml
+
+.. raw:: html
+
+   </details>
+
+|
+
+Users can directly modify the default file, which is then loaded automatically:
+
+* API: ``eodag.EODataAccessGateway()``
+* CLI: ``eodag search -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C``
+
+They can also choose to create their own configuration file(s)
+and load them explicitely:
+
+* API: ``eodag.EODataAccessGateway("my_config.yml")``
+* CLI: ``eodag search -f my_config.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C``
+
+Alternatively, the environment variable ``EODAG_CFG_FILE`` can be used to set the path
+to the configuration file. In that case it is also loaded automatically:
+
+* API: ``eodag.EODataAccessGateway()``
+* CLI: ``eodag search -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C``
+
+.. warning::
+
+   This file contains login information in clear text. Make sure you correctly
+   configure access rules to it. It should be read/write-able only by the
+   current user of eodag.
+
+Environment variable configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``eodag`` can also be configured with environment variables, which have **priority over**
+the YAML file configuration.
+
+The name of the environment variables understood by ``eodag`` must follow the pattern
+``EODAG__KEY1__KEY2__[...]__KEYN`` (note the double underscore between the keys).
+
+See for instance the following configuration extracted from YAML file:
+
+.. code-block:: yaml
+
+   sobloo:
+       download:
+           extract: True
+           outputs_prefix: /absolute/path/to/a/folder/
+
+
+The same configuration could be achieved by setting environment variables:
+
+.. code-block:: bash
+
+   export EODAG__SOBLOO__DOWNLOAD__EXTRACT=True
+   export EODAG__SOBLOO__DOWNLOAD__OUTPUTS_PREFIX=/absolute/path/to/a/folder/
+
+
+Each configuration parameter can be set with an environment variable.
+
+CLI configuration
+^^^^^^^^^^^^^^^^^
+
+The commands that require a configuration file (e.g. ``download`` ) have an option
+(usually ``-f``) to provide the path to a YAML configuration file. If not specified,
+the default configuration filepath is used. Settings defined by environment variables
+are also taken into account.
+
+API: Dynamic configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``eodag`` 's configuration can be altered directly from using Python. See this
+`dedicated page <../notebooks/api_uder_guide/3_configuration.ipynb>`_ in the API user guide.
+
+Priority setting
+^^^^^^^^^^^^^^^^
+
+Some product types are available from multiple providers, for instance
+*Sentinel 2 Level-1C* products. When a search is made for such product types,
+``eodag`` would use its pre-configured preferred/prioritary provider, which is *PEPS*
+currently.
+
+To make a provider the preferred/prioritary one, its priority setting must be set to
+an integer value that is higher than the priority of all the other providers.
+
+.. note::
+
+   *PEPS* is currently the default provider used when a search is made.
+   To target another provider its priority must be increased.
+
+
+.. warning::
+
+   If the priority is set to a provider, and a search is made for a product type
+   available in ``eodag``'s catalog with a provider that doesn't offer this product type,
+   then the search will still be done. The provider used would be the one with the
+   highest priority among those which offer this product type.
+
+Download settings
+^^^^^^^^^^^^^^^^^
+
+Two useful download parameters can be set by a user:
+
+* ``extract`` indicates whether the downloaded product archive should be automatically
+  extracted or not. ``True`` by default.
+
+*  ``outputs_prefix`` indicates the absolute file path to `eodag`'s download folder.
+   It is the temporary folder by default (e.g. ``/tmp`` on Linux).
+
+Credentials settings
+^^^^^^^^^^^^^^^^^^^^
+
+Credentials come into play at different stages for a provider. Most do not
+require any credentials for a search to be made (a few require an API key).
+Most, if not all of them, require credentials to be set to download products.
+
+.. note::
+
+   ``eodag`` tries to fail as early as possible if some credentials are missing to authenticate
+   to a provider while trying to download a product. If the credentials are set, ``eodag`` will
+   keep going. An :class:`~eodag.utils.exceptions.AuthenticationError` is raised if the
+   authentication fails.
+
+   Make sure to check that your credentials are correctly set and to keep them up to date.
+
+Example
+^^^^^^^
+
+The following content can be saved to a file at ``/home/user/eodagworkspace/my_config.yml``.
+
+.. code-block:: yaml
+
+   sobloo:
+       priority: 2
+       download:
+           extract: False
+           outputs_prefix: /home/user/eodagworkspace/
+       auth:
+           credentials:
+               apikey: my_secret_sobloo_api_key
+
+It updates and completes the settings of the provider `sobloo` by:
+
+* Setting its priority to ``2``, which is higher than the default maximum priority (*PEPS* at 1).
+  Products will then be searched through `sobloo`'s catalog.
+
+* The products downloaded should not be extracted automatically by ``eodag``.
+
+* The products should be downloaded to the folder ``/home/user/eodagworkspace/``.
+
+* An API key obtained from `sobloo` is saved there, it will be used to authenticate to the provider.
+
+This file can be used to download products with the API:
+
+.. code-block:: python
+
+   from eodag import EODataAccessGateway
+   dag = EODataAccessGateway("/home/user/eodagworkspace/my_config.yml")
+   products = dag.search_all(
+      productType="S2_MSI_L1C",
+      start="2018-01-01",
+      end="2018-01-31",
+      geom=(1, 43, 2, 44)
+   )
+   dag.download_all(products)
+
+Or with the CLI:
+
+.. code-block:: console
+
+   cd /home/user/eodagworkspace/
+   eodag search -f my_config.yml \
+                -b 1 43 2 44 \
+                -s 2018-01-01 \
+                -e 2018-01-31 \
+                -p S2_MSI_L1C \
+                --all \
+                --storage my_search.geojson
+   eodag download -f my_config.yml --search-results my_search.geojson
