@@ -84,6 +84,10 @@ class EODataAccessGateway(object):
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
         makedirs(self.conf_dir)
 
+        self._plugins_manager = PluginManager(self.providers_config)
+        # use updated providers_config
+        self.providers_config = self._plugins_manager.providers_config
+
         # First level override: From a user configuration file
         if user_conf_file_path is None:
             env_var_name = "EODAG_CFG_FILE"
@@ -103,9 +107,8 @@ class EODataAccessGateway(object):
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
 
-        self._plugins_manager = PluginManager(self.providers_config)
-        # use updated providers_config
-        self.providers_config = self._plugins_manager.providers_config
+        # Sort providers taking into account of possible new priority orders
+        self._plugins_manager.sort_providers()
 
         # Build a search index for product types
         self._product_types_index = None
