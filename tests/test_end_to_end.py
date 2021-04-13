@@ -78,6 +78,13 @@ EARTH_SEARCH_SEARCH_ARGS = [
     "2020-01-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
+EARTH_SEARCH_COG_SEARCH_ARGS = [
+    "earth_search_cog",
+    "S2_MSI_L2A_COG",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 USGS_SATAPI_AWS_SEARCH_ARGS = [
     "usgs_satapi_aws",
     "LANDSAT_C2L1",
@@ -360,12 +367,17 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_end_to_end_search_download_astraea_eod(self):
         product = self.execute_search(*ASTRAE_EOD_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
+        self.execute_download(product, expected_filename, wait_sec=15)
 
     def test_end_to_end_search_download_earth_search(self):
         product = self.execute_search(*EARTH_SEARCH_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_earth_search_cog(self):
+        product = self.execute_search(*EARTH_SEARCH_COG_SEARCH_ARGS)
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename, wait_sec=20)
 
     def test_end_to_end_search_download_usgs_satapi_aws(self):
         product = self.execute_search(*USGS_SATAPI_AWS_SEARCH_ARGS)

@@ -127,3 +127,8 @@ earth_search:
             aws_profile:
     download:
         outputs_prefix:
+earth_search_cog:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        outputs_prefix:
