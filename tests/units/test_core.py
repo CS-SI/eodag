@@ -512,10 +512,8 @@ class TestCoreSearch(unittest.TestCase):
         actual = self.dag.guess_product_type(**kwargs)
         expected = [
             "S2_MSI_L1C",
-            "S2_MSI_L1C_JP2",
             "S2_MSI_L2A",
             "S2_MSI_L2A_COG",
-            "S2_MSI_L2A_JP2",
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
