@@ -163,6 +163,12 @@ class AwsDownload(Download):
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download method for AWS S3 API.
 
+        The product can be downloaded as it is, or as SAFE-formatted product.
+        SAFE-build is configured for a given provider and product type.
+        If the product title is configured to be updated during download and
+        SAFE-formatted, its destination path will be:
+        `{outputs_prefix}/{title}/{updated_title}.SAFE`
+
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product.EOProduct`
         :param auth: (optional) The configuration of a plugin of type Authentication
@@ -176,6 +182,18 @@ class AwsDownload(Download):
         :return: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        # prepare download & create dirs (before updating metadata)
+        product_local_path, record_filename = self._prepare_download(product, **kwargs)
+        if not product_local_path or not record_filename:
+            return product_local_path
+        product_local_path = product_local_path.replace(".zip", "")
+        # remove existing incomplete file
+        if os.path.isfile(product_local_path):
+            os.remove(product_local_path)
+        # create product dest dir
+        if not os.path.isdir(product_local_path):
+            os.makedirs(product_local_path)
+
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
@@ -227,18 +245,6 @@ class AwsDownload(Download):
                     product, product.properties[complementary_url_key]
                 )
             )
-
-        # prepare download & create dirs
-        product_local_path, record_filename = self._prepare_download(product, **kwargs)
-        if not product_local_path or not record_filename:
-            return product_local_path
-        product_local_path = product_local_path.replace(".zip", "")
-        # remove existing incomplete file
-        if os.path.isfile(product_local_path):
-            os.remove(product_local_path)
-        # create product dest dir
-        if not os.path.isdir(product_local_path):
-            os.makedirs(product_local_path)
 
         # progress bar init
         if progress_callback is None:
