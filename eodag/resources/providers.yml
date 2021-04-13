@@ -1672,3 +1672,35 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
+
+---
+!provider
+  name: earth_search_cog
+  priority: 0
+  roles:
+    - host
+  description: Earth Search
+  url: https://www.element84.com/earth-search/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    metadata_mapping:
+      id:
+        - 'ids=["{id}"]'
+        - '$.id'
+      productType:
+        - 'collections=["{productType}"]'
+        - '$.collection'
+      geometry:
+        - 'bbox=[{geometry.bounds#csv_list}]'
+        - '$.geometry'
+      platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+      polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+  products:
+    S2_MSI_L2A_COG:
+      productType: sentinel-s2-l2a-cogs
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://sentinel-cogs.s3.us-west-2.amazonaws.com'
