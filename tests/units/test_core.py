@@ -62,6 +62,7 @@ class TestCore(unittest.TestCase):
             "mundi",
             "creodias",
             "aws_eos",
+            "astraea_eod",
         ],
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
@@ -76,6 +77,7 @@ class TestCore(unittest.TestCase):
             "astraea_eod",
             "earth_search",
         ],
+        "S2_MSI_L2A_COG": ["earth_search_cog"],
         "S2_MSI_L2A_MAJA": ["theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
@@ -134,6 +136,7 @@ class TestCore(unittest.TestCase):
             "astraea_eod",
             "usgs_satapi_aws",
             "earth_search",
+            "earth_search_cog",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -149,6 +152,7 @@ class TestCore(unittest.TestCase):
         "astraea_eod",
         "usgs_satapi_aws",
         "earth_search",
+        "earth_search_cog",
     ]
 
     @classmethod
@@ -509,6 +513,7 @@ class TestCoreSearch(unittest.TestCase):
         expected = [
             "S2_MSI_L1C",
             "S2_MSI_L2A",
+            "S2_MSI_L2A_COG",
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",

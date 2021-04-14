@@ -708,6 +708,29 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
         return jsonpath_obj
 
 
+def nested_pairs2dict(pairs):
+    """Create a dict using nested pairs
+
+    >>> nested_pairs2dict([["foo",[["bar","baz"]]]])
+    {'foo': {'bar': 'baz'}}
+
+    :param pairs: pairs [key, value]
+    :type pairs: list
+    :returns: created dict
+    :rtype: dict
+    """
+    d = {}
+    try:
+        for k, v in pairs:
+            if isinstance(v, list):
+                v = nested_pairs2dict(v)
+            d[k] = v
+    except ValueError:
+        return pairs
+
+    return d
+
+
 def get_geometry_from_various(locations_config=[], **query_args):
     """Creates a shapely geometry using given query kwargs arguments
 
