@@ -6,6 +6,7 @@ Release history
 
 - Build SAFE format for Sentinel products from AWS STAC API providers, fixes
   `GH-171 <https://github.com/CS-SI/eodag/issues/171>`_
+- Deprecate ``EODataAccessGateway.load_stac_items``, use the ``StaticStacSearch`` search plugin instead
 
 2.2.0 (2021-03-26)
 ++++++++++++++++++

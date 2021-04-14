@@ -23,12 +23,15 @@ this package should go here
 import ast
 import copy
 import errno
+import functools
+import inspect
 import logging
 import os
 import re
 import string
 import types
 import unicodedata
+import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from itertools import repeat, starmap
@@ -826,7 +829,39 @@ class MockResponse(object):
         return self.json_data
 
 
-if __name__ == "__main__":
-    import doctest
+def _deprecated(reason="", version=None):
+    """Simple decorator to mark functions/methods/classes as deprecated.
 
-    doctest.testmod()
+    Warning: Does not work with staticmethods!
+
+    @deprecate(reason="why", versoin="1.2")
+    def foo():
+        pass
+    foo()
+    DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
+    """
+
+    def decorator(callable):
+
+        if inspect.isclass(callable):
+            ctype = "class"
+        else:
+            ctype = "function/method"
+        cname = callable.__name__
+        reason_ = f"({reason})" if reason else ""
+        version_ = f" -- Deprecated since v{version}" if version else ""
+
+        @functools.wraps(callable)
+        def wrapper(*args, **kwargs):
+            warnings.simplefilter("always", DeprecationWarning)
+            warnings.warn(
+                f"Call to deprecated {ctype} {cname} {reason_}{version_}",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            warnings.simplefilter("default", DeprecationWarning)
+            return callable(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
