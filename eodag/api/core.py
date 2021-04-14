@@ -44,6 +44,7 @@ from eodag.plugins.manager import PluginManager
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     MockResponse,
+    _deprecated,
     get_geometry_from_various,
     makedirs,
 )
@@ -1190,6 +1191,9 @@ class EODataAccessGateway(object):
                 )
         return products
 
+    @_deprecated(
+        reason="Use the StaticStacSearch search plugin instead", version="2.2.1"
+    )
     def load_stac_items(
         self,
         filename,
@@ -1221,6 +1225,9 @@ class EODataAccessGateway(object):
                             search criteria
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
+
+        .. deprecated:: 2.2.1
+           Use the ``StaticStacSearch`` search plugin instead.
         """
         features = fetch_stac_items(
             filename,
