@@ -246,7 +246,7 @@ of this bbox"
 Contribute
 ==========
 
-Have you spotted a typo in our documentation? Have you observed an unexpected behaviour while running EODAG?
+Have you spotted a typo in our documentation? Have you observed a bug while running EODAG?
 Do you have a suggestion for a new feature?
 
 Don't hesitate and open an issue or submit a pull request, contributions are most welcome!
@@ -267,11 +267,15 @@ See LICENSE file for details.
 Authors
 =======
 
-EODAG has been created and maintained by `CS GROUP - France <https://www.csgroup.eu/>`_.
-New contributors to EODAG are listed below, we hope to see it growing fast!
+EODAG has been created by `CS GROUP - France <https://www.csgroup.eu/>`_.
+
+Contributors
+============
+
+New contributors to the project are listed below, we hope to see it growing fast!
 
 * @apparell
-
+* @ahuarte47
 
 Credits
 =======

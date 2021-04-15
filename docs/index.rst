@@ -15,12 +15,13 @@ Earth Observation Data Access Gateway
 :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro.md" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://github.com/CS-SI/eodag" rel="nofollow"><img src="https://img.shields.io/github/stars/CS-SI/eodag?style=social" type="image/svg+xml"/></a>`
 
-**One and only one way to search for and download Earth Observation products.**
+**EODAG (Earth Observation Data Access Gateway) is a command line tool and a Python package for searching and downloading
+remotely sensed images while offering a unified API for data access regardless of the data provider.**
 
 |
 
-EODAG gives you an easy way to access data from more than 10 providers, with more than 50 different product
-types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched for and downloaded.
+EODAG gives you an easy way to access products from more than 10 providers, with more than 50 different product
+types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched and downloaded.
 
 .. glossary::
 

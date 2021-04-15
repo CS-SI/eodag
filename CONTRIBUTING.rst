@@ -97,7 +97,7 @@ a notebook's general metadata:
     "execute": "always"
    }
 
-The notebooks listed below are always executed by `nbsphinx`:
+The notebooks listed below are **always executed** by `nbsphinx`:
 
 * `<notebooks/api_user_guide/2_providers_products_available.ipynb>`_
 * `<notebooks/api_user_guide/3_configuration.ipynb>`_
@@ -105,6 +105,11 @@ The notebooks listed below are always executed by `nbsphinx`:
 
 For the other notebooks, their **cell output as long as their widget state** need so be saved.
 If not, the outputs and the widgets (e.g. progress bar) won't be displayed in the online documentation.
+
+.. tip::
+
+   `sphinx-autobuild <https://pypi.org/project/sphinx-autobuild/>`_ can be installed to rebuild Sphinx documentation on changes, with live-reload in the browser.
+   Run it from the repository root with ``sphinx-autobuild docs docs/_build/html/``
 
 `Read the Docs <https://readthedocs.org/>`_ is a service that uses Sphinx to build a documentation website,
 which it then hosts for free for open source projects, such as EODAG.
