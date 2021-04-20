@@ -593,6 +593,8 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         self.assertNotEqual(prev_location, product.location)
         # The location must follow the file URI scheme
         self.assertTrue(product.location.startswith("file://"))
+        # The location must point to a SAFE directory
+        self.assertTrue(product.location.endswith("SAFE"))
         # The path must point to a SAFE directory
         self.assertTrue(os.path.isdir(product_dir_path))
         self.assertTrue(product_dir_path.endswith("SAFE"))

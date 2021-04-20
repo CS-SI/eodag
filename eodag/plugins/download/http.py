@@ -224,8 +224,9 @@ class HTTPDownload(Download):
                                 shutil.move(fs_path, new_fs_path)
                                 product.location = path_to_uri(new_fs_path)
                                 return new_fs_path
-                            product.location = path_to_uri(fs_path)
-                            return self._finalize(fs_path, **kwargs)
+                            product_path = self._finalize(fs_path, **kwargs)
+                            product.location = path_to_uri(product_path)
+                            return product_path
 
                 except NotAvailableError as e:
                     if not getattr(self.config, "order_enabled", False):
