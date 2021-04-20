@@ -434,7 +434,7 @@ class EODataAccessGateway(object):
                 if results is None:
                     results = searcher.search(query, limit=None)
                 else:
-                    results.upgrade_and_extend(searcher.search(query))
+                    results.upgrade_and_extend(searcher.search(query, limit=None))
             guesses = [r["ID"] for r in results or []]
         if guesses:
             return guesses
