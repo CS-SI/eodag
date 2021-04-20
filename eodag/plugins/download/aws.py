@@ -34,7 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.download.base import Download
-from eodag.utils import get_progress_callback, urlparse
+from eodag.utils import get_progress_callback, path_to_uri, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
@@ -185,6 +185,8 @@ class AwsDownload(Download):
         # prepare download & create dirs (before updating metadata)
         product_local_path, record_filename = self._prepare_download(product, **kwargs)
         if not product_local_path or not record_filename:
+            if product_local_path:
+                product.location = path_to_uri(product_local_path)
             return product_local_path
         product_local_path = product_local_path.replace(".zip", "")
         # remove existing incomplete file
@@ -395,6 +397,7 @@ class AwsDownload(Download):
             fh.write(product.remote_location)
         logger.debug("Download recorded in %s", record_filename)
 
+        product.location = path_to_uri(product_local_path)
         return product_local_path
 
     def get_authenticated_objects(self, bucket_name, prefix, auth_dict):

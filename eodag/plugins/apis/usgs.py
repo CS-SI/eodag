@@ -37,7 +37,12 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
-from eodag.utils import GENERIC_PRODUCT_TYPE, format_dict_items, get_progress_callback
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    format_dict_items,
+    get_progress_callback,
+    path_to_uri,
+)
 from eodag.utils.exceptions import AuthenticationError, NotAvailableError
 
 logger = logging.getLogger("eodag.plugins.apis.usgs")
@@ -164,6 +169,8 @@ class UsgsApi(Api, Download):
             product, outputs_extension=".tar.gz", **kwargs
         )
         if not fs_path or not record_filename:
+            if fs_path:
+                product.location = path_to_uri(fs_path)
             return fs_path
 
         # progress bar init
@@ -264,8 +271,11 @@ class UsgsApi(Api, Download):
             )
             new_fs_path = fs_path[: fs_path.index(".tar.gz")]
             shutil.move(fs_path, new_fs_path)
+            product.location = path_to_uri(new_fs_path)
             return new_fs_path
-        return self._finalize(fs_path, outputs_extension=".tar.gz", **kwargs)
+        product_path = self._finalize(fs_path, outputs_extension=".tar.gz", **kwargs)
+        product.location = path_to_uri(product_path)
+        return product_path
 
     def download_all(
         self,
