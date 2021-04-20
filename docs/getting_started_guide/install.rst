@@ -9,6 +9,11 @@ EODAG is really simple to install with ``pip``:
 
    python -m pip install eodag
 
+.. note::
+
+   ``pyproj`` requires Cython or pip>=10.0.1. If the install of ``eodag`` fails, check your
+   version of pip (Ubuntu 18.04 comes installed with pip 9.0.1).
+
 Or with ``conda`` from the *conda-forge* channel:
 
 .. code-block:: bash
