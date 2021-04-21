@@ -621,8 +621,19 @@ class TestCoreSearch(unittest.TestCase):
             platformSerialIdentifier="S2A",
         )
         prepared_search = self.dag._prepare_search(**base)
-        expected = {"productType": "S2_MSI_L1C", **base}
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["productType"], "S2_MSI_L1C")
+
+    def test__prepare_search_remove_guess_kwargs(self):
+        """_prepare_search must remove the guess kwargs"""
+        # Uses guess_product_type to find the product matching
+        # the best the given params.
+        base = dict(
+            instrument="MSI",
+            platform="SENTINEL2",
+            platformSerialIdentifier="S2A",
+        )
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertEqual(len(base.keys() & prepared_search.keys()), 0)
 
     def test__prepare_search_with_id(self):
         """_prepare_search must handle a search by id"""

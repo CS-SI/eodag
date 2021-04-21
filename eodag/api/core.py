@@ -844,6 +844,19 @@ class EODataAccessGateway(object):
         if product_type is None:
             try:
                 guesses = self.guess_product_type(**kwargs)
+
+                # guess_product_type raises a NoMatchingProductType error if no product
+                # is found. Here, the supported search params are removed from the
+                # kwargs if present, not to propagate them to the query itself.
+                for param in (
+                    "instrument",
+                    "platform",
+                    "platformSerialIdentifier",
+                    "processingLevel",
+                    "sensorType",
+                ):
+                    kwargs.pop(param, None)
+
                 # By now, only use the best bet
                 product_type = guesses[0]
             except NoMatchingProductType:
