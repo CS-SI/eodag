@@ -367,7 +367,7 @@ class TestCoreGeometry(unittest.TestCase):
             "lonmax": 2,
             "latmax": 52,
         }
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # Bad dict with a missing key
         del geometry["lonmin"]
         self.assertRaises(
@@ -378,10 +378,10 @@ class TestCoreGeometry(unittest.TestCase):
         )
         # Tuple
         geometry = (0, 50, 2, 52)
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # List
         geometry = list(geometry)
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # List without 4 items
         geometry.pop()
         self.assertRaises(
@@ -392,7 +392,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         # WKT
         geometry = ref_geom_as_wkt
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # Some other shapely geom
         geometry = LineString([[0, 0], [1, 1]])
         self.assertIsInstance(
@@ -409,7 +409,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="FRA")
         )
         self.assertIsInstance(geom_france, MultiPolygon)
-        self.assertEquals(len(geom_france), 3)  # France + Guyana + Corsica
+        self.assertEqual(len(geom_france), 3)  # France + Guyana + Corsica
 
     def test_get_geometry_from_various_locations_with_wrong_location_name_in_kwargs(
         self,
@@ -444,7 +444,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="PA[A-Z]")
         )
         self.assertIsInstance(geom_regex_pa, MultiPolygon)
-        self.assertEquals(len(geom_regex_pa), 2)
+        self.assertEqual(len(geom_regex_pa), 2)
 
     def test_get_geometry_from_various_locations_no_match_raises_error(self):
         """If the location search doesn't match any of the feature attribute a ValueError must be raised"""
@@ -468,7 +468,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # France + Guyana + Corsica + somewhere over Poland
-        self.assertEquals(len(geom_combined), 4)
+        self.assertEqual(len(geom_combined), 4)
         geometry = {
             "lonmin": 0,
             "latmin": 50,
@@ -480,7 +480,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # The bounding box overlaps with France inland
-        self.assertEquals(len(geom_combined), 3)
+        self.assertEqual(len(geom_combined), 3)
 
 
 class TestCoreSearch(unittest.TestCase):
@@ -546,7 +546,6 @@ class TestCoreSearch(unittest.TestCase):
             "geometry": None,
             "productType": None,
         }
-        self.assertDictContainsSubset(expected, prepared_search)
         expected = set(["geometry", "productType", "auth", "search_plugin"])
         self.assertSetEqual(expected, set(prepared_search))
 
@@ -557,11 +556,10 @@ class TestCoreSearch(unittest.TestCase):
             "end": "2020-02-01",
         }
         prepared_search = self.dag._prepare_search(**base)
-        expected = {
-            "startTimeFromAscendingNode": base["start"],
-            "completionTimeFromAscendingNode": base["end"],
-        }
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["startTimeFromAscendingNode"], base["start"])
+        self.assertEqual(
+            prepared_search["completionTimeFromAscendingNode"], base["end"]
+        )
 
     def test__prepare_search_geom(self):
         """_prepare_search must handle geom, box and bbox"""
@@ -608,8 +606,7 @@ class TestCoreSearch(unittest.TestCase):
         """_prepare_search must handle when a product type is given"""
         base = {"productType": "S2_MSI_L1C"}
         prepared_search = self.dag._prepare_search(**base)
-        expected = {"productType": base["productType"]}
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["productType"], base["productType"])
 
     def test__prepare_search_product_type_guess_it(self):
         """_prepare_search must guess a product type when required to"""
@@ -649,8 +646,8 @@ class TestCoreSearch(unittest.TestCase):
             "cloudCover": 10,
         }
         prepared_search = self.dag._prepare_search(**base)
-        expected = base
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["productType"], base["productType"])
+        self.assertEqual(prepared_search["cloudCover"], base["cloudCover"])
 
     def test__prepare_search_search_plugin_has_known_product_properties(self):
         """_prepare_search must attach the product properties to the search plugin"""
