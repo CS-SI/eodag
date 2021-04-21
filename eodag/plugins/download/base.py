@@ -252,6 +252,9 @@ class Download(PluginTopic):
         A sequential download_all implementation
         using download method for every products
         """
+        # Products are going to be removed one by one from this sequence once
+        # downloaded.
+        products = products[:]
         paths = []
         # initiate retry loop
         start_time = datetime.now()
