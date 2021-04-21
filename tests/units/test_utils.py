@@ -25,15 +25,22 @@ from tests.context import get_timestamp, path_to_uri, uri_to_path
 
 class TestUtils(unittest.TestCase):
     def test_utils_get_timestamp(self):
-        """get_timestamp must handle UTC dates"""
+        """get_timestamp must handle different date formats and assume they're in UTC"""
+        # Date to timestamp to date
         requested_date = "2020-08-08"
-        date_format = "%Y-%m-%d"
-        # If as_utc is False, get_timestamp takes into account the
-        # local timezone (because of datetime.timestamp)
-        ts_in_secs = get_timestamp(requested_date, date_format=date_format, as_utc=True)
-        expected_dt = datetime.strptime(requested_date, date_format)
+        ts_in_secs = get_timestamp(requested_date)
+        expected_dt = datetime.strptime(requested_date, "%Y-%m-%d")
         actual_utc_dt = datetime.utcfromtimestamp(ts_in_secs)
         self.assertEqual(actual_utc_dt, expected_dt)
+
+        # Check different formats
+        self.assertEqual(get_timestamp("2021-04-21T18:27:19.123Z"), 1619029639.123)
+        self.assertEqual(get_timestamp("2021-04-21T18:27:19.123"), 1619029639.123)
+        self.assertEqual(get_timestamp("2021-04-21"), 1618963200)
+
+        # Non UTC dates are not allowed
+        with self.assertRaises(ValueError):
+            get_timestamp("2018-02-01T12:52:34+09:00")
 
     def test_uri_to_path(self):
         if sys.platform == "win32":

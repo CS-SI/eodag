@@ -33,7 +33,6 @@ import types
 import unicodedata
 import warnings
 from collections import defaultdict
-from datetime import datetime, timezone
 from itertools import repeat, starmap
 from pathlib import Path
 
@@ -52,6 +51,8 @@ from urllib.request import url2pathname
 import click
 import shapefile
 import shapely.wkt
+from dateutil.parser import isoparse
+from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from requests.auth import AuthBase
@@ -331,28 +332,20 @@ def maybe_generator(obj):
         yield obj
 
 
-def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S", as_utc=False):
-    """Returns the given UTC date_time string formatted with date_format as timestamp
+def get_timestamp(date_time):
+    """Return the Unix timestamp of a UTC (or considered as if) date/datetime
+    in seconds.
 
     :param date_time: the datetime string to return as timestamp
     :type date_time: str
-    :param date_format: (optional) the date format in which date_time is given,
-                        defaults to '%Y-%m-%dT%H:%M:%S'
-    :type date_format: str
-    :param as_utc: (optional) if ``True``, consider the input ``date_time`` as UTC,
-                        defaults to ``False``
-    :type date_format: bool
     :returns: the timestamp corresponding to the date_time string in seconds
     :rtype: float
-
-    .. versionchanged::
-        2.1.0
-
-            * The optional parameter ``as_utc`` to consider the input date as UTC.
     """
-    dt = datetime.strptime(date_time, date_format)
-    if as_utc:
-        dt = dt.replace(tzinfo=timezone.utc)
+    dt = isoparse(date_time)
+    if dt.tzinfo and dt.tzinfo is not UTC:
+        raise ValueError("date_time must be a UTC time or have no timezone info")
+    if not dt.tzinfo:
+        dt = dt.replace(tzinfo=UTC)
     return dt.timestamp()
 
 

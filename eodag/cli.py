@@ -156,13 +156,15 @@ def version():
     "-s",
     "--start",
     type=click.DateTime(),
-    help="Start sensing UTC time of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
+    help="Start sensing UTC time of the product in ISO 8601 format (e.g. '1990-11-26', "
+    "'1990-11-26T14:30:10.153Z', etc.)",
 )
 @click.option(
     "-e",
     "--end",
     type=click.DateTime(),
-    help="End sensing UTC time of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
+    help="End sensing UTC time of the product in ISO 8601 format (e.g. '1990-11-26', "
+    "'1990-11-26T14:30:10.153Z', etc.)",
 )
 @click.option(
     "-c",

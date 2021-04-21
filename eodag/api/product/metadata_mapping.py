@@ -22,7 +22,8 @@ from datetime import datetime
 from string import Formatter
 
 import geojson
-from dateutil.tz import tzutc
+from dateutil.parser import isoparse
+from dateutil.tz import UTC, tzutc
 from jsonpath_ng.ext import parse
 from lxml import etree
 from lxml.etree import XPathEvalError
@@ -183,13 +184,12 @@ def format_metadata(search_param, *args, **kwargs):
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
-        def convert_utc_to_timestamp_milliseconds(value):
-            if len(value) == 10:
-                return int(
-                    1e3 * get_timestamp(value, date_format="%Y-%m-%d", as_utc=True)
-                )
-            else:
-                return int(1e3 * get_timestamp(value, as_utc=True))
+        def convert_utc_to_timestamp_milliseconds(date_time):
+            """Convert a date_time (str) to a Unix timestamp in milliseconds
+
+            "2021-04-21T18:27:19.123Z" => "1619029639123"
+            """
+            return int(1e3 * get_timestamp(date_time))
 
         @staticmethod
         def convert_to_wkt_convex_hull(value):
@@ -254,6 +254,10 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
+            """Convert a timestamp in milliseconds (int) to its ISO8601 UTC format
+
+            1619029639123 => "2021-04-21T18:27:19.123Z"
+            """
             try:
                 return (
                     datetime.fromtimestamp(timestamp / 1e3, tzutc())
@@ -264,21 +268,24 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(dt):
-            for idx, fmt in enumerate(("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S")):
-                try:
-                    return (
-                        datetime.strptime(dt, fmt)
-                        .replace(tzinfo=tzutc())
-                        .isoformat(timespec="milliseconds")
-                        .replace("+00:00", "Z")
-                    )
-                except ValueError:
-                    if idx == 1:
-                        raise
+        def convert_to_iso_utc_datetime(date_time):
+            """Convert a date_time (str) assumed UTC to its ISO 8601 representation
+
+            "2021-04-21" => "2021-04-21T00:00:00.000Z"
+            """
+            dt = isoparse(date_time)
+            if dt.tzinfo and dt.tzinfo is not UTC:
+                raise ValueError("Date must be in UTC or have no timezone info")
+            if not dt.tzinfo:
+                dt = dt.replace(tzinfo=UTC)
+            return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
         @staticmethod
         def convert_to_iso_date(datetime_string):
+            """Convert an ISO8601 datetime (str) to its ISO8601 date format
+
+            "2021-04-21T18:27:19.123Z" => "2021-04-21"
+            """
             return datetime_string[:10]
 
         @staticmethod

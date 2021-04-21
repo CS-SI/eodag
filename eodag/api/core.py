@@ -487,9 +487,11 @@ class EODataAccessGateway(object):
         :param raise_errors:  When an error occurs when searching, if this is set to
                               True, the error is raised (default: False)
         :type raise_errors: bool
-        :param start: Start sensing UTC time in iso format
+        :param start: Start sensing UTC time in ISO 8601 format (e.g. "1990-11-26",
+                      "1990-11-26T14:30:10.153Z", etc.)
         :type start: str
-        :param end: End sensing UTC time in iso format
+        :param end: End sensing UTC time in ISO 8601 format (e.g. "1990-11-26",
+                    "1990-11-26T14:30:10.153Z", etc.)
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
@@ -600,9 +602,11 @@ class EODataAccessGateway(object):
 
         :param items_per_page: The number of results requested per page (default: 20)
         :type items_per_page: int
-        :param start: Start sensing UTC time in iso format
+        :param start: Start sensing UTC time in ISO 8601 format (e.g. "1990-11-26",
+                      "1990-11-26T14:30:10.153Z", etc.)
         :type start: str
-        :param end: End sensing UTC time in iso format
+        :param end: End sensing UTC time in ISO 8601 format (e.g. "1990-11-26",
+                    "1990-11-26T14:30:10.153Z", etc.)
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
@@ -728,9 +732,11 @@ class EODataAccessGateway(object):
                                available, a default value of 50 is used instead.
                                items_per_page can also be set to any arbitrary value.
         :type items_per_page: int
-        :param start: Start sensing UTC time in iso format
+        :param start: Start sensing UTC time in ISO 8601 format (e.g. "1990-11-26",
+                      "1990-11-26T14:30:10.153Z", etc.)
         :type start: str
-        :param end: End sensing UTC time in iso format
+        :param end: End sensing UTC time in ISO 8601 format (e.g. "1990-11-26",
+                    "1990-11-26T14:30:10.153Z", etc.)
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
