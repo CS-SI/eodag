@@ -209,13 +209,13 @@ This file can be used to download products with the API:
 
    from eodag import EODataAccessGateway
    dag = EODataAccessGateway("/home/user/eodagworkspace/my_config.yml")
-   products = dag.search_all(
+   products, total_count = dag.search(
       productType="S2_MSI_L1C",
       start="2018-01-01",
       end="2018-01-31",
       geom=(1, 43, 2, 44)
    )
-   dag.download_all(products)
+   product_paths = dag.download_all(products)
 
 Or with the CLI:
 
@@ -227,6 +227,5 @@ Or with the CLI:
                 -s 2018-01-01 \
                 -e 2018-01-31 \
                 -p S2_MSI_L1C \
-                --all \
                 --storage my_search.geojson
    eodag download -f my_config.yml --search-results my_search.geojson

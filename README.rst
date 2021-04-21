@@ -91,7 +91,7 @@ Example usage for interacting with the api in your Python code:
 
     dag = EODataAccessGateway()
 
-    search_results, found_nb = dag.search(
+    search_results, total_count = dag.search(
         productType='S2_MSI_L1C',
         geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
         start='2021-01-01',

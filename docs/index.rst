@@ -55,15 +55,31 @@ downloading *Sentinel 2 Level-1C* products from any provider's catalog is as sim
 .. code-block:: python
 
    from eodag import EODataAccessGateway
-   dag = EODataAccessGateway("my_config.yml")
-   dag.set_preferred_provider("astraea_eod")  # or "earth_search", "sobloo", "peps", "mundi", "onda"...
-   s2_products = dag.search_all(
+
+   dag = EODataAccessGateway()
+
+   search_results, total_count = dag.search_all(
        productType="S2_MSI_L1C",
        start="2021-03-01",
        end="2021-03-31",
        geom={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44}
    )
-   dag.download_all(s2_products)
+
+   product_paths = dag.download_all(search_results)
+
+Or:
+
+.. code-block:: bash
+
+   eodag search \
+   --box 1 43 2 44 \
+   --start 2018-01-01 \
+   --end 2018-01-31 \
+   --cloudCover 20 \
+   --productType S2_MSI_L1C \
+   --storage my_search.geojson
+   eodag download  --search-results my_search.geojson
+
 
 License
 -------
