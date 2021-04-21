@@ -282,21 +282,20 @@ class EOProduct(object):
         return self.location
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
-        """Download the quick look image of a given EOProduct from its provider if it
+        """Download the quicklook image of a given EOProduct from its provider if it
         exists.
 
-        :param filename: (optional) the name to give to the downloaded quicklook.
+        :param filename: (optional) the name to give to the downloaded quicklook. If not
+           given, it defaults to the product's ID (without file extension).
         :type filename: str
         :param base_dir: (optional) the absolute path of the directory where to store
-                         the quicklooks in the filesystem. If it is not given, it
-                         defaults to the `quicklooks` directory under this EO product
-                         downloader's ``outputs_prefix`` config param
+           the quicklooks in the filesystem. If not given, it defaults to the
+           `quicklooks` directory under this EO product downloader's ``outputs_prefix``
+           config param (e.g. '/tmp/quicklooks/')
         :type base_dir: str
-        :param progress_callback: (optional) A method or a callable object
-                                  which takes a current size and a maximum
-                                  size as inputs and handle progress bar
-                                  creation and update to give the user a
-                                  feedback on the download progress
+        :param progress_callback: (optional) A method or a callable object which takes
+           a current size and a maximum size as inputs and handle progress bar creation
+           and update to give the user a feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
         :rtype: str
