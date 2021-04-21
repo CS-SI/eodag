@@ -883,11 +883,20 @@ class EODataAccessGateway(object):
         search_plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
         )
-        logger.info(
-            "Searching product type '%s' on provider: %s",
-            product_type,
-            search_plugin.provider,
-        )
+        if search_plugin.provider != self.get_preferred_provider()[0]:
+            logger.warning(
+                "Product type '%s' is not available with provider '%s'. "
+                "Searching it on provider '%s' instead.",
+                product_type,
+                self.get_preferred_provider()[0],
+                search_plugin.provider,
+            )
+        else:
+            logger.info(
+                "Searching product type '%s' on provider: %s",
+                product_type,
+                search_plugin.provider,
+            )
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         try:
