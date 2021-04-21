@@ -689,6 +689,7 @@ class EODataAccessGateway(object):
         end=None,
         geom=None,
         locations=None,
+        providers=None,
         **kwargs,
     ):
         """Search and return all the products matching the search criteria.
@@ -728,6 +729,11 @@ class EODataAccessGateway(object):
                           'PA' such as Panama and Pakistan in the shapefile configured with
                           name=country and attr=ISO3
         :type locations: dict
+        :param providers: (optional) List of providers used to search for products.
+                          Products found twice (same ID) are considered as duplicate,
+                          only the first one (the one retrieve with the first provider
+                          in the list) is returned.
+        :type providers: list
         :param dict kwargs: some other criteria that will be used to do the search,
                             using paramaters compatibles with the provider
         :returns: An iterator that yields page per page a collection of EO products
@@ -737,32 +743,51 @@ class EODataAccessGateway(object):
         .. versionadded::
             2.2.0
         """
-        # Prepare the search just to get the search plugin and the maximized value
-        # of items_per_page if defined for the provider used.
-        search_kwargs = self._prepare_search(
-            start=start, end=end, geom=geom, locations=locations, **kwargs
-        )
-        search_plugin = search_kwargs["search_plugin"]
-        if items_per_page is None:
-            items_per_page = search_plugin.config.pagination.get(
-                "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
-            )
-        logger.debug(
-            "Searching for all the products with provider %s and a maximum of %s "
-            "items per page.",
-            search_plugin.provider,
-            items_per_page,
-        )
         all_results = SearchResult([])
-        for page_results in self.search_iter_page(
-            items_per_page=items_per_page,
-            start=start,
-            end=end,
-            geom=geom,
-            locations=locations,
-            **kwargs,
-        ):
-            all_results.data.extend(page_results.data)
+        # Store the current provider to reset it if `providers` is used.
+        current_preferred_provider = self.get_preferred_provider()[0]
+        providers = providers if providers else []
+        for provider in providers:
+            # Set the provider if `providers` is used
+            if provider:
+                self.set_preferred_provider(provider)
+            # Prepare the search just to get the search plugin and the maximized value
+            # of items_per_page if defined for the provider used.
+            search_kwargs = self._prepare_search(
+                start=start, end=end, geom=geom, locations=locations, **kwargs
+            )
+            search_plugin = search_kwargs["search_plugin"]
+            if items_per_page is None:
+                items_per_page = search_plugin.config.pagination.get(
+                    "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+                )
+            logger.debug(
+                "Searching for all the products with provider %s and a maximum of %s "
+                "items per page.",
+                search_plugin.provider,
+                items_per_page,
+            )
+            for page_results in self.search_iter_page(
+                items_per_page=items_per_page,
+                start=start,
+                end=end,
+                geom=geom,
+                locations=locations,
+                **kwargs,
+            ):
+                # Remove products that were already found from another provider (only
+                # relevant when `providers` is used)
+                page_results = SearchResult(
+                    [
+                        product
+                        for product in page_results
+                        if product.properties["id"]
+                        not in (p.properties["id"] for p in all_results)
+                    ]
+                )
+                all_results.data.extend(page_results.data)
+        # Reset the current provider
+        self.set_preferred_provider(current_preferred_provider)
         logger.info(
             "Found %s result(s) on provider '%s'",
             len(all_results),
