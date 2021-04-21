@@ -160,22 +160,38 @@ class EODataAccessGateway(object):
         # use eodag_version to help keeping index up-to-date
         eodag_version = self.get_version()
 
-        create_index = not exists_in(index_dir)
-        # check index version
-        if not create_index:
-            if self._product_types_index is None:
-                logger.debug("Opening product types index in %s", index_dir)
-                self._product_types_index = open_dir(index_dir)
-            try:
-                self.guess_product_type(eodagVersion=eodag_version)
-            except NoMatchingProductType:
+        try:
+            create_index = not exists_in(index_dir)
+            # check index version
+            if not create_index:
+                if self._product_types_index is None:
+                    logger.debug("Opening product types index in %s", index_dir)
+                    self._product_types_index = open_dir(index_dir)
+                try:
+                    self.guess_product_type(eodagVersion=eodag_version)
+                except NoMatchingProductType:
+                    create_index = True
+                finally:
+                    if create_index:
+                        shutil.rmtree(index_dir)
+                        logger.debug(
+                            "Out-of-date product types index removed from %s", index_dir
+                        )
+        except ValueError as ve:
+            # Whoosh uses pickle internally. New versions of Python sometimes introduce
+            # a new pickle protocol (e.g. 3.4 -> 4, 3.8 -> 5), the new version not
+            # being supported by previous versions of Python (e.g. Python 3.7 doesn't
+            # support Protocol 5). In that case, we need to recreate the .index.
+            if "unsupported pickle protocol" in str(ve):
                 create_index = True
-            finally:
-                if create_index:
-                    shutil.rmtree(index_dir)
-                    logger.debug(
-                        "Out-of-date product types index removed from %s", index_dir
-                    )
+            # Unexpected error
+            else:
+                logger.error(
+                    "Error while building .index using whoosh, "
+                    "please report this issue and try to delete %s manually",
+                    index_dir,
+                )
+                raise
 
         if create_index:
             logger.debug("Creating product types index in %s", index_dir)
