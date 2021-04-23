@@ -34,11 +34,3 @@ types of plugins compose the tool:
   always with the same directory organization
 * Authentication plugins, which are used to authenticate the user on the
   external services used (JSON Token, Basic Auth, OAUTH, ...).
-
-
-EODAG-cube
-----------
-
-Data access functionalities have been split to a separate project to avoid conflicts with
-unneeded libraries when using only EODAG basic functionalities. EODAG-cube is available
-on `github <https://github.com/CS-SI/eodag-cube>`_ and `pypi <https://pypi.org/project/eodag-cube>`_.

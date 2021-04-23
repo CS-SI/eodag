@@ -1,7 +1,7 @@
 .. _api_user_guide:
 
 Python API User Guide
-==============
+=====================
 
 The Python API user guide introduces all the features offered by ``eodag`` through its API and
 explains how they should be used. Each page is a `Jupyter notebook <https://jupyter.org/>`_ that can be viewed online,

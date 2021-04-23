@@ -16,3 +16,4 @@ it efficiently as quickly as possible.
    product_types
    product_storage_status
    configure
+   side_projects

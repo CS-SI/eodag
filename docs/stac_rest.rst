@@ -105,3 +105,41 @@ And browse http://127.0.0.1:5001:
 .. image:: _static/stac_browser_example.png
    :width: 800
    :alt: STAC browser example
+
+Example
+-------
+
+.. code-block:: bash
+
+    # list available product types for ``peps`` provider:
+    $ curl "http://127.0.0.1:5000/collections?provider=peps" | jq ".collections[].id"
+    "S1_SAR_GRD"
+    "S1_SAR_OCN"
+    "S1_SAR_SLC"
+    "S2_MSI_L1C"
+    "S2_MSI_L2A"
+    "S3_EFR"
+    "S3_ERR"
+    "S3_LAN"
+    "S3_OLCI_L2LFR"
+    "S3_OLCI_L2LRR"
+    "S3_SLSTR_L1RBT"
+    "S3_SLSTR_L2LST"
+
+    # search for items
+    $ curl "http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25" \
+    | jq ".context.matched"
+    6
+
+    # browse for items
+    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    | jq ".context.matched"
+    9
+
+    # get download link
+    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    | jq ".features[0].assets.downloadLink.href"
+    "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+
+    # download
+    $ wget "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
