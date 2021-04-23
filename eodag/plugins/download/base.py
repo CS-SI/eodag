@@ -314,6 +314,9 @@ class Download(PluginTopic):
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
         :rtype: list
         """
+        # Products are going to be removed one by one from this sequence once
+        # downloaded.
+        products = products[:]
         paths = []
         # initiate retry loop
         start_time = datetime.now()
