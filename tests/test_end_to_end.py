@@ -18,15 +18,22 @@
 
 import datetime
 import glob
+import hashlib
 import multiprocessing
 import os
 import shutil
+import time
 import unittest
 from pathlib import Path
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
-from tests.context import AuthenticationError, EODataAccessGateway
+from tests.context import (
+    AuthenticationError,
+    EODataAccessGateway,
+    SearchResult,
+    uri_to_path,
+)
 
 THEIA_SEARCH_ARGS = [
     "theia",
@@ -148,8 +155,8 @@ class EndToEndBase(unittest.TestCase):
         """
         search_criteria = {
             "productType": product_type,
-            "startTimeFromAscendingNode": start,
-            "completionTimeFromAscendingNode": end,
+            "start": start,
+            "end": end,
             "geom": geom,
         }
         if items_per_page:
@@ -190,8 +197,8 @@ class EndToEndBase(unittest.TestCase):
         - Return all the products
         """
         search_criteria = {
-            "startTimeFromAscendingNode": start,
-            "completionTimeFromAscendingNode": end,
+            "start": start,
+            "end": end,
             "geom": geom,
         }
         self.eodag.set_preferred_provider(provider)
@@ -428,6 +435,196 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertGreater(len(results), 10)
 
 
+class TestEODagEndToEndComplete(unittest.TestCase):
+    """Make real and complete test cases that search for products, download them and
+    extract them. There should be just a tiny number of these tests which can be quite
+    long to run.
+
+    There must be a user conf file in the test resources folder named user_conf.yml
+    """
+
+    @classmethod
+    def setUpClass(cls):
+
+        # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
+        tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
+        if not os.path.isfile(tests_user_conf):
+            unittest.SkipTest("Missing user conf file with credentials")
+        cls.eodag = EODataAccessGateway(
+            user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
+        )
+
+        # create TESTS_DOWNLOAD_PATH is not exists
+        if not os.path.exists(TESTS_DOWNLOAD_PATH):
+            os.makedirs(TESTS_DOWNLOAD_PATH)
+
+        for provider, conf in cls.eodag.providers_config.items():
+            # Change download directory to TESTS_DOWNLOAD_PATH for tests
+            if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
+                conf.download.outputs_prefix = TESTS_DOWNLOAD_PATH
+            elif hasattr(conf, "api") and hasattr(conf.api, "outputs_prefix"):
+                conf.api.outputs_prefix = TESTS_DOWNLOAD_PATH
+            else:
+                # no outputs_prefix found for provider
+                pass
+            # Force all providers implementing RestoSearch and defining how to retrieve
+            # products by specifying the
+            # location scheme to use https, enabling actual downloading of the product
+            if (
+                getattr(getattr(conf, "search", {}), "product_location_scheme", "https")
+                == "file"
+            ):
+                conf.search.product_location_scheme = "https"
+
+    def tearDown(self):
+        """Clear the test directory"""
+        for p in Path(TESTS_DOWNLOAD_PATH).glob("**/*"):
+            try:
+                os.remove(p)
+            except OSError:
+                shutil.rmtree(p)
+
+    def test_end_to_end_complete_peps(self):
+        """Complete end-to-end test with PEPS for download and download_all"""
+        # Search for products that are ONLINE and as small as possible
+        today = datetime.date.today()
+        month_span = datetime.timedelta(weeks=4)
+        search_results, _ = self.eodag.search(
+            productType="S2_MSI_L1C",
+            start=(today - month_span).isoformat(),
+            end=today.isoformat(),
+            geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
+            items_per_page=100,
+        )
+        prods_sorted_by_size = SearchResult(
+            sorted(search_results, key=lambda p: p.properties["resourceSize"])
+        )
+        prods_online = [
+            p for p in prods_sorted_by_size if p.properties["storageStatus"] == "ONLINE"
+        ]
+        if len(prods_online) < 2:
+            unittest.skip(
+                "Not enough ONLINE products found, update the search criteria."
+            )
+
+        # Retrieve one product to work with
+        product = prods_online[0]
+
+        prev_remote_location = product.remote_location
+        prev_location = product.location
+        # The expected product's archive filename is based on the product's title
+        expected_product_name = f"{product.properties['title']}.zip"
+
+        # Download the product, but DON'T extract it
+        archive_file_path = self.eodag.download(product, extract=False)
+
+        # The archive must have been downloaded
+        self.assertTrue(os.path.isfile(archive_file_path))
+        # Its name must be the "{product_title}.zip"
+        self.assertIn(
+            expected_product_name, os.listdir(product.downloader.config.outputs_prefix)
+        )
+        # Its size should be >= 5 KB
+        archive_size = os.stat(archive_file_path).st_size
+        self.assertGreaterEqual(archive_size, 5 * 2 ** 10)
+        # The product remote_location should be the same
+        self.assertEqual(prev_remote_location, product.remote_location)
+        # However its location should have been update
+        self.assertNotEqual(prev_location, product.location)
+        # The location must follow the file URI scheme
+        self.assertTrue(product.location.startswith("file://"))
+        # That points to the downloaded archive
+        self.assertEqual(uri_to_path(product.location), archive_file_path)
+        # A .downloaded folder must have been created
+        record_dir = os.path.join(TESTS_DOWNLOAD_PATH, ".downloaded")
+        self.assertTrue(os.path.isdir(record_dir))
+        # It must contain a file per product downloade, whose name is
+        # the MD5 hash of the product's remote location
+        expected_hash = hashlib.md5(product.remote_location.encode("utf-8")).hexdigest()
+        record_file = os.path.join(record_dir, expected_hash)
+        self.assertTrue(os.path.isfile(record_file))
+        # Its content must be the product's remote location
+        record_content = Path(record_file).read_text()
+        self.assertEqual(record_content, product.remote_location)
+
+        # The product should not be downloaded again if the download method
+        # is executed again
+        previous_archive_file_path = archive_file_path
+        previous_location = product.location
+        start_time = time.time()
+        archive_file_path = self.eodag.download(product, extract=False)
+        end_time = time.time()
+        self.assertLess(end_time - start_time, 2)  # Should be really fast (< 2s)
+        # The paths should be the same as before
+        self.assertEqual(archive_file_path, previous_archive_file_path)
+        self.assertEqual(product.location, previous_location)
+
+        # If we emulate that the product has just been found, it should not
+        # be downloaded again since the record file is still present.
+        product.location = product.remote_location
+        # Pretty much the same checks as with the previous step
+        previous_archive_file_path = archive_file_path
+        start_time = time.time()
+        archive_file_path = self.eodag.download(product, extract=False)
+        end_time = time.time()
+        self.assertLess(end_time - start_time, 2)  # Should be really fast (< 2s)
+        # The returned path should be the same as before
+        self.assertEqual(archive_file_path, previous_archive_file_path)
+        self.assertEqual(uri_to_path(product.location), archive_file_path)
+
+        # Remove the archive
+        os.remove(archive_file_path)
+
+        # Now, the archive is removed but its associated record file
+        # still exists. Downloading the product again should really
+        # download it, if its location points to the remote location.
+        # The product should be automatically extracted.
+        product.location = product.remote_location
+        product_dir_path = self.eodag.download(product)
+
+        # Its size should be >= 5 KB
+        downloaded_size = sum(
+            f.stat().st_size for f in Path(product_dir_path).glob("**/*") if f.is_file()
+        )
+        self.assertGreaterEqual(downloaded_size, 5 * 2 ** 10)
+        # The product remote_location should be the same
+        self.assertEqual(prev_remote_location, product.remote_location)
+        # However its location should have been update
+        self.assertNotEqual(prev_location, product.location)
+        # The location must follow the file URI scheme
+        self.assertTrue(product.location.startswith("file://"))
+        # The location must point to a SAFE directory
+        self.assertTrue(product.location.endswith("SAFE"))
+        # The path must point to a SAFE directory
+        self.assertTrue(os.path.isdir(product_dir_path))
+        self.assertTrue(product_dir_path.endswith("SAFE"))
+
+        # Remove the archive and extracted product and reset the product's location
+        os.remove(archive_file_path)
+        shutil.rmtree(Path(product_dir_path).parent)
+        product.location = product.remote_location
+
+        # Now let's check download_all
+        products = prods_sorted_by_size[:2]
+        # Pass a copy because download_all empties the list
+        archive_paths = self.eodag.download_all(products[:], extract=False)
+
+        # The returned paths must point to the downloaded archives
+        # Each product's location must be a URI path to the archive
+        for product, archive_path in zip(products, archive_paths):
+            self.assertTrue(os.path.isfile(archive_path))
+            self.assertEqual(uri_to_path(product.location), archive_path)
+
+        # Downloading the product again should not download them, since
+        # they are all already there.
+        prev_archive_paths = archive_paths
+        start_time = time.time()
+        archive_paths = self.eodag.download_all(products[:], extract=False)
+        end_time = time.time()
+        self.assertLess(end_time - start_time, 2)  # Should be really fast (< 2s)
+        self.assertEqual(archive_paths, prev_archive_paths)
+
+
 # @unittest.skip("skip auto run")
 class TestEODagEndToEndWrongCredentials(EndToEndBase):
     """Make real case tests with wrong credentials. This assumes the existence of a
@@ -462,7 +659,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
-                )
+                ),
             )
 
     def test_end_to_end_good_apikey_wrong_credentials_aws_eos(self):
@@ -489,7 +686,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
-                )
+                ),
             )
             self.assertGreater(len(results), 0)
             one_product = results[0]
@@ -525,5 +722,5 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(["productType", "start", "end", "geom"], USGS_SEARCH_ARGS[1:])
-                )
+                ),
             )

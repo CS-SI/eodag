@@ -29,7 +29,7 @@ from requests import HTTPError
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.http import HTTPDownload
-from eodag.utils import get_progress_callback, urljoin
+from eodag.utils import get_progress_callback, path_to_uri, urljoin
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -158,6 +158,7 @@ class S3RestDownload(AwsDownload):
         url_hash = hashlib.md5(product.remote_location.encode("utf-8")).hexdigest()
         record_filename = os.path.join(download_records_dir, url_hash)
         if os.path.isfile(record_filename) and os.path.exists(product_local_path):
+            product.location = path_to_uri(product_local_path)
             return product_local_path
         # Remove the record file if product_local_path is absent (e.g. it was deleted while record wasn't)
         elif os.path.isfile(record_filename):
@@ -215,4 +216,5 @@ class S3RestDownload(AwsDownload):
             fh.write(product.remote_location)
         logger.debug("Download recorded in %s", record_filename)
 
+        product.location = path_to_uri(product_local_path)
         return product_local_path
