@@ -44,10 +44,12 @@ class Download(PluginTopic):
     """Base Download Plugin.
 
     A Download plugin has two download methods that it must implement:
+
     - ``download``: download a single ``EOProduct``
     - ``download_all``: download multiple products from a ``SearchResult``
 
     They must:
+
     - download data in the ``outputs_prefix`` folder defined in the plugin's
       configuration or passed through kwargs
     - extract products from their archive (if relevant) if ``extract`` is set to True

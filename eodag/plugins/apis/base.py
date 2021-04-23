@@ -27,11 +27,13 @@ class Api(PluginTopic):
     """Plugins API Base plugin
 
     An Api plugin has three download methods that it must implement:
+
     - ``query``: search for products
     - ``download``: download a single ``EOProduct``
     - ``download_all``: download multiple products from a ``SearchResult``
 
     The download methods must:
+
     - download data in the ``outputs_prefix`` folder defined in the plugin's
       configuration or passed through kwargs
     - extract products from their archive (if relevant) if ``extract`` is set to True
