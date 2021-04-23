@@ -90,23 +90,18 @@ class TestEOProduct(EODagTestCase):
             self.provider, self.eoproduct_props, productType=self.product_type
         )
         geo_interface = geojson.loads(geojson.dumps(product))
-        self.assertDictContainsSubset(
-            {
-                "type": "Feature",
-                "geometry": self._tuples_to_lists(geometry.mapping(self.geometry)),
-            },
-            geo_interface,
+        self.assertEqual(geo_interface["type"], "Feature")
+        self.assertEqual(
+            geo_interface["geometry"],
+            self._tuples_to_lists(geometry.mapping(self.geometry)),
         )
-        self.assertDictContainsSubset(
-            {
-                "eodag_provider": self.provider,
-                "eodag_search_intersection": self._tuples_to_lists(
-                    geometry.mapping(product.search_intersection)
-                ),
-                "eodag_product_type": self.product_type,
-            },
-            geo_interface["properties"],
+        properties = geo_interface["properties"]
+        self.assertEqual(properties["eodag_provider"], self.provider)
+        self.assertEqual(
+            properties["eodag_search_intersection"],
+            self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
+        self.assertEqual(properties["eodag_product_type"], self.product_type)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
