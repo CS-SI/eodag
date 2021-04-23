@@ -19,7 +19,7 @@
     :target: https://github.com/CS-SI/eodag/issues
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro.md
+    :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro_notebooks.ipynb
 
 |
 
