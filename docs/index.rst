@@ -58,7 +58,7 @@ downloading *Sentinel 2 Level-1C* products from any provider's catalog is as sim
 
    dag = EODataAccessGateway()
 
-   search_results, total_count = dag.search_all(
+   search_results, total_count = dag.search(
        productType="S2_MSI_L1C",
        start="2021-03-01",
        end="2021-03-31",
@@ -71,14 +71,8 @@ Or:
 
 .. code-block:: bash
 
-   eodag search \
-   --box 1 43 2 44 \
-   --start 2018-01-01 \
-   --end 2018-01-31 \
-   --cloudCover 20 \
-   --productType S2_MSI_L1C \
-   --storage my_search.geojson
-   eodag download  --search-results my_search.geojson
+   eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
+   eodag download  --search-results search_results.geojson
 
 
 License

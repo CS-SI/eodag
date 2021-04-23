@@ -8,7 +8,7 @@ Configuration in ``eodag`` plays an important role:
 * To provide credentials (e.g. login/password, API key, etc.) required to download (and search sometimes) products with a provider
 * To specify the search priority of a provider
 * To indicate where to download products, whether to extract them or not, etc.
-* To dynamically update a provider or a new one
+* To update a provider or add a new one
 
 This page describes how to configure `eodag` both for interacting with its API or its command line interface.
 
@@ -30,7 +30,7 @@ This YAML file contains a template that shows how to complete the configuration 
 more providers. It allows to either **override** an existing setting or **add** a missing
 one (e.g. credentials). *PEPS*'s configuration template is shown below:
 
-.. code-block:
+.. code-block:: yaml
 
    peps:
        priority: # Lower value means lower priority (Default: 1)
@@ -114,7 +114,7 @@ Each configuration parameter can be set with an environment variable.
 CLI configuration
 ^^^^^^^^^^^^^^^^^
 
-The commands that require a configuration file (e.g. ``download`` ) have an option
+The command options that require a configuration file (e.g. ``eodag download`` ) have an argument
 (usually ``-f``) to provide the path to a YAML configuration file. If not specified,
 the default configuration filepath is used. Settings defined by environment variables
 are also taken into account.
@@ -123,7 +123,7 @@ API: Dynamic configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``eodag`` 's configuration can be altered directly from using Python. See this
-`dedicated page <../notebooks/api_uder_guide/3_configuration.ipynb>`_ in the API user guide.
+`dedicated page <../notebooks/api_uder_guide/3_configuration.ipynb>`_ in the Python API user guide.
 
 Priority setting
 ^^^^^^^^^^^^^^^^
@@ -179,7 +179,7 @@ Most, if not all of them, require credentials to be set to download products.
 Example
 ^^^^^^^
 
-The following content can be saved to a file at ``/home/user/eodagworkspace/my_config.yml``.
+Edit your configuration file ``$HOME/.config/eodag/eodag.yml`` with the following content:
 
 .. code-block:: yaml
 
@@ -208,7 +208,7 @@ This file can be used to download products with the API:
 .. code-block:: python
 
    from eodag import EODataAccessGateway
-   dag = EODataAccessGateway("/home/user/eodagworkspace/my_config.yml")
+   dag = EODataAccessGateway()
    products, total_count = dag.search(
       productType="S2_MSI_L1C",
       start="2018-01-01",
@@ -222,8 +222,7 @@ Or with the CLI:
 .. code-block:: console
 
    cd /home/user/eodagworkspace/
-   eodag search -f my_config.yml \
-                -b 1 43 2 44 \
+   eodag search -b 1 43 2 44 \
                 -s 2018-01-01 \
                 -e 2018-01-31 \
                 -p S2_MSI_L1C \

@@ -15,4 +15,4 @@ its different values mapped to these 3 unique status:
 * `OFFLINE`: the product is not available for download, but can eventually be ordered.
 
 ``eodag`` is able to order `OFFLINE` products and retry downloading them for a while. This
-is described in more details in the `API user guide <../notebooks/api_user_guide/7_download.ipynb>`_.
+is described in more details in the `Python API user guide <../notebooks/api_user_guide/7_download.ipynb>`_.

@@ -103,7 +103,7 @@ Example usage for interacting with the api in your Python code:
 
 This will search for Sentinel 2 level-1C products on the default provider and return the found products first page and
 an estimated total number of products matching the search criteria. And then it will download these products. Please
-check the `API User Guide <https://eodag.readthedocs.io/en/stable/api_user_guide.html>`_ for more details.
+check the `Python API User Guide <https://eodag.readthedocs.io/en/stable/api_user_guide.html>`_ for more details.
 
 STAC REST API
 -------------
@@ -185,7 +185,7 @@ And browse http://127.0.0.1:5001:
    :width: 600px
 
 
-For more information, see `STAC REST interface usage <https://eodag.readthedocs.io/en/stable/stac_rest.html>`_.
+For more information, see `STAC REST API usage <https://eodag.readthedocs.io/en/stable/stac_rest.html>`_.
 
 Command line interface
 ----------------------

@@ -136,8 +136,8 @@ def format_metadata(search_param, *args, **kwargs):
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
           values matching a regex
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
-        - ``fake_l2a_title_from_l1c``
-        - ``s2msil2a_title_to_aws_productinfo``
+        - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
+        - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
 
     :param search_param: The string to be formatted
     :type search_param: str

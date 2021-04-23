@@ -1,9 +1,9 @@
 .. _api_user_guide:
 
-API User Guide
+Python API User Guide
 ==============
 
-The API user guide introduces all the features offered by ``eodag`` through its API and
+The Python API user guide introduces all the features offered by ``eodag`` through its API and
 explains how they should be used. Each page is a `Jupyter notebook <https://jupyter.org/>`_ that can be viewed online,
 run online thanks to `Binder <https://mybinder.readthedocs.io/en/latest/>`_,
 or run locally after being downloaded (see how to :ref:`install_notebooks`).

@@ -1,7 +1,7 @@
 .. _stac_rest:
 
-STAC REST Interface
-===================
+STAC REST API
+=============
 
 .. image:: _static/eodag_stac_server.png
    :width: 800

@@ -1,10 +1,10 @@
 .. _api_reference:
 
-API Reference
+Python API Reference
 =============
 
 
-The API Reference provides an overview of all public objects, functions and methods implemented in eodag.
+The Python API Reference provides an overview of all public objects, functions and methods implemented in eodag.
 
 .. toctree::
    :maxdepth: 2
