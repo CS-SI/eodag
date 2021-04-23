@@ -874,13 +874,13 @@ def _deprecated(reason="", version=None):
 
         @functools.wraps(callable)
         def wrapper(*args, **kwargs):
-            warnings.simplefilter("always", DeprecationWarning)
-            warnings.warn(
-                f"Call to deprecated {ctype} {cname} {reason_}{version_}",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            warnings.simplefilter("default", DeprecationWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", DeprecationWarning)
+                warnings.warn(
+                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
             return callable(*args, **kwargs)
 
         return wrapper
