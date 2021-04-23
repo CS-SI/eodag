@@ -32,9 +32,8 @@ class TestSearchResult(unittest.TestCase):
     def test_search_result_geo_interface(self):
         """SearchResult must provide a FeatureCollection geo-interface"""
         geo_interface = geojson.loads(geojson.dumps(self.search_result))
-        self.assertDictContainsSubset(
-            {"type": "FeatureCollection", "features": []}, geo_interface
-        )
+        self.assertEqual(geo_interface["type"], "FeatureCollection")
+        self.assertEqual(geo_interface["features"], [])
 
     def test_search_result_is_list_like(self):
         """SearchResult must provide a list interface"""

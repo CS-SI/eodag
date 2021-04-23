@@ -47,10 +47,8 @@ class TestStacReader(unittest.TestCase):
         items = fetch_stac_items(self.child_cat)
         self.assertIsInstance(items, list)
         self.assertEqual(len(items), self.child_cat_len)
-        self.assertDictContainsSubset(
-            {"type": "Feature", "collection": "S2_MSI_L1C"},
-            items[0],
-        )
+        self.assertEqual(items[0]["type"], "Feature")
+        self.assertEqual(items[0]["collection"], "S2_MSI_L1C")
 
     def test_stac_reader_fetch_root_not_recursive(self):
         """fetch_stac_items from root must provide an empty list when no recursive"""
@@ -62,23 +60,20 @@ class TestStacReader(unittest.TestCase):
         items = fetch_stac_items(self.root_cat, recursive=True)
         self.assertEqual(len(items), self.root_cat_len)
         for item in items:
-            self.assertDictContainsSubset(
-                {"type": "Feature", "collection": "S2_MSI_L1C"}, item
-            )
+            self.assertEqual(item["type"], "Feature")
+            self.assertEqual(item["collection"], "S2_MSI_L1C")
 
     def test_stac_reader_fetch_item(self):
         """fetch_stac_items from an item must return it"""
         item = fetch_stac_items(self.item)
         self.assertIsInstance(item, list)
         self.assertEqual(len(item), 1)
-        self.assertDictContainsSubset(
-            {"type": "Feature", "collection": "S2_MSI_L1C"},
-            item[0],
-        )
+        self.assertEqual(item[0]["type"], "Feature")
+        self.assertEqual(item[0]["collection"], "S2_MSI_L1C")
 
     def test_stact_reader_fetch_singlefile_catalog(self):
         """fetch_stact_items must return all the items from a single file catalog"""
         items = fetch_stac_items(self.singlefile_cat)
         self.assertIsInstance(items, list)
         self.assertEqual(len(items), self.singlefile_cat_len)
-        self.assertDictContainsSubset({"type": "Feature"}, items[0])
+        self.assertEqual(items[0]["type"], "Feature")

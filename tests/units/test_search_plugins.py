@@ -106,8 +106,8 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
-        self.assertEquals(estimate, self.sobloo_products_count)
-        self.assertEquals(len(products), number_of_products)
+        self.assertEqual(estimate, self.sobloo_products_count)
+        self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
     @mock.patch(
@@ -144,7 +144,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             exception_message=mock.ANY,
         )
         self.assertIsNone(estimate)
-        self.assertEquals(len(products), number_of_products)
+        self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
 
@@ -196,8 +196,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             exception_message=mock.ANY,
         )
 
-        self.assertEquals(estimate, self.awseos_products_count)
-        self.assertEquals(len(products), number_of_products)
+        self.assertEqual(estimate, self.awseos_products_count)
+        self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
     @mock.patch(
@@ -232,7 +232,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
 
         self.assertIsNone(estimate)
-        self.assertEquals(len(products), number_of_products)
+        self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
 
@@ -294,6 +294,6 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             exception_message=mock.ANY,
         )
 
-        self.assertEquals(estimate, self.onda_products_count)
-        self.assertEquals(len(products), number_of_products)
+        self.assertEqual(estimate, self.onda_products_count)
+        self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
