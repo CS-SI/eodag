@@ -167,16 +167,9 @@ class EODataAccessGateway(object):
                 if self._product_types_index is None:
                     logger.debug("Opening product types index in %s", index_dir)
                     self._product_types_index = open_dir(index_dir)
-                try:
-                    self.guess_product_type(eodagVersion=eodag_version)
-                except NoMatchingProductType:
-                    create_index = True
-                finally:
-                    if create_index:
-                        shutil.rmtree(index_dir)
-                        logger.debug(
-                            "Out-of-date product types index removed from %s", index_dir
-                        )
+                self.guess_product_type(eodagVersion=eodag_version)
+        except NoMatchingProductType:
+            create_index = True
         except ValueError as ve:
             # Whoosh uses pickle internally. New versions of Python sometimes introduce
             # a new pickle protocol (e.g. 3.4 -> 4, 3.8 -> 5), the new version not
@@ -192,6 +185,12 @@ class EODataAccessGateway(object):
                     index_dir,
                 )
                 raise
+        finally:
+            if create_index:
+                shutil.rmtree(index_dir)
+                logger.debug(
+                    "Out-of-date product types index removed from %s", index_dir
+                )
 
         if create_index:
             logger.debug("Creating product types index in %s", index_dir)
