@@ -360,6 +360,8 @@ class EODataAccessGateway(object):
             if provider in self.providers_config:
                 provider_supported_products = self.providers_config[provider].products
                 for product_type_id in provider_supported_products:
+                    if product_type_id == GENERIC_PRODUCT_TYPE:
+                        continue
                     product_type = dict(
                         ID=product_type_id, **self.product_types_config[product_type_id]
                     )
