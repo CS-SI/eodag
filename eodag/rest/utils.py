@@ -463,7 +463,7 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
 
     product_path = eodag_api.download(product)
 
-    return product_path.replace("file://", "")
+    return product_path
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None):

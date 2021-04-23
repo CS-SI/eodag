@@ -295,7 +295,6 @@ class TestEOProduct(EODagTestCase):
         self.requests_http_get.assert_called_with(
             self.download_url, stream=True, auth=None, params={}
         )
-        product_file_path = product_file_path[len("file://") :]
         download_records_dir = pathlib.Path(product_file_path).parent / ".downloaded"
         # A .downloaded folder should be created, including a text file that
         # lists the downloaded product by their url
@@ -332,7 +331,7 @@ class TestEOProduct(EODagTestCase):
 
         # Download
         product_dir_path = product.download()
-        product_dir_path = pathlib.Path(product_dir_path[len("file://") :])
+        product_dir_path = pathlib.Path(product_dir_path)
         # The returned path must be a directory.
         self.assertTrue(product_dir_path.is_dir())
         # Check that the extracted dir has at least one file, there are more
@@ -379,7 +378,7 @@ class TestEOProduct(EODagTestCase):
             self.download_url, stream=True, auth=None, params={"fakeparam": "dummy"}
         )
         # Check that "outputs_prefix" is respected.
-        product_dir_path = pathlib.Path(product_dir_path[len("file://") :])
+        product_dir_path = pathlib.Path(product_dir_path)
         self.assertEqual(product_dir_path.parent.name, output_dir_name)
         # We've asked to extract the product so there should be a directory.
         self.assertTrue(product_dir_path.is_dir())

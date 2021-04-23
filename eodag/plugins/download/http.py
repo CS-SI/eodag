@@ -32,7 +32,7 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
-from eodag.utils import get_progress_callback
+from eodag.utils import get_progress_callback, path_to_uri
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -70,6 +70,8 @@ class HTTPDownload(Download):
         """
         fs_path, record_filename = self._prepare_download(product, **kwargs)
         if not fs_path or not record_filename:
+            if fs_path:
+                product.location = path_to_uri(fs_path)
             return fs_path
 
         # progress bar init
@@ -80,7 +82,7 @@ class HTTPDownload(Download):
 
         # download assets if exist instead of remote_location
         try:
-            return self._download_assets(
+            fs_path = self._download_assets(
                 product,
                 fs_path.replace(".zip", ""),
                 record_filename,
@@ -88,6 +90,8 @@ class HTTPDownload(Download):
                 progress_callback,
                 **kwargs
             )
+            product.location = path_to_uri(fs_path)
+            return fs_path
         except NotAvailableError:
             pass
 
@@ -218,8 +222,11 @@ class HTTPDownload(Download):
                                 )
                                 new_fs_path = fs_path[: fs_path.index(".zip")]
                                 shutil.move(fs_path, new_fs_path)
+                                product.location = path_to_uri(new_fs_path)
                                 return new_fs_path
-                            return self._finalize(fs_path, **kwargs)
+                            product_path = self._finalize(fs_path, **kwargs)
+                            product.location = path_to_uri(product_path)
+                            return product_path
 
                 except NotAvailableError as e:
                     if not getattr(self.config, "order_enabled", False):

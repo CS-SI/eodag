@@ -35,6 +35,7 @@ import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from itertools import repeat, starmap
+from pathlib import Path
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -43,8 +44,10 @@ from urllib.parse import (  # noqa; noqa
     urlencode,
     urljoin,
     urlparse,
+    urlsplit,
     urlunparse,
 )
+from urllib.request import url2pathname
 
 import click
 import shapefile
@@ -201,6 +204,24 @@ def strip_accents(s):
     return "".join(
         c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
     )
+
+
+def uri_to_path(uri):
+    """
+    Convert a file URI (e.g. 'file:///tmp') to a local path (e.g. '/tmp')
+    """
+    if not uri.startswith("file"):
+        raise ValueError("A file URI must be provided (e.g. 'file:///tmp'")
+    _, _, path, _, _ = urlsplit(uri)
+    # On Windows urlsplit returns the path starting with a slash ('/C:/User)
+    path = url2pathname(path)
+    # url2pathname removes it
+    return path
+
+
+def path_to_uri(path):
+    """Convert a local absolute path to a file URI"""
+    return Path(path).as_uri()
 
 
 def mutate_dict_in_place(func, mapping):

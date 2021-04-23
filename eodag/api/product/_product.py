@@ -240,6 +240,11 @@ class EOProduct(object):
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
+
+        .. versionchanged:: 2.3.0
+
+           Returns a file system path instead of a file URI ('/tmp' instead of
+           'file:///tmp').
         """
         if progress_callback is None:
             progress_callback = ProgressCallback()
@@ -254,7 +259,7 @@ class EOProduct(object):
             if self.downloader_auth is not None
             else self.downloader_auth
         )
-        fs_location = self.downloader.download(
+        fs_path = self.downloader.download(
             self,
             auth=auth,
             progress_callback=progress_callback,
@@ -262,13 +267,8 @@ class EOProduct(object):
             timeout=timeout,
             **kwargs
         )
-        if fs_location is None:
-            raise DownloadError(
-                "Invalid file location returned by download process: '{}'".format(
-                    fs_location
-                )
-            )
-        self.location = "file://{}".format(fs_location)
+        if fs_path is None:
+            raise DownloadError("Missing file location returned by download process")
         logger.debug(
             "Product location updated from '%s' to '%s'",
             self.remote_location,
@@ -279,7 +279,7 @@ class EOProduct(object):
             "'remote_location' property: %s",
             self.remote_location,
         )
-        return self.location
+        return fs_path
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
         """Download the quick look image of a given EOProduct from its provider if it

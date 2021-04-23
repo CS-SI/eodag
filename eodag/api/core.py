@@ -47,6 +47,7 @@ from eodag.utils import (
     _deprecated,
     get_geometry_from_various,
     makedirs,
+    uri_to_path,
 )
 from eodag.utils.exceptions import (
     NoMatchingProductType,
@@ -1281,8 +1282,10 @@ class EODataAccessGateway(object):
         This is an alias to the method of the same name on
         :class:`~eodag.api.product.EOProduct`, but it performs some additional
         checks like verifying that a downloader and authenticator are registered
-        for the product before trying to download it. If the metadata mapping for
-        `downloadLink` is set to something that can be interpreted as a link on a
+        for the product before trying to download it.
+
+        If the metadata mapping for `downloadLink` is set to something that can be
+        interpreted as a link on a
         local filesystem, the download is skipped (by now, only a link starting
         with `file://` is supported). Therefore, any user that knows how to extract
         product location from product metadata on a provider can override the
@@ -1316,10 +1319,15 @@ class EODataAccessGateway(object):
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
+
+        .. versionchanged:: 2.3.0
+
+           Returns a file system path instead of a file URI ('/tmp' instead of
+           'file:///tmp').
         """
-        if product.location.startswith("file"):
+        if product.location.startswith("file://"):
             logger.info("Local product detected. Download skipped")
-            return product.location
+            return uri_to_path(product.location)
         if product.downloader is None:
             auth = product.downloader_auth
             if auth is None:

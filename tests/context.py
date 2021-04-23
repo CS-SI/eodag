@@ -44,7 +44,13 @@ from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.rest import server as eodag_http_server
 from eodag.rest.utils import eodag_api, get_date
-from eodag.utils import get_geometry_from_various, get_timestamp, makedirs
+from eodag.utils import (
+    get_geometry_from_various,
+    get_timestamp,
+    makedirs,
+    path_to_uri,
+    uri_to_path,
+)
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,
