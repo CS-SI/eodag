@@ -190,57 +190,47 @@ For more information, see `STAC REST API usage <https://eodag.readthedocs.io/en/
 Command line interface
 ----------------------
 
-Create a configuration file from the template `user_conf_template.yml` provided with the repository, filling
-in your credentials as expected by each provider (note that this configuration file is required by now. However, this
-will change in the future).
+Start playing with the CLI:
 
-Then you can start playing with it:
+- To search for some products:
 
-* To search for products and crunch the results of the search::
+  .. code-block::bash
+     
+     eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
 
-        eodag search \
-        --conf my_conf.yml \
-        --box 1 43 2 44 \
-        --start 2018-01-01 \
-        --end 2018-01-31 \
-        --cloudCover 20 \
-        --productType S2_MSI_L1C \
-        --all \
-        --storage my_search.geojson
+  The request above searches for ``S2_MSI_L1C`` product types in a given bounding box, in March 2021. It saves the results in a GeoJSON file (search_results.geojson by default).
 
-The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches internally all
-the products that match these criteria. Without ``--all``, it would only fetch the products found on the first result page.
-It finally saves the results in a GeoJSON file.
+  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options:
 
-You can pass arguments to a cruncher on the command line by doing this (example with using `FilterOverlap` cruncher
-which takes `minimum_overlap` as argument)::
+  .. code-block::bash
+     
+     eodag search --help
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C --all \
-                     --cruncher FilterOverlap \
-                     --cruncher-args FilterOverlap minimum_overlap 10
+- To download the result of the previous call to search:
 
-The request above means : "Give me all the products of type `S2_MSI_L1C`, use ``FilterOverlap`` to keep only those products
-that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (``minimum_overlap``) of the surface
-of this bbox"
+  .. code-block::bash
+     
+     eodag download --search-results search_results.geojson
 
-* To download the result of a previous call to ``search``::
+- To list all available product types and supported providers:
 
-        eodag download --conf my_conf.yml --search-results my_search.geojson
+  .. code-block::bash
 
-* To list all available product types and supported providers::
+     eodag list
 
-        eodag list
+- To list available product types on a specified supported provider:
 
-* To list available product types on a specified supported provider::
+  .. code-block::bash
 
-        eodag list -p sobloo
+     eodag list -p sobloo
 
-* To see all the available options and commands::
+- To see all the available options and commands:
 
-        eodag --help
+  .. code-block::bash
 
-* To print log messages, add ``-v`` to `eodag` master command. e.g. ``eodag -v list``. The more ``v`` given (up to 3), the more
-  verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
+     eodag --help
+
+- To print log messages, add ``-v`` to eodag master command. e.g. ``eodag -v list``. The more ``v`` given (up to 3), the more verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
 
 
 Contribute
