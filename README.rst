@@ -269,13 +269,6 @@ Authors
 
 EODAG has been created by `CS GROUP - France <https://www.csgroup.eu/>`_.
 
-Contributors
-============
-
-New contributors to the project are listed below, we hope to see it growing fast!
-
-* @apparell
-* @ahuarte47
 
 Credits
 =======
