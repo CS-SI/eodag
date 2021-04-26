@@ -118,7 +118,7 @@ def format_metadata(search_param, *args, **kwargs):
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
-        - ``utc_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
+        - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
           milliseconds
         - ``to_wkt``: converts a geometry to its well known text representation
         - ``to_iso_utc_datetime_from_milliseconds``: converts a utc timestamp in given
@@ -184,10 +184,12 @@ def format_metadata(search_param, *args, **kwargs):
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
-        def convert_utc_to_timestamp_milliseconds(date_time):
+        def convert_datetime_to_timestamp_milliseconds(date_time):
             """Convert a date_time (str) to a Unix timestamp in milliseconds
 
             "2021-04-21T18:27:19.123Z" => "1619029639123"
+            "2021-04-21" => "1618963200000"
+            "2021-04-21T00:00:00+02:00" => "1618956000000"
             """
             return int(1e3 * get_timestamp(date_time))
 
@@ -269,15 +271,16 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_to_iso_utc_datetime(date_time):
-            """Convert a date_time (str) assumed UTC to its ISO 8601 representation
+            """Convert a date_time (str) to its ISO 8601 representation in UTC
 
             "2021-04-21" => "2021-04-21T00:00:00.000Z"
+            "2021-04-21T00:00:00.000+02:00" => "2021-04-20T22:00:00.000Z"
             """
             dt = isoparse(date_time)
-            if dt.tzinfo and dt.tzinfo is not UTC:
-                raise ValueError("Date must be in UTC or have no timezone info")
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
+            elif dt.tzinfo is not UTC:
+                dt = dt.astimezone(UTC)
             return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
         @staticmethod
@@ -285,8 +288,15 @@ def format_metadata(search_param, *args, **kwargs):
             """Convert an ISO8601 datetime (str) to its ISO8601 date format
 
             "2021-04-21T18:27:19.123Z" => "2021-04-21"
+            "2021-04-21" => "2021-04-21"
+            "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
-            return datetime_string[:10]
+            dt = isoparse(datetime_string)
+            if not dt.tzinfo:
+                dt = dt.replace(tzinfo=UTC)
+            elif dt.tzinfo is not UTC:
+                dt = dt.astimezone(UTC)
+            return dt.isoformat()[:10]
 
         @staticmethod
         def convert_remove_extension(string):

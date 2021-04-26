@@ -21,8 +21,8 @@ from tests.context import format_metadata
 
 
 class TestMetadataFormatter(unittest.TestCase):
-    def test_convert_utc_to_timestamp_milliseconds(self):
-        to_format = "{fieldname#utc_to_timestamp_milliseconds}"
+    def test_convert_datetime_to_timestamp_milliseconds(self):
+        to_format = "{fieldname#datetime_to_timestamp_milliseconds}"
         self.assertEqual(
             format_metadata(to_format, fieldname="2021-04-21T18:27:19.123Z"),
             "1619029639123",
@@ -33,6 +33,10 @@ class TestMetadataFormatter(unittest.TestCase):
         )
         self.assertEqual(
             format_metadata(to_format, fieldname="2021-04-21"), "1618963200000"
+        )
+        self.assertEqual(
+            format_metadata(to_format, fieldname="2021-04-21T00:00:00+02:00"),
+            "1618956000000",
         )
 
     def test_convert_to_iso_utc_datetime(self):
@@ -49,6 +53,10 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, fieldname="2021-04-21"),
             "2021-04-21T00:00:00.000Z",
         )
+        self.assertEqual(
+            format_metadata(to_format, fieldname="2021-04-21T00:00:00.000+02:00"),
+            "2021-04-20T22:00:00.000Z",
+        )
 
     def test_convert_to_iso_date(self):
         to_format = "{fieldname#to_iso_date}"
@@ -62,6 +70,10 @@ class TestMetadataFormatter(unittest.TestCase):
         )
         self.assertEqual(
             format_metadata(to_format, fieldname="2021-04-21"), "2021-04-21"
+        )
+        self.assertEqual(
+            format_metadata(to_format, fieldname="2021-04-21T00:00:00+06:00"),
+            "2021-04-20",
         )
 
     def test_convert_to_iso_utc_datetime_from_milliseconds(self):

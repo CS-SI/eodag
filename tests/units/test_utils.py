@@ -25,22 +25,27 @@ from tests.context import get_timestamp, path_to_uri, uri_to_path
 
 class TestUtils(unittest.TestCase):
     def test_utils_get_timestamp(self):
-        """get_timestamp must handle different date formats and assume they're in UTC"""
-        # Date to timestamp to date
-        requested_date = "2020-08-08"
+        """get_timestamp must return a UNIX timestamp"""
+        # Date to timestamp to date, this assumes the date is in UTC
+        requested_date = "2020-08-08"  # Considered as 2020-08-08T00:00:00Z
         ts_in_secs = get_timestamp(requested_date)
         expected_dt = datetime.strptime(requested_date, "%Y-%m-%d")
         actual_utc_dt = datetime.utcfromtimestamp(ts_in_secs)
         self.assertEqual(actual_utc_dt, expected_dt)
 
-        # Check different formats
+        # Handle UTC datetime
         self.assertEqual(get_timestamp("2021-04-21T18:27:19.123Z"), 1619029639.123)
-        self.assertEqual(get_timestamp("2021-04-21T18:27:19.123"), 1619029639.123)
-        self.assertEqual(get_timestamp("2021-04-21"), 1618963200)
+        # If date/datetime not in UTC, it assumes it's in UTC
+        self.assertEqual(
+            get_timestamp("2021-04-21T18:27:19.123"),
+            get_timestamp("2021-04-21T18:27:19.123Z"),
+        )
+        self.assertEqual(
+            get_timestamp("2021-04-21"), get_timestamp("2021-04-21T00:00:00.000Z")
+        )
 
-        # Non UTC dates are not allowed
-        with self.assertRaises(ValueError):
-            get_timestamp("2018-02-01T12:52:34+09:00")
+        # Non UTC datetime are also supported
+        self.assertEqual(get_timestamp("2021-04-21T00:00:00+02:00"), 1618956000)
 
     def test_uri_to_path(self):
         if sys.platform == "win32":

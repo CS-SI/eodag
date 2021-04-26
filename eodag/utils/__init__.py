@@ -333,8 +333,9 @@ def maybe_generator(obj):
 
 
 def get_timestamp(date_time):
-    """Return the Unix timestamp of a UTC (or considered as if) date/datetime
-    in seconds.
+    """Return the Unix timestamp of an ISO8601 date/datetime in seconds.
+
+    If the datetime has no offset, it is assumed to be an UTC datetime.
 
     :param date_time: the datetime string to return as timestamp
     :type date_time: str
@@ -342,8 +343,6 @@ def get_timestamp(date_time):
     :rtype: float
     """
     dt = isoparse(date_time)
-    if dt.tzinfo and dt.tzinfo is not UTC:
-        raise ValueError("date_time must be a UTC time or have no timezone info")
     if not dt.tzinfo:
         dt = dt.replace(tzinfo=UTC)
     return dt.timestamp()
