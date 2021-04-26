@@ -192,46 +192,33 @@ Command line interface
 
 Start playing with the CLI:
 
-- To search for some products:
+- To search for some products::
 
-  .. code-block::bash
-     
      eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
 
   The request above searches for ``S2_MSI_L1C`` product types in a given bounding box, in March 2021. It saves the results in a GeoJSON file (search_results.geojson by default).
 
-  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options:
+  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options::
 
-  .. code-block::bash
-     
      eodag search --help
 
-- To download the result of the previous call to search:
+- To download the result of the previous call to search::
 
-  .. code-block::bash
-     
      eodag download --search-results search_results.geojson
 
-- To list all available product types and supported providers:
-
-  .. code-block::bash
+- To list all available product types and supported providers::
 
      eodag list
 
-- To list available product types on a specified supported provider:
-
-  .. code-block::bash
+- To list available product types on a specified supported provider::
 
      eodag list -p sobloo
 
-- To see all the available options and commands:
-
-  .. code-block::bash
+- To see all the available options and commands::
 
      eodag --help
 
 - To print log messages, add ``-v`` to eodag master command. e.g. ``eodag -v list``. The more ``v`` given (up to 3), the more verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
-
 
 Contribute
 ==========
