@@ -903,13 +903,11 @@ class EODataAccessGateway(object):
             )
         # If the product isn't in the catalog, it's a generic product type.
         except IndexError:
+            # Construct the GENERIC_PRODUCT_TYPE metadata
             search_plugin.config.product_type_config = dict(
-                [
-                    p
-                    for p in self.list_product_types(search_plugin.provider)
-                    if p["ID"] == GENERIC_PRODUCT_TYPE
-                ][0],
-                **{"productType": product_type},
+                ID=GENERIC_PRODUCT_TYPE,
+                **self.product_types_config[GENERIC_PRODUCT_TYPE],
+                productType=product_type,
             )
         # Remove the ID since this is equal to productType.
         search_plugin.config.product_type_config.pop("ID", None)
