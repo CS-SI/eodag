@@ -161,7 +161,25 @@ class EODataAccessGateway(object):
         # use eodag_version to help keeping index up-to-date
         eodag_version = self.get_version()
 
-        create_index = not exists_in(index_dir)
+        try:
+            create_index = not exists_in(index_dir)
+        except ValueError as ve:
+            # Whoosh uses pickle internally. New versions of Python sometimes introduce
+            # a new pickle protocol (e.g. 3.4 -> 4, 3.8 -> 5), the new version not
+            # being supported by previous versions of Python (e.g. Python 3.7 doesn't
+            # support Protocol 5). In that case, we need to recreate the .index.
+            if "unsupported pickle protocol" in str(ve):
+                logger.debug("Need to recreate whoosh .index: '%s'", ve)
+                create_index = True
+                shutil.rmtree(index_dir)
+            # Unexpected error
+            else:
+                logger.error(
+                    "Error while opening .index using whoosh, "
+                    "please report this issue and try to delete '%s' manually",
+                    index_dir,
+                )
+                raise
         # check index version
         if not create_index:
             if self._product_types_index is None:
