@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -79,10 +79,11 @@ def get_metadata_path(map_value):
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config. For example, it is the list
                       `['productType', '$.properties.productType']` with the sample
-                      above
+                      above. Or the string `$.properties.id`.
     :type map_value: str or list(str)
-    :return: The value of the path to the metadata value in the provider search result
-    :rtype: str
+    :return: Either, None and the path to the metadata value, or a list of converter
+             and its args, and the path to the metadata value.
+    :rtype: tuple(list(str) or None, str)
     """
     path = get_metadata_path_value(map_value)
     try:
@@ -120,14 +121,24 @@ def format_metadata(search_param, *args, **kwargs):
     The currently understood converters are:
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
           milliseconds
-        - ``to_wkt``: converts a geometry to its well known text representation
-        - ``to_iso_utc_datetime_from_milliseconds``: converts a utc timestamp in given
+        - ``to_rounded_wkt``: simplify the WKT of a geometry
+        - ``to_bounds_lists``: convert to list(s) of bounds
+        - ``to_geo_interface``: convert to a GeoJSON via __geo_interface__
+        - ``csv_list``: convert to a comma separated list
+        - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
           milliseconds to a utc iso datetime
-        - ``to_iso_utc_datetime``: converts a UTC datetime string to ISO UTC datetime
+        - ``to_iso_utc_datetime``: convert a UTC datetime string to ISO UTC datetime
           string
-        - ``to_iso_date``: removes the time part of a iso datetime string
+        - ``to_iso_date``: remove the time part of a iso datetime string
         - ``remove_extension``: on a string that contains dots, only take the first
           part of the list obtained by splitting the string on dots
+        - ``get_group_name``: get the matching regex group name
+        - ``replace_str``: execute "string".replace(old, new)
+        - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
+          values matching a regex
+        - ``slice_str``: slice a string (equivalent to s[start, end, step])
+        - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
+        - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
 
     :param search_param: The string to be formatted
     :type search_param: str
@@ -137,11 +148,6 @@ def format_metadata(search_param, *args, **kwargs):
     :type kwargs: dict
     :returns: The formatted string
     :rtype: str
-
-    .. versionadded::
-        1.0
-
-            * Added the ``remove_extension`` metadata converter
     """
 
     class MetadataFormatter(Formatter):
@@ -194,14 +200,6 @@ def format_metadata(search_param, *args, **kwargs):
             return int(1e3 * get_timestamp(date_time))
 
         @staticmethod
-        def convert_to_wkt_convex_hull(value):
-            if hasattr(value, "convex_hull"):
-                return value.convex_hull.to_wkt()
-            else:
-                logger.warning("Could not get wkt_convex_hull from %s", value)
-                return value
-
-        @staticmethod
         def convert_to_rounded_wkt(value):
             wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
             # If needed, simplify WKT to prevent too long request failure
@@ -234,21 +232,6 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_to_geo_interface(geom):
             return geojson.dumps(geom.__geo_interface__)
-
-        @staticmethod
-        def convert_to_bbox_dict(value):
-            if hasattr(value, "bounds"):
-                bbox_dict = {}
-                (
-                    bbox_dict["lonmin"],
-                    bbox_dict["latmin"],
-                    bbox_dict["lonmax"],
-                    bbox_dict["latmax"],
-                ) = value.bounds
-                return bbox_dict
-            else:
-                logger.warning("Could not get bbox_dict from %s", value)
-                return value
 
         @staticmethod
         def convert_csv_list(values_list):
