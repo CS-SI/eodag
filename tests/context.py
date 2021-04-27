@@ -29,6 +29,7 @@ from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
+from eodag.api.product.metadata_mapping import format_metadata
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.config import load_default_config, merge_configs

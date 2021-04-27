@@ -913,10 +913,10 @@
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       availabilityTime: '$.data.availabilityTime'
       startTimeFromAscendingNode:
-        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#utc_to_timestamp_milliseconds}'
+        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#datetime_to_timestamp_milliseconds}'
         - '{$.data.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds}'
       completionTimeFromAscendingNode:
-        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#utc_to_timestamp_milliseconds}'
+        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#datetime_to_timestamp_milliseconds}'
         - '{$.data.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
       polarizationChannels: '$.data.acquisition.polarization'
       sensorMode: '$.data.acquisition.sensorMode'
