@@ -196,7 +196,7 @@ Start playing with the CLI:
 
      eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
 
-  The request above searches for ``S2_MSI_L1C`` product types in a given bounding box, in March 2021. It saves the results in a GeoJSON file (search_results.geojson by default).
+  The request above searches for ``S2_MSI_L1C`` product types in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
 
   Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options::
 
