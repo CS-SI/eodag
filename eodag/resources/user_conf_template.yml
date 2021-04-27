@@ -19,8 +19,8 @@ peps:
     priority: # Lower value means lower priority (Default: 1)
     search:  # Search parameters configuration
     download:
-        extract:  # whether to extract the downloaded products (true or false).
-        outputs_prefix: # where to store downloaded products.
+        extract:  # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
+        outputs_prefix: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
         dl_url_params:  # additional parameters to pass over to the download url as an url parameter
     auth:
         credentials:

@@ -161,7 +161,25 @@ class EODataAccessGateway(object):
         # use eodag_version to help keeping index up-to-date
         eodag_version = self.get_version()
 
-        create_index = not exists_in(index_dir)
+        try:
+            create_index = not exists_in(index_dir)
+        except ValueError as ve:
+            # Whoosh uses pickle internally. New versions of Python sometimes introduce
+            # a new pickle protocol (e.g. 3.4 -> 4, 3.8 -> 5), the new version not
+            # being supported by previous versions of Python (e.g. Python 3.7 doesn't
+            # support Protocol 5). In that case, we need to recreate the .index.
+            if "unsupported pickle protocol" in str(ve):
+                logger.debug("Need to recreate whoosh .index: '%s'", ve)
+                create_index = True
+                shutil.rmtree(index_dir)
+            # Unexpected error
+            else:
+                logger.error(
+                    "Error while opening .index using whoosh, "
+                    "please report this issue and try to delete '%s' manually",
+                    index_dir,
+                )
+                raise
         # check index version
         if not create_index:
             if self._product_types_index is None:
@@ -361,6 +379,8 @@ class EODataAccessGateway(object):
             if provider in self.providers_config:
                 provider_supported_products = self.providers_config[provider].products
                 for product_type_id in provider_supported_products:
+                    if product_type_id == GENERIC_PRODUCT_TYPE:
+                        continue
                     product_type = dict(
                         ID=product_type_id, **self.product_types_config[product_type_id]
                     )
@@ -467,9 +487,13 @@ class EODataAccessGateway(object):
         :param raise_errors:  When an error occurs when searching, if this is set to
                               True, the error is raised (default: False)
         :type raise_errors: bool
-        :param start: Start sensing UTC time in iso format
+        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+                      "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                      If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing UTC time in iso format
+        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+                    "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                    If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
@@ -580,9 +604,13 @@ class EODataAccessGateway(object):
 
         :param items_per_page: The number of results requested per page (default: 20)
         :type items_per_page: int
-        :param start: Start sensing UTC time in iso format
+        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+                      "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                      If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing UTC time in iso format
+        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+                    "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                    If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
@@ -708,9 +736,13 @@ class EODataAccessGateway(object):
                                available, a default value of 50 is used instead.
                                items_per_page can also be set to any arbitrary value.
         :type items_per_page: int
-        :param start: Start sensing UTC time in iso format
+        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+                      "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                      If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing UTC time in iso format
+        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+                    "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                    If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
         :param geom: Search area that can be defined in different ways:
 
@@ -824,9 +856,13 @@ class EODataAccessGateway(object):
             * TODO: better expose cloudCover
             * other search params are passed to Searchplugin.query()
 
-        :param start: Start sensing UTC time in iso format
+        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+                      "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                      If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing UTC time in iso format
+        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+                    "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
+                    If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
         :param geom: Search area that can be defined in different ways (see search)
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
@@ -924,13 +960,11 @@ class EODataAccessGateway(object):
             )
         # If the product isn't in the catalog, it's a generic product type.
         except IndexError:
+            # Construct the GENERIC_PRODUCT_TYPE metadata
             search_plugin.config.product_type_config = dict(
-                [
-                    p
-                    for p in self.list_product_types(search_plugin.provider)
-                    if p["ID"] == GENERIC_PRODUCT_TYPE
-                ][0],
-                **{"productType": product_type},
+                ID=GENERIC_PRODUCT_TYPE,
+                **self.product_types_config[GENERIC_PRODUCT_TYPE],
+                productType=product_type,
             )
         # Remove the ID since this is equal to productType.
         search_plugin.config.product_type_config.pop("ID", None)

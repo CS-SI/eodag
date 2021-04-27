@@ -201,7 +201,7 @@ class Download(PluginTopic):
         """
         extract = kwargs.pop("extract", None)
         extract = (
-            extract if extract is not None else getattr(self.config, "extract", False)
+            extract if extract is not None else getattr(self.config, "extract", True)
         )
         outputs_extension = kwargs.pop("outputs_extension", ".zip")
 

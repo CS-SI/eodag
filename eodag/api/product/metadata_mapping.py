@@ -22,7 +22,8 @@ from datetime import datetime
 from string import Formatter
 
 import geojson
-from dateutil.tz import tzutc
+from dateutil.parser import isoparse
+from dateutil.tz import UTC, tzutc
 from jsonpath_ng.ext import parse
 from lxml import etree
 from lxml.etree import XPathEvalError
@@ -118,7 +119,7 @@ def format_metadata(search_param, *args, **kwargs):
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
-        - ``utc_to_timestamp_milliseconds``: convert a utc date string to a timestamp in
+        - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
           milliseconds
         - ``to_rounded_wkt``: simplify the WKT of a geometry
         - ``to_bounds_lists``: convert to list(s) of bounds
@@ -189,13 +190,14 @@ def format_metadata(search_param, *args, **kwargs):
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
-        def convert_utc_to_timestamp_milliseconds(value):
-            if len(value) == 10:
-                return int(
-                    1e3 * get_timestamp(value, date_format="%Y-%m-%d", as_utc=True)
-                )
-            else:
-                return int(1e3 * get_timestamp(value, as_utc=True))
+        def convert_datetime_to_timestamp_milliseconds(date_time):
+            """Convert a date_time (str) to a Unix timestamp in milliseconds
+
+            "2021-04-21T18:27:19.123Z" => "1619029639123"
+            "2021-04-21" => "1618963200000"
+            "2021-04-21T00:00:00+02:00" => "1618956000000"
+            """
+            return int(1e3 * get_timestamp(date_time))
 
         @staticmethod
         def convert_to_rounded_wkt(value):
@@ -237,6 +239,10 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
+            """Convert a timestamp in milliseconds (int) to its ISO8601 UTC format
+
+            1619029639123 => "2021-04-21T18:27:19.123Z"
+            """
             try:
                 return (
                     datetime.fromtimestamp(timestamp / 1e3, tzutc())
@@ -247,22 +253,33 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(dt):
-            for idx, fmt in enumerate(("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S")):
-                try:
-                    return (
-                        datetime.strptime(dt, fmt)
-                        .replace(tzinfo=tzutc())
-                        .isoformat(timespec="milliseconds")
-                        .replace("+00:00", "Z")
-                    )
-                except ValueError:
-                    if idx == 1:
-                        raise
+        def convert_to_iso_utc_datetime(date_time):
+            """Convert a date_time (str) to its ISO 8601 representation in UTC
+
+            "2021-04-21" => "2021-04-21T00:00:00.000Z"
+            "2021-04-21T00:00:00.000+02:00" => "2021-04-20T22:00:00.000Z"
+            """
+            dt = isoparse(date_time)
+            if not dt.tzinfo:
+                dt = dt.replace(tzinfo=UTC)
+            elif dt.tzinfo is not UTC:
+                dt = dt.astimezone(UTC)
+            return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
         @staticmethod
         def convert_to_iso_date(datetime_string):
-            return datetime_string[:10]
+            """Convert an ISO8601 datetime (str) to its ISO8601 date format
+
+            "2021-04-21T18:27:19.123Z" => "2021-04-21"
+            "2021-04-21" => "2021-04-21"
+            "2021-04-21T00:00:00+06:00" => "2021-04-20" !
+            """
+            dt = isoparse(datetime_string)
+            if not dt.tzinfo:
+                dt = dt.replace(tzinfo=UTC)
+            elif dt.tzinfo is not UTC:
+                dt = dt.astimezone(UTC)
+            return dt.isoformat()[:10]
 
         @staticmethod
         def convert_remove_extension(string):
