@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -84,7 +84,12 @@ setup(
             "imageio",
             "rasterio",
         ],
-        "docs": ["sphinx", "nbsphinx", "nbsphinx-link"],
+        "docs": [
+            "sphinx==3.5.3",
+            "sphinx-book-theme==0.0.42",
+            "sphinx-copybutton==0.3.1",
+            "nbsphinx==0.8.3",
+        ],
     },
     entry_points={
         "console_scripts": ["eodag = eodag.cli:eodag"],

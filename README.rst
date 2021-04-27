@@ -1,4 +1,4 @@
-.. image:: https://eodag.readthedocs.io/en/latest/_static/eodag_bycs.png
+.. image:: https://eodag.readthedocs.io/en/stable/_static/eodag_bycs.png
     :target: https://github.com/CS-SI/eodag
 
 |
@@ -19,7 +19,7 @@
     :target: https://github.com/CS-SI/eodag/issues
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=examples%2Ftuto_basics.ipynb
+    :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro_notebooks.ipynb
 
 |
 
@@ -50,9 +50,9 @@ integrate new data providers. Three types of plugins compose the tool:
 
 * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
 
-Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/latest/intro.html#stac-client-and-server>`_.
+Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/stable/stac.html>`_.
 
-Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
+Read `the documentation <https://eodag.readthedocs.io/en/stable/>`_ for more insights.
 
 .. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/eodag_overview.png
    :alt: EODAG overview
@@ -61,18 +61,23 @@ Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more ins
 Installation
 ============
 
-EODAG is on `PyPI <https://pypi.org/project/eodag/>`_:
+EODAG is available on `PyPI <https://pypi.org/project/eodag/>`_:
 
 .. code-block:: bash
 
-    python -m pip install eodag
+   python -m pip install eodag
 
+And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-forge/eodag>`_:
+
+.. code-block:: bash
+
+   conda install -c conda-forge eodag
 
 Usage
 =====
 
 For downloading you will need to fill your credentials for the desired providers in your
-`eodag user configuration file <https://eodag.readthedocs.io/en/latest/intro.html#how-to-configure-authentication-for-available-providers>`_.
+`eodag user configuration file <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html>`_.
 The file will automatically be created with empty values on the first run.
 
 Python API
@@ -86,7 +91,7 @@ Example usage for interacting with the api in your Python code:
 
     dag = EODataAccessGateway()
 
-    search_results, found_nb = dag.search(
+    search_results, total_count = dag.search(
         productType='S2_MSI_L1C',
         geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
         start='2021-01-01',
@@ -98,7 +103,7 @@ Example usage for interacting with the api in your Python code:
 
 This will search for Sentinel 2 level-1C products on the default provider and return the found products first page and
 an estimated total number of products matching the search criteria. And then it will download these products. Please
-check `tutorials <https://eodag.readthedocs.io/en/latest/tutos.html>`_ for more examples.
+check the `Python API User Guide <https://eodag.readthedocs.io/en/stable/api_user_guide.html>`_ for more details.
 
 STAC REST API
 -------------
@@ -180,66 +185,48 @@ And browse http://127.0.0.1:5001:
    :width: 600px
 
 
-For more information, see `STAC REST interface usage <https://eodag.readthedocs.io/en/latest/use.html#stac-rest-interface>`_.
+For more information, see `STAC REST API usage <https://eodag.readthedocs.io/en/stable/stac_rest.html>`_.
 
 Command line interface
 ----------------------
 
-Create a configuration file from the template `user_conf_template.yml` provided with the repository, filling
-in your credentials as expected by each provider (note that this configuration file is required by now. However, this
-will change in the future).
+Start playing with the CLI:
 
-Then you can start playing with it:
+- To search for some products::
 
-* To search for products and crunch the results of the search::
+     eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
 
-        eodag search \
-        --conf my_conf.yml \
-        --box 1 43 2 44 \
-        --start 2018-01-01 \
-        --end 2018-01-31 \
-        --cloudCover 20 \
-        --productType S2_MSI_L1C \
-        --all \
-        --storage my_search.geojson
+  The request above searches for ``S2_MSI_L1C`` product types in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
 
-The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches internally all
-the products that match these criteria. Without `--all`, it would only fetch the products found on the first result page.
-It finally saves the results in a GeoJSON file.
+  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options::
 
-You can pass arguments to a cruncher on the command line by doing this (example with using `FilterOverlap` cruncher
-which takes `minimum_overlap` as argument)::
+     eodag search --help
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C --all \
-                     --cruncher FilterOverlap \
-                     --cruncher-args FilterOverlap minimum_overlap 10
+- To download the result of the previous call to search::
 
-The request above means : "Give me all the products of type `S2_MSI_L1C`, use `FilterOverlap` to keep only those products
-that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (`minimum_overlap`) of the surface
-of this bbox"
+     eodag download --search-results search_results.geojson
 
-* To download the result of a previous call to `search`::
+- To list all available product types and supported providers::
 
-        eodag download --conf my_conf.yml --search-results my_search.geojson
+     eodag list
 
-* To list all available product types and supported providers::
+- To list available product types on a specified supported provider::
 
-        eodag list
+     eodag list -p sobloo
 
-* To list available product types on a specified supported provider::
+- To see all the available options and commands::
 
-        eodag list -p sobloo
+     eodag --help
 
-* To see all the available options and commands::
-
-        eodag --help
-
-* To print log messages, add `-v` to `eodag` master command. e.g. `eodag -v list`. The more `v` given (up to 3), the more
-  verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
-
+- To print log messages, add ``-v`` to eodag master command. e.g. ``eodag -v list``. The more ``v`` given (up to 3), the more verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
 
 Contribute
 ==========
+
+Have you spotted a typo in our documentation? Have you observed a bug while running EODAG?
+Do you have a suggestion for a new feature?
+
+Don't hesitate and open an issue or submit a pull request, contributions are most welcome!
 
 For guidance on setting up a development environment and how to make a
 contribution to eodag, see the `contributing guidelines`_.
@@ -247,20 +234,20 @@ contribution to eodag, see the `contributing guidelines`_.
 .. _contributing guidelines: https://github.com/CS-SI/eodag/blob/develop/CONTRIBUTING.rst
 
 
-LICENSE
+License
 =======
 
 EODAG is licensed under Apache License v2.0.
 See LICENSE file for details.
 
 
-AUTHORS
+Authors
 =======
 
-EODAG is developed by `CS GROUP - France <https://www.c-s.fr>`_.
+EODAG has been created by `CS GROUP - France <https://www.csgroup.eu/>`_.
 
 
-CREDITS
+Credits
 =======
 
 EODAG is built on top of amazingly useful open source projects. See NOTICE file for details about those projects and

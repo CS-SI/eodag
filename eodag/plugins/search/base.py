@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -55,7 +55,7 @@ class Search(PluginTopic):
             2.1
 
                 * A new optional boolean parameter ``count`` which defaults to ``True``, it
-                allows to trigger or not a count query.
+                  allows to trigger or not a count query.
 
         """
         raise NotImplementedError("A Search plugin must implement a method named query")

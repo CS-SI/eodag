@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -22,4 +22,4 @@ __author__ = "CS GROUP - France (CSSI)"
 __author_email__ = "admin@geostorm.eu"
 __url__ = "https://github.com/CS-SI/eodag"
 __license__ = "Apache 2.0"
-__copyright__ = "Copyright 2021, CS GROUP - France, http://www.c-s.fr"
+__copyright__ = "Copyright 2021, CS GROUP - France, https://www.csgroup.eu/"
