@@ -718,6 +718,27 @@ class TestCoreSearch(unittest.TestCase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
+        """_do_search must create a count query by default"""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results.data,  # a list must be returned by .query
+            self.search_results_size,
+        )
+
+        class DummyConfig:
+            pagination = {"max_items_per_page": 1}
+
+        search_plugin.config = DummyConfig()
+        sr, estimate = self.dag._do_search(
+            search_plugin=search_plugin,
+            items_per_page=2,
+        )
+        self.assertIsInstance(sr, SearchResult)
+        self.assertEqual(len(sr), self.search_results_size)
+        self.assertEqual(estimate, self.search_results_size)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_counts_by_default(self, search_plugin):
         """_do_search must create a count query by default"""
         search_plugin.provider = "peps"
