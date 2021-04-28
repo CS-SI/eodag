@@ -659,7 +659,7 @@ class EODataAccessGateway(object):
         while True:
             if iteration > 1 and next_page_url:
                 pagination_config["next_page_url_tpl"] = next_page_url
-            logger.debug("Iterate over pages: search page %s", iteration)
+            logger.info("Iterate search over multiple pages: page #%s", iteration)
             try:
                 products, _ = self._do_search(
                     search_plugin, count=False, raise_errors=True, **search_kwargs
