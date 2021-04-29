@@ -1623,6 +1623,11 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     pagination:
+      # Override the default next page url key path of StacSearch because the next link returned
+      # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
+      # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
+      # Remove that entry if Earth Search updates that and returns a valid link.
+      next_page_url_key_path: null
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1694,6 +1699,11 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     pagination:
+      # Override the default next page url key path of StacSearch because the next link returned
+      # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
+      # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
+      # Remove that entry if Earth Search updates that and returns a valid link.
+      next_page_url_key_path: null
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
