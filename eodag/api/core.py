@@ -659,7 +659,7 @@ class EODataAccessGateway(object):
         while True:
             if iteration > 1 and next_page_url:
                 pagination_config["next_page_url_tpl"] = next_page_url
-            logger.debug("Iterate over pages: search page %s", iteration)
+            logger.info("Iterate search over multiple pages: page #%s", iteration)
             try:
                 products, _ = self._do_search(
                     search_plugin, count=False, raise_errors=True, **search_kwargs
@@ -993,6 +993,18 @@ class EODataAccessGateway(object):
 
         .. versionadded:: 1.0
         """
+        max_items_per_page = search_plugin.config.pagination.get("max_items_per_page")
+        if max_items_per_page and kwargs["items_per_page"] > max_items_per_page:
+            logger.warning(
+                "EODAG believes that you might have asked for more products/items "
+                "than the maximum allowed by '%s': %s > %s. Try to lower "
+                "the value of 'items_per_page' and get the next page (e.g. 'page=2'), "
+                "or directly use the 'search_all' method.",
+                search_plugin.provider,
+                kwargs["items_per_page"],
+                max_items_per_page,
+            )
+
         results = SearchResult([])
         total_results = 0
         try:
