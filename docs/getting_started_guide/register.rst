@@ -8,7 +8,8 @@ the users obtain a set of credentials (e.g. login/password, API key, etc.). Thes
 need to be provided to ``eodag`` (see :ref:`configure`). The list below explains how to register
 to each provider supported by ``eodag``:
 
-* `usgs`: create an account  `here <https://ers.cr.usgs.gov/register/>`__
+* `usgs`: create an account  `here <https://ers.cr.usgs.gov/register/>`__ and then `request an access <https://ers.cr.usgs.gov/profile/access>`_ to the `Machine-to-Machine (M2M) API <https://m2m.cr.usgs.gov/>`_.
+  Product requests can be performed once access to the M2M API has been granted to you.
 
 * `theia`: create an account `here <https://sso.theia-land.fr/theia/register/register.xhtml>`__
 
