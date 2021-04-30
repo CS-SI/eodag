@@ -25,7 +25,7 @@ import copy
 import errno
 import functools
 import inspect
-import logging
+import logging as py_logging
 import os
 import re
 import string
@@ -60,11 +60,12 @@ from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
 
+from eodag.utils import logging as eodag_logging
 from eodag.utils.notebook import check_ipython
 
 DEFAULT_PROJ = "EPSG:4326"
 
-logger = logging.getLogger("eodag.utils")
+logger = py_logging.getLogger("eodag.utils")
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 
@@ -386,7 +387,11 @@ def get_timestamp(date_time):
 
 
 class ProgressCallback(object):
-    """A callable used to render progress to users for long running processes"""
+    """A callable used to render progress to users for long running processes.
+
+    It can be globally disabled using eodag.utils.logging.setup_logging(0) or
+    eodag.utils.logging.setup_logging(level, no_progress_bar=True)
+    """
 
     def __init__(self, max_size=None):
         self.pb = None
@@ -395,6 +400,7 @@ class ProgressCallback(object):
         self.unit_scale = True
         self.desc = ""
         self.position = 0
+        self.disable = False
 
     def __call__(self, current_size, max_size=None):
         """Update the progress bar.
@@ -407,6 +413,7 @@ class ProgressCallback(object):
         if max_size is not None:
             self.max_size = max_size
         if self.pb is None:
+            self.disable = eodag_logging.disable_tqdm
             self.pb = tqdm(
                 total=self.max_size,
                 unit=self.unit,
@@ -414,6 +421,7 @@ class ProgressCallback(object):
                 desc=self.desc,
                 position=self.position,
                 dynamic_ncols=True,
+                disable=self.disable,
             )
         self.pb.update(current_size)
 
