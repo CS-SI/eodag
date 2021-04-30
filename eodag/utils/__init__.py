@@ -58,8 +58,7 @@ from jsonpath_ng.ext import parse
 from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
-from tqdm import tqdm
-from tqdm.notebook import tqdm as tqdm_notebook
+from tqdm.auto import tqdm
 
 from eodag.utils.notebook import check_ipython
 
@@ -68,6 +67,44 @@ DEFAULT_PROJ = "EPSG:4326"
 logger = logging.getLogger("eodag.utils")
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+
+
+def _deprecated(reason="", version=None):
+    """Simple decorator to mark functions/methods/classes as deprecated.
+
+    Warning: Does not work with staticmethods!
+
+    @deprecate(reason="why", versoin="1.2")
+    def foo():
+        pass
+    foo()
+    DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
+    """
+
+    def decorator(callable):
+
+        if inspect.isclass(callable):
+            ctype = "class"
+        else:
+            ctype = "function/method"
+        cname = callable.__name__
+        reason_ = f"({reason})" if reason else ""
+        version_ = f" -- Deprecated since v{version}" if version else ""
+
+        @functools.wraps(callable)
+        def wrapper(*args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", DeprecationWarning)
+                warnings.warn(
+                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+            return callable(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class RequestsTokenAuth(AuthBase):
@@ -399,23 +436,11 @@ class ProgressCallback(object):
         return False
 
 
+@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
 class NotebookProgressCallback(ProgressCallback):
     """A custom progress bar to be used inside Jupyter notebooks"""
 
-    def __call__(self, current_size, max_size=None):
-        """Update the progress bar"""
-        if max_size is not None:
-            self.max_size = max_size
-        if self.pb is None:
-            self.pb = tqdm_notebook(
-                total=self.max_size,
-                unit=self.unit,
-                unit_scale=self.unit_scale,
-                desc=self.desc,
-                position=self.position,
-                dynamic_ncols=True,
-            )
-        self.pb.update(current_size)
+    pass
 
 
 def get_progress_callback():
@@ -840,41 +865,3 @@ class MockResponse(object):
     def json(self):
         """Return json data"""
         return self.json_data
-
-
-def _deprecated(reason="", version=None):
-    """Simple decorator to mark functions/methods/classes as deprecated.
-
-    Warning: Does not work with staticmethods!
-
-    @deprecate(reason="why", versoin="1.2")
-    def foo():
-        pass
-    foo()
-    DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
-    """
-
-    def decorator(callable):
-
-        if inspect.isclass(callable):
-            ctype = "class"
-        else:
-            ctype = "function/method"
-        cname = callable.__name__
-        reason_ = f"({reason})" if reason else ""
-        version_ = f" -- Deprecated since v{version}" if version else ""
-
-        @functools.wraps(callable)
-        def wrapper(*args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter("always", DeprecationWarning)
-                warnings.warn(
-                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            return callable(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
