@@ -34,7 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.download.base import Download
-from eodag.utils import get_progress_callback, path_to_uri, urlparse
+from eodag.utils import ProgressCallback, path_to_uri, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
@@ -250,7 +250,7 @@ class AwsDownload(Download):
 
         # progress bar init
         if progress_callback is None:
-            progress_callback = get_progress_callback()
+            progress_callback = ProgressCallback()
         progress_callback.desc = product.properties.get("id", "")
         progress_callback.position = 1
 

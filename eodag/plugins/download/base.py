@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from time import sleep
 
 from eodag.plugins.base import PluginTopic
-from eodag.utils import get_progress_callback, sanitize, uri_to_path
+from eodag.utils import ProgressCallback, sanitize, uri_to_path
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -251,7 +251,7 @@ class Download(PluginTopic):
             if fs_path.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
                     fileinfos = zfile.infolist()
-                    with get_progress_callback() as bar:
+                    with ProgressCallback() as bar:
                         bar.max_size = len(fileinfos)
                         bar.unit = "file"
                         bar.desc = "Extracting files from {}".format(
@@ -331,7 +331,7 @@ class Download(PluginTopic):
         for product in products:
             product.next_try = start_time
 
-        with get_progress_callback() as bar:
+        with ProgressCallback() as bar:
             bar.max_size = nb_products
             bar.unit = "product"
             bar.desc = "Downloaded products"

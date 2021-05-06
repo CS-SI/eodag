@@ -32,7 +32,7 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
-from eodag.utils import get_progress_callback, path_to_uri
+from eodag.utils import ProgressCallback, path_to_uri
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -76,7 +76,7 @@ class HTTPDownload(Download):
 
         # progress bar init
         if progress_callback is None:
-            progress_callback = get_progress_callback()
+            progress_callback = ProgressCallback()
         progress_callback.desc = product.properties.get("id", "")
         progress_callback.position = 1
 

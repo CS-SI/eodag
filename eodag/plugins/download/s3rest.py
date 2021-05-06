@@ -29,7 +29,7 @@ from requests import HTTPError
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.http import HTTPDownload
-from eodag.utils import get_progress_callback, path_to_uri, urljoin
+from eodag.utils import ProgressCallback, path_to_uri, urljoin
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -177,7 +177,7 @@ class S3RestDownload(AwsDownload):
         )
         # progress bar init
         if progress_callback is None:
-            progress_callback = get_progress_callback()
+            progress_callback = ProgressCallback()
         progress_callback.desc = product.properties.get("id", "")
         progress_callback.position = 1
         progress_callback.max_size = total_size

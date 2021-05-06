@@ -61,7 +61,6 @@ from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
-from eodag.utils.notebook import check_ipython
 
 DEFAULT_PROJ = "EPSG:4326"
 
@@ -435,12 +434,17 @@ class ProgressCallback(object):
             self.pb.desc = self.desc
             self.pb.position = self.position
 
+    def close(self):
+        """Close progress bar"""
+        if hasattr(self.pb, "close"):
+            self.pb.close()
+        return False
+
     def __enter__(self):
         return self
 
     def __exit__(self, *exc):
-        if hasattr(self.pb, "close"):
-            self.pb.close()
+        self.close()
         return False
 
 
@@ -451,13 +455,11 @@ class NotebookProgressCallback(ProgressCallback):
     pass
 
 
+@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
 def get_progress_callback():
     """Get progress_callback"""
 
-    if check_ipython():
-        return NotebookProgressCallback()
-    else:
-        return ProgressCallback()
+    return ProgressCallback()
 
 
 def repeatfunc(func, n, *args):

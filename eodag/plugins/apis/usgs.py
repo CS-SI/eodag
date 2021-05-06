@@ -39,8 +39,8 @@ from eodag.plugins.download.base import (
 )
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    ProgressCallback,
     format_dict_items,
-    get_progress_callback,
     path_to_uri,
 )
 from eodag.utils.exceptions import AuthenticationError, NotAvailableError
@@ -175,7 +175,7 @@ class UsgsApi(Api, Download):
 
         # progress bar init
         if progress_callback is None:
-            progress_callback = get_progress_callback()
+            progress_callback = ProgressCallback()
         progress_callback.desc = product.properties.get("id", "")
         progress_callback.position = 1
 
