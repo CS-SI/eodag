@@ -337,7 +337,7 @@ class EOProduct(object):
         if progress_callback is None:
             progress_callback = ProgressCallback()
 
-        if self.properties["quicklook"] is None:
+        if self.properties.get("quicklook", None) is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
                 self.properties["id"],
