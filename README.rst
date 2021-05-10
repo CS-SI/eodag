@@ -206,6 +206,10 @@ Start playing with the CLI:
 
      eodag download --search-results search_results.geojson
 
+- To download only the result quicklooks of the previous call to search::
+
+     eodag download --quicklooks --search-results search_results.geojson
+
 - To list all available product types and supported providers::
 
      eodag list
