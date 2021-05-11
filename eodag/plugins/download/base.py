@@ -114,11 +114,13 @@ class Download(PluginTopic):
             "A Download plugin must implement a method named download"
         )
 
-    def _prepare_download(self, product, **kwargs):
+    def _prepare_download(self, product, progress_callback=None, **kwargs):
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :return: fs_path, record_filename
         :rtype: tuple
         """
@@ -178,10 +180,18 @@ class Download(PluginTopic):
         record_filename = os.path.join(download_records_dir, url_hash)
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info("Product already downloaded: %s", fs_path)
-            return self._finalize(fs_path, **kwargs), None
+            return (
+                self._finalize(fs_path, progress_callback=progress_callback, **kwargs),
+                None,
+            )
         elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
             logger.info("Product already downloaded: %s", fs_dir_path)
-            return self._finalize(fs_dir_path, **kwargs), None
+            return (
+                self._finalize(
+                    fs_dir_path, progress_callback=progress_callback, **kwargs
+                ),
+                None,
+            )
         # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
         elif os.path.isfile(record_filename):
             logger.debug(
@@ -192,13 +202,30 @@ class Download(PluginTopic):
 
         return fs_path, record_filename
 
-    def _finalize(self, fs_path, **kwargs):
+    def _finalize(self, fs_path, progress_callback=None, **kwargs):
         """Finalize the download process.
 
         :param fs_path: The path to the local zip archive downloaded or already present
         :type fs_path: str
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :return: the absolute path to the product
         """
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = ProgressCallback(
+                unit="file",
+                unit_scale=False,
+                position=2,
+            )
+            # one shot progress callback to close after download
+            close_progress_callback = True
+        else:
+            close_progress_callback = False
+            progress_callback.unit = "file"
+            progress_callback.unit_scale = False
+            progress_callback.refresh()
+
         extract = kwargs.pop("extract", None)
         extract = (
             extract if extract is not None else getattr(self.config, "extract", True)
@@ -207,7 +234,9 @@ class Download(PluginTopic):
 
         if not extract:
             logger.info("Extraction not activated. The product is available as is.")
+            progress_callback(1, total=1)
             return fs_path
+
         product_path = (
             fs_path[: fs_path.index(outputs_extension)]
             if outputs_extension in fs_path
@@ -242,35 +271,48 @@ class Download(PluginTopic):
                 "Extraction cancelled, destination directory already exists and is not empty: %s"
                 % product_path
             )
+            progress_callback(1, total=1)
             return product_path
         outputs_prefix = (
             kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
         )
+
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
+            progress_callback.desc = "Extracting files from {}".format(
+                os.path.basename(fs_path)
+            )
+            progress_callback.refresh()
+
             if fs_path.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
                     fileinfos = zfile.infolist()
-                    with ProgressCallback() as bar:
-                        bar.max_size = len(fileinfos)
-                        bar.unit = "file"
-                        bar.desc = "Extracting files from {}".format(
-                            os.path.basename(fs_path)
+
+                    progress_callback.reset(total=len(fileinfos))
+
+                    for fileinfo in fileinfos:
+                        zfile.extract(
+                            fileinfo,
+                            path=os.path.join(outputs_prefix, product_path),
                         )
-                        bar.unit_scale = False
-                        bar.position = 2
-                        for fileinfo in fileinfos:
-                            zfile.extract(
-                                fileinfo,
-                                path=os.path.join(outputs_prefix, product_path),
-                            )
-                            bar(1)
+                        progress_callback(1)
+
             elif fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r:gz") as zfile:
                     logger.info(
                         "Extracting files from {}".format(os.path.basename(fs_path))
                     )
+                    progress_callback.reset(total=1)
                     zfile.extractall(path=os.path.join(outputs_prefix, product_path))
+                    progress_callback(1)
+            else:
+                progress_callback(1, total=1)
+        else:
+            progress_callback(1, total=1)
+
+        # close progress bar if needed
+        if close_progress_callback:
+            progress_callback.close()
 
         # Handle depth levels in the product archive. For example, if the downloaded archive was
         # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
@@ -331,40 +373,33 @@ class Download(PluginTopic):
         for product in products:
             product.next_try = start_time
 
-        with ProgressCallback() as bar:
-            bar.max_size = nb_products
-            bar.unit = "product"
-            bar.desc = "Downloaded products"
-            bar.unit_scale = False
-            bar(0)
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = ProgressCallback(
+                total=nb_products,
+                unit="product",
+                desc="Downloaded products",
+                unit_scale=False,
+            )
+            product_progress_callback = None
+        else:
+            product_progress_callback = progress_callback.copy()
+            progress_callback.reset(total=nb_products)
+            progress_callback.unit = "product"
+            progress_callback.desc = "Downloaded products"
+            progress_callback.unit_scale = False
+        progress_callback.refresh()
 
+        with progress_callback as bar:
             while "Loop until all products are download or timeout is reached":
                 # try downloading each product before retry
                 for idx, product in enumerate(products):
                     if datetime.now() >= product.next_try:
                         products[idx].next_try += timedelta(minutes=wait)
                         try:
-                            if product.downloader is None:
-                                raise RuntimeError(
-                                    "EO product is unable to download itself due to lacking of a "
-                                    "download plugin"
-                                )
-
-                            auth = (
-                                product.downloader_auth.authenticate()
-                                if product.downloader_auth is not None
-                                else product.downloader_auth
-                            )
-                            # resolve remote location if needed with downloader configuration
-                            product.remote_location = product.remote_location % vars(
-                                product.downloader.config
-                            )
-
                             paths.append(
-                                self.download(
-                                    product,
-                                    auth=auth,
-                                    progress_callback=progress_callback,
+                                product.download(
+                                    progress_callback=product_progress_callback,
                                     wait=wait,
                                     timeout=-1,
                                     **kwargs,
@@ -433,8 +468,5 @@ class Download(PluginTopic):
                     break
                 elif len(products) == 0:
                     break
-
-        if hasattr(progress_callback, "pb") and hasattr(progress_callback.pb, "close"):
-            progress_callback.pb.close()
 
         return paths

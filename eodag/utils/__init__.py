@@ -385,71 +385,65 @@ def get_timestamp(date_time):
     return dt.timestamp()
 
 
-class ProgressCallback(object):
+class ProgressCallback(tqdm):
     """A callable used to render progress to users for long running processes.
 
-    It can be globally disabled using eodag.utils.logging.setup_logging(0) or
-    eodag.utils.logging.setup_logging(level, no_progress_bar=True)
+    It inherits from `tqdm.auto.tqdm`, and accepts the same arguments on
+    instantiation: `iterable`, `desc`, `total`, `leave`, `file`, `ncols`,
+    `mininterval`, `maxinterval`, `miniters`, `ascii`, `disable`, `unit`,
+    `unit_scale`, `dynamic_ncols`, `smoothing`, `bar_format`, `initial`,
+    `position`, `postfix`, `unit_divisor`.
+
+    It can be globally disabled using `eodag.utils.logging.setup_logging(0)` or
+    `eodag.utils.logging.setup_logging(level, no_progress_bar=True)`, and
+    individually disabled using `disable=True`.
     """
 
-    def __init__(self, max_size=None):
-        self.pb = None
-        self.max_size = max_size
-        self.unit = "B"
-        self.unit_scale = True
-        self.desc = ""
-        self.position = 0
-        self.disable = False
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs.copy()
+        if "unit" not in kwargs:
+            kwargs["unit"] = "B"
+        if "unit_scale" not in kwargs:
+            kwargs["unit_scale"] = True
+        if "desc" not in kwargs:
+            kwargs["desc"] = ""
+        if "position" not in kwargs:
+            kwargs["position"] = 0
+        if "disable" not in kwargs:
+            kwargs["disable"] = eodag_logging.disable_tqdm
+        if "dynamic_ncols" not in kwargs:
+            kwargs["dynamic_ncols"] = True
 
-    def __call__(self, current_size, max_size=None):
+        super(ProgressCallback, self).__init__(*args, **kwargs)
+
+    def __call__(self, current_size, total=None):
         """Update the progress bar.
 
         :param current_size: amount of data already processed
         :type current_size: int
-        :param max_size: maximum amount of data to be processed
-        :type max_size: int
+        :param total: maximum amount of data to be processed
+        :type total: int
         """
-        if max_size is not None:
-            self.max_size = max_size
-        if self.pb is None:
-            self.disable = eodag_logging.disable_tqdm
-            self.pb = tqdm(
-                total=self.max_size,
-                unit=self.unit,
-                unit_scale=self.unit_scale,
-                desc=self.desc,
-                position=self.position,
-                dynamic_ncols=True,
-                disable=self.disable,
-            )
-        self.pb.update(current_size)
+        if total is not None:
+            self.reset(total=total)
 
-    def reset(self):
-        """Reset progress bar"""
-        if hasattr(self.pb, "reset"):
-            self.pb.reset(self.max_size)
-            self.pb.total = self.max_size
-            self.pb.unit = self.unit
-            self.pb.unit_scale = self.unit_scale
-            self.pb.desc = self.desc
-            self.pb.position = self.position
+        self.update(current_size)
+        self.refresh()
 
-    def close(self):
-        """Close progress bar"""
-        if hasattr(self.pb, "close"):
-            self.pb.close()
-        return False
+    def copy(self, *args, **kwargs):
+        """Returns another progress callback using the same initial
+        keyword-arguments.
 
-    def __enter__(self):
-        return self
+        Optional `args` and `kwargs` parameters will be used to create a
+        new `~eodag.utils.ProgressCallback` instance, overriding initial
+        `kwargs`.
+        """
 
-    def __exit__(self, *exc):
-        self.close()
-        return False
+        return ProgressCallback(*args, **dict(self.kwargs, **kwargs))
 
 
 @_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-class NotebookProgressCallback(ProgressCallback):
+class NotebookProgressCallback(tqdm):
     """A custom progress bar to be used inside Jupyter notebooks"""
 
     pass
@@ -459,7 +453,7 @@ class NotebookProgressCallback(ProgressCallback):
 def get_progress_callback():
     """Get progress_callback"""
 
-    return ProgressCallback()
+    return tqdm()
 
 
 def repeatfunc(func, n, *args):

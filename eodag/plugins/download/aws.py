@@ -182,8 +182,16 @@ class AwsDownload(Download):
         :return: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        if progress_callback is None:
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+
         # prepare download & create dirs (before updating metadata)
-        product_local_path, record_filename = self._prepare_download(product, **kwargs)
+        product_local_path, record_filename = self._prepare_download(
+            product, progress_callback=progress_callback, **kwargs
+        )
         if not product_local_path or not record_filename:
             if product_local_path:
                 product.location = path_to_uri(product_local_path)
@@ -247,12 +255,6 @@ class AwsDownload(Download):
                     product, product.properties[complementary_url_key]
                 )
             )
-
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = ProgressCallback()
-        progress_callback.desc = product.properties.get("id", "")
-        progress_callback.position = 1
 
         # authenticate
         authenticated_objects = {}
@@ -331,8 +333,7 @@ class AwsDownload(Download):
         total_size = sum([p.size for p in unique_product_chunks])
 
         # download
-        progress_callback.max_size = total_size
-        progress_callback.reset()
+        progress_callback.reset(total=total_size)
         try:
             for product_chunk in unique_product_chunks:
                 chunk_rel_path = self.get_chunk_dest_path(
