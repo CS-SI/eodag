@@ -321,13 +321,13 @@ class TestEodagCli(unittest.TestCase):
                     "--cruncher-args",
                     cruncher,
                     "minimum_overlap",
-                    10,
+                    "10",
                 ],
             )
             api_obj.crunch.assert_called_with(
                 search_results,
                 search_criteria=criteria,
-                **{cruncher: {"minimum_overlap": 10}}
+                **{cruncher: {"minimum_overlap": "10"}}
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
