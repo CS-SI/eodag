@@ -140,7 +140,8 @@ class TestEodagCli(unittest.TestCase):
             result = self.runner.invoke(
                 eodag, ["search", "--conf", conf_file, "-p", "whatever", "-b", 1, 2]
             )
-            self.assertIn("Error: -b option requires 4 arguments", result.output)
+            self.assertIn("-b", result.output)
+            self.assertIn("requires 4 arguments", result.output)
             self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
