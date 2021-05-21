@@ -12,4 +12,6 @@ Logging
 Progress callback
 -----------------
 
+.. autofunction:: eodag.utils.ProgressCallback
+
 .. autofunction:: eodag.utils.NotebookProgressCallback

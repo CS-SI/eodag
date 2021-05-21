@@ -52,7 +52,7 @@ class S3RestDownload(AwsDownload):
         """Download method for S3 REST API.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) The configuration of a plugin of type Authentication
         :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A method or a callable object

@@ -51,9 +51,9 @@ class FilterLatestByName(Crunch):
         """Execute crunch: Filter Search results to get only the latest product, based on the name of the product
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product.EOProduct`)
+        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Starting products filtering")
         processed = []

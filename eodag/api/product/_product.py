@@ -63,10 +63,10 @@ class EOProduct(object):
     :ivar search_kwargs: The search kwargs used by eodag to search for the product
     :vartype search_kwargs: dict
     :ivar geometry: The geometry of the product
-    :vartype geometry: shapely.geometry.base.BaseGeometry
+    :vartype geometry: :class:`shapely.geometry.base.BaseGeometry`
     :ivar search_intersection: The intersection between the product's geometry
                                and the search area.
-    :vartype search_intersection: :class:``shapely.geometry.base.BaseGeometry`` or None
+    :vartype search_intersection: :class:`shapely.geometry.base.BaseGeometry` or None
 
 
     .. note::
@@ -140,7 +140,7 @@ class EOProduct(object):
         """Builds a representation of EOProduct as a dictionary to enable its geojson
         serialization
 
-        :returns: The representation of a :class:`~eodag.api.product.EOProduct` as a
+        :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a
                   Python dict
         :rtype: dict
         """
@@ -168,14 +168,14 @@ class EOProduct(object):
 
     @classmethod
     def from_geojson(cls, feature):
-        """Builds an :class:`~eodag.api.product.EOProduct` object from its
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
         representation as geojson
 
-        :param feature: The representation of a :class:`~eodag.api.product.EOProduct`
+        :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
                         as a Python dict
         :type feature: dict
-        :returns: An instance of :class:`~eodag.api.product.EOProduct`
-        :rtype: :class:`~eodag.api.product.EOProduct`
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :rtype: :class:`~eodag.api.product._product.EOProduct`
         """
         properties = feature["properties"]
         properties["geometry"] = feature["geometry"]

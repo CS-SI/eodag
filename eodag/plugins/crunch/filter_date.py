@@ -51,9 +51,9 @@ class FilterDate(Crunch):
         """Execute crunch: Filter products between start and end dates.
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product.EOProduct`)
+        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Start filtering by date")
         if not products:
