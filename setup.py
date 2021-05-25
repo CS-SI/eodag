@@ -86,9 +86,9 @@ setup(
         ],
         "docs": [
             "sphinx",
-            "sphinx-book-theme",
+            "sphinx-book-theme >= 0.1.0",
             "sphinx-copybutton",
-            "nbsphinx",
+            "nbsphinx == 0.8.5",
         ],
     },
     entry_points={
