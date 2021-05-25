@@ -25,7 +25,7 @@ import copy
 import errno
 import functools
 import inspect
-import logging
+import logging as py_logging
 import os
 import re
 import string
@@ -58,16 +58,53 @@ from jsonpath_ng.ext import parse
 from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
-from tqdm import tqdm
-from tqdm.notebook import tqdm as tqdm_notebook
+from tqdm.auto import tqdm
 
-from eodag.utils.notebook import check_ipython
+from eodag.utils import logging as eodag_logging
 
 DEFAULT_PROJ = "EPSG:4326"
 
-logger = logging.getLogger("eodag.utils")
+logger = py_logging.getLogger("eodag.utils")
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+
+
+def _deprecated(reason="", version=None):
+    """Simple decorator to mark functions/methods/classes as deprecated.
+
+    Warning: Does not work with staticmethods!
+
+    @deprecate(reason="why", versoin="1.2")
+    def foo():
+        pass
+    foo()
+    DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
+    """
+
+    def decorator(callable):
+
+        if inspect.isclass(callable):
+            ctype = "class"
+        else:
+            ctype = "function/method"
+        cname = callable.__name__
+        reason_ = f"({reason})" if reason else ""
+        version_ = f" -- Deprecated since v{version}" if version else ""
+
+        @functools.wraps(callable)
+        def wrapper(*args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", DeprecationWarning)
+                warnings.warn(
+                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+            return callable(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class RequestsTokenAuth(AuthBase):
@@ -348,83 +385,75 @@ def get_timestamp(date_time):
     return dt.timestamp()
 
 
-class ProgressCallback(object):
-    """A callable used to render progress to users for long running processes"""
+class ProgressCallback(tqdm):
+    """A callable used to render progress to users for long running processes.
 
-    def __init__(self, max_size=None):
-        self.pb = None
-        self.max_size = max_size
-        self.unit = "B"
-        self.unit_scale = True
-        self.desc = ""
-        self.position = 0
+    It inherits from `tqdm.auto.tqdm`, and accepts the same arguments on
+    instantiation: `iterable`, `desc`, `total`, `leave`, `file`, `ncols`,
+    `mininterval`, `maxinterval`, `miniters`, `ascii`, `disable`, `unit`,
+    `unit_scale`, `dynamic_ncols`, `smoothing`, `bar_format`, `initial`,
+    `position`, `postfix`, `unit_divisor`.
 
-    def __call__(self, current_size, max_size=None):
+    It can be globally disabled using `eodag.utils.logging.setup_logging(0)` or
+    `eodag.utils.logging.setup_logging(level, no_progress_bar=True)`, and
+    individually disabled using `disable=True`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs.copy()
+        if "unit" not in kwargs:
+            kwargs["unit"] = "B"
+        if "unit_scale" not in kwargs:
+            kwargs["unit_scale"] = True
+        if "desc" not in kwargs:
+            kwargs["desc"] = ""
+        if "position" not in kwargs:
+            kwargs["position"] = 0
+        if "disable" not in kwargs:
+            kwargs["disable"] = eodag_logging.disable_tqdm
+        if "dynamic_ncols" not in kwargs:
+            kwargs["dynamic_ncols"] = True
+
+        super(ProgressCallback, self).__init__(*args, **kwargs)
+
+    def __call__(self, current_size, total=None):
         """Update the progress bar.
 
         :param current_size: amount of data already processed
         :type current_size: int
-        :param max_size: maximum amount of data to be processed
-        :type max_size: int
+        :param total: maximum amount of data to be processed
+        :type total: int
         """
-        if max_size is not None:
-            self.max_size = max_size
-        if self.pb is None:
-            self.pb = tqdm(
-                total=self.max_size,
-                unit=self.unit,
-                unit_scale=self.unit_scale,
-                desc=self.desc,
-                position=self.position,
-                dynamic_ncols=True,
-            )
-        self.pb.update(current_size)
+        if total is not None:
+            self.reset(total=total)
 
-    def reset(self):
-        """Reset progress bar"""
-        if hasattr(self.pb, "reset"):
-            self.pb.reset(self.max_size)
-            self.pb.total = self.max_size
-            self.pb.unit = self.unit
-            self.pb.unit_scale = self.unit_scale
-            self.pb.desc = self.desc
-            self.pb.position = self.position
+        self.update(current_size)
+        self.refresh()
 
-    def __enter__(self):
-        return self
+    def copy(self, *args, **kwargs):
+        """Returns another progress callback using the same initial
+        keyword-arguments.
 
-    def __exit__(self, *exc):
-        if hasattr(self.pb, "close"):
-            self.pb.close()
-        return False
+        Optional `args` and `kwargs` parameters will be used to create a
+        new `~eodag.utils.ProgressCallback` instance, overriding initial
+        `kwargs`.
+        """
+
+        return ProgressCallback(*args, **dict(self.kwargs, **kwargs))
 
 
-class NotebookProgressCallback(ProgressCallback):
+@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
+class NotebookProgressCallback(tqdm):
     """A custom progress bar to be used inside Jupyter notebooks"""
 
-    def __call__(self, current_size, max_size=None):
-        """Update the progress bar"""
-        if max_size is not None:
-            self.max_size = max_size
-        if self.pb is None:
-            self.pb = tqdm_notebook(
-                total=self.max_size,
-                unit=self.unit,
-                unit_scale=self.unit_scale,
-                desc=self.desc,
-                position=self.position,
-                dynamic_ncols=True,
-            )
-        self.pb.update(current_size)
+    pass
 
 
+@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
 def get_progress_callback():
     """Get progress_callback"""
 
-    if check_ipython():
-        return NotebookProgressCallback()
-    else:
-        return ProgressCallback()
+    return tqdm()
 
 
 def repeatfunc(func, n, *args):
@@ -840,41 +869,3 @@ class MockResponse(object):
     def json(self):
         """Return json data"""
         return self.json_data
-
-
-def _deprecated(reason="", version=None):
-    """Simple decorator to mark functions/methods/classes as deprecated.
-
-    Warning: Does not work with staticmethods!
-
-    @deprecate(reason="why", versoin="1.2")
-    def foo():
-        pass
-    foo()
-    DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
-    """
-
-    def decorator(callable):
-
-        if inspect.isclass(callable):
-            ctype = "class"
-        else:
-            ctype = "function/method"
-        cname = callable.__name__
-        reason_ = f"({reason})" if reason else ""
-        version_ = f" -- Deprecated since v{version}" if version else ""
-
-        @functools.wraps(callable)
-        def wrapper(*args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter("always", DeprecationWarning)
-                warnings.warn(
-                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            return callable(*args, **kwargs)
-
-        return wrapper
-
-    return decorator

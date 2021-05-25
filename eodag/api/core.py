@@ -1204,11 +1204,6 @@ class EODataAccessGateway(object):
                 timeout=timeout,
                 **kwargs,
             )
-            # close progress_bar when finished
-            if hasattr(progress_callback, "pb") and hasattr(
-                progress_callback.pb, "close"
-            ):
-                progress_callback.pb.close()
         else:
             logger.info("Empty search result, nothing to be downloaded !")
         return paths
@@ -1406,9 +1401,6 @@ class EODataAccessGateway(object):
         path = product.download(
             progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
         )
-        # close progress_bar when finished
-        if hasattr(progress_callback, "pb") and hasattr(progress_callback.pb, "close"):
-            progress_callback.pb.close()
 
         return path
 

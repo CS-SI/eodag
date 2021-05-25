@@ -260,8 +260,6 @@ class EOProduct(object):
            Returns a file system path instead of a file URI ('/tmp' instead of
            'file:///tmp').
         """
-        if progress_callback is None:
-            progress_callback = ProgressCallback()
         if self.downloader is None:
             raise RuntimeError(
                 "EO product is unable to download itself due to lacking of a "
@@ -273,6 +271,23 @@ class EOProduct(object):
             if self.downloader_auth is not None
             else self.downloader_auth
         )
+
+        # resolve remote location if needed with downloader configuration
+        self.remote_location = self.remote_location % vars(self.downloader.config)
+
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = ProgressCallback(position=1)
+            # one shot progress callback to close after download
+            close_progress_callback = True
+        else:
+            close_progress_callback = False
+            # update units as bar may have been previously used for extraction
+            progress_callback.unit = "B"
+            progress_callback.unit_scale = True
+        progress_callback.desc = self.properties.get("id", "")
+        progress_callback.refresh()
+
         fs_path = self.downloader.download(
             self,
             auth=auth,
@@ -281,6 +296,11 @@ class EOProduct(object):
             timeout=timeout,
             **kwargs
         )
+
+        # close progress bar if needed
+        if close_progress_callback:
+            progress_callback.close()
+
         if fs_path is None:
             raise DownloadError("Missing file location returned by download process")
         logger.debug(
@@ -293,6 +313,7 @@ class EOProduct(object):
             "'remote_location' property: %s",
             self.remote_location,
         )
+
         return fs_path
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
@@ -334,8 +355,17 @@ class EOProduct(object):
                     }
                 )
 
+        # progress bar init
         if progress_callback is None:
             progress_callback = ProgressCallback()
+            # one shot progress callback to close after download
+            close_progress_callback = True
+        else:
+            close_progress_callback = False
+            # update units as bar may have been previously used for extraction
+            progress_callback.unit = "B"
+            progress_callback.unit_scale = True
+        progress_callback.desc = "quicklooks/%s" % self.properties.get("id", "")
 
         if self.properties.get("quicklook", None) is None:
             logger.warning(
@@ -388,10 +418,16 @@ class EOProduct(object):
                     return str(e)
                 else:
                     stream_size = int(stream.headers.get("content-length", 0))
+                    progress_callback.reset(stream_size)
                     with open(quicklook_file, "wb") as fhandle:
                         for chunk in stream.iter_content(chunk_size=64 * 1024):
                             if chunk:
                                 fhandle.write(chunk)
-                                progress_callback(len(chunk), stream_size)
+                                progress_callback(len(chunk))
                     logger.info("Download recorded in %s", quicklook_file)
+
+            # close progress bar if needed
+            if close_progress_callback:
+                progress_callback.close()
+
         return quicklook_file

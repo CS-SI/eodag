@@ -29,7 +29,7 @@ from requests import HTTPError
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.http import HTTPDownload
-from eodag.utils import get_progress_callback, path_to_uri, urljoin
+from eodag.utils import ProgressCallback, path_to_uri, urljoin
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -64,6 +64,12 @@ class S3RestDownload(AwsDownload):
         :return: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        if progress_callback is None:
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+
         # get bucket urls
         bucket_name, prefix = self.get_bucket_name_and_prefix(product)
 
@@ -175,13 +181,7 @@ class S3RestDownload(AwsDownload):
                 for node in xmldoc.getElementsByTagName("Size")
             ]
         )
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = get_progress_callback()
-        progress_callback.desc = product.properties.get("id", "")
-        progress_callback.position = 1
-        progress_callback.max_size = total_size
-        progress_callback.reset()
+        progress_callback.reset(total=total_size)
 
         # download each node key
         for node_xml in nodes_xml_list:
@@ -208,7 +208,7 @@ class S3RestDownload(AwsDownload):
                         for chunk in stream.iter_content(chunk_size=64 * 1024):
                             if chunk:
                                 fhandle.write(chunk)
-                                progress_callback(len(chunk), total_size)
+                                progress_callback(len(chunk))
 
             # TODO: check md5 hash ?
 
