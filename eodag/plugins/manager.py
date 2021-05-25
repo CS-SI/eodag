@@ -47,7 +47,7 @@ class PluginManager(object):
     authenticate, crunch).
 
     :param providers_config: The configuration with all information about the providers
-                             supported by the `eodag`
+                             supported by ``eodag``
     :type providers_config: dict
     """
 

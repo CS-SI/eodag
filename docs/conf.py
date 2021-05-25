@@ -32,6 +32,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
+    "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.viewcode",
@@ -223,10 +224,16 @@ texinfo_documents = [
     )
 ]
 
+extlinks = {
+    "issue": ("https://github.com/CS-SI/eodag/issues/%s", "GH-"),
+    "pull": ("https://github.com/CS-SI/eodag/pull/%s", "GH-"),
+}
+
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "https://docs.python.org/3/": None,
-    "https://docs.python-requests.org/en/master/": None,
+    "python": ("https://docs.python.org/3/", None),
+    "python-requests": ("https://docs.python-requests.org/en/master/", None),
+    "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
 }
 
 

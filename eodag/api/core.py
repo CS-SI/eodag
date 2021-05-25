@@ -498,7 +498,7 @@ class EODataAccessGateway(object):
         :param geom: Search area that can be defined in different ways:
 
                     * with a Shapely geometry object:
-                      ``class:`shapely.geometry.base.BaseGeometry```
+                      :class:`shapely.geometry.base.BaseGeometry`
                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
                     * with a bounding box as list of float:
@@ -615,7 +615,7 @@ class EODataAccessGateway(object):
         :param geom: Search area that can be defined in different ways:
 
                     * with a Shapely geometry object:
-                      ``class:`shapely.geometry.base.BaseGeometry```
+                      :class:`shapely.geometry.base.BaseGeometry`
                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
                     * with a bounding box as list of float:
@@ -747,7 +747,7 @@ class EODataAccessGateway(object):
         :param geom: Search area that can be defined in different ways:
 
                     * with a Shapely geometry object:
-                      ``class:`shapely.geometry.base.BaseGeometry```
+                      :class:`shapely.geometry.base.BaseGeometry`
                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
                     * with a bounding box as list of float:
@@ -1296,7 +1296,7 @@ class EODataAccessGateway(object):
         :rtype: :class:`~eodag.api.search_result.SearchResult`
 
         .. deprecated:: 2.2.1
-           Use the ``StaticStacSearch`` search plugin instead.
+           Use the :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` search plugin instead.
         """
         features = fetch_stac_items(
             filename,
@@ -1348,25 +1348,25 @@ class EODataAccessGateway(object):
         """Download a single product.
 
         This is an alias to the method of the same name on
-        :class:`~eodag.api.product.EOProduct`, but it performs some additional
+        :class:`~eodag.api.product._product.EOProduct`, but it performs some additional
         checks like verifying that a downloader and authenticator are registered
         for the product before trying to download it.
 
-        If the metadata mapping for `downloadLink` is set to something that can be
+        If the metadata mapping for ``downloadLink`` is set to something that can be
         interpreted as a link on a
         local filesystem, the download is skipped (by now, only a link starting
-        with `file://` is supported). Therefore, any user that knows how to extract
+        with ``file://`` is supported). Therefore, any user that knows how to extract
         product location from product metadata on a provider can override the
-        `downloadLink` metadata mapping in the right way. For example, using the
+        ``downloadLink`` metadata mapping in the right way. For example, using the
         environment variable:
-        EODAG__SOBLOO__SEARCH__METADATA_MAPPING__DOWNLOADLINK="file:///{id}" will
-        lead to all `EOProduct`s originating from the provider `sobloo` to have their
-        `downloadLink` metadata point to something like: "file:///12345-678",
-        making this method immediately return the later string without trying
-        to download the product.
+        ``EODAG__SOBLOO__SEARCH__METADATA_MAPPING__DOWNLOADLINK="file:///{id}"`` will
+        lead to all :class:`~eodag.api.product._product.EOProduct`'s originating from the
+        provider ``sobloo`` to have their ``downloadLink`` metadata point to something like:
+        ``file:///12345-678``, making this method immediately return the later string without
+        trying to download the product.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar

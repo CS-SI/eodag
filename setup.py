@@ -85,10 +85,10 @@ setup(
             "rasterio",
         ],
         "docs": [
-            "sphinx==3.5.3",
-            "sphinx-book-theme==0.0.42",
-            "sphinx-copybutton==0.3.1",
-            "nbsphinx==0.8.5",
+            "sphinx",
+            "sphinx-book-theme >= 0.1.0",
+            "sphinx-copybutton",
+            "nbsphinx == 0.8.5",
         ],
     },
     entry_points={

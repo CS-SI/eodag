@@ -170,7 +170,7 @@ class AwsDownload(Download):
         `{outputs_prefix}/{title}/{updated_title}.SAFE`
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) The configuration of a plugin of type Authentication
         :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A method or a callable object
@@ -508,7 +508,7 @@ class AwsDownload(Download):
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param url: URL to use as product.location
         :type url: str
         :return: bucket_name and prefix as str

@@ -49,10 +49,10 @@ class FilterLatestIntersect(Crunch):
         Filter latest products (the ones with a the highest start date) that intersect search extent.
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :param dict search_params: search criteria that must contain `geometry` (dict)
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product.EOProduct`)
+        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Start filtering for latest products")
         if not products:

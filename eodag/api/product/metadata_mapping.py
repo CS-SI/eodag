@@ -373,7 +373,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
 
     :param json: the representation of a provider result as a json object
     :type json: dict
-    :param mapping: a mapping between :class:`~eodag.api.product.EOProduct`'s metadata
+    :param mapping: a mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the json
                     representation, expressed as a
                     `jsonpath <http://goessner.net/articles/JsonPath/>`_
@@ -382,7 +382,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
     :type discovery_pattern: str
     :param discovery_path: str representation of jsonpath
     :type discovery_path: str
-    :return: the metadata of the :class:`~eodag.api.product.EOProduct`
+    :return: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
     properties = {}
@@ -469,7 +469,7 @@ def properties_from_xml(
 
     :param xml_as_text: the representation of a provider result as xml
     :type xml_as_text: str
-    :param mapping: a mapping between :class:`~eodag.api.product.EOProduct`'s metadata
+    :param mapping: a mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the xml
                     representation, expressed as a
                     `xpath <https://www.w3schools.com/xml/xml_xpath.asp>`_
@@ -479,7 +479,7 @@ def properties_from_xml(
                             xpath in `mapping` must use this value to be able to
                             correctly reach empty-namespace prefixed elements
     :type empty_ns_prefix: str
-    :return: the metadata of the :class:`~eodag.api.product.EOProduct`
+    :return: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
     properties = {}
