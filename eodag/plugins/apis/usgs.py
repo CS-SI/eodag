@@ -39,8 +39,8 @@ from eodag.plugins.download.base import (
 )
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    ProgressCallback,
     format_dict_items,
-    get_progress_callback,
     path_to_uri,
 )
 from eodag.utils.exceptions import AuthenticationError, NotAvailableError
@@ -165,19 +165,22 @@ class UsgsApi(Api, Download):
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download data from USGS catalogues"""
 
+        if progress_callback is None:
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+
         fs_path, record_filename = self._prepare_download(
-            product, outputs_extension=".tar.gz", **kwargs
+            product,
+            progress_callback=progress_callback,
+            outputs_extension=".tar.gz",
+            **kwargs
         )
         if not fs_path or not record_filename:
             if fs_path:
                 product.location = path_to_uri(fs_path)
             return fs_path
-
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = get_progress_callback()
-        progress_callback.desc = product.properties.get("id", "")
-        progress_callback.position = 1
 
         try:
             api.login(
@@ -250,13 +253,12 @@ class UsgsApi(Api, Download):
                 )
             else:
                 stream_size = int(stream.headers.get("content-length", 0))
-                progress_callback.max_size = stream_size
-                progress_callback.reset()
+                progress_callback.reset(total=stream_size)
                 with open(fs_path, "wb") as fhandle:
                     for chunk in stream.iter_content(chunk_size=64 * 1024):
                         if chunk:
                             fhandle.write(chunk)
-                            progress_callback(len(chunk), stream_size)
+                            progress_callback(len(chunk))
 
         with open(record_filename, "w") as fh:
             fh.write(product.properties["downloadLink"])
@@ -273,7 +275,12 @@ class UsgsApi(Api, Download):
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
-        product_path = self._finalize(fs_path, outputs_extension=".tar.gz", **kwargs)
+        product_path = self._finalize(
+            fs_path,
+            progress_callback=progress_callback,
+            outputs_extension=".tar.gz",
+            **kwargs
+        )
         product.location = path_to_uri(product_path)
         return product_path
 
