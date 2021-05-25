@@ -45,8 +45,8 @@ class Download(PluginTopic):
 
     A Download plugin has two download methods that it must implement:
 
-    - ``download``: download a single ``EOProduct``
-    - ``download_all``: download multiple products from a ``SearchResult``
+    - ``download``: download a single :class:`~eodag.api.product._product.EOProduct`
+    - ``download_all``: download multiple products from a :class:`~eodag.api.search_result.SearchResult`
 
     They must:
 
@@ -93,7 +93,7 @@ class Download(PluginTopic):
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param progress_callback: A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
         :param wait: If download fails, wait time in minutes between two download tries
@@ -118,7 +118,7 @@ class Download(PluginTopic):
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :return: fs_path, record_filename
         :rtype: tuple
         """
@@ -295,8 +295,8 @@ class Download(PluginTopic):
         """
         Base download_all method.
 
-        This specific implementation uses the ``download`` method implemented by
-        the plugin to **sequentially** attempt to download products.
+        This specific implementation uses the :meth:`eodag.plugins.download.base.Download.download` method
+        implemented by the plugin to **sequentially** attempt to download products.
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`

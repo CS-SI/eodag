@@ -29,8 +29,8 @@ class Api(PluginTopic):
     An Api plugin has three download methods that it must implement:
 
     - ``query``: search for products
-    - ``download``: download a single ``EOProduct``
-    - ``download_all``: download multiple products from a ``SearchResult``
+    - ``download``: download a single :class:`~eodag.api.product._product.EOProduct`
+    - ``download_all``: download multiple products from a :class:`~eodag.api.search_result.SearchResult`
 
     The download methods must:
 
@@ -82,7 +82,7 @@ class Api(PluginTopic):
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param progress_callback: A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
         :param wait: If download fails, wait time in minutes between two download tries
