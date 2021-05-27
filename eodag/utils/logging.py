@@ -118,3 +118,43 @@ def setup_logging(verbose, no_progress_bar=False):
         )
     else:
         raise ValueError("'verbose' must be one of: 0, 1, 2, 3")
+
+
+def get_logging_verbose():
+    """Get logging verbose level
+
+    >>> from eodag import setup_logging
+    >>> get_logging_verbose()
+    >>> setup_logging(verbose=0)
+    >>> get_logging_verbose()
+    0
+    >>> setup_logging(verbose=1)
+    >>> get_logging_verbose()
+    1
+    >>> setup_logging(verbose=2)
+    >>> get_logging_verbose()
+    2
+    >>> setup_logging(verbose=3)
+    >>> get_logging_verbose()
+    3
+
+    :returns: Verbose level in ``[0, 1, 2, 3]`` or None if not set
+    :rtype: int or None
+    """
+    global disable_tqdm
+    logger = logging.getLogger("eodag")
+
+    try:
+        if disable_tqdm and isinstance(logger.handlers[0], logging.NullHandler):
+            return 0
+        elif isinstance(logger.handlers[0], logging.NullHandler):
+            return 1
+        elif logger.getEffectiveLevel() == logging.INFO:
+            return 2
+        elif logger.getEffectiveLevel() == logging.DEBUG:
+            return 3
+    except IndexError:
+        # verbose level has not been set yet
+        pass
+
+    return None
