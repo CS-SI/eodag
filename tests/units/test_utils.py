@@ -18,9 +18,17 @@
 
 import sys
 import unittest
+from contextlib import closing
 from datetime import datetime
+from io import StringIO
 
-from tests.context import get_timestamp, path_to_uri, uri_to_path
+from tests.context import (
+    ProgressCallback,
+    get_timestamp,
+    path_to_uri,
+    setup_logging,
+    uri_to_path,
+)
 
 
 class TestUtils(unittest.TestCase):
@@ -64,3 +72,49 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(path_to_uri(r"C:\tmp\file.txt"), "file:///C:/tmp/file.txt")
         else:
             self.assertEqual(path_to_uri("/tmp/file.txt"), "file:///tmp/file.txt")
+
+    def test_progresscallback_init(self):
+        """ProgressCallback can be instantiated using defaults values"""
+        with ProgressCallback() as bar:
+            self.assertEqual(bar.unit, "B")
+            self.assertEqual(bar.unit_scale, True)
+            self.assertEqual(bar.desc, "")
+
+    def test_progresscallback_init_customize(self):
+        """ProgressCallback can be instantiated using custom values"""
+        with ProgressCallback(unit="foo", unit_scale=False, desc="bar", total=5) as bar:
+            self.assertEqual(bar.unit, "foo")
+            self.assertEqual(bar.unit_scale, False)
+            self.assertEqual(bar.desc, "bar")
+            self.assertEqual(bar.total, 5)
+
+    def test_progresscallback_copy(self):
+        """ProgressCallback can be copied"""
+        with ProgressCallback(unit="foo", unit_scale=False, desc="bar", total=5) as bar:
+            with bar.copy() as another_bar:
+                self.assertEqual(another_bar.unit, "foo")
+                self.assertEqual(another_bar.unit_scale, False)
+                self.assertEqual(another_bar.desc, "bar")
+                self.assertEqual(another_bar.total, 5)
+
+    def test_progresscallback_disable(self):
+        """ProgressCallback can be disabled"""
+        # enabled
+        with closing(StringIO()) as tqdm_out:
+            with ProgressCallback(total=2, file=tqdm_out) as bar:
+                bar(1)
+            self.assertIn("50%", tqdm_out.getvalue())
+
+        # disabled using setup_logging
+        setup_logging(verbose=1, no_progress_bar=True)
+        with closing(StringIO()) as tqdm_out:
+            with ProgressCallback(total=2, file=tqdm_out) as bar:
+                bar(1)
+            self.assertEqual(tqdm_out.getvalue(), "")
+        setup_logging(verbose=1, no_progress_bar=False)
+
+        # disabled using tqdm parameter
+        with closing(StringIO()) as tqdm_out:
+            with ProgressCallback(total=2, file=tqdm_out, disable=True) as bar:
+                bar(1)
+            self.assertEqual(tqdm_out.getvalue(), "")

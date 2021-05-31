@@ -24,7 +24,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from eodag import EODataAccessGateway, api, config
+from eodag import EODataAccessGateway, api, config, setup_logging
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
@@ -50,6 +50,7 @@ from eodag.utils import (
     get_timestamp,
     makedirs,
     path_to_uri,
+    ProgressCallback,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
