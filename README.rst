@@ -1,4 +1,4 @@
-.. image:: https://eodag.readthedocs.io/en/stable/_static/eodag_bycs.png
+.. image:: https://eodag.readthedocs.io/en/latest/_static/eodag_bycs.png
     :target: https://github.com/CS-SI/eodag
 
 |
@@ -50,9 +50,9 @@ integrate new data providers. Three types of plugins compose the tool:
 
 * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
 
-Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/stable/stac.html>`_.
+Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/latest/stac.html>`_.
 
-Read `the documentation <https://eodag.readthedocs.io/en/stable/>`_ for more insights.
+Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
 .. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/eodag_overview.png
    :alt: EODAG overview
@@ -77,7 +77,7 @@ Usage
 =====
 
 For downloading you will need to fill your credentials for the desired providers in your
-`eodag user configuration file <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html>`_.
+`eodag user configuration file <https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html>`_.
 The file will automatically be created with empty values on the first run.
 
 Python API
@@ -103,7 +103,7 @@ Example usage for interacting with the api in your Python code:
 
 This will search for Sentinel 2 level-1C products on the default provider and return the found products first page and
 an estimated total number of products matching the search criteria. And then it will download these products. Please
-check the `Python API User Guide <https://eodag.readthedocs.io/en/stable/api_user_guide.html>`_ for more details.
+check the `Python API User Guide <https://eodag.readthedocs.io/en/latest/api_user_guide.html>`_ for more details.
 
 STAC REST API
 -------------
@@ -185,7 +185,7 @@ And browse http://127.0.0.1:5001:
    :width: 600px
 
 
-For more information, see `STAC REST API usage <https://eodag.readthedocs.io/en/stable/stac_rest.html>`_.
+For more information, see `STAC REST API usage <https://eodag.readthedocs.io/en/latest/stac_rest.html>`_.
 
 Command line interface
 ----------------------
