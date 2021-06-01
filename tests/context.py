@@ -49,6 +49,7 @@ from eodag.utils import (
     get_geometry_from_various,
     get_timestamp,
     makedirs,
+    merge_mappings,
     path_to_uri,
     ProgressCallback,
     uri_to_path,
