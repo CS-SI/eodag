@@ -286,15 +286,13 @@ def merge_mappings(mapping1, mapping2):
     """Merge two mappings with string keys, values from `mapping2` overriding values
     from `mapping1`.
 
-    Do its best to detect the key in `mapping1` to override. For example, let's say
-    we have::
+    Do its best to detect the key in `mapping1` to override. For example::
 
-        mapping2 = {"keya": "new"}
-        mapping1 = {"keyA": "obsolete"}
-
-    Then::
-
-        merge_mappings(mapping1, mapping2) ==> {"keyA": "new"}
+    >>> mapping2 = {"keya": "new"}
+    >>> mapping1 = {"keyA": "obsolete"}
+    >>> merge_mappings(mapping1, mapping2)
+    >>> mapping1
+    {'keyA': 'new'}
 
     If mapping2 has a key that cannot be detected in mapping1, this new key is added
     to mapping1 as is.
@@ -326,35 +324,48 @@ def merge_mappings(mapping1, mapping2):
             current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
             if current_value is not None:
                 current_value_type = type(current_value)
-                if isinstance(value, str):
-                    # Bool is a type with special meaning in Python, thus the special
-                    # case
-                    if current_value_type is bool:
-                        if value.capitalize() not in ("True", "False"):
-                            raise ValueError(
-                                "Only true or false strings (case insensitive) are "
-                                "allowed for booleans"
+                new_value_type = type(value)
+                try:
+                    # If current or new value is a list (search queryable parameter), simply replace current with new
+                    if (
+                        new_value_type == list
+                        and current_value_type != list
+                        or new_value_type != list
+                        and current_value_type == list
+                    ):
+                        mapping1[m1_keys_lowercase.get(key, key)] = value
+                    elif isinstance(value, str):
+                        # Bool is a type with special meaning in Python, thus the special
+                        # case
+                        if current_value_type is bool:
+                            if value.capitalize() not in ("True", "False"):
+                                raise ValueError(
+                                    "Only true or false strings (case insensitive) are "
+                                    "allowed for booleans"
+                                )
+                            # Get the real Python value of the boolean. e.g: value='tRuE'
+                            # => eval(value.capitalize())=True.
+                            # str.capitalize() transforms the first character of the string
+                            # to a capital letter
+                            mapping1[m1_keys_lowercase.get(key, key)] = eval(
+                                value.capitalize()
                             )
-                        # Get the real Python value of the boolean. e.g: value='tRuE'
-                        # => eval(value.capitalize())=True.
-                        # str.capitalize() transforms the first character of the string
-                        # to a capital letter
-                        mapping1[m1_keys_lowercase.get(key, key)] = eval(
-                            value.capitalize()
-                        )
+                        else:
+                            mapping1[
+                                m1_keys_lowercase.get(key, key)
+                            ] = current_value_type(value)
                     else:
                         mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
                             value
                         )
-                else:
-                    try:
-                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
-                            value
-                        )
-                    except TypeError:
-                        # Ignore any override value that does not have the same type
-                        # as the default value
-                        pass
+                except (TypeError, ValueError):
+                    # Ignore any override value that does not have the same type
+                    # as the default value
+                    logger.debug(
+                        f"Ignored '{key}' setting override from '{current_value}' to '{value}', "
+                        f"(could not cast {new_value_type} to {current_value_type})"
+                    )
+                    pass
             else:
                 mapping1[key] = value
 

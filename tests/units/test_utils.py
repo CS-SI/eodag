@@ -25,6 +25,7 @@ from io import StringIO
 from tests.context import (
     ProgressCallback,
     get_timestamp,
+    merge_mappings,
     path_to_uri,
     setup_logging,
     uri_to_path,
@@ -118,3 +119,36 @@ class TestUtils(unittest.TestCase):
             with ProgressCallback(total=2, file=tqdm_out, disable=True) as bar:
                 bar(1)
             self.assertEqual(tqdm_out.getvalue(), "")
+
+    def test_merge_mappings(self):
+        """Configuration mappings must be merged properly."""
+
+        # nested dict
+        mapping = {"foo": {"keyA": "obsolete"}}
+        merge_mappings(mapping, {"foo": {"keya": "new"}})
+        self.assertEqual(mapping, {"foo": {"keyA": "new"}})
+
+        # list replaced by string
+        mapping = {"keyA": ["obsolete1", "obsolete2"]}
+        merge_mappings(mapping, {"keya": "new"})
+        self.assertEqual(mapping, {"keyA": "new"})
+
+        # string replaced by list
+        mapping = {"keyA": "obsolete"}
+        merge_mappings(mapping, {"keya": ["new1", "new2"]})
+        self.assertEqual(mapping, {"keyA": ["new1", "new2"]})
+
+        # bool replaced by str
+        mapping = {"keyA": True}
+        merge_mappings(mapping, {"keya": "fAlSe"})
+        self.assertEqual(mapping, {"keyA": False})
+
+        # int replaced by str
+        mapping = {"keyA": 1}
+        merge_mappings(mapping, {"keya": "2"})
+        self.assertEqual(mapping, {"keyA": 2})
+
+        # override ignored if cast cannot be perfomed to origin type
+        mapping = {"keyA": True}
+        merge_mappings(mapping, {"keya": "bar"})
+        self.assertEqual(mapping, {"keyA": True})
