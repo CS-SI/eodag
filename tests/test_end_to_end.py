@@ -547,8 +547,8 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         record_content = Path(record_file).read_text()
         self.assertEqual(record_content, product.remote_location)
 
-        # The product should not be downloaded again if the download method
-        # is executed again
+        # The downloaded product should not be downloaded again if the download
+        # method is executed again
         previous_archive_file_path = archive_file_path
         previous_location = product.location
         start_time = time.time()
@@ -580,7 +580,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # download it, if its location points to the remote location.
         # The product should be automatically extracted.
         product.location = product.remote_location
-        product_dir_path = self.eodag.download(product)
+        product_dir_path = self.eodag.download(product, extract=True)
 
         # Its size should be >= 5 KB
         downloaded_size = sum(
@@ -598,6 +598,16 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # The path must point to a SAFE directory
         self.assertTrue(os.path.isdir(product_dir_path))
         self.assertTrue(product_dir_path.endswith("SAFE"))
+
+        # The downloaded & extracted product should not be downloaded again if
+        # the download method is executed again
+        previous_product_dir_path = product_dir_path
+        start_time = time.time()
+        product_dir_path = self.eodag.download(product)
+        end_time = time.time()
+        self.assertLess(end_time - start_time, 2)  # Should be really fast (< 2s)
+        # The paths should be the same as before
+        self.assertEqual(product_dir_path, previous_product_dir_path)
 
         # Remove the archive and extracted product and reset the product's location
         os.remove(archive_file_path)
