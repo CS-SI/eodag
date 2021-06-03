@@ -202,6 +202,26 @@ class Download(PluginTopic):
 
         return fs_path, record_filename
 
+    def _resolve_archive_depth(self, product_path):
+        """Update product_path using archive_depth from provider configuration.
+
+        Handle depth levels in the product archive. For example, if the downloaded archive was
+        extracted to: ``/top_level/product_base_dir`` and ``archive_depth`` was configured to 2, the product
+        location will be ``/top_level/product_base_dir``.
+        WARNING: A strong assumption is made here: there is only one subdirectory per level
+
+        :param product_path: The path to the extracted product
+        :type product_path: str
+        :return: The path to the extracted product with the right depth
+        :rtype: str
+        """
+        archive_depth = getattr(self.config, "archive_depth", 1)
+        count = 1
+        while count < archive_depth:
+            product_path = os.path.join(product_path, os.listdir(product_path)[0])
+            count += 1
+        return product_path
+
     def _finalize(self, fs_path, progress_callback=None, **kwargs):
         """Finalize the download process.
 
@@ -210,6 +230,7 @@ class Download(PluginTopic):
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :return: the absolute path to the product
+        :rtype: str
         """
         # progress bar init
         if progress_callback is None:
@@ -272,6 +293,7 @@ class Download(PluginTopic):
                 % product_path
             )
             progress_callback(1, total=1)
+            product_path = self._resolve_archive_depth(product_path)
             return product_path
         outputs_prefix = (
             kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
@@ -314,15 +336,8 @@ class Download(PluginTopic):
         if close_progress_callback:
             progress_callback.close()
 
-        # Handle depth levels in the product archive. For example, if the downloaded archive was
-        # extracted to: /top_level/product_base_dir and archive_depth was configured to 2, the product
-        # location will be /top_level/product_base_dir.
-        # WARNING: A strong assumption is made here: there is only one subdirectory per level
-        archive_depth = getattr(self.config, "archive_depth", 1)
-        count = 1
-        while count < archive_depth:
-            product_path = os.path.join(product_path, os.listdir(product_path)[0])
-            count += 1
+        product_path = self._resolve_archive_depth(product_path)
+
         return product_path
 
     def download_all(
