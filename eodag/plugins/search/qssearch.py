@@ -46,7 +46,7 @@ from eodag.utils import (
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import AuthenticationError, RequestError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -899,16 +899,26 @@ class PostJsonSearch(QueryStringSearch):
         urls = []
         total_results = 0 if count else None
         for collection in self.get_collections(**kwargs):
-            search_endpoint = self.config.api_endpoint.rstrip("/").format(
-                **dict(collection=collection, **kwargs["auth"].config.credentials)
-            )
+            try:
+                search_endpoint = self.config.api_endpoint.rstrip("/").format(
+                    **dict(
+                        collection=collection,
+                        **getattr(kwargs["auth"].config, "credentials", {})
+                    )
+                )
+            except KeyError as e:
+                raise MisconfiguredError(
+                    "Missing %s in %s configuration"
+                    % (",".join(e.args), kwargs["auth"].provider)
+                )
             if page is not None and items_per_page is not None:
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
                     ).format(
                         **dict(
-                            collection=collection, **kwargs["auth"].config.credentials
+                            collection=collection,
+                            **getattr(kwargs["auth"].config, "credentials", {})
                         )
                     )
                     if count_endpoint:
