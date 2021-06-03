@@ -72,8 +72,8 @@ class UsgsApi(Api, Download):
             return [], 0
         try:
             api.login(
-                self.config.credentials["username"],
-                self.config.credentials["password"],
+                getattr(self.config, "credentials", {}).get("username", ""),
+                getattr(self.config, "credentials", {}).get("password", ""),
                 save=True,
             )
         except USGSError:
@@ -184,8 +184,8 @@ class UsgsApi(Api, Download):
 
         try:
             api.login(
-                self.config.credentials["username"],
-                self.config.credentials["password"],
+                getattr(self.config, "credentials", {}).get("username", ""),
+                getattr(self.config, "credentials", {}).get("password", ""),
                 save=True,
             )
         except USGSError:
