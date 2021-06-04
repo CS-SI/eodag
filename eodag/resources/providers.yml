@@ -986,29 +986,49 @@
         - productType
         - '$.properties.productType'
       platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
-      instrument: '$.properties.instrument'
-      processingLevel: '$.properties.processingLevel'
+      platformSerialIdentifier:
+        - platform
+        - '$.properties.platform'
+      instrument:
+        - instrument
+        - '$.properties.instrument'
+      processingLevel:
+        - processingLevel
+        - '$.properties.processingLevel'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
       keyword: '$.properties.keywords'
       abstract: '$.properties.description'
-      resolution: '$.properties.resolution'
-      organisationName: '$.properties.organisationName'
+      resolution:
+        - resolution
+        - '$.properties.resolution'
+      organisationName:
+        - organisationName
+        - '$.properties.organisationName'
       publicationDate: '$.properties.published'
       accessConstraint: '$.properties.license'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier: '$.properties.parentIdentifier'
-      orbitNumber: '$.properties.orbitNumber'
-      orbitDirection: '$.properties.orbitDirection'
+      parentIdentifier:
+        - parentIdentifier
+        - '$.properties.parentIdentifier'
+      orbitNumber:
+        - orbitNumber
+        - '$.properties.orbitNumber'
+      orbitDirection:
+        - orbitDirection
+        - '$.properties.orbitDirection'
       cloudCover:
         - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
-      snowCover: '$.properties.snowCover'
+      snowCover:
+        - snowCover
+        - '$.properties.snowCover'
       modificationDate: '$.properties.updated'
-      sensorMode: '$.properties.sensorMode'
+      sensorMode:
+        - sensorMode
+        - '$.properties.sensorMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
@@ -1037,6 +1057,57 @@
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
+      cultivatedCover:
+        - cultivatedCover
+        - '$.properties.cultivatedCover'
+      desertCover:
+        - desertCover
+        - '$.properties.desertCover'
+      floodedCover:
+        - floodedCover
+        - '$.properties.floodedCover'
+      forestCover:
+        - forestCover
+        - '$.properties.forestCover'
+      herbaceousCover:
+        - herbaceousCover
+        - '$.properties.herbaceousCover'
+      iceCover:
+        - iceCover
+        - '$.properties.iceCover'
+      urbanCover:
+        - urbanCover
+        - '$.properties.urbanCover'
+      waterCover:
+        - waterCover
+        - '$.properties.waterCover'
+      processingBaseline:
+        - processingBaseline
+        - '$.properties.processingBaseline'
+      publishedAfter:
+        - publishedAfter
+        - '$.properties.publishedAfter'
+      publishedBefore:
+        - publishedBefore
+        - '$.properties.publishedBefore'
+      relativeOrbitNumber:
+        - relativeOrbitNumber
+        - '$.properties.relativeOrbitNumber'
+      relativeOrbitNumber:
+        - relativeOrbitNumber
+        - '$.properties.relativeOrbitNumber'
+      sortOrder:
+        - sortOrder
+        - '$.properties.sortOrder'
+      sortParam:
+        - sortParam
+        - '$.properties.sortParam'
+      status:
+        - status
+        - '$.properties.status'
+      timeliness:
+        - timeliness
+        - '$.properties.timeliness'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
