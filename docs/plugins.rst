@@ -54,8 +54,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +-----------------+-------------------+--------------------------+----------------+
 | usgs            | UsgsApi           | UsgsApi                  | UsgsApi        |
 +-----------------+-------------------+--------------------------+----------------+
-| wekeo           | CSWSearch         | GenericAuth              | HTTPDownload   |
-+-----------------+-------------------+--------------------------+----------------+
 
 .. _creating_plugins:
 
