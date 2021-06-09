@@ -81,6 +81,27 @@ Parameters mapping
 
 EODAG maps each provider's specific metadata parameters to a common model using
 `OGC OpenSearch Extension for Earth Observation <http://docs.opengeospatial.org/is/13-026r9/13-026r9.html>`_.
+Extra parameters having no equivalent in this model are mapped as is.
 
-The list of parameters mapped for the available providers can be found in this
-`CSV file <_static/params_mapping.csv>`_.
+Depending on the provider, some parameters are queryable or not. The following
+tables list the parameters supported by providers, and if they are queryable or not.
+
+OpenSearch parameters (`CSV <_static/params_mapping_opensearch.csv>`__)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. role:: green
+.. csv-table::
+   :file: _static/params_mapping_opensearch.csv
+   :header-rows: 1
+   :stub-columns: 1
+   :class: params
+
+Provider/eodag specific parameters (`CSV <_static/params_mapping_extra.csv>`__)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. role:: green
+.. csv-table::
+   :file: _static/params_mapping_extra.csv
+   :header-rows: 1
+   :stub-columns: 1
+   :class: params
