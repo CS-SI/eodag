@@ -37,11 +37,3 @@ repos:
     rev: v5.7.0
     hooks:
     -   id: isort
-
--   repo: local
-    hooks:
-        - id: params-mapping-to-csv
-          name: params-mapping-to-csv
-          entry: python utils/params_mapping_to_csv.py
-          verbose: true
-          language: system
