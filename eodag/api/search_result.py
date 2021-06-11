@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -21,10 +21,10 @@ from eodag.api.product import EOProduct
 
 
 class SearchResult(UserList):
-    """An object representing a collection of :class:`~eodag.api.product.EOProduct` resulting from a search.
+    """An object representing a collection of :class:`~eodag.api.product._product.EOProduct` resulting from a search.
 
     :param products: A list of products resulting from a search
-    :type products: list(:class:`~eodag.api.product.EOProduct`)
+    :type products: list(:class:`~eodag.api.product._product.EOProduct`)
     """
 
     def __init__(self, products):

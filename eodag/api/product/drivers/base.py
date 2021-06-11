@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -24,7 +24,7 @@ class DatasetDriver(metaclass=type):
         """Retrieve the address of the dataset represented by `eo_product`.
 
         :param eo_product: The product whom underlying dataset address is to be retrieved
-        :type eo_product: :class:`~eodag.api.product.EOProduct`
+        :type eo_product: :class:`~eodag.api.product._product.EOProduct`
         :param band: The band to retrieve (e.g: 'B01')
         :type band: str
         :returns: An address for the dataset

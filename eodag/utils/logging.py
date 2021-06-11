@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -18,18 +18,30 @@
 
 import logging.config
 
+disable_tqdm = False
 
-def setup_logging(verbose):
+
+def setup_logging(verbose, no_progress_bar=False):
     """Define logging level
 
     :param verbose: Accepted values:
 
-                    * 0: no logging
-                    * 1 or 2: INFO level
+                    * 0: no logging with muted progress bars
+                    * 1: no logging but still displays progress bars
+                    * 2: INFO level
                     * 3: DEBUG level
     :type verbose: int
+
+    :param no_progress_bar: (optional) disable progress bars (default=False)
+    :type no_progress_bar: bool
     """
-    if verbose == 0:
+    global disable_tqdm
+    disable_tqdm = no_progress_bar
+
+    if verbose < 1:
+        disable_tqdm = True
+
+    if verbose <= 1:
         logging.config.dictConfig(
             {
                 "version": 1,
@@ -42,7 +54,7 @@ def setup_logging(verbose):
                 },
             }
         )
-    elif verbose <= 2:
+    elif verbose == 2:
         logging.config.dictConfig(
             {
                 "version": 1,
@@ -106,3 +118,43 @@ def setup_logging(verbose):
         )
     else:
         raise ValueError("'verbose' must be one of: 0, 1, 2, 3")
+
+
+def get_logging_verbose():
+    """Get logging verbose level
+
+    >>> from eodag import setup_logging
+    >>> get_logging_verbose()
+    >>> setup_logging(verbose=0)
+    >>> get_logging_verbose()
+    0
+    >>> setup_logging(verbose=1)
+    >>> get_logging_verbose()
+    1
+    >>> setup_logging(verbose=2)
+    >>> get_logging_verbose()
+    2
+    >>> setup_logging(verbose=3)
+    >>> get_logging_verbose()
+    3
+
+    :returns: Verbose level in ``[0, 1, 2, 3]`` or None if not set
+    :rtype: int or None
+    """
+    global disable_tqdm
+    logger = logging.getLogger("eodag")
+
+    try:
+        if disable_tqdm and isinstance(logger.handlers[0], logging.NullHandler):
+            return 0
+        elif isinstance(logger.handlers[0], logging.NullHandler):
+            return 1
+        elif logger.getEffectiveLevel() == logging.INFO:
+            return 2
+        elif logger.getEffectiveLevel() == logging.DEBUG:
+            return 3
+    except IndexError:
+        # verbose level has not been set yet
+        pass
+
+    return None

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -23,15 +23,18 @@ this package should go here
 import ast
 import copy
 import errno
-import logging
+import functools
+import inspect
+import logging as py_logging
 import os
 import re
 import string
 import types
 import unicodedata
+import warnings
 from collections import defaultdict
-from datetime import datetime, timezone
 from itertools import repeat, starmap
+from pathlib import Path
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -40,27 +43,68 @@ from urllib.parse import (  # noqa; noqa
     urlencode,
     urljoin,
     urlparse,
+    urlsplit,
     urlunparse,
 )
+from urllib.request import url2pathname
 
 import click
 import shapefile
 import shapely.wkt
+from dateutil.parser import isoparse
+from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
-from tqdm import tqdm
-from tqdm.notebook import tqdm as tqdm_notebook
+from tqdm.auto import tqdm
 
-from eodag.utils.notebook import check_ipython
+from eodag.utils import logging as eodag_logging
 
 DEFAULT_PROJ = "EPSG:4326"
 
-logger = logging.getLogger("eodag.utils")
+logger = py_logging.getLogger("eodag.utils")
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+
+
+def _deprecated(reason="", version=None):
+    """Simple decorator to mark functions/methods/classes as deprecated.
+
+    Warning: Does not work with staticmethods!
+
+    @deprecate(reason="why", versoin="1.2")
+    def foo():
+        pass
+    foo()
+    DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
+    """
+
+    def decorator(callable):
+
+        if inspect.isclass(callable):
+            ctype = "class"
+        else:
+            ctype = "function/method"
+        cname = callable.__name__
+        reason_ = f"({reason})" if reason else ""
+        version_ = f" -- Deprecated since v{version}" if version else ""
+
+        @functools.wraps(callable)
+        def wrapper(*args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", DeprecationWarning)
+                warnings.warn(
+                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+            return callable(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class RequestsTokenAuth(AuthBase):
@@ -200,6 +244,24 @@ def strip_accents(s):
     )
 
 
+def uri_to_path(uri):
+    """
+    Convert a file URI (e.g. 'file:///tmp') to a local path (e.g. '/tmp')
+    """
+    if not uri.startswith("file"):
+        raise ValueError("A file URI must be provided (e.g. 'file:///tmp'")
+    _, _, path, _, _ = urlsplit(uri)
+    # On Windows urlsplit returns the path starting with a slash ('/C:/User)
+    path = url2pathname(path)
+    # url2pathname removes it
+    return path
+
+
+def path_to_uri(path):
+    """Convert a local absolute path to a file URI"""
+    return Path(path).as_uri()
+
+
 def mutate_dict_in_place(func, mapping):
     """Apply func to values of mapping.
 
@@ -224,15 +286,13 @@ def merge_mappings(mapping1, mapping2):
     """Merge two mappings with string keys, values from `mapping2` overriding values
     from `mapping1`.
 
-    Do its best to detect the key in `mapping1` to override. For example, let's say
-    we have::
+    Do its best to detect the key in `mapping1` to override. For example::
 
-        mapping2 = {"keya": "new"}
-        mapping1 = {"keyA": "obsolete"}
-
-    Then::
-
-        merge_mappings(mapping1, mapping2) ==> {"keyA": "new"}
+    >>> mapping2 = {"keya": "new"}
+    >>> mapping1 = {"keyA": "obsolete"}
+    >>> merge_mappings(mapping1, mapping2)
+    >>> mapping1
+    {'keyA': 'new'}
 
     If mapping2 has a key that cannot be detected in mapping1, this new key is added
     to mapping1 as is.
@@ -264,35 +324,48 @@ def merge_mappings(mapping1, mapping2):
             current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
             if current_value is not None:
                 current_value_type = type(current_value)
-                if isinstance(value, str):
-                    # Bool is a type with special meaning in Python, thus the special
-                    # case
-                    if current_value_type is bool:
-                        if value.capitalize() not in ("True", "False"):
-                            raise ValueError(
-                                "Only true or false strings (case insensitive) are "
-                                "allowed for booleans"
+                new_value_type = type(value)
+                try:
+                    # If current or new value is a list (search queryable parameter), simply replace current with new
+                    if (
+                        new_value_type == list
+                        and current_value_type != list
+                        or new_value_type != list
+                        and current_value_type == list
+                    ):
+                        mapping1[m1_keys_lowercase.get(key, key)] = value
+                    elif isinstance(value, str):
+                        # Bool is a type with special meaning in Python, thus the special
+                        # case
+                        if current_value_type is bool:
+                            if value.capitalize() not in ("True", "False"):
+                                raise ValueError(
+                                    "Only true or false strings (case insensitive) are "
+                                    "allowed for booleans"
+                                )
+                            # Get the real Python value of the boolean. e.g: value='tRuE'
+                            # => eval(value.capitalize())=True.
+                            # str.capitalize() transforms the first character of the string
+                            # to a capital letter
+                            mapping1[m1_keys_lowercase.get(key, key)] = eval(
+                                value.capitalize()
                             )
-                        # Get the real Python value of the boolean. e.g: value='tRuE'
-                        # => eval(value.capitalize())=True.
-                        # str.capitalize() transforms the first character of the string
-                        # to a capital letter
-                        mapping1[m1_keys_lowercase.get(key, key)] = eval(
-                            value.capitalize()
-                        )
+                        else:
+                            mapping1[
+                                m1_keys_lowercase.get(key, key)
+                            ] = current_value_type(value)
                     else:
                         mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
                             value
                         )
-                else:
-                    try:
-                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
-                            value
-                        )
-                    except TypeError:
-                        # Ignore any override value that does not have the same type
-                        # as the default value
-                        pass
+                except (TypeError, ValueError):
+                    # Ignore any override value that does not have the same type
+                    # as the default value
+                    logger.debug(
+                        f"Ignored '{key}' setting override from '{current_value}' to '{value}', "
+                        f"(could not cast {new_value_type} to {current_value_type})"
+                    )
+                    pass
             else:
                 mapping1[key] = value
 
@@ -307,108 +380,91 @@ def maybe_generator(obj):
         yield obj
 
 
-def get_timestamp(date_time, date_format="%Y-%m-%dT%H:%M:%S", as_utc=False):
-    """Returns the given UTC date_time string formatted with date_format as timestamp
+def get_timestamp(date_time):
+    """Return the Unix timestamp of an ISO8601 date/datetime in seconds.
+
+    If the datetime has no offset, it is assumed to be an UTC datetime.
 
     :param date_time: the datetime string to return as timestamp
     :type date_time: str
-    :param date_format: (optional) the date format in which date_time is given,
-                        defaults to '%Y-%m-%dT%H:%M:%S'
-    :type date_format: str
-    :param as_utc: (optional) if ``True``, consider the input ``date_time`` as UTC,
-                        defaults to ``False``
-    :type date_format: bool
     :returns: the timestamp corresponding to the date_time string in seconds
     :rtype: float
-
-    .. versionchanged::
-        2.1.0
-
-            * The optional parameter ``as_utc`` to consider the input date as UTC.
     """
-    dt = datetime.strptime(date_time, date_format)
-    if as_utc:
-        dt = dt.replace(tzinfo=timezone.utc)
+    dt = isoparse(date_time)
+    if not dt.tzinfo:
+        dt = dt.replace(tzinfo=UTC)
     return dt.timestamp()
 
 
-class ProgressCallback(object):
-    """A callable used to render progress to users for long running processes"""
+class ProgressCallback(tqdm):
+    """A callable used to render progress to users for long running processes.
 
-    def __init__(self, max_size=None):
-        self.pb = None
-        self.max_size = max_size
-        self.unit = "B"
-        self.unit_scale = True
-        self.desc = ""
-        self.position = 0
+    It inherits from `tqdm.auto.tqdm`, and accepts the same arguments on
+    instantiation: `iterable`, `desc`, `total`, `leave`, `file`, `ncols`,
+    `mininterval`, `maxinterval`, `miniters`, `ascii`, `disable`, `unit`,
+    `unit_scale`, `dynamic_ncols`, `smoothing`, `bar_format`, `initial`,
+    `position`, `postfix`, `unit_divisor`.
 
-    def __call__(self, current_size, max_size=None):
+    It can be globally disabled using `eodag.utils.logging.setup_logging(0)` or
+    `eodag.utils.logging.setup_logging(level, no_progress_bar=True)`, and
+    individually disabled using `disable=True`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs.copy()
+        if "unit" not in kwargs:
+            kwargs["unit"] = "B"
+        if "unit_scale" not in kwargs:
+            kwargs["unit_scale"] = True
+        if "desc" not in kwargs:
+            kwargs["desc"] = ""
+        if "position" not in kwargs:
+            kwargs["position"] = 0
+        if "disable" not in kwargs:
+            kwargs["disable"] = eodag_logging.disable_tqdm
+        if "dynamic_ncols" not in kwargs:
+            kwargs["dynamic_ncols"] = True
+
+        super(ProgressCallback, self).__init__(*args, **kwargs)
+
+    def __call__(self, current_size, total=None):
         """Update the progress bar.
 
         :param current_size: amount of data already processed
         :type current_size: int
-        :param max_size: maximum amount of data to be processed
-        :type max_size: int
+        :param total: maximum amount of data to be processed
+        :type total: int
         """
-        if max_size is not None:
-            self.max_size = max_size
-        if self.pb is None:
-            self.pb = tqdm(
-                total=self.max_size,
-                unit=self.unit,
-                unit_scale=self.unit_scale,
-                desc=self.desc,
-                position=self.position,
-                dynamic_ncols=True,
-            )
-        self.pb.update(current_size)
+        if total is not None:
+            self.reset(total=total)
 
-    def reset(self):
-        """Reset progress bar"""
-        if hasattr(self.pb, "reset"):
-            self.pb.reset(self.max_size)
-            self.pb.total = self.max_size
-            self.pb.unit = self.unit
-            self.pb.unit_scale = self.unit_scale
-            self.pb.desc = self.desc
-            self.pb.position = self.position
+        self.update(current_size)
+        self.refresh()
 
-    def __enter__(self):
-        return self
+    def copy(self, *args, **kwargs):
+        """Returns another progress callback using the same initial
+        keyword-arguments.
 
-    def __exit__(self, *exc):
-        if hasattr(self.pb, "close"):
-            self.pb.close()
-        return False
+        Optional `args` and `kwargs` parameters will be used to create a
+        new `~eodag.utils.ProgressCallback` instance, overriding initial
+        `kwargs`.
+        """
+
+        return ProgressCallback(*args, **dict(self.kwargs, **kwargs))
 
 
-class NotebookProgressCallback(ProgressCallback):
+@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
+class NotebookProgressCallback(tqdm):
     """A custom progress bar to be used inside Jupyter notebooks"""
 
-    def __call__(self, current_size, max_size=None):
-        """Update the progress bar"""
-        if max_size is not None:
-            self.max_size = max_size
-        if self.pb is None:
-            self.pb = tqdm_notebook(
-                total=self.max_size,
-                unit=self.unit,
-                unit_scale=self.unit_scale,
-                desc=self.desc,
-                position=self.position,
-                dynamic_ncols=True,
-            )
-        self.pb.update(current_size)
+    pass
 
 
+@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
 def get_progress_callback():
     """Get progress_callback"""
 
-    if check_ipython():
-        return NotebookProgressCallback()
-    else:
-        return ProgressCallback()
+    return tqdm()
 
 
 def repeatfunc(func, n, *args):
@@ -705,6 +761,29 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
         return jsonpath_obj
 
 
+def nested_pairs2dict(pairs):
+    """Create a dict using nested pairs
+
+    >>> nested_pairs2dict([["foo",[["bar","baz"]]]])
+    {'foo': {'bar': 'baz'}}
+
+    :param pairs: pairs [key, value]
+    :type pairs: list
+    :returns: created dict
+    :rtype: dict
+    """
+    d = {}
+    try:
+        for k, v in pairs:
+            if isinstance(v, list):
+                v = nested_pairs2dict(v)
+            d[k] = v
+    except ValueError:
+        return pairs
+
+    return d
+
+
 def get_geometry_from_various(locations_config=[], **query_args):
     """Creates a shapely geometry using given query kwargs arguments
 
@@ -801,9 +880,3 @@ class MockResponse(object):
     def json(self):
         """Return json data"""
         return self.json_data
-
-
-if __name__ == "__main__":
-    import doctest
-
-    doctest.testmod()

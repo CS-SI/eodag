@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import shutil
+from pathlib import Path
 
 import boto3
 import requests
@@ -27,14 +28,18 @@ from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
 
-from eodag.api.product.metadata_mapping import mtd_cfg_as_jsonpath, properties_from_json
+from eodag.api.product.metadata_mapping import (
+    mtd_cfg_as_jsonpath,
+    properties_from_json,
+    properties_from_xml,
+)
 from eodag.plugins.download.base import Download
-from eodag.utils import get_progress_callback, urlparse
+from eodag.utils import ProgressCallback, path_to_uri, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
 
-# AWS chunck path identify patterns
+# AWS chunk path identify patterns
 
 # S2 L2A Tile files -----------------------------------------------------------
 S2L2A_TILE_IMG_REGEX = re.compile(
@@ -44,6 +49,16 @@ S2L2A_TILE_IMG_REGEX = re.compile(
 S2L2A_TILE_AUX_DIR_REGEX = re.compile(
     r"^tiles/(?P<tile1>[0-9]+)/(?P<tile2>[A-Z]+)/(?P<tile3>[A-Z]+)/(?P<year>[0-9]+)/(?P<month>[0-9]+)/"
     + r"(?P<day>[0-9]+)/(?P<num>[0-9]+)/auxiliary/(?P<file>AUX_.+)$"
+)
+# S2 L2A QI Masks
+S2_TILE_QI_MSK_REGEX = re.compile(
+    r"^tiles/(?P<tile1>[0-9]+)/(?P<tile2>[A-Z]+)/(?P<tile3>[A-Z]+)/(?P<year>[0-9]+)/(?P<month>[0-9]+)/"
+    + r"(?P<day>[0-9]+)/(?P<num>[0-9]+)/qi/(?P<file_base>.+)_(?P<file_suffix>[0-9]+m\.jp2)$"
+)
+# S2 L2A QI PVI
+S2_TILE_QI_PVI_REGEX = re.compile(
+    r"^tiles/(?P<tile1>[0-9]+)/(?P<tile2>[A-Z]+)/(?P<tile3>[A-Z]+)/(?P<year>[0-9]+)/(?P<month>[0-9]+)/"
+    + r"(?P<day>[0-9]+)/(?P<num>[0-9]+)/qi/L2A_PVI\.jp2$"
 )
 # S2 Tile files ---------------------------------------------------------------
 S2_TILE_IMG_REGEX = re.compile(
@@ -87,6 +102,10 @@ S2_PROD_DS_QI_REGEX = re.compile(
     r"^products/(?P<year>[0-9]+)/(?P<month>[0-9]+)/(?P<day>[0-9]+)/(?P<title>[A-Z0-9_]+)/datastrip/"
     + r"(?P<num>.+)/qi/(?P<file>.+)$"
 )
+S2_PROD_DS_QI_REPORT_REGEX = re.compile(
+    r"^products/(?P<year>[0-9]+)/(?P<month>[0-9]+)/(?P<day>[0-9]+)/(?P<title>[A-Z0-9_]+)/datastrip/"
+    + r"(?P<num>.+)/qi/(?P<filename>.+)_report\.xml$"
+)
 S2_PROD_INSPIRE_REGEX = re.compile(
     r"^products/(?P<year>[0-9]+)/(?P<month>[0-9]+)/(?P<day>[0-9]+)/(?P<title>[A-Z0-9_]+)/"
     + r"(?P<file>inspire\.xml)$"
@@ -129,7 +148,7 @@ CBERS4_REGEX = re.compile(
 S1_IMG_NB_PER_POLAR = {
     "SH": {"HH": 1},
     "SV": {"VV": 1},
-    "DH": {"HH": 1, "VV": 2},
+    "DH": {"HH": 1, "HV": 2},
     "DV": {"VV": 1, "VH": 2},
     "HH": {"HH": 1},
     "HV": {"HV": 1},
@@ -144,8 +163,14 @@ class AwsDownload(Download):
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download method for AWS S3 API.
 
+        The product can be downloaded as it is, or as SAFE-formatted product.
+        SAFE-build is configured for a given provider and product type.
+        If the product title is configured to be updated during download and
+        SAFE-formatted, its destination path will be:
+        `{outputs_prefix}/{title}/{updated_title}.SAFE`
+
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) The configuration of a plugin of type Authentication
         :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A method or a callable object
@@ -157,6 +182,28 @@ class AwsDownload(Download):
         :return: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        if progress_callback is None:
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+
+        # prepare download & create dirs (before updating metadata)
+        product_local_path, record_filename = self._prepare_download(
+            product, progress_callback=progress_callback, **kwargs
+        )
+        if not product_local_path or not record_filename:
+            if product_local_path:
+                product.location = path_to_uri(product_local_path)
+            return product_local_path
+        product_local_path = product_local_path.replace(".zip", "")
+        # remove existing incomplete file
+        if os.path.isfile(product_local_path):
+            os.remove(product_local_path)
+        # create product dest dir
+        if not os.path.isdir(product_local_path):
+            os.makedirs(product_local_path)
+
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
@@ -175,12 +222,15 @@ class AwsDownload(Download):
             fetch_url = product_conf["fetch_metadata"]["fetch_url"].format(
                 **product.properties
             )
+            logger.info("Fetching extra metadata from %s" % fetch_url)
+            resp = requests.get(fetch_url)
+            update_metadata = mtd_cfg_as_jsonpath(update_metadata)
             if fetch_format == "json":
-                logger.info("Fetching extra metadata from %s" % fetch_url)
-                resp = requests.get(fetch_url)
                 json_resp = resp.json()
-                update_metadata = mtd_cfg_as_jsonpath(update_metadata)
                 update_metadata = properties_from_json(json_resp, update_metadata)
+                product.properties.update(update_metadata)
+            elif fetch_format == "xml":
+                update_metadata = properties_from_xml(resp.content, update_metadata)
                 product.properties.update(update_metadata)
             else:
                 logger.warning(
@@ -206,27 +256,8 @@ class AwsDownload(Download):
                 )
             )
 
-        # prepare download & create dirs
-        product_local_path, record_filename = self._prepare_download(product, **kwargs)
-        if not product_local_path or not record_filename:
-            return product_local_path
-        product_local_path = product_local_path.replace(".zip", "")
-        # remove existing incomplete file
-        if os.path.isfile(product_local_path):
-            os.remove(product_local_path)
-        # create product dest dir
-        if not os.path.isdir(product_local_path):
-            os.makedirs(product_local_path)
-
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = get_progress_callback()
-        progress_callback.desc = product.properties.get("id", "")
-        progress_callback.position = 1
-
-        # authenticate & get product size
+        # authenticate
         authenticated_objects = {}
-        total_size = 0
         auth_error_messages = set()
         for idx, pack in enumerate(bucket_names_and_prefixes):
             try:
@@ -260,8 +291,6 @@ class AwsDownload(Download):
                 else:
                     s3_objects = authenticated_objects[bucket_name]
 
-                total_size += sum([p.size for p in s3_objects.filter(Prefix=prefix)])
-
             except AuthenticationError as e:
                 logger.warning("Unexpected error: %s" % e)
                 logger.warning("Skipping %s/%s" % (bucket_name, prefix))
@@ -290,61 +319,63 @@ class AwsDownload(Download):
         if not authenticated_objects:
             raise AuthenticationError(", ".join(auth_error_messages))
 
-        # bucket_names_and_prefixes with unauthenticated items filtered out
-        auth_bucket_names_and_prefixes = [
-            p for p in bucket_names_and_prefixes if p[0] in authenticated_objects.keys()
-        ]
+        # downloadable files
+        product_chunks = []
+        for bucket_name, prefix in bucket_names_and_prefixes:
+            # unauthenticated items filtered out
+            if bucket_name in authenticated_objects.keys():
+                product_chunks.extend(
+                    authenticated_objects[bucket_name].filter(Prefix=prefix)
+                )
+
+        unique_product_chunks = set(product_chunks)
+
+        total_size = sum([p.size for p in unique_product_chunks])
 
         # download
-        progress_callback.max_size = total_size
-        progress_callback.reset()
-        for bucket_name, prefix in auth_bucket_names_and_prefixes:
-            try:
-                s3_objects = authenticated_objects[bucket_name]
+        progress_callback.reset(total=total_size)
+        try:
+            for product_chunk in unique_product_chunks:
+                chunk_rel_path = self.get_chunk_dest_path(
+                    product,
+                    product_chunk,
+                    build_safe=build_safe,
+                    dir_prefix=prefix,
+                )
+                chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
+                chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
+                if not os.path.isdir(chunk_abs_path_dir):
+                    os.makedirs(chunk_abs_path_dir)
 
-                for product_chunk in s3_objects.filter(
-                    Prefix=prefix,
-                ):
-                    chunck_rel_path = self.get_chunck_dest_path(
-                        product,
-                        product_chunk,
-                        build_safe=build_safe,
-                        dir_prefix=prefix,
+                if not os.path.isfile(chunk_abs_path):
+                    product_chunk.Bucket().download_file(
+                        product_chunk.key,
+                        chunk_abs_path,
+                        ExtraArgs=getattr(s3_objects, "_params", {}),
+                        Callback=progress_callback,
                     )
-                    chunck_abs_path = os.path.join(product_local_path, chunck_rel_path)
-                    chunck_abs_path_dir = os.path.dirname(chunck_abs_path)
-                    if not os.path.isdir(chunck_abs_path_dir):
-                        os.makedirs(chunck_abs_path_dir)
 
-                    if not os.path.isfile(chunck_abs_path):
-                        product_chunk.Bucket().download_file(
-                            product_chunk.key,
-                            chunck_abs_path,
-                            ExtraArgs=getattr(s3_objects, "_params", {}),
-                            Callback=progress_callback,
-                        )
-
-            except AuthenticationError as e:
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-            except ClientError as e:
-                err = e.response["Error"]
-                auth_messages = [
-                    "AccessDenied",
-                    "InvalidAccessKeyId",
-                    "SignatureDoesNotMatch",
-                ]
-                if err["Code"] in auth_messages and "key" in err["Message"].lower():
-                    raise AuthenticationError(
-                        "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
-                            e.response["ResponseMetadata"]["HTTPStatusCode"],
-                            err["Code"],
-                            err["Message"],
-                            self.provider,
-                        )
+        except AuthenticationError as e:
+            logger.warning("Unexpected error: %s" % e)
+            logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+        except ClientError as e:
+            err = e.response["Error"]
+            auth_messages = [
+                "AccessDenied",
+                "InvalidAccessKeyId",
+                "SignatureDoesNotMatch",
+            ]
+            if err["Code"] in auth_messages and "key" in err["Message"].lower():
+                raise AuthenticationError(
+                    "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                        e.response["ResponseMetadata"]["HTTPStatusCode"],
+                        err["Code"],
+                        err["Message"],
+                        self.provider,
                     )
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+                )
+            logger.warning("Unexpected error: %s" % e)
+            logger.warning("Skipping %s/%s" % (bucket_name, prefix))
 
         # finalize safe product
         if build_safe and "S2_MSI" in product.product_type:
@@ -359,11 +390,15 @@ class AwsDownload(Download):
                     os.rename(tmp_product_local_path, product_local_path)
                     break
 
+        if build_safe:
+            self.check_manifest_file_list(product_local_path)
+
         # save hash/record file
         with open(record_filename, "w") as fh:
             fh.write(product.remote_location)
         logger.debug("Download recorded in %s", record_filename)
 
+        product.location = path_to_uri(product_local_path)
         return product_local_path
 
     def get_authenticated_objects(self, bucket_name, prefix, auth_dict):
@@ -474,7 +509,7 @@ class AwsDownload(Download):
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product.EOProduct`
+        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param url: URL to use as product.location
         :type url: str
         :return: bucket_name and prefix as str
@@ -499,6 +534,25 @@ class AwsDownload(Download):
             parts = path.split("/")
             bucket, prefix = parts[1], "/{}".format("/".join(parts[2:]))
         return bucket, prefix
+
+    def check_manifest_file_list(self, product_path):
+        """Checks if products listed in manifest.safe exist"""
+        manifest_path = [
+            os.path.join(d, x)
+            for d, _, f in os.walk(product_path)
+            for x in f
+            if x == "manifest.safe"
+        ][0]
+        safe_path = os.path.dirname(manifest_path)
+
+        root = etree.parse(os.path.join(safe_path, "manifest.safe")).getroot()
+        for safe_file in root.xpath("//fileLocation"):
+            safe_file_path = os.path.join(safe_path, safe_file.get("href"))
+            if not os.path.isfile(safe_file_path) and "HTML" in safe_file.get("href"):
+                # add empty files for missing HTML/*
+                Path(safe_file_path).touch()
+            elif not os.path.isfile(safe_file_path):
+                logger.warning("SAFE build: %s is missing" % safe_file.get("href"))
 
     def finalize_s2_safe_product(self, product_path):
         """Add missing dirs to downloaded product"""
@@ -536,26 +590,41 @@ class AwsDownload(Download):
                 os.path.join(safe_path, "GRANULE/0"),
                 os.path.join(safe_path, "GRANULE", tile_id),
             )
+
+            # datastrip scene dirname
+            scene_id = os.path.basename(
+                os.path.dirname(
+                    root.xpath("//fileLocation[contains(@href,'MTD_DS.xml')]")[0].get(
+                        "href"
+                    )
+                )
+            )
+            datastrip_folder = os.path.join(safe_path, "DATASTRIP/0")
+            if os.path.isdir(datastrip_folder):
+                os.rename(
+                    os.path.join(safe_path, "DATASTRIP/0"),
+                    os.path.join(safe_path, "DATASTRIP", scene_id),
+                )
         except Exception as e:
             logger.exception("Could not finalize SAFE product from downloaded data")
             raise DownloadError(e)
 
-    def get_chunck_dest_path(self, product, chunk, dir_prefix, build_safe=False):
-        """Get chunck destination path"""
+    def get_chunk_dest_path(self, product, chunk, dir_prefix, build_safe=False):
+        """Get chunk destination path"""
         if build_safe:
             # S2 common
             if "S2_MSI" in product.product_type:
-                title_date1_search = re.search(
-                    r"^\w+_\w+_(\w+)_\w+_\w+_\w+_\w+$", product.properties["title"]
+                title_search = re.search(
+                    r"^\w+_\w+_(\w+)_(\w+)_(\w+)_(\w+)_(\w+)$",
+                    product.properties["title"],
                 )
-                title_date1 = (
-                    title_date1_search.group(1) if title_date1_search else None
-                )
+                title_date1 = title_search.group(1) if title_search else None
+                title_part3 = title_search.group(4) if title_search else None
                 ds_dir_search = re.search(
                     r"^.+_(DS_\w+_+\w+_\w+)_\w+.\w+$",
                     product.properties.get("originalSceneID", ""),
                 )
-                ds_dir = ds_dir_search.group(1) if ds_dir_search else None
+                ds_dir = ds_dir_search.group(1) if ds_dir_search else 0
                 s2_processing_level = product.product_type.split("_")[-1]
             # S1 common
             elif product.product_type == "S1_SAR_GRD":
@@ -572,16 +641,19 @@ class AwsDownload(Download):
             # S2 L2A Tile files -----------------------------------------------
             if S2L2A_TILE_IMG_REGEX.match(chunk.key):
                 found_dict = S2L2A_TILE_IMG_REGEX.match(chunk.key).groupdict()
-                product_path = "%s.SAFE/GRANULE/%s/IMG_DATA/%s/T%s%s%s_%s_%s_%s.jp2" % (
-                    product.properties["title"],
-                    found_dict["num"],
-                    found_dict["res"],
-                    found_dict["tile1"],
-                    found_dict["tile2"],
-                    found_dict["tile3"],
-                    title_date1,
-                    found_dict["file"],
-                    found_dict["res"],
+                product_path = (
+                    "%s.SAFE/GRANULE/%s/IMG_DATA/R%s/T%s%s%s_%s_%s_%s.jp2"
+                    % (
+                        product.properties["title"],
+                        found_dict["num"],
+                        found_dict["res"],
+                        found_dict["tile1"],
+                        found_dict["tile2"],
+                        found_dict["tile3"],
+                        title_date1,
+                        found_dict["file"],
+                        found_dict["res"],
+                    )
                 )
             elif S2L2A_TILE_AUX_DIR_REGEX.match(chunk.key):
                 found_dict = S2L2A_TILE_AUX_DIR_REGEX.match(chunk.key).groupdict()
@@ -589,6 +661,24 @@ class AwsDownload(Download):
                     product.properties["title"],
                     found_dict["num"],
                     found_dict["file"],
+                )
+            # S2 L2A QI Masks
+            elif S2_TILE_QI_MSK_REGEX.match(chunk.key):
+                found_dict = S2_TILE_QI_MSK_REGEX.match(chunk.key).groupdict()
+                product_path = "%s.SAFE/GRANULE/%s/QI_DATA/MSK_%sPRB_%s" % (
+                    product.properties["title"],
+                    found_dict["num"],
+                    found_dict["file_base"],
+                    found_dict["file_suffix"],
+                )
+            # S2 L2A QI PVI
+            elif S2_TILE_QI_PVI_REGEX.match(chunk.key):
+                found_dict = S2_TILE_QI_PVI_REGEX.match(chunk.key).groupdict()
+                product_path = "%s.SAFE/GRANULE/%s/QI_DATA/%s_%s_PVI.jp2" % (
+                    product.properties["title"],
+                    found_dict["num"],
+                    title_part3,
+                    title_date1,
                 )
             # S2 Tile files ---------------------------------------------------
             elif S2_TILE_PREVIEW_DIR_REGEX.match(chunk.key):
@@ -650,6 +740,13 @@ class AwsDownload(Download):
                 product_path = "%s.SAFE/DATASTRIP/%s/MTD_DS.xml" % (
                     product.properties["title"],
                     ds_dir,
+                )
+            elif S2_PROD_DS_QI_REPORT_REGEX.match(chunk.key):
+                found_dict = S2_PROD_DS_QI_REPORT_REGEX.match(chunk.key).groupdict()
+                product_path = "%s.SAFE/DATASTRIP/%s/QI_DATA/%s.xml" % (
+                    product.properties["title"],
+                    ds_dir,
+                    found_dict["filename"],
                 )
             elif S2_PROD_DS_QI_REGEX.match(chunk.key):
                 found_dict = S2_PROD_DS_QI_REGEX.match(chunk.key).groupdict()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -47,7 +47,7 @@ class PluginManager(object):
     authenticate, crunch).
 
     :param providers_config: The configuration with all information about the providers
-                             supported by the `eodag`
+                             supported by ``eodag``
     :type providers_config: dict
     """
 
@@ -241,6 +241,11 @@ class PluginManager(object):
         """
         Klass = Crunch.get_plugin_by_class_name(name)
         return Klass(options)
+
+    def sort_providers(self):
+        """Sort providers taking into account current priority order"""
+        for provider_configs in self.product_type_to_provider_config_map.values():
+            provider_configs.sort(key=attrgetter("priority"), reverse=True)
 
     def set_priority(self, provider, priority):
         """Set the priority of the given provider

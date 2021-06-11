@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -331,8 +331,14 @@ def override_config_from_mapping(config, mapping):
             try:
                 new_conf["name"] = new_conf.get("name", provider)
                 config[provider] = ProviderConfig.from_mapping(new_conf)
-            except (AttributeError, ValidationError) as e:
-                logger.warning("%s skipped: %s", provider, e)
+            except Exception:
+                logger.warning(
+                    "%s skipped: could not be loaded from user configuration", provider
+                )
+
+                import traceback as tb
+
+                logger.debug(tb.format_exc())
 
 
 def merge_configs(config, other_config):

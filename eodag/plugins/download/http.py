@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -32,7 +32,7 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
-from eodag.utils import get_progress_callback
+from eodag.utils import ProgressCallback, path_to_uri
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -68,19 +68,23 @@ class HTTPDownload(Download):
         the user is warned, it is renamed to remove the zip extension and
         no further treatment is done (no extraction)
         """
-        fs_path, record_filename = self._prepare_download(product, **kwargs)
-        if not fs_path or not record_filename:
-            return fs_path
-
-        # progress bar init
         if progress_callback is None:
-            progress_callback = get_progress_callback()
-        progress_callback.desc = product.properties.get("id", "")
-        progress_callback.position = 1
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+
+        fs_path, record_filename = self._prepare_download(
+            product, progress_callback=progress_callback, **kwargs
+        )
+        if not fs_path or not record_filename:
+            if fs_path:
+                product.location = path_to_uri(fs_path)
+            return fs_path
 
         # download assets if exist instead of remote_location
         try:
-            return self._download_assets(
+            fs_path = self._download_assets(
                 product,
                 fs_path.replace(".zip", ""),
                 record_filename,
@@ -88,6 +92,8 @@ class HTTPDownload(Download):
                 progress_callback,
                 **kwargs
             )
+            product.location = path_to_uri(fs_path)
+            return fs_path
         except NotAvailableError:
             pass
 
@@ -199,13 +205,12 @@ class HTTPDownload(Download):
                                         stream.reason,
                                     )
                                 )
-                            progress_callback.max_size = stream_size
-                            progress_callback.reset()
+                            progress_callback.reset(total=stream_size)
                             with open(fs_path, "wb") as fhandle:
                                 for chunk in stream.iter_content(chunk_size=64 * 1024):
                                     if chunk:
                                         fhandle.write(chunk)
-                                        progress_callback(len(chunk), stream_size)
+                                        progress_callback(len(chunk))
 
                             with open(record_filename, "w") as fh:
                                 fh.write(url)
@@ -218,8 +223,13 @@ class HTTPDownload(Download):
                                 )
                                 new_fs_path = fs_path[: fs_path.index(".zip")]
                                 shutil.move(fs_path, new_fs_path)
+                                product.location = path_to_uri(new_fs_path)
                                 return new_fs_path
-                            return self._finalize(fs_path, **kwargs)
+                            product_path = self._finalize(
+                                fs_path, progress_callback=progress_callback, **kwargs
+                            )
+                            product.location = path_to_uri(product_path)
+                            return product_path
 
                 except NotAvailableError as e:
                     if not getattr(self.config, "order_enabled", False):
@@ -299,8 +309,7 @@ class HTTPDownload(Download):
                 for asset_url in assets_urls
             ]
         )
-        progress_callback.max_size = total_size
-        progress_callback.reset()
+        progress_callback.reset(total=total_size)
         error_messages = set()
 
         for asset_url in assets_urls:

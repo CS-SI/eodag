@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -65,6 +65,10 @@
     pagination:
       next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
       total_items_nb_key_path: '$.meta.found'
+      # 2021/04/28: aws_eos doesn't specify a limit in its docs. It says that the default
+      # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
+      # Let's set it to this value for now
+      max_items_per_page: 500
     query_params_key: 'search'
     discover_metadata:
       auto_discovery: true
@@ -510,7 +514,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
-      # 2019/03/19: Returns a 400 error code if greater than 500.
+      # 2021/03/19: Returns a 400 error code if greater than 500.
       max_items_per_page: 500
     discover_metadata:
       auto_discovery: true
@@ -684,7 +688,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
-      # 2019/03/19: 500 is the max, no error if greater
+      # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     discover_metadata:
       auto_discovery: true
@@ -876,7 +880,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&size={items_per_page}&from={skip}'
       total_items_nb_key_path: '$.totalnb'
-      # 2019/03/19: It's not possible to get more than 10_000 products
+      # 2021/03/19: It's not possible to get more than 10_000 products
       # Returns a 400 Bad Request if more products are requested.
       max_items_per_page: 10_000
     results_entry: 'hits'
@@ -913,10 +917,10 @@
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       availabilityTime: '$.data.availabilityTime'
       startTimeFromAscendingNode:
-        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#utc_to_timestamp_milliseconds}'
+        - 'f=acquisition.beginViewingDate:gte:{startTimeFromAscendingNode#datetime_to_timestamp_milliseconds}'
         - '{$.data.acquisition.beginViewingDate#to_iso_utc_datetime_from_milliseconds}'
       completionTimeFromAscendingNode:
-        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#utc_to_timestamp_milliseconds}'
+        - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#datetime_to_timestamp_milliseconds}'
         - '{$.data.acquisition.endViewingDate#to_iso_utc_datetime_from_milliseconds}'
       polarizationChannels: '$.data.acquisition.polarization'
       sensorMode: '$.data.acquisition.sensorMode'
@@ -966,7 +970,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
-      # 2019/03/19: 2000 is the max, 400 error if greater
+      # 2021/03/19: 2000 is the max, 400 error if greater
       max_items_per_page: 2_000
     discover_metadata:
       auto_discovery: true
@@ -982,29 +986,49 @@
         - productType
         - '$.properties.productType'
       platform: '$.properties.collection'
-      platformSerialIdentifier: '$.properties.platform'
-      instrument: '$.properties.instrument'
-      processingLevel: '$.properties.processingLevel'
+      platformSerialIdentifier:
+        - platform
+        - '$.properties.platform'
+      instrument:
+        - instrument
+        - '$.properties.instrument'
+      processingLevel:
+        - processingLevel
+        - '$.properties.processingLevel'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
       keyword: '$.properties.keywords'
       abstract: '$.properties.description'
-      resolution: '$.properties.resolution'
-      organisationName: '$.properties.organisationName'
+      resolution:
+        - resolution
+        - '$.properties.resolution'
+      organisationName:
+        - organisationName
+        - '$.properties.organisationName'
       publicationDate: '$.properties.published'
       accessConstraint: '$.properties.license'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier: '$.properties.parentIdentifier'
-      orbitNumber: '$.properties.orbitNumber'
-      orbitDirection: '$.properties.orbitDirection'
+      parentIdentifier:
+        - parentIdentifier
+        - '$.properties.parentIdentifier'
+      orbitNumber:
+        - orbitNumber
+        - '$.properties.orbitNumber'
+      orbitDirection:
+        - orbitDirection
+        - '$.properties.orbitDirection'
       cloudCover:
         - 'cloudCover=[0,{cloudCover}]'
         - '$.properties.cloudCover'
-      snowCover: '$.properties.snowCover'
+      snowCover:
+        - snowCover
+        - '$.properties.snowCover'
       modificationDate: '$.properties.updated'
-      sensorMode: '$.properties.sensorMode'
+      sensorMode:
+        - sensorMode
+        - '$.properties.sensorMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
@@ -1033,6 +1057,57 @@
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
+      cultivatedCover:
+        - cultivatedCover
+        - '$.properties.cultivatedCover'
+      desertCover:
+        - desertCover
+        - '$.properties.desertCover'
+      floodedCover:
+        - floodedCover
+        - '$.properties.floodedCover'
+      forestCover:
+        - forestCover
+        - '$.properties.forestCover'
+      herbaceousCover:
+        - herbaceousCover
+        - '$.properties.herbaceousCover'
+      iceCover:
+        - iceCover
+        - '$.properties.iceCover'
+      urbanCover:
+        - urbanCover
+        - '$.properties.urbanCover'
+      waterCover:
+        - waterCover
+        - '$.properties.waterCover'
+      processingBaseline:
+        - processingBaseline
+        - '$.properties.processingBaseline'
+      publishedAfter:
+        - publishedAfter
+        - '$.properties.publishedAfter'
+      publishedBefore:
+        - publishedBefore
+        - '$.properties.publishedBefore'
+      relativeOrbitNumber:
+        - relativeOrbitNumber
+        - '$.properties.relativeOrbitNumber'
+      relativeOrbitNumber:
+        - relativeOrbitNumber
+        - '$.properties.relativeOrbitNumber'
+      sortOrder:
+        - sortOrder
+        - '$.properties.sortOrder'
+      sortParam:
+        - sortParam
+        - '$.properties.sortParam'
+      status:
+        - status
+        - '$.properties.status'
+      timeliness:
+        - timeliness
+        - '$.properties.timeliness'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
@@ -1121,7 +1196,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
       total_items_nb_key_path: '//os:totalResults/text()'
-      # 2019/03/19: 50 is the max, no error if greater
+      # 2021/03/19: 50 is the max, no error if greater
       max_items_per_page: 50
     discover_metadata:
       auto_discovery: true
@@ -1272,60 +1347,6 @@
       processingLevel: '{processingLevel}'
 ---
 !provider
-  name: wekeo
-  priority: 0
-  roles:
-    - host
-  url: https://www.wekeo.eu
-  description: Wekeo
-  search: !plugin
-    type: CSWSearch
-    api_endpoint: 'https://www.wekeo.eu/elastic-csw/service'
-    metadata_mapping:
-      id: 'dc:identifier/text()'
-      productType: 'dct:alternative/text()'
-      title: 'dc:title/text()'
-      abstract: 'dct:abstract/text()'
-      quicklook: 'https://www.wekeo.eu/sites/default/files/quicklooks/{productType}.jpg'
-      keyword: 'dc:subject[text()]'
-    search_definition:
-      product_type_tags:
-        - name: 'dc:identifier' # any xml tag of the catalogue that can be queryable
-          matching: exact # One of exact (eq. to L1C for ex), prefix (eq. *L1C), postfix (eq. L1C*) or fuzzy (eq. *L1C*)
-  download: !plugin
-    type: HTTPDownload
-    order_enabled: false
-  auth: !plugin
-    type: GenericAuth
-  products:
-    S1_SAR_GRD:
-      productType: "EO:ESA:DAT:SENTINEL-1:L1_GRD"
-    S1_SAR_SLC:
-      productType: "EO:ESA:DAT:SENTINEL-1:L1_SLC"
-    S2_MSI_L1C:
-      productType: "EO:ESA:DAT:SENTINEL-2:MSI1C"
-    S3_LAN:
-      productType: "EO:ESA:DAT:SENTINEL-3:SR_2_LAN___"
-    S3_SRA:
-      productType: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"
-    S3_SRA_BS:
-      productType: "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS___"
-    S3_EFR:
-      productType: "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"
-    S3_ERR:
-      productType: "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"
-    S3_WAT:
-      productType: "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"
-    S3_SLSTR_L2LST:
-      productType: "EO:ESA:DAT:SENTINEL-3:SL_2_LST___"
-    S3_OLCI_L2LRR:
-      productType: "EO:ESA:DAT:SENTINEL-3:OL_2_LRR___"
-    S3_OLCI_L2LFR:
-      productType: "EO:ESA:DAT:SENTINEL-3:OL_2_LFR___"
-    S3_SLSTR_L1RBT:
-      productType: "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"
----
-!provider
   name: onda
   priority: 0
   description: Serco DIAS
@@ -1345,7 +1366,7 @@
     pagination:
       count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}'
-      # 2019/03/19: 2000 is the max, if greater 200 response but contains an error message
+      # 2021/03/19: 2000 is the max, if greater 200 response but contains an error message
       max_items_per_page: 2_000
     results_entry: 'value'
     literal_search_params:
@@ -1483,17 +1504,35 @@
     type: StacSearch
     api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
     pagination:
-      # 2019/03/19: The docs (https://eod-catalog-svc-prod.astraea.earth/api.html#operation/getSearchSTAC)
+      # 2021/03/19: The docs (https://eod-catalog-svc-prod.astraea.earth/api.html#operation/getSearchSTAC)
       # say the max is 10_000. In practice 1_000 products are returned if more are asked (even greater
       # than 10_000), without any error.
       # This provider doesn't implement any pagination, let's just try to get the maximum number of
       # products available at once then, so we stick to 10_000.
       max_items_per_page: 10_000
   products:
+    S1_SAR_GRD:
+      productType: sentinel1_l1c_grd
+      metadata_mapping:
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+        awsPath: '$.assets.productInfo.href.`sub(/(.*)\/productInfo\.json/, \\1)`'
+        assets: |
+          {$.assets#dict_update([["manifest.safe",[["title","manifest.safe"],["href","{awsPath}/manifest.safe"],["roles",["metadata"]],["type","application/xml"]]]])}
     S2_MSI_L1C:
       productType: sentinel2_l1c
+      metadata_mapping:
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        tileInfo: '{$.assets.tileInfo.href#replace_str(r"s3(.*)sentinel-s2-l1c/",r"https\1roda.sentinel-hub.com/sentinel-s2-l1c/")}'
+        tilePath: |
+          $.assets.tileInfo.href.`sub(/.*\/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     S2_MSI_L2A:
       productType: sentinel2_l2a
+      metadata_mapping:
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        tileInfo: '{$.assets.tileInfo.href#replace_str(r"s3(.*)sentinel-s2-l2a/",r"https\1roda.sentinel-hub.com/sentinel-s2-l2a/")}'
+        tilePath: |
+          $.assets.tileInfo.href.`sub(/.*\/sentinel-s2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     L8_OLI_TIRS_C1L1:
       productType: landsat8_l1tp
     MODIS_MCD43A4:
@@ -1506,6 +1545,36 @@
     type: AwsDownload
     base_uri: https://eod-catalog-svc-prod.astraea.earth
     flatten_top_dirs: True
+    products:
+      S1_SAR_GRD:
+        default_bucket: 'sentinel-s1-l1c'
+        build_safe: true
+        complementary_url_key:
+          - awsPath
+      S2_MSI_L1C:
+        default_bucket: 'sentinel-s2-l1c'
+        build_safe: true
+        fetch_metadata:
+          fetch_url: '{tileInfo}'
+          fetch_format: json
+          update_metadata:
+            title: '$.productName'
+            productPath: '$.productPath'
+        complementary_url_key:
+          - productPath
+          - tilePath
+      S2_MSI_L2A:
+        default_bucket: 'sentinel-s2-l2a'
+        build_safe: true
+        fetch_metadata:
+          fetch_url: '{tileInfo}'
+          fetch_format: json
+          update_metadata:
+            title: '$.productName'
+            productPath: '$.productPath'
+        complementary_url_key:
+          - productPath
+          - tilePath
   auth: !plugin
     type: AwsAuth
 
@@ -1522,7 +1591,7 @@
     api_endpoint: https://landsatlook.usgs.gov/sat-api/collections/{collection}/items
     pagination:
       total_items_nb_key_path: '$.meta.found'
-      # 2019/03/19: no more than 10_000 (if greater, returns a 500 error code)
+      # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
       max_items_per_page: 500
@@ -1570,7 +1639,20 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
+    pagination:
+      # Override the default next page url key path of StacSearch because the next link returned
+      # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
+      # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
+      # Remove that entry if Earth Search updates that and returns a valid link.
+      next_page_url_key_path: null
+      # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
+      # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
+      # Let's set it to a more robust number: 500
+      max_items_per_page: 500
     metadata_mapping:
+      id:
+        - 'ids=["{id}"]'
+        - '$.id'
       productType:
         - 'collections=["{productType}"]'
         - '$.collection'
@@ -1580,8 +1662,24 @@
   products:
     S2_MSI_L1C:
       productType: sentinel-s2-l1c
+      metadata_mapping:
+        title: '$.properties."sentinel:product_id"'
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+        productPath: |
+          $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})(0?)([1-9]+)([0-9]{2})(T.*)/, products/\\2/\\4/\\5/\\1_MSIL1C_\\2\\3\\4\\5\\6)`
+        tilePath: |
+          $.assets.info.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     S2_MSI_L2A:
       productType: sentinel-s2-l2a
+      metadata_mapping:
+        title: '$.properties."sentinel:product_id"'
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+        productPath: |
+          $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL2A_([0-9]{4})(0?)([1-9]+)([0-9]{2})(T.*)/, products/\\2/\\4/\\5/\\1_MSIL2A_\\2\\3\\4\\5\\6)`
+        tilePath: |
+          $.assets.info.href.`sub(/.*/sentinel-s2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     L8_OLI_TIRS_C1L1:
       productType: landsat-8-l1-c1
     GENERIC_PRODUCT_TYPE:
@@ -1590,5 +1688,60 @@
     type: AwsDownload
     base_uri: https://earth-search.aws.element84.com/v0
     flatten_top_dirs: True
+    products:
+      S2_MSI_L1C:
+        default_bucket: 'sentinel-s2-l1c'
+        build_safe: true
+        complementary_url_key:
+          - productPath
+          - tilePath
+      S2_MSI_L2A:
+        default_bucket: 'sentinel-s2-l2a'
+        build_safe: true
+        complementary_url_key:
+          - productPath
+          - tilePath
   auth: !plugin
     type: AwsAuth
+
+---
+!provider
+  name: earth_search_cog
+  priority: 0
+  roles:
+    - host
+  description: Earth Search
+  url: https://www.element84.com/earth-search/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    pagination:
+      # Override the default next page url key path of StacSearch because the next link returned
+      # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
+      # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
+      # Remove that entry if Earth Search updates that and returns a valid link.
+      next_page_url_key_path: null
+      # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
+      # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
+      # Let's set it to a more robust number: 500
+      max_items_per_page: 500
+    metadata_mapping:
+      id:
+        - 'ids=["{id}"]'
+        - '$.id'
+      productType:
+        - 'collections=["{productType}"]'
+        - '$.collection'
+      geometry:
+        - 'bbox=[{geometry.bounds#csv_list}]'
+        - '$.geometry'
+      platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+      polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+  products:
+    S2_MSI_L2A_COG:
+      productType: sentinel-s2-l2a-cogs
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://sentinel-cogs.s3.us-west-2.amazonaws.com'

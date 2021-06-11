@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -84,7 +84,12 @@ setup(
             "imageio",
             "rasterio",
         ],
-        "docs": ["sphinx", "nbsphinx", "nbsphinx-link"],
+        "docs": [
+            "sphinx",
+            "sphinx-book-theme >= 0.1.0",
+            "sphinx-copybutton",
+            "nbsphinx == 0.8.5",
+        ],
     },
     entry_points={
         "console_scripts": ["eodag = eodag.cli:eodag"],
@@ -122,21 +127,26 @@ setup(
     },
     project_urls={
         "Bug Tracker": "https://github.com/CS-SI/eodag/issues/",
-        "Documentation": "https://eodag.readthedocs.io/en/latest/",
+        "Documentation": "https://eodag.readthedocs.io",
         "Source Code": "https://github.com/CS-SI/eodag",
     },
     classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "License :: OSI Approved :: Apache Software License",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",
+        "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
         "Topic :: Scientific/Engineering :: GIS",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -54,6 +54,20 @@ class EOProduct(object):
     :type provider: str
     :param properties: The metadata of the product
     :type properties: dict
+    :ivar product_type: The product type
+    :vartype product_type: str
+    :ivar location: The path to the product, either remote or local if downloaded
+    :vartype location: str
+    :ivar remote_location: The remote path to the product
+    :vartype remote_location: str
+    :ivar search_kwargs: The search kwargs used by eodag to search for the product
+    :vartype search_kwargs: dict
+    :ivar geometry: The geometry of the product
+    :vartype geometry: :class:`shapely.geometry.base.BaseGeometry`
+    :ivar search_intersection: The intersection between the product's geometry
+                               and the search area.
+    :vartype search_intersection: :class:`shapely.geometry.base.BaseGeometry` or None
+
 
     .. note::
         The geojson spec `enforces <https://github.com/geojson/draft-geojson/pull/6>`_
@@ -126,7 +140,7 @@ class EOProduct(object):
         """Builds a representation of EOProduct as a dictionary to enable its geojson
         serialization
 
-        :returns: The representation of a :class:`~eodag.api.product.EOProduct` as a
+        :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a
                   Python dict
         :rtype: dict
         """
@@ -154,14 +168,14 @@ class EOProduct(object):
 
     @classmethod
     def from_geojson(cls, feature):
-        """Builds an :class:`~eodag.api.product.EOProduct` object from its
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
         representation as geojson
 
-        :param feature: The representation of a :class:`~eodag.api.product.EOProduct`
+        :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
                         as a Python dict
         :type feature: dict
-        :returns: An instance of :class:`~eodag.api.product.EOProduct`
-        :rtype: :class:`~eodag.api.product.EOProduct`
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :rtype: :class:`~eodag.api.product._product.EOProduct`
         """
         properties = feature["properties"]
         properties["geometry"] = feature["geometry"]
@@ -240,9 +254,12 @@ class EOProduct(object):
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
+
+        .. versionchanged:: 2.3.0
+
+           Returns a file system path instead of a file URI ('/tmp' instead of
+           'file:///tmp').
         """
-        if progress_callback is None:
-            progress_callback = ProgressCallback()
         if self.downloader is None:
             raise RuntimeError(
                 "EO product is unable to download itself due to lacking of a "
@@ -254,7 +271,24 @@ class EOProduct(object):
             if self.downloader_auth is not None
             else self.downloader_auth
         )
-        fs_location = self.downloader.download(
+
+        # resolve remote location if needed with downloader configuration
+        self.remote_location = self.remote_location % vars(self.downloader.config)
+
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = ProgressCallback(position=1)
+            # one shot progress callback to close after download
+            close_progress_callback = True
+        else:
+            close_progress_callback = False
+            # update units as bar may have been previously used for extraction
+            progress_callback.unit = "B"
+            progress_callback.unit_scale = True
+        progress_callback.desc = self.properties.get("id", "")
+        progress_callback.refresh()
+
+        fs_path = self.downloader.download(
             self,
             auth=auth,
             progress_callback=progress_callback,
@@ -262,13 +296,13 @@ class EOProduct(object):
             timeout=timeout,
             **kwargs
         )
-        if fs_location is None:
-            raise DownloadError(
-                "Invalid file location returned by download process: '{}'".format(
-                    fs_location
-                )
-            )
-        self.location = "file://{}".format(fs_location)
+
+        # close progress bar if needed
+        if close_progress_callback:
+            progress_callback.close()
+
+        if fs_path is None:
+            raise DownloadError("Missing file location returned by download process")
         logger.debug(
             "Product location updated from '%s' to '%s'",
             self.remote_location,
@@ -279,24 +313,24 @@ class EOProduct(object):
             "'remote_location' property: %s",
             self.remote_location,
         )
-        return self.location
+
+        return fs_path
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
-        """Download the quick look image of a given EOProduct from its provider if it
+        """Download the quicklook image of a given EOProduct from its provider if it
         exists.
 
-        :param filename: (optional) the name to give to the downloaded quicklook.
+        :param filename: (optional) the name to give to the downloaded quicklook. If not
+           given, it defaults to the product's ID (without file extension).
         :type filename: str
         :param base_dir: (optional) the absolute path of the directory where to store
-                         the quicklooks in the filesystem. If it is not given, it
-                         defaults to the `quicklooks` directory under this EO product
-                         downloader's ``outputs_prefix`` config param
+           the quicklooks in the filesystem. If not given, it defaults to the
+           `quicklooks` directory under this EO product downloader's ``outputs_prefix``
+           config param (e.g. '/tmp/quicklooks/')
         :type base_dir: str
-        :param progress_callback: (optional) A method or a callable object
-                                  which takes a current size and a maximum
-                                  size as inputs and handle progress bar
-                                  creation and update to give the user a
-                                  feedback on the download progress
+        :param progress_callback: (optional) A method or a callable object which takes
+           a current size and a maximum size as inputs and handle progress bar creation
+           and update to give the user a feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
         :rtype: str
@@ -321,10 +355,19 @@ class EOProduct(object):
                     }
                 )
 
+        # progress bar init
         if progress_callback is None:
             progress_callback = ProgressCallback()
+            # one shot progress callback to close after download
+            close_progress_callback = True
+        else:
+            close_progress_callback = False
+            # update units as bar may have been previously used for extraction
+            progress_callback.unit = "B"
+            progress_callback.unit_scale = True
+        progress_callback.desc = "quicklooks/%s" % self.properties.get("id", "")
 
-        if self.properties["quicklook"] is None:
+        if self.properties.get("quicklook", None) is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
                 self.properties["id"],
@@ -375,10 +418,16 @@ class EOProduct(object):
                     return str(e)
                 else:
                     stream_size = int(stream.headers.get("content-length", 0))
+                    progress_callback.reset(stream_size)
                     with open(quicklook_file, "wb") as fhandle:
                         for chunk in stream.iter_content(chunk_size=64 * 1024):
                             if chunk:
                                 fhandle.write(chunk)
-                                progress_callback(len(chunk), stream_size)
+                                progress_callback(len(chunk))
                     logger.info("Download recorded in %s", quicklook_file)
+
+            # close progress bar if needed
+            if close_progress_callback:
+                progress_callback.close()
+
         return quicklook_file

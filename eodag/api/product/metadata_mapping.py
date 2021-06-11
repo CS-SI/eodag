@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -22,14 +22,15 @@ from datetime import datetime
 from string import Formatter
 
 import geojson
-from dateutil.tz import tzutc
+from dateutil.parser import isoparse
+from dateutil.tz import UTC, tzutc
 from jsonpath_ng.ext import parse
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon
 
-from eodag.utils import get_timestamp, items_recursive_apply
+from eodag.utils import get_timestamp, items_recursive_apply, nested_pairs2dict
 
 logger = logging.getLogger("eodag.api.product.metadata_mapping")
 
@@ -78,10 +79,11 @@ def get_metadata_path(map_value):
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config. For example, it is the list
                       `['productType', '$.properties.productType']` with the sample
-                      above
+                      above. Or the string `$.properties.id`.
     :type map_value: str or list(str)
-    :return: The value of the path to the metadata value in the provider search result
-    :rtype: str
+    :return: Either, None and the path to the metadata value, or a list of converter
+             and its args, and the path to the metadata value.
+    :rtype: tuple(list(str) or None, str)
     """
     path = get_metadata_path_value(map_value)
     try:
@@ -117,16 +119,26 @@ def format_metadata(search_param, *args, **kwargs):
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
-        - ``utc_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
+        - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
           milliseconds
-        - ``to_wkt``: converts a geometry to its well known text representation
-        - ``to_iso_utc_datetime_from_milliseconds``: converts a utc timestamp in given
+        - ``to_rounded_wkt``: simplify the WKT of a geometry
+        - ``to_bounds_lists``: convert to list(s) of bounds
+        - ``to_geo_interface``: convert to a GeoJSON via __geo_interface__
+        - ``csv_list``: convert to a comma separated list
+        - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
           milliseconds to a utc iso datetime
-        - ``to_iso_utc_datetime``: converts a UTC datetime string to ISO UTC datetime
+        - ``to_iso_utc_datetime``: convert a UTC datetime string to ISO UTC datetime
           string
-        - ``to_iso_date``: removes the time part of a iso datetime string
+        - ``to_iso_date``: remove the time part of a iso datetime string
         - ``remove_extension``: on a string that contains dots, only take the first
           part of the list obtained by splitting the string on dots
+        - ``get_group_name``: get the matching regex group name
+        - ``replace_str``: execute "string".replace(old, new)
+        - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
+          values matching a regex
+        - ``slice_str``: slice a string (equivalent to s[start, end, step])
+        - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
+        - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
 
     :param search_param: The string to be formatted
     :type search_param: str
@@ -136,11 +148,6 @@ def format_metadata(search_param, *args, **kwargs):
     :type kwargs: dict
     :returns: The formatted string
     :rtype: str
-
-    .. versionadded::
-        1.0
-
-            * Added the ``remove_extension`` metadata converter
     """
 
     class MetadataFormatter(Formatter):
@@ -183,21 +190,14 @@ def format_metadata(search_param, *args, **kwargs):
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
-        def convert_utc_to_timestamp_milliseconds(value):
-            if len(value) == 10:
-                return int(
-                    1e3 * get_timestamp(value, date_format="%Y-%m-%d", as_utc=True)
-                )
-            else:
-                return int(1e3 * get_timestamp(value, as_utc=True))
+        def convert_datetime_to_timestamp_milliseconds(date_time):
+            """Convert a date_time (str) to a Unix timestamp in milliseconds
 
-        @staticmethod
-        def convert_to_wkt_convex_hull(value):
-            if hasattr(value, "convex_hull"):
-                return value.convex_hull.to_wkt()
-            else:
-                logger.warning("Could not get wkt_convex_hull from %s", value)
-                return value
+            "2021-04-21T18:27:19.123Z" => "1619029639123"
+            "2021-04-21" => "1618963200000"
+            "2021-04-21T00:00:00+02:00" => "1618956000000"
+            """
+            return int(1e3 * get_timestamp(date_time))
 
         @staticmethod
         def convert_to_rounded_wkt(value):
@@ -234,26 +234,15 @@ def format_metadata(search_param, *args, **kwargs):
             return geojson.dumps(geom.__geo_interface__)
 
         @staticmethod
-        def convert_to_bbox_dict(value):
-            if hasattr(value, "bounds"):
-                bbox_dict = {}
-                (
-                    bbox_dict["lonmin"],
-                    bbox_dict["latmin"],
-                    bbox_dict["lonmax"],
-                    bbox_dict["latmax"],
-                ) = value.bounds
-                return bbox_dict
-            else:
-                logger.warning("Could not get bbox_dict from %s", value)
-                return value
-
-        @staticmethod
         def convert_csv_list(values_list):
             return ",".join([str(x) for x in values_list])
 
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
+            """Convert a timestamp in milliseconds (int) to its ISO8601 UTC format
+
+            1619029639123 => "2021-04-21T18:27:19.123Z"
+            """
             try:
                 return (
                     datetime.fromtimestamp(timestamp / 1e3, tzutc())
@@ -264,22 +253,33 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(dt):
-            for idx, fmt in enumerate(("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S")):
-                try:
-                    return (
-                        datetime.strptime(dt, fmt)
-                        .replace(tzinfo=tzutc())
-                        .isoformat(timespec="milliseconds")
-                        .replace("+00:00", "Z")
-                    )
-                except ValueError:
-                    if idx == 1:
-                        raise
+        def convert_to_iso_utc_datetime(date_time):
+            """Convert a date_time (str) to its ISO 8601 representation in UTC
+
+            "2021-04-21" => "2021-04-21T00:00:00.000Z"
+            "2021-04-21T00:00:00.000+02:00" => "2021-04-20T22:00:00.000Z"
+            """
+            dt = isoparse(date_time)
+            if not dt.tzinfo:
+                dt = dt.replace(tzinfo=UTC)
+            elif dt.tzinfo is not UTC:
+                dt = dt.astimezone(UTC)
+            return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
         @staticmethod
         def convert_to_iso_date(datetime_string):
-            return datetime_string[:10]
+            """Convert an ISO8601 datetime (str) to its ISO8601 date format
+
+            "2021-04-21T18:27:19.123Z" => "2021-04-21"
+            "2021-04-21" => "2021-04-21"
+            "2021-04-21T00:00:00+06:00" => "2021-04-20" !
+            """
+            dt = isoparse(datetime_string)
+            if not dt.tzinfo:
+                dt = dt.replace(tzinfo=UTC)
+            elif dt.tzinfo is not UTC:
+                dt = dt.astimezone(UTC)
+            return dt.isoformat()[:10]
 
         @staticmethod
         def convert_remove_extension(string):
@@ -301,7 +301,7 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_replace_str(string, args):
             old, new = ast.literal_eval(args)
-            return string.replace(old, new)
+            return re.sub(old, new, string)
 
         @staticmethod
         def convert_recursive_sub_str(input_obj, args):
@@ -311,6 +311,15 @@ def format_metadata(search_param, *args, **kwargs):
                 lambda k, v, x, y: re.sub(x, y, v) if isinstance(v, str) else v,
                 **{"x": old, "y": new}
             )
+
+        @staticmethod
+        def convert_dict_update(input_dict, args):
+            """Converts"""
+            new_items_list = ast.literal_eval(args)
+
+            new_items_dict = nested_pairs2dict(new_items_list)
+
+            return dict(input_dict, **new_items_dict)
 
         @staticmethod
         def convert_slice_str(string, args):
@@ -364,7 +373,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
 
     :param json: the representation of a provider result as a json object
     :type json: dict
-    :param mapping: a mapping between :class:`~eodag.api.product.EOProduct`'s metadata
+    :param mapping: a mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the json
                     representation, expressed as a
                     `jsonpath <http://goessner.net/articles/JsonPath/>`_
@@ -373,7 +382,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
     :type discovery_pattern: str
     :param discovery_path: str representation of jsonpath
     :type discovery_path: str
-    :return: the metadata of the :class:`~eodag.api.product.EOProduct`
+    :return: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
     properties = {}
@@ -415,6 +424,11 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
                         )
                     elif isinstance(conversion_or_none, list):
                         conversion_or_none = conversion_or_none[0]
+
+                    # check if conversion uses variables to format
+                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                        conversion_or_none = conversion_or_none.format(**properties)
+
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value}
@@ -455,7 +469,7 @@ def properties_from_xml(
 
     :param xml_as_text: the representation of a provider result as xml
     :type xml_as_text: str
-    :param mapping: a mapping between :class:`~eodag.api.product.EOProduct`'s metadata
+    :param mapping: a mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the xml
                     representation, expressed as a
                     `xpath <https://www.w3schools.com/xml/xml_xpath.asp>`_
@@ -465,7 +479,7 @@ def properties_from_xml(
                             xpath in `mapping` must use this value to be able to
                             correctly reach empty-namespace prefixed elements
     :type empty_ns_prefix: str
-    :return: the metadata of the :class:`~eodag.api.product.EOProduct`
+    :return: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
     properties = {}
