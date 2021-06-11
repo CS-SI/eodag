@@ -4,8 +4,8 @@ Release history
 2.3.0b1 (2021-06-11)
 ++++++++++++++++++++
 
-- Re-structured and more complete documentation (:pull:`282`, and also :pull:`224`, :pull:`254`, :pull:`287`,
-  :pull:`301`)
+- Re-structured and more complete documentation (:pull:`233`, and also :pull:`224`, :pull:`254`, :pull:`282`,
+  :pull:`287`, :pull:`301`)
 - Homogenized inconsistent paths returned by :meth:`~eodag.api.core.EODataAccessGateway.download` and
   :meth:`~eodag.api.core.EODataAccessGateway.download_all` methods (:pull:`244`)(:pull:`292`)
 - Rewritten progress callback mechanism (:pull:`276`)(:pull:`285`)
