@@ -1,20 +1,45 @@
 Release history
 ---------------
 
-2.2.1 (XXXX-XX-XX)
-++++++++++++++++++
+2.3.0b1 (2021-06-11)
+++++++++++++++++++++
 
-- Re-structure and complete the documentation.
-- Build SAFE format for Sentinel products from AWS STAC API providers, fixes :issue:`171`
-- Deprecate :meth:`~eodag.api.core.EODataAccessGateway.load_stac_items`, use the
-  :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` search plugin instead
+- Re-structured and more complete documentation (:pull:`282`, and also :pull:`224`, :pull:`254`, :pull:`287`)
+- Homogenized inconsistent paths returned by :meth:`~eodag.api.core.EODataAccessGateway.download` and
+  :meth:`~eodag.api.core.EODataAccessGateway.download_all` methods (:pull:`244`)(:pull:`292`)
+- Rewritten progress callback mechanism (:pull:`276`)(:pull:`285`)
+- Sentinel products SAFE-format build for STAC AWS providers (:pull:`218`)
+- New CLI optional `--quicklooks` flag in `eodag download` command (:pull:`279`,
+  thanks `@ahuarte47 <https://github.com/ahuarte47>`_)
+- New product types for Sentinel non-SAFE products (:pull:`228`)
+- Creodias metadata mapping update (:pull:`294`)
+- :meth:`~eodag.utils.logging.setup_logging` is now easier to import (:pull:`221`)
+- :func:`~eodag.utils.logging.get_logging_verbose` function added (:pull:`283`)
+- Documentation on how to request USGS M2M API access (:pull:`269`)
+- User friendly parameters mapping documentation (:pull:`299`)
+- Auto extract if extract is not set (:pull:`249`)
+- Fixed how :meth:`~eodag.api.core.EODataAccessGateway.download_all` updates the passed list of products (:pull:`253`)
+- Fixed user config file loading with settings of providers from ext plugin (:pull:`235`,
+  thanks `@ahuarte47 <https://github.com/ahuarte47>`_)
+- Improved and less strict handling of misconfigured user settings (:pull:`293`)(:pull:`296`)
+- ISO 8601 formatted datetimes accepted by all providers (:pull:`257`)
+- `GENERIC_PRODUCT_TYPE` not returned any more by :meth:`~eodag.api.core.EODataAccessGateway.list_product_types`
+  (:pull:`261`)
+- Warning displayed when searching with non preferred provider (:pull:`260`)
+- Search kwargs used for guessing a product type not propagated any more (:pull:`248`)
+- Deprecate :meth:`~eodag.api.core.EODataAccessGateway.load_stac_items`,
+  :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` search plugin should be used instead (:pull:`225`)
+- `ipywidgets` no more needed in :class:`~eodag.utils.notebook.NotebookWidgets` (:pull:`223`)
+- Various minor fixes and improvements (:pull:`219`)(:pull:`246`)(:pull:`247`)(:pull:`258`)(:pull:`233`)(:pull:`273`)
+  (:pull:`274`)(:pull:`280`)(:pull:`284`)(:pull:`288`)(:pull:`290`)(:pull:`295`)
 
 2.2.0 (2021-03-26)
 ++++++++++++++++++
 
 - New :meth:`~eodag.api.core.EODataAccessGateway.search_all` and
   :meth:`~eodag.api.core.EODataAccessGateway.search_iter_page` methods to simplify pagination handling (:pull:`190`)
-- Docker-compose files for STAC API server with STAC-browser (:pull:`183`)
+- Docker-compose files for STAC API server with STAC-browser (:pull:`183`,
+  thanks `@apparell <https://github.com/apparell>`_)
 - Fixed USGS plugin which now uses M2M API (:pull:`209`)
 - Windows support added in Continuous Integration (:pull:`192`)
 - Fixes issue with automatically load configution from EODAG external plugins, fixes :issue:`184`

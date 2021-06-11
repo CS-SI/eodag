@@ -6,8 +6,8 @@
 .. role:: raw-html(raw)
     :format: html
 
-Earth Observation Data Access Gateway
-=====================================
+Earth Observation Data Access Gateway (|version|)
+=================================================
 
 :raw-html:`<a class="reference external image-reference" href="https://badge.fury.io/py/eodag" rel="nofollow"><img src="https://badge.fury.io/py/eodag.svg" type="image/svg+xml"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://anaconda.org/conda-forge/eodag" rel="nofollow"><img src="https://img.shields.io/conda/vn/conda-forge/eodag" type="image/svg+xml"/></a>`

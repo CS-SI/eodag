@@ -231,8 +231,8 @@ texinfo_documents = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/CS-SI/eodag/issues/%s", "GH-"),
-    "pull": ("https://github.com/CS-SI/eodag/pull/%s", "GH-"),
+    "issue": ("https://github.com/CS-SI/eodag/issues/%s", "#"),
+    "pull": ("https://github.com/CS-SI/eodag/pull/%s", "#"),
 }
 
 # Example configuration for intersphinx: refer to the Python standard library.
