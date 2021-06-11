@@ -7,9 +7,16 @@ Utils
 Logging
 -------
 
-.. autofunction:: eodag.utils.logging.setup_logging
+.. automodule:: eodag.utils.logging
+   :members:
 
 Progress callback
 -----------------
 
 .. autofunction:: eodag.utils.ProgressCallback
+
+Notebook
+--------
+
+.. automodule:: eodag.utils.notebook
+   :members:
