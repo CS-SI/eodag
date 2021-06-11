@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -58,14 +58,14 @@ class TestCore(unittest.TestCase):
             "peps",
             "sobloo",
             "onda",
-            "wekeo",
             "mundi",
             "creodias",
             "aws_eos",
+            "astraea_eod",
         ],
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
-        "S1_SAR_SLC": ["peps", "sobloo", "onda", "wekeo", "mundi", "creodias"],
+        "S1_SAR_SLC": ["peps", "sobloo", "onda", "mundi", "creodias"],
         "S2_MSI_L2A": [
             "onda",
             "mundi",
@@ -76,6 +76,7 @@ class TestCore(unittest.TestCase):
             "astraea_eod",
             "earth_search",
         ],
+        "S2_MSI_L2A_COG": ["earth_search_cog"],
         "S2_MSI_L2A_MAJA": ["theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
@@ -85,23 +86,22 @@ class TestCore(unittest.TestCase):
             "peps",
             "sobloo",
             "onda",
-            "wekeo",
             "mundi",
             "creodias",
             "astraea_eod",
             "earth_search",
         ],
-        "S3_ERR": ["peps", "onda", "wekeo", "creodias"],
-        "S3_EFR": ["peps", "onda", "wekeo", "creodias"],
-        "S3_LAN": ["peps", "onda", "wekeo", "creodias"],
-        "S3_SRA": ["onda", "wekeo", "creodias"],
-        "S3_SRA_BS": ["onda", "wekeo", "creodias"],
+        "S3_ERR": ["peps", "onda", "creodias"],
+        "S3_EFR": ["peps", "onda", "creodias"],
+        "S3_LAN": ["peps", "onda", "creodias"],
+        "S3_SRA": ["onda", "creodias"],
+        "S3_SRA_BS": ["onda", "creodias"],
         "S3_SRA_A_BS": ["onda", "creodias"],
-        "S3_WAT": ["onda", "wekeo", "creodias"],
-        "S3_OLCI_L2LFR": ["peps", "onda", "wekeo", "creodias", "mundi"],
-        "S3_OLCI_L2LRR": ["peps", "onda", "wekeo", "creodias"],
-        "S3_SLSTR_L1RBT": ["peps", "onda", "wekeo", "creodias"],
-        "S3_SLSTR_L2LST": ["peps", "onda", "wekeo", "creodias"],
+        "S3_WAT": ["onda", "creodias"],
+        "S3_OLCI_L2LFR": ["peps", "onda", "creodias", "mundi"],
+        "S3_OLCI_L2LRR": ["peps", "onda", "creodias"],
+        "S3_SLSTR_L1RBT": ["peps", "onda", "creodias"],
+        "S3_SLSTR_L2LST": ["peps", "onda", "creodias"],
         "PLD_PAN": ["theia"],
         "PLD_XS": ["theia"],
         "PLD_BUNDLE": ["theia"],
@@ -134,6 +134,7 @@ class TestCore(unittest.TestCase):
             "astraea_eod",
             "usgs_satapi_aws",
             "earth_search",
+            "earth_search_cog",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -144,11 +145,11 @@ class TestCore(unittest.TestCase):
         "creodias",
         "mundi",
         "onda",
-        "wekeo",
         "aws_eos",
         "astraea_eod",
         "usgs_satapi_aws",
         "earth_search",
+        "earth_search_cog",
     ]
 
     @classmethod
@@ -363,7 +364,7 @@ class TestCoreGeometry(unittest.TestCase):
             "lonmax": 2,
             "latmax": 52,
         }
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # Bad dict with a missing key
         del geometry["lonmin"]
         self.assertRaises(
@@ -374,10 +375,10 @@ class TestCoreGeometry(unittest.TestCase):
         )
         # Tuple
         geometry = (0, 50, 2, 52)
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # List
         geometry = list(geometry)
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # List without 4 items
         geometry.pop()
         self.assertRaises(
@@ -388,7 +389,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         # WKT
         geometry = ref_geom_as_wkt
-        self.assertEquals(get_geometry_from_various([], geometry=geometry), ref_geom)
+        self.assertEqual(get_geometry_from_various([], geometry=geometry), ref_geom)
         # Some other shapely geom
         geometry = LineString([[0, 0], [1, 1]])
         self.assertIsInstance(
@@ -405,7 +406,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="FRA")
         )
         self.assertIsInstance(geom_france, MultiPolygon)
-        self.assertEquals(len(geom_france), 3)  # France + Guyana + Corsica
+        self.assertEqual(len(geom_france), 3)  # France + Guyana + Corsica
 
     def test_get_geometry_from_various_locations_with_wrong_location_name_in_kwargs(
         self,
@@ -440,7 +441,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="PA[A-Z]")
         )
         self.assertIsInstance(geom_regex_pa, MultiPolygon)
-        self.assertEquals(len(geom_regex_pa), 2)
+        self.assertEqual(len(geom_regex_pa), 2)
 
     def test_get_geometry_from_various_locations_no_match_raises_error(self):
         """If the location search doesn't match any of the feature attribute a ValueError must be raised"""
@@ -464,7 +465,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # France + Guyana + Corsica + somewhere over Poland
-        self.assertEquals(len(geom_combined), 4)
+        self.assertEqual(len(geom_combined), 4)
         geometry = {
             "lonmin": 0,
             "latmin": 50,
@@ -476,7 +477,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # The bounding box overlaps with France inland
-        self.assertEquals(len(geom_combined), 3)
+        self.assertEqual(len(geom_combined), 3)
 
 
 class TestCoreSearch(unittest.TestCase):
@@ -509,6 +510,7 @@ class TestCoreSearch(unittest.TestCase):
         expected = [
             "S2_MSI_L1C",
             "S2_MSI_L2A",
+            "S2_MSI_L2A_COG",
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
@@ -541,7 +543,6 @@ class TestCoreSearch(unittest.TestCase):
             "geometry": None,
             "productType": None,
         }
-        self.assertDictContainsSubset(expected, prepared_search)
         expected = set(["geometry", "productType", "auth", "search_plugin"])
         self.assertSetEqual(expected, set(prepared_search))
 
@@ -552,11 +553,10 @@ class TestCoreSearch(unittest.TestCase):
             "end": "2020-02-01",
         }
         prepared_search = self.dag._prepare_search(**base)
-        expected = {
-            "startTimeFromAscendingNode": base["start"],
-            "completionTimeFromAscendingNode": base["end"],
-        }
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["startTimeFromAscendingNode"], base["start"])
+        self.assertEqual(
+            prepared_search["completionTimeFromAscendingNode"], base["end"]
+        )
 
     def test__prepare_search_geom(self):
         """_prepare_search must handle geom, box and bbox"""
@@ -603,8 +603,7 @@ class TestCoreSearch(unittest.TestCase):
         """_prepare_search must handle when a product type is given"""
         base = {"productType": "S2_MSI_L1C"}
         prepared_search = self.dag._prepare_search(**base)
-        expected = {"productType": base["productType"]}
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["productType"], base["productType"])
 
     def test__prepare_search_product_type_guess_it(self):
         """_prepare_search must guess a product type when required to"""
@@ -616,8 +615,19 @@ class TestCoreSearch(unittest.TestCase):
             platformSerialIdentifier="S2A",
         )
         prepared_search = self.dag._prepare_search(**base)
-        expected = {"productType": "S2_MSI_L1C", **base}
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["productType"], "S2_MSI_L1C")
+
+    def test__prepare_search_remove_guess_kwargs(self):
+        """_prepare_search must remove the guess kwargs"""
+        # Uses guess_product_type to find the product matching
+        # the best the given params.
+        base = dict(
+            instrument="MSI",
+            platform="SENTINEL2",
+            platformSerialIdentifier="S2A",
+        )
+        prepared_search = self.dag._prepare_search(**base)
+        self.assertEqual(len(base.keys() & prepared_search.keys()), 0)
 
     def test__prepare_search_with_id(self):
         """_prepare_search must handle a search by id"""
@@ -633,8 +643,8 @@ class TestCoreSearch(unittest.TestCase):
             "cloudCover": 10,
         }
         prepared_search = self.dag._prepare_search(**base)
-        expected = base
-        self.assertDictContainsSubset(expected, prepared_search)
+        self.assertEqual(prepared_search["productType"], base["productType"])
+        self.assertEqual(prepared_search["cloudCover"], base["cloudCover"])
 
     def test__prepare_search_search_plugin_has_known_product_properties(self):
         """_prepare_search must attach the product properties to the search plugin"""
@@ -705,13 +715,39 @@ class TestCoreSearch(unittest.TestCase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test__do_search_counts_by_default(self, search_plugin):
-        """__do_search must create a count query by default"""
+    def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
+        """_do_search must create a count query by default"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,  # a list must be returned by .query
             self.search_results_size,
         )
+
+        class DummyConfig:
+            pagination = {"max_items_per_page": 1}
+
+        search_plugin.config = DummyConfig()
+        sr, estimate = self.dag._do_search(
+            search_plugin=search_plugin,
+            items_per_page=2,
+        )
+        self.assertIsInstance(sr, SearchResult)
+        self.assertEqual(len(sr), self.search_results_size)
+        self.assertEqual(estimate, self.search_results_size)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_counts_by_default(self, search_plugin):
+        """_do_search must create a count query by default"""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results.data,  # a list must be returned by .query
+            self.search_results_size,
+        )
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
         sr, estimate = self.dag._do_search(search_plugin=search_plugin)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), self.search_results_size)
@@ -719,22 +755,34 @@ class TestCoreSearch(unittest.TestCase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_without_count(self, search_plugin):
-        """__do_search must be able to create a query without a count"""
+        """_do_search must be able to create a query without a count"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,
             None,  # .query must return None if count is False
         )
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
         sr, estimate = self.dag._do_search(search_plugin=search_plugin, count=False)
         self.assertIsNone(estimate)
         self.assertEqual(len(sr), self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
-        """__do_search must provide a best estimate when a provider doesn't return a count"""  # noqa
+        """_do_search must provide a best estimate when a provider doesn't return a count"""  # noqa
         search_plugin.provider = "peps"
         # If the provider doesn't return a count, .query returns 0
         search_plugin.query.return_value = (self.search_results.data, 0)
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
         page = 4
         sr, estimate = self.dag._do_search(
             search_plugin=search_plugin,
@@ -747,12 +795,18 @@ class TestCoreSearch(unittest.TestCase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_fuzzy_count(self, search_plugin):
-        """__do_search must provide a best estimate when a provider returns a fuzzy count"""  # noqa
+        """_do_search must provide a best estimate when a provider returns a fuzzy count"""  # noqa
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data * 4,  # 8 products returned
             22,  # fuzzy number, less than the real total count
         )
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
         page = 4
         items_per_page = 10
         sr, estimate = self.dag._do_search(
@@ -771,13 +825,19 @@ class TestCoreSearch(unittest.TestCase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_null_count(self, search_plugin):
-        """__do_search must provide a best estimate when a provider returns a null count"""  # noqa
+        """_do_search must provide a best estimate when a provider returns a null count"""  # noqa
         # TODO: check the underlying implementation, it doesn't make so much sense since
         # this case is already covered with nb_res = len(res) * page. This one uses
         # nb_res = items_per_page * (page - 1) whick actually makes more sense. Choose
         # one of them.
         search_plugin.provider = "peps"
         search_plugin.query.return_value = ([], 0)
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
         page = 4
         items_per_page = 10
         sr, estimate = self.dag._do_search(
@@ -790,10 +850,14 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(estimate, expected_estimate)
 
     def test__do_search_does_not_raise_by_default(self):
-        """__do_search must not raise any error by default"""
+        """_do_search must not raise any error by default"""
         # provider attribute required internally by __do_search for logging purposes.
+        class DummyConfig:
+            pagination = {}
+
         class DummySearchPlugin:
             provider = "peps"
+            config = DummyConfig()
 
         sr, estimate = self.dag._do_search(search_plugin=DummySearchPlugin())
         self.assertIsInstance(sr, SearchResult)
@@ -801,7 +865,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(estimate, 0)
 
     def test__do_search_can_raise_errors(self):
-        """__do_search must not raise any error by default"""
+        """_do_search must not raise errors if raise_errors=True"""
 
         class DummySearchPlugin:
             provider = "peps"
@@ -812,23 +876,35 @@ class TestCoreSearch(unittest.TestCase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_query_products_must_be_a_list(self, search_plugin):
-        """__do_search expects that each search plugin returns a list of products."""
+        """_do_search expects that each search plugin returns a list of products."""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
-            self.search_results,
+            self.search_results,  # This is not a list but a SearchResult
             self.search_results_size,
         )
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
         with self.assertRaises(PluginImplementationError):
             self.dag._do_search(search_plugin=search_plugin, raise_errors=True)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_register_downloader_if_search_intersection(self, search_plugin):
-        """__do_search must register each product's downloader if search_intersection is not None"""  # noqa
+        """_do_search must register each product's downloader if search_intersection is not None"""  # noqa
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,
             self.search_results_size,
         )
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
         sr, _ = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
             self.assertIsNotNone(product.downloader)
@@ -837,11 +913,15 @@ class TestCoreSearch(unittest.TestCase):
     def test__do_search_doest_not_register_downloader_if_no_search_intersection(
         self, search_plugin
     ):
-        """__do_search must not register downloaders if search_intersection is None"""
+        """_do_search must not register downloaders if search_intersection is None"""
 
         class DummyProduct:
             seach_intersecion = None
 
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
         search_plugin.provider = "peps"
         search_plugin.query.return_value = ([DummyProduct(), DummyProduct()], 2)
         sr, _ = self.dag._do_search(search_plugin=search_plugin)

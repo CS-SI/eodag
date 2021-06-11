@@ -1,4 +1,25 @@
-div.sphinxsidebar {
-    max-height: 100%;
-    overflow-y: auto;
+.green {
+    color: green;
+}
+table.params {
+    table-layout: fixed;
+    width: 100%;
+    overflow: auto;
+    height: 500px;
+}
+table.params td{
+    padding-top: 0;
+    padding-bottom: 0;
+}
+table.params thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #fafafa;
+}
+table.params th:first-child, table.params td:first-child {
+    background-color: #fafafa;
+    z-index: 2;
+    position: sticky;
+    left: 0;
 }

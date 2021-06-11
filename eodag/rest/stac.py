@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS Systemes d'Information, http://www.c-s.fr
+# Copyright 2021, CS Systemes d'Information, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -31,7 +31,6 @@ from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import (
-    GENERIC_PRODUCT_TYPE,
     dict_items_recursive_apply,
     format_dict_items,
     jsonpath_parse_dict_items,
@@ -60,7 +59,7 @@ class StacCommon(object):
     :param provider: chosen provider
     :type provider: str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.EODataAccessGateway`
+    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: API root
     :type root: str
     """
@@ -169,7 +168,7 @@ class StacItem(StacCommon):
     :param provider: chosen provider
     :type provider: str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.EODataAccessGateway`
+    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: API root
     :type root: str
     """
@@ -191,7 +190,7 @@ class StacItem(StacCommon):
         """Build STAC items list from EODAG search results
 
         :param search_results: EODAG search results
-        :type search_results: :class:`eodag.api.search_result.SearchResult`
+        :type search_results: :class:`~eodag.api.search_result.SearchResult`
         :param catalog: STAC catalog dict used for parsing item metadata
         :type catalog: dict
         :returns: STAC item dicts list
@@ -228,7 +227,7 @@ class StacItem(StacCommon):
         """Build STAC items from EODAG search results
 
         :param search_results: EODAG search results
-        :type search_results: :class:`eodag.api.search_result.SearchResult`
+        :type search_results: :class:`~eodag.api.search_result.SearchResult`
         :param catalog: STAC catalog dict used for parsing item metadata
         :type catalog: dict
         :returns: STAC item dicts list
@@ -457,7 +456,7 @@ class StacCollection(StacCommon):
     :param provider: chosen provider
     :type provider: str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.EODataAccessGateway`
+    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: API root
     :type root: str
     """
@@ -503,7 +502,7 @@ class StacCollection(StacCommon):
             ]
         else:
             product_types = self.eodag_api.list_product_types(provider=self.provider)
-        return [pt for pt in product_types if pt["ID"] != GENERIC_PRODUCT_TYPE]
+        return product_types
 
     def __get_collection_list(self, filters=None):
         """Build STAC collections list
@@ -606,7 +605,7 @@ class StacCatalog(StacCommon):
     :param provider: chosen provider
     :type provider: str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.EODataAccessGateway`
+    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: API root
     :type root: str
     :param catalogs: catalogs list
@@ -1099,9 +1098,7 @@ class StacCatalog(StacCommon):
 
             # build children : product_types
             product_types_list = [
-                pt
-                for pt in self.eodag_api.list_product_types(provider=self.provider)
-                if pt["ID"] != GENERIC_PRODUCT_TYPE
+                pt for pt in self.eodag_api.list_product_types(provider=self.provider)
             ]
             self.set_children(
                 [

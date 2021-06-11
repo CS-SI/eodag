@@ -1,25 +1,57 @@
 Release history
 ---------------
 
+2.3.0b1 (2021-06-11)
+++++++++++++++++++++
+
+- Re-structured and more complete documentation (:pull:`233`, and also :pull:`224`, :pull:`254`, :pull:`282`,
+  :pull:`287`, :pull:`301`)
+- Homogenized inconsistent paths returned by :meth:`~eodag.api.core.EODataAccessGateway.download` and
+  :meth:`~eodag.api.core.EODataAccessGateway.download_all` methods (:pull:`244`)(:pull:`292`)
+- Rewritten progress callback mechanism (:pull:`276`)(:pull:`285`)
+- Sentinel products SAFE-format build for STAC AWS providers (:pull:`218`)
+- New CLI optional `--quicklooks` flag in `eodag download` command (:pull:`279`,
+  thanks `@ahuarte47 <https://github.com/ahuarte47>`_)
+- New product types for Sentinel non-SAFE products (:pull:`228`)
+- Creodias metadata mapping update (:pull:`294`)
+- :meth:`~eodag.utils.logging.setup_logging` is now easier to import (:pull:`221`)
+- :func:`~eodag.utils.logging.get_logging_verbose` function added (:pull:`283`)
+- Documentation on how to request USGS M2M API access (:pull:`269`)
+- User friendly parameters mapping documentation (:pull:`299`)
+- Auto extract if extract is not set (:pull:`249`)
+- Fixed how :meth:`~eodag.api.core.EODataAccessGateway.download_all` updates the passed list of products (:pull:`253`)
+- Fixed user config file loading with settings of providers from ext plugin (:pull:`235`,
+  thanks `@ahuarte47 <https://github.com/ahuarte47>`_)
+- Improved and less strict handling of misconfigured user settings (:pull:`293`)(:pull:`296`)
+- ISO 8601 formatted datetimes accepted by all providers (:pull:`257`)
+- `GENERIC_PRODUCT_TYPE` not returned any more by :meth:`~eodag.api.core.EODataAccessGateway.list_product_types`
+  (:pull:`261`)
+- Warning displayed when searching with non preferred provider (:pull:`260`)
+- Search kwargs used for guessing a product type not propagated any more (:pull:`248`)
+- Deprecate :meth:`~eodag.api.core.EODataAccessGateway.load_stac_items`,
+  :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` search plugin should be used instead (:pull:`225`)
+- `ipywidgets` no more needed in :class:`~eodag.utils.notebook.NotebookWidgets` (:pull:`223`)
+- Various minor fixes and improvements (:pull:`219`)(:pull:`246`)(:pull:`247`)(:pull:`258`)(:pull:`233`)(:pull:`273`)
+  (:pull:`274`)(:pull:`280`)(:pull:`284`)(:pull:`288`)(:pull:`290`)(:pull:`295`)
+
 2.2.0 (2021-03-26)
 ++++++++++++++++++
 
-- New ``search_all`` and ``search_iter_page`` methods to simplify pagination handling
-  (`GH-190 <https://github.com/CS-SI/eodag/pull/190>`_)
-- Docker-compose files for STAC API server with STAC-browser (`GH-183 <https://github.com/CS-SI/eodag/pull/183>`_)
-- Fixed USGS plugin which now uses M2M API (`GH-209 <https://github.com/CS-SI/eodag/pull/209>`_)
-- Windows support added in Continuous Integration (`GH-192 <https://github.com/CS-SI/eodag/pull/192>`_)
-- Fixes issue with automatically load configution from EODAG external plugins, fixes
-  `GH-184 <https://github.com/CS-SI/eodag/issues/184>`_
-- More explicit signature for ``setup_logging``, fixes `GH-197 <https://github.com/CS-SI/eodag/issues/197>`_
+- New :meth:`~eodag.api.core.EODataAccessGateway.search_all` and
+  :meth:`~eodag.api.core.EODataAccessGateway.search_iter_page` methods to simplify pagination handling (:pull:`190`)
+- Docker-compose files for STAC API server with STAC-browser (:pull:`183`,
+  thanks `@apparell <https://github.com/apparell>`_)
+- Fixed USGS plugin which now uses M2M API (:pull:`209`)
+- Windows support added in Continuous Integration (:pull:`192`)
+- Fixes issue with automatically load configution from EODAG external plugins, fixes :issue:`184`
+- More explicit signature for :meth:`~eodag.utils.logging.setup_logging`, fixes :issue:`197`
 - Various minor fixes
 
 2.1.1 (2021-03-18)
 ++++++++++++++++++
 
 - Continuous Integration performed with GitHub actions
-- Providers config automatically loaded from EODAG external plugins, fixes
-  `GH-172 <https://github.com/CS-SI/eodag/issues/172>`_
+- Providers config automatically loaded from EODAG external plugins, fixes :issue:`172`
 - Various minor fixes
 
 2.1.0 (2021-03-09)
@@ -27,34 +59,35 @@ Release history
 
 - `earth_search <https://www.element84.com/earth-search>`_ and
   `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api>`_ as new providers
-- Updated ``HTTPDownload`` plugin, handling products with multiple assets
-- New plugin ``AwsAuth``, enables AWS authentication using no-sign-request, profile, ``~/.aws/*``
-- New search plugin ``StaticStacSearch`` and updated
+- Updated :class:`~eodag.plugins.download.http.HTTPDownload` plugin, handling products with multiple assets
+- New plugin :class:`~eodag.plugins.authentication.aws_auth.AwsAuth`, enables AWS authentication using no-sign-request,
+  profile, ``~/.aws/*``
+- New search plugin :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` and updated
   `STAC client tutorial <https://eodag.readthedocs.io/en/latest/tutorials/tuto_stac_client.html>`_
 - New tutorial for `Copernicus DEM <https://eodag.readthedocs.io/en/latest/tutorials/tuto_cop_dem.html>`_
 - Remove ``unidecode`` dependency
 - Start/end dates passed to sobloo are now in UTC, and make it clear that search dates must be in UTC
-- Locations must now be passed to ``search()`` method as a dictionnary
-- Metadata mapping update and uniformization, fixes `GH-154 <https://github.com/CS-SI/eodag/issues/154>`_
-- Raise a ``ValueError`` when a location search doesn't match any record and add a new ``locations``
-  parameter to ``EODataAccessGateway.search``.
+- Locations must now be passed to :meth:`~eodag.api.core.EODataAccessGateway.search` method as a dictionnary
+- Metadata mapping update and uniformization, fixes :issue:`154`
+- Raise a :class:`ValueError` when a location search doesn't match any record and add a new ``locations``
+  parameter to :meth:`~eodag.api.core.EODataAccessGateway.search`.
 - Drop support of Python 3.5
 
 2.0.1 (2021-02-05)
 ++++++++++++++++++
 
-- Fixes issue when rebuilding index on NFS, see `GH-151 <https://github.com/CS-SI/eodag/issues/151>`_
-- Tests can be run in parallel mode, fixes `GH-103 <https://github.com/CS-SI/eodag/issues/103>`_
+- Fixes issue when rebuilding index on NFS, see :issue:`151`
+- Tests can be run in parallel mode, fixes :issue:`103`
 
 2.0 (2021-01-28)
 ++++++++++++++++
 
 - Add a new provider dynamically
-- Allow to dynamically set download options, fixes `GH-145 <https://github.com/CS-SI/eodag/issues/145>`_ and
-  `GH-112 <https://github.com/CS-SI/eodag/issues/112>`_
-- New tutorials for STAC and search by geometry, fixes `GH-139 <https://github.com/CS-SI/eodag/issues/139>`_
-- New crunches ``FilterDate``, ``FilterProperty`` and updated ``FilterOverlap``, fixes
-  `GH-137 <https://github.com/CS-SI/eodag/issues/137>`_
+- Allow to dynamically set download options, fixes :issue:`145` and :issue:`112`
+- New tutorials for STAC and search by geometry, fixes :issue:`139`
+- New crunches :class:`~eodag.plugins.crunch.filter_date.FilterDate`,
+  :class:`~eodag.plugins.crunch.filter_property.FilterProperty` and updated
+  :class:`~eodag.plugins.crunch.filter_overlap.FilterOverlap`, fixes :issue:`137`
 - Use ``jsonpath-ng`` instead of ``jsonpath-rw`` and ``pyjq``, ``pyshp`` instead of ``fiona``
 - Better wrong or missing credentials handling
 - Add warning for the total number of results returned by theia
@@ -66,11 +99,11 @@ Release history
 2.0b2 (2020-12-18)
 ++++++++++++++++++
 
-- New method ``deserialize_and_register``, fixes `GH-140 <https://github.com/CS-SI/eodag/issues/140>`_
-- Load static stac catalogs as ``SearchResult``
+- New method :meth:`~eodag.api.core.EODataAccessGateway.deserialize_and_register`, fixes :issue:`140`
+- Load static stac catalogs as :class:`~eodag.api.search_result.SearchResult`
 - Search on unknown product types using ``GENERIC_PRODUCT_TYPE``
 - ``get_data``, drivers and rpc server moved to `eodag-cube <https://github.com/CS-SI/eodag-cube>`_
-- Removed fixed dependencies, fixes `GH-82 <https://github.com/CS-SI/eodag/issues/82>`_
+- Removed fixed dependencies, fixes :issue:`82`
 - Use locations conf template by default
 
 2.0b1 (2020-11-17)
@@ -79,7 +112,7 @@ Release history
 - STAC API compliant REST server
 - Common configuration for STAC providers
 - astraea_eod as new STAC provider
-- Search by geometry / bbox / location name, fixes `#49 <https://github.com/CS-SI/eodag/issues/49>`_
+- Search by geometry / bbox / location name, fixes :issue:`49`
 - removed Python 2.7 support
 
 1.6.0 (2020-08-24)
@@ -91,11 +124,10 @@ Release history
 +++++++++++++++++++++
 
 - Queryable parameters configuration update for peps
-- Fixed re-download error after original zip deletion, fixes `#142 <https://github.com/CS-SI/eodag/issues/142>`_
-- Fixed python-dateutil version conflict, fixes `#141 <https://github.com/CS-SI/eodag/issues/141>`_
+- Fixed re-download error after original zip deletion, fixes :issue:`142`
+- Fixed python-dateutil version conflict, fixes :issue:`141`
 - Default user configuration file usage in CLI mode
-- Fixed error when provider returns geometry as bbox with negative coords, fixes
-  `#143 <https://github.com/CS-SI/eodag/issues/143>`_
+- Fixed error when provider returns geometry as bbox with negative coords, fixes :issue:`143`
 
 1.6.0rc0 (2020-06-18)
 +++++++++++++++++++++
@@ -107,14 +139,14 @@ Release history
 - New search plugin for POST requests (PostJsonSearch)
 - Metadata auto discovery (for product properties and search parameter), replaces custom parameter
 - Search configuration can be tweaked for each provider product type
-- Fixed Lansat-8 search for onda, fixes `#135 <https://github.com/CS-SI/eodag/issues/135>`_
-- Advanced tutorial notebook, fixes `#130 <https://github.com/CS-SI/eodag/issues/130>`_
+- Fixed Lansat-8 search for onda, fixes :issue:`135`
+- Advanced tutorial notebook, fixes :issue:`130`
 - Various minor fixes, code refactorization, and tests update
 
 1.5.2 (2020-05-06)
 ++++++++++++++++++
 
-- Fix CLI download_all missing plugin configuration, fixes `#134 <https://github.com/CS-SI/eodag/issues/134>`_
+- Fix CLI download_all missing plugin configuration, fixes :issue:`134`
 
 1.5.1 (2020-04-08)
 ++++++++++++++++++
@@ -127,32 +159,32 @@ Release history
 
 - ``productionStatus`` parameter standardization over providers
 - Not-available products download management, using ``wait``/``timeout``
-  `download <https://eodag.readthedocs.io/en/latest/api.html#eodag.api.core.EODataAccessGateway.download>`_
-  optional parameters, fixes `#125 <https://github.com/CS-SI/eodag/issues/125>`_
+  :meth:`~eodag.api.core.EODataAccessGateway.download`
+  optional parameters, fixes :issue:`125`
 - More explicit authentication errors messages
 - Update search endoint for aws_s3_sentinel2_l1c and add RequestPayer option usage,
-  fixes `#131 <https://github.com/CS-SI/eodag/issues/131>`_
+  fixes :issue:`131`
 
 1.4.2 (2020-03-04)
 ++++++++++++++++++
 
-- Skip badly configured providers in user configuration, see `#129 <https://github.com/CS-SI/eodag/issues/129>`_
+- Skip badly configured providers in user configuration, see :issue:`129`
 
 1.4.1 (2020-02-25)
 ++++++++++++++++++
 
 - Warning message if an unknow provider is found in user configuration file,
-  fixes `#129 <https://github.com/CS-SI/eodag/issues/129>`_
+  fixes :issue:`129`
 
 1.4.0 (2020-02-24)
 ++++++++++++++++++
 
 - Add to query the parameters set in the provider product type definition
-- New ``S3RestDownload`` plugin for mundi, fixes `#127 <https://github.com/CS-SI/eodag/issues/127>`_
-- S3_OLCI_L2LFR support for mundi, see `#124 <https://github.com/CS-SI/eodag/issues/124>`_
-- S2_MSI_L2A support for peps, see `#124 <https://github.com/CS-SI/eodag/issues/124>`_
-- Theia-landsat provider moved to theia, fixes `#95 <https://github.com/CS-SI/eodag/issues/95>`_
-- Fixed onda query quoting issues, fixes `#128 <https://github.com/CS-SI/eodag/issues/128>`_
+- New :class:`~eodag.plugins.download.s3rest.S3RestDownload` plugin for mundi, fixes :issue:`127`
+- S3_OLCI_L2LFR support for mundi, see :issue:`124`
+- S2_MSI_L2A support for peps, see :issue:`124`
+- Theia-landsat provider moved to theia, fixes :issue:`95`
+- Fixed onda query quoting issues, fixes :issue:`128`
 - Mundi, creodias and onda added to end-to-end tests
 - Gdal install instructions and missing auxdata in ship_detection tutorial
 - Sobloo and creodias quicklooks fix
@@ -161,53 +193,53 @@ Release history
 1.3.6 (2020-01-24)
 ++++++++++++++++++
 
-- USGS plugin corrections, fixes `#73 <https://github.com/CS-SI/eodag/issues/73>`_
+- USGS plugin corrections, fixes :issue:`73`
 - Fixed py27 encodeurl in querystring
-- End-to-end tests update, fixes `#119 <https://github.com/CS-SI/eodag/issues/119>`_
-- Default eodag conf used in end-to-end tests, fixes `#98 <https://github.com/CS-SI/eodag/issues/98>`_
-- Fixed ``download_all`` method `#118 <https://github.com/CS-SI/eodag/issues/118>`_
+- End-to-end tests update, fixes :issue:`119`
+- Default eodag conf used in end-to-end tests, fixes :issue:`98`
+- Fixed :meth:`~eodag.api.core.EODataAccessGateway.download_all` method :issue:`118`
 
 1.3.5 (2020-01-07)
 ++++++++++++++++++
 
-- Removed tqdm_notebook warning, fixes `#117 <https://github.com/CS-SI/eodag/issues/117>`_
-- Removed traceback from geom intersection warning, fixes `#114 <https://github.com/CS-SI/eodag/issues/114>`_
+- Removed tqdm_notebook warning, fixes :issue:`117`
+- Removed traceback from geom intersection warning, fixes :issue:`114`
 - Documentation update for provider priorities and parametters mapping
 - New test for readme/pypi syntax
 
 1.3.4 (2019-12-12)
 ++++++++++++++++++
 
-- Use sobloo official api endpoint, fixes `#115 <https://github.com/CS-SI/eodag/issues/115>`_
+- Use sobloo official api endpoint, fixes :issue:`115`
 - New badges in readme and CS logo
 - Set owslib version to 0.18.0 (py27 support dropped)
 
 1.3.3 (2019-10-11)
 ++++++++++++++++++
 
-- Fixes product configuration for theia provider `#113 <https://github.com/CS-SI/eodag/issues/113>`_
+- Fixes product configuration for theia provider :issue:`113`
 
 1.3.2 (2019-09-27)
 ++++++++++++++++++
 
-- Fixes pagination configuration for sobloo provider `#111 <https://github.com/CS-SI/eodag/issues/111>`_
+- Fixes pagination configuration for sobloo provider :issue:`111`
 
 1.3.1 (2019-09-27)
 ++++++++++++++++++
 
 - Added calls graphs in documentation
-- Tutorial notebooks fixes `#109 <https://github.com/CS-SI/eodag/issues/109>`_,
-  `#110 <https://github.com/CS-SI/eodag/issues/110>`_
-- Download unit display fix `#108 <https://github.com/CS-SI/eodag/issues/108>`_
-- Fix date format with sobloo provider `#107 <https://github.com/CS-SI/eodag/issues/107>`_
+- Tutorial notebooks fixes :issue:`109`,
+  :issue:`110`
+- Download unit display fix :issue:`108`
+- Fix date format with sobloo provider :issue:`107`
 
 1.3.0 (2019-09-06)
 ++++++++++++++++++
 
 - Add parameters mapping in documentation
-- Add new queryable parameters for sobloo `#105 <https://github.com/CS-SI/eodag/issues/105>`_
+- Add new queryable parameters for sobloo :issue:`105`
 - Fix custom search
-- Fix sobloo cloudCoverage query `#106 <https://github.com/CS-SI/eodag/issues/106>`_
+- Fix sobloo cloudCoverage query :issue:`106`
 
 1.2.3 (2019-08-26)
 ++++++++++++++++++
@@ -255,8 +287,8 @@ Release history
 1.0.1 (2019-04-30)
 ++++++++++++++++++
 
-- Fixes `#97 <https://github.com/CS-SI/eodag/issues/97/conversion-to-provider-product-type-is-not>`_
-- Fixes `#96 <https://github.com/CS-SI/eodag/issues/96/eodag-does-not-handle-well-the-switch-in>`_
+- Fixes :issue:`97`
+- Fixes :issue:`96`
 
 1.0 (2019-04-26)
 ++++++++++++++++

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -48,7 +48,7 @@ import textwrap
 import click
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
-from eodag.utils import GENERIC_PRODUCT_TYPE, parse_qs
+from eodag.utils import parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -156,13 +156,13 @@ def version():
     "-s",
     "--start",
     type=click.DateTime(),
-    help="Start sensing UTC time of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
+    help="Start sensing time in ISO8601 format (e.g. '1990-11-26', '1990-11-26T14:30:10'). UTC is assumed",
 )
 @click.option(
     "-e",
     "--end",
     type=click.DateTime(),
-    help="End sensing UTC time of the product (in ISO8601 format: yyyy-MM-ddThh:mm:ss.SSSZ)",
+    help="End sensing time in ISO8601 format (e.g. '1990-11-26', '1990-11-26T14:30:10'). UTC is assumed",
 )
 @click.option(
     "-c",
@@ -436,9 +436,7 @@ def list_pt(ctx, **kwargs):
         else:
             product_types = dag.list_product_types(provider=provider)
         click.echo("Listing available product types:")
-        for product_type in [
-            pt for pt in product_types if pt["ID"] != GENERIC_PRODUCT_TYPE
-        ]:
+        for product_type in product_types:
             click.echo("\n* {}: ".format(product_type["ID"]))
             for prop, value in product_type.items():
                 if prop != "ID":
@@ -468,6 +466,12 @@ def list_pt(ctx, **kwargs):
     type=click.Path(exists=True),
     help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
 )
+@click.option(
+    "--quicklooks",
+    is_flag=True,
+    show_default=False,
+    help="Download only quicklooks of products instead full set of files",
+)
 @click.pass_context
 def download(ctx, **kwargs):
     """Download a bunch of products from a serialized search result"""
@@ -484,27 +488,55 @@ def download(ctx, **kwargs):
 
     satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
     search_results = satim_api.deserialize(search_result_path)
-    # register downloader
-    for idx, product in enumerate(search_results):
-        if product.downloader is None:
-            auth = product.downloader_auth
-            if auth is None:
-                auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
-            search_results[idx].register_downloader(
-                satim_api._plugins_manager.get_download_plugin(product), auth
-            )
 
-    downloaded_files = satim_api.download_all(search_results)
-    if downloaded_files and len(downloaded_files) > 0:
-        for downloaded_file in downloaded_files:
-            if downloaded_file is None:
-                click.echo("A file may have been downloaded but we cannot locate it")
+    get_quicklooks = kwargs.pop("quicklooks")
+    if get_quicklooks:
+        click.echo(
+            "Flag 'quicklooks' specified, downloading only quicklooks of products"
+        )
+
+        for idx, product in enumerate(search_results):
+            if product.downloader is None:
+                auth = product.downloader_auth
+                if auth is None:
+                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
+                search_results[idx].register_downloader(
+                    satim_api._plugins_manager.get_download_plugin(product), auth
+                )
+
+            downloaded_file = product.get_quicklook()
+            if not downloaded_file:
+                click.echo(
+                    "A quicklook may have been downloaded but we cannot locate it. "
+                    "Increase verbosity for more details: `eodag -v download [OPTIONS]`"
+                )
             else:
                 click.echo("Downloaded {}".format(downloaded_file))
+
     else:
-        click.echo(
-            "Error during download, a file may have been downloaded but we cannot locate it"
-        )
+        # register downloader
+        for idx, product in enumerate(search_results):
+            if product.downloader is None:
+                auth = product.downloader_auth
+                if auth is None:
+                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
+                search_results[idx].register_downloader(
+                    satim_api._plugins_manager.get_download_plugin(product), auth
+                )
+
+        downloaded_files = satim_api.download_all(search_results)
+        if downloaded_files and len(downloaded_files) > 0:
+            for downloaded_file in downloaded_files:
+                if downloaded_file is None:
+                    click.echo(
+                        "A file may have been downloaded but we cannot locate it"
+                    )
+                else:
+                    click.echo("Downloaded {}".format(downloaded_file))
+        else:
+            click.echo(
+                "Error during download, a file may have been downloaded but we cannot locate it"
+            )
 
 
 @eodag.command(help="Start eodag rpc server")

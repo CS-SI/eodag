@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -49,10 +49,10 @@ class FilterOverlap(Crunch):
         """Execute crunch: Filter products, retaining only those that are overlapping with the search_extent
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product.EOProduct`)
+        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :param dict search_params: search criteria that must contain `geometry`
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product.EOProduct`)
+        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Start filtering for overlapping products")
         filtered = []

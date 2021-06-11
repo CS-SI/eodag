@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -46,7 +46,7 @@ from eodag.utils import (
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import AuthenticationError, RequestError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -92,7 +92,7 @@ class QueryStringSearch(Search):
           - *count_endpoint*: (optional) The endpoint for counting the number of items
             satisfying a request
 
-            *next_page_url_key_path: (optional) A JSONPATH expression used to retrieve
+          - *next_page_url_key_path*: (optional) A JSONPATH expression used to retrieve
             the URL of the next page in the response of the current page.
 
         - **free_text_search_operations**: (optional) A tree structure of the form::
@@ -182,6 +182,29 @@ class QueryStringSearch(Search):
             if (provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE)
             else product_type
         )
+
+        # provider product type specific conf
+        self.product_type_def_params = self.get_product_type_def_params(
+            product_type, **kwargs
+        )
+
+        # update config using provider product type definition metadata_mapping
+        # from another product
+        other_product_for_mapping = self.product_type_def_params.get(
+            "metadata_mapping_from_product", ""
+        )
+        if other_product_for_mapping:
+            other_product_type_def_params = self.get_product_type_def_params(
+                other_product_for_mapping, **kwargs
+            )
+            self.update_metadata_mapping(
+                other_product_type_def_params.get("metadata_mapping", {})
+            )
+        # from current product
+        self.update_metadata_mapping(
+            self.product_type_def_params.get("metadata_mapping", {})
+        )
+
         # Add to the query, the queryable parameters set in the provider product type definition
         self.product_type_def_params = self.get_product_type_def_params(
             product_type, **kwargs
@@ -210,6 +233,43 @@ class QueryStringSearch(Search):
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
+
+    def update_metadata_mapping(self, metadata_mapping):
+        """Update plugin metadata_mapping with input metadata_mapping configuration"""
+        self.config.metadata_mapping.update(metadata_mapping)
+        for metadata in metadata_mapping:
+            path = get_metadata_path_value(self.config.metadata_mapping[metadata])
+            # check if path has already been parsed
+            if isinstance(path, str):
+                conversion, path = get_metadata_path(
+                    self.config.metadata_mapping[metadata]
+                )
+                try:
+                    # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
+                    if len(self.config.metadata_mapping[metadata]) == 2:
+                        self.config.metadata_mapping[metadata][1] = (
+                            conversion,
+                            parse(path),
+                        )
+                    else:
+                        self.config.metadata_mapping[metadata] = (
+                            conversion,
+                            parse(path),
+                        )
+                except Exception:  # jsonpath_ng does not provide a proper exception
+                    # Assume the mapping is to be passed as is.
+                    # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
+                    # it further
+                    _, text = get_metadata_path(self.config.metadata_mapping[metadata])
+                    if len(self.config.metadata_mapping[metadata]) == 2:
+                        self.config.metadata_mapping[metadata][1] = (None, text)
+                    else:
+                        self.config.metadata_mapping[metadata] = (None, text)
+
+                # Put the updated mapping at the end
+                self.config.metadata_mapping[
+                    metadata
+                ] = self.config.metadata_mapping.pop(metadata)
 
     def build_query_string(self, product_type, **kwargs):
         """Build The query string using the search parameters"""
@@ -745,38 +805,6 @@ class PostJsonSearch(QueryStringSearch):
         super(PostJsonSearch, self).__init__(provider, config)
         self.config.results_entry = "results"
 
-    def update_metadata_mapping(self, metadata_mapping):
-        """Update plugin metadata_mapping with input metadata_mapping configuration"""
-        self.config.metadata_mapping.update(metadata_mapping)
-        for metadata in metadata_mapping:
-            path = get_metadata_path_value(self.config.metadata_mapping[metadata])
-            # check if path has already been parsed
-            if isinstance(path, str):
-                conversion, path = get_metadata_path(
-                    self.config.metadata_mapping[metadata]
-                )
-                try:
-                    # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (
-                            conversion,
-                            parse(path),
-                        )
-                    else:
-                        self.config.metadata_mapping[metadata] = (
-                            conversion,
-                            parse(path),
-                        )
-                except Exception:  # jsonpath_ng does not provide a proper exception
-                    # Assume the mapping is to be passed as is.
-                    # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                    # it further
-                    _, text = get_metadata_path(self.config.metadata_mapping[metadata])
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (None, text)
-                    else:
-                        self.config.metadata_mapping[metadata] = (None, text)
-
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
@@ -871,16 +899,26 @@ class PostJsonSearch(QueryStringSearch):
         urls = []
         total_results = 0 if count else None
         for collection in self.get_collections(**kwargs):
-            search_endpoint = self.config.api_endpoint.rstrip("/").format(
-                **dict(collection=collection, **kwargs["auth"].config.credentials)
-            )
+            try:
+                search_endpoint = self.config.api_endpoint.rstrip("/").format(
+                    **dict(
+                        collection=collection,
+                        **getattr(kwargs["auth"].config, "credentials", {})
+                    )
+                )
+            except KeyError as e:
+                raise MisconfiguredError(
+                    "Missing %s in %s configuration"
+                    % (",".join(e.args), kwargs["auth"].provider)
+                )
             if page is not None and items_per_page is not None:
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
                     ).format(
                         **dict(
-                            collection=collection, **kwargs["auth"].config.credentials
+                            collection=collection,
+                            **getattr(kwargs["auth"].config, "credentials", {})
                         )
                     )
                     if count_endpoint:

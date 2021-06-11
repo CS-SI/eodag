@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -140,7 +140,8 @@ class TestEodagCli(unittest.TestCase):
             result = self.runner.invoke(
                 eodag, ["search", "--conf", conf_file, "-p", "whatever", "-b", 1, 2]
             )
-            self.assertIn("Error: -b option requires 4 arguments", result.output)
+            self.assertIn("-b", result.output)
+            self.assertIn("requires 4 arguments", result.output)
             self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -320,13 +321,13 @@ class TestEodagCli(unittest.TestCase):
                     "--cruncher-args",
                     cruncher,
                     "minimum_overlap",
-                    10,
+                    "10",
                 ],
             )
             api_obj.crunch.assert_called_with(
                 search_results,
                 search_criteria=criteria,
-                **{cruncher: {"minimum_overlap": 10}}
+                **{cruncher: {"minimum_overlap": "10"}}
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -427,7 +428,7 @@ class TestEodagCli(unittest.TestCase):
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
-        dag.return_value.download_all.return_value = ["file:///fake_path"]
+        dag.return_value.download_all.return_value = ["/fake_path"]
         result = self.runner.invoke(
             eodag,
             ["download", "--search-results", search_results_path, "-f", config_path],
@@ -435,7 +436,7 @@ class TestEodagCli(unittest.TestCase):
         dag.assert_called_once_with(user_conf_file_path=config_path)
         dag.return_value.deserialize.assert_called_once_with(search_results_path)
         self.assertEqual(dag.return_value.download_all.call_count, 1)
-        self.assertEqual("Downloaded file:///fake_path\n", result.output)
+        self.assertEqual("Downloaded /fake_path\n", result.output)
 
         # Testing the case when no downloaded path is returned
         dag.return_value.download_all.return_value = [None]
