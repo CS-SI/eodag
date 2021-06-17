@@ -109,6 +109,11 @@ class EODataAccessGateway(object):
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
 
+        # re-create _plugins_manager using up-to-date providers_config
+        self._plugins_manager = PluginManager(self.providers_config)
+        # use updated and checked providers_config
+        self.providers_config = self._plugins_manager.providers_config
+
         # Sort providers taking into account of possible new priority orders
         self._plugins_manager.sort_providers()
 
