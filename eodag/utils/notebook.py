@@ -18,7 +18,7 @@
 
 
 def check_ipython():
-    """Check if called from ipython / notebook"""
+    """Check if called from ipython"""
     try:
         __IPYTHON__
         return True
@@ -26,18 +26,32 @@ def check_ipython():
         return False
 
 
+def check_notebook():
+    """Check if called from a notebook"""
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == "ZMQInteractiveShell":
+            return True  # Jupyter notebook or qtconsole
+        elif shell == "TerminalInteractiveShell":
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type
+    except NameError:
+        return False  # Probably standard Python interpreter
+
+
 class NotebookWidgets(object):
     """Display / handle ipython widgets"""
 
-    ipython = False
+    is_notebook = False
     html_box = None
     html_box_shown = False
     display = None
 
     def __init__(self):
-        self.ipython = check_ipython()
+        self.is_notebook = check_notebook()
 
-        if self.ipython:
+        if self.is_notebook:
             from IPython.display import HTML, display, update_display
 
             self.display = display
@@ -49,7 +63,7 @@ class NotebookWidgets(object):
     def display_html(self, html_value):
         """Display HTML message"""
 
-        if self.ipython:
+        if self.is_notebook:
             self.html_box.data = html_value
 
             if not self.html_box_shown:
@@ -63,6 +77,6 @@ class NotebookWidgets(object):
     def clear_html(self):
         """Clear HTML message"""
 
-        if self.ipython:
+        if self.is_notebook:
             self.html_box.data = ""
             self._update_display(self.html_box, display_id=self._html_handle.display_id)
