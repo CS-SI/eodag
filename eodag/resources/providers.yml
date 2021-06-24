@@ -804,27 +804,6 @@
     S2_MSI_L2A:
       collection: S2ST
       productType: S2MSI2A
-    S3_EFR:
-      productType: OL_1_EFR___
-      collection: S3
-    S3_ERR:
-      productType: OL_1_ERR___
-      collection: S3
-    S3_OLCI_L2LFR:
-      productType: OL_2_LFR___
-      collection: S3
-    S3_OLCI_L2LRR:
-      productType: OL_2_LRR___
-      collection: S3
-    S3_SLSTR_L1RBT:
-      productType: SL_1_RBT___
-      collection: S3
-    S3_SLSTR_L2LST:
-      productType: SL_2_LST___
-      collection: S3
-    S3_LAN:
-      productType: SR_2_LAN___
-      collection: S3
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
