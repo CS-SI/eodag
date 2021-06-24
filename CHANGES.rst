@@ -1,6 +1,13 @@
 Release history
 ---------------
 
+2.3.0 (2021-06-24)
+++++++++++++++++++
+
+- Removed Sentinel-3 products not available on peps any more (:pull:`304`, thanks `@tpfd <https://github.com/tpfd>`_)
+- Prevent :meth:`~eodag.utils.notebook.NotebookWidgets.display_html` in ipython shell (:pull:`307`)
+- Fixed plugins reload after having updated providers settings from user configuration (:pull:`306`)
+
 2.3.0b1 (2021-06-11)
 ++++++++++++++++++++
 
