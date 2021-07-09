@@ -74,6 +74,9 @@ setup(
             "flake8",
             "pre-commit",
         ],
+        "notebook": [
+            "tqdm[notebook]",
+        ],
         "tutorials": [
             "eodag-cube",
             "jupyter",
