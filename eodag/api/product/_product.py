@@ -132,7 +132,7 @@ class EOProduct(object):
                     product_geometry,
                 )
                 self.search_intersection = None
-        self.driver = DRIVERS.get(self.product_type, NoDriver())
+        self.driver = self.get_driver()
         self.downloader = None
         self.downloader_auth = None
 
@@ -431,3 +431,16 @@ class EOProduct(object):
                 progress_callback.close()
 
         return quicklook_file
+
+    def get_driver(self):
+        """Get the most appropriate driver"""
+        try:
+            for driver_conf in DRIVERS:
+                if all([criteria(self) for criteria in driver_conf["criteria"]]):
+                    return driver_conf["driver"]
+        except TypeError:
+            logger.warning(
+                "Drivers definition seems out-of-date, please update eodag-cube"
+            )
+            pass
+        return NoDriver()
