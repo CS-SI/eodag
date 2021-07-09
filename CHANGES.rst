@@ -1,6 +1,13 @@
 Release history
 ---------------
 
+2.3.1 (2021-07-09)
+++++++++++++++++++
+
+- Dockerfile update to be compatible with `stac-browser v2.0` (:pull:`314`)
+- Adds new notebook extra dependency (:pull:`317`)
+- EOProduct drivers definition update (:pull:`316`)
+
 2.3.0 (2021-06-24)
 ++++++++++++++++++
 
