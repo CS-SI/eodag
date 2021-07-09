@@ -1,5 +1,5 @@
 # build stage
-FROM node:lts-jessie-slim as build-stage
+FROM node:lts-buster-slim as build-stage
 
 # install git
 RUN apt-get update \
@@ -15,7 +15,7 @@ WORKDIR /stac-browser
 RUN npm install
 
 # start application
-RUN CATALOG_URL=http://localhost:5000 npm run build
+RUN npm run build -- --CATALOG_URL=http://localhost:5000
 
 # production stage, self describing
 FROM nginx:stable-alpine as production-stage

@@ -21,4 +21,4 @@ from eodag.api.product.drivers.base import NoDriver  # noqa
 try:
     from eodag_cube.api.product.drivers import DRIVERS
 except ImportError:
-    DRIVERS = {}
+    DRIVERS = []
