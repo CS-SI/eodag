@@ -160,6 +160,10 @@ S1_IMG_NB_PER_POLAR = {
 class AwsDownload(Download):
     """Download on AWS using S3 protocol"""
 
+    def __init__(self, provider, config):
+        super(AwsDownload, self).__init__(provider, config)
+        self.s3_session = None
+
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download method for AWS S3 API.
 
@@ -414,11 +418,11 @@ class AwsDownload(Download):
         :return: The rasterio environement variables
         :rtype: dict
         """
-        if hasattr(self, "s3_session"):
+        if self.s3_session is not None:
             return {"session": self.s3_session, "requester_pays": True}
 
         _ = self.get_authenticated_objects(bucket_name, prefix, auth_dict)
-        if hasattr(self, "s3_session"):
+        if self.s3_session is not None:
             return {"session": self.s3_session, "requester_pays": True}
         else:
             return {"aws_unsigned": True}
