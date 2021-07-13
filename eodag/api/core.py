@@ -840,6 +840,12 @@ class EODataAccessGateway(object):
             auth = self._plugins_manager.get_auth_plugin(plugin.provider)
             results, _ = self._do_search(plugin, auth=auth, id=uid)
             if len(results) == 1:
+                if not results[0].product_type:
+                    # guess product type from properties
+                    guesses = self.guess_product_type(**results[0].properties)
+                    results[0].product_type = guesses[0]
+                    # reset driver
+                    results[0].driver = results[0].get_driver()
                 return results, 1
         return SearchResult([]), 0
 
