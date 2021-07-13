@@ -418,6 +418,7 @@ class TestEODagEndToEnd(EndToEndBase):
         product = products[0]
 
         self.assertEqual(product.properties["id"], uid)
+        self.assertIsNotNone(product.product_type)
 
     def test_end_to_end_search_all_mundi_default(self):
         # 23/03/2021: Got 16 products for this search
