@@ -401,9 +401,32 @@ class AwsDownload(Download):
         product.location = path_to_uri(product_local_path)
         return product_local_path
 
+    def get_rio_env(self, bucket_name, prefix, auth_dict):
+        """Get rasterio environment variables needed for data access authentication.
+
+        :param bucket_name: bucket containg objects
+        :type bucket_name: str
+        :param prefix: prefix used to try auth
+        :type prefix: str
+        :param auth_dict: dictionnary containing authentication keys
+        :type auth_dict: dict
+
+        :return: The rasterio environement variables
+        :rtype: dict
+        """
+        if hasattr(self, "s3_session"):
+            return {"session": self.s3_session, "requester_pays": True}
+
+        _ = self.get_authenticated_objects(bucket_name, prefix, auth_dict)
+        if hasattr(self, "s3_session"):
+            return {"session": self.s3_session, "requester_pays": True}
+        else:
+            return {"aws_unsigned": True}
+
     def get_authenticated_objects(self, bucket_name, prefix, auth_dict):
         """Get boto3 authenticated objects for the given bucket using
-        the most adapted auth strategy
+        the most adapted auth strategy.
+        Also expose ``s3_session`` as class variable if available.
 
         :param bucket_name: bucket containg objects
         :type bucket_name: str
@@ -472,6 +495,7 @@ class AwsDownload(Download):
                 RequestPayer="requester"
             )
             list(objects.filter(Prefix=prefix).limit(1))
+            self.s3_session = s3_session
             return objects
         else:
             return None
@@ -490,6 +514,7 @@ class AwsDownload(Download):
                 RequestPayer="requester"
             )
             list(objects.filter(Prefix=prefix).limit(1))
+            self.s3_session = s3_session
             return objects
         else:
             return None
@@ -503,6 +528,7 @@ class AwsDownload(Download):
             RequestPayer="requester"
         )
         list(objects.filter(Prefix=prefix).limit(1))
+        self.s3_session = s3_session
         return objects
 
     def get_bucket_name_and_prefix(self, product, url=None):
