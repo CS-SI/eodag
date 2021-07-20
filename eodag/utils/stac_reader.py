@@ -33,7 +33,7 @@ HTTP_REQ_TIMEOUT = 5
 
 
 class _TextOpener:
-    """Exhaust read methods for pystac.STAC_IO in the order defined
+    """Exhaust read methods for pystac.StacIO in the order defined
     in the openers list"""
 
     def __init__(self, timeout):
@@ -117,7 +117,7 @@ def fetch_stac_items(
     # URI opener used by PySTAC internally, instantiated here
     # to retrieve the timeout.
     _text_opener = _TextOpener(timeout)
-    pystac.STAC_IO.read_text_method = _text_opener
+    pystac.StacIO.read_text = _text_opener
 
     stac_obj = pystac.read_file(stac_path)
     # Single STAC item

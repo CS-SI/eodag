@@ -160,6 +160,9 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertIn("foo", item[0].properties)
         self.assertEqual(item[0].properties["foo"], "descending")
 
+    @unittest.skip(
+        "skipped as single-file-stac has been removed and is being rethought"
+    )
     def test_search_stac_static_load_singlefile_catalog(self):
         """load_stac_items from child catalog must provide items"""
         items = self.dag.load_stac_items(
