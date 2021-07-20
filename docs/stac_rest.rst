@@ -98,7 +98,11 @@ Browsing over catalogs can be experienced connecting EODAG STAC API to
     git clone https://github.com/CS-SI/eodag.git
     cd eodag
     docker-compose up
+    # or for a more verbose logging:
+    EODAG_LOGGING=3 docker-compose up
 
+(``EODAG_LOGGING`` environment variable definition will increase ``eodag``
+logging level, and accepts values: 1, 2, or 3 for maximum level)
 
 And browse http://127.0.0.1:5001:
 
