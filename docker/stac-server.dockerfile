@@ -71,4 +71,4 @@ RUN addgroup --system user \
 USER user
 
 # and then start STAC
-CMD ["/eodag/run-stac-server.sh"]
+CMD ["/bin/bash", "/eodag/run-stac-server.sh"]
