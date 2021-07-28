@@ -584,10 +584,11 @@ class EODataAccessGateway(object):
         search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        if search_kwargs.get("id"):
-            provider = search_kwargs.get("provider")
-            return self._search_by_id(search_kwargs["id"], provider)
         search_plugin = search_kwargs.pop("search_plugin")
+        if search_kwargs.get("id"):
+            # remove auth from search_kwargs as a loop over providers will be performed
+            search_kwargs.pop("auth", None)
+            return self._search_by_id(search_kwargs.pop("id"), **search_kwargs)
         search_kwargs.update(
             page=page,
             items_per_page=items_per_page,
@@ -808,7 +809,7 @@ class EODataAccessGateway(object):
         )
         return all_results
 
-    def _search_by_id(self, uid, provider=None):
+    def _search_by_id(self, uid, provider=None, **kwargs):
         """Internal method that enables searching a product by its id.
 
         Keeps requesting providers until a result matching the id is supplied. The
@@ -826,6 +827,7 @@ class EODataAccessGateway(object):
                          This may be useful for performance reasons when the user
                          knows this product is available on the given provider
         :type provider: str
+        :param dict kwargs: Search criteria to help finding the right product
         :returns: A search result with one EO product or None at all, and the number
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -838,7 +840,7 @@ class EODataAccessGateway(object):
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
             auth = self._plugins_manager.get_auth_plugin(plugin.provider)
-            results, _ = self._do_search(plugin, auth=auth, id=uid)
+            results, _ = self._do_search(plugin, auth=auth, id=uid, **kwargs)
             if len(results) == 1:
                 if not results[0].product_type:
                     # guess product type from properties
