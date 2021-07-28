@@ -776,16 +776,22 @@ class EODataAccessGateway(object):
         .. versionadded::
             2.2.0
         """
-        # Prepare the search just to get the search plugin and the maximized value
+        # Get the search plugin and the maximized value
         # of items_per_page if defined for the provider used.
-        search_kwargs = self._prepare_search(
-            start=start, end=end, geom=geom, locations=locations, **kwargs
+        try:
+            product_type = (
+                kwargs.get("productType", None) or self.guess_product_type(**kwargs)[0]
+            )
+        except NoMatchingProductType:
+            product_type = GENERIC_PRODUCT_TYPE
+        search_plugin = next(
+            self._plugins_manager.get_search_plugins(product_type=product_type)
         )
-        search_plugin = search_kwargs["search_plugin"]
         if items_per_page is None:
             items_per_page = search_plugin.config.pagination.get(
                 "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
             )
+
         logger.debug(
             "Searching for all the products with provider %s and a maximum of %s "
             "items per page.",
