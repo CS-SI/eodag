@@ -1,6 +1,16 @@
 Release history
 ---------------
 
+2.3.2 (2021-07-29)
+++++++++++++++++++
+
+* Fixes duplicate logging in :meth:`~eodag.api.core.EODataAccessGateway.search_all` (:pull:`330`)
+* Enable additional arguments like `productType` when searching by id (:pull:`329`)
+* Prevent EOL auto changes on windows causing docker crashes (:pull:`324`)
+* Configurable eodag logging in docker stac-server (:pull:`323`)
+* Fixes missing `productType` in product properties when searching by id (:pull:`320`)
+* Various minor fixes and improvements (:pull:`319`)(:pull:`321`)
+
 2.3.1 (2021-07-09)
 ++++++++++++++++++
 
