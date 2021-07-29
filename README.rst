@@ -175,7 +175,8 @@ Simply run:
     git clone https://github.com/CS-SI/eodag.git
     cd eodag
     docker-compose up
-
+    # or for a more verbose logging:
+    EODAG_LOGGING=3 docker-compose up
 
 And browse http://127.0.0.1:5001:
 
