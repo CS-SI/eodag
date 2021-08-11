@@ -130,7 +130,6 @@ class PluginManager(object):
         :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProductType`
-        :raises: StopIteration
 
         .. versionchanged::
             1.0
@@ -158,18 +157,16 @@ class PluginManager(object):
             except KeyError:
                 raise UnsupportedProvider
             yield get_plugin()
-            # Signal the end of iteration as we already have what we wanted
-            # In a for-loop, this exception is automatically catched
-            raise StopIteration
+            # Signal the end of iteration as we already have what we wanted (see PEP-479)
+            return
 
         if product_type is None:
             for config in sorted(
                 self.providers_config.values(), key=attrgetter("priority"), reverse=True
             ):
                 yield get_plugin()
-            # Signal the end of iteration as we already have what we wanted
-            # In a for-loop, this exception is automatically catched
-            raise StopIteration
+            # Signal the end of iteration as we already have what we wanted (see PEP-479)
+            return
         try:
             for config in self.product_type_to_provider_config_map[product_type]:
                 yield get_plugin()
