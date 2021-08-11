@@ -584,7 +584,7 @@ class EODataAccessGateway(object):
         search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        search_plugin = search_kwargs.pop("search_plugin")
+        search_plugin = search_kwargs.pop("search_plugin", None)
         if search_kwargs.get("id"):
             # remove auth from search_kwargs as a loop over providers will be performed
             search_kwargs.pop("auth", None)
