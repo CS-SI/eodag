@@ -855,6 +855,11 @@ class EODataAccessGateway(object):
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 return results, 1
+            elif len(results) > 1:
+                logger.info(
+                    "Several products found for this id (%s). You may try searching using more selective criteria.",
+                    results,
+                )
         return SearchResult([]), 0
 
     def _prepare_search(
