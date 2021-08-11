@@ -78,7 +78,7 @@ setup(
             "tqdm[notebook]",
         ],
         "tutorials": [
-            "eodag-cube",
+            "eodag-cube >= 0.2.0",
             "jupyter",
             "ipyleaflet >= 0.10.0",
             "ipywidgets",
