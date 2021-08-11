@@ -1,6 +1,13 @@
 Release history
 ---------------
 
+2.3.3 (2021-08-11)
+++++++++++++++++++
+
+* Fixed issue when searching by id (:pull:`335`)
+* Specified minimal `eodag-cube <https://github.com/CS-SI/eodag-cube>`_ version needed (:pull:`338`)
+* Various minor fixes and improvements (:pull:`336`)(:pull:`337`)
+
 2.3.2 (2021-07-29)
 ++++++++++++++++++
 
