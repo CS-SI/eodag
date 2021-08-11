@@ -584,7 +584,7 @@ class EODataAccessGateway(object):
         search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        search_plugin = search_kwargs.pop("search_plugin")
+        search_plugin = search_kwargs.pop("search_plugin", None)
         if search_kwargs.get("id"):
             # remove auth from search_kwargs as a loop over providers will be performed
             search_kwargs.pop("auth", None)
@@ -855,6 +855,11 @@ class EODataAccessGateway(object):
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 return results, 1
+            elif len(results) > 1:
+                logger.info(
+                    "Several products found for this id (%s). You may try searching using more selective criteria.",
+                    results,
+                )
         return SearchResult([]), 0
 
     def _prepare_search(
