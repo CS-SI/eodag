@@ -51,7 +51,7 @@ setup(
         "owslib",
         "geojson",
         "pyproj",
-        "usgs >= 0.3.0",
+        "usgs >= 0.3.1",
         "boto3",
         "flasgger",
         "jsonpath-ng",
