@@ -218,7 +218,7 @@ class EODataAccessGateway(object):
                 missionStartDate=fields.ID,
                 missionEndDate=fields.ID,
             )
-            non_indexable_fields = ["bands"]
+            non_indexable_fields = []
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types():
