@@ -74,5 +74,6 @@
             "S2A,S2B"
         ]
     },
-    "title": "year"
+    "title": "year",
+    "type": "Catalog"
 }

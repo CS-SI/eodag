@@ -75,6 +75,7 @@ collections:
 # https://stacspec.org/STAC-api.html#operation/describeCollection
 collection:
   id: '$.product_type.ID'
+  type: Collection
   title: '$.product_type.title'
   description: '$.product_type.abstract'
   links:
@@ -241,6 +242,7 @@ metadata_ignore:
 catalog:
   parent_key: root
   model:
+    type: Catalog
     item_type: catalog
     id: "{catalog[id]}"
     title: "{catalog[title]}"
