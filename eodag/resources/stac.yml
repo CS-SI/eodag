@@ -123,6 +123,7 @@ collection:
       - '$.product_type.platformSerialIdentifier'
     intruments:
       - '$.product_type.instrument'
+    processing:level: '$.product_type.processingLevel'
 
 # Data ------------------------------------------------------------------------
 
@@ -185,8 +186,8 @@ item:
     platform: '$.product.properties.platformSerialIdentifier'
     intruments:
       - '$.product.properties.instrument'
+    gsd: '$.product.properties.resolution'
     eo:cloud_cover: '$.product.properties.cloudCover'
-    eo:gsd: '$.product.properties.resolution'
     sat:orbit_state: '$.product.properties.orbitDirection'
     sat:relative_orbit: '$.product.properties.relativeOrbitNumber'
     sar:product_type: '$.product.properties.productType'

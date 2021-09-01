@@ -281,7 +281,7 @@ OSO:
   processingLevel: L3B
   sensorType:
   license: proprietary
-  missionStartDate:
+  missionStartDate: "2016-01-01T00:00:00Z"
   title: OSO Land Cover
 
 # NAIP -----------------------------------------------------------------------
