@@ -101,7 +101,6 @@ collection:
           - '$.product_type.missionEndDate'
       # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
   properties:
-  item_type: feature
   crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
   stac_version: "{stac_version}"
   keywords:
@@ -243,7 +242,6 @@ catalog:
   parent_key: root
   model:
     type: Catalog
-    item_type: catalog
     id: "{catalog[id]}"
     title: "{catalog[title]}"
     description: "{catalog[description]}"
@@ -285,7 +283,6 @@ catalogs:
             - - "{collection[extent][temporal][interval][0][0]}"
               - "{collection[extent][temporal][interval][0][1]}"
           # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
-      item_type: feature
       crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
       keywords:
         - "{collection[keywords][0]}"
