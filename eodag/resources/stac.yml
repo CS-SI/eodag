@@ -166,12 +166,6 @@ items:
 item:
   stac_version: "{stac_version}"
   stac_extensions:
-    - eo
-    - sar
-    - sat
-    - sci
-    - view
-    # - "{catalog[root]}/extensions/oseo/json-schema/schema.json"
   id: '$.product.properties.title'
   bbox:
     - '{item[geometry].bounds[0]}'
@@ -235,6 +229,15 @@ metadata_ignore:
   - quicklook
   - downloadLink
   - custom
+
+# extensions mapping {prefix: schema_url,}
+stac_extensions:
+  eo: 'https://stac-extensions.github.io/eo/v1.0.0/schema.json'
+  sar: 'https://stac-extensions.github.io/sar/v1.0.0/schema.json'
+  sat: 'https://stac-extensions.github.io/sat/v1.0.0/schema.json'
+  sci: 'https://stac-extensions.github.io/scientific/v1.0.0/schema.json'
+  view: 'https://stac-extensions.github.io/view/v1.0.0/schema.json'
+  oseo: "{catalog[root]}/extensions/oseo/json-schema/schema.json"
 
 # Catalogs --------------------------------------------------------------------
 
