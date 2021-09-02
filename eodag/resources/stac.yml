@@ -16,16 +16,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-stac_version: 1.0.0-beta.2
-stac_api_version: 1.0.0-beta.2
-# different versions raise error with stac-browser
+stac_version: 1.0.0
+stac_api_version: 1.0.0-beta.3
 
 # Capabilities ----------------------------------------------------------------
 
 # https://stacspec.org/STAC-api.html#operation/getLandingPage
-
 landing_page:
   title: "EODAG"
+  type: "Catalog"
   description: "STAC API provided by EODAG"
   links:
     - rel: self
@@ -46,16 +45,20 @@ landing_page:
     - rel: search
       href: "{catalog[root]}/search"
       method: GET
-  stac_version: "{stac_api_version}"
-  stac_extensions: []
+  stac_version: "{stac_version}"
   id: eodag-stac-api
+  conformsTo: "{conformance[conformsTo]}"
 
-# https://stacspec.org/STAC-api.html#operation/getConformanceDeclaration
+# required by OGC API - Features
+# http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_declaration_of_conformance_classes
 conformance:
   conformsTo:
+    - https://api.stacspec.org/v1.0.0-beta.3/core
+    - https://api.stacspec.org/v1.0.0-beta.3/item-search
+    - https://api.stacspec.org/v1.0.0-beta.3/ogcapi-features
+    - https://api.stacspec.org/v1.0.0-beta.3/collections
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core
-    # - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
-    - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html
+    - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson
 
 # https://stacspec.org/STAC-api.html#operation/getCollections
@@ -94,12 +97,10 @@ collection:
           - -90
           - 180
           - 90
-      # crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
     temporal:
       interval:
         - - '$.product_type.missionStartDate'
           - '$.product_type.missionEndDate'
-      # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
   properties:
   crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
   stac_version: "{stac_version}"
@@ -281,12 +282,10 @@ catalogs:
               - "{collection[extent][spatial][bbox][0][1]}"
               - "{collection[extent][spatial][bbox][0][2]}"
               - "{collection[extent][spatial][bbox][0][3]}"
-          # crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
         temporal:
           interval:
             - - "{collection[extent][temporal][interval][0][0]}"
               - "{collection[extent][temporal][interval][0][1]}"
-          # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
       crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
       keywords:
         - "{collection[keywords][0]}"
