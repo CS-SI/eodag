@@ -29,7 +29,11 @@ from dateutil.relativedelta import relativedelta
 from shapely.geometry import shape
 from shapely.ops import unary_union
 
-from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
+from eodag.api.product.metadata_mapping import (
+    DEFAULT_METADATA_MAPPING,
+    format_metadata,
+    get_metadata_path,
+)
 from eodag.utils import (
     dict_items_recursive_apply,
     format_dict_items,
@@ -203,12 +207,42 @@ class StacItem(StacCommon):
             self.stac_config["item"], search_results[0].product_type
         )
 
+        # check if some items need to be converted
+        need_conversion = {}
+        for k, v in item_model["properties"].items():
+            if isinstance(v, str):
+                conversion, item_model["properties"][k] = get_metadata_path(
+                    item_model["properties"][k]
+                )
+                if conversion is not None:
+                    need_conversion[k] = conversion
+                    # convert str to jsonpath if needed
+                    item_model["properties"][k] = string_to_jsonpath(
+                        k, item_model["properties"][k]
+                    )
+
         item_list = []
         for product in search_results:
             # parse jsonpath
             product_item = jsonpath_parse_dict_items(
                 item_model, {"product": product.__dict__}
             )
+            # apply conversion if needed
+            for prop_key, prop_val in need_conversion.items():
+                conv_func, conv_args = prop_val
+                # colon `:` in key breaks format() method, hide it
+                formatable_prop_key = prop_key.replace(":", "")
+                if conv_args is not None:
+                    product_item["properties"][prop_key] = format_metadata(
+                        "{%s#%s(%s)}" % (formatable_prop_key, conv_func, conv_args),
+                        **{formatable_prop_key: product_item["properties"][prop_key]},
+                    )
+                else:
+                    product_item["properties"][prop_key] = format_metadata(
+                        "{%s#%s}" % (formatable_prop_key, conv_func),
+                        **{formatable_prop_key: product_item["properties"][prop_key]},
+                    )
+
             # parse f-strings
             format_args = copy.deepcopy(self.stac_config)
             format_args["catalog"] = catalog
@@ -380,24 +414,20 @@ class StacItem(StacCommon):
             all_extensions_dict, **{"catalog": {"root": self.root}}
         )
 
-        extensions_from_properties_dict = {}
+        item["stac_extensions"] = []
         # dict to list of keys to permit pop() while iterating
         for k in list(item["properties"]):
-            extension_prefix = k.split(":")[0] if ":" in k else ""
+            extension_prefix = k.split(":")[0]
 
             if item["properties"][k] is None:
                 item["properties"].pop(k, None)
             # feed found extensions list
             elif (
-                extension_prefix
-                and extension_prefix not in extensions_from_properties_dict.keys()
+                extension_prefix in all_extensions_dict.keys()
+                and all_extensions_dict[extension_prefix] not in item["stac_extensions"]
             ):
-                # append path from item extensions, or extension name
-                extensions_from_properties_dict[
-                    extension_prefix
-                ] = all_extensions_dict.get(extension_prefix, extension_prefix)
-
-        item["stac_extensions"] = list(extensions_from_properties_dict.values())
+                # append path from item extensions
+                item["stac_extensions"].append(all_extensions_dict[extension_prefix])
 
         return item
 
