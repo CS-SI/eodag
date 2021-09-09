@@ -130,14 +130,6 @@ class PluginManager(object):
         :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProductType`
-
-        .. versionchanged::
-            1.0
-
-                * ``product_type`` is now optional. If no product type is provided,
-                  return all search plugins, ordered by priority
-                * A new optional parameter ``provider`` which defaults to ``None``, if
-                  we want to build the search plugin of that provider
         """
 
         def get_plugin():
@@ -208,11 +200,6 @@ class PluginManager(object):
         :type provider: str
         :returns: The Authentication plugin for the provider
         :rtype: :class:`~eodag.plugins.authentication.Authentication`
-
-        .. versionchanged::
-            1.0
-
-                * ``product_type`` is no longer needed to find the auth plugin
         """
         plugin_conf = self.providers_config[provider]
         try:

@@ -50,13 +50,7 @@ class CSWSearch(Search):
         self.catalog = None
 
     def query(self, product_type=None, auth=None, count=True, **kwargs):
-        """Perform a search on a OGC/CSW-like interface
-
-        .. versionchanged::
-            1.0
-
-                * ``product_type`` is no longer mandatory
-        """
+        """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0

@@ -158,8 +158,6 @@ class EODataAccessGateway(object):
     def build_index(self):
         """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_
         index for product types searches.
-
-        .. versionadded:: 1.0
         """
         index_dir = os.path.join(self.conf_dir, ".index")
 
@@ -432,7 +430,6 @@ class EODataAccessGateway(object):
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
 
-        .. versionadded:: 1.0
         """
         supported_params = {
             param
@@ -523,59 +520,6 @@ class EODataAccessGateway(object):
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
 
-        .. versionchanged::
-           2.1.0
-
-                * A new parameter ``locations`` is added to be more explicit about
-                  how to pass a location search (with one or more selections). It also
-                  fixes an issue when a wrong location_name would be provided as kwargs
-                  with no other geometry, resulting in a worldwide search.
-
-        .. versionchanged::
-           2.0.0
-
-                * A location search based on a local Shapefile can be made through
-                  kwargs with ``<location_name>="<attr_regex>"``.
-
-        .. versionchanged::
-           1.6
-
-                * Any search parameter supported by the provider can be passed as
-                  kwargs. Each provider has a 'discover_metadata' configuration
-                  with a metadata_pattern (to which the parameter must match) and a
-                  search_param setting, defining the way the query will be built.
-
-        .. versionchanged::
-           1.0
-
-                * The ``product_type`` parameter is no longer mandatory
-                * Support new search parameters compliant with OpenSearch
-                * Fails if a suitable product type could not be guessed (returns an
-                  empty search result) and if the user is not querying a specific
-                  product (by providing ``id`` as search parameter)
-                * A search by ID is now performed if a product type can not be guessed
-                  from the user input, and if the user has provided an ID as a search
-                  criteria (in the keyword arguments)
-                * It is now possible to pass in the name of the provider on which to
-                  perform the request when searching a product by its ID,
-                  for performance reasons. In that case, the search with the product ID
-                  will be done directly on that provider
-
-        .. versionchanged::
-           0.7.1
-
-                * The search now stops at the first provider that supports the
-                  requested product type (removal of the partial mechanism)
-                * The method now returns a tuple of 2 elements, the first one
-                  being the result and the second one being the total number of
-                  results satisfying the criteria on the provider. This is useful
-                  for applications wrapping eodag and wishing to implement
-                  pagination. An example of this kind of application is the
-                  embedded eodag HTTP server. Also useful for informational purposes
-                  in the CLI: the user is informed about the total number of results
-                  available, and can ask for retrieving a given number of these
-                  results (See the help message of the CLI for more information).
-
         .. note::
             The search interfaces, which are implemented as plugins, are required to
             return a list as a result of their processing. This requirement is
@@ -640,9 +584,6 @@ class EODataAccessGateway(object):
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
-
-        .. versionadded::
-            2.2.0
         """
         search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
@@ -772,9 +713,6 @@ class EODataAccessGateway(object):
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
-
-        .. versionadded::
-            2.2.0
         """
         # Get the search plugin and the maximized value
         # of items_per_page if defined for the provider used.
@@ -837,8 +775,6 @@ class EODataAccessGateway(object):
         :returns: A search result with one EO product or None at all, and the number
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
-
-        .. versionadded:: 1.0
         """
         for plugin in self._plugins_manager.get_search_plugins(provider=provider):
             logger.info(
@@ -898,8 +834,6 @@ class EODataAccessGateway(object):
                             * other criteria compatible with the provider
         :returns: The prepared kwargs to make a query.
         :rtype: dict
-
-        .. versionadded:: 2.2
         """
         product_type = kwargs.get("productType", None)
         if product_type is None:
@@ -1014,8 +948,6 @@ class EODataAccessGateway(object):
         :returns: A collection of EO products matching the criteria and the total
                   number of results found if count is True else None
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
-
-        .. versionadded:: 1.0
         """
         max_items_per_page = search_plugin.config.pagination.get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
@@ -1161,12 +1093,6 @@ class EODataAccessGateway(object):
         :param searches: List of eodag SearchResult
         :type searches: list
         :return: list of :class:`~eodag.api.search_result.SearchResult`
-
-        .. versionchanged::
-           2.0
-
-                * Renamed from sort_by_extent to group_by_extent to reflect its
-                  actual behaviour.
         """
         # Dict with extents as keys, each extent being defined by a str
         # "{minx}{miny}{maxx}{maxy}" (each float rounded to 2 dec).
@@ -1408,11 +1334,6 @@ class EODataAccessGateway(object):
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
-
-        .. versionchanged:: 2.3.0
-
-           Returns a file system path instead of a file URI ('/tmp' instead of
-           'file:///tmp').
         """
         if product.location.startswith("file://"):
             logger.info("Local product detected. Download skipped")

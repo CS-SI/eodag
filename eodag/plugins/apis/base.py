@@ -61,11 +61,6 @@ class Api(PluginTopic):
         This method must return a tuple with (1) a list of EOProduct instances (see eodag.api.product module)
         which will be processed by a Download plugin (2) and the total number of products matching
         the search criteria. If ``count`` is False, the second element returned must be ``None``.
-
-        .. versionchanged:: 2.1
-
-           A new optional boolean parameter ``count`` which defaults to ``True``, it
-           allows to trigger or not a count query.
         """
         raise NotImplementedError("A Api plugin must implement a method named query")
 

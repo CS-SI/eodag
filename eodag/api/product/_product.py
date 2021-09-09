@@ -255,11 +255,6 @@ class EOProduct(object):
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
-
-        .. versionchanged:: 2.3.0
-
-           Returns a file system path instead of a file URI ('/tmp' instead of
-           'file:///tmp').
         """
         if self.downloader is None:
             raise RuntimeError(
@@ -335,12 +330,6 @@ class EOProduct(object):
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
         :rtype: str
-
-        .. versionchanged::
-            1.0
-
-                * Added the ``base_dir`` optional parameter to choose where to download
-                  the retrieved quicklook
         """
 
         def format_quicklook_address():
