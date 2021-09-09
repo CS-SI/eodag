@@ -435,7 +435,7 @@ class ProgressCallback(tqdm):
         :param total: maximum amount of data to be processed
         :type total: int
         """
-        if total is not None:
+        if total is not None and total != self.total:
             self.reset(total=total)
 
         self.update(increment)
