@@ -427,18 +427,18 @@ class ProgressCallback(tqdm):
 
         super(ProgressCallback, self).__init__(*args, **kwargs)
 
-    def __call__(self, current_size, total=None):
+    def __call__(self, increment, total=None):
         """Update the progress bar.
 
-        :param current_size: amount of data already processed
-        :type current_size: int
+        :param increment: amount of data already processed
+        :type increment: int
         :param total: maximum amount of data to be processed
         :type total: int
         """
-        if total is not None:
+        if total is not None and total != self.total:
             self.reset(total=total)
 
-        self.update(current_size)
+        self.update(increment)
         self.refresh()
 
     def copy(self, *args, **kwargs):
