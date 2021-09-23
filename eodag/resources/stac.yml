@@ -181,6 +181,8 @@ item:
     datetime: '$.product.properties.startTimeFromAscendingNode'
     start_datetime: '$.product.properties.startTimeFromAscendingNode'
     end_datetime: '$.product.properties.completionTimeFromAscendingNode'
+    created: '$.product.properties.creationDate'
+    updated: '$.product.properties.modificationDate'
     description: '$.product.properties.abstract'
     license: '{catalog[license]}'
     constellation: '$.product.properties.platform'
@@ -188,7 +190,9 @@ item:
     intruments:
       - '$.product.properties.instrument'
     gsd: '$.product.properties.resolution'
+    published: '$.product.properties.publicationDate'
     eo:cloud_cover: '$.product.properties.cloudCover'
+    processing:level: '$.product.properties.processingLevel'
     sat:orbit_state: '$.product.properties.orbitDirection'
     sat:relative_orbit: '$.product.properties.relativeOrbitNumber'
     sar:product_type: '$.product.properties.productType'
@@ -196,6 +200,7 @@ item:
     sar:polarizations: '$.product.properties.polarizationChannels'
     sar:frequency_band: '$.product.properties.dopplerFrequency'
     sci:doi: '$.product.properties.doi'
+    version: '$.product.properties.productVersion'
     view:sun_elevation: '$.product.properties.illuminationElevationAngle'
     view:sun_azimuth: '$.product.properties.illuminationAzimuthAngle'
   links:
@@ -235,9 +240,12 @@ metadata_ignore:
 # extensions mapping {prefix: schema_url,}
 stac_extensions:
   eo: 'https://stac-extensions.github.io/eo/v1.0.0/schema.json'
+  published: 'https://stac-extensions.github.io/timestamps/v1.0.0/schema.json'
+  processing: 'https://stac-extensions.github.io/processing/v1.0.0/schema.json'
   sar: 'https://stac-extensions.github.io/sar/v1.0.0/schema.json'
   sat: 'https://stac-extensions.github.io/sat/v1.0.0/schema.json'
   sci: 'https://stac-extensions.github.io/scientific/v1.0.0/schema.json'
+  version: 'https://stac-extensions.github.io/version/v1.0.0/schema.json'
   view: 'https://stac-extensions.github.io/view/v1.0.0/schema.json'
   oseo: "{catalog[root]}/extensions/oseo/json-schema/schema.json"
 
