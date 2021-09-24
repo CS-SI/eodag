@@ -118,9 +118,9 @@ collection:
       roles: '$.provider.roles'
       url: '$.provider.url'
   summaries:
-    platform:
+    constellation:
       - '$.product_type.platform'
-    platformSerialIdentifier:
+    platform:
       - '$.product_type.platformSerialIdentifier'
     intruments:
       - '$.product_type.instrument'
