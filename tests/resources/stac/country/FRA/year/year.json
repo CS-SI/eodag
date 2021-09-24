@@ -61,7 +61,7 @@
         }
     ],
     "stac_extensions": [],
-    "stac_version": "1.0.0-beta.2",
+    "stac_version": "1.0.0",
     "summaries": {
         "intruments": [
             "MSI"
