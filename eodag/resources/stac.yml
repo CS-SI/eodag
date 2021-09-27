@@ -16,16 +16,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-stac_version: 1.0.0-beta.2
-stac_api_version: 1.0.0-beta.2
-# different versions raise error with stac-browser
+stac_version: 1.0.0
+stac_api_version: 1.0.0-beta.3
 
 # Capabilities ----------------------------------------------------------------
 
 # https://stacspec.org/STAC-api.html#operation/getLandingPage
-
 landing_page:
   title: "EODAG"
+  type: "Catalog"
   description: "STAC API provided by EODAG"
   links:
     - rel: self
@@ -46,16 +45,20 @@ landing_page:
     - rel: search
       href: "{catalog[root]}/search"
       method: GET
-  stac_version: "{stac_api_version}"
-  stac_extensions: []
+  stac_version: "{stac_version}"
   id: eodag-stac-api
+  conformsTo: "{conformance[conformsTo]}"
 
-# https://stacspec.org/STAC-api.html#operation/getConformanceDeclaration
+# required by OGC API - Features
+# http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_declaration_of_conformance_classes
 conformance:
   conformsTo:
+    - https://api.stacspec.org/v1.0.0-beta.3/core
+    - https://api.stacspec.org/v1.0.0-beta.3/item-search
+    - https://api.stacspec.org/v1.0.0-beta.3/ogcapi-features
+    - https://api.stacspec.org/v1.0.0-beta.3/collections
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core
-    # - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
-    - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html
+    - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson
 
 # https://stacspec.org/STAC-api.html#operation/getCollections
@@ -75,6 +78,7 @@ collections:
 # https://stacspec.org/STAC-api.html#operation/describeCollection
 collection:
   id: '$.product_type.ID'
+  type: Collection
   title: '$.product_type.title'
   description: '$.product_type.abstract'
   links:
@@ -93,14 +97,11 @@ collection:
           - -90
           - 180
           - 90
-      # crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
     temporal:
       interval:
         - - '$.product_type.missionStartDate'
           - '$.product_type.missionEndDate'
-      # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
   properties:
-  item_type: feature
   crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
   stac_version: "{stac_version}"
   keywords:
@@ -117,12 +118,13 @@ collection:
       roles: '$.provider.roles'
       url: '$.provider.url'
   summaries:
-    platform:
+    constellation:
       - '$.product_type.platform'
-    platformSerialIdentifier:
+    platform:
       - '$.product_type.platformSerialIdentifier'
     intruments:
       - '$.product_type.instrument'
+    processing:level: '$.product_type.processingLevel'
 
 # Data ------------------------------------------------------------------------
 
@@ -166,12 +168,6 @@ items:
 item:
   stac_version: "{stac_version}"
   stac_extensions:
-    - eo
-    - sar
-    - sat
-    - sci
-    - view
-    # - "{catalog[root]}/extensions/oseo/json-schema/schema.json"
   id: '$.product.properties.title'
   bbox:
     - '{item[geometry].bounds[0]}'
@@ -185,14 +181,18 @@ item:
     datetime: '$.product.properties.startTimeFromAscendingNode'
     start_datetime: '$.product.properties.startTimeFromAscendingNode'
     end_datetime: '$.product.properties.completionTimeFromAscendingNode'
+    created: '$.product.properties.creationDate'
+    updated: '$.product.properties.modificationDate'
     description: '$.product.properties.abstract'
     license: '{catalog[license]}'
     constellation: '$.product.properties.platform'
     platform: '$.product.properties.platformSerialIdentifier'
     intruments:
       - '$.product.properties.instrument'
+    gsd: '$.product.properties.resolution'
+    published: '$.product.properties.publicationDate'
     eo:cloud_cover: '$.product.properties.cloudCover'
-    eo:gsd: '$.product.properties.resolution'
+    processing:level: '$.product.properties.processingLevel'
     sat:orbit_state: '$.product.properties.orbitDirection'
     sat:relative_orbit: '$.product.properties.relativeOrbitNumber'
     sar:product_type: '$.product.properties.productType'
@@ -200,6 +200,7 @@ item:
     sar:polarizations: '$.product.properties.polarizationChannels'
     sar:frequency_band: '$.product.properties.dopplerFrequency'
     sci:doi: '$.product.properties.doi'
+    version: '$.product.properties.productVersion'
     view:sun_elevation: '$.product.properties.illuminationElevationAngle'
     view:sun_azimuth: '$.product.properties.illuminationAzimuthAngle'
   links:
@@ -236,12 +237,24 @@ metadata_ignore:
   - downloadLink
   - custom
 
+# extensions mapping {prefix: schema_url,}
+stac_extensions:
+  eo: 'https://stac-extensions.github.io/eo/v1.0.0/schema.json'
+  published: 'https://stac-extensions.github.io/timestamps/v1.0.0/schema.json'
+  processing: 'https://stac-extensions.github.io/processing/v1.0.0/schema.json'
+  sar: 'https://stac-extensions.github.io/sar/v1.0.0/schema.json'
+  sat: 'https://stac-extensions.github.io/sat/v1.0.0/schema.json'
+  sci: 'https://stac-extensions.github.io/scientific/v1.0.0/schema.json'
+  version: 'https://stac-extensions.github.io/version/v1.0.0/schema.json'
+  view: 'https://stac-extensions.github.io/view/v1.0.0/schema.json'
+  oseo: "{catalog[root]}/extensions/oseo/json-schema/schema.json"
+
 # Catalogs --------------------------------------------------------------------
 
 catalog:
   parent_key: root
   model:
-    item_type: catalog
+    type: Catalog
     id: "{catalog[id]}"
     title: "{catalog[title]}"
     description: "{catalog[description]}"
@@ -277,13 +290,10 @@ catalogs:
               - "{collection[extent][spatial][bbox][0][1]}"
               - "{collection[extent][spatial][bbox][0][2]}"
               - "{collection[extent][spatial][bbox][0][3]}"
-          # crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
         temporal:
           interval:
             - - "{collection[extent][temporal][interval][0][0]}"
               - "{collection[extent][temporal][interval][0][1]}"
-          # trs: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
-      item_type: feature
       crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
       keywords:
         - "{collection[keywords][0]}"
