@@ -29,7 +29,11 @@ from dateutil.relativedelta import relativedelta
 from shapely.geometry import shape
 from shapely.ops import unary_union
 
-from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
+from eodag.api.product.metadata_mapping import (
+    DEFAULT_METADATA_MAPPING,
+    format_metadata,
+    get_metadata_path,
+)
 from eodag.utils import (
     dict_items_recursive_apply,
     format_dict_items,
@@ -203,12 +207,42 @@ class StacItem(StacCommon):
             self.stac_config["item"], search_results[0].product_type
         )
 
+        # check if some items need to be converted
+        need_conversion = {}
+        for k, v in item_model["properties"].items():
+            if isinstance(v, str):
+                conversion, item_model["properties"][k] = get_metadata_path(
+                    item_model["properties"][k]
+                )
+                if conversion is not None:
+                    need_conversion[k] = conversion
+                    # convert str to jsonpath if needed
+                    item_model["properties"][k] = string_to_jsonpath(
+                        k, item_model["properties"][k]
+                    )
+
         item_list = []
         for product in search_results:
             # parse jsonpath
             product_item = jsonpath_parse_dict_items(
                 item_model, {"product": product.__dict__}
             )
+            # apply conversion if needed
+            for prop_key, prop_val in need_conversion.items():
+                conv_func, conv_args = prop_val
+                # colon `:` in key breaks format() method, hide it
+                formatable_prop_key = prop_key.replace(":", "")
+                if conv_args is not None:
+                    product_item["properties"][prop_key] = format_metadata(
+                        "{%s#%s(%s)}" % (formatable_prop_key, conv_func, conv_args),
+                        **{formatable_prop_key: product_item["properties"][prop_key]},
+                    )
+                else:
+                    product_item["properties"][prop_key] = format_metadata(
+                        "{%s#%s}" % (formatable_prop_key, conv_func),
+                        **{formatable_prop_key: product_item["properties"][prop_key]},
+                    )
+
             # parse f-strings
             format_args = copy.deepcopy(self.stac_config)
             format_args["catalog"] = catalog
@@ -302,26 +336,10 @@ class StacItem(StacCommon):
         self.update_data(items)
         return self.as_dict()
 
-    @staticmethod
-    def get_stac_extensions_dict(stac_extensions_list):
-        """Get stac_extensions dict { extension_name: extension_name_or_path, }
-
-        :param stac_extensions_list: stac_extensions list
-        :type stac_extensions_list: list
-        :returns: stac_extensions dict
-        :rtype: dict
-        """
-        stac_extensions_dict = {}
-        for extension in stac_extensions_list:
-            extension_name = re.sub(r".*/([a-z_-]+)/json-schema/.*", r"\1", extension)
-            stac_extensions_dict[extension_name] = extension
-
-        return stac_extensions_dict
-
     def __filter_item_model_properties(self, item_model, product_type):
         """Filter item model depending on product type metadata and its extensions.
         Removes not needed parameters, and adds supplementary ones as
-        part of eodag extension.
+        part of oseo extension.
 
         :param item_model: item model from stac_config
         :type item_model: dict
@@ -345,19 +363,11 @@ class StacItem(StacCommon):
             )
 
         result_item_model = copy.deepcopy(item_model)
+        result_item_model["stac_extensions"] = list(
+            self.stac_config["stac_extensions"].values()
+        )
 
-        if product_type_dict["sensorType"] != "RADAR":
-            result_item_model["stac_extensions"].remove("sar")
-
-        extensions_names = self.get_stac_extensions_dict(
-            result_item_model["stac_extensions"]
-        ).keys()
-        for k, v in item_model["properties"].items():
-            # remove key if extension not in stac_extensions
-            if ":" in k and k.split(":")[0] not in extensions_names:
-                result_item_model["properties"].pop(k, None)
-
-        # build jsonpath for eodag product properties and adapt path
+        # build jsonpath for eodag product default properties and adapt path
         eodag_properties_dict = {
             k: string_to_jsonpath(k, v.replace("$.", "$.product."))
             for k, v in DEFAULT_METADATA_MAPPING.items()
@@ -371,6 +381,23 @@ class StacItem(StacCommon):
             ):
                 result_item_model["properties"]["oseo:" + k] = string_to_jsonpath(k, v)
 
+        # Filter out unneeded extensions
+        if product_type_dict["sensorType"] != "RADAR":
+            result_item_model["stac_extensions"].remove(
+                self.stac_config["stac_extensions"]["sar"]
+            )
+
+        # Filter out unneeded properties
+        extensions_prefixes = [
+            k
+            for k, v in self.stac_config["stac_extensions"].items()
+            if v in result_item_model["stac_extensions"]
+        ]
+        for k, v in item_model["properties"].items():
+            # remove key if extension not in stac_extensions
+            if ":" in k and k.split(":")[0] not in extensions_prefixes:
+                result_item_model["properties"].pop(k, None)
+
         return result_item_model
 
     def __filter_item_properties_values(self, item):
@@ -381,24 +408,26 @@ class StacItem(StacCommon):
         :returns: filtered item model
         :rtype: dict
         """
-        item_extensions_dict = self.get_stac_extensions_dict(item["stac_extensions"])
-        extensions_from_properties = []
+        all_extensions_dict = copy.deepcopy(self.stac_config["stac_extensions"])
+        # parse f-strings with root
+        all_extensions_dict = format_dict_items(
+            all_extensions_dict, **{"catalog": {"root": self.root}}
+        )
+
+        item["stac_extensions"] = []
         # dict to list of keys to permit pop() while iterating
         for k in list(item["properties"]):
-            extension = k.split(":")[0] if ":" in k else ""
-            extensions_from_properties_dict = self.get_stac_extensions_dict(
-                extensions_from_properties
-            )
+            extension_prefix = k.split(":")[0]
+
             if item["properties"][k] is None:
                 item["properties"].pop(k, None)
             # feed found extensions list
-            elif extension and extension not in extensions_from_properties_dict.keys():
-                # append path from item extensions, or extension name
-                extensions_from_properties.append(
-                    item_extensions_dict.get(extension, extension)
-                )
-
-        item["stac_extensions"] = extensions_from_properties
+            elif (
+                extension_prefix in all_extensions_dict.keys()
+                and all_extensions_dict[extension_prefix] not in item["stac_extensions"]
+            ):
+                # append path from item extensions
+                item["stac_extensions"].append(all_extensions_dict[extension_prefix])
 
         return item
 

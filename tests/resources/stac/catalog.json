@@ -22,7 +22,6 @@
         }
     },
     "id": "S2_MSI_L1C",
-    "item_type": "feature",
     "keywords": [
         "MSI",
         "SENTINEL2",
@@ -53,7 +52,7 @@
         }
     ],
     "stac_extensions": [],
-    "stac_version": "1.0.0-beta.2",
+    "stac_version": "1.0.0",
     "summaries": {
         "intruments": [
             "MSI"
@@ -65,5 +64,6 @@
             "S2A,S2B"
         ]
     },
-    "title": "SENTINEL2 Level-1C"
+    "title": "SENTINEL2 Level-1C",
+    "type": "Catalog"
 }

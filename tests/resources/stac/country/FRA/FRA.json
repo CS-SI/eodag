@@ -22,7 +22,6 @@
         }
     },
     "id": "FRA",
-    "item_type": "catalog",
     "keywords": [
         "MSI",
         "SENTINEL2",
@@ -57,7 +56,7 @@
         }
     ],
     "stac_extensions": [],
-    "stac_version": "1.0.0-beta.2",
+    "stac_version": "1.0.0",
     "summaries": {
         "intruments": [
             "MSI"
@@ -69,5 +68,6 @@
             "S2A,S2B"
         ]
     },
-    "title": "FRA"
+    "title": "FRA",
+    "type": "Catalog"
 }
