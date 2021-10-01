@@ -29,7 +29,7 @@ from requests import HTTPError
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.http import HTTPDownload
-from eodag.utils import ProgressCallback, path_to_uri, urljoin
+from eodag.utils import ProgressCallback, path_to_uri, unquote, urljoin
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -185,7 +185,9 @@ class S3RestDownload(AwsDownload):
 
         # download each node key
         for node_xml in nodes_xml_list:
-            node_key = node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue
+            node_key = unquote(
+                node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue
+            )
             # As "Key", "Size" and "ETag" (md5 hash) can also be retrieved from node_xml
             node_url = urljoin(bucket_url.strip("/") + "/", node_key.strip("/"))
             # output file location
