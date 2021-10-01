@@ -40,6 +40,7 @@ from pathlib import Path
 from urllib.parse import (  # noqa; noqa
     parse_qs,
     quote,
+    unquote,
     urlencode,
     urljoin,
     urlparse,
