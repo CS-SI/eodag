@@ -1,6 +1,17 @@
 Release history
 ---------------
 
+2.3.4 (2021-10-08)
+++++++++++++++++++
+
+* Link to the new eodag Jupyterlab extension: `eodag-labextension <https://github.com/CS-SI/eodag-labextension>`_
+  (:pull:`352`)
+* STAC client and server update to STAC 1.0.0 (:pull:`347`)
+* Fixes :meth:`~eodag.api.product._product.EOProduct.get_quicklook` for onda provider
+  (:pull:`344`, thanks `@drnextgis <https://github.com/drnextgis>`_)
+* Fixed issue when downloading ``S2_MSI_L2A`` products from ``mundi`` (:pull:`350`)
+* Various minor fixes and improvements (:pull:`340`)(:pull:`341`)(:pull:`345`)
+
 2.3.3 (2021-08-11)
 ++++++++++++++++++
 
