@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import base64
 import logging
 import os
 import re
@@ -391,14 +392,15 @@ class EOProduct(object):
 
         if not os.path.isfile(quicklook_file):
             # VERY SPECIAL CASE (introduced by the onda provider): first check if
-            # it is a HTTP URL. If not, we assume it is a byte string, in which case
-            # we just write the content into the quicklook_file and return it.
+            # it is a HTTP URL. If not, we assume it is a base64 string, in which case
+            # we just decode the content, write it into the quicklook_file and return it.
             if not (
                 self.properties["quicklook"].startswith("http")
                 or self.properties["quicklook"].startswith("https")
             ):
                 with open(quicklook_file, "wb") as fd:
-                    fd.write(self.properties["quicklook"])
+                    img = self.properties["quicklook"].encode("ascii")
+                    fd.write(base64.b64decode(img))
                 return quicklook_file
 
             auth = (
