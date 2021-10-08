@@ -29,6 +29,8 @@
 .. image:: https://img.shields.io/pypi/pyversions/eodag.svg
     :target: https://pypi.org/project/eodag/
 
+|
+
 ..
 
     Checkout the **new Jupyterlab extension**: `eodag-labextension <https://github.com/CS-SI/eodag-labextension>`_!
