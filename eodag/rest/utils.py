@@ -42,7 +42,8 @@ stac_config = load_stac_config()
 def format_product_types(product_types):
     """Format product_types
 
-    :param list product_types: A list of EODAG product types as returned by the core api
+    :param product_types: A list of EODAG product types as returned by the core api
+    :type product_types: list
     """
     result = []
     for pt in product_types:
@@ -53,9 +54,9 @@ def format_product_types(product_types):
 def get_detailled_collections_list(provider=None):
     """Returns detailled collections / product_types list for a given provider as a list of config dicts
 
-    :param provider: chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: list of config dicts
+    :returns: List of config dicts
     :rtype: list
     """
     return eodag_api.list_product_types(provider=provider)
@@ -64,8 +65,11 @@ def get_detailled_collections_list(provider=None):
 def get_home_page_content(base_url, ipp=None):
     """Compute eodag service home page content
 
-    :param base_url: the service root URL
-    :param ipp: items per page number"""
+    :param base_url: The service root URL
+    :type base_url: str
+    :param ipp: (optional) Items per page number
+    :type ipp: int
+    """
 
     with open(os.path.join(os.path.dirname(__file__), "description.md"), "rt") as fp:
         content = fp.read()
@@ -85,11 +89,12 @@ def get_templates_path():
 
 def get_product_types(provider=None, filters=None):
     """Returns a list of supported product types
-    :param provider: provider name
+
+    :param provider: (optional) Provider name
     :type provider: str
-    :param filters: additional filters for product types search
+    :param filters: (optional) Additional filters for product types search
     :type filters: dict
-    :returns: a list of corresponding product types
+    :returns: A list of corresponding product types
     :rtype: list
     """
     if filters is None:
@@ -261,11 +266,11 @@ def get_geometry(arguments):
 def search_products(product_type, arguments):
     """Returns product search results
 
-    :param product_type: the product type criteria
+    :param product_type: The product type criteria
     :type product_type: str
-    :param arguments: filter criteria
+    :param arguments: Filter criteria
     :type arguments: dict
-    :return: search result
+    :returns: A search result
     :rtype serialized GeoJSON response"""
 
     try:
@@ -335,7 +340,7 @@ def search_product_by_id(uid, product_type=None):
     :type uid: str
     :param product_type: (optional) The product type
     :type product_type: str
-    :returns: An search result
+    :returns: A search result
     :rtype: :class:`~eodag.api.search_result.SearchResult`
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     :raises: RuntimeError
@@ -365,15 +370,15 @@ def get_stac_conformance():
 def get_stac_collections(url, root, arguments, provider=None):
     """Build STAC collections
 
-    :param url: requested URL
+    :param url: Requested URL
     :type url: str
-    :param root: API root
+    :param root: The API root
     :type root: str
-    :param arguments: request args
+    :param arguments: Request args
     :type arguments: dict
-    :param provider: chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: collections dictionnary
+    :returns: Collections dictionnary
     :rtype: dict
     """
     return StacCollection(
@@ -388,15 +393,15 @@ def get_stac_collections(url, root, arguments, provider=None):
 def get_stac_collection_by_id(url, root, collection_id, provider=None):
     """Build STAC collection by id
 
-    :param url: requested URL
+    :param url: Requested URL
     :type url: str
     :param root: API root
     :type root: str
-    :param collection_id: product_type as ID of the collection
+    :param collection_id: Product_type as ID of the collection
     :type collection_id: str
-    :param provider: chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: collection dictionnary
+    :returns: Collection dictionnary
     :rtype: dict
     """
     return StacCollection(
@@ -411,17 +416,17 @@ def get_stac_collection_by_id(url, root, collection_id, provider=None):
 def get_stac_item_by_id(url, item_id, root="/", catalogs=[], provider=None):
     """Build STAC item by id
 
-    :param url: requested URL
+    :param url: Requested URL
     :type url: str
-    :param root: API root
-    :type root: str
-    :param item_id: product ID
+    :param item_id: Product ID
     :type item_id: str
-    :param catalogs: catalogs list (only first is used as product_type)
+    :param root: (optional) API root
+    :type root: str
+    :param catalogs: (optional) Catalogs list (only first is used as product_type)
     :type catalogs: list
-    :param provider: chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: collection dictionnary
+    :returns: Collection dictionnary
     :rtype: dict
     """
     product_type = catalogs[0]
@@ -441,13 +446,13 @@ def get_stac_item_by_id(url, item_id, root="/", catalogs=[], provider=None):
 def download_stac_item_by_id(catalogs, item_id, provider=None):
     """Download item
 
-    :param catalogs: catalogs list (only first is used as product_type)
+    :param catalogs: Catalogs list (only first is used as product_type)
     :type catalogs: list
-    :param item_id: product ID
+    :param item_id: Product ID
     :type item_id: str
-    :param provider: chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: downloaded item local path
+    :returns: Downloaded item local path
     :rtype: str
     """
     if provider:
@@ -465,15 +470,15 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None):
     """Build STAC catalog
 
-    :param url: requested URL
+    :param url: Requested URL
     :type url: str
-    :param root: API root
+    :param root: (optional) API root
     :type root: str
-    :param catalogs: catalogs list
+    :param catalogs: (optional) Catalogs list
     :type catalogs: list
-    :param provider: chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: catalog dictionnary
+    :returns: Catalog dictionnary
     :rtype: dict
     """
     return StacCatalog(
@@ -489,17 +494,17 @@ def get_stac_catalogs(url, root="/", catalogs=[], provider=None):
 def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
     """Get items collection dict for given catalogs list
 
-    :param url: requested URL
+    :param url: Requested URL
     :type url: str
-    :param arguments: request args
+    :param arguments: Request args
     :type arguments: dict
-    :param root: API root
+    :param root: (optional) API root
     :type root: str
-    :param catalogs: catalogs list
+    :param catalogs: (optional) Catalogs list
     :type catalogs: list
-    :param provider: chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: catalog dictionnary
+    :returns: Catalog dictionnary
     :rtype: dict
     """
     collections = arguments.get("collections", None)
@@ -590,9 +595,9 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
 def get_stac_extension_oseo(url):
     """Build STAC OGC / OpenSearch Extension for EO
 
-    :param url: requested URL
+    :param url: Requested URL
     :type url: str
-    :returns: catalog dictionnary
+    :returns: Catalog dictionnary
     :rtype: dict
     """
 

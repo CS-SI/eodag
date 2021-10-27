@@ -76,19 +76,20 @@ class Api(PluginTopic):
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
-        :param product: EO product to download
+        :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param progress_callback: A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
-        :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int, optional
-        :param timeout: If download fails, maximum time in minutes before stop retrying
-            to download
-        :type timeout: int, optional
-        :param dict kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-            ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-            override any other values defined in a configuration file or with
-            environment variables.
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
+                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
+                       override any other values defined in a configuration file or with
+                       environment variables.
+        :type kwargs: dict
         :returns: The absolute path to the downloaded product in the local filesystem
             (e.g. '/tmp/product.zip' on Linux or
             'C:\\Users\\username\\AppData\\Local\\Temp\\product.zip' on Windows)
@@ -112,17 +113,18 @@ class Api(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
-        :param progress_callback: A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
-        :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int, optional
-        :param timeout: If download fails, maximum time in minutes before stop retrying
-            to download
-        :type timeout: int, optional
-        :param dict kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-            ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-            override any other values defined in a configuration file or with
-            environment variables.
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
+                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
+                       override any other values defined in a configuration file or with
+                       environment variables.
+        :type kwargs: dict
         :returns: List of absolute paths to the downloaded products in the local
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)

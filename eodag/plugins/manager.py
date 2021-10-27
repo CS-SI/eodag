@@ -120,10 +120,10 @@ class PluginManager(object):
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority, or the search plugin of the given provider
 
-        :param product_type: (Optional) The product type that the constructed plugins
+        :param product_type: (optional) The product type that the constructed plugins
                              must support
         :type product_type: str
-        :param provider: (Optional) The provider on which to get the search plugin
+        :param provider: (optional) The provider on which to get the search plugin
         :type provider: str
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
@@ -220,7 +220,7 @@ class PluginManager(object):
         :type name: str
         :param options: The configuration parameters of the cruncher
         :type options: dict
-        :return: The cruncher named `name`
+        :returns: The cruncher named `name`
         :rtype: :class:`~eodag.plugins.crunch.Crunch`
         """
         Klass = Crunch.get_plugin_by_class_name(name)

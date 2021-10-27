@@ -35,7 +35,8 @@ class SearchResult(UserList):
 
         :param cruncher: The plugin instance to use to work on the products
         :type cruncher: subclass of :class:`~eodag.plugins.crunch.base.Crunch`
-        :param dict search_params: The criteria that have been used to produce this result
+        :param search_params: The criteria that have been used to produce this result
+        :type search_params: dict
         :returns: The result of the application of the crunching method to the EO products
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """

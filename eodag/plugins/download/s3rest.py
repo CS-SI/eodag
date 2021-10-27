@@ -61,7 +61,7 @@ class S3RestDownload(AwsDownload):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
-        :return: The absolute path to the downloaded product in the local filesystem
+        :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
         if progress_callback is None:
