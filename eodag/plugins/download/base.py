@@ -19,7 +19,9 @@
 import hashlib
 import logging
 import os
+import shutil
 import tarfile
+import tempfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
@@ -312,6 +314,10 @@ class Download(PluginTopic):
             )
             progress_callback.refresh()
 
+            outputs_dir = os.path.join(outputs_prefix, product_path)
+            tmp_dir = tempfile.TemporaryDirectory()
+            extraction_dir = os.path.join(tmp_dir.name, os.path.basename(outputs_dir))
+
             if fs_path.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
                     fileinfos = zfile.infolist()
@@ -321,20 +327,21 @@ class Download(PluginTopic):
                     for fileinfo in fileinfos:
                         zfile.extract(
                             fileinfo,
-                            path=os.path.join(outputs_prefix, product_path),
+                            path=extraction_dir,
                         )
                         progress_callback(1)
+                shutil.move(extraction_dir, outputs_dir)
 
             elif fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r:gz") as zfile:
-                    logger.info(
-                        "Extracting files from {}".format(os.path.basename(fs_path))
-                    )
                     progress_callback.reset(total=1)
-                    zfile.extractall(path=os.path.join(outputs_prefix, product_path))
+                    zfile.extractall(path=extraction_dir)
                     progress_callback(1)
+                shutil.move(extraction_dir, outputs_dir)
             else:
                 progress_callback(1, total=1)
+
+            tmp_dir.cleanup()
 
             if delete_archive:
                 logger.info("Deleting archive {}".format(os.path.basename(fs_path)))
