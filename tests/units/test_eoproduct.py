@@ -278,7 +278,11 @@ class TestEOProduct(EODagTestCase):
         )
         self.requests_http_get.return_value = self._download_response_archive()
         dl_config = config.PluginConfig.from_mapping(
-            {"base_uri": "fake_base_uri", "outputs_prefix": tempfile.gettempdir()}
+            {
+                "base_uri": "fake_base_uri",
+                "outputs_prefix": tempfile.gettempdir(),
+                "delete_archive": False,
+            }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         product.register_downloader(downloader, None)
@@ -326,6 +330,7 @@ class TestEOProduct(EODagTestCase):
                 "base_uri": "fake_base_uri",
                 "outputs_prefix": tempfile.gettempdir(),
                 "extract": True,
+                "delete_archive": False,
             }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
