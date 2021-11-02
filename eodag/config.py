@@ -245,6 +245,8 @@ def provider_config_init(provider_config):
             param_value = getattr(provider_config, param_name)
             if not getattr(param_value, "outputs_prefix", None):
                 param_value.outputs_prefix = tempfile.gettempdir()
+            if not getattr(param_value, "delete_archive", None):
+                param_value.delete_archive = True
     # Set default priority to 0
     provider_config.__dict__.setdefault("priority", 0)
 

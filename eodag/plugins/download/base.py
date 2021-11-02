@@ -251,6 +251,12 @@ class Download(PluginTopic):
         extract = (
             extract if extract is not None else getattr(self.config, "extract", True)
         )
+        delete_archive = kwargs.pop("delete_archive", None)
+        delete_archive = (
+            delete_archive
+            if delete_archive is not None
+            else getattr(self.config, "delete_archive", True)
+        )
         outputs_extension = kwargs.pop("outputs_extension", ".zip")
 
         if not extract:
@@ -329,6 +335,16 @@ class Download(PluginTopic):
                     progress_callback(1)
             else:
                 progress_callback(1, total=1)
+
+            if delete_archive:
+                logger.info("Deleting archive {}".format(os.path.basename(fs_path)))
+                os.unlink(fs_path)
+            else:
+                logger.info(
+                    "Archive deletion is deactivated, keeping {}".format(
+                        os.path.basename(fs_path)
+                    )
+                )
         else:
             progress_callback(1, total=1)
 
