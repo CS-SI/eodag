@@ -26,6 +26,8 @@ import warnings
 
 from .__meta__ import __version__  # noqa
 from .api.core import EODataAccessGateway  # noqa
+from .api.product import EOProduct  # noqa
+from .api.search_result import SearchResult  # noqa
 from .utils.logging import setup_logging  # noqa
 
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
