@@ -13,6 +13,7 @@ Logging
 Callbacks
 -----------------
 
+.. autofunction:: eodag.utils.DownloadedCallback
 .. autofunction:: eodag.utils.AllDownloadedCallback
 .. autofunction:: eodag.utils.ProgressCallback
 

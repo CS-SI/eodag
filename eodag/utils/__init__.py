@@ -399,6 +399,18 @@ def get_timestamp(date_time):
     return dt.timestamp()
 
 
+class DownloadedCallback:
+    """Example class for :meth:`~eodag.api.core.EODataAccessGateway.download` callback"""
+
+    def __call__(self, product):
+        """Callback
+
+        :param product: The EO product downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        """
+        logger.debug("Download finished for the product %s", product)
+
+
 class AllDownloadedCallback:
     """Example class for :meth:`~eodag.api.core.EODataAccessGateway.download_all` callback"""
 

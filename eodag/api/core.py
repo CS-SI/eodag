@@ -1321,6 +1321,7 @@ class EODataAccessGateway(object):
     def download(
         self,
         product,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -1348,6 +1349,12 @@ class EODataAccessGateway(object):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param downloaded_callback: (optional) A method or a callable object which takes
+                                    as parameter the `product`. You can use the base class
+                                    :class:`~eodag.utils.DownloadedCallback` and override
+                                    its `__call__`.
+        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
+                                   or None
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -1381,7 +1388,11 @@ class EODataAccessGateway(object):
                 self._plugins_manager.get_download_plugin(product), auth
             )
         path = product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
+            downloaded_callback=downloaded_callback,
+            progress_callback=progress_callback,
+            wait=wait,
+            timeout=timeout,
+            **kwargs,
         )
 
         return path
