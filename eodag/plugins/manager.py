@@ -120,24 +120,16 @@ class PluginManager(object):
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority, or the search plugin of the given provider
 
-        :param product_type: (Optional) The product type that the constructed plugins
+        :param product_type: (optional) The product type that the constructed plugins
                              must support
         :type product_type: str
-        :param provider: (Optional) The provider on which to get the search plugin
+        :param provider: (optional) The provider on which to get the search plugin
         :type provider: str
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
         :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProductType`
-
-        .. versionchanged::
-            1.0
-
-                * ``product_type`` is now optional. If no product type is provided,
-                  return all search plugins, ordered by priority
-                * A new optional parameter ``provider`` which defaults to ``None``, if
-                  we want to build the search plugin of that provider
         """
 
         def get_plugin():
@@ -208,11 +200,6 @@ class PluginManager(object):
         :type provider: str
         :returns: The Authentication plugin for the provider
         :rtype: :class:`~eodag.plugins.authentication.Authentication`
-
-        .. versionchanged::
-            1.0
-
-                * ``product_type`` is no longer needed to find the auth plugin
         """
         plugin_conf = self.providers_config[provider]
         try:
@@ -233,7 +220,7 @@ class PluginManager(object):
         :type name: str
         :param options: The configuration parameters of the cruncher
         :type options: dict
-        :return: The cruncher named `name`
+        :returns: The cruncher named `name`
         :rtype: :class:`~eodag.plugins.crunch.Crunch`
         """
         Klass = Crunch.get_plugin_by_class_name(name)

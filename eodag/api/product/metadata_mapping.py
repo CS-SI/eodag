@@ -81,7 +81,7 @@ def get_metadata_path(map_value):
                       `['productType', '$.properties.productType']` with the sample
                       above. Or the string `$.properties.id`.
     :type map_value: str or list(str)
-    :return: Either, None and the path to the metadata value, or a list of converter
+    :returns: Either, None and the path to the metadata value, or a list of converter
              and its args, and the path to the metadata value.
     :rtype: tuple(list(str) or None, str)
     """
@@ -98,7 +98,7 @@ def get_metadata_path(map_value):
 
 
 def get_metadata_path_value(map_value):
-    """ Get raw metadata path without converter """
+    """Get raw metadata path without converter"""
     return map_value[1] if isinstance(map_value, list) else map_value
 
 
@@ -108,7 +108,7 @@ def get_search_param(map_value):
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config
     :type map_value: list
-    :return: The value of the search parameter as defined in the provider config
+    :returns: The value of the search parameter as defined in the provider config
     :rtype: str
     """
     # Assume that caller will pass in the value as a list
@@ -371,18 +371,18 @@ def format_metadata(search_param, *args, **kwargs):
 def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=None):
     """Extract properties from a provider json result.
 
-    :param json: the representation of a provider result as a json object
+    :param json: The representation of a provider result as a json object
     :type json: dict
-    :param mapping: a mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
+    :param mapping: A mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the json
                     representation, expressed as a
                     `jsonpath <http://goessner.net/articles/JsonPath/>`_
-    :param discovery_pattern: regex pattern for metadata key discovery,
-                                e.g. "^[a-zA-Z]+$"
+    :param discovery_pattern: (optional) Regex pattern for metadata key discovery,
+                              e.g. "^[a-zA-Z]+$"
     :type discovery_pattern: str
-    :param discovery_path: str representation of jsonpath
+    :param discovery_path: (optional) String representation of jsonpath
     :type discovery_path: str
-    :return: the metadata of the :class:`~eodag.api.product._product.EOProduct`
+    :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
     properties = {}
@@ -467,19 +467,24 @@ def properties_from_xml(
 ):
     """Extract properties from a provider xml result.
 
-    :param xml_as_text: the representation of a provider result as xml
+    :param xml_as_text: The representation of a provider result as xml
     :type xml_as_text: str
-    :param mapping: a mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
+    :param mapping: A mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the xml
                     representation, expressed as a
                     `xpath <https://www.w3schools.com/xml/xml_xpath.asp>`_
-    :param empty_ns_prefix: the name to give to the default namespace of `xml_as_text`.
+    :param empty_ns_prefix: (optional) The name to give to the default namespace of `xml_as_text`.
                             This is a technical workaround for the limitation of lxml
-                            not supporting empty namespace prefix (default: ns). The
+                            not supporting empty namespace prefix. The
                             xpath in `mapping` must use this value to be able to
                             correctly reach empty-namespace prefixed elements
     :type empty_ns_prefix: str
-    :return: the metadata of the :class:`~eodag.api.product._product.EOProduct`
+    :param discovery_pattern: (optional) Regex pattern for metadata key discovery,
+                              e.g. "^[a-zA-Z]+$"
+    :type discovery_pattern: str
+    :param discovery_path: (optional) String representation of jsonpath
+    :type discovery_path: str
+    :returns: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
     properties = {}
@@ -591,9 +596,9 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
 
     :param src_dict: Input dict containing jsonpath str as values
     :type src_dict: dict
-    :param dest_dict: Output dict containing jsonpath objects as values
+    :param dest_dict: (optional) Output dict containing jsonpath objects as values
     :type dest_dict: dict
-    :return: dest_dict
+    :returns: dest_dict
     :rtype: dict
     """
     if not dest_dict:

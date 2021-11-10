@@ -48,6 +48,11 @@ class StaticStacSearch(StacSearch):
     This plugin first loads all STAC items found in the catalog, and converts them to
     EOProducts using StacSearch.
     Then it uses crunchers to only keep products matching query parameters.
+
+    :param provider: An eodag providers configuration dictionary
+    :type provider: dict
+    :param config: Path to the user configuration file
+    :type config: str
     """
 
     def __init__(self, provider, config):

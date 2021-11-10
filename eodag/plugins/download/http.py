@@ -392,7 +392,7 @@ class HTTPDownload(Download):
         **kwargs
     ):
         """
-        download_all using parent (base plugin) method
+        Download all using parent (base plugin) method
         """
         return super(HTTPDownload, self).download_all(
             products,

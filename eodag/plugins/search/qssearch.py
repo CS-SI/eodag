@@ -141,6 +141,11 @@ class QueryStringSearch(Search):
     ``#`` (see :func:`~eodag.utils.format_metadata` for further details on the
     available converters). Note that for the values in the
     ``free_text_search_operations`` configuration parameter follow the same rule.
+
+    :param provider: An eodag providers configuration dictionary
+    :type provider: dict
+    :param config: Path to the user configuration file
+    :type config: str
     """
 
     COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
@@ -161,12 +166,12 @@ class QueryStringSearch(Search):
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface
 
-        :param page: The page number to retur (default: 1)
-        :type page: int
-        :param items_per_page: The number of results that must appear in one single
-                               page
+        :param items_per_page: (optional) The number of results that must appear in one
+                               single page
         :type items_per_page: int
-        :param count:  To trigger a count request (default: True)
+        :param page: (optional) The page number to return
+        :type page: int
+        :param count: (optional) To trigger a count request
         :type count: bool
         """
         product_type = kwargs.get("productType", None)
@@ -476,7 +481,8 @@ class QueryStringSearch(Search):
         If there is a specified number of items per page, return the results as soon
         as this number is reached
 
-        :param int items_per_page: (Optional) The number of items to return for one page
+        :param items_per_page: (optional) The number of items to return for one page
+        :type items_per_page: int
         """
         results = []
         for search_url in self.search_urls:

@@ -75,7 +75,7 @@ def _deprecated(reason="", version=None):
 
     Warning: Does not work with staticmethods!
 
-    @deprecate(reason="why", versoin="1.2")
+    @deprecate(reason="why", version="1.2")
     def foo():
         pass
     foo()
@@ -298,9 +298,11 @@ def merge_mappings(mapping1, mapping2):
     If mapping2 has a key that cannot be detected in mapping1, this new key is added
     to mapping1 as is.
 
-    :param dict mapping1: The mapping containing values to be overridden
-    :param dict mapping2: The mapping containing values that will override the
-                          first mapping
+    :param mapping1: The mapping containing values to be overridden
+    :type mapping1: dict
+    :param mapping2: The mapping containing values that will override the
+                     first mapping
+    :type mapping2: dict
     """
     # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
     m1_keys_lowercase = {key.lower(): key for key in mapping1}
@@ -386,9 +388,9 @@ def get_timestamp(date_time):
 
     If the datetime has no offset, it is assumed to be an UTC datetime.
 
-    :param date_time: the datetime string to return as timestamp
+    :param date_time: The datetime string to return as timestamp
     :type date_time: str
-    :returns: the timestamp corresponding to the date_time string in seconds
+    :returns: The timestamp corresponding to the date_time string in seconds
     :rtype: float
     """
     dt = isoparse(date_time)
@@ -431,9 +433,9 @@ class ProgressCallback(tqdm):
     def __call__(self, increment, total=None):
         """Update the progress bar.
 
-        :param increment: amount of data already processed
+        :param increment: Amount of data already processed
         :type increment: int
-        :param total: maximum amount of data to be processed
+        :param total: (optional) Maximum amount of data to be processed
         :type total: int
         """
         if total is not None and total != self.total:
@@ -488,15 +490,15 @@ def format_dict_items(config_dict, **format_variables):
 
     >>> format_dict_items(
     ...     {"foo": {"bar": "{a}"}, "baz": ["{b}?", "{b}!"]},
-    ...     **{"a": "qux", "b":"quux"},
+    ...     **{"a": "qux", "b": "quux"},
     ... ) == {"foo": {"bar": "qux"}, "baz": ["quux?", "quux!"]}
     True
 
-    :param config_dict: dictionnary having values that need to be parsed
+    :param config_dict: Dictionnary having values that need to be parsed
     :type config_dict: dict
-    :param format_variables: variables used as args for parsing
+    :param format_variables: Variables used as args for parsing
     :type format_variables: dict
-    :returns: updated dict
+    :returns: Updated dict
     :rtype: dict
     """
     return dict_items_recursive_apply(config_dict, format_string, **format_variables)
@@ -512,11 +514,11 @@ def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
     ... ) == {'foo': {'bar': 'baz'}, 'qux': ['quux', 'quux']}
     True
 
-    :param jsonpath_dict: dictionnary having values that need to be parsed
+    :param jsonpath_dict: Dictionnary having values that need to be parsed
     :type jsonpath_dict: dict
-    :param values_dict: values dict used as args for parsing
+    :param values_dict: Values dict used as args for parsing
     :type values_dict: dict
-    :returns: updated dict
+    :returns: Updated dict
     :rtype: dict
     """
     return dict_items_recursive_apply(jsonpath_dict, parse_jsonpath, **values_dict)
@@ -537,13 +539,13 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
     ... ) == {'a': {'a.a': [1, 2, 10]}}
     True
 
-    :param old_dict: dict to be updated
+    :param old_dict: Dict to be updated
     :type old_dict: dict
-    :param new_dict: incomming dict
+    :param new_dict: Incomming dict
     :type new_dict: dict
-    :param extend_list_values: extend old_dict value if both old/new values are lists
+    :param extend_list_values: (optional) Extend old_dict value if both old/new values are lists
     :type extend_list_values: bool
-    :returns: updated dict
+    :returns: Updated dict
     :rtype: dict
     """
     for k, v in new_dict.items():
@@ -584,14 +586,14 @@ def items_recursive_apply(input_obj, apply_method, **apply_method_parameters):
     ...     **{"x":"!"})
     'foo'
 
-    :param input_obj: input object (dict or list)
+    :param input_obj: Input object (dict or list)
     :type input_obj: Union[dict,list]
-    :param apply_method: method to be applied to dict elements
+    :param apply_method: Method to be applied to dict elements
     :type apply_method: :func:`apply_method`
-    :param apply_method_parameters: optional parameters passed to the method
+    :param apply_method_parameters: Optional parameters passed to the method
     :type apply_method_parameters: dict
-    :returns: updated object
-    :rtype: Union[dict,list]
+    :returns: Updated object
+    :rtype: Union[dict, list]
     """
     if isinstance(input_obj, dict):
         return dict_items_recursive_apply(
@@ -610,18 +612,18 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
     """Recursive apply method to dict elements
 
     >>> dict_items_recursive_apply(
-    ...     {"foo": {"bar":"baz"}, "qux": ["a","b"]},
-    ...     lambda k,v,x: v.upper()+x, **{"x":"!"}
+    ...     {"foo": {"bar": "baz"}, "qux": ["a", "b"]},
+    ...     lambda k, v, x: v.upper() + x, **{"x": "!"}
     ... ) == {'foo': {'bar': 'BAZ!'}, 'qux': ['A!', 'B!']}
     True
 
-    :param config_dict: input nested dictionnary
+    :param config_dict: Input nested dictionnary
     :type config_dict: dict
-    :param apply_method: method to be applied to dict elements
+    :param apply_method: Method to be applied to dict elements
     :type apply_method: :func:`apply_method`
-    :param apply_method_parameters: optional parameters passed to the method
+    :param apply_method_parameters: Optional parameters passed to the method
     :type apply_method_parameters: dict
-    :returns: updated dict
+    :returns: Updated dict
     :rtype: dict
     """
     result_dict = copy.deepcopy(config_dict)
@@ -646,18 +648,18 @@ def list_items_recursive_apply(config_list, apply_method, **apply_method_paramet
     """Recursive apply method to list elements
 
     >>> list_items_recursive_apply(
-    ...     [{"foo": {"bar":"baz"}}, "qux"],
-    ...     lambda k,v,x: v.upper()+x,
-    ...     **{"x":"!"})
+    ...     [{"foo": {"bar": "baz"}}, "qux"],
+    ...     lambda k, v, x: v.upper() + x,
+    ...     **{"x": "!"})
     [{'foo': {'bar': 'BAZ!'}}, 'QUX!']
 
-    :param config_list: input list containing nested lists/dicts
+    :param config_list: Input list containing nested lists/dicts
     :type config_list: list
-    :param apply_method: method to be applied to list elements
+    :param apply_method: Method to be applied to list elements
     :type apply_method: :func:`apply_method`
-    :param apply_method_parameters: optional parameters passed to the method
+    :param apply_method_parameters: Optional parameters passed to the method
     :type apply_method_parameters: dict
-    :returns: updated list
+    :returns: Updated list
     :rtype: list
     """
     result_list = copy.deepcopy(config_list)
@@ -684,11 +686,11 @@ def string_to_jsonpath(key, str_value):
     >>> string_to_jsonpath(None, "$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
 
-    :param key: input item key
+    :param key: Input item key
     :type key: str
-    :param str_value: input item value, to be converted
+    :param str_value: Input item value, to be converted
     :type str_value: str
-    :returns: parsed value
+    :returns: Parsed value
     :rtype: str
     """
     if "$." in str(str_value):
@@ -707,11 +709,11 @@ def format_string(key, str_to_format, **format_variables):
     >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})
     'foo qux, quux ?'
 
-    :param key: input item key
+    :param key: Input item key
     :type key: str
-    :param str_to_format: input item value, to be parsed
+    :param str_to_format: Input item value, to be parsed
     :type str_to_format: str
-    :returns: parsed value
+    :returns: Parsed value
     :rtype: str
     """
     if isinstance(str_to_format, str):
@@ -743,16 +745,16 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
     """Parse jsonpah in jsonpath_obj using values_dict
 
     >>> import jsonpath_ng.ext as jsonpath
-    >>> parse_jsonpath(None, parse("$.foo.bar"), **{"foo":{"bar":"baz"}})
+    >>> parse_jsonpath(None, parse("$.foo.bar"), **{"foo": {"bar": "baz"}})
     'baz'
 
-    :param key: input item key
+    :param key: Input item key
     :type key: str
-    :param jsonpath_obj: input item value, to be parsed
+    :param jsonpath_obj: Input item value, to be parsed
     :type jsonpath_obj: str
-    :param values_dict: values used as args for parsing
+    :param values_dict: Values used as args for parsing
     :type values_dict: dict
-    :returns: parsed value
+    :returns: Parsed value
     :rtype: str
     """
     if isinstance(jsonpath_obj, jsonpath.Child):
@@ -765,12 +767,12 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
 def nested_pairs2dict(pairs):
     """Create a dict using nested pairs
 
-    >>> nested_pairs2dict([["foo",[["bar","baz"]]]])
+    >>> nested_pairs2dict([["foo", [["bar", "baz"]]]])
     {'foo': {'bar': 'baz'}}
 
-    :param pairs: pairs [key, value]
+    :param pairs: Pairs of key / value
     :type pairs: list
-    :returns: created dict
+    :returns: Created dict
     :rtype: dict
     """
     d = {}
@@ -788,11 +790,11 @@ def nested_pairs2dict(pairs):
 def get_geometry_from_various(locations_config=[], **query_args):
     """Creates a shapely geometry using given query kwargs arguments
 
-    :param locations_config: EODAG locations configuration
+    :param locations_config: (optional) EODAG locations configuration
     :type locations_config: list
-    :param query_args: query kwargs arguments from core.search() method
+    :param query_args: Query kwargs arguments from core.search() method
     :type query_args: dict
-    :returns: shapely geometry found
+    :returns: shapely Geometry found
     :rtype: :class:`shapely.geometry.BaseGeometry`
     :raises: :class:`ValueError`
     """
