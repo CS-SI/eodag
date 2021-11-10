@@ -29,10 +29,12 @@ class FilterProperty(Crunch):
 
     Filter products, retaining only those whose property match criteria
 
-    :param dict config: crunch configuration, should contain :
+    :param config: Crunch configuration, should contain :
 
-            - `property=value` : property key from product.properties, associated to its filter value
-            - `operator` : (optional) Operator used for filtering (one of `lt,le,eq,ne,ge,gt`). Default is `eq`
+                   - `property=value` : property key from product.properties, associated to its filter value
+                   - `operator` : (optional) Operator used for filtering (one of `lt,le,eq,ne,ge,gt`). Default is `eq`
+
+    :type config: dict
     """
 
     def proceed(self, products, **search_params):

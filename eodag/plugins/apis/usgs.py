@@ -54,19 +54,7 @@ class UsgsApi(Api, Download):
     def query(
         self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
     ):
-        """Search for data on USGS catalogues
-
-        .. versionchanged::
-           2.2.0
-
-                * Based on usgs library v0.3.0 which now uses M2M API. The library
-                  is used for both search & download
-
-        .. versionchanged::
-            1.0
-
-                * ``product_type`` is no longer mandatory
-        """
+        """Search for data on USGS catalogues"""
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
@@ -294,7 +282,7 @@ class UsgsApi(Api, Download):
         **kwargs
     ):
         """
-        download_all using parent (base plugin) method
+        Download all using parent (base plugin) method
         """
         return super(UsgsApi, self).download_all(
             products,
