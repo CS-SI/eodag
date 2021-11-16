@@ -18,18 +18,20 @@
 search:
   type: StacSearch
   pagination:
-    next_page_url_tpl: '{url}?{search}&limit={items_per_page}&page={page}'
+    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
     total_items_nb_key_path: '$.context.matched'
     next_page_url_key_path: '$.links[?(@.rel="next")].href'
+    next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'
+    next_page_merge_key_path: '$.links[?(@.rel="next")].merge'
   discover_metadata:
     auto_discovery: true
     metadata_pattern: '^[a-zA-Z0-9_:-]+$'
-    search_param: '{metadata}={{{metadata}}}'
+    search_param: '{{"{metadata}"="{{{metadata}}}"}}'
     metadata_path: '$.properties.*'
   metadata_mapping:
     # OpenSearch Parameters for Collection Search (Table 3)
     productType:
-      - 'collections={productType}'
+      - '{{"collections":["{productType}"]}}'
       - '$.collection'
     doi: '$.properties."sci:doi"'
     processingLevel: '$.properties."processing:level"'
@@ -55,7 +57,7 @@ search:
     acquisitionSubType: '$.properties.acquisitionSubType'
     startTimeFromAscendingNode: '$.properties.datetime'
     completionTimeFromAscendingNode:
-      - 'datetime={startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}'
+      - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
       - '$.properties.end_datetime'
     illuminationAzimuthAngle: '$.properties."view:sun_azimuth"'
     illuminationElevationAngle: '$.properties."view:sun_elevation"'
@@ -63,10 +65,10 @@ search:
     dopplerFrequency: '$.properties."sar:frequency_band"'
     # Custom parameters (not defined in the base document referenced above)
     id:
-      - 'ids={id}'
+      - '{{"ids":["{id}"]}}'
       - '$.id'
     geometry:
-      - 'bbox={geometry.bounds#csv_list}'
+      - '{{"intersects":{geometry#to_geo_interface}}}'
       - '$.geometry'
     downloadLink: '%(base_uri)s/collections/{productType}/items/{id}'
     quicklook: '$.assets.quicklook.href'
