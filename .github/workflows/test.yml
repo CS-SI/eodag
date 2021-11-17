@@ -28,7 +28,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.9]
+        # skip 3.9.8 which fails on windows
+        python-version: [3.6, "3.9.9 - 3.9"]
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout the repo

@@ -19,6 +19,7 @@
 import os
 import random
 import shutil
+import tempfile
 import unittest
 from collections import OrderedDict, namedtuple
 from io import StringIO
@@ -35,7 +36,7 @@ dirn = os.path.dirname
 
 TEST_RESOURCES_PATH = jp(dirn(__file__), "resources")
 RESOURCES_PATH = jp(dirn(__file__), "..", "eodag", "resources")
-TESTS_DOWNLOAD_PATH = "/tmp/eodag_tests"
+TESTS_DOWNLOAD_PATH = jp(tempfile.gettempdir(), "eodag_tests")
 
 
 class EODagTestCase(unittest.TestCase):
