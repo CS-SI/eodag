@@ -1690,10 +1690,10 @@
   roles:
     - host
   description: Earth Search
-  url: https://www.element84.com/earth-search/
+  url: https://sentinel-cogs.s3.us-west-2.amazonaws.com
   search: !plugin
     type: StacSearch
-    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    api_endpoint: https://sentinel-cogs.s3.us-west-2.amazonaws.com
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
