@@ -591,9 +591,10 @@ class EODataAccessGateway(object):
         iteration = 1
         # Store the search plugin config pagination.next_page_url_tpl to reset it later
         # since it might be modified if the next_page_url mechanism is used by the
-        # plugin.
+        # plugin. (same thing for next_page_query_obj, next_page_query_obj with POST reqs)
         pagination_config = getattr(search_plugin.config, "pagination", {})
-        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl")
+        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl", None)
+        prev_next_page_query_obj = pagination_config.get("next_page_query_obj", None)
         # Page has to be set to a value even if use_next is True, this is required
         # internally by the search plugin (see collect_search_urls)
         search_kwargs.update(
@@ -602,9 +603,12 @@ class EODataAccessGateway(object):
         )
         prev_product = None
         next_page_url = None
+        next_page_query_obj = None
         while True:
             if iteration > 1 and next_page_url:
                 pagination_config["next_page_url_tpl"] = next_page_url
+            if iteration > 1 and next_page_query_obj:
+                pagination_config["next_page_query_obj"] = next_page_query_obj
             logger.info("Iterate search over multiple pages: page #%s", iteration)
             try:
                 products, _ = self._do_search(
@@ -616,12 +620,29 @@ class EODataAccessGateway(object):
                 # yields, the attr next_page_url (to None) and
                 # config.pagination["next_page_url_tpl"] (to its original value).
                 next_page_url = getattr(search_plugin, "next_page_url", None)
+                next_page_query_obj = getattr(search_plugin, "next_page_query_obj", {})
+                next_page_merge = getattr(search_plugin, "next_page_merge", None)
+
                 if next_page_url:
                     search_plugin.next_page_url = None
                     if prev_next_page_url_tpl:
                         search_plugin.config.pagination[
                             "next_page_url_tpl"
                         ] = prev_next_page_url_tpl
+                if next_page_query_obj:
+                    if prev_next_page_query_obj:
+                        search_plugin.config.pagination[
+                            "next_page_query_obj"
+                        ] = prev_next_page_query_obj
+                    # Update next_page_query_obj for next page req
+                    if next_page_merge:
+                        search_plugin.next_page_query_obj = dict(
+                            getattr(search_plugin, "query_params", {}),
+                            **next_page_query_obj,
+                        )
+                    else:
+                        search_plugin.next_page_query_obj = next_page_query_obj
+
             if len(products) > 0:
                 # The first products between two iterations are compared. If they
                 # are actually the same product, it means the iteration failed at
