@@ -39,6 +39,7 @@ one (e.g. credentials). *PEPS*'s configuration template is shown below:
            extract:  # whether to extract the downloaded products (true or false).
            outputs_prefix: # where to store downloaded products.
            dl_url_params:  # additional parameters to pass over to the download url as an url parameter
+           delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
        auth:
            credentials:
                username:
@@ -99,6 +100,7 @@ See for instance the following configuration extracted from YAML file:
        download:
            extract: True
            outputs_prefix: /absolute/path/to/a/folder/
+           delete_archive: False
 
 
 The same configuration could be achieved by setting environment variables:
@@ -107,6 +109,7 @@ The same configuration could be achieved by setting environment variables:
 
    export EODAG__SOBLOO__DOWNLOAD__EXTRACT=True
    export EODAG__SOBLOO__DOWNLOAD__OUTPUTS_PREFIX=/absolute/path/to/a/folder/
+   export EODAG__SOBLOO__DOWNLOAD__DELETE_ARCHIVE=False
 
 
 Each configuration parameter can be set with an environment variable.
@@ -159,6 +162,9 @@ Two useful download parameters can be set by a user:
 
 *  ``outputs_prefix`` indicates the absolute file path to `eodag`'s download folder.
    It is the temporary folder by default (e.g. ``/tmp`` on Linux).
+
+* ``delete_archive`` indicates whether the downloaded product archive should be automatically
+  deleted after extraction or not. ``True`` by default.
 
 Credentials settings
 ^^^^^^^^^^^^^^^^^^^^
