@@ -1489,6 +1489,35 @@
       # This provider doesn't implement any pagination, let's just try to get the maximum number of
       # products available at once then, so we stick to 10_000.
       max_items_per_page: 10_000
+    metadata_mapping:
+      # redefine the following mapppings as the provider does not support advanced queries/filtering,
+      # these parameters will not be queryable
+      doi: '$.properties."sci:doi"'
+      processingLevel: '$.properties."processing:level"'
+      platform: '$.properties.constellation'
+      platformSerialIdentifier: '$.properties.platform'
+      instrument: '$.properties.instruments'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '$.id'
+      abstract: '$.properties.description'
+      resolution: '$.properties.gsd'
+      publicationDate: '$.properties.published'
+      # OpenSearch Parameters for Product Search (Table 5)
+      orbitNumber: '$.properties."sat:relative_orbit"'
+      orbitDirection: '$.properties."sat:orbit_state"'
+      cloudCover: '$.properties."eo:cloud_cover"'
+      sensorMode: '$.properties."sar:instrument_mode"'
+      creationDate: '$.properties.created'
+      modificationDate: '$.properties.updated'
+      productVersion: '$.properties.version'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      availabilityTime: '$.properties.availabilityTime'
+      acquisitionStation: '$.properties.acquisitionStation'
+      acquisitionSubType: '$.properties.acquisitionSubType'
+      illuminationAzimuthAngle: '$.properties."view:sun_azimuth"'
+      illuminationElevationAngle: '$.properties."view:sun_elevation"'
+      polarizationChannels: '$.properties."sar:polarizations"'
+      dopplerFrequency: '$.properties."sar:frequency_band"'
   products:
     S1_SAR_GRD:
       productType: sentinel1_l1c_grd
@@ -1564,39 +1593,43 @@
   roles:
     - host
   description: USGS Landsatlook SAT API
-  url: https://landsatlook.usgs.gov/sat-api/
+  url: https://landsatlook.usgs.gov/stac-server
   search: !plugin
     type: StacSearch
-    api_endpoint: https://landsatlook.usgs.gov/sat-api/collections/{collection}/items
+    api_endpoint: https://landsatlook.usgs.gov/stac-server/search
     pagination:
-      total_items_nb_key_path: '$.meta.found'
       # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
       max_items_per_page: 500
     metadata_mapping:
-      productType: '$.collection'
+      cloudCover:
+        - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
+        - '$.properties."eo:cloud_cover"'
+      platformSerialIdentifier:
+        - '{{"query":{{"platform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
+        - '$.properties.platform'
       assets: '{$.assets#recursive_sub_str(r"https?(.*)landsatlook.usgs.gov/data/",r"s3\1usgs-landsat/")}'
   products:
     LANDSAT_C2L1:
-      collection: landsat-c2l1
+      productType: landsat-c2l1
     LANDSAT_C2L2_SR:
-      collection: landsat-c2l2-sr
+      productType: landsat-c2l2-sr
     LANDSAT_C2L2_ST:
-      collection: landsat-c2l2-st
+      productType: landsat-c2l2-st
     LANDSAT_C2L2ALB_BT:
-      collection: landsat-c2l2alb-bt
+      productType: landsat-c2l2alb-bt
     LANDSAT_C2L2ALB_SR:
-      collection: landsat-c2l2alb-sr
+      productType: landsat-c2l2alb-sr
     LANDSAT_C2L2ALB_ST:
-      collection: landsat-c2l2alb-st
+      productType: landsat-c2l2alb-st
     LANDSAT_C2L2ALB_TA:
-      collection: landsat-c2l2alb-ta
+      productType: landsat-c2l2alb-ta
     GENERIC_PRODUCT_TYPE:
-      collection: '{productType}'
+      productType: '{productType}'
   download: !plugin
     type: AwsDownload
-    base_uri: https://landsatlook.usgs.gov/sat-api/
+    base_uri: https://landsatlook.usgs.gov/stac-server
     flatten_top_dirs: True
   auth: !plugin
     type: AwsAuth

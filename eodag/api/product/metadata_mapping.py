@@ -365,6 +365,13 @@ def format_metadata(search_param, *args, **kwargs):
                 logger.error("Could not extract title infos from %s" % string)
                 return NOT_AVAILABLE
 
+    # if stac extension colon separator `:` is in search search params, parse it to prevent issues with vformat
+    if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
+        search_param = re.sub(
+            r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
+        )
+        kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
