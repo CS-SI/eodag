@@ -278,7 +278,11 @@ class TestEOProduct(EODagTestCase):
         )
         self.requests_http_get.return_value = self._download_response_archive()
         dl_config = config.PluginConfig.from_mapping(
-            {"base_uri": "fake_base_uri", "outputs_prefix": tempfile.gettempdir()}
+            {
+                "base_uri": "fake_base_uri",
+                "outputs_prefix": tempfile.gettempdir(),
+                "delete_archive": False,
+            }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         product.register_downloader(downloader, None)
@@ -314,6 +318,42 @@ class TestEOProduct(EODagTestCase):
             os.remove(str(records_file))
             os.rmdir(str(download_records_dir))
 
+    def test_eoproduct_download_http_delete_archive(self):
+        """eoproduct.download must delete the downloaded archive"""  # noqa
+        # Setup
+        product = EOProduct(
+            self.provider, self.eoproduct_props, productType=self.product_type
+        )
+        self.requests_http_get.return_value = self._download_response_archive()
+        dl_config = config.PluginConfig.from_mapping(
+            {
+                "base_uri": "fake_base_uri",
+                "outputs_prefix": tempfile.gettempdir(),
+                "delete_archive": True,
+            }
+        )
+        downloader = HTTPDownload(provider=self.provider, config=dl_config)
+        product.register_downloader(downloader, None)
+
+        try:
+            # Download
+            product_dir_path = product.download()
+            product_dir_path = pathlib.Path(product_dir_path)
+            # Check that the mocked request was properly called.
+            self.requests_http_get.assert_called_with(
+                self.download_url, stream=True, auth=None, params={}
+            )
+            download_records_dir = product_dir_path.parent / ".downloaded"
+            # Check that the product's directory exists.
+            self.assertTrue(os.path.isdir(product_dir_path))
+            # Check that the ZIP file was deleted there
+            product_zip = product_dir_path.parent / (product_dir_path.name + ".zip")
+            self.assertFalse(os.path.exists(product_zip))
+        finally:
+            # Teardown
+            shutil.rmtree(product_dir_path)
+            shutil.rmtree(download_records_dir)
+
     def test_eoproduct_download_http_extract(self):
         """eoproduct.download over must be able to extract a product"""
         # Setup
@@ -326,6 +366,7 @@ class TestEOProduct(EODagTestCase):
                 "base_uri": "fake_base_uri",
                 "outputs_prefix": tempfile.gettempdir(),
                 "extract": True,
+                "delete_archive": False,
             }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
