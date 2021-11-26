@@ -26,7 +26,7 @@ search:
   discover_metadata:
     auto_discovery: true
     metadata_pattern: '^[a-zA-Z0-9_:-]+$'
-    search_param: '{{"{metadata}"="{{{metadata}}}"}}'
+    search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
     metadata_path: '$.properties.*'
   metadata_mapping:
     # OpenSearch Parameters for Collection Search (Table 3)
@@ -34,76 +34,77 @@ search:
       - '{{"collections":["{productType}"]}}'
       - '$.collection'
     doi:
-      - 'sci:doi'
+      - '{{"query":{{"sci:doi":{{"eq":"{doi}"}}}}}}'
       - '$.properties."sci:doi"'
     processingLevel:
-      - 'processing:level'
+      - '{{"query":{{"processing:level":{{"eq":"{processingLevel}"}}}}}}'
       - '$.properties."processing:level"'
     platform:
-      - 'constellation'
+      - '{{"query":{{"constellation":{{"eq":"{platform}"}}}}}}'
       - '$.properties.constellation'
     platformSerialIdentifier:
-      - 'platform'
+      - '{{"query":{{"platform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
       - '$.properties.platform'
     instrument:
-      - 'instruments'
+    # to test
+      - '{{"query":{{"instruments":{{"eq":"{instrument}"}}}}}}'
       - '$.properties.instruments'
     # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
     title: '$.id'
     abstract: '$.properties.description'
     resolution:
-      - 'gsd'
+      - '{{"query":{{"gsd":{{"eq":"{resolution}"}}}}}}'
       - '$.properties.gsd'
     publicationDate:
-      - 'published'
+      - '{{"query":{{"published":{{"eq":"{publicationDate}"}}}}}}'
       - '$.properties.published'
     # OpenSearch Parameters for Product Search (Table 5)
     orbitNumber:
-      - 'sat:relative_orbit'
+      - '{{"query":{{"sat:relative_orbit":{{"eq":"{orbitNumber}"}}}}}}'
       - '$.properties."sat:relative_orbit"'
     orbitDirection:
-      - 'sat:orbit_state'
+      - '{{"query":{{"sat:orbit_state":{{"eq":"{orbitDirection}"}}}}}}'
       - '$.properties."sat:orbit_state"'
     cloudCover:
-      - 'eo:cloud_cover'
+      - '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}'
       - '$.properties."eo:cloud_cover"'
     sensorMode:
-      - 'sar:instrument_mode'
+      - '{{"query":{{"sar:instrument_mode":{{"eq":"{sensorMode}"}}}}}}'
       - '$.properties."sar:instrument_mode"'
     creationDate:
-      - 'created'
+      - '{{"query":{{"created":{{"eq":"{creationDate}"}}}}}}'
       - '$.properties.created'
     modificationDate:
-      - 'updated'
+      - '{{"query":{{"updated":{{"eq":"{modificationDate}"}}}}}}'
       - '$.properties.updated'
     productVersion:
-      - 'version'
+      - '{{"query":{{"version":{{"eq":"{productVersion}"}}}}}}'
       - '$.properties.version'
     # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
     availabilityTime:
-      - 'availabilityTime'
+      - '{{"query":{{"availabilityTime":{{"eq":"{availabilityTime}"}}}}}}'
       - '$.properties.availabilityTime'
     acquisitionStation:
-      - 'acquisitionStation'
+      - '{{"query":{{"acquisitionStation":{{"eq":"{acquisitionStation}"}}}}}}'
       - '$.properties.acquisitionStation'
     acquisitionSubType:
-      - 'acquisitionSubType'
+      - '{{"query":{{"acquisitionSubType":{{"eq":"{acquisitionSubType}"}}}}}}'
       - '$.properties.acquisitionSubType'
     startTimeFromAscendingNode: '$.properties.datetime'
     completionTimeFromAscendingNode:
       - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
       - '$.properties.end_datetime'
     illuminationAzimuthAngle:
-      - 'view:sun_azimuth'
+      - '{{"query":{{"view:sun_azimuth":{{"eq":"{illuminationAzimuthAngle}"}}}}}}'
       - '$.properties."view:sun_azimuth"'
     illuminationElevationAngle:
-      - 'view:sun_elevation'
+      - '{{"query":{{"view:sun_elevation":{{"eq":"{illuminationElevationAngle}"}}}}}}'
       - '$.properties."view:sun_elevation"'
     polarizationChannels:
-      - 'sar:polarizations'
+      - '{{"query":{{"sar:polarizations":{{"eq":"{polarizationChannels}"}}}}}}'
       - '$.properties."sar:polarizations"'
     dopplerFrequency:
-      - 'sar:frequency_band'
+      - '{{"query":{{"sar:frequency_band":{{"eq":"{dopplerFrequency}"}}}}}}'
       - '$.properties."sar:frequency_band"'
     # Custom parameters (not defined in the base document referenced above)
     id:
@@ -116,8 +117,6 @@ search:
     quicklook: '$.assets.quicklook.href'
     thumbnail: '$.assets.thumbnail.href'
     # storageStatus set to ONLINE for consistency between providers
-    storageStatus:
-      - 'storageStatus'
-      - '{$.null#replace_str("Not Available","ONLINE")}'
+    storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
     # Normalization code moves assets from properties to product's attr
     assets: '$.assets'

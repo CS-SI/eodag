@@ -200,44 +200,6 @@ def format_metadata(search_param, *args, **kwargs):
             return int(1e3 * get_timestamp(date_time))
 
         @staticmethod
-        def convert_to_rounded_wkt(value):
-            wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
-            # If needed, simplify WKT to prevent too long request failure
-            tolerance = 0.1
-            while len(wkt_value) > WKT_MAX_LEN and tolerance <= 1:
-                logger.debug(
-                    "Geometry WKT is too long (%s), trying to simplify it with tolerance %s",
-                    len(wkt_value),
-                    tolerance,
-                )
-                wkt_value = wkt.dumps(
-                    value.simplify(tolerance),
-                    rounding_precision=COORDS_ROUNDING_PRECISION,
-                )
-                tolerance += 0.1
-            if len(wkt_value) > WKT_MAX_LEN and tolerance > 1:
-                logger.warning("Failed to reduce WKT length lower than %s", WKT_MAX_LEN)
-            return wkt_value
-
-        @staticmethod
-        def convert_to_bounds_lists(input_geom):
-            if isinstance(input_geom, MultiPolygon):
-                geoms = [geom for geom in input_geom]
-                # sort with larger one at first (stac-browser only plots first one)
-                geoms.sort(key=lambda x: x.area, reverse=True)
-                return [list(x.bounds[0:4]) for x in geoms]
-            else:
-                return [list(input_geom.bounds[0:4])]
-
-        @staticmethod
-        def convert_to_geo_interface(geom):
-            return geojson.dumps(geom.__geo_interface__)
-
-        @staticmethod
-        def convert_csv_list(values_list):
-            return ",".join([str(x) for x in values_list])
-
-        @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
             """Convert a timestamp in milliseconds (int) to its ISO8601 UTC format
 
@@ -280,6 +242,44 @@ def format_metadata(search_param, *args, **kwargs):
             elif dt.tzinfo is not UTC:
                 dt = dt.astimezone(UTC)
             return dt.isoformat()[:10]
+
+        @staticmethod
+        def convert_to_rounded_wkt(value):
+            wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
+            # If needed, simplify WKT to prevent too long request failure
+            tolerance = 0.1
+            while len(wkt_value) > WKT_MAX_LEN and tolerance <= 1:
+                logger.debug(
+                    "Geometry WKT is too long (%s), trying to simplify it with tolerance %s",
+                    len(wkt_value),
+                    tolerance,
+                )
+                wkt_value = wkt.dumps(
+                    value.simplify(tolerance),
+                    rounding_precision=COORDS_ROUNDING_PRECISION,
+                )
+                tolerance += 0.1
+            if len(wkt_value) > WKT_MAX_LEN and tolerance > 1:
+                logger.warning("Failed to reduce WKT length lower than %s", WKT_MAX_LEN)
+            return wkt_value
+
+        @staticmethod
+        def convert_to_bounds_lists(input_geom):
+            if isinstance(input_geom, MultiPolygon):
+                geoms = [geom for geom in input_geom]
+                # sort with larger one at first (stac-browser only plots first one)
+                geoms.sort(key=lambda x: x.area, reverse=True)
+                return [list(x.bounds[0:4]) for x in geoms]
+            else:
+                return [list(input_geom.bounds[0:4])]
+
+        @staticmethod
+        def convert_to_geo_interface(geom):
+            return geojson.dumps(geom.__geo_interface__)
+
+        @staticmethod
+        def convert_csv_list(values_list):
+            return ",".join([str(x) for x in values_list])
 
         @staticmethod
         def convert_remove_extension(string):
@@ -364,6 +364,13 @@ def format_metadata(search_param, *args, **kwargs):
             else:
                 logger.error("Could not extract title infos from %s" % string)
                 return NOT_AVAILABLE
+
+    # if stac extension colon separator `:` is in search search params, parse it to prevent issues with vformat
+    if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
+        search_param = re.sub(
+            r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
+        )
+        kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
