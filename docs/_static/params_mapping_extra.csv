@@ -10,7 +10,7 @@ herbaceousCover,,,:green:`queryable metadata`,,,,,,,,,
 iceCover,,,:green:`queryable metadata`,,,,,,,,,
 id,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,:green:`queryable metadata`
 orderLink,,,,,,,metadata only,,,,,
-polarizationChannels,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,,metadata only
+polarizationChannels,metadata only,,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,,metadata only,metadata only,,:green:`queryable metadata`
 polarizationMode,,,,,metadata only,metadata only,,:green:`queryable metadata`,,metadata only,,
 processingBaseline,,,:green:`queryable metadata`,,,,,,,,,
 publishedAfter,,,:green:`queryable metadata`,,,,,,,,,
