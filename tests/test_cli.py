@@ -301,7 +301,9 @@ class TestEodagCli(unittest.TestCase):
 
             # Assertions
             dag.assert_called_once_with(
-                user_conf_file_path=conf_file, locations_conf_path=None
+                user_conf_file_path=conf_file,
+                credentials_file_path=None,
+                locations_conf_path=None,
             )
             api_obj.search.assert_called_once_with(
                 items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
@@ -440,7 +442,9 @@ class TestEodagCli(unittest.TestCase):
             eodag,
             ["download", "--search-results", search_results_path, "-f", config_path],
         )
-        dag.assert_called_once_with(user_conf_file_path=config_path)
+        dag.assert_called_once_with(
+            user_conf_file_path=config_path, credentials_file_path=None
+        )
         dag.return_value.deserialize.assert_called_once_with(search_results_path)
         self.assertEqual(dag.return_value.download_all.call_count, 1)
         self.assertEqual("Downloaded /fake_path\n", result.output)

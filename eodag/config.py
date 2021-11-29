@@ -17,7 +17,9 @@
 # limitations under the License.
 import logging
 import os
+import pickle
 import tempfile
+import warnings
 
 import yaml
 import yaml.constructor
@@ -31,8 +33,11 @@ from eodag.utils import (
     string_to_jsonpath,
 )
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.security import Crypto
 
 logger = logging.getLogger("eodag.config")
+
+CREDENTIALS_KEY_FIELD = "__key__"
 
 
 class SimpleYamlProxyConfig(object):
@@ -259,6 +264,99 @@ def provider_config_init(provider_config):
                 param_value.delete_archive = True
     # Set default priority to 0
     provider_config.__dict__.setdefault("priority", 0)
+
+
+def get_provider_credentials(provider_config):
+    """Get a provider's credentials from its config
+
+    :param provider_config: An eodag provider configuration
+    :type provider_config: :class:`~eodag.config.ProviderConfig`
+    :returns: The mapping containing the credentials of a provider
+    :rtype: dict
+    """
+    provider_credentials_mapping = {}
+    if hasattr(provider_config, "auth"):
+        auth = getattr(provider_config, "auth")
+        provider_credentials_mapping = getattr(auth, "credentials", {})
+    elif hasattr(provider_config, "api"):
+        api = getattr(provider_config, "api")
+        provider_credentials_mapping = getattr(api, "credentials", {})
+    return provider_credentials_mapping
+
+
+def override_credentials_from_mapping(config, credentials_mapping):
+    """Override a configuration's credentials with the values of a credentials mapping
+
+    :param config: An eodag providers configuration dictionary
+    :type config: dict
+    :param credentials_mapping: The mapping containing the credentials of all providers
+    :type credentials_mapping: dict
+    """
+    providers_with_raw_creds = []
+    for provider in config:
+        provider_credentials = get_provider_credentials(config[provider])
+        if any(cred is not None for cred in provider_credentials.values()):
+            providers_with_raw_creds.append(provider)
+        if provider in credentials_mapping:
+            provider_encrypted_credentials = {**credentials_mapping[provider]}
+            if CREDENTIALS_KEY_FIELD in provider_encrypted_credentials:
+                key_str = provider_encrypted_credentials.pop(CREDENTIALS_KEY_FIELD)
+                crypto = Crypto.from_strkey(key_str)
+                for cred_name, cred in provider_encrypted_credentials.items():
+                    provider_credentials[cred_name] = crypto.decrypt(cred)
+
+    if providers_with_raw_creds:
+        pretty_providers_print = ", ".join(providers_with_raw_creds[:-1]) + (
+            f" and {providers_with_raw_creds[-1]}"
+            if len(providers_with_raw_creds) > 1
+            else f"{providers_with_raw_creds[-1]}"
+        )
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            f"Raw credentials were found in your configuration for "
+            f"provider{'s' if len(providers_with_raw_creds) > 1 else ''} "
+            f"{pretty_providers_print}.",
+            category=DeprecationWarning,
+            stacklevel=3,
+        )
+
+
+def set_provider_credentials_key(provider_credentials_mapping, crypto_key):
+    """Set a field inside mapping to store a cryptography key
+
+    :param provider_credentials_mapping: The mapping from which the key must be stored
+    :type provider_credentials_mapping: dict
+    :param crypto_key: The crypto key
+    :type crypto_key: :class:`~eodag.utils.security.CryptoKey`
+    """
+    provider_credentials_mapping[CREDENTIALS_KEY_FIELD] = crypto_key.as_str()
+
+
+def load_providers_credentials(credentials_file_path):
+    """Load a credentials mapping from given file path
+
+    :param credentials_file_path: The path to the file from where the credentials will be read
+    :type credentials_file_path: str
+    :returns: The mapping containing the credentials of all providers
+    :rtype: dict
+    """
+    try:
+        with open(credentials_file_path, "rb") as credentials_file:
+            return pickle.load(credentials_file)
+    except (EOFError, pickle.UnpicklingError):
+        return {}
+
+
+def save_providers_credentials(credentials_file_path, credentials_mapping):
+    """Save a credentials mapping inside a file
+
+    :param credentials_file_path: The path to the file from where the credentials will be saved
+    :type credentials_file_path: str
+    :param credentials_mapping: The mapping containing the credentials of all providers
+    :type credentials_mapping: dict
+    """
+    with open(credentials_file_path, "wb") as credentials_file:
+        pickle.dump(credentials_mapping, credentials_file)
 
 
 def override_config_from_file(config, file_path):

@@ -34,10 +34,12 @@ from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
     load_default_config,
+    load_providers_credentials,
     load_yml_config,
     override_config_from_env,
     override_config_from_file,
     override_config_from_mapping,
+    override_credentials_from_mapping,
     provider_config_init,
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
@@ -79,7 +81,12 @@ class EODataAccessGateway(object):
     :type locations_conf_path: str
     """
 
-    def __init__(self, user_conf_file_path=None, locations_conf_path=None):
+    def __init__(
+        self,
+        user_conf_file_path=None,
+        credentials_file_path=None,
+        locations_conf_path=None,
+    ):
         product_types_config_path = resource_filename(
             "eodag", os.path.join("resources/", "product_types.yml")
         )
@@ -109,6 +116,24 @@ class EODataAccessGateway(object):
                         standard_configuration_path,
                     )
         override_config_from_file(self.providers_config, user_conf_file_path)
+
+        if credentials_file_path is None:
+            credentials_file_path = os.getenv("EODAG_CREDS_FILE")
+            if credentials_file_path is None:
+                credentials_file_path = os.path.join(self.conf_dir, "credentials")
+        self.credentials_file_path = credentials_file_path
+
+        if os.path.isfile(credentials_file_path):
+            self.encrypted_credentials = load_providers_credentials(
+                credentials_file_path
+            )
+        else:
+            self.encrypted_credentials = {}
+
+        # Override credentials from credentials file
+        override_credentials_from_mapping(
+            self.providers_config, self.encrypted_credentials
+        )
 
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
