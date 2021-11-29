@@ -25,6 +25,9 @@
   url: https://earthexplorer.usgs.gov/
   api: !plugin
     type: UsgsApi
+    credentials:
+      username: null
+      password: null
     google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
     pagination:
       max_items_per_page: 5000
@@ -500,6 +503,11 @@
           - productPath
   auth: !plugin
     type: AwsAuth
+    credentials:
+      apikey: null
+      aws_access_key_id: null
+      aws_secret_access_key: null
+      aws_profile: null
 
 ---
 !provider
@@ -672,6 +680,9 @@
   auth: !plugin
     type: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
+    credentials:
+        username: null
+        password: null
 
 ---
 !provider
@@ -826,6 +837,9 @@
   auth: !plugin
     type: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
+    credentials:
+      username: null
+      password: null
 
 ---
 !provider
@@ -949,6 +963,8 @@
     type: HTTPHeaderAuth
     headers:
       Authorization: "Apikey {apikey}"
+    credentials:
+      apikey: null
 
 ---
 !provider
@@ -1110,6 +1126,9 @@
     archive_depth: 2
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
+    credentials:
+      username: null
+      password: null
     auth_base_uri: 'https://auth.creodias.eu/auth'
     realm: 'dias'
     client_id: 'CLOUDFERRO_PARTNERS'
@@ -1330,6 +1349,8 @@
     type: HTTPHeaderAuth
     headers:
       Cookie: "seeedtoken={apikey}"
+    credentials:
+      apikey: null
   products:
     S1_SAR_GRD:
       productType: GRD
@@ -1524,6 +1545,9 @@
       Content-Type: application/json
   auth: !plugin
     type: GenericAuth
+    credentials:
+      username: null
+      password: null
 
 ---
 !provider
@@ -1640,6 +1664,10 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
+    credentials:
+      aws_access_key_id: null
+      aws_secret_access_key: null
+      aws_profile: null
 
 ---
 !provider
@@ -1683,6 +1711,10 @@
     flatten_top_dirs: True
   auth: !plugin
     type: AwsAuth
+    credentials:
+      aws_access_key_id: null
+      aws_secret_access_key: null
+      aws_profile: null
 
 ---
 !provider
@@ -1749,6 +1781,10 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
+    credentials:
+      aws_access_key_id: null
+      aws_secret_access_key: null
+      aws_profile: null
 
 ---
 !provider
