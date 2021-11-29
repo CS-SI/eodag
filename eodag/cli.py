@@ -126,8 +126,14 @@ def version():
 @click.option(
     "-f",
     "--conf",
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
+    help="File path to the user configuration file, default is ~/.config/eodag/eodag.yml",
     type=click.Path(exists=True),
+)
+@click.option(
+    "-c",
+    "--creds",
+    type=click.Path(exists=True),
+    help="File path to the credentials file, default is ~/.config/eodag/credentials",
 )
 @click.option(
     "-l",
@@ -322,6 +328,9 @@ def search_crunch(ctx, **kwargs):
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
+    creds_file = kwargs.pop("creds")
+    if creds_file:
+        creds_file = click.format_filename(creds_file)
     locs_file = kwargs.pop("locs")
     if locs_file:
         locs_file = click.format_filename(locs_file)
@@ -338,7 +347,9 @@ def search_crunch(ctx, **kwargs):
     page = kwargs.pop("page") or 1
 
     gateway = EODataAccessGateway(
-        user_conf_file_path=conf_file, locations_conf_path=locs_file
+        user_conf_file_path=conf_file,
+        credentials_file_path=creds_file,
+        locations_conf_path=locs_file,
     )
 
     # Search
@@ -464,7 +475,13 @@ def list_pt(ctx, **kwargs):
     "-f",
     "--conf",
     type=click.Path(exists=True),
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
+    help="File path to the user configuration file, default is ~/.config/eodag/eodag.yml",
+)
+@click.option(
+    "-c",
+    "--creds",
+    type=click.Path(exists=True),
+    help="File path to the credentials file, default is ~/.config/eodag/credentials",
 )
 @click.option(
     "--quicklooks",
@@ -485,8 +502,13 @@ def download(ctx, **kwargs):
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
+    creds_file = kwargs.pop("creds")
+    if creds_file:
+        creds_file = click.format_filename(creds_file)
 
-    satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
+    satim_api = EODataAccessGateway(
+        user_conf_file_path=conf_file, credentials_file_path=creds_file
+    )
     search_results = satim_api.deserialize(search_result_path)
 
     get_quicklooks = kwargs.pop("quicklooks")
@@ -558,7 +580,7 @@ def download(ctx, **kwargs):
     "-f",
     "--conf",
     type=click.Path(exists=True),
-    help="File path to the user configuration file with its credentials",
+    help="File path to the user configuration file",
 )
 @click.pass_context
 def serve_rpc(ctx, host, port, conf):
@@ -580,7 +602,7 @@ def serve_rpc(ctx, host, port, conf):
     "-f",
     "--config",
     type=click.Path(exists=True, resolve_path=True),
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
+    help="File path to the user configuration file, default is ~/.config/eodag/eodag.yml",
 )
 @click.option(
     "-l",
@@ -671,7 +693,7 @@ def serve_rest(ctx, daemon, world, port, config, locs, debug):
     "--config",
     type=click.Path(exists=True, resolve_path=True),
     required=True,
-    help="File path to the user configuration file with its credentials",
+    help="File path to the user configuration file",
 )
 @click.option(
     "--webserver",
