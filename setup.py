@@ -60,6 +60,7 @@ setup(
         "markdown >= 3.0.1",
         "whoosh",
         "pystac >= 1.0.0b1",
+        "cryptography",
     ],
     python_requires=">=3.6",
     extras_require={
