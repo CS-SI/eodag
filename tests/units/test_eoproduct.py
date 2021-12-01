@@ -281,6 +281,28 @@ class TestEOProduct(EODagTestCase):
             # Teardown
             self._clean_product(product_dir_path)
 
+    def test_eoproduct_downloaded_callback(self):
+        """eoproduct.download must save the product at outputs_prefix and create a .downloaded dir"""  # noqa
+        # Setup
+        product = self._dummy_downloadable_product()
+
+        def downloaded_callback_func(product):
+            self.assertEqual(product, product)
+            downloaded_callback_func.called = True
+
+        downloaded_callback_func.called = False
+
+        try:
+            # Download
+            product_dir_path = product.download(
+                downloaded_callback=downloaded_callback_func
+            )
+            # Check that callback function was called
+            self.assertTrue(downloaded_callback_func.called)
+        finally:
+            # Teardown
+            self._clean_product(product_dir_path)
+
     def test_eoproduct_download_http_delete_archive(self):
         """eoproduct.download must delete the downloaded archive"""  # noqa
         # Setup
