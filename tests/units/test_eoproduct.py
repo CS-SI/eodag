@@ -40,9 +40,7 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_search_intersection_geom(self):
         """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""  # noqa
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
+        product = self._dummy_product()
         self.assertEqual(product.geometry, product.search_intersection)
 
     def test_eoproduct_search_intersection_none(self):
@@ -60,10 +58,7 @@ class TestEOProduct(EODagTestCase):
                 ]
             ],
         }
-        product = EOProduct(
-            self.provider,
-            self.eoproduct_props,
-            productType=self.product_type,
+        product = self._dummy_product(
             geometry=geometry.Polygon(
                 (
                     (10.469970703124998, 3.9957805129630373),
@@ -77,18 +72,12 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_default_driver_unsupported_product_type(self):
         """EOProduct driver attr must be NoDriver if its product type is not associated with a eodag dataset driver"""  # noqa
-        product = EOProduct(
-            self.provider,
-            self.eoproduct_props,
-            productType=self.NOT_ASSOCIATED_PRODUCT_TYPE,
-        )
+        product = self._dummy_product(productType=self.NOT_ASSOCIATED_PRODUCT_TYPE)
         self.assertIsInstance(product.driver, NoDriver)
 
     def test_eoproduct_geointerface(self):
         """EOProduct must provide a geo-interface with a set of specific properties"""
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
+        product = self._dummy_product()
         geo_interface = geojson.loads(geojson.dumps(product))
         self.assertEqual(geo_interface["type"], "Feature")
         self.assertEqual(
@@ -105,9 +94,7 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
+        product = self._dummy_product()
         same_product = EOProduct.from_geojson(geojson.loads(geojson.dumps(product)))
         self.assertSequenceEqual(
             [
@@ -138,9 +125,7 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_get_quicklook_no_quicklook_url(self):
         """EOProduct.get_quicklook must return an empty string if no quicklook property"""  # noqa
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
+        product = self._dummy_product()
         product.properties["quicklook"] = None
 
         quicklook_file_path = product.get_quicklook()
@@ -148,9 +133,7 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_get_quicklook_http_error(self):
         """EOProduct.get_quicklook must return an empty string if there was an error during retrieval"""  # noqa
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
+        product = self._dummy_product()
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
@@ -172,9 +155,7 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_get_quicklook_ok(self):
         """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""  # noqa
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
+        product = self._dummy_product()
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value = self._quicklook_response()
@@ -224,9 +205,7 @@ class TestEOProduct(EODagTestCase):
             os.mkdir(quicklook_dir)
         with open(existing_quicklook_file_path, "wb") as fh:
             fh.write(b"content")
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
+        product = self._dummy_product()
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
         mock_downloader = mock.MagicMock(
             spec_set=Download(provider=self.provider, config=None)
@@ -273,20 +252,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_download_http_default(self):
         """eoproduct.download must save the product at outputs_prefix and create a .downloaded dir"""  # noqa
         # Setup
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
-        self.requests_http_get.return_value = self._download_response_archive()
-        dl_config = config.PluginConfig.from_mapping(
-            {
-                "base_uri": "fake_base_uri",
-                "outputs_prefix": tempfile.gettempdir(),
-                "delete_archive": False,
-            }
-        )
-        downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        product.register_downloader(downloader, None)
-
+        product = self._dummy_downloadable_product()
         try:
             # Download
             product_dir_path = product.download()
@@ -313,65 +279,33 @@ class TestEOProduct(EODagTestCase):
             self.assertTrue(zipfile.is_zipfile(product_zip))
         finally:
             # Teardown
-            os.remove(product_zip)
-            shutil.rmtree(product_dir_path)
-            os.remove(str(records_file))
-            os.rmdir(str(download_records_dir))
+            self._clean_product(product_dir_path)
 
     def test_eoproduct_download_http_delete_archive(self):
         """eoproduct.download must delete the downloaded archive"""  # noqa
         # Setup
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
-        self.requests_http_get.return_value = self._download_response_archive()
-        dl_config = config.PluginConfig.from_mapping(
-            {
-                "base_uri": "fake_base_uri",
-                "outputs_prefix": tempfile.gettempdir(),
-                "delete_archive": True,
-            }
-        )
-        downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        product.register_downloader(downloader, None)
-
+        product = self._dummy_downloadable_product(delete_archive=True)
         try:
             # Download
             product_dir_path = product.download()
-            product_dir_path = pathlib.Path(product_dir_path)
             # Check that the mocked request was properly called.
             self.requests_http_get.assert_called_with(
                 self.download_url, stream=True, auth=None, params={}
             )
-            download_records_dir = product_dir_path.parent / ".downloaded"
             # Check that the product's directory exists.
             self.assertTrue(os.path.isdir(product_dir_path))
             # Check that the ZIP file was deleted there
-            product_zip = product_dir_path.parent / (product_dir_path.name + ".zip")
+            _product_dir_path = pathlib.Path(product_dir_path)
+            product_zip = _product_dir_path.parent / (_product_dir_path.name + ".zip")
             self.assertFalse(os.path.exists(product_zip))
         finally:
             # Teardown
-            shutil.rmtree(product_dir_path)
-            shutil.rmtree(download_records_dir)
+            self._clean_product(product_dir_path)
 
     def test_eoproduct_download_http_extract(self):
         """eoproduct.download over must be able to extract a product"""
         # Setup
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
-        self.requests_http_get.return_value = self._download_response_archive()
-        dl_config = config.PluginConfig.from_mapping(
-            {
-                "base_uri": "fake_base_uri",
-                "outputs_prefix": tempfile.gettempdir(),
-                "extract": True,
-                "delete_archive": False,
-            }
-        )
-        downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        product.register_downloader(downloader, None)
-
+        product = self._dummy_downloadable_product(extract=True)
         try:
             # Download
             product_dir_path = product.download()
@@ -384,21 +318,15 @@ class TestEOProduct(EODagTestCase):
             # The zip file should is around
             product_zip_file = product_dir_path.with_suffix(".SAFE.zip")
             self.assertTrue(product_zip_file.is_file)
-
-            download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
         finally:
             # Teardown
-            shutil.rmtree(str(product_dir_path))
-            os.remove(str(product_zip_file))
-            shutil.rmtree(str(download_records_dir))
+            self._clean_product(product_dir_path)
 
     def test_eoproduct_download_http_dynamic_options(self):
         """eoproduct.download must accept the download options to be set automatically"""
         # Setup
-        product = EOProduct(
-            self.provider, self.eoproduct_props, productType=self.product_type
-        )
-        self.requests_http_get.return_value = self._download_response_archive()
+        product = self._dummy_product()
+        self._set_download_simulation()
         dl_config = config.PluginConfig.from_mapping(
             {"base_uri": "fake_base_uri", "outputs_prefix": "will_be_overriden"}
         )
@@ -409,7 +337,7 @@ class TestEOProduct(EODagTestCase):
         output_dir = pathlib.Path(tempfile.gettempdir()) / output_dir_name
         try:
             if output_dir.is_dir():
-                shutil.rmtree(str(output_dir))
+                shutil.rmtree(output_dir)
             output_dir.mkdir()
 
             # Download
@@ -435,34 +363,4 @@ class TestEOProduct(EODagTestCase):
             self.assertTrue(product_zip_file.is_file)
         finally:
             # Teardown (all the created files are within outputs_prefix)
-            shutil.rmtree(str(output_dir))
-
-    def _download_response_archive(self):
-        class Response(object):
-            """Emulation of a response to requests.get method for a zipped product"""
-
-            def __init__(response):
-                # Using a zipped product file
-                with open(self.local_product_as_archive_path, "rb") as fh:
-                    response.__zip_buffer = io.BytesIO(fh.read())
-                cl = response.__zip_buffer.getbuffer().nbytes
-                response.headers = {"content-length": cl}
-
-            def __enter__(response):
-                return response
-
-            def __exit__(response, *args):
-                pass
-
-            def iter_content(response, **kwargs):
-                with response.__zip_buffer as fh:
-                    while True:
-                        chunk = fh.read(kwargs["chunk_size"])
-                        if not chunk:
-                            break
-                        yield chunk
-
-            def raise_for_status(response):
-                pass
-
-        return Response()
+            shutil.rmtree(output_dir)
