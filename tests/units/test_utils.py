@@ -22,7 +22,6 @@ from contextlib import closing
 from datetime import datetime
 from io import StringIO
 
-from eodag.utils import AllDownloadedCallback, DownloadedCallback
 from tests.context import (
     ProgressCallback,
     get_timestamp,
@@ -74,24 +73,6 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(path_to_uri(r"C:\tmp\file.txt"), "file:///C:/tmp/file.txt")
         else:
             self.assertEqual(path_to_uri("/tmp/file.txt"), "file:///tmp/file.txt")
-
-    def test_downloaded_callback(self):
-        """DownloadedCallback instance is callable with product as parameter"""
-        downloaded_callback = DownloadedCallback()
-        self.assertTrue(callable(downloaded_callback))
-        try:
-            downloaded_callback(product=None)
-        except TypeError as e:
-            self.fail(f"DownloadedCallback got an error when called: {e}")
-
-    def test_alldownloaded_callback(self):
-        """AllDownloadedCallback instance is callable with search_result as parameter"""
-        alldownloaded_callback = AllDownloadedCallback()
-        self.assertTrue(callable(alldownloaded_callback))
-        try:
-            alldownloaded_callback(search_result=None)
-        except TypeError as e:
-            self.fail(f"AllDownloadedCallback got an error when called: {e}")
 
     def test_progresscallback_init(self):
         """ProgressCallback can be instantiated using defaults values"""

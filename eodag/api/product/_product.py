@@ -223,7 +223,6 @@ class EOProduct(object):
 
     def download(
         self,
-        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -236,12 +235,6 @@ class EOProduct(object):
         method. A side effect of this method is that it changes the ``location``
         attribute of an EOProduct, from its remote address to the local address.
 
-        :param downloaded_callback: (optional) A method or a callable object which takes
-                                    a product as parameter. You can use the base class
-                                    :class:`~eodag.utils.DownloadedCallback` and override
-                                    its `__call__`.
-        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
-                                   or None
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -304,9 +297,6 @@ class EOProduct(object):
         # close progress bar if needed
         if close_progress_callback:
             progress_callback.close()
-
-        if downloaded_callback:
-            downloaded_callback(self)
 
         if fs_path is None:
             raise DownloadError("Missing file location returned by download process")
