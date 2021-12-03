@@ -16,9 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 import os
-import pathlib
 import random
 import shutil
 import tempfile
@@ -31,10 +29,7 @@ from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
 
-from eodag import config
-from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
-from eodag.plugins.download.http import HTTPDownload
 
 jp = os.path.join
 dirn = os.path.dirname
@@ -283,80 +278,3 @@ class EODagTestCase(unittest.TestCase):
             }
         )
         return mock.DEFAULT
-
-    def _dummy_product(
-        self, provider=None, properties=None, productType=None, **kwargs
-    ):
-        return EOProduct(
-            self.provider if provider is None else provider,
-            self.eoproduct_props if properties is None else properties,
-            productType=self.product_type if productType is None else productType,
-            **kwargs,
-        )
-
-    def _dummy_downloadable_product(
-        self,
-        product=None,
-        base_uri=None,
-        outputs_prefix=None,
-        extract=None,
-        delete_archive=None,
-    ):
-        self._set_download_simulation()
-        dl_config = config.PluginConfig.from_mapping(
-            {
-                "base_uri": "fake_base_uri" if base_uri is None else base_uri,
-                "outputs_prefix": tempfile.gettempdir()
-                if outputs_prefix is None
-                else outputs_prefix,
-                "extract": True if extract is None else extract,
-                "delete_archive": False if delete_archive is None else delete_archive,
-            }
-        )
-        downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        if product is None:
-            product = self._dummy_product()
-        product.register_downloader(downloader, None)
-        return product
-
-    def _clean_product(self, product_path):
-        product_path = pathlib.Path(product_path)
-        download_records_dir = product_path.parent / ".downloaded"
-        product_zip = product_path.parent / (product_path.name + ".zip")
-        shutil.rmtree(product_path)
-        shutil.rmtree(download_records_dir)
-        if os.path.exists(product_zip):
-            os.remove(product_zip)
-
-    def _set_download_simulation(self):
-        self.requests_http_get.return_value = self._download_response_archive()
-
-    def _download_response_archive(self):
-        class Response(object):
-            """Emulation of a response to requests.get method for a zipped product"""
-
-            def __init__(response):
-                # Using a zipped product file
-                with open(self.local_product_as_archive_path, "rb") as fh:
-                    response.__zip_buffer = io.BytesIO(fh.read())
-                cl = response.__zip_buffer.getbuffer().nbytes
-                response.headers = {"content-length": cl}
-
-            def __enter__(response):
-                return response
-
-            def __exit__(response, *args):
-                pass
-
-            def iter_content(response, **kwargs):
-                with response.__zip_buffer as fh:
-                    while True:
-                        chunk = fh.read(kwargs["chunk_size"])
-                        if not chunk:
-                            break
-                        yield chunk
-
-            def raise_for_status(response):
-                pass
-
-        return Response()
