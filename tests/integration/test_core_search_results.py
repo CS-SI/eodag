@@ -20,16 +20,16 @@ import json
 import os
 import shutil
 import tempfile
+import unittest
 
 from shapely import geometry
 
-from tests import TEST_RESOURCES_PATH, EODagTestCase
+from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, EOProduct, SearchResult
 
 
-class TestCoreSearchResults(EODagTestCase):
+class TestCoreSearchResults(unittest.TestCase):
     def setUp(self):
-        super(TestCoreSearchResults, self).setUp()
         self.dag = EODataAccessGateway()
         self.maxDiff = None
         self.geojson_repr = {
@@ -203,46 +203,3 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertIn(1, ss_len)
         self.assertIn(2, ss_len)
         self.assertIn(3, ss_len)
-
-    def test__empty_search_result_return_empty_list(self):
-        products_paths = self.dag.download_all(None)
-        self.assertFalse(products_paths)
-
-    def test_download_all_callback(self):
-        product = self._dummy_downloadable_product()
-        search_result = SearchResult([product])
-
-        def alldownloaded_callback_func(downloaded_search_result):
-            self.assertEqual(search_result, downloaded_search_result)
-            alldownloaded_callback_func.called = True
-
-        alldownloaded_callback_func.called = False
-
-        try:
-            self.assertFalse(alldownloaded_callback_func.called)
-            products_paths = self.dag.download_all(
-                search_result, alldownloaded_callback=alldownloaded_callback_func
-            )
-            self.assertTrue(alldownloaded_callback_func.called)
-        finally:
-            for product_path in products_paths:
-                self._clean_product(product_path)
-
-    def test_download_callback(self):
-        product = self._dummy_downloadable_product()
-
-        def downloaded_callback_func(downloaded_product):
-            self.assertEqual(product, downloaded_product)
-            downloaded_callback_func.called = True
-
-        downloaded_callback_func.called = False
-
-        try:
-            self.assertFalse(downloaded_callback_func.called)
-            product_path = self.dag.download(
-                product, downloaded_callback=downloaded_callback_func
-            )
-            self.assertTrue(downloaded_callback_func.called)
-        finally:
-            # Teardown
-            self._clean_product(product_path)
