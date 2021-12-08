@@ -890,7 +890,7 @@ def md5sum(file_path):
     """Get file MD5 checksum
     >>> import os
     >>> md5sum(os.devnull)
-    d41d8cd98f00b204e9800998ecf8427e
+    'd41d8cd98f00b204e9800998ecf8427e'
 
     :param file_path: Pairs of key / value
     :type file_path: str
