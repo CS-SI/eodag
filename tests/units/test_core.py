@@ -21,6 +21,7 @@ import json
 import os
 import shutil
 import unittest
+import uuid
 from copy import deepcopy
 
 from shapely import wkt
@@ -237,23 +238,18 @@ class TestCore(unittest.TestCase):
         self.assertEqual(dag.locations_config, [])
 
     def test_rebuild_index(self):
-        """Change eodag version and check that whoosh index is rebuilt"""
+        """Change product_types_config_md5 and check that whoosh index is rebuilt"""
         index_dir = os.path.join(self.dag.conf_dir, ".index")
         index_dir_mtime = os.path.getmtime(index_dir)
+        random_md5 = uuid.uuid4().hex
 
-        self.assertNotEqual(self.dag.get_version(), "fake-version")
+        self.assertNotEqual(self.dag.product_types_config_md5, random_md5)
 
-        with mock.patch(
-            "eodag.api.core.EODataAccessGateway.get_version",
-            autospec=True,
-            return_value="fake-version",
-        ):
-            self.assertEqual(self.dag.get_version(), "fake-version")
+        self.dag.product_types_config_md5 = random_md5
+        self.dag.build_index()
 
-            self.dag.build_index()
-
-            # check that index_dir has beeh re-created
-            self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
+        # check that index_dir has beeh re-created
+        self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
 
 
 class TestCoreConfWithEnvVar(unittest.TestCase):
