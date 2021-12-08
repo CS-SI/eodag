@@ -24,7 +24,7 @@ import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from whoosh import fields
+from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
@@ -47,6 +47,7 @@ from eodag.utils import (
     _deprecated,
     get_geometry_from_various,
     makedirs,
+    md5sum,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
@@ -78,9 +79,11 @@ class EODataAccessGateway(object):
     """
 
     def __init__(self, user_conf_file_path=None, locations_conf_path=None):
-        self.product_types_config = SimpleYamlProxyConfig(
-            resource_filename("eodag", os.path.join("resources/", "product_types.yml"))
+        product_types_config_path = resource_filename(
+            "eodag", os.path.join("resources/", "product_types.yml")
         )
+        self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
+        self.product_types_config_md5 = md5sum(product_types_config_path)
         self.providers_config = load_default_config()
 
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
@@ -161,9 +164,6 @@ class EODataAccessGateway(object):
         """
         index_dir = os.path.join(self.conf_dir, ".index")
 
-        # use eodag_version to help keeping index up-to-date
-        eodag_version = self.get_version()
-
         try:
             create_index = not exists_in(index_dir)
         except ValueError as ve:
@@ -189,7 +189,7 @@ class EODataAccessGateway(object):
                 logger.debug("Opening product types index in %s", index_dir)
                 self._product_types_index = open_dir(index_dir)
             try:
-                self.guess_product_type(eodagVersion=eodag_version)
+                self.guess_product_type(md5=self.product_types_config_md5)
             except NoMatchingProductType:
                 create_index = True
             finally:
@@ -202,6 +202,14 @@ class EODataAccessGateway(object):
         if create_index:
             logger.debug("Creating product types index in %s", index_dir)
             makedirs(index_dir)
+
+            kw_analyzer = (
+                analysis.CommaSeparatedTokenizer()
+                | analysis.LowercaseFilter()
+                | analysis.SubstitutionFilter("-", "")
+                | analysis.SubstitutionFilter("_", "")
+            )
+
             product_types_schema = Schema(
                 ID=fields.STORED,
                 abstract=fields.TEXT,
@@ -210,18 +218,19 @@ class EODataAccessGateway(object):
                 platformSerialIdentifier=fields.IDLIST,
                 processingLevel=fields.ID,
                 sensorType=fields.ID,
-                eodagVersion=fields.ID,
+                md5=fields.ID,
                 license=fields.ID,
                 title=fields.ID,
                 missionStartDate=fields.ID,
                 missionEndDate=fields.ID,
+                keywords=fields.KEYWORD(analyzer=kw_analyzer),
             )
             non_indexable_fields = []
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types():
                 versioned_product_type = dict(
-                    product_type, **{"eodagVersion": eodag_version}
+                    product_type, **{"md5": self.product_types_config_md5}
                 )
                 # add to index
                 ix_writer.add_document(
@@ -438,7 +447,8 @@ class EODataAccessGateway(object):
                 "platformSerialIdentifier",
                 "processingLevel",
                 "sensorType",
-                "eodagVersion",
+                "keywords",
+                "md5",
             )
             if kwargs.get(param, None) is not None
         }

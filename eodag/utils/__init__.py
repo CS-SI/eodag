@@ -24,6 +24,7 @@ import ast
 import copy
 import errno
 import functools
+import hashlib
 import inspect
 import logging as py_logging
 import os
@@ -883,3 +884,21 @@ class MockResponse(object):
     def json(self):
         """Return json data"""
         return self.json_data
+
+
+def md5sum(file_path):
+    """Get file MD5 checksum
+    >>> import os
+    >>> md5sum(os.devnull)
+    'd41d8cd98f00b204e9800998ecf8427e'
+
+    :param file_path: Pairs of key / value
+    :type file_path: str
+    :returns: MD5 checksum
+    :rtype: str
+    """
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
