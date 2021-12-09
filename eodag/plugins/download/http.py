@@ -20,6 +20,7 @@ import logging
 import os
 import shutil
 import zipfile
+from cgi import parse_header
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -301,6 +302,7 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
         )
 
+        # get total size using header[Content-length] of each asset
         total_size = sum(
             [
                 int(
@@ -309,14 +311,39 @@ class HTTPDownload(Download):
                 for asset_url in assets_urls
             ]
         )
+        if total_size == 0:
+            # alternative: get total size using header[content-disposition][size] of each asset
+            total_size = sum(
+                [
+                    int(
+                        parse_header(
+                            requests.head(asset_url, auth=auth).headers.get(
+                                "content-disposition", ""
+                            )
+                        )[-1].get("size", 0)
+                    )
+                    for asset_url in assets_urls
+                ]
+            )
         progress_callback.reset(total=total_size)
         error_messages = set()
 
         for asset_url in assets_urls:
 
+            # get asset filename from header
+            asset_content_disposition = requests.head(asset_url, auth=auth).headers.get(
+                "content-disposition", None
+            )
+            if asset_content_disposition:
+                asset_filename = parse_header(asset_content_disposition)[-1]["filename"]
+            else:
+                asset_filename = None
+
+            # get extra parameters to pass to the query
             params = kwargs.pop("dl_url_params", None) or getattr(
                 self.config, "dl_url_params", {}
             )
+
             with requests.get(
                 asset_url,
                 stream=True,
@@ -344,11 +371,14 @@ class HTTPDownload(Download):
                         logger.warning("Skipping %s" % asset_url)
                     error_messages.add(str(e))
                 else:
-                    asset_rel_path = (
-                        asset_url.replace(product.location, "")
-                        .replace("https://", "")
-                        .replace("http://", "")
-                    )
+                    if asset_filename is not None:
+                        asset_rel_path = asset_filename
+                    else:
+                        asset_rel_path = (
+                            asset_url.replace(product.location, "")
+                            .replace("https://", "")
+                            .replace("http://", "")
+                        )
                     asset_abs_path = os.path.join(fs_dir_path, asset_rel_path)
                     asset_abs_path_dir = os.path.dirname(asset_abs_path)
                     if not os.path.isdir(asset_abs_path_dir):
