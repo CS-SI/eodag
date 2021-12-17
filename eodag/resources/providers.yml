@@ -1610,6 +1610,7 @@
         - '{{"query":{{"platform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
         - '$.properties.platform'
       assets: '{$.assets#recursive_sub_str(r"https?(.*)landsatlook.usgs.gov/data/",r"s3\1usgs-landsat/")}'
+      awsProductId: '{$.assets.thumbnail.href#replace_str(r".+/([A-Z0-9_]+)/[\w.]+$",r"\1")}'
   products:
     LANDSAT_C2L1:
       productType: landsat-c2l1
