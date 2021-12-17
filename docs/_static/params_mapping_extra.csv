@@ -1,5 +1,6 @@
 parameter,astraea_eod,aws_eos,creodias,earth_search,earth_search_cog,mundi,onda,peps,sobloo,theia,usgs,usgs_satapi_aws
 assets,metadata only,,,metadata only,metadata only,,,,,,,metadata only
+awsProductId,,,,,,,,,,,,metadata only
 cultivatedCover,,,:green:`queryable metadata`,,,,,,,,,
 desertCover,,,:green:`queryable metadata`,,,,,,,,,
 downloadLink,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only
