@@ -32,7 +32,15 @@ from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.metadata_mapping import format_metadata
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
-from eodag.config import load_default_config, merge_configs
+from eodag.config import (
+    load_default_config,
+    merge_configs,
+    get_provider_credentials,
+    load_providers_credentials,
+    override_credentials_from_mapping,
+    save_providers_credentials,
+    set_provider_credentials_key,
+)
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -82,6 +90,7 @@ from eodag.utils import (
     uri_to_path,
     DownloadedCallback,
 )
+from eodag.utils.cli import ask_confirmation
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,
@@ -93,5 +102,6 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
 )
+from eodag.utils.security import Crypto, CryptoKey
 from eodag.utils.stac_reader import fetch_stac_items
 from tests import TESTS_DOWNLOAD_PATH, TEST_RESOURCES_PATH

@@ -16,7 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import tempfile
+
 # All tests files should import mock from this place
+from contextlib import contextmanager
 from unittest import mock  # noqa
 
 
@@ -29,3 +33,14 @@ def no_blanks(string):
     :returns the same string with all blank characters removed
     """
     return string.replace("\n", "").replace("\t", "").replace(" ", "")
+
+
+@contextmanager
+def tmpfilepath(**kwargs):
+    """Create a temporary file, yield its path, and then delete it"""
+    fd, path = tempfile.mkstemp(**kwargs)
+    os.close(fd)
+    try:
+        yield path
+    finally:
+        os.unlink(path)

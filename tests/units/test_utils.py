@@ -16,15 +16,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import builtins
 import sys
 import unittest
 from contextlib import closing
 from datetime import datetime
 from io import StringIO
+from unittest.mock import patch
 
 from tests.context import (
     DownloadedCallback,
     ProgressCallback,
+    ask_confirmation,
     get_timestamp,
     merge_mappings,
     path_to_uri,
@@ -162,3 +165,27 @@ class TestUtils(unittest.TestCase):
         mapping = {"keyA": True}
         merge_mappings(mapping, {"keya": "bar"})
         self.assertEqual(mapping, {"keyA": True})
+
+    def test_ask_confirmation_answer_y(self):
+        """The method :meth:`~eodag.utils.cli.ask_confirmation` returns True if input is 'y'"""
+        with patch.object(builtins, "input", lambda _: "y"):
+            confirm = ask_confirmation("test ?")
+        self.assertTrue(confirm)
+
+    def test_ask_confirmation_answer_n(self):
+        """The method :meth:`~eodag.utils.cli.ask_confirmation` returns False if input is 'n'"""
+        with patch.object(builtins, "input", lambda _: "n"):
+            confirm = ask_confirmation("test ?")
+        self.assertFalse(confirm)
+
+    def test_ask_confirmation_answer_something_else(self):
+        """The method :meth:`~eodag.utils.cli.ask_confirmation` returns False if input response is neither 'y'/'n'"""
+        with patch.object(builtins, "input", lambda _: "something else"):
+            confirm = ask_confirmation("test ?")
+        self.assertFalse(confirm)
+
+    def test_ask_confirmation_no_answer(self):
+        """The method :meth:`~eodag.utils.cli.ask_confirmation` returns False if input response is empty"""
+        with patch.object(builtins, "input", lambda _: ""):
+            confirm = ask_confirmation("test ?")
+        self.assertFalse(confirm)

@@ -38,7 +38,7 @@ from tests.context import (
     setup_logging,
 )
 from tests.units import test_core
-from tests.utils import mock, no_blanks
+from tests.utils import mock, no_blanks, tmpfilepath
 
 
 class TestEodagCli(unittest.TestCase):
@@ -336,7 +336,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.crunch.assert_called_with(
                 search_results,
                 search_criteria=criteria,
-                **{cruncher: {"minimum_overlap": "10"}}
+                **{cruncher: {"minimum_overlap": "10"}},
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -503,3 +503,281 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertIsInstance(result.exception, AuthenticationError)
         self.assertEqual(download.call_count, 1)
+
+    def test_eodag_credentials_provider_not_found(self):
+        with tmpfilepath() as fpath:
+            result = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "notexists"]
+            )
+        self.assertEqual(result.exit_code, -1)
+
+    @mock.patch("getpass.getpass")
+    def test_eodag_credentials_set(self, getpass_mock):
+        getpass_mock.return_value = "mocked_value"
+        with tmpfilepath() as fpath:
+            result = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo"]
+            )
+        self.assertEqual(result.exit_code, 0)
+
+    @mock.patch("builtins.input")
+    def test_eodag_credentials_already_saved_not_override(self, input_mock):
+        input_mock.return_value = "n"
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    "apikey=abcd",
+                ],
+            )
+            insert_creds2 = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(insert_creds2.exit_code, 1)
+
+    @mock.patch("getpass.getpass")
+    @mock.patch("builtins.input")
+    def test_eodag_credentials_already_saved_override(self, input_mock, getpass_mock):
+        getpass_mock.return_value = "mocked_value"
+        input_mock.return_value = "y"
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    "apikey=abcd",
+                ],
+            )
+            insert_creds2 = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(insert_creds2.exit_code, 0)
+
+    def test_eodag_credentials_set_from_cli(self):
+        with tmpfilepath() as fpath:
+            result = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "peps",
+                    "-y",
+                    "-s",
+                    "username=user1",
+                    "-s",
+                    "password=secret",
+                ],
+            )
+        self.assertEqual(result.exit_code, 0)
+
+    def test_eodag_credentials_set_from_cli_missing_field(self):
+        with tmpfilepath() as fpath:
+            result = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "peps",
+                    "-y",
+                    "-s",
+                    "username=user1",
+                ],
+            )
+        self.assertEqual(result.exit_code, -1)
+
+    def test_eodag_credentials_list(self):
+        result = self.runner.invoke(eodag, ["credentials", "peps", "-l"])
+        self.assertTrue("username" in result.stdout)
+        self.assertTrue("password" in result.stdout)
+        self.assertEqual(result.exit_code, 0)
+
+    def test_eodag_credentials_exists(self):
+        with tmpfilepath() as fpath:
+            check_not_exists = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-e"]
+            )
+            insert_creds = self.runner.invoke(
+                eodag,
+                ["credentials", "--creds", fpath, "sobloo", "-y", "-s", "apikey=abcd"],
+            )
+            check_exists = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-e"]
+            )
+        self.assertEqual(check_not_exists.exit_code, -1)
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(check_exists.exit_code, 0)
+
+    def test_eodag_credentials_read_no_credentials_found(self):
+        with tmpfilepath() as fpath:
+            result = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-ry"]
+            )
+        self.assertEqual(result.exit_code, -1)
+
+    def test_eodag_credentials_read_autoconfirm(self):
+        apikey = "abcd"
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    f"apikey={apikey}",
+                ],
+            )
+            read_creds = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-ry"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(read_creds.exit_code, 0)
+        self.assertTrue(apikey in read_creds.stdout)
+
+    @mock.patch("builtins.input")
+    def test_eodag_credentials_read_confirm(self, input_mock):
+        input_mock.return_value = "y"
+        apikey = "abcd"
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    f"apikey={apikey}",
+                ],
+            )
+            read_creds = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-r"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(read_creds.exit_code, 0)
+        self.assertTrue(apikey in read_creds.stdout)
+
+    @mock.patch("builtins.input")
+    def test_eodag_credentials_read_not_confirm(self, input_mock):
+        input_mock.return_value = "n"
+        apikey = "abcd"
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    f"apikey={apikey}",
+                ],
+            )
+            read_creds = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-r"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(read_creds.exit_code, 1)
+        self.assertTrue(apikey not in read_creds.stdout)
+
+    def test_eodag_credentials_delete_no_credentials_found(self):
+        with tmpfilepath() as fpath:
+            delete_creds = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-d"]
+            )
+        self.assertEqual(delete_creds.exit_code, -1)
+
+    def test_eodag_credentials_delete_autoconfirm(self):
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    "apikey=abcd",
+                ],
+            )
+            delete_creds = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-dy"]
+            )
+            check_exists = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-e"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(delete_creds.exit_code, 0)
+        self.assertEqual(check_exists.exit_code, -1)
+
+    @mock.patch("builtins.input")
+    def test_eodag_credentials_delete_confirm(self, input_mock):
+        input_mock.return_value = "y"
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    "apikey=abcd",
+                ],
+            )
+            delete_creds = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-d"]
+            )
+            check_exists = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-e"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(delete_creds.exit_code, 0)
+        self.assertEqual(check_exists.exit_code, -1)
+
+    @mock.patch("builtins.input")
+    def test_eodag_credentials_delete_not_confirm(self, input_mock):
+        input_mock.return_value = "n"
+        with tmpfilepath() as fpath:
+            insert_creds = self.runner.invoke(
+                eodag,
+                [
+                    "credentials",
+                    "--creds",
+                    fpath,
+                    "sobloo",
+                    "-y",
+                    "-s",
+                    "apikey=abcd",
+                ],
+            )
+            delete_creds = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-d"]
+            )
+            check_exists = self.runner.invoke(
+                eodag, ["credentials", "--creds", fpath, "sobloo", "-e"]
+            )
+        self.assertEqual(insert_creds.exit_code, 0)
+        self.assertEqual(delete_creds.exit_code, 1)
+        self.assertEqual(check_exists.exit_code, 0)
