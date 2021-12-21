@@ -48,7 +48,7 @@ from eodag.utils.exceptions import AuthenticationError, NotAvailableError
 logger = logging.getLogger("eodag.plugins.apis.usgs")
 
 
-class UsgsApi(Api, Download):
+class UsgsApi(Download, Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
 
     def query(
