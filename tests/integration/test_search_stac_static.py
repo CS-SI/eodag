@@ -83,8 +83,8 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertIsInstance(items, SearchResult)
         self.assertEqual(len(items), self.child_cat_len)
         self.assertEqual(items[0].provider, self.stac_provider)
-        # if no product_type is provided, product_type is None
-        self.assertIsNone(items[0].product_type)
+        # if no product_type is provided, product_type should be guessed from properties
+        self.assertEqual(items[0].product_type, "S2_MSI_L1C")
 
     def test_search_stac_static_load_root_not_recursive(self):
         """load_stac_items from root must provide an empty list when no recursive"""
@@ -120,8 +120,8 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertIsInstance(item, SearchResult)
         self.assertEqual(len(item), 1)
         self.assertEqual(item[0].provider, self.stac_provider)
-        # if no product_type is provided, product_type is None
-        self.assertIsNone(item[0].product_type)
+        # if no product_type is provided, product_type should be guessed from properties
+        self.assertEqual(item[0].product_type, "S2_MSI_L1C")
 
     def test_search_stac_static_load_item_updated_provider(self):
         """load_stac_items from a single item using updated provider"""
