@@ -78,6 +78,8 @@ class Api(PluginTopic):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -103,6 +105,7 @@ class Api(PluginTopic):
         self,
         products,
         auth=None,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -113,6 +116,15 @@ class Api(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param downloaded_callback: (optional) A method or a callable object which takes
+                                    as parameter the `product`. You can use the base class
+                                    :class:`~eodag.utils.DownloadedCallback` and override
+                                    its `__call__`. Will be called each time a product
+                                    finished downloading
+        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
+                                   or None
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries

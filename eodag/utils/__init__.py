@@ -400,6 +400,18 @@ def get_timestamp(date_time):
     return dt.timestamp()
 
 
+class DownloadedCallback:
+    """Example class for callback after each download in :meth:`~eodag.api.core.EODataAccessGateway.download_all`"""
+
+    def __call__(self, product):
+        """Callback
+
+        :param product: The EO product downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        """
+        logger.debug("Download finished for the product %s", product)
+
+
 class ProgressCallback(tqdm):
     """A callable used to render progress to users for long running processes.
 
