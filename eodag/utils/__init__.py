@@ -406,7 +406,7 @@ class DownloadedCallback:
     def __call__(self, product):
         """Callback
 
-        :param product: The EO product downloaded
+        :param product: The downloaded EO product
         :type product: :class:`~eodag.api.product._product.EOProduct`
         """
         logger.debug("Download finished for the product %s", product)

@@ -10,9 +10,10 @@ Logging
 .. automodule:: eodag.utils.logging
    :members:
 
-Progress callback
+Callbacks
 -----------------
 
+.. autofunction:: eodag.utils.DownloadedCallback
 .. autofunction:: eodag.utils.ProgressCallback
 
 Notebook
