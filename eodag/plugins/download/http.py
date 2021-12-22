@@ -381,6 +381,7 @@ class HTTPDownload(Download):
                             asset_url.replace(product.location, "")
                             .replace("https://", "")
                             .replace("http://", "")
+                            .strip("/")
                         )
                     asset_abs_path = os.path.join(fs_dir_path, asset_rel_path)
                     asset_abs_path_dir = os.path.dirname(asset_abs_path)

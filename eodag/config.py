@@ -111,9 +111,21 @@ class ProviderConfig(yaml.YAMLObject):
     def from_mapping(cls, mapping):
         """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
         cls.validate(mapping)
-        for key in ("api", "search", "download", "auth"):
+
+        plugin_keys = ("api", "search", "download", "auth")
+        for key in plugin_keys:
             if key in mapping:
                 mapping[key] = PluginConfig.from_mapping(mapping[key])
+        # per product_type conf
+        for pt in mapping.get("products", {}).keys():
+            for key in plugin_keys:
+                if (
+                    key in mapping["products"][pt]
+                    and mapping["products"][pt][key] is not None
+                ):
+                    mapping["products"][pt][key] = PluginConfig.from_mapping(
+                        mapping["products"][pt][key]
+                    )
         c = cls()
         c.__dict__.update(mapping)
         return c
@@ -257,6 +269,16 @@ def provider_config_init(provider_config):
                 param_value.outputs_prefix = tempfile.gettempdir()
             if not getattr(param_value, "delete_archive", None):
                 param_value.delete_archive = True
+        # per product_type configurations
+        for product_type, product_type_conf in getattr(
+            provider_config, "products", {}
+        ).items():
+            if param_name in product_type_conf.keys():
+                param_value = product_type_conf[param_name]
+                if not getattr(param_value, "outputs_prefix", None):
+                    param_value.outputs_prefix = tempfile.gettempdir()
+                if not getattr(param_value, "delete_archive", None):
+                    param_value.delete_archive = True
     # Set default priority to 0
     provider_config.__dict__.setdefault("priority", 0)
 

@@ -295,7 +295,13 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_get_group_name(string, pattern):
             try:
-                return re.search(pattern, str(string)).lastgroup
+                return ",".join(
+                    [
+                        k
+                        for k, v in re.search(pattern, str(string)).groupdict().items()
+                        if v is not None
+                    ]
+                )
             except AttributeError:
                 logger.warning(
                     "Could not extract property from %s using %s", string, pattern

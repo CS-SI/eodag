@@ -185,10 +185,26 @@ class PluginManager(object):
         :rtype: :class:`~eodag.plugins.download.Download`
         """
         plugin_conf = self.providers_config[product.provider]
+        # use product type specific download plugin if it is configured
+        product_type = getattr(product, "product_type", None)
+        if product_type:
+            product_type_download_conf = (
+                getattr(plugin_conf, "products", {})
+                .get(product_type, {})
+                .get("download", {})
+            )
         try:
+            if not product_type_download_conf:
+                product_type_download_conf = plugin_conf.download
+                product_type_as_plugin_identifier = None
+            else:
+                product_type_as_plugin_identifier = product_type
             plugin_conf.download.priority = plugin_conf.priority
             plugin = self._build_plugin(
-                product.provider, plugin_conf.download, Download
+                product.provider,
+                product_type_download_conf,
+                Download,
+                product_type_as_plugin_identifier,
             )
             return plugin
         except AttributeError:
@@ -196,19 +212,35 @@ class PluginManager(object):
             plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
             return plugin
 
-    def get_auth_plugin(self, provider):
+    def get_auth_plugin(self, provider, product_type=None):
         """Build and return the authentication plugin for the given product_type and
         provider
 
         :param provider: The provider for which to get the authentication plugin
         :type provider: str
+        :param product_type: (optional) The product_type if it has a distinct
+                             configuration than the providers one
+        :type product_type: str
         :returns: The Authentication plugin for the provider
         :rtype: :class:`~eodag.plugins.authentication.Authentication`
         """
         plugin_conf = self.providers_config[provider]
         try:
+            plugin_auth_conf = plugin_conf.auth
+            # use product type specific auth plugin if it is configured
+            optional_args = {}
+            if product_type:
+                optional_args["product_type"] = product_type
+                product_type_conf = getattr(plugin_conf, "products", {}).get(
+                    product_type, {}
+                )
+                if "auth" in product_type_conf:
+                    plugin_auth_conf = product_type_conf["auth"]
+
             plugin_conf.auth.priority = plugin_conf.priority
-            plugin = self._build_plugin(provider, plugin_conf.auth, Authentication)
+            plugin = self._build_plugin(
+                provider, plugin_auth_conf, Authentication, **optional_args
+            )
             return plugin
         except AttributeError:
             # We guess the plugin being built is of type Api, therefore no need
@@ -255,11 +287,13 @@ class PluginManager(object):
             # Sort the provider configs, taking into account the new priority order
             provider_configs.sort(key=attrgetter("priority"), reverse=True)
         # Update the priority of already built plugins of the given provider
-        for provider_name, topic_class in self._built_plugins_cache:
+        for provider_name, product_type, topic_class in self._built_plugins_cache:
             if provider_name == provider:
-                self._built_plugins_cache[(provider, topic_class)].priority = priority
+                self._built_plugins_cache[
+                    (provider, product_type, topic_class)
+                ].priority = priority
 
-    def _build_plugin(self, provider, plugin_conf, topic_class):
+    def _build_plugin(self, provider, plugin_conf, topic_class, product_type=None):
         """Build the plugin of the given topic with the given plugin configuration and
         registered as the given provider
 
@@ -269,6 +303,8 @@ class PluginManager(object):
         :type plugin_conf: :class:`~eodag.config.PluginConfig`
         :param topic_class: The type of plugin to build
         :type topic_class: :class:`~eodag.plugin.base.PluginTopic`
+        :param product_type: (optional) product_type if needed to identify the plugin
+        :type product_type: str
         :returns: The built plugin
         :rtype: :class:`~eodag.plugin.search.Search` or
                 :class:`~eodag.plugin.download.Download` or
@@ -276,7 +312,7 @@ class PluginManager(object):
                 :class:`~eodag.plugin.crunch.Crunch`
         """
         cached_instance = self._built_plugins_cache.setdefault(
-            (provider, topic_class.__name__), None
+            (provider, product_type, topic_class.__name__), None
         )
         if cached_instance is not None:
             return cached_instance
@@ -284,5 +320,7 @@ class PluginManager(object):
             topic_class, getattr(plugin_conf, "type")
         )
         plugin = plugin_class(provider, plugin_conf)
-        self._built_plugins_cache[(provider, topic_class.__name__)] = plugin
+        self._built_plugins_cache[
+            (provider, product_type, topic_class.__name__)
+        ] = plugin
         return plugin

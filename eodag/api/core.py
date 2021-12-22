@@ -1024,7 +1024,9 @@ class EODataAccessGateway(object):
         logger.debug(
             "Using plugin class for search: %s", search_plugin.__class__.__name__
         )
-        auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
+        auth_plugin = self._plugins_manager.get_auth_plugin(
+            search_plugin.provider, product_type
+        )
 
         # append auth to search plugin if needed
         if getattr(search_plugin.config, "need_auth", False):
@@ -1120,6 +1122,7 @@ class EODataAccessGateway(object):
             # WARNING: this means an eo_product that has an invalid geometry can still
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
+            auth_plugin = kwargs.get("auth", None)
             for eo_product in res:
                 # if product_type is not defined, try to guess using properties
                 if eo_product.product_type is None:
@@ -1146,13 +1149,15 @@ class EODataAccessGateway(object):
                         pass
                     else:
                         eo_product.product_type = guesses[0]
+                        auth_plugin = self._plugins_manager.get_auth_plugin(
+                            eo_product.provider, eo_product.product_type
+                        )
+
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    eo_product.register_downloader(
-                        download_plugin, kwargs.get("auth", None)
-                    )
+                    eo_product.register_downloader(download_plugin, auth_plugin)
 
             results.extend(res)
             total_results = None if nb_res is None else total_results + nb_res
@@ -1335,7 +1340,9 @@ class EODataAccessGateway(object):
             if product.downloader is None:
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(product.provider)
+                    auth = self._plugins_manager.get_auth_plugin(
+                        product.provider, product.product_type
+                    )
                 products[i].register_downloader(
                     self._plugins_manager.get_download_plugin(product), auth
                 )
@@ -1477,7 +1484,9 @@ class EODataAccessGateway(object):
         if product.downloader is None:
             auth = product.downloader_auth
             if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(product.provider)
+                auth = self._plugins_manager.get_auth_plugin(
+                    product.provider, product.product_type
+                )
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )
