@@ -17,6 +17,7 @@
 # limitations under the License.
 import logging
 import os
+import re
 import shutil
 from operator import itemgetter
 
@@ -1055,6 +1056,31 @@ class EODataAccessGateway(object):
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
             for eo_product in res:
+                # if product_type is not defined, try to guess using properties
+                if eo_product.product_type is None:
+                    pattern = re.compile(r"[^\w,]+")
+                    try:
+                        guesses = self.guess_product_type(
+                            **{
+                                # k:str(v) for k,v in eo_product.properties.items()
+                                k: pattern.sub("", str(v).upper())
+                                for k, v in eo_product.properties.items()
+                                if k
+                                in [
+                                    "instrument",
+                                    "platform",
+                                    "platformSerialIdentifier",
+                                    "processingLevel",
+                                    "sensorType",
+                                    "keywords",
+                                ]
+                                and v is not None
+                            }
+                        )
+                    except NoMatchingProductType:
+                        pass
+                    else:
+                        eo_product.product_type = guesses[0]
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
