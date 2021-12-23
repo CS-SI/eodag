@@ -416,6 +416,7 @@ class HTTPDownload(Download):
         self,
         products,
         auth=None,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -427,6 +428,7 @@ class HTTPDownload(Download):
         return super(HTTPDownload, self).download_all(
             products,
             auth=auth,
+            downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,

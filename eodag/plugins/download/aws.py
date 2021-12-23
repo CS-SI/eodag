@@ -862,10 +862,21 @@ class AwsDownload(Download):
         logger.debug("Downloading %s to %s" % (chunk.key, product_path))
         return product_path
 
-    def download_all(self, products, auth=None, progress_callback=None, **kwargs):
+    def download_all(
+        self,
+        products,
+        auth=None,
+        downloaded_callback=None,
+        progress_callback=None,
+        **kwargs
+    ):
         """
         download_all using parent (base plugin) method
         """
         return super(AwsDownload, self).download_all(
-            products, auth=auth, progress_callback=progress_callback, **kwargs
+            products,
+            auth=auth,
+            downloaded_callback=downloaded_callback,
+            progress_callback=progress_callback,
+            **kwargs
         )

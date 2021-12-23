@@ -53,6 +53,7 @@ from eodag.utils import (
     path_to_uri,
     ProgressCallback,
     uri_to_path,
+    DownloadedCallback,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,

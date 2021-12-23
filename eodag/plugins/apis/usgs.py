@@ -276,6 +276,7 @@ class UsgsApi(Download, Api):
         self,
         products,
         auth=None,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -287,6 +288,7 @@ class UsgsApi(Download, Api):
         return super(UsgsApi, self).download_all(
             products,
             auth=auth,
+            downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
