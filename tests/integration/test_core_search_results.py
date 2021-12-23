@@ -20,16 +20,16 @@ import json
 import os
 import shutil
 import tempfile
-import unittest
 
 from shapely import geometry
 
-from tests import TEST_RESOURCES_PATH
+from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import EODataAccessGateway, EOProduct, SearchResult
 
 
-class TestCoreSearchResults(unittest.TestCase):
+class TestCoreSearchResults(EODagTestCase):
     def setUp(self):
+        super(TestCoreSearchResults, self).setUp()
         self.dag = EODataAccessGateway()
         self.maxDiff = None
         self.geojson_repr = {
@@ -203,3 +203,27 @@ class TestCoreSearchResults(unittest.TestCase):
         self.assertIn(1, ss_len)
         self.assertIn(2, ss_len)
         self.assertIn(3, ss_len)
+
+    def test_empty_search_result_return_empty_list(self):
+        products_paths = self.dag.download_all(None)
+        self.assertFalse(products_paths)
+
+    def test_download_all_callback(self):
+        product = self._dummy_downloadable_product()
+        search_result = SearchResult([product])
+
+        def downloaded_callback_func(product):
+            self.assertTrue(product in search_result)
+            downloaded_callback_func.times_called += 1
+
+        downloaded_callback_func.times_called = 0
+
+        try:
+            self.assertEqual(downloaded_callback_func.times_called, 0)
+            products_paths = self.dag.download_all(
+                search_result, downloaded_callback=downloaded_callback_func
+            )
+            self.assertEqual(downloaded_callback_func.times_called, len(search_result))
+        finally:
+            for product_path in products_paths:
+                self._clean_product(product_path)
