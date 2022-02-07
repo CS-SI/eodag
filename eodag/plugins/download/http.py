@@ -31,6 +31,7 @@ from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
 from eodag.utils import ProgressCallback, path_to_uri
@@ -147,6 +148,7 @@ class HTTPDownload(Download):
                         stream=True,
                         auth=auth,
                         params=params,
+                        timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
                     ) as stream:
                         try:
                             stream.raise_for_status()
@@ -349,6 +351,7 @@ class HTTPDownload(Download):
                 stream=True,
                 auth=auth,
                 params=params,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             ) as stream:
                 try:
                     stream.raise_for_status()

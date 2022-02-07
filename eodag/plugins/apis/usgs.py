@@ -35,6 +35,7 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
 from eodag.utils import (
@@ -240,6 +241,7 @@ class UsgsApi(Download, Api):
         with requests.get(
             req_url,
             stream=True,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         ) as stream:
             try:
                 stream.raise_for_status()
