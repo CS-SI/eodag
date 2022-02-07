@@ -28,7 +28,14 @@ import requests
 from shapely import geometry
 
 from tests import EODagTestCase
-from tests.context import Download, EOProduct, HTTPDownload, NoDriver, config
+from tests.context import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    Download,
+    EOProduct,
+    HTTPDownload,
+    NoDriver,
+    config,
+)
 from tests.utils import mock
 
 
@@ -259,7 +266,11 @@ class TestEOProduct(EODagTestCase):
 
             # Check that the mocked request was properly called.
             self.requests_http_get.assert_called_with(
-                self.download_url, stream=True, auth=None, params={}
+                self.download_url,
+                stream=True,
+                auth=None,
+                params={},
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
             # A .downloaded folder should be created, including a text file that
@@ -290,7 +301,11 @@ class TestEOProduct(EODagTestCase):
             product_dir_path = product.download()
             # Check that the mocked request was properly called.
             self.requests_http_get.assert_called_with(
-                self.download_url, stream=True, auth=None, params={}
+                self.download_url,
+                stream=True,
+                auth=None,
+                params={},
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             # Check that the product's directory exists.
             self.assertTrue(os.path.isdir(product_dir_path))
@@ -348,7 +363,11 @@ class TestEOProduct(EODagTestCase):
             )
             # Check that dl_url_params are properly passed to the GET request
             self.requests_http_get.assert_called_with(
-                self.download_url, stream=True, auth=None, params={"fakeparam": "dummy"}
+                self.download_url,
+                stream=True,
+                auth=None,
+                params={"fakeparam": "dummy"},
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             # Check that "outputs_prefix" is respected.
             product_dir_path = pathlib.Path(product_dir_path)
