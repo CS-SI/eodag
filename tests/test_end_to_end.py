@@ -109,8 +109,8 @@ CREODIAS_SEARCH_ARGS = [
 MUNDI_SEARCH_ARGS = [
     "mundi",
     "S2_MSI_L1C",
-    "2019-11-08",
-    "2019-11-16",
+    "2021-11-08",
+    "2021-11-16",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 # As of 2021-01-14 the products previously required in 2020-08 were offline.
@@ -158,6 +158,7 @@ class EndToEndBase(unittest.TestCase):
             "start": start,
             "end": end,
             "geom": geom,
+            "raise_errors": True,
         }
         if items_per_page:
             search_criteria["items_per_page"] = items_per_page
@@ -267,34 +268,39 @@ class TestEODagEndToEnd(EndToEndBase):
         except OSError:
             pass
 
-    def execute_download(
-        self, product, expected_filename, wait_sec=10, timeout_sec=120
-    ):
+    def execute_download(self, product, expected_filename, wait_sec=5, timeout_sec=120):
         """Download the product in a child process, avoiding to perform the entire
         download, then do some checks and delete the downloaded result from the
         filesystem.
         """
 
-        dl_process = multiprocessing.Process(
-            target=self.eodag.download,
+        start_time = time.time()
+
+        dl_pool = multiprocessing.Pool()
+
+        dl_result = dl_pool.apply_async(
+            func=self.eodag.download,
             args=(product, None, wait_sec / 60, timeout_sec / 60),
         )
-        dl_process.start()
+        max_wait_time = timeout_sec
+        while (
+            not glob.glob("%s/[!quicklooks]*" % TESTS_DOWNLOAD_PATH)
+            and max_wait_time > 0
+        ):
+            # check every 2s if download has start
+            dl_result.wait(2)
+            max_wait_time -= 2
+
         try:
-            # timeout loop, to handle long download start times
-            max_wait_time = timeout_sec
-            while (
-                dl_process.is_alive()
-                and not glob.glob("%s/[!quicklooks]*" % TESTS_DOWNLOAD_PATH)
-                and max_wait_time > 0
-            ):
-                dl_process.join(timeout=wait_sec)
-                max_wait_time -= wait_sec
-            if dl_process.is_alive():  # The process has timed out
-                dl_process.terminate()
-        except KeyboardInterrupt:
-            while dl_process.is_alive():
-                dl_process.terminate()
+            dl_result.get(timeout=wait_sec)
+        except multiprocessing.TimeoutError:
+            pass
+
+        dl_pool.terminate()
+        dl_pool.close()
+
+        stop_time = time.time()
+        print(stop_time - start_time)
 
         self.assertIn(
             expected_filename, os.listdir(product.downloader.config.outputs_prefix)
@@ -379,7 +385,7 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_end_to_end_search_download_earth_search(self):
         product = self.execute_search(*EARTH_SEARCH_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
+        self.execute_download(product, expected_filename, wait_sec=15)
 
     def test_end_to_end_search_download_earth_search_cog(self):
         product = self.execute_search(*EARTH_SEARCH_COG_SEARCH_ARGS)
