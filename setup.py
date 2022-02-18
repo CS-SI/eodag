@@ -92,6 +92,9 @@ setup(
             "sphinx-book-theme >= 0.1.0",
             "sphinx-copybutton",
             "nbsphinx == 0.8.5",
+            # pined markup safe until fixed in sphinx or jinja
+            # see https://github.com/pallets/jinja/issues/1585
+            "markupsafe < 2.1.0",
         ],
     },
     entry_points={
