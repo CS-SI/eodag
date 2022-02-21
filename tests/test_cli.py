@@ -35,6 +35,7 @@ from tests.context import (
     download,
     eodag,
     search_crunch,
+    setup_logging,
 )
 from tests.units.test_core import TestCore
 from tests.utils import mock, no_blanks
@@ -52,8 +53,14 @@ class TestEodagCli(unittest.TestCase):
             yield conf_file
 
     def setUp(self):
+        super(TestEodagCli, self).setUp()
         self.runner = CliRunner()
         self.faker = Faker()
+
+    def tearDown(self):
+        super(TestEodagCli, self).tearDown()
+        # Default logging: no logging but still displays progress bars
+        setup_logging(1)
 
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""
