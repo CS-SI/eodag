@@ -402,7 +402,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="FRA")
         )
         self.assertIsInstance(geom_france, MultiPolygon)
-        self.assertEqual(len(geom_france), 3)  # France + Guyana + Corsica
+        self.assertEqual(len(geom_france.geoms), 3)  # France + Guyana + Corsica
 
     def test_get_geometry_from_various_locations_with_wrong_location_name_in_kwargs(
         self,
@@ -437,7 +437,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="PA[A-Z]")
         )
         self.assertIsInstance(geom_regex_pa, MultiPolygon)
-        self.assertEqual(len(geom_regex_pa), 2)
+        self.assertEqual(len(geom_regex_pa.geoms), 2)
 
     def test_get_geometry_from_various_locations_no_match_raises_error(self):
         """If the location search doesn't match any of the feature attribute a ValueError must be raised"""
@@ -461,7 +461,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # France + Guyana + Corsica + somewhere over Poland
-        self.assertEqual(len(geom_combined), 4)
+        self.assertEqual(len(geom_combined.geoms), 4)
         geometry = {
             "lonmin": 0,
             "latmin": 50,
@@ -473,7 +473,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # The bounding box overlaps with France inland
-        self.assertEqual(len(geom_combined), 3)
+        self.assertEqual(len(geom_combined.geoms), 3)
 
 
 class TestCoreSearch(unittest.TestCase):

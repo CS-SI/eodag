@@ -84,7 +84,7 @@ class TestSafeBuild(unittest.TestCase):
 
         with self.assertLogs(self.logger, logging.WARN) as cm:
             # assertLogs fails if no warning is raised
-            self.logger.warn("Dummy warning")
+            self.logger.warning("Dummy warning")
             self.awsd.check_manifest_file_list(product_path)
 
         self.assertEqual(len(cm.output), 1)
@@ -128,7 +128,7 @@ class TestSafeBuild(unittest.TestCase):
 
         with self.assertLogs(self.logger, logging.WARN) as cm:
             # assertLogs fails if no warning is raised
-            self.logger.warn("Dummy warning")
+            self.logger.warning("Dummy warning")
             self.awsd.check_manifest_file_list(product_path)
 
         self.assertEqual(len(cm.output), 1)
@@ -172,7 +172,7 @@ class TestSafeBuild(unittest.TestCase):
 
         with self.assertLogs(self.logger, logging.WARN) as cm:
             # assertLogs fails if no warning is raised
-            self.logger.warn("Dummy warning")
+            self.logger.warning("Dummy warning")
             self.awsd.check_manifest_file_list(product_path)
 
         self.assertEqual(len(cm.output), 2)
