@@ -64,10 +64,11 @@ setup(
     python_requires=">=3.6",
     extras_require={
         "dev": [
-            "nose",
+            "pytest",
+            "pytest-cov",
+            "pytest-html",
             "tox",
             "faker",
-            "coverage",
             "moto",
             "twine",
             "wheel",
