@@ -253,11 +253,17 @@ class AwsDownload(Download):
             bucket_names_and_prefixes = [self.get_bucket_name_and_prefix(product)]
 
         # add complementary urls
-        for complementary_url_key in product_conf.get("complementary_url_key", []):
-            bucket_names_and_prefixes.append(
-                self.get_bucket_name_and_prefix(
-                    product, product.properties[complementary_url_key]
+        try:
+            for complementary_url_key in product_conf.get("complementary_url_key", []):
+                bucket_names_and_prefixes.append(
+                    self.get_bucket_name_and_prefix(
+                        product, product.properties[complementary_url_key]
+                    )
                 )
+        except KeyError:
+            logger.error(
+                "complementary_url_key %s is missing in %s properties"
+                % (complementary_url_key, product.properties["id"])
             )
 
         # authenticate
@@ -566,13 +572,18 @@ class AwsDownload(Download):
 
     def check_manifest_file_list(self, product_path):
         """Checks if products listed in manifest.safe exist"""
-        manifest_path = [
+        manifest_path_list = [
             os.path.join(d, x)
             for d, _, f in os.walk(product_path)
             for x in f
             if x == "manifest.safe"
-        ][0]
-        safe_path = os.path.dirname(manifest_path)
+        ]
+        if len(manifest_path_list) == 0:
+            raise FileNotFoundError(
+                f"No manifest.safe could be found in {product_path}"
+            )
+        else:
+            safe_path = os.path.dirname(manifest_path_list[0])
 
         root = etree.parse(os.path.join(safe_path, "manifest.safe")).getroot()
         for safe_file in root.xpath("//fileLocation"):
@@ -587,13 +598,18 @@ class AwsDownload(Download):
         """Add missing dirs to downloaded product"""
         try:
             logger.debug("Finalize SAFE product")
-            manifest_path = [
+            manifest_path_list = [
                 os.path.join(d, x)
                 for d, _, f in os.walk(product_path)
                 for x in f
                 if x == "manifest.safe"
-            ][0]
-            safe_path = os.path.dirname(manifest_path)
+            ]
+            if len(manifest_path_list) == 0:
+                raise FileNotFoundError(
+                    f"No manifest.safe could be found in {product_path}"
+                )
+            else:
+                safe_path = os.path.dirname(manifest_path_list[0])
 
             # create empty missing dirs
             auxdata_path = os.path.join(safe_path, "AUX_DATA")
@@ -868,7 +884,7 @@ class AwsDownload(Download):
         auth=None,
         downloaded_callback=None,
         progress_callback=None,
-        **kwargs
+        **kwargs,
     ):
         """
         download_all using parent (base plugin) method
@@ -878,5 +894,5 @@ class AwsDownload(Download):
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
-            **kwargs
+            **kwargs,
         )
