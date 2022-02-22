@@ -266,7 +266,7 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_to_bounds_lists(input_geom):
             if isinstance(input_geom, MultiPolygon):
-                geoms = [geom for geom in input_geom]
+                geoms = [geom for geom in input_geom.geoms]
                 # sort with larger one at first (stac-browser only plots first one)
                 geoms.sort(key=lambda x: x.area, reverse=True)
                 return [list(x.bounds[0:4]) for x in geoms]
