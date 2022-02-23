@@ -297,3 +297,50 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.assertEqual(estimate, self.onda_products_count)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
+
+
+class TestSearchPluginStacSearch(BaseSearchPluginTest):
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_mapping_earthsearch(self, mock__request):
+        """The metadata mapping for earth_search should return well formatted results"""  # noqa
+
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "context": {"page": 1, "limit": 2, "matched": 1, "returned": 2},
+            },
+            {
+                "features": [
+                    {
+                        "id": "foo",
+                        "geometry": geojson_geometry,
+                        "properties": {
+                            "sentinel:product_id": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456",
+                        },
+                    },
+                    {
+                        "id": "bar",
+                        "geometry": geojson_geometry,
+                        "properties": {
+                            "sentinel:product_id": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
+                        },
+                    },
+                ]
+            },
+        ]
+
+        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+
+        products, estimate = search_plugin.query(
+            page=1, items_per_page=2, auth=None, **self.search_criteria_s2_msi_l1c
+        )
+        self.assertEqual(
+            products[0].properties["productPath"],
+            "products/2020/10/9/S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456",
+        )
+        self.assertEqual(
+            products[1].properties["productPath"],
+            "products/2020/9/10/S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
+        )
