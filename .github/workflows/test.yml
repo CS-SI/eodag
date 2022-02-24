@@ -60,8 +60,10 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: Unit Test Results (Python ${{ matrix.python-version }})
-        path: test-reports/junit-report.xml
+        name: unit-test-results-python${{ matrix.python-version }}
+        path: |
+          test-reports/junit-report.xml
+          test-reports/coverage.xml
 
   publish-test-results:
     name: "Publish Unit Tests Results"
@@ -78,7 +80,15 @@ jobs:
     - name: Publish Unit Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       with:
-        files: artifacts/**/*.xml
+        files: artifacts/**/*junit-report.xml
+    - name: Publish Coverage Report
+      uses: 5monkeys/cobertura-action@master
+      with:
+        path: artifacts/**/*coverage.xml
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        minimum_coverage: 70
+        fail_below_threshold: false
+        only_changed_files: true
 
   build-docs:
     name: Build the docs
