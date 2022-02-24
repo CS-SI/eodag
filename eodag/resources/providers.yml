@@ -1107,6 +1107,7 @@
     base_uri: 'https://zipper.creodias.eu/download/'
     extract: true
     order_enabled: false
+    archive_depth: 2
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: 'https://auth.creodias.eu/auth'
@@ -1657,12 +1658,6 @@
       # about 500 products.
       max_items_per_page: 500
     metadata_mapping:
-      cloudCover:
-        - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
-        - '$.properties."eo:cloud_cover"'
-      platformSerialIdentifier:
-        - '{{"query":{{"platform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
-        - '$.properties.platform'
       assets: '{$.assets#recursive_sub_str(r"https?(.*)landsatlook.usgs.gov/data/",r"s3\1usgs-landsat/")}'
       awsProductId: '{$.assets.thumbnail.href#replace_str(r".+/([A-Z0-9_]+)/[\w.]+$",r"\1")}'
   products:

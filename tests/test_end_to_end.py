@@ -372,6 +372,7 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    # @unittest.skip("expired aws_eos api key")
     def test_end_to_end_search_download_aws_eos(self):
         product = self.execute_search(*AWSEOS_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
@@ -442,6 +443,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertGreater(len(results), 10)
 
 
+# @unittest.skip("skip auto run")
 class TestEODagEndToEndComplete(unittest.TestCase):
     """Make real and complete test cases that search for products, download them and
     extract them. There should be just a tiny number of these tests which can be quite
@@ -587,7 +589,9 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # download it, if its location points to the remote location.
         # The product should be automatically extracted.
         product.location = product.remote_location
-        product_dir_path = self.eodag.download(product, extract=True)
+        product_dir_path = self.eodag.download(
+            product, extract=True, delete_archive=False
+        )
 
         # Its size should be >= 5 KB
         downloaded_size = sum(
@@ -679,6 +683,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 ),
             )
 
+    # @unittest.skip("expired aws_eos api key")
     def test_end_to_end_good_apikey_wrong_credentials_aws_eos(self):
         # Setup
         # We retrieve correct credentials from the user_conf.yml file
