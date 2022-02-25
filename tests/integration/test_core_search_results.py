@@ -25,11 +25,18 @@ from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import EODataAccessGateway, EOProduct, SearchResult
+from tests.utils import mock
 
 
 class TestCoreSearchResults(EODagTestCase):
     def setUp(self):
         super(TestCoreSearchResults, self).setUp()
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = tempfile.mkdtemp()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir
+        )
+        self.expanduser_mock.start()
         self.dag = EODataAccessGateway()
         self.maxDiff = None
         self.geojson_repr = {
@@ -101,6 +108,15 @@ class TestCoreSearchResults(EODagTestCase):
         # intersection as a shapely geometry
         for product in self.search_result:
             product.search_intersection = geometry.shape(product.search_intersection)
+
+    def tearDown(self):
+        super(TestCoreSearchResults, self).tearDown()
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        try:
+            shutil.rmtree(self.tmp_home_dir)
+        except OSError:
+            pass
 
     def test_core_serialize_search_results(self):
         """The core api must serialize a search results to geojson"""

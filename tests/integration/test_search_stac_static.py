@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import shutil
+import tempfile
 import unittest
 
 from tests import TEST_RESOURCES_PATH
@@ -27,11 +29,19 @@ from tests.context import (
     FilterProperty,
     SearchResult,
 )
+from tests.utils import mock
 
 
 class TestSearchStacStatic(unittest.TestCase):
     def setUp(self):
         super(TestSearchStacStatic, self).setUp()
+
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = tempfile.mkdtemp()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir
+        )
+        self.expanduser_mock.start()
 
         self.dag = EODataAccessGateway()
 
@@ -74,6 +84,15 @@ class TestSearchStacStatic(unittest.TestCase):
         """
         )
         self.dag.set_preferred_provider(self.static_stac_provider)
+
+    def tearDown(self):
+        super(TestSearchStacStatic, self).tearDown()
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        try:
+            shutil.rmtree(self.tmp_home_dir)
+        except OSError:
+            pass
 
     def test_search_stac_static_load_child(self):
         """load_stac_items from child catalog must provide items"""
