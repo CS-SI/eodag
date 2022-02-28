@@ -20,6 +20,7 @@ import glob
 import json
 import os
 import shutil
+import tempfile
 import unittest
 import uuid
 from copy import deepcopy
@@ -43,7 +44,29 @@ from tests.context import (
 from tests.utils import mock
 
 
-class TestCore(unittest.TestCase):
+class TestCoreBase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreBase, cls).setUpClass()
+        # Mock home and eodag conf directory to tmp dir
+        cls.tmp_home_dir = tempfile.mkdtemp()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir
+        )
+        cls.expanduser_mock.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCoreBase, cls).tearDownClass()
+        # stop Mock and remove tmp config dir
+        cls.expanduser_mock.stop()
+        try:
+            shutil.rmtree(cls.tmp_home_dir)
+        except OSError:
+            pass
+
+
+class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
         "L8_REFLECTANCE": ["theia"],
         "L57_REFLECTANCE": ["theia"],
@@ -155,6 +178,7 @@ class TestCore(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(TestCore, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         cls.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
 
@@ -252,13 +276,15 @@ class TestCore(unittest.TestCase):
         self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
 
 
-class TestCoreConfWithEnvVar(unittest.TestCase):
+class TestCoreConfWithEnvVar(TestCoreBase):
     @classmethod
     def setUpClass(cls):
+        super(TestCoreConfWithEnvVar, cls).setUpClass()
         cls.dag = EODataAccessGateway()
 
     @classmethod
     def tearDownClass(cls):
+        super(TestCoreConfWithEnvVar, cls).tearDownClass()
         if os.getenv("EODAG_CFG_FILE") is not None:
             os.environ.pop("EODAG_CFG_FILE")
         if os.getenv("EODAG_LOCS_CFG_FILE") is not None:
@@ -344,9 +370,10 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
         self.execution_involving_conf_dir(inspect=["locations.yml", "shp"])
 
 
-class TestCoreGeometry(unittest.TestCase):
+class TestCoreGeometry(TestCoreBase):
     @classmethod
     def setUpClass(cls):
+        super(TestCoreGeometry, cls).setUpClass()
         cls.dag = EODataAccessGateway()
 
     def test_get_geometry_from_various_no_locations(self):
@@ -476,9 +503,10 @@ class TestCoreGeometry(unittest.TestCase):
         self.assertEqual(len(geom_combined.geoms), 3)
 
 
-class TestCoreSearch(unittest.TestCase):
+class TestCoreSearch(TestCoreBase):
     @classmethod
     def setUpClass(cls):
+        super(TestCoreSearch, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(
