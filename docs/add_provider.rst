@@ -83,8 +83,25 @@ EODAG maps each provider's specific metadata parameters to a common model using
 `OGC OpenSearch Extension for Earth Observation <http://docs.opengeospatial.org/is/13-026r9/13-026r9.html>`_.
 Extra parameters having no equivalent in this model are mapped as is.
 
-Depending on the provider, some parameters are queryable or not. The following
-tables list the parameters supported by providers, and if they are queryable or not.
+Depending on the provider, some parameters are queryable or not. This is configured in `providers.yml`:
+
+* If a parameter metadata-mapping is a list, the first element will help constructing the query \
+  (using `format() <https://docs.python.org/fr/3/library/string.html#string.Formatter.format>`_), and the 2nd will \
+  help extracting its values from the query result (using `jsonpath <https://github.com/h2non/jsonpath-ng>`_)
+* If a parameter metadata-mapping is a string, it will not be queryable and this string will help extracting its \
+  values from the query result (using `jsonpath <https://github.com/h2non/jsonpath-ng>`_).
+
+.. code-block::
+
+   some_provider:
+      search:
+         metadata_mapping:
+            queryableParameter:
+               - 'this_is_query_string={queryableParameter}'
+               - '$.jsonpath.in.result.to.parameter'
+            nonQueryableParameter: '$.jsonpath.in.result.to.another_parameter'
+
+The following tables list the parameters supported by providers, and if they are queryable or not.
 
 OpenSearch parameters (`CSV <_static/params_mapping_opensearch.csv>`__)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
