@@ -2,6 +2,7 @@
 # Copyright 2017-2018 CS GROUP - France (CS SI)
 # All rights reserved
 
+import ast
 import datetime
 import os
 import re
@@ -10,13 +11,14 @@ from collections import namedtuple
 import dateutil.parser
 import markdown
 from dateutil import tz
+from jsonpath_ng.ext import parse
 from shapely.geometry import Polygon, shape
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
-from eodag.config import load_stac_config
+from eodag.config import load_stac_config, load_stac_provider_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
@@ -37,6 +39,9 @@ crunchers = {
     "overlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
 }
 stac_config = load_stac_config()
+stac_provider_config = load_stac_provider_config()
+
+STAC_QUERY_PATTERN = "query.*.*"
 
 
 def format_product_types(product_types):
@@ -263,46 +268,154 @@ def get_geometry(arguments):
     return geom
 
 
+def get_datetime(arguments):
+    """Get the datetime criterias from the search arguments
+
+    :param arguments: Request args
+    :type arguments: dict
+    :returns: Start date and end date from datetime string.
+    :rtype: Tuple[Optional[str], Optional[str]]
+    """
+    datetime_str = arguments.pop("datetime", None)
+    if datetime_str:
+        datetime_split = datetime_str.split("/")
+        if len(datetime_split) == 1:
+            return get_date(datetime_split[0]), None
+        elif len(datetime_split) == 2:
+            return get_date(datetime_split[0]), get_date(datetime_split[1])
+    dtstart = get_date(arguments.pop("dtstart", None))
+    dtend = get_date(arguments.pop("dtend", None))
+    return dtstart, dtend
+
+
+def get_metadata_query_paths(metadata_mapping):
+    """Get dict of query paths and their names from metadata_mapping
+
+    >>> metadata_mapping = {
+    ...     'cloudCover': [
+    ...         '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}',
+    ...         '$.properties."eo:cloud_cover"'
+    ...     ]
+    ... }
+    >>> get_metadata_query_paths(metadata_mapping)
+    {'query.eo:cloud_cover.lte': 'cloudCover'}
+
+    :param metadata_mapping: STAC metadata mapping (see 'resources/stac_provider.yml')
+    :type metadata_mapping: dict
+    :returns: Mapping of query paths with their corresponding names
+    :rtype: dict
+    """
+    metadata_query_paths = {}
+    for metadata_name, metadata_spec in metadata_mapping.items():
+        # When metadata_spec have a length of 1 the query path is not specified
+        if len(metadata_spec) == 2:
+            metadata_query_template = metadata_spec[0]
+            try:
+                # We create the dict corresponding to the metadata query of the metadata
+                metadata_query_dict = ast.literal_eval(
+                    metadata_query_template.format(**{metadata_name: None})
+                )
+                # We check if our query path pattern matches one or more of the dict path
+                matches = [
+                    (str(match.full_path))
+                    for match in parse(STAC_QUERY_PATTERN).find(metadata_query_dict)
+                ]
+                if matches:
+                    metadata_query_path = matches[0]
+                    metadata_query_paths[metadata_query_path] = metadata_name
+            except KeyError:
+                pass
+    return metadata_query_paths
+
+
+def get_arguments_query_paths(arguments):
+    """Get dict of query paths and their values from arguments
+
+    Build a mapping of the query paths present in the arguments
+    with their values. All matching paths of our STAC_QUERY_PATTERN
+    ('query.*.*') are used.
+
+    >>> arguments = {'another': 'example', 'query': {'eo:cloud_cover': {'lte': '10'}, 'foo': {'eq': 'bar'}}}
+    >>> get_arguments_query_paths(arguments)
+    {'query.eo:cloud_cover.lte': '10', 'query.foo.eq': 'bar'}
+
+    :param arguments: Request args
+    :type arguments: dict
+    :returns: Mapping of query paths with their corresponding values
+    :rtype: dict
+    """
+    return dict(
+        (str(match.full_path), match.value)
+        for match in parse(STAC_QUERY_PATTERN).find(arguments)
+    )
+
+
+def get_criterias_from_metadata_mapping(metadata_mapping, arguments):
+    """Get criterias from the search arguments with the metadata mapping config
+
+    :param metadata_mapping: STAC metadata mapping (see 'resources/stac_provider.yml')
+    :type metadata_mapping: dict
+    :param arguments: Request args
+    :type arguments: dict
+    :returns: Mapping of criterias with their corresponding values
+    :rtype: dict
+    """
+    criterias = {}
+    metadata_query_paths = get_metadata_query_paths(metadata_mapping)
+    arguments_query_paths = get_arguments_query_paths(arguments)
+    for query_path in arguments_query_paths:
+        if query_path in metadata_query_paths:
+            criteria_name = metadata_query_paths[query_path]
+        else:
+            # The criteria is custom and we must read
+            # its name from the query path
+            criteria_name = query_path.split(".")[1]
+        criteria_value = arguments_query_paths[query_path]
+        criterias[criteria_name] = criteria_value
+    return criterias
+
+
 def search_products(product_type, arguments):
     """Returns product search results
 
     :param product_type: The product type criteria
     :type product_type: str
-    :param arguments: Filter criteria
+    :param arguments: Request args
     :type arguments: dict
     :returns: A search result
     :rtype serialized GeoJSON response"""
 
     try:
+        arg_product_type = arguments.pop("product_type", None)
+        unserialized = arguments.pop("unserialized", None)
+
         page, items_per_page = get_pagination_info(arguments)
+        dtstart, dtend = get_datetime(arguments)
         geom = get_geometry(arguments)
 
-        criteria = {
+        criterias = {
+            "productType": product_type if product_type else arg_product_type,
+            "page": page,
+            "items_per_page": items_per_page,
+            "raise_errors": True,
+            "start": dtstart,
+            "end": dtend,
             "geom": geom,
-            "startTimeFromAscendingNode": get_date(arguments.pop("dtstart", None)),
-            "completionTimeFromAscendingNode": get_date(arguments.pop("dtend", None)),
-            "cloudCover": get_int(arguments.pop("cloudCover", None)),
-            "productType": product_type,
         }
-        if "id" in arguments.keys():
-            criteria["id"] = arguments["id"]
 
-        if items_per_page is None:
-            items_per_page = DEFAULT_ITEMS_PER_PAGE
-        if page is None:
-            page = DEFAULT_PAGE
-
-        unserialized = arguments.pop("unserialized", None)
-        arguments.pop("product_type", None)
-
-        products, total = eodag_api.search(
-            page=page,
-            items_per_page=items_per_page,
-            raise_errors=True,
-            **dict(criteria, **arguments),
+        stac_provider_metadata_mapping = stac_provider_config.get("search", {}).get(
+            "metadata_mapping", {}
         )
+        extra_criterias = get_criterias_from_metadata_mapping(
+            stac_provider_metadata_mapping, arguments
+        )
+        criterias.update(extra_criterias)
 
-        products = filter_products(products, arguments, **criteria)
+        # We remove potential None values to use the default values of the search method
+        criterias = dict((k, v) for k, v in criterias.items() if v is not None)
+
+        products, total = eodag_api.search(**criterias)
+        products = filter_products(products, arguments, **criterias)
 
         if not unserialized:
             response = SearchResult(products).as_geojson_object()
@@ -413,17 +526,17 @@ def get_stac_collection_by_id(url, root, collection_id, provider=None):
     ).get_collection_by_id(collection_id)
 
 
-def get_stac_item_by_id(url, item_id, root="/", catalogs=[], provider=None):
+def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
     """Build STAC item by id
 
     :param url: Requested URL
     :type url: str
     :param item_id: Product ID
     :type item_id: str
+    :param catalogs: Catalogs list (only first is used as product_type)
+    :type catalogs: list
     :param root: (optional) API root
     :type root: str
-    :param catalogs: (optional) Catalogs list (only first is used as product_type)
-    :type catalogs: list
     :param provider: (optional) Chosen provider
     :type provider: str
     :returns: Collection dictionnary
