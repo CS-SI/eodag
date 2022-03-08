@@ -22,13 +22,7 @@ import unittest
 import geojson
 
 from tests import mock
-from tests.context import (
-    DEFAULT_ITEMS_PER_PAGE,
-    SearchResult,
-    ValidationError,
-    eodag_http_server,
-    get_date,
-)
+from tests.context import DEFAULT_ITEMS_PER_PAGE, SearchResult, eodag_http_server
 
 
 class RequestTestCase(unittest.TestCase):
@@ -175,20 +169,6 @@ class RequestTestCase(unittest.TestCase):
             )
         )
         self.assertGreaterEqual(len(result1.features), len(result2.features))
-
-    def test_get_date(self):
-        """Date validation function must correctly validate dates"""
-        get_date("2018-01-01")
-        get_date("2018-01-01T")
-        get_date("2018-01-01T00:00")
-        get_date("2018-01-01T00:00:00")
-        get_date("2018-01-01T00:00:00Z")
-        get_date("20180101")
-
-        self.assertRaises(ValidationError, get_date, "foo")
-        self.assertRaises(ValidationError, get_date, "foo2018-01-01")
-
-        self.assertIsNone(get_date(None))
 
     def test_date_search(self):
         result1 = self._request_valid(
