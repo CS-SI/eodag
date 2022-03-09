@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -53,11 +53,11 @@ def params_mapping_to_csv(
     """Get providers metadata mapping, with corresponding description from OGC
     documentation and writes it to csv files (for opensearch and extra params)
 
-    :param ogc_doc_url: (Optional) URL to OGC OpenSearch documentation
+    :param ogc_doc_url: (optional) URL to OGC OpenSearch documentation
     :type ogc_doc_url: str
-    :param opensearch_csv_file_path: (Optional) path to opensearch params csv output file
+    :param opensearch_csv_file_path: (optional) Path to opensearch params csv output file
     :type opensearch_csv_file_path: str
-    :param extra_csv_file_path: (Optional) path to extra params csv output file
+    :param extra_csv_file_path: (optional) Path to extra params csv output file
     :type extra_csv_file_path: str
     """
     dag = EODataAccessGateway()

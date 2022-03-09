@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.9]
+        python-version: [3.6, "3.10"]
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout the repo
@@ -56,6 +56,40 @@ jobs:
       run: python -m pip install tox tox-gh-actions
     - name: Test with tox
       run: tox
+    - name: Upload Unit Test Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: unit-test-results-python${{ matrix.python-version }}
+        path: |
+          test-reports/junit-report.xml
+          test-reports/coverage.xml
+
+  publish-test-results:
+    name: "Publish Unit Tests Results"
+    needs: tests
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: artifacts
+
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      with:
+        files: artifacts/**/*junit-report.xml
+    - name: Publish Coverage Report
+      uses: 5monkeys/cobertura-action@master
+      if: ${{ github.event_name == 'pull_request' }}
+      with:
+        path: artifacts/**/*coverage.xml
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        minimum_coverage: 70
+        fail_below_threshold: false
+        only_changed_files: true
 
   build-docs:
     name: Build the docs

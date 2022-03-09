@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -23,6 +23,7 @@ from datetime import datetime
 from io import StringIO
 
 from tests.context import (
+    DownloadedCallback,
     ProgressCallback,
     get_timestamp,
     merge_mappings,
@@ -73,6 +74,15 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(path_to_uri(r"C:\tmp\file.txt"), "file:///C:/tmp/file.txt")
         else:
             self.assertEqual(path_to_uri("/tmp/file.txt"), "file:///tmp/file.txt")
+
+    def test_downloaded_callback(self):
+        """DownloadedCallback instance is callable with product as parameter"""
+        downloaded_callback = DownloadedCallback()
+        self.assertTrue(callable(downloaded_callback))
+        try:
+            downloaded_callback(product=None)
+        except TypeError as e:
+            self.fail(f"DownloadedCallback got an error when called: {e}")
 
     def test_progresscallback_init(self):
         """ProgressCallback can be instantiated using defaults values"""

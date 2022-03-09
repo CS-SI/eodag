@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -83,12 +83,14 @@ class ProviderConfig(yaml.YAMLObject):
     :type api: :class:`~eodag.config.PluginConfig`
     :param search: (optional) The configuration of a plugin of type Search
     :type search: :class:`~eodag.config.PluginConfig`
-    :param dict products: (optional) The products types supported by the provider
+    :param products: (optional) The products types supported by the provider
+    :type products: dict
     :param download: (optional) The configuration of a plugin of type Download
     :type download: :class:`~eodag.config.PluginConfig`
     :param auth: (optional) The configuration of a plugin of type Authentication
     :type auth: :class:`~eodag.config.PluginConfig`
-    :param dict kwargs: Additional configuration variables for this provider
+    :param kwargs: Additional configuration variables for this provider
+    :type kwargs: dict
     """
 
     yaml_loader = yaml.Loader
@@ -118,7 +120,11 @@ class ProviderConfig(yaml.YAMLObject):
 
     @staticmethod
     def validate(config_keys):
-        """Validate a :class:`~eodag.config.ProviderConfig`"""
+        """Validate a :class:`~eodag.config.ProviderConfig`
+
+        :param config_keys: The configurations keys to validate
+        :type config_keys: dict
+        """
         if "name" not in config_keys:
             raise ValidationError("Provider config must have name key")
         if not any(k in config_keys for k in ("api", "search", "download", "auth")):
@@ -134,7 +140,8 @@ class ProviderConfig(yaml.YAMLObject):
     def update(self, mapping):
         """Update the configuration parameters with values from `mapping`
 
-        :param dict mapping: The mapping from which to override configuration parameters
+        :param mapping: The mapping from which to override configuration parameters
+        :type mapping: dict
         """
         if mapping is None:
             mapping = {}
@@ -158,9 +165,11 @@ class PluginConfig(yaml.YAMLObject):
 
     :param name: The name of the plugin class to use to instantiate the plugin object
     :type name: str
-    :param dict metadata_mapping: (optional) The mapping between eodag metadata and
+    :param metadata_mapping: (optional) The mapping between eodag metadata and
                                   the plugin specific metadata
-    :param dict free_params: (optional) Additional configuration parameters
+    :type metadata_mapping: dict
+    :param free_params: (optional) Additional configuration parameters
+    :type free_params: dict
     """
 
     yaml_loader = yaml.Loader
@@ -191,7 +200,8 @@ class PluginConfig(yaml.YAMLObject):
     def update(self, mapping):
         """Update the configuration parameters with values from `mapping`
 
-        :param dict mapping: The mapping from which to override configuration parameters
+        :param mapping: The mapping from which to override configuration parameters
+        :type mapping: dict
         """
         if mapping is None:
             mapping = {}
@@ -201,7 +211,7 @@ class PluginConfig(yaml.YAMLObject):
 
 
 def load_default_config():
-    """Build the providers configuration into a dictionnary
+    """Load the providers configuration into a dictionnary
 
     :returns: The default provider's configuration
     :rtype: dict
@@ -210,7 +220,7 @@ def load_default_config():
 
 
 def load_config(config_path):
-    """Build providers configuration into a dictionnary from a given file
+    """Load the providers configuration into a dictionnary from a given file
 
     :param config_path: The path to the provider config file
     :type config_path: str
@@ -245,6 +255,8 @@ def provider_config_init(provider_config):
             param_value = getattr(provider_config, param_name)
             if not getattr(param_value, "outputs_prefix", None):
                 param_value.outputs_prefix = tempfile.gettempdir()
+            if not getattr(param_value, "delete_archive", None):
+                param_value.delete_archive = True
     # Set default priority to 0
     provider_config.__dict__.setdefault("priority", 0)
 
@@ -252,7 +264,8 @@ def provider_config_init(provider_config):
 def override_config_from_file(config, file_path):
     """Override a configuration with the values in a file
 
-    :param dict config: An eodag providers configuration dictionary
+    :param config: An eodag providers configuration dictionary
+    :type config: dict
     :param file_path: The path to the file from where the new values will be read
     :type file_path: str
     """
@@ -271,7 +284,8 @@ def override_config_from_file(config, file_path):
 def override_config_from_env(config):
     """Override a configuration with environment variables values
 
-    :param dict config: An eodag providers configuration dictionary
+    :param config: An eodag providers configuration dictionary
+    :type config: dict
     """
 
     def build_mapping_from_env(env_var, env_value, mapping):
@@ -292,7 +306,8 @@ def override_config_from_env(config):
         :type env_var: str
         :param env_value: The value from environment variable
         :type env_value: str
-        :param dict mapping: The mapping in which the value will be created
+        :param mapping: The mapping in which the value will be created
+        :type mapping: dict
         """
         parts = env_var.split("__")
         if len(parts) == 1:
@@ -316,8 +331,10 @@ def override_config_from_env(config):
 def override_config_from_mapping(config, mapping):
     """Override a configuration with the values in a mapping
 
-    :param dict config: An eodag providers configuration dictionary
-    :param dict mapping: The mapping containing the values to be overriden
+    :param config: An eodag providers configuration dictionary
+    :type config: dict
+    :param mapping: The mapping containing the values to be overriden
+    :type mapping: dict
     """
     for provider, new_conf in mapping.items():
         old_conf = config.get(provider)
@@ -344,8 +361,10 @@ def override_config_from_mapping(config, mapping):
 def merge_configs(config, other_config):
     """Override a configuration with the values of another configuration
 
-    :param dict config: An eodag providers configuration dictionary
-    :param dict other_config: An eodag providers configuration dictionary
+    :param config: An eodag providers configuration dictionary
+    :type config: dict
+    :param other_config: An eodag providers configuration dictionary
+    :type other_config: dict
     """
     # configs union with other_config values as default
     other_config = dict(config, **other_config)
@@ -374,7 +393,7 @@ def merge_configs(config, other_config):
 
 
 def load_yml_config(yml_path):
-    """Build a conf dictionnary from given yml absolute path
+    """Load a conf dictionnary from given yml absolute path
 
     :returns: The yml configuration file
     :rtype: dict
@@ -384,7 +403,7 @@ def load_yml_config(yml_path):
 
 
 def load_stac_config():
-    """Build the stac configuration into a dictionnary
+    """Load the stac configuration into a dictionnary
 
     :returns: The stac configuration
     :rtype: dict
@@ -395,7 +414,7 @@ def load_stac_config():
 
 
 def load_stac_api_config():
-    """Build the stac API configuration into a dictionnary
+    """Load the stac API configuration into a dictionnary
 
     :returns: The stac API configuration
     :rtype: dict
@@ -406,7 +425,7 @@ def load_stac_api_config():
 
 
 def load_stac_provider_config():
-    """Build the stac provider configuration into a dictionnary
+    """Load the stac provider configuration into a dictionnary
 
     :returns: The stac provider configuration
     :rtype: dict

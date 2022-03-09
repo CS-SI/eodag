@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -35,6 +35,7 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
 from eodag.utils import (
@@ -48,25 +49,13 @@ from eodag.utils.exceptions import AuthenticationError, NotAvailableError
 logger = logging.getLogger("eodag.plugins.apis.usgs")
 
 
-class UsgsApi(Api, Download):
+class UsgsApi(Download, Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
 
     def query(
         self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
     ):
-        """Search for data on USGS catalogues
-
-        .. versionchanged::
-           2.2.0
-
-                * Based on usgs library v0.3.0 which now uses M2M API. The library
-                  is used for both search & download
-
-        .. versionchanged::
-            1.0
-
-                * ``product_type`` is no longer mandatory
-        """
+        """Search for data on USGS catalogues"""
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
@@ -217,9 +206,20 @@ class UsgsApi(Api, Download):
                 product.properties["productType"], product.properties["id"], product_id
             )
             try:
-                req_urls.extend(
-                    [x["url"] for x in download_request["data"]["preparingDownloads"]]
-                )
+                if len(download_request["data"]["preparingDownloads"]) > 0:
+                    req_urls.extend(
+                        [
+                            x["url"]
+                            for x in download_request["data"]["preparingDownloads"]
+                        ]
+                    )
+                else:
+                    req_urls.extend(
+                        [
+                            x["url"]
+                            for x in download_request["data"]["availableDownloads"]
+                        ]
+                    )
             except KeyError as e:
                 raise NotAvailableError(
                     "%s not found in %s download_request"
@@ -241,6 +241,7 @@ class UsgsApi(Api, Download):
         with requests.get(
             req_url,
             stream=True,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         ) as stream:
             try:
                 stream.raise_for_status()
@@ -288,17 +289,19 @@ class UsgsApi(Api, Download):
         self,
         products,
         auth=None,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs
     ):
         """
-        download_all using parent (base plugin) method
+        Download all using parent (base plugin) method
         """
         return super(UsgsApi, self).download_all(
             products,
             auth=auth,
+            downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,

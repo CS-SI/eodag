@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# Copyright 2022, CS GROUP - France, http://www.c-s.fr
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -84,7 +84,7 @@ class TestSafeBuild(unittest.TestCase):
 
         with self.assertLogs(self.logger, logging.WARN) as cm:
             # assertLogs fails if no warning is raised
-            self.logger.warn("Dummy warning")
+            self.logger.warning("Dummy warning")
             self.awsd.check_manifest_file_list(product_path)
 
         self.assertEqual(len(cm.output), 1)
@@ -128,7 +128,7 @@ class TestSafeBuild(unittest.TestCase):
 
         with self.assertLogs(self.logger, logging.WARN) as cm:
             # assertLogs fails if no warning is raised
-            self.logger.warn("Dummy warning")
+            self.logger.warning("Dummy warning")
             self.awsd.check_manifest_file_list(product_path)
 
         self.assertEqual(len(cm.output), 1)
@@ -172,7 +172,7 @@ class TestSafeBuild(unittest.TestCase):
 
         with self.assertLogs(self.logger, logging.WARN) as cm:
             # assertLogs fails if no warning is raised
-            self.logger.warn("Dummy warning")
+            self.logger.warning("Dummy warning")
             self.awsd.check_manifest_file_list(product_path)
 
         self.assertEqual(len(cm.output), 2)

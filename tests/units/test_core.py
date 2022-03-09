@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -20,7 +20,9 @@ import glob
 import json
 import os
 import shutil
+import tempfile
 import unittest
+import uuid
 from copy import deepcopy
 
 from shapely import wkt
@@ -42,7 +44,29 @@ from tests.context import (
 from tests.utils import mock
 
 
-class TestCore(unittest.TestCase):
+class TestCoreBase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreBase, cls).setUpClass()
+        # Mock home and eodag conf directory to tmp dir
+        cls.tmp_home_dir = tempfile.mkdtemp()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir
+        )
+        cls.expanduser_mock.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCoreBase, cls).tearDownClass()
+        # stop Mock and remove tmp config dir
+        cls.expanduser_mock.stop()
+        try:
+            shutil.rmtree(cls.tmp_home_dir)
+        except OSError:
+            pass
+
+
+class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
         "L8_REFLECTANCE": ["theia"],
         "L57_REFLECTANCE": ["theia"],
@@ -154,6 +178,7 @@ class TestCore(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(TestCore, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         cls.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
 
@@ -237,32 +262,29 @@ class TestCore(unittest.TestCase):
         self.assertEqual(dag.locations_config, [])
 
     def test_rebuild_index(self):
-        """Change eodag version and check that whoosh index is rebuilt"""
+        """Change product_types_config_md5 and check that whoosh index is rebuilt"""
         index_dir = os.path.join(self.dag.conf_dir, ".index")
         index_dir_mtime = os.path.getmtime(index_dir)
+        random_md5 = uuid.uuid4().hex
 
-        self.assertNotEqual(self.dag.get_version(), "fake-version")
+        self.assertNotEqual(self.dag.product_types_config_md5, random_md5)
 
-        with mock.patch(
-            "eodag.api.core.EODataAccessGateway.get_version",
-            autospec=True,
-            return_value="fake-version",
-        ):
-            self.assertEqual(self.dag.get_version(), "fake-version")
+        self.dag.product_types_config_md5 = random_md5
+        self.dag.build_index()
 
-            self.dag.build_index()
-
-            # check that index_dir has beeh re-created
-            self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
+        # check that index_dir has beeh re-created
+        self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
 
 
-class TestCoreConfWithEnvVar(unittest.TestCase):
+class TestCoreConfWithEnvVar(TestCoreBase):
     @classmethod
     def setUpClass(cls):
+        super(TestCoreConfWithEnvVar, cls).setUpClass()
         cls.dag = EODataAccessGateway()
 
     @classmethod
     def tearDownClass(cls):
+        super(TestCoreConfWithEnvVar, cls).tearDownClass()
         if os.getenv("EODAG_CFG_FILE") is not None:
             os.environ.pop("EODAG_CFG_FILE")
         if os.getenv("EODAG_LOCS_CFG_FILE") is not None:
@@ -348,9 +370,10 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
         self.execution_involving_conf_dir(inspect=["locations.yml", "shp"])
 
 
-class TestCoreGeometry(unittest.TestCase):
+class TestCoreGeometry(TestCoreBase):
     @classmethod
     def setUpClass(cls):
+        super(TestCoreGeometry, cls).setUpClass()
         cls.dag = EODataAccessGateway()
 
     def test_get_geometry_from_various_no_locations(self):
@@ -406,7 +429,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="FRA")
         )
         self.assertIsInstance(geom_france, MultiPolygon)
-        self.assertEqual(len(geom_france), 3)  # France + Guyana + Corsica
+        self.assertEqual(len(geom_france.geoms), 3)  # France + Guyana + Corsica
 
     def test_get_geometry_from_various_locations_with_wrong_location_name_in_kwargs(
         self,
@@ -441,7 +464,7 @@ class TestCoreGeometry(unittest.TestCase):
             locations_config, locations=dict(country="PA[A-Z]")
         )
         self.assertIsInstance(geom_regex_pa, MultiPolygon)
-        self.assertEqual(len(geom_regex_pa), 2)
+        self.assertEqual(len(geom_regex_pa.geoms), 2)
 
     def test_get_geometry_from_various_locations_no_match_raises_error(self):
         """If the location search doesn't match any of the feature attribute a ValueError must be raised"""
@@ -465,7 +488,7 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # France + Guyana + Corsica + somewhere over Poland
-        self.assertEqual(len(geom_combined), 4)
+        self.assertEqual(len(geom_combined.geoms), 4)
         geometry = {
             "lonmin": 0,
             "latmin": 50,
@@ -477,12 +500,13 @@ class TestCoreGeometry(unittest.TestCase):
         )
         self.assertIsInstance(geom_combined, MultiPolygon)
         # The bounding box overlaps with France inland
-        self.assertEqual(len(geom_combined), 3)
+        self.assertEqual(len(geom_combined.geoms), 3)
 
 
-class TestCoreSearch(unittest.TestCase):
+class TestCoreSearch(TestCoreBase):
     @classmethod
     def setUpClass(cls):
+        super(TestCoreSearch, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(

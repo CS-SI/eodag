@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -18,55 +18,100 @@
 search:
   type: StacSearch
   pagination:
-    next_page_url_tpl: '{url}?{search}&limit={items_per_page}&page={page}'
+    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
     total_items_nb_key_path: '$.context.matched'
     next_page_url_key_path: '$.links[?(@.rel="next")].href'
+    next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'
+    next_page_merge_key_path: '$.links[?(@.rel="next")].merge'
   discover_metadata:
     auto_discovery: true
     metadata_pattern: '^[a-zA-Z0-9_:-]+$'
-    search_param: '{metadata}={{{metadata}}}'
+    search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
     metadata_path: '$.properties.*'
   metadata_mapping:
     # OpenSearch Parameters for Collection Search (Table 3)
     productType:
-      - 'collections={productType}'
+      - '{{"collections":["{productType}"]}}'
       - '$.collection'
-    doi: '$.properties."sci:doi"'
-    processingLevel: '$.properties."processing:level"'
-    platform: '$.properties.constellation'
-    platformSerialIdentifier: '$.properties.platform'
-    instrument: '$.properties.instruments'
+    doi:
+      - '{{"query":{{"sci:doi":{{"eq":"{doi}"}}}}}}'
+      - '$.properties."sci:doi"'
+    processingLevel:
+      - '{{"query":{{"processing:level":{{"eq":"{processingLevel}"}}}}}}'
+      - '$.properties."processing:level"'
+    platform:
+      - '{{"query":{{"constellation":{{"eq":"{platform}"}}}}}}'
+      - '$.properties.constellation'
+    platformSerialIdentifier:
+      - '{{"query":{{"platform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
+      - '$.properties.platform'
+    instrument:
+    # to test
+      - '{{"query":{{"instruments":{{"eq":"{instrument}"}}}}}}'
+      - '$.properties.instruments'
     # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
     title: '$.id'
     abstract: '$.properties.description'
-    resolution: '$.properties.gsd'
-    publicationDate: '$.properties.published'
+    resolution:
+      - '{{"query":{{"gsd":{{"eq":"{resolution}"}}}}}}'
+      - '$.properties.gsd'
+    publicationDate:
+      - '{{"query":{{"published":{{"eq":"{publicationDate}"}}}}}}'
+      - '$.properties.published'
     # OpenSearch Parameters for Product Search (Table 5)
-    orbitNumber: '$.properties."sat:relative_orbit"'
-    orbitDirection: '$.properties."sat:orbit_state"'
-    cloudCover: '$.properties."eo:cloud_cover"'
-    sensorMode: '$.properties."sar:instrument_mode"'
-    creationDate: '$.properties.created'
-    modificationDate: '$.properties.updated'
-    productVersion: '$.properties.version'
+    orbitNumber:
+      - '{{"query":{{"sat:relative_orbit":{{"eq":"{orbitNumber}"}}}}}}'
+      - '$.properties."sat:relative_orbit"'
+    orbitDirection:
+      - '{{"query":{{"sat:orbit_state":{{"eq":"{orbitDirection}"}}}}}}'
+      - '$.properties."sat:orbit_state"'
+    cloudCover:
+      - '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}'
+      - '$.properties."eo:cloud_cover"'
+    sensorMode:
+      - '{{"query":{{"sar:instrument_mode":{{"eq":"{sensorMode}"}}}}}}'
+      - '$.properties."sar:instrument_mode"'
+    creationDate:
+      - '{{"query":{{"created":{{"eq":"{creationDate}"}}}}}}'
+      - '$.properties.created'
+    modificationDate:
+      - '{{"query":{{"updated":{{"eq":"{modificationDate}"}}}}}}'
+      - '$.properties.updated'
+    productVersion:
+      - '{{"query":{{"version":{{"eq":"{productVersion}"}}}}}}'
+      - '$.properties.version'
     # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-    availabilityTime: '$.properties.availabilityTime'
-    acquisitionStation: '$.properties.acquisitionStation'
-    acquisitionSubType: '$.properties.acquisitionSubType'
+    availabilityTime:
+      - '{{"query":{{"availabilityTime":{{"eq":"{availabilityTime}"}}}}}}'
+      - '$.properties.availabilityTime'
+    acquisitionStation:
+      - '{{"query":{{"acquisitionStation":{{"eq":"{acquisitionStation}"}}}}}}'
+      - '$.properties.acquisitionStation'
+    acquisitionSubType:
+      - '{{"query":{{"acquisitionSubType":{{"eq":"{acquisitionSubType}"}}}}}}'
+      - '$.properties.acquisitionSubType'
     startTimeFromAscendingNode: '$.properties.datetime'
     completionTimeFromAscendingNode:
-      - 'datetime={startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}'
+      - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
       - '$.properties.end_datetime'
-    illuminationAzimuthAngle: '$.properties."view:sun_azimuth"'
-    illuminationElevationAngle: '$.properties."view:sun_elevation"'
-    polarizationChannels: '$.properties."sar:polarizations"'
-    dopplerFrequency: '$.properties."sar:frequency_band"'
+    illuminationAzimuthAngle:
+      - '{{"query":{{"view:sun_azimuth":{{"eq":"{illuminationAzimuthAngle}"}}}}}}'
+      - '$.properties."view:sun_azimuth"'
+    illuminationElevationAngle:
+      - '{{"query":{{"view:sun_elevation":{{"eq":"{illuminationElevationAngle}"}}}}}}'
+      - '$.properties."view:sun_elevation"'
+    polarizationChannels:
+      - '{{"query":{{"sar:polarizations":{{"eq":"{polarizationChannels}"}}}}}}'
+      - '$.properties."sar:polarizations"'
+    dopplerFrequency:
+      - '{{"query":{{"sar:frequency_band":{{"eq":"{dopplerFrequency}"}}}}}}'
+      - '$.properties."sar:frequency_band"'
     # Custom parameters (not defined in the base document referenced above)
     id:
-      - 'ids={id}'
+      - '{{"ids":["{id}"]}}'
       - '$.id'
     geometry:
-      - 'bbox={geometry.bounds#csv_list}'
+      - '{{"intersects":{geometry#to_geo_interface}}}'
       - '$.geometry'
     downloadLink: '%(base_uri)s/collections/{productType}/items/{id}'
     quicklook: '$.assets.quicklook.href'

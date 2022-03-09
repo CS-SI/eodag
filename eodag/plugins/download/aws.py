@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -183,7 +183,7 @@ class AwsDownload(Download):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
-        :return: The absolute path to the downloaded product in the local filesystem
+        :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
         if progress_callback is None:
@@ -253,11 +253,17 @@ class AwsDownload(Download):
             bucket_names_and_prefixes = [self.get_bucket_name_and_prefix(product)]
 
         # add complementary urls
-        for complementary_url_key in product_conf.get("complementary_url_key", []):
-            bucket_names_and_prefixes.append(
-                self.get_bucket_name_and_prefix(
-                    product, product.properties[complementary_url_key]
+        try:
+            for complementary_url_key in product_conf.get("complementary_url_key", []):
+                bucket_names_and_prefixes.append(
+                    self.get_bucket_name_and_prefix(
+                        product, product.properties[complementary_url_key]
+                    )
                 )
+        except KeyError:
+            logger.error(
+                "complementary_url_key %s is missing in %s properties"
+                % (complementary_url_key, product.properties["id"])
             )
 
         # authenticate
@@ -408,14 +414,13 @@ class AwsDownload(Download):
     def get_rio_env(self, bucket_name, prefix, auth_dict):
         """Get rasterio environment variables needed for data access authentication.
 
-        :param bucket_name: bucket containg objects
+        :param bucket_name: Bucket containg objects
         :type bucket_name: str
-        :param prefix: prefix used to try auth
+        :param prefix: Prefix used to try auth
         :type prefix: str
-        :param auth_dict: dictionnary containing authentication keys
+        :param auth_dict: Dictionnary containing authentication keys
         :type auth_dict: dict
-
-        :return: The rasterio environement variables
+        :returns: The rasterio environement variables
         :rtype: dict
         """
         if self.s3_session is not None:
@@ -432,14 +437,14 @@ class AwsDownload(Download):
         the most adapted auth strategy.
         Also expose ``s3_session`` as class variable if available.
 
-        :param bucket_name: bucket containg objects
+        :param bucket_name: Bucket containg objects
         :type bucket_name: str
-        :param prefix: prefix used to filter objects on auth try
+        :param prefix: Prefix used to filter objects on auth try
                        (not used to filter returned objects)
         :type prefix: str
-        :param auth_dict: dictionnary containing authentication keys
+        :param auth_dict: Dictionnary containing authentication keys
         :type auth_dict: dict
-        :return: boto3 authenticated objects
+        :returns: The boto3 authenticated objects
         :rtype: :class:`~boto3.resources.collection.s3.Bucket.objectsCollection`
         """
         auth_methods = [
@@ -540,9 +545,9 @@ class AwsDownload(Download):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param url: URL to use as product.location
+        :param url: (optional) URL to use as product.location
         :type url: str
-        :return: bucket_name and prefix as str
+        :returns: bucket_name and prefix as str
         :rtype: tuple
         """
         if not url:
@@ -567,13 +572,18 @@ class AwsDownload(Download):
 
     def check_manifest_file_list(self, product_path):
         """Checks if products listed in manifest.safe exist"""
-        manifest_path = [
+        manifest_path_list = [
             os.path.join(d, x)
             for d, _, f in os.walk(product_path)
             for x in f
             if x == "manifest.safe"
-        ][0]
-        safe_path = os.path.dirname(manifest_path)
+        ]
+        if len(manifest_path_list) == 0:
+            raise FileNotFoundError(
+                f"No manifest.safe could be found in {product_path}"
+            )
+        else:
+            safe_path = os.path.dirname(manifest_path_list[0])
 
         root = etree.parse(os.path.join(safe_path, "manifest.safe")).getroot()
         for safe_file in root.xpath("//fileLocation"):
@@ -588,13 +598,18 @@ class AwsDownload(Download):
         """Add missing dirs to downloaded product"""
         try:
             logger.debug("Finalize SAFE product")
-            manifest_path = [
+            manifest_path_list = [
                 os.path.join(d, x)
                 for d, _, f in os.walk(product_path)
                 for x in f
                 if x == "manifest.safe"
-            ][0]
-            safe_path = os.path.dirname(manifest_path)
+            ]
+            if len(manifest_path_list) == 0:
+                raise FileNotFoundError(
+                    f"No manifest.safe could be found in {product_path}"
+                )
+            else:
+                safe_path = os.path.dirname(manifest_path_list[0])
 
             # create empty missing dirs
             auxdata_path = os.path.join(safe_path, "AUX_DATA")
@@ -863,10 +878,21 @@ class AwsDownload(Download):
         logger.debug("Downloading %s to %s" % (chunk.key, product_path))
         return product_path
 
-    def download_all(self, products, auth=None, progress_callback=None, **kwargs):
+    def download_all(
+        self,
+        products,
+        auth=None,
+        downloaded_callback=None,
+        progress_callback=None,
+        **kwargs,
+    ):
         """
         download_all using parent (base plugin) method
         """
         return super(AwsDownload, self).download_all(
-            products, auth=auth, progress_callback=progress_callback, **kwargs
+            products,
+            auth=auth,
+            downloaded_callback=downloaded_callback,
+            progress_callback=progress_callback,
+            **kwargs,
         )

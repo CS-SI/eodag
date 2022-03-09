@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -30,8 +30,11 @@ class FilterLatestByName(Crunch):
 
     Filter Search results to get only the latest product, based on the name of the product
 
-    :param dict config: crunch configuration, must contain :
-            - `name_pattern` : product name pattern
+    :param config: Crunch configuration, must contain :
+
+                   - `name_pattern` : product name pattern
+
+    :type config: dict
     """
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -17,6 +17,7 @@
 # limitations under the License.
 import logging
 import os
+import re
 import shutil
 from operator import itemgetter
 
@@ -24,7 +25,7 @@ import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from whoosh import fields
+from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
@@ -47,6 +48,7 @@ from eodag.utils import (
     _deprecated,
     get_geometry_from_various,
     makedirs,
+    md5sum,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
@@ -71,16 +73,18 @@ class EODataAccessGateway(object):
     """An API for downloading a wide variety of geospatial products originating
     from different types of providers.
 
-    :param user_conf_file_path: Path to the user configuration file
+    :param user_conf_file_path: (optional) Path to the user configuration file
     :type user_conf_file_path: str
-    :param locations_conf_path: Path to the locations configuration file
+    :param locations_conf_path: (optional) Path to the locations configuration file
     :type locations_conf_path: str
     """
 
     def __init__(self, user_conf_file_path=None, locations_conf_path=None):
-        self.product_types_config = SimpleYamlProxyConfig(
-            resource_filename("eodag", os.path.join("resources/", "product_types.yml"))
+        product_types_config_path = resource_filename(
+            "eodag", os.path.join("resources/", "product_types.yml")
         )
+        self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
+        self.product_types_config_md5 = md5sum(product_types_config_path)
         self.providers_config = load_default_config()
 
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
@@ -158,13 +162,8 @@ class EODataAccessGateway(object):
     def build_index(self):
         """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_
         index for product types searches.
-
-        .. versionadded:: 1.0
         """
         index_dir = os.path.join(self.conf_dir, ".index")
-
-        # use eodag_version to help keeping index up-to-date
-        eodag_version = self.get_version()
 
         try:
             create_index = not exists_in(index_dir)
@@ -191,7 +190,7 @@ class EODataAccessGateway(object):
                 logger.debug("Opening product types index in %s", index_dir)
                 self._product_types_index = open_dir(index_dir)
             try:
-                self.guess_product_type(eodagVersion=eodag_version)
+                self.guess_product_type(md5=self.product_types_config_md5)
             except NoMatchingProductType:
                 create_index = True
             finally:
@@ -204,6 +203,14 @@ class EODataAccessGateway(object):
         if create_index:
             logger.debug("Creating product types index in %s", index_dir)
             makedirs(index_dir)
+
+            kw_analyzer = (
+                analysis.CommaSeparatedTokenizer()
+                | analysis.LowercaseFilter()
+                | analysis.SubstitutionFilter("-", "")
+                | analysis.SubstitutionFilter("_", "")
+            )
+
             product_types_schema = Schema(
                 ID=fields.STORED,
                 abstract=fields.TEXT,
@@ -212,18 +219,19 @@ class EODataAccessGateway(object):
                 platformSerialIdentifier=fields.IDLIST,
                 processingLevel=fields.ID,
                 sensorType=fields.ID,
-                eodagVersion=fields.ID,
+                md5=fields.ID,
                 license=fields.ID,
                 title=fields.ID,
                 missionStartDate=fields.ID,
                 missionEndDate=fields.ID,
+                keywords=fields.KEYWORD(analyzer=kw_analyzer),
             )
             non_indexable_fields = []
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types():
                 versioned_product_type = dict(
-                    product_type, **{"eodagVersion": eodag_version}
+                    product_type, **{"md5": self.product_types_config_md5}
                 )
                 # add to index
                 ix_writer.add_document(
@@ -287,7 +295,7 @@ class EODataAccessGateway(object):
         """Get the provider currently set as the preferred one for searching
         products, along with its priority.
 
-        :return: The provider with the maximum priority and its priority
+        :returns: The provider with the maximum priority and its priority
         :rtype: tuple(str, int)
         """
         providers_with_priority = [
@@ -372,7 +380,7 @@ class EODataAccessGateway(object):
     def list_product_types(self, provider=None):
         """Lists supported product types.
 
-        :param provider: The name of a provider that must support the product
+        :param provider: (optional) The name of a provider that must support the product
                          types we are about to list
         :type provider: str
         :returns: The list of the product types that can be accessed using eodag.
@@ -409,7 +417,7 @@ class EODataAccessGateway(object):
     def available_providers(self, product_type=None):
         """Gives the sorted list of the available providers
 
-        :param product_type: (optional) only list providers configured for this product_type
+        :param product_type: (optional) Only list providers configured for this product_type
         :type product_type: str
         :returns: the sorted list of the available providers
         :rtype: list
@@ -428,11 +436,9 @@ class EODataAccessGateway(object):
         """Find the eodag product type code that best matches a set of search params
 
         :param kwargs: A set of search parameters as keywords arguments
-        :return: The best match for the given parameters
+        :returns: The best match for the given parameters
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
-
-        .. versionadded:: 1.0
         """
         supported_params = {
             param
@@ -442,7 +448,8 @@ class EODataAccessGateway(object):
                 "platformSerialIdentifier",
                 "processingLevel",
                 "sensorType",
-                "eodagVersion",
+                "keywords",
+                "md5",
             )
             if kwargs.get(param, None) is not None
         }
@@ -484,97 +491,44 @@ class EODataAccessGateway(object):
         are configurable through user configuration file or individual
         environment variable.
 
-        :param page: The page number to return (default: 1)
+        :param page: (optional) The page number to return
         :type page: int
-        :param items_per_page: The number of results that must appear in one single
-                               page (default: 20)
+        :param items_per_page: (optional) The number of results that must appear in one single
+                               page
         :type items_per_page: int
-        :param raise_errors:  When an error occurs when searching, if this is set to
-                              True, the error is raised (default: False)
+        :param raise_errors:  (optional) When an error occurs when searching, if this is set to
+                              True, the error is raised
         :type raise_errors: bool
-        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param end: (optional) End sensing time in ISO 8601 format (e.g. "1990-11-26",
                     "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                     If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
-        :param geom: Search area that can be defined in different ways:
+        :param geom: (optional) Search area that can be defined in different ways:
 
-                    * with a Shapely geometry object:
-                      :class:`shapely.geometry.base.BaseGeometry`
-                    * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
-                      ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
-                    * with a bounding box as list of float:
-                      ``[lonmin, latmin, lonmax, latmax]``
-                    * with a WKT str
-
+                     * with a Shapely geometry object:
+                       :class:`shapely.geometry.base.BaseGeometry`
+                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
+                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
+                     * with a bounding box as list of float:
+                       ``[lonmin, latmin, lonmax, latmax]``
+                     * with a WKT str
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
-        :param locations: Location filtering by name using locations configuration
+        :param locations: (optional) Location filtering by name using locations configuration
                           ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
                           the geometry of the features having the property ISO3 starting with
                           'PA' such as Panama and Pakistan in the shapefile configured with
                           name=country and attr=ISO3
         :type locations: dict
-        :param dict kwargs: some other criteria that will be used to do the search,
-                            using paramaters compatibles with the provider
+        :param kwargs: Some other criteria that will be used to do the search,
+                       using paramaters compatibles with the provider
+        :type kwargs: dict
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
-
-        .. versionchanged::
-           2.1.0
-
-                * A new parameter ``locations`` is added to be more explicit about
-                  how to pass a location search (with one or more selections). It also
-                  fixes an issue when a wrong location_name would be provided as kwargs
-                  with no other geometry, resulting in a worldwide search.
-
-        .. versionchanged::
-           2.0.0
-
-                * A location search based on a local Shapefile can be made through
-                  kwargs with ``<location_name>="<attr_regex>"``.
-
-        .. versionchanged::
-           1.6
-
-                * Any search parameter supported by the provider can be passed as
-                  kwargs. Each provider has a 'discover_metadata' configuration
-                  with a metadata_pattern (to which the parameter must match) and a
-                  search_param setting, defining the way the query will be built.
-
-        .. versionchanged::
-           1.0
-
-                * The ``product_type`` parameter is no longer mandatory
-                * Support new search parameters compliant with OpenSearch
-                * Fails if a suitable product type could not be guessed (returns an
-                  empty search result) and if the user is not querying a specific
-                  product (by providing ``id`` as search parameter)
-                * A search by ID is now performed if a product type can not be guessed
-                  from the user input, and if the user has provided an ID as a search
-                  criteria (in the keyword arguments)
-                * It is now possible to pass in the name of the provider on which to
-                  perform the request when searching a product by its ID,
-                  for performance reasons. In that case, the search with the product ID
-                  will be done directly on that provider
-
-        .. versionchanged::
-           0.7.1
-
-                * The search now stops at the first provider that supports the
-                  requested product type (removal of the partial mechanism)
-                * The method now returns a tuple of 2 elements, the first one
-                  being the result and the second one being the total number of
-                  results satisfying the criteria on the provider. This is useful
-                  for applications wrapping eodag and wishing to implement
-                  pagination. An example of this kind of application is the
-                  embedded eodag HTTP server. Also useful for informational purposes
-                  in the CLI: the user is informed about the total number of results
-                  available, and can ask for retrieving a given number of these
-                  results (See the help message of the CLI for more information).
 
         .. note::
             The search interfaces, which are implemented as plugins, are required to
@@ -608,41 +562,38 @@ class EODataAccessGateway(object):
     ):
         """Iterate over the pages of a products search.
 
-        :param items_per_page: The number of results requested per page (default: 20)
+        :param items_per_page: (optional) The number of results requested per page
         :type items_per_page: int
-        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param end: (optional) End sensing time in ISO 8601 format (e.g. "1990-11-26",
                     "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                     If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
-        :param geom: Search area that can be defined in different ways:
+        :param geom: (optional) Search area that can be defined in different ways:
 
-                    * with a Shapely geometry object:
-                      :class:`shapely.geometry.base.BaseGeometry`
-                    * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
-                      ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
-                    * with a bounding box as list of float:
-                      ``[lonmin, latmin, lonmax, latmax]``
-                    * with a WKT str
-
+                     * with a Shapely geometry object:
+                       :class:`shapely.geometry.base.BaseGeometry`
+                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
+                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
+                     * with a bounding box as list of float:
+                       ``[lonmin, latmin, lonmax, latmax]``
+                     * with a WKT str
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
-        :param locations: Location filtering by name using locations configuration
+        :param locations: (optional) Location filtering by name using locations configuration
                           ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
                           the geometry of the features having the property ISO3 starting with
                           'PA' such as Panama and Pakistan in the shapefile configured with
                           name=country and attr=ISO3
         :type locations: dict
-        :param dict kwargs: some other criteria that will be used to do the search,
-                            using paramaters compatibles with the provider
+        :param kwargs: Some other criteria that will be used to do the search,
+                       using paramaters compatibles with the provider
+        :type kwargs: dict
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
-
-        .. versionadded::
-            2.2.0
         """
         search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
@@ -651,9 +602,10 @@ class EODataAccessGateway(object):
         iteration = 1
         # Store the search plugin config pagination.next_page_url_tpl to reset it later
         # since it might be modified if the next_page_url mechanism is used by the
-        # plugin.
+        # plugin. (same thing for next_page_query_obj, next_page_query_obj with POST reqs)
         pagination_config = getattr(search_plugin.config, "pagination", {})
-        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl")
+        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl", None)
+        prev_next_page_query_obj = pagination_config.get("next_page_query_obj", None)
         # Page has to be set to a value even if use_next is True, this is required
         # internally by the search plugin (see collect_search_urls)
         search_kwargs.update(
@@ -662,9 +614,12 @@ class EODataAccessGateway(object):
         )
         prev_product = None
         next_page_url = None
+        next_page_query_obj = None
         while True:
             if iteration > 1 and next_page_url:
                 pagination_config["next_page_url_tpl"] = next_page_url
+            if iteration > 1 and next_page_query_obj:
+                pagination_config["next_page_query_obj"] = next_page_query_obj
             logger.info("Iterate search over multiple pages: page #%s", iteration)
             try:
                 products, _ = self._do_search(
@@ -676,12 +631,29 @@ class EODataAccessGateway(object):
                 # yields, the attr next_page_url (to None) and
                 # config.pagination["next_page_url_tpl"] (to its original value).
                 next_page_url = getattr(search_plugin, "next_page_url", None)
+                next_page_query_obj = getattr(search_plugin, "next_page_query_obj", {})
+                next_page_merge = getattr(search_plugin, "next_page_merge", None)
+
                 if next_page_url:
                     search_plugin.next_page_url = None
                     if prev_next_page_url_tpl:
                         search_plugin.config.pagination[
                             "next_page_url_tpl"
                         ] = prev_next_page_url_tpl
+                if next_page_query_obj:
+                    if prev_next_page_query_obj:
+                        search_plugin.config.pagination[
+                            "next_page_query_obj"
+                        ] = prev_next_page_query_obj
+                    # Update next_page_query_obj for next page req
+                    if next_page_merge:
+                        search_plugin.next_page_query_obj = dict(
+                            getattr(search_plugin, "query_params", {}),
+                            **next_page_query_obj,
+                        )
+                    else:
+                        search_plugin.next_page_query_obj = next_page_query_obj
+
             if len(products) > 0:
                 # The first products between two iterations are compared. If they
                 # are actually the same product, it means the iteration failed at
@@ -742,39 +714,36 @@ class EODataAccessGateway(object):
                                available, a default value of 50 is used instead.
                                items_per_page can also be set to any arbitrary value.
         :type items_per_page: int
-        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param end: (optional) End sensing time in ISO 8601 format (e.g. "1990-11-26",
                     "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                     If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
-        :param geom: Search area that can be defined in different ways:
+        :param geom: (optional) Search area that can be defined in different ways:
 
-                    * with a Shapely geometry object:
-                      :class:`shapely.geometry.base.BaseGeometry`
-                    * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
-                      ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
-                    * with a bounding box as list of float:
-                      ``[lonmin, latmin, lonmax, latmax]``
-                    * with a WKT str
-
+                     * with a Shapely geometry object:
+                       :class:`shapely.geometry.base.BaseGeometry`
+                     * with a bounding box (dict with keys: "lonmin", "latmin", "lonmax", "latmax"):
+                       ``dict.fromkeys(["lonmin", "latmin", "lonmax", "latmax"])``
+                     * with a bounding box as list of float:
+                       ``[lonmin, latmin, lonmax, latmax]``
+                     * with a WKT str
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
-        :param locations: Location filtering by name using locations configuration
+        :param locations: (optional) Location filtering by name using locations configuration
                           ``{"<location_name>"="<attr_regex>"}``. For example, ``{"country"="PA."}`` will use
                           the geometry of the features having the property ISO3 starting with
                           'PA' such as Panama and Pakistan in the shapefile configured with
                           name=country and attr=ISO3
         :type locations: dict
-        :param dict kwargs: some other criteria that will be used to do the search,
-                            using paramaters compatibles with the provider
+        :param kwargs: Some other criteria that will be used to do the search,
+                       using paramaters compatibles with the provider
+        :type kwargs: dict
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
-
-        .. versionadded::
-            2.2.0
         """
         # Get the search plugin and the maximized value
         # of items_per_page if defined for the provider used.
@@ -833,12 +802,11 @@ class EODataAccessGateway(object):
                          This may be useful for performance reasons when the user
                          knows this product is available on the given provider
         :type provider: str
-        :param dict kwargs: Search criteria to help finding the right product
+        :param kwargs: Search criteria to help finding the right product
+        :type kwargs: dict
         :returns: A search result with one EO product or None at all, and the number
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
-
-        .. versionadded:: 1.0
         """
         for plugin in self._plugins_manager.get_search_plugins(provider=provider):
             logger.info(
@@ -880,26 +848,25 @@ class EODataAccessGateway(object):
             * TODO: better expose cloudCover
             * other search params are passed to Searchplugin.query()
 
-        :param start: Start sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
         :type start: str
-        :param end: End sensing time in ISO 8601 format (e.g. "1990-11-26",
+        :param end: (optional) End sensing time in ISO 8601 format (e.g. "1990-11-26",
                     "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                     If no time offset is given, the time is assumed to be given in UTC.
         :type end: str
-        :param geom: Search area that can be defined in different ways (see search)
+        :param geom: (optional) Search area that can be defined in different ways (see search)
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
-        :param locations: Location filtering by name using locations configuration
+        :param locations: (optional) Location filtering by name using locations configuration
         :type locations: dict
-        :param dict kwargs: Some other criteria
-                            * id and/or a provider for a search by
-                            * search criteria to guess the product type
-                            * other criteria compatible with the provider
+        :param kwargs: Some other criteria
+                       * id and/or a provider for a search by
+                       * search criteria to guess the product type
+                       * other criteria compatible with the provider
+        :type kwargs: dict
         :returns: The prepared kwargs to make a query.
         :rtype: dict
-
-        .. versionadded:: 2.2
         """
         product_type = kwargs.get("productType", None)
         if product_type is None:
@@ -1005,17 +972,16 @@ class EODataAccessGateway(object):
 
         :param search_plugin: A search plugin
         :type search_plugin: eodag.plugins.base.Search
-        :param count: Whether to run a query with a count request or not (default: True)
+        :param count: (optional) Whether to run a query with a count request or not
         :type count: bool
-        :param raise_errors:  When an error occurs when searching, if this is set to
-                              True, the error is raised (default: False)
+        :param raise_errors: (optional) When an error occurs when searching, if this is set to
+                             True, the error is raised
         :type raise_errors: bool
-        :param dict kwargs: some other criteria that will be used to do the search
+        :param kwargs: Some other criteria that will be used to do the search
+        :type kwargs: dict
         :returns: A collection of EO products matching the criteria and the total
                   number of results found if count is True else None
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
-
-        .. versionadded:: 1.0
         """
         max_items_per_page = search_plugin.config.pagination.get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
@@ -1090,6 +1056,31 @@ class EODataAccessGateway(object):
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
             for eo_product in res:
+                # if product_type is not defined, try to guess using properties
+                if eo_product.product_type is None:
+                    pattern = re.compile(r"[^\w,]+")
+                    try:
+                        guesses = self.guess_product_type(
+                            **{
+                                # k:str(v) for k,v in eo_product.properties.items()
+                                k: pattern.sub("", str(v).upper())
+                                for k, v in eo_product.properties.items()
+                                if k
+                                in [
+                                    "instrument",
+                                    "platform",
+                                    "platformSerialIdentifier",
+                                    "processingLevel",
+                                    "sensorType",
+                                    "keywords",
+                                ]
+                                and v is not None
+                            }
+                        )
+                    except NoMatchingProductType:
+                        pass
+                    else:
+                        eo_product.product_type = guesses[0]
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
@@ -1142,7 +1133,7 @@ class EODataAccessGateway(object):
 
         :param results: The results of a eodag search request
         :type results: :class:`~eodag.api.search_result.SearchResult`
-        :return: The result of successively applying all the filters to the results
+        :returns: The result of successively applying all the filters to the results
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         search_criteria = kwargs.pop("search_criteria", {})
@@ -1160,13 +1151,7 @@ class EODataAccessGateway(object):
 
         :param searches: List of eodag SearchResult
         :type searches: list
-        :return: list of :class:`~eodag.api.search_result.SearchResult`
-
-        .. versionchanged::
-           2.0
-
-                * Renamed from sort_by_extent to group_by_extent to reflect its
-                  actual behaviour.
+        :returns: list of :class:`~eodag.api.search_result.SearchResult`
         """
         # Dict with extents as keys, each extent being defined by a str
         # "{minx}{miny}{maxx}{maxy}" (each float rounded to 2 dec).
@@ -1187,6 +1172,7 @@ class EODataAccessGateway(object):
     def download_all(
         self,
         search_result,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -1196,6 +1182,13 @@ class EODataAccessGateway(object):
 
         :param search_result: A collection of EO products resulting from a search
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
+        :param downloaded_callback: (optional) A method or a callable object which takes
+                                    as parameter the ``product``. You can use the base class
+                                    :class:`~eodag.utils.DownloadedCallback` and override
+                                    its ``__call__`` method. Will be called each time a product
+                                    finishes downloading
+        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
+                                   or None
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -1203,15 +1196,16 @@ class EODataAccessGateway(object):
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :param wait: (optional) If download fails, wait time in minutes between
-                    two download tries of the same product (default=2')
+                     two download tries of the same product
         :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes
-                    before stop retrying to download (default=20')
+                        before stop retrying to download
         :type timeout: int
-        :param dict kwargs: `outputs_prefix` (str), `extract` (bool) and
-                            `dl_url_params` (dict) can be provided here and will
-                            override any other values defined in a configuration file
-                            or with environment variables.
+        :param kwargs: `outputs_prefix` (str), `extract` (bool) and
+                        `dl_url_params` (dict) can be provided here and will
+                        override any other values defined in a configuration file
+                        or with environment variables.
+        :type kwargs: dict
         :returns: A collection of the absolute paths to the downloaded products
         :rtype: list
         """
@@ -1225,6 +1219,7 @@ class EODataAccessGateway(object):
             )
             paths = download_plugin.download_all(
                 search_result,
+                downloaded_callback=downloaded_callback,
                 progress_callback=progress_callback,
                 wait=wait,
                 timeout=timeout,
@@ -1240,7 +1235,7 @@ class EODataAccessGateway(object):
 
         :param search_result: A collection of EO products resulting from a search
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
-        :param filename: The name of the file to generate
+        :param filename: (optional) The name of the file to generate
         :type filename: str
         :returns: The name of the created file
         :rtype: str
@@ -1301,18 +1296,19 @@ class EODataAccessGateway(object):
 
         :param filename: A filename containing features encoded as a geojson
         :type filename: str
-        :param recursive: Browse recursively in child nodes if True
+        :param recursive: (optional) Browse recursively in child nodes if True
         :type recursive: bool
-        :param max_connections: Maximum number of connections for HTTP requests
+        :param max_connections: (optional) Maximum number of connections for HTTP requests
         :type max_connections: int
-        :param provider: Data provider
+        :param provider: (optional) Data provider
         :type provider: str
-        :param productType: Data product type
+        :param productType: (optional) Data product type
         :type productType: str
         :param timeout: (optional) Timeout in seconds for each internal HTTP request
         :type timeout: float
-        :param dict kwargs: Parameters that will be stored in the result as
-                            search criteria
+        :param kwargs: Parameters that will be stored in the result as
+                       search criteria
+        :type kwargs: dict
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
 
@@ -1395,24 +1391,20 @@ class EODataAccessGateway(object):
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :param wait: (optional) If download fails, wait time in minutes between
-                    two download tries (default=2')
+                    two download tries
         :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes
-                        before stop retrying to download (default=20')
+                        before stop retrying to download
         :type timeout: int
-        :param dict kwargs: `outputs_prefix` (str), `extract` (bool) and
-                            `dl_url_params` (dict) can be provided as additional kwargs
-                            and will override any other values defined in a configuration
-                            file or with environment variables.
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: dict
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
-
-        .. versionchanged:: 2.3.0
-
-           Returns a file system path instead of a file URI ('/tmp' instead of
-           'file:///tmp').
         """
         if product.location.startswith("file://"):
             logger.info("Local product detected. Download skipped")
@@ -1437,7 +1429,7 @@ class EODataAccessGateway(object):
         :type name: str
         :param options: The configuration options of the cruncher
         :type options: dict
-        :return: The cruncher named ``name``
+        :returns: The cruncher named ``name``
         :rtype: :class:`~eodag.plugins.crunch.Crunch`
         """
         plugin_conf = {"name": name}

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -31,8 +31,7 @@ def setup_logging(verbose, no_progress_bar=False):
                     * 2: INFO level
                     * 3: DEBUG level
     :type verbose: int
-
-    :param no_progress_bar: (optional) disable progress bars (default=False)
+    :param no_progress_bar: (optional) Disable progress bars
     :type no_progress_bar: bool
     """
     global disable_tqdm
