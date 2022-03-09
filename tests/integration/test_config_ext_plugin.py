@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -16,17 +16,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import shutil
+import tempfile
 import unittest
 
 import pkg_resources
 
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway
+from tests.utils import mock
 
 
 class TestExternalPluginConfig(unittest.TestCase):
     def setUp(self):
         super(TestExternalPluginConfig, self).setUp()
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = tempfile.mkdtemp()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir
+        )
+        self.expanduser_mock.start()
+
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
@@ -38,6 +48,13 @@ class TestExternalPluginConfig(unittest.TestCase):
         distpath = pkg_resources.working_set.by_key.pop("eodag-fakeplugin").location
         pkg_resources.working_set.entry_keys.pop(distpath)
         pkg_resources.working_set.entries.remove(distpath)
+
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        try:
+            shutil.rmtree(self.tmp_home_dir)
+        except OSError:
+            pass
 
     def test_update_providers_from_ext_plugin(self):
         """Load fake external plugin and check if it updates providers config"""

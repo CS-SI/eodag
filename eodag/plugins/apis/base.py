@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -61,11 +61,6 @@ class Api(PluginTopic):
         This method must return a tuple with (1) a list of EOProduct instances (see eodag.api.product module)
         which will be processed by a Download plugin (2) and the total number of products matching
         the search criteria. If ``count`` is False, the second element returned must be ``None``.
-
-        .. versionchanged:: 2.1
-
-           A new optional boolean parameter ``count`` which defaults to ``True``, it
-           allows to trigger or not a count query.
         """
         raise NotImplementedError("A Api plugin must implement a method named query")
 
@@ -81,19 +76,22 @@ class Api(PluginTopic):
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
-        :param product: EO product to download
+        :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param progress_callback: A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
-        :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int, optional
-        :param timeout: If download fails, maximum time in minutes before stop retrying
-            to download
-        :type timeout: int, optional
-        :param dict kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-            ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-            override any other values defined in a configuration file or with
-            environment variables.
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
+                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
+                       override any other values defined in a configuration file or with
+                       environment variables.
+        :type kwargs: dict
         :returns: The absolute path to the downloaded product in the local filesystem
             (e.g. '/tmp/product.zip' on Linux or
             'C:\\Users\\username\\AppData\\Local\\Temp\\product.zip' on Windows)
@@ -107,6 +105,7 @@ class Api(PluginTopic):
         self,
         products,
         auth=None,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -117,17 +116,27 @@ class Api(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
-        :param progress_callback: A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
-        :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int, optional
-        :param timeout: If download fails, maximum time in minutes before stop retrying
-            to download
-        :type timeout: int, optional
-        :param dict kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-            ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-            override any other values defined in a configuration file or with
-            environment variables.
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param downloaded_callback: (optional) A method or a callable object which takes
+                                    as parameter the ``product``. You can use the base class
+                                    :class:`~eodag.utils.DownloadedCallback` and override
+                                    its ``__call__`` method. Will be called each time a product
+                                    finishes downloading
+        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
+                                   or None
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
+                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
+                       override any other values defined in a configuration file or with
+                       environment variables.
+        :type kwargs: dict
         :returns: List of absolute paths to the downloaded products in the local
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)

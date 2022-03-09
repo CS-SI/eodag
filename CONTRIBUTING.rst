@@ -39,7 +39,9 @@ If you intend to contribute to eodag source code:
     python -m pip install -r requirements-dev.txt
     pre-commit install
 
-We use ``pre-commit`` to run a suite of linters, formatters and pre-commit hooks (``black``, ``isort``, ``flake8``) to ensure the code base is homogeneously formatted and easier to read. It's important that you install it, since we run the exact same hooks in the Continuous Integration.
+We use ``pre-commit`` to run a suite of linters, formatters and pre-commit hooks (``black``, ``isort``, ``flake8``) to
+ensure the code base is homogeneously formatted and easier to read. It's important that you install it, since we run
+the exact same hooks in the Continuous Integration.
 
 To run the default test suite (which excludes end-to-end tests):
 
@@ -47,11 +49,17 @@ To run the default test suite (which excludes end-to-end tests):
 
     tox
 
+To run the default test suite in parallel:
+
+.. code-block:: bash
+
+    tox -p
+
 To only run end-to-end test:
 
 .. code-block:: bash
 
-    tox -- tests.test_end_to_end
+    tox -- tests/test_end_to_end.py
 
 To run the entire tests (units, integraton and end-to-end):
 
@@ -67,7 +75,7 @@ To run the entire tests (units, integraton and end-to-end):
       you, please `install <https://pandoc.org/installing.html>`_ pandoc and try
       again.
 
-    * eodag is tested against python versions 3.6, 3.7, 3.8 and 3.9. Ensure you have
+    * eodag is tested against python versions 3.6, 3.7, 3.8, 3.9 and 3.10. Ensure you have
       these versions installed before you run tox. You can use
       `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
       of python

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -50,7 +50,8 @@ class FilterLatestIntersect(Crunch):
 
         :param products: A list of products resulting from a search
         :type products: list(:class:`~eodag.api.product._product.EOProduct`)
-        :param dict search_params: search criteria that must contain `geometry` (dict)
+        :param search_params: Search criteria that must contain `geometry` (dict)
+        :type search_params: dict
         :returns: The filtered products
         :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """

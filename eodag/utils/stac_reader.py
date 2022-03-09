@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -103,10 +103,10 @@ def fetch_stac_items(
     """Fetch STAC item from a single item file or items from a catalog.
 
     :param stac_path: A STAC object filepath
-    :type filename: str
+    :type stac_path: str
     :param recursive: (optional) Browse recursively in child nodes if True
     :type recursive: bool
-    :param max_connections: Maximum number of connections for HTTP requests
+    :param max_connections: (optional) Maximum number of connections for HTTP requests
     :type max_connections: int
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
     :type timeout: float

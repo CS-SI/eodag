@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -80,7 +80,7 @@ def patch_owslib_requests(verify=True):
     :func:`owslib.util.openURL` and :func:`owslib.util.http_post` functions, providing some control over how to use
     these functions in `owslib <https://geopython.github.io/OWSLib/>`_.
 
-    :param verify: Whether to verify the use of https or not
+    :param verify: (optional) Whether to verify the use of https or not
     :type verify: bool
     """
     from owslib.util import requests

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -22,6 +22,7 @@ peps:
         extract:  # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
         outputs_prefix: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
         dl_url_params:  # additional parameters to pass over to the download url as an url parameter
+        delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
     auth:
         credentials:
             username:

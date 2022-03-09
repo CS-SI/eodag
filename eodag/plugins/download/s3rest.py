@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -28,6 +28,7 @@ from requests import HTTPError
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
+from eodag.plugins.download.base import DEFAULT_STREAM_REQUESTS_TIMEOUT
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import ProgressCallback, path_to_uri, unquote, urljoin
 from eodag.utils.exceptions import (
@@ -61,7 +62,7 @@ class S3RestDownload(AwsDownload):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
-        :return: The absolute path to the downloaded product in the local filesystem
+        :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
         if progress_callback is None:
@@ -198,7 +199,12 @@ class S3RestDownload(AwsDownload):
             if not os.path.isdir(local_filename_dir):
                 os.makedirs(local_filename_dir)
 
-            with requests.get(node_url, stream=True, auth=auth) as stream:
+            with requests.get(
+                node_url,
+                stream=True,
+                auth=auth,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            ) as stream:
                 try:
                     stream.raise_for_status()
                 except HTTPError:

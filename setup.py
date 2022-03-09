@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -64,10 +64,11 @@ setup(
     python_requires=">=3.6",
     extras_require={
         "dev": [
-            "nose",
+            "pytest",
+            "pytest-cov",
+            "pytest-html",
             "tox",
             "faker",
-            "coverage",
             "moto",
             "twine",
             "wheel",
@@ -92,6 +93,9 @@ setup(
             "sphinx-book-theme >= 0.1.0",
             "sphinx-copybutton",
             "nbsphinx == 0.8.5",
+            # pined markup safe until fixed in sphinx or jinja
+            # see https://github.com/pallets/jinja/issues/1585
+            "markupsafe < 2.1.0",
         ],
     },
     entry_points={
@@ -147,6 +151,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
         "Topic :: Scientific/Engineering :: GIS",

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -35,14 +35,15 @@ class FilterOverlap(Crunch):
 
     Filter products, retaining only those that are overlapping with the search_extent
 
-    :param dict config: crunch configuration, may contain :
+    :param config: Crunch configuration, may contain :
 
-            - `minimum_overlap` : minimal overlap percentage
-            - `contains` : True if product geometry contains the search area
-            - `intersects` : True if product geometry intersects the search area
-            - `within` : True if product geometry is within the search area
+                   - `minimum_overlap` : minimal overlap percentage
+                   - `contains` : True if product geometry contains the search area
+                   - `intersects` : True if product geometry intersects the search area
+                   - `within` : True if product geometry is within the search area
 
-        These configuration parameters are mutually exclusive.
+                   These configuration parameters are mutually exclusive.
+    :type config: dict
     """
 
     def proceed(self, products, **search_params):
@@ -50,7 +51,8 @@ class FilterOverlap(Crunch):
 
         :param products: A list of products resulting from a search
         :type products: list(:class:`~eodag.api.product._product.EOProduct`)
-        :param dict search_params: search criteria that must contain `geometry`
+        :param search_params: Search criteria that must contain `geometry`
+        :type search_params: dict
         :returns: The filtered products
         :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """

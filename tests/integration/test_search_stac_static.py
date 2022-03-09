@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import shutil
+import tempfile
 import unittest
 
 from tests import TEST_RESOURCES_PATH
@@ -27,11 +29,19 @@ from tests.context import (
     FilterProperty,
     SearchResult,
 )
+from tests.utils import mock
 
 
 class TestSearchStacStatic(unittest.TestCase):
     def setUp(self):
         super(TestSearchStacStatic, self).setUp()
+
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = tempfile.mkdtemp()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir
+        )
+        self.expanduser_mock.start()
 
         self.dag = EODataAccessGateway()
 
@@ -75,6 +85,15 @@ class TestSearchStacStatic(unittest.TestCase):
         )
         self.dag.set_preferred_provider(self.static_stac_provider)
 
+    def tearDown(self):
+        super(TestSearchStacStatic, self).tearDown()
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        try:
+            shutil.rmtree(self.tmp_home_dir)
+        except OSError:
+            pass
+
     def test_search_stac_static_load_child(self):
         """load_stac_items from child catalog must provide items"""
         items = self.dag.load_stac_items(
@@ -83,8 +102,8 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertIsInstance(items, SearchResult)
         self.assertEqual(len(items), self.child_cat_len)
         self.assertEqual(items[0].provider, self.stac_provider)
-        # if no product_type is provided, product_type is None
-        self.assertIsNone(items[0].product_type)
+        # if no product_type is provided, product_type should be guessed from properties
+        self.assertEqual(items[0].product_type, "S2_MSI_L1C")
 
     def test_search_stac_static_load_root_not_recursive(self):
         """load_stac_items from root must provide an empty list when no recursive"""
@@ -120,8 +139,8 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertIsInstance(item, SearchResult)
         self.assertEqual(len(item), 1)
         self.assertEqual(item[0].provider, self.stac_provider)
-        # if no product_type is provided, product_type is None
-        self.assertIsNone(item[0].product_type)
+        # if no product_type is provided, product_type should be guessed from properties
+        self.assertEqual(item[0].product_type, "S2_MSI_L1C")
 
     def test_search_stac_static_load_item_updated_provider(self):
         """load_stac_items from a single item using updated provider"""

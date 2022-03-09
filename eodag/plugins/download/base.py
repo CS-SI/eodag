@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -19,7 +19,9 @@
 import hashlib
 import logging
 import os
+import shutil
 import tarfile
+import tempfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
@@ -36,8 +38,9 @@ from eodag.utils.notebook import NotebookWidgets
 logger = logging.getLogger("eodag.plugins.download.base")
 
 # default wait times in minutes
-DEFAULT_DOWNLOAD_WAIT = 2
-DEFAULT_DOWNLOAD_TIMEOUT = 20
+DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
+DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
+DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 
 class Download(PluginTopic):
@@ -92,19 +95,22 @@ class Download(PluginTopic):
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
-        :param product: EO product to download
+        :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param progress_callback: A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
-        :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int, optional
-        :param timeout: If download fails, maximum time in minutes before stop retrying
-            to download
-        :type timeout: int, optional
-        :param dict kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-            ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-            override any other values defined in a configuration file or with
-            environment variables.
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
+                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
+                       override any other values defined in a configuration file or with
+                       environment variables.
+        :type kwargs: dict
         :returns: The absolute path to the downloaded product in the local filesystem
             (e.g. '/tmp/product.zip' on Linux or
             'C:\\Users\\username\\AppData\\Local\\Temp\\product.zip' on Windows)
@@ -121,7 +127,7 @@ class Download(PluginTopic):
         :type product: :class:`~eodag.api.product._product.EOProduct`
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
-        :return: fs_path, record_filename
+        :returns: fs_path, record_filename
         :rtype: tuple
         """
         if product.location != product.remote_location:
@@ -212,7 +218,7 @@ class Download(PluginTopic):
 
         :param product_path: The path to the extracted product
         :type product_path: str
-        :return: The path to the extracted product with the right depth
+        :returns: The path to the extracted product with the right depth
         :rtype: str
         """
         archive_depth = getattr(self.config, "archive_depth", 1)
@@ -229,7 +235,7 @@ class Download(PluginTopic):
         :type fs_path: str
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
-        :return: the absolute path to the product
+        :returns: The absolute path to the product
         :rtype: str
         """
         # progress bar init
@@ -250,6 +256,12 @@ class Download(PluginTopic):
         extract = kwargs.pop("extract", None)
         extract = (
             extract if extract is not None else getattr(self.config, "extract", True)
+        )
+        delete_archive = kwargs.pop("delete_archive", None)
+        delete_archive = (
+            delete_archive
+            if delete_archive is not None
+            else getattr(self.config, "delete_archive", True)
         )
         outputs_extension = kwargs.pop("outputs_extension", ".zip")
 
@@ -306,6 +318,10 @@ class Download(PluginTopic):
             )
             progress_callback.refresh()
 
+            outputs_dir = os.path.join(outputs_prefix, product_path)
+            tmp_dir = tempfile.TemporaryDirectory()
+            extraction_dir = os.path.join(tmp_dir.name, os.path.basename(outputs_dir))
+
             if fs_path.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
                     fileinfos = zfile.infolist()
@@ -315,20 +331,31 @@ class Download(PluginTopic):
                     for fileinfo in fileinfos:
                         zfile.extract(
                             fileinfo,
-                            path=os.path.join(outputs_prefix, product_path),
+                            path=extraction_dir,
                         )
                         progress_callback(1)
+                shutil.move(extraction_dir, outputs_dir)
 
             elif fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r:gz") as zfile:
-                    logger.info(
-                        "Extracting files from {}".format(os.path.basename(fs_path))
-                    )
                     progress_callback.reset(total=1)
-                    zfile.extractall(path=os.path.join(outputs_prefix, product_path))
+                    zfile.extractall(path=extraction_dir)
                     progress_callback(1)
+                shutil.move(extraction_dir, outputs_dir)
             else:
                 progress_callback(1, total=1)
+
+            tmp_dir.cleanup()
+
+            if delete_archive:
+                logger.info("Deleting archive {}".format(os.path.basename(fs_path)))
+                os.unlink(fs_path)
+            else:
+                logger.info(
+                    "Archive deletion is deactivated, keeping {}".format(
+                        os.path.basename(fs_path)
+                    )
+                )
         else:
             progress_callback(1, total=1)
 
@@ -344,6 +371,7 @@ class Download(PluginTopic):
         self,
         products,
         auth=None,
+        downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -357,17 +385,27 @@ class Download(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
-        :param progress_callback: A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`, optional
-        :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int, optional
-        :param timeout: If download fails, maximum time in minutes before stop retrying
-            to download
-        :type timeout: int, optional
-        :param dict kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-            ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-            override any other values defined in a configuration file or with
-            environment variables.
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param downloaded_callback: (optional) A method or a callable object which takes
+                                    as parameter the ``product``. You can use the base class
+                                    :class:`~eodag.utils.DownloadedCallback` and override
+                                    its ``__call__`` method. Will be called each time a product
+                                    finishes downloading
+        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
+                                   or None
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
+                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
+                       override any other values defined in a configuration file or with
+                       environment variables.
+        :type kwargs: dict
         :returns: List of absolute paths to the downloaded products in the local
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
@@ -420,6 +458,9 @@ class Download(PluginTopic):
                                     **kwargs,
                                 )
                             )
+
+                            if downloaded_callback:
+                                downloaded_callback(product)
 
                             # product downloaded, to not retry it
                             products.remove(product)

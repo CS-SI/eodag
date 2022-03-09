@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -141,6 +141,11 @@ class QueryStringSearch(Search):
     ``#`` (see :func:`~eodag.utils.format_metadata` for further details on the
     available converters). Note that for the values in the
     ``free_text_search_operations`` configuration parameter follow the same rule.
+
+    :param provider: An eodag providers configuration dictionary
+    :type provider: dict
+    :param config: Path to the user configuration file
+    :type config: str
     """
 
     COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
@@ -161,12 +166,12 @@ class QueryStringSearch(Search):
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface
 
-        :param page: The page number to retur (default: 1)
-        :type page: int
-        :param items_per_page: The number of results that must appear in one single
-                               page
+        :param items_per_page: (optional) The number of results that must appear in one
+                               single page
         :type items_per_page: int
-        :param count:  To trigger a count request (default: True)
+        :param page: (optional) The page number to return
+        :type page: int
+        :param count: (optional) To trigger a count request
         :type count: bool
         """
         product_type = kwargs.get("productType", None)
@@ -476,7 +481,8 @@ class QueryStringSearch(Search):
         If there is a specified number of items per page, return the results as soon
         as this number is reached
 
-        :param int items_per_page: (Optional) The number of items to return for one page
+        :param items_per_page: (optional) The number of items to return for one page
+        :type items_per_page: int
         """
         results = []
         for search_url in self.search_urls:
@@ -492,7 +498,13 @@ class QueryStringSearch(Search):
                 return
             else:
                 next_page_url_key_path = self.config.pagination.get(
-                    "next_page_url_key_path"
+                    "next_page_url_key_path", None
+                )
+                next_page_query_obj_key_path = self.config.pagination.get(
+                    "next_page_query_obj_key_path", None
+                )
+                next_page_merge_key_path = self.config.pagination.get(
+                    "next_page_merge_key_path", None
                 )
                 if self.config.result_type == "xml":
                     root_node = etree.fromstring(response.content)
@@ -503,7 +515,7 @@ class QueryStringSearch(Search):
                             self.config.results_entry, namespaces=namespaces
                         )
                     ]
-                    if next_page_url_key_path:
+                    if next_page_url_key_path or next_page_query_obj_key_path:
                         raise NotImplementedError(
                             "Setting the next page url from an XML response has not "
                             "been implemented yet"
@@ -519,6 +531,30 @@ class QueryStringSearch(Search):
                             )
                         except IndexError:
                             logger.debug("Next page URL could not be collected")
+                    if next_page_query_obj_key_path:
+                        path_parsed = parse(next_page_query_obj_key_path)
+                        try:
+                            self.next_page_query_obj = path_parsed.find(resp_as_json)[
+                                0
+                            ].value
+                            logger.debug(
+                                "Next page Query-object collected and set for the next search",
+                            )
+                        except IndexError:
+                            logger.debug(
+                                "Next page Query-object could not be collected"
+                            )
+                    if next_page_merge_key_path:
+                        path_parsed = parse(next_page_merge_key_path)
+                        try:
+                            self.next_page_merge = path_parsed.find(resp_as_json)[
+                                0
+                            ].value
+                            logger.debug(
+                                "Next page merge collected and set for the next search",
+                            )
+                        except IndexError:
+                            logger.debug("Next page merge could not be collected")
 
                     result = resp_as_json.get(self.config.results_entry, [])
                 if getattr(self.config, "merge_responses", False):
@@ -811,11 +847,11 @@ class PostJsonSearch(QueryStringSearch):
         product_type = kwargs.get("productType", None)
         provider_product_type = self.map_product_type(product_type, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
-        keywords["productType"] = (
-            provider_product_type
-            if (provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE)
-            else product_type
-        )
+
+        if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
+            keywords["productType"] = provider_product_type
+        elif product_type:
+            keywords["productType"] = product_type
 
         # provider product type specific conf
         self.product_type_def_params = self.get_product_type_def_params(
@@ -855,7 +891,7 @@ class PostJsonSearch(QueryStringSearch):
         for query_param, query_value in qp.items():
             if (
                 query_param
-                in self.config.products[product_type].get(
+                in self.config.products.get(product_type, {}).get(
                     "specific_qssearch", {"parameters": []}
                 )["parameters"]
             ):
@@ -899,13 +935,14 @@ class PostJsonSearch(QueryStringSearch):
         """Adds pagination to query parameters, and auth to url"""
         urls = []
         total_results = 0 if count else None
+        if hasattr(kwargs["auth"], "config"):
+            auth_conf_dict = getattr(kwargs["auth"].config, "credentials", {})
+        else:
+            auth_conf_dict = {}
         for collection in self.get_collections(**kwargs):
             try:
                 search_endpoint = self.config.api_endpoint.rstrip("/").format(
-                    **dict(
-                        collection=collection,
-                        **getattr(kwargs["auth"].config, "credentials", {})
-                    )
+                    **dict(collection=collection, **auth_conf_dict)
                 )
             except KeyError as e:
                 raise MisconfiguredError(
@@ -916,12 +953,7 @@ class PostJsonSearch(QueryStringSearch):
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
-                    ).format(
-                        **dict(
-                            collection=collection,
-                            **getattr(kwargs["auth"].config, "credentials", {})
-                        )
-                    )
+                    ).format(**dict(collection=collection, **auth_conf_dict))
                     if count_endpoint:
                         _total_results = self.count_hits(
                             count_endpoint, result_type=self.config.result_type
@@ -945,23 +977,31 @@ class PostJsonSearch(QueryStringSearch):
                         total_results = _total_results or 0
                     else:
                         total_results += _total_results or 0
-                next_page_query_obj = self.config.pagination[
-                    "next_page_query_obj"
-                ].format(
-                    items_per_page=items_per_page,
-                    page=page,
-                    skip=(page - 1) * items_per_page,
-                    skip_base_1=(page - 1) * items_per_page + 1,
-                )
-                update_nested_dict(self.query_params, json.loads(next_page_query_obj))
+                if isinstance(self.config.pagination["next_page_query_obj"], str):
+                    # next_page_query_obj needs to be parsed
+                    next_page_query_obj = self.config.pagination[
+                        "next_page_query_obj"
+                    ].format(
+                        items_per_page=items_per_page,
+                        page=page,
+                        skip=(page - 1) * items_per_page,
+                        skip_base_1=(page - 1) * items_per_page + 1,
+                    )
+                    update_nested_dict(
+                        self.query_params, json.loads(next_page_query_obj)
+                    )
 
             urls.append(search_endpoint)
         return urls, total_results
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
+            # perform the request using the next page arguments if they are defined
+            if getattr(self, "next_page_query_obj", None):
+                self.query_params = self.next_page_query_obj
             if info_message:
                 logger.info(info_message)
+            logger.debug("Query parameters: %s" % self.query_params)
             response = requests.post(url, json=self.query_params)
             response.raise_for_status()
         except (requests.HTTPError, urllib_HTTPError) as err:
@@ -990,7 +1030,7 @@ class PostJsonSearch(QueryStringSearch):
         return response
 
 
-class StacSearch(QueryStringSearch):
+class StacSearch(PostJsonSearch):
     """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
 
     def __init__(self, provider, config):

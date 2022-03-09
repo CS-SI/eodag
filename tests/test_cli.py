@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -35,8 +35,9 @@ from tests.context import (
     download,
     eodag,
     search_crunch,
+    setup_logging,
 )
-from tests.units.test_core import TestCore
+from tests.units import test_core
 from tests.utils import mock, no_blanks
 
 
@@ -52,8 +53,14 @@ class TestEodagCli(unittest.TestCase):
             yield conf_file
 
     def setUp(self):
+        super(TestEodagCli, self).setUp()
         self.runner = CliRunner()
         self.faker = Faker()
+
+    def tearDown(self):
+        super(TestEodagCli, self).tearDown()
+        # Default logging: no logging but still displays progress bars
+        setup_logging(1)
 
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""
@@ -369,7 +376,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag list without provider return all supported product types"""
         all_supported_product_types = [
             pt
-            for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items()
+            for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
             if len(provs) != 0 and pt != GENERIC_PRODUCT_TYPE
         ]
         result = self.runner.invoke(eodag, ["list"])
@@ -379,10 +386,10 @@ class TestEodagCli(unittest.TestCase):
 
     def test_eodag_list_product_type_with_provider_ok(self):
         """Calling eodag list with provider should return all supported product types of specified provider"""  # noqa
-        provider = random.choice(TestCore.SUPPORTED_PROVIDERS)
+        provider = random.choice(test_core.TestCore.SUPPORTED_PROVIDERS)
         provider_supported_product_types = [
             pt
-            for pt, provs in TestCore.SUPPORTED_PRODUCT_TYPES.items()
+            for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
             if provider in provs
             if pt != GENERIC_PRODUCT_TYPE
         ]
@@ -399,7 +406,7 @@ class TestEodagCli(unittest.TestCase):
         self.assertIn("Unsupported provider. You may have a typo", result.output)
         self.assertIn(
             "Available providers: {}".format(
-                ", ".join(sorted(TestCore.SUPPORTED_PROVIDERS))
+                ", ".join(sorted(test_core.TestCore.SUPPORTED_PROVIDERS))
             ),
             result.output,
         )

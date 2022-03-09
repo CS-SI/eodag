@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -18,6 +18,11 @@
 from collections import UserList
 
 from eodag.api.product import EOProduct
+from eodag.plugins.crunch.filter_date import FilterDate
+from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
+from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
+from eodag.plugins.crunch.filter_overlap import FilterOverlap
+from eodag.plugins.crunch.filter_property import FilterProperty
 
 
 class SearchResult(UserList):
@@ -35,12 +40,65 @@ class SearchResult(UserList):
 
         :param cruncher: The plugin instance to use to work on the products
         :type cruncher: subclass of :class:`~eodag.plugins.crunch.base.Crunch`
-        :param dict search_params: The criteria that have been used to produce this result
+        :param search_params: The criteria that have been used to produce this result
+        :type search_params: dict
         :returns: The result of the application of the crunching method to the EO products
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         crunched_results = cruncher.proceed(self, **search_params)
         return SearchResult(crunched_results)
+
+    def filter_date(self, start=None, end=None):
+        """
+        Apply :class:`~eodag.plugins.crunch.filter_date.FilterDate` crunch,
+        check its documentation to know more.
+        """
+        return self.crunch(FilterDate(dict(start=start, end=end)))
+
+    def filter_latest_intersect(self, geometry):
+        """
+        Apply :class:`~eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect` crunch,
+        check its documentation to know more.
+        """
+        return self.crunch(FilterLatestIntersect({}), geometry=geometry)
+
+    def filter_latest_by_name(self, name_pattern):
+        """
+        Apply :class:`~eodag.plugins.crunch.filter_latest_tpl_name.FilterLatestByName` crunch,
+        check its documentation to know more.
+        """
+        return self.crunch(FilterLatestByName(dict(name_pattern=name_pattern)))
+
+    def filter_overlap(
+        self,
+        geometry,
+        minimum_overlap=0,
+        contains=False,
+        intersects=False,
+        within=False,
+    ):
+        """
+        Apply :class:`~eodag.plugins.crunch.filter_overlap.FilterOverlap` crunch,
+        check its documentation to know more.
+        """
+        return self.crunch(
+            FilterOverlap(
+                dict(
+                    minimum_overlap=minimum_overlap,
+                    contains=contains,
+                    intersects=intersects,
+                    within=within,
+                )
+            ),
+            geometry=geometry,
+        )
+
+    def filter_property(self, operator="eq", **search_property):
+        """
+        Apply :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch,
+        check its documentation to know more.
+        """
+        return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
     @staticmethod
     def from_geojson(feature_collection):
