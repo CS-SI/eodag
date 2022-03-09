@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -17,9 +17,9 @@
 # limitations under the License.
 __title__ = "eodag"
 __description__ = "Earth Observation Data Access Gateway"
-__version__ = "2.3.4"
+__version__ = "2.4.0"
 __author__ = "CS GROUP - France (CSSI)"
 __author_email__ = "admin@geostorm.eu"
 __url__ = "https://github.com/CS-SI/eodag"
 __license__ = "Apache 2.0"
-__copyright__ = "Copyright 2021, CS GROUP - France, https://www.csgroup.eu/"
+__copyright__ = "Copyright 2022, CS GROUP - France, https://www.csgroup.eu/"
