@@ -1,6 +1,26 @@
 Release history
 ---------------
 
+2.4.0 (2022-03-09)
+++++++++++++++++++
+
+* STAC API POST requests and Query fragment handled in both
+  :class:`~eodag.plugins.search.qssearch.StacSearch` client (:pull:`363`)(:pull:`367`) and server mode (:pull:`417`)
+* Added ``downloaded_callback`` parameter to :meth:`~eodag.api.core.EODataAccessGateway.download_all` method
+  allowing running a callback after each individual download (:pull:`381`)
+* ``cloudCover`` parameter disabled for RADAR product types (:pull:`389`)
+* Guess ``EOProduct.product_type`` from properties when missing (:pull:`380`)
+* Keywords usage in product types configuration and guess mechanism (:pull:`372`)
+* Automatic deletion of downloaded product zip after extraction (:pull:`358`)
+* Crunchers are now directly attached to :class:`~eodag.api.search_result.SearchResult` (:pull:`359`)
+* Import simplified for :class:`~eodag.api.product._product.EOProduct`, :class:`~eodag.api.search_result.SearchResult`,
+  and `Crunchers <https://eodag.readthedocs.io/en/stable/plugins_reference/crunch.html>`_ (:pull:`356`)
+* Added support for `python3.10` (:pull:`407`)
+* Pytest usage instead of nosetest (:pull:`406`) and tests/coverage reports included in PR (:pull:`411`)(:pull:`416`)
+* Various minor fixes and improvements (:pull:`355`)(:pull:`361`)(:pull:`366`)(:pull:`357`)(:pull:`371`)(:pull:`373`)
+  (:pull:`374`)(:pull:`377`)(:pull:`379`)(:pull:`388`)(:pull:`394`)(:pull:`393`)(:pull:`405`)(:pull:`401`)(:pull:`398`)
+  (:pull:`399`)(:pull:`419`)(:pull:`415`)(:pull:`410`)(:pull:`420`)
+
 2.3.4 (2021-10-08)
 ++++++++++++++++++
 
