@@ -22,6 +22,7 @@ Then you can start playing with it:
         --help         Show this message and exit.
 
         Commands:
+        credentials      This command can be used to create, read, update, or...
         deploy-wsgi-app  Configure the settings of the HTTP web app (the
                         providers...
         download         Download a list of products from a serialized search...
@@ -122,3 +123,35 @@ to the provider. For instance, if you want to add foo=1 and bar=2 to the previou
 .. code-block:: console
 
         eodag list -p sobloo
+
+* To check if credentials were stored for a provider:
+
+.. code-block:: console
+
+        eodag credentials sobloo --exists
+
+* To list the credentials fields of a provider:
+
+.. code-block:: console
+
+        eodag credentials sobloo --list
+
+* To create credentials for a provider:
+
+.. code-block:: console
+
+        eodag credentials sobloo # interactive
+        # OR
+        eodag credentials sobloo --set apikey=<..>
+
+* To read the credentials stored for a provider:
+
+.. code-block:: console
+
+        eodag credentials sobloo --read
+
+* To delete the credentials of a provider:
+
+.. code-block:: console
+
+        eodag credentials sobloo --delete
