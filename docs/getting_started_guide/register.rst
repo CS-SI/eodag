@@ -38,7 +38,7 @@ to each provider supported by ``eodag``:
 
   * In access keys, click on create access key.
 
-  * Add these credentials to the user configuration file.
+  * Add these credentials to eodag.
 
 .. note::
 
@@ -54,7 +54,7 @@ to each provider supported by ``eodag``:
 
   * In access keys, click on create access key.
 
-  * Add these credentials to the user configuration file.
+  * Add these credentials to eodag.
 
 .. warning::
 

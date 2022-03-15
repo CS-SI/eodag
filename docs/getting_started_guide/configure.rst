@@ -28,7 +28,7 @@ in a local directory (``~/.config/eodag/eodag.yml`` on Linux).
 
 This YAML file contains a template that shows how to complete the configuration of one or
 more providers. It allows to either **override** an existing setting or **add** a missing
-one (e.g. credentials). *PEPS*'s configuration template is shown below:
+one. *PEPS*'s configuration template is shown below:
 
 .. code-block:: yaml
 
@@ -40,10 +40,6 @@ one (e.g. credentials). *PEPS*'s configuration template is shown below:
            outputs_prefix: # where to store downloaded products.
            dl_url_params:  # additional parameters to pass over to the download url as an url parameter
            delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
-       auth:
-           credentials:
-               username:
-               password:
 
 .. raw:: html
 
@@ -173,6 +169,12 @@ Credentials come into play at different stages for a provider. Most do not
 require any credentials for a search to be made (a few require an API key).
 Most, if not all of them, require credentials to be set to download products.
 
+For security purposes, credentials be can saved the outside of ``eodag``'s configuration file.
+The command ``credentials`` can be used to manage these credentials, because they cannot be edited
+by hand as they are encrypted.
+
+Check the `CLI User Guide <../cli_user_guide.rst>`_
+
 .. note::
 
    ``eodag`` tries to fail as early as possible if some credentials are missing to authenticate
@@ -194,9 +196,6 @@ Edit your configuration file ``$HOME/.config/eodag/eodag.yml`` with the followin
        download:
            extract: False
            outputs_prefix: /home/user/eodagworkspace/
-       auth:
-           credentials:
-               apikey: my_secret_sobloo_api_key
 
 It updates and completes the settings of the provider `sobloo` by:
 
@@ -207,7 +206,15 @@ It updates and completes the settings of the provider `sobloo` by:
 
 * The products should be downloaded to the folder ``/home/user/eodagworkspace/``.
 
-* An API key obtained from `sobloo` is saved there, it will be used to authenticate to the provider.
+Then, create the credentials:
+
+.. code-block:: console
+
+   eodag credentials sobloo # interactive mode
+   # OR
+   eodag credentials sobloo -y --set apikey=my_secret_sobloo_api_key
+
+The API key obtained from `sobloo` is used there, it will be used to authenticate to the provider.
 
 This file can be used to download products with the API:
 

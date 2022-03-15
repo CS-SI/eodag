@@ -39,6 +39,7 @@ Commands:
 
   noqa: D103
 """
+import getpass
 import json
 import os
 import shutil
@@ -48,9 +49,16 @@ import textwrap
 import click
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
+from eodag.config import (
+    get_provider_credentials,
+    save_providers_credentials,
+    set_provider_credentials_key,
+)
 from eodag.utils import parse_qs
+from eodag.utils.cli import ask_confirmation
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
+from eodag.utils.security import Crypto
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
@@ -126,8 +134,14 @@ def version():
 @click.option(
     "-f",
     "--conf",
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
+    help="File path to the user configuration file, default is ~/.config/eodag/eodag.yml",
     type=click.Path(exists=True),
+)
+@click.option(
+    "-c",
+    "--creds",
+    type=click.Path(exists=True),
+    help="File path to the credentials file, default is ~/.config/eodag/credentials",
 )
 @click.option(
     "-l",
@@ -322,6 +336,9 @@ def search_crunch(ctx, **kwargs):
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
+    creds_file = kwargs.pop("creds")
+    if creds_file:
+        creds_file = click.format_filename(creds_file)
     locs_file = kwargs.pop("locs")
     if locs_file:
         locs_file = click.format_filename(locs_file)
@@ -338,7 +355,9 @@ def search_crunch(ctx, **kwargs):
     page = kwargs.pop("page") or 1
 
     gateway = EODataAccessGateway(
-        user_conf_file_path=conf_file, locations_conf_path=locs_file
+        user_conf_file_path=conf_file,
+        credentials_file_path=creds_file,
+        locations_conf_path=locs_file,
     )
 
     # Search
@@ -464,7 +483,13 @@ def list_pt(ctx, **kwargs):
     "-f",
     "--conf",
     type=click.Path(exists=True),
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
+    help="File path to the user configuration file, default is ~/.config/eodag/eodag.yml",
+)
+@click.option(
+    "-c",
+    "--creds",
+    type=click.Path(exists=True),
+    help="File path to the credentials file, default is ~/.config/eodag/credentials",
 )
 @click.option(
     "--quicklooks",
@@ -485,8 +510,13 @@ def download(ctx, **kwargs):
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
+    creds_file = kwargs.pop("creds")
+    if creds_file:
+        creds_file = click.format_filename(creds_file)
 
-    satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
+    satim_api = EODataAccessGateway(
+        user_conf_file_path=conf_file, credentials_file_path=creds_file
+    )
     search_results = satim_api.deserialize(search_result_path)
 
     get_quicklooks = kwargs.pop("quicklooks")
@@ -558,7 +588,7 @@ def download(ctx, **kwargs):
     "-f",
     "--conf",
     type=click.Path(exists=True),
-    help="File path to the user configuration file with its credentials",
+    help="File path to the user configuration file",
 )
 @click.pass_context
 def serve_rpc(ctx, host, port, conf):
@@ -580,7 +610,7 @@ def serve_rpc(ctx, host, port, conf):
     "-f",
     "--config",
     type=click.Path(exists=True, resolve_path=True),
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
+    help="File path to the user configuration file, default is ~/.config/eodag/eodag.yml",
 )
 @click.option(
     "-l",
@@ -671,7 +701,7 @@ def serve_rest(ctx, daemon, world, port, config, locs, debug):
     "--config",
     type=click.Path(exists=True, resolve_path=True),
     required=True,
-    help="File path to the user configuration file with its credentials",
+    help="File path to the user configuration file",
 )
 @click.option(
     "--webserver",
@@ -806,6 +836,200 @@ def deploy_wsgi_app(
         )
         click.echo("Sample Apache2 config to add in a your virtual host:")
         click.echo(apache_config_sample)
+
+
+@eodag.command(
+    name="credentials",
+    help="This command can be used to create, read, update, or delete a provider's credentials. "
+    "Default behavior is create/update.",
+)
+@click.option(
+    "-f",
+    "--conf",
+    type=click.Path(exists=True),
+    help="File path to the user configuration file, default is ~/.config/eodag/eodag.yml",
+)
+@click.option(
+    "-c",
+    "--creds",
+    type=click.Path(exists=False),
+    help="File path to the credentials file, default is ~/.config/eodag/credentials",
+)
+@click.option(
+    "-y",
+    "--yes",
+    is_flag=True,
+    help="Answers yes to command confirmation, disabling safety of credentials update, read and deletion",
+)
+@click.option(
+    "-l",
+    "--list",
+    is_flag=True,
+    help="Display the provider's credentials fields names",
+)
+@click.option(
+    "-e",
+    "--exists",
+    is_flag=True,
+    help="Check if the provider's credentials exists in the credentials file. "
+    "WARNING: Raw credentials in the user conf are not checked",
+)
+@click.option(
+    "-s",
+    "--set",
+    multiple=True,
+    help="Set a provider's credentials value",
+)
+@click.option(
+    "-r",
+    "--read",
+    is_flag=True,
+    help="Read the provider's credentials and display them. WARNING: "
+    "This command may display sensible informations, be wary of it",
+)
+@click.option(
+    "-d",
+    "--delete",
+    is_flag=True,
+    help="Delete the provider's credentials",
+)
+@click.argument("provider", type=str)
+@click.pass_context
+def credentials(ctx, **kwargs):
+    """Command used to create, read, update, or delete a provider's credentials, Default behavior is create/update."""
+    setup_logging(verbose=ctx.obj["verbosity"])
+
+    conf_file = kwargs.pop("conf")
+    if conf_file:
+        conf_file = click.format_filename(conf_file)
+    creds_file = kwargs.pop("creds")
+    if creds_file:
+        creds_file = click.format_filename(creds_file)
+
+    dag = EODataAccessGateway(
+        user_conf_file_path=conf_file, credentials_file_path=creds_file
+    )
+    providers = dag.available_providers()
+    provider = kwargs.pop("provider")
+
+    if provider not in providers:
+        click.echo(
+            f"Error: Provider '{provider}' not found in available providers.",
+            err=True,
+        )
+        sys.exit(-1)
+
+    provider_credentials = get_provider_credentials(dag.providers_config[provider])
+    encrypted_credentials = {**dag.encrypted_credentials}
+    provider_has_encrypted_credentials = provider in dag.encrypted_credentials
+
+    do_list = kwargs.pop("list")
+    if do_list:
+        creds_names = list(provider_credentials.keys())
+        click.echo(
+            f"Credentials field{'s' if len(creds_names)>1 else ''} for '{provider}': ",
+            nl=False,
+        )
+        click.echo(", ".join(creds_names))
+        sys.exit(0)
+
+    do_exists = kwargs.pop("exists")
+    if do_exists:
+        if provider_has_encrypted_credentials:
+            click.echo(f"Credentials found for provider '{provider}'.")
+            sys.exit(0)
+        else:
+            click.echo(
+                f"Error: No credentials found for the provider '{provider}' inside '{dag.credentials_file_path}'.",
+                err=True,
+            )
+            sys.exit(-1)
+
+    confirm_yes = kwargs.pop("yes")
+
+    do_read = kwargs.pop("read")
+    if do_read:
+        if provider in dag.encrypted_credentials:
+            if not confirm_yes:
+                confirm = ask_confirmation(
+                    f"Do you want to read the credentials saved for '{provider}' "
+                    f"inside '{dag.credentials_file_path}'?"
+                )
+                if not confirm:
+                    sys.exit(1)
+            for cred_name, cred in provider_credentials.items():
+                click.echo(f"{cred_name}: {cred}")
+            sys.exit(0)
+        else:
+            click.echo(
+                f"Error: No credentials found for the provider '{provider}' "
+                f"inside '{dag.credentials_file_path}', cannot read."
+                "",
+                err=True,
+            )
+            sys.exit(-1)
+
+    do_delete = kwargs.pop("delete")
+    if do_delete:
+        if provider in dag.encrypted_credentials:
+            if not confirm_yes:
+                confirm = ask_confirmation(
+                    f"Do you want to delete the credentials saved for '{provider}' "
+                    f"inside '{dag.credentials_file_path}'?"
+                )
+                if not confirm:
+                    sys.exit(1)
+            del encrypted_credentials[provider]
+            save_providers_credentials(dag.credentials_file_path, encrypted_credentials)
+            click.echo(f"Credentials of '{provider}' were deleted.")
+            sys.exit(0)
+        else:
+            click.echo(
+                f"Error: No credentials found for the provider '{provider}' "
+                f"inside '{dag.credentials_file_path}', cannot delete.",
+                err=True,
+            )
+            sys.exit(-1)
+
+    if provider in dag.encrypted_credentials and not confirm_yes:
+        confirm = ask_confirmation(
+            f"The provider '{provider}' already have credentials saved inside '{dag.credentials_file_path}', "
+            "do you want to override them?"
+        )
+        if not confirm:
+            sys.exit(1)
+
+    crypto = Crypto()
+    new_creds = {}
+
+    creds_from_cli = kwargs.pop("set")
+    if creds_from_cli:
+        for cred_def in creds_from_cli:
+            cred_name, *cred_parts = str(cred_def).split("=", 1)
+            cred = "".join(cred_parts)
+            if cred and cred_name in provider_credentials:
+                new_creds[cred_name] = crypto.encrypt(cred)
+
+        remaining = list(filter(lambda i: i not in new_creds, provider_credentials))
+        if remaining:
+            click.echo(
+                f"Error: Missing credentials field{'s' if len(remaining)>1 else ''}: {', '.join(remaining)}.",
+                err=True,
+            )
+            sys.exit(-1)
+    else:
+        click.echo(f"Enter your credentials for the provider '{provider}':")
+        for cred_name in provider_credentials:
+            cred_input = getpass.getpass(prompt=f"- {cred_name}: ")
+            new_creds[cred_name] = crypto.encrypt(cred_input)
+
+    set_provider_credentials_key(new_creds, crypto.key)
+    encrypted_credentials[provider] = new_creds
+
+    save_providers_credentials(dag.credentials_file_path, encrypted_credentials)
+    click.echo(
+        f"Credentials for '{provider}' saved inside '{dag.credentials_file_path}'."
+    )
 
 
 if __name__ == "__main__":

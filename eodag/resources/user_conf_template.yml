@@ -23,10 +23,6 @@ peps:
         outputs_prefix: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
         dl_url_params:  # additional parameters to pass over to the download url as an url parameter
         delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
-    auth:
-        credentials:
-            username:
-            password:
 theia:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -34,10 +30,6 @@ theia:
         extract:
         outputs_prefix:
         dl_url_params:
-    auth:
-        credentials:
-            ident:
-            pass:
 usgs:
     priority: # Lower value means lower priority (Default: 0)
     api:
@@ -45,18 +37,9 @@ usgs:
         outputs_prefix:
         dl_url_params:
         product_location_scheme:
-        credentials:
-            username:
-            password:
 aws_eos:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
-    auth:
-        credentials:
-            apikey:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
     download:
         outputs_prefix:
 sobloo:
@@ -66,66 +49,37 @@ sobloo:
         extract:
         outputs_prefix:
         dl_url_params:
-    auth:
-        credentials:
-            apikey:
 creodias:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
-    auth:
-        credentials:
-            username:
-            password:
 mundi:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
-    auth:
-        credentials:
-            apikey:
 onda:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
         extract:
         outputs_prefix:
-    auth:
-        credentials:
-            username:
-            password:
 astraea_eod:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
-    auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
     download:
         outputs_prefix:
 usgs_satapi_aws:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
-    auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
     download:
         outputs_prefix:
 earth_search:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
-    auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
     download:
         outputs_prefix:
 earth_search_cog:

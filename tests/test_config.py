@@ -17,13 +17,26 @@
 # limitations under the License.
 
 import os
+import pickle
 import tempfile
 import unittest
 from io import StringIO
 
 import yaml.parser
 
-from tests.context import ValidationError, config, merge_configs
+from tests.context import (
+    Crypto,
+    CryptoKey,
+    ValidationError,
+    config,
+    get_provider_credentials,
+    load_providers_credentials,
+    merge_configs,
+    override_credentials_from_mapping,
+    save_providers_credentials,
+    set_provider_credentials_key,
+)
+from tests.utils import tmpfilepath
 
 
 class TestProviderConfig(unittest.TestCase):
@@ -426,3 +439,108 @@ class TestConfigFunctions(unittest.TestCase):
 
         peps_conf = default_config["peps"]
         self.assertEqual(peps_conf.download.outputs_prefix, "/data")
+
+    def test_get_provider_credentials(self):
+        secret_apikey = "test"
+
+        provider1_stream = StringIO(
+            """!provider
+            name: provider1
+            api: !plugin
+                type: MyPluginClass
+            """
+        )
+        provider1_config = yaml.load(provider1_stream, Loader=yaml.Loader)
+        provider1_credentials = get_provider_credentials(provider1_config)
+        self.assertTrue(isinstance(provider1_credentials, dict))
+        self.assertTrue("apikey" not in provider1_credentials)
+        self.assertTrue(provider1_credentials.get("apikey") != secret_apikey)
+
+        provider2_stream = StringIO(
+            f"""!provider
+            name: provider2
+            api: !plugin
+                type: MyPluginClass
+                credentials:
+                    apikey: {secret_apikey}
+            """
+        )
+        provider2_config = yaml.load(provider2_stream, Loader=yaml.Loader)
+        provider2_credentials = get_provider_credentials(provider2_config)
+        self.assertTrue(isinstance(provider2_credentials, dict))
+        self.assertTrue("apikey" in provider2_credentials)
+        self.assertTrue(provider2_credentials.get("apikey") == secret_apikey)
+
+        provider3_stream = StringIO(
+            f"""!provider
+            name: provider3
+            auth: !plugin
+                type: MyPluginClass
+                credentials:
+                    apikey: {secret_apikey}
+            """
+        )
+        provider3_config = yaml.load(provider3_stream, Loader=yaml.Loader)
+        provider3_credentials = get_provider_credentials(provider3_config)
+        self.assertTrue(isinstance(provider3_credentials, dict))
+        self.assertTrue("apikey" in provider3_credentials)
+        self.assertTrue(provider3_credentials.get("apikey") == secret_apikey)
+
+    def test_override_credentials_from_mapping(self):
+        crypto = Crypto()
+        fake_username = "user1"
+        fake_password = "passw"
+        fake_creds = {
+            "peps": {
+                "username": crypto.encrypt(fake_username),
+                "password": crypto.encrypt(fake_password),
+            },
+        }
+        set_provider_credentials_key(fake_creds["peps"], crypto.key)
+
+        default_config = config.load_default_config()
+
+        fake_raw_cred = "raw"
+        default_config["sobloo"].auth.credentials["apikey"] = fake_raw_cred
+
+        override_credentials_from_mapping(default_config, fake_creds)
+
+        peps = get_provider_credentials(default_config["peps"])
+        sobloo = get_provider_credentials(default_config["sobloo"])
+        self.assertEqual(peps.get("username"), fake_username)
+        self.assertEqual(peps.get("password"), fake_password)
+        self.assertEqual(sobloo.get("apikey"), fake_raw_cred)
+
+    def test_set_provider_credentials_key(self):
+        key = CryptoKey()
+        fake_provider_creds = {"apikey": "something"}
+
+        count_before = len(fake_provider_creds)
+        set_provider_credentials_key(fake_provider_creds, key)
+        count_after = len(fake_provider_creds)
+        self.assertEqual(count_before + 1, count_after)
+        self.assertTrue(key.as_str() in fake_provider_creds.values())
+
+    def test_load_providers_credentials(self):
+        fake_creds = {"peps": {"apikey": "something"}}
+        with tmpfilepath() as fpath:
+            # File is not a pickle file, function returns {}
+            empty_loaded_creds = load_providers_credentials(fpath)
+            # We make it a pickle file with fake credentials data
+            with open(fpath, "wb") as tmpfile:
+                pickle.dump(fake_creds, tmpfile)
+            # Then load the credentials
+            loaded_creds = load_providers_credentials(fpath)
+        self.assertTrue(isinstance(empty_loaded_creds, dict))
+        self.assertTrue(isinstance(loaded_creds, dict))
+        self.assertEqual(empty_loaded_creds, {})
+        self.assertEqual(fake_creds, loaded_creds)
+
+    def test_save_providers_credentials(self):
+        fake_creds = {"peps": {}}
+        with tmpfilepath() as fpath:
+            # File is empty because we wrote nothing inside
+            self.assertTrue(os.stat(fpath).st_size == 0)
+            save_providers_credentials(fpath, fake_creds)
+            # File is no longer empty because we wrote the credentials inside
+            self.assertTrue(os.stat(fpath).st_size != 0)

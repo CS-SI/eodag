@@ -24,8 +24,9 @@ Below is the content of the help message of this command (`eodag serve-rest --he
       Start eodag HTTP server
 
     Options:
-      -f, --config PATH   File path to the user configuration file with its
-                          credentials, default is ~/.config/eodag/eodag.yml
+      -f, --config PATH   File path to the user configuration file, default is
+                          ~/.config/eodag/eodag.yml
+      -l, --locs PATH     File path to the location shapefiles configuration file
       -d, --daemon        run in daemon mode  [default: False]
       -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
                           otherwise bind to 127.0.0.1 (localhost). This maybe
