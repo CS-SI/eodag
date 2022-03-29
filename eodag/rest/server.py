@@ -393,8 +393,8 @@ def stac_collections_items(collection_id):
 def stac_search():
     """STAC collections items"""
 
-    if request.get_json():
-        arguments = dict(request.args.to_dict(), **request.get_json())
+    if request.get_json(silent=True, force=True):
+        arguments = dict(request.args.to_dict(), **request.get_json(force=True))
     else:
         arguments = request.args.to_dict()
 
