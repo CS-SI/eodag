@@ -317,7 +317,7 @@ class TestEODagEndToEnd(EndToEndBase):
         else:
             downloaded_size = os.stat(self.downloaded_file_path).st_size
         # The partially downloaded file should be greater or equal to 5 KB
-        self.assertGreaterEqual(downloaded_size, 5 * 2 ** 10)
+        self.assertGreaterEqual(downloaded_size, 5 * 2**10)
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(*USGS_SEARCH_ARGS)
@@ -413,7 +413,7 @@ class TestEODagEndToEnd(EndToEndBase):
             os.path.dirname(quicklook_file_path),
             os.path.join(product.downloader.config.outputs_prefix, "quicklooks"),
         )
-        self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2 ** 5)
+        self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2**5)
 
     def test__search_by_id_sobloo(self):
         # A single test with sobloo to check that _search_by_id returns
@@ -535,7 +535,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         )
         # Its size should be >= 5 KB
         archive_size = os.stat(archive_file_path).st_size
-        self.assertGreaterEqual(archive_size, 5 * 2 ** 10)
+        self.assertGreaterEqual(archive_size, 5 * 2**10)
         # The product remote_location should be the same
         self.assertEqual(prev_remote_location, product.remote_location)
         # However its location should have been update
@@ -597,7 +597,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         downloaded_size = sum(
             f.stat().st_size for f in Path(product_dir_path).glob("**/*") if f.is_file()
         )
-        self.assertGreaterEqual(downloaded_size, 5 * 2 ** 10)
+        self.assertGreaterEqual(downloaded_size, 5 * 2**10)
         # The product remote_location should be the same
         self.assertEqual(prev_remote_location, product.remote_location)
         # However its location should have been update

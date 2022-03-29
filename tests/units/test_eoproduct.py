@@ -234,7 +234,7 @@ class TestEOProduct(EODagTestCase):
             """Emulation of a response to requests.get method for a quicklook"""
 
             def __init__(response):
-                response.headers = {"content-length": 2 ** 5}
+                response.headers = {"content-length": 2**5}
 
             def __enter__(response):
                 return response
@@ -244,7 +244,7 @@ class TestEOProduct(EODagTestCase):
 
             @staticmethod
             def iter_content(**kwargs):
-                with io.BytesIO(b"a" * 2 ** 5) as fh:
+                with io.BytesIO(b"a" * 2**5) as fh:
                     while True:
                         chunk = fh.read(kwargs["chunk_size"])
                         if not chunk:

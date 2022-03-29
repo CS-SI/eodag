@@ -353,13 +353,16 @@ def format_metadata(search_param, *args, **kwargs):
             id_match = id_regex.match(string)
             if id_match:
                 id_dict = id_match.groupdict()
-                return "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{collection}.json" % (
-                    id_dict["tile1"],
-                    id_dict["tile2"],
-                    id_dict["tile3"],
-                    id_dict["year"],
-                    int(id_dict["month"]),
-                    int(id_dict["day"]),
+                return (
+                    "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{collection}.json"
+                    % (
+                        id_dict["tile1"],
+                        id_dict["tile2"],
+                        id_dict["tile3"],
+                        id_dict["year"],
+                        int(id_dict["month"]),
+                        int(id_dict["day"]),
+                    )
                 )
             else:
                 logger.error("Could not extract title infos from %s" % string)
