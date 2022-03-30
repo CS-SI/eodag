@@ -24,11 +24,21 @@
 """EODAG package"""
 import warnings
 
-from .__meta__ import __version__  # noqa
 from .api.core import EODataAccessGateway  # noqa
 from .api.product import EOProduct  # noqa
 from .api.search_result import SearchResult  # noqa
 from .utils.logging import setup_logging  # noqa
+
+try:
+    from importlib.metadata import PackageNotFoundError, version  # type: ignore
+except ImportError:  # pragma: no cover
+    from importlib_metadata import PackageNotFoundError, version  # type: ignore
+
+try:
+    __version__ = version(__name__)
+except PackageNotFoundError:  # pragma: no cover
+    from .__meta__ import __version__  # noqa
+
 
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
