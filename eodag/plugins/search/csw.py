@@ -49,6 +49,11 @@ class CSWSearch(Search):
         super(CSWSearch, self).__init__(provider, config)
         self.catalog = None
 
+    def clear(self):
+        """Clear search context"""
+        super().clear()
+        self.catalog = None
+
     def query(self, product_type=None, auth=None, count=True, **kwargs):
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
