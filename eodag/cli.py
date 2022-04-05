@@ -44,6 +44,7 @@ import os
 import shutil
 import sys
 import textwrap
+from importlib import metadata
 
 import click
 
@@ -107,13 +108,13 @@ def eodag(ctx, verbose):
 @eodag.command(name="version", help="Print eodag version and exit")
 def version():
     """Print eodag version and exit"""
-    base_dir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-    info = {}
-    with open(os.path.join(base_dir, "__meta__.py"), "r") as f:
-        exec(f.read(), info)
-        click.echo(
-            "{__title__} ({__description__}): version {__version__}".format(**info)
+    click.echo(
+        "{__title__} ({__description__}): version {__version__}".format(
+            __title__=metadata.metadata("eodag")["Name"],
+            __description__=metadata.metadata("eodag")["Summary"],
+            __version__=metadata.metadata("eodag")["Version"],
         )
+    )
 
 
 @eodag.command(
