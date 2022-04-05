@@ -32,12 +32,13 @@ from .utils.logging import setup_logging  # noqa
 try:
     from importlib.metadata import PackageNotFoundError, version  # type: ignore
 except ImportError:  # pragma: no cover
+    # for python < 3.8
     from importlib_metadata import PackageNotFoundError, version  # type: ignore
 
 try:
     __version__ = version(__name__)
 except PackageNotFoundError:  # pragma: no cover
-    from ._version import __version__  # noqa
+    from ._version import version as __version__  # noqa
 
 
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")

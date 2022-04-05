@@ -44,7 +44,12 @@ import os
 import shutil
 import sys
 import textwrap
-from importlib import metadata
+
+try:
+    from importlib.metadata import metadata  # type: ignore
+except ImportError:  # pragma: no cover
+    # for python < 3.8
+    from importlib_metadata import metadata  # type: ignore
 
 import click
 
@@ -110,9 +115,9 @@ def version():
     """Print eodag version and exit"""
     click.echo(
         "{__title__} ({__description__}): version {__version__}".format(
-            __title__=metadata.metadata("eodag")["Name"],
-            __description__=metadata.metadata("eodag")["Summary"],
-            __version__=metadata.metadata("eodag")["Version"],
+            __title__=metadata("eodag")["Name"],
+            __description__=metadata("eodag")["Summary"],
+            __version__=metadata("eodag")["Version"],
         )
     )
 

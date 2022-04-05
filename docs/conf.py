@@ -17,7 +17,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-from importlib import metadata
+try:
+    from importlib.metadata import metadata  # type: ignore
+except ImportError:  # pragma: no cover
+    # for python < 3.8
+    from importlib_metadata import metadata  # type: ignore
 
 # -- General configuration ------------------------------------------------
 
@@ -76,8 +80,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = metadata.metadata("eodag")["Name"]
-author = metadata.metadata("eodag")["Author"]
+project = metadata("eodag")["Name"]
+author = metadata("eodag")["Author"]
 copyright = "2018, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -85,7 +89,7 @@ copyright = "2018, CS GROUP - France, https://www.csgroup.eu"
 # built documents.
 #
 # The short X.Y version.
-version = metadata.metadata("eodag")["Version"]
+version = metadata("eodag")["Version"]
 # The full version, including alpha/beta/rc tags.
 release = version
 
