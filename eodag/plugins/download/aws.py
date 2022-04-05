@@ -34,7 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.download.base import Download
-from eodag.utils import ProgressCallback, path_to_uri, urlparse
+from eodag.utils import ProgressCallback, path_to_uri, rename_subfolder, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
@@ -631,10 +631,8 @@ class AwsDownload(Download):
                     )
                 )
             )
-            os.rename(
-                os.path.join(safe_path, "GRANULE/0"),
-                os.path.join(safe_path, "GRANULE", tile_id),
-            )
+            granule_folder = os.path.join(safe_path, "GRANULE")
+            rename_subfolder(granule_folder, tile_id)
 
             # datastrip scene dirname
             scene_id = os.path.basename(
@@ -644,12 +642,8 @@ class AwsDownload(Download):
                     )
                 )
             )
-            datastrip_folder = os.path.join(safe_path, "DATASTRIP/0")
-            if os.path.isdir(datastrip_folder):
-                os.rename(
-                    os.path.join(safe_path, "DATASTRIP/0"),
-                    os.path.join(safe_path, "DATASTRIP", scene_id),
-                )
+            datastrip_folder = os.path.join(safe_path, "DATASTRIP")
+            rename_subfolder(datastrip_folder, scene_id)
         except Exception as e:
             logger.exception("Could not finalize SAFE product from downloaded data")
             raise DownloadError(e)
