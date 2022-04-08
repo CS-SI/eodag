@@ -82,7 +82,7 @@ master_doc = "index"
 # General information about the project.
 project = metadata("eodag")["Name"]
 author = metadata("eodag")["Author"]
-copyright = "2018, CS GROUP - France, https://www.csgroup.eu"
+copyright = "2018-2022, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
