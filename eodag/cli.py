@@ -45,6 +45,12 @@ import shutil
 import sys
 import textwrap
 
+try:
+    from importlib.metadata import metadata  # type: ignore
+except ImportError:  # pragma: no cover
+    # for python < 3.8
+    from importlib_metadata import metadata  # type: ignore
+
 import click
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
@@ -107,13 +113,13 @@ def eodag(ctx, verbose):
 @eodag.command(name="version", help="Print eodag version and exit")
 def version():
     """Print eodag version and exit"""
-    base_dir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-    info = {}
-    with open(os.path.join(base_dir, "__meta__.py"), "r") as f:
-        exec(f.read(), info)
-        click.echo(
-            "{__title__} ({__description__}): version {__version__}".format(**info)
+    click.echo(
+        "{__title__} ({__description__}): version {__version__}".format(
+            __title__=metadata("eodag")["Name"],
+            __description__=metadata("eodag")["Summary"],
+            __version__=metadata("eodag")["Version"],
         )
+    )
 
 
 @eodag.command(

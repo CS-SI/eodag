@@ -16,6 +16,10 @@ jobs:
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v2
+    - name: Get history and tags for SCM versioning to work
+      run: |
+        git fetch --prune --unshallow
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set up Python 3.7
       uses: actions/setup-python@v2
       with:
@@ -33,6 +37,10 @@ jobs:
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v2
+    - name: Get history and tags for SCM versioning to work
+      run: |
+        git fetch --prune --unshallow
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set up Python ${{ matrix.python-version }} on ${{ matrix.os }}
       uses: actions/setup-python@v2
       with:
@@ -97,6 +105,10 @@ jobs:
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v2
+    - name: Get history and tags for SCM versioning to work
+      run: |
+        git fetch --prune --unshallow
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set up Python 3.7
       uses: actions/setup-python@v2
       with:
@@ -132,6 +144,10 @@ jobs:
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v2
+    - name: Get history and tags for SCM versioning to work
+      run: |
+        git fetch --prune --unshallow
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set up Python 3.7
       uses: actions/setup-python@v2
       with:
