@@ -989,13 +989,18 @@ class PostJsonSearch(QueryStringSearch):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
+            # auth if needed
+            kwargs = {}
+            if getattr(self.config, "need_auth", False) and hasattr(self, "auth"):
+                kwargs["auth"] = self.auth
+
             # perform the request using the next page arguments if they are defined
             if getattr(self, "next_page_query_obj", None):
                 self.query_params = self.next_page_query_obj
             if info_message:
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
-            response = requests.post(url, json=self.query_params)
+            response = requests.post(url, json=self.query_params, **kwargs)
             response.raise_for_status()
         except (requests.HTTPError, urllib_HTTPError) as err:
             # check if error is identified as auth_error in provider conf
