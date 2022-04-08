@@ -1,7 +1,7 @@
 FROM python:3.9-slim
 
 # start from root
-WORKDIR /
+WORKDIR /eodag
 
 ENV \
     # force stdin, stdout and stderr to be totally unbuffered. (equivalent to `python -u`)
@@ -48,14 +48,15 @@ ENV LC_ALL=en_US.UTF-8 \
 # copy necessary files
 COPY setup.py setup.py
 COPY setup.cfg setup.cfg
+COPY pyproject.toml pyproject.toml
 COPY README.rst README.rst
-COPY ./eodag /eodag
+COPY ./eodag /eodag/eodag
 
 # install eodag
 RUN python setup.py install
 
 # add python path
-ENV PYTHONPATH="${PYTHONPATH}:/eodag"
+ENV PYTHONPATH="${PYTHONPATH}:/eodag/eodag"
 
 # copy start-stac script
 COPY ./docker/run-stac-server.sh /eodag/run-stac-server.sh
