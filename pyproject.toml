@@ -3,4 +3,4 @@ requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-# write_to = "eodag/_version.py"
+fallback_version = "2.4.1.dev0"

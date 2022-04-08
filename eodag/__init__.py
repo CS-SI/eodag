@@ -38,7 +38,7 @@ except ImportError:  # pragma: no cover
 try:
     __version__ = version(__name__)
 except PackageNotFoundError:  # pragma: no cover
-    from ._version import version as __version__  # noqa
+    __version__ = "0.0.0"
 
 
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
