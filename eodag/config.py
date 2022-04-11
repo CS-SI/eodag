@@ -90,7 +90,7 @@ class ProviderConfig(yaml.YAMLObject):
     :param auth: (optional) The configuration of a plugin of type Authentication
     :type auth: :class:`~eodag.config.PluginConfig`
     :param kwargs: Additional configuration variables for this provider
-    :type kwargs: dict
+    :type kwargs: Any
     """
 
     yaml_loader = yaml.Loader

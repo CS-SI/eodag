@@ -145,7 +145,7 @@ def format_metadata(search_param, *args, **kwargs):
     :param args: (optional) Additional arguments to use in the formatting process
     :type args: tuple
     :param kwargs: (optional) Additional named-arguments to use when formatting
-    :type kwargs: dict
+    :type kwargs: Any
     :returns: The formatted string
     :rtype: str
     """
