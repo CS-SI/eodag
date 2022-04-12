@@ -106,6 +106,10 @@ class PluginManager(object):
                 providers_config.pop(provider)
                 continue
 
+            # provider priority set to lowest if not set
+            if getattr(provider_config, "priority", None) is None:
+                provider_config.priority = 0
+
             for product_type in provider_config.products:
                 product_type_providers = (
                     self.product_type_to_provider_config_map.setdefault(  # noqa
