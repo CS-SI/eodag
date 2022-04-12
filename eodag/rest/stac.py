@@ -132,7 +132,7 @@ class StacCommon(object):
         :param extension: Extension name
         :type extension: str
         :param kwargs: Additional variables needed for parsing extension
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: STAC extension as dictionnary
         :rtype: dict
         """

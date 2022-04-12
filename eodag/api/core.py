@@ -525,7 +525,7 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :type kwargs: dict
+        :type kwargs: Union[int, str, bool, dict]
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -590,7 +590,7 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :type kwargs: dict
+        :type kwargs: Union[int, str, bool, dict]
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
@@ -740,7 +740,7 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :type kwargs: dict
+        :type kwargs: Union[int, str, bool, dict]
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
@@ -803,7 +803,7 @@ class EODataAccessGateway(object):
                          knows this product is available on the given provider
         :type provider: str
         :param kwargs: Search criteria to help finding the right product
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: A search result with one EO product or None at all, and the number
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -864,7 +864,7 @@ class EODataAccessGateway(object):
                        * id and/or a provider for a search by
                        * search criteria to guess the product type
                        * other criteria compatible with the provider
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: The prepared kwargs to make a query.
         :rtype: dict
         """
@@ -978,7 +978,7 @@ class EODataAccessGateway(object):
                              True, the error is raised
         :type raise_errors: bool
         :param kwargs: Some other criteria that will be used to do the search
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: A collection of EO products matching the criteria and the total
                   number of results found if count is True else None
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
@@ -1201,11 +1201,11 @@ class EODataAccessGateway(object):
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
         :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool) and
-                        `dl_url_params` (dict) can be provided here and will
-                        override any other values defined in a configuration file
-                        or with environment variables.
-        :type kwargs: dict
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
         :returns: A collection of the absolute paths to the downloaded products
         :rtype: list
         """
@@ -1308,7 +1308,7 @@ class EODataAccessGateway(object):
         :type timeout: float
         :param kwargs: Parameters that will be stored in the result as
                        search criteria
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
 
@@ -1400,7 +1400,7 @@ class EODataAccessGateway(object):
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: dict
+        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
