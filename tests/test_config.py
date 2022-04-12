@@ -227,6 +227,17 @@ class TestPluginConfig(unittest.TestCase):
 
 
 class TestConfigFunctions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestConfigFunctions, cls).setUpClass()
+        # backup os.environ as it will be modified by tests
+        cls.os_environ_backup = os.environ
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestConfigFunctions, cls).tearDownClass()
+        os.environ = cls.os_environ_backup
+
     def test_load_default_config(self):
         """Default config must be successfully loaded"""
         conf = config.load_default_config()

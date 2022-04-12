@@ -316,14 +316,13 @@ class TestCoreConfWithEnvVar(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreConfWithEnvVar, cls).setUpClass()
         cls.dag = EODataAccessGateway()
+        # backup os.environ as it will be modified by tests
+        cls.os_environ_backup = os.environ
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        if os.getenv("EODAG_CFG_FILE") is not None:
-            os.environ.pop("EODAG_CFG_FILE")
-        if os.getenv("EODAG_LOCS_CFG_FILE") is not None:
-            os.environ.pop("EODAG_LOCS_CFG_FILE")
+        os.environ = cls.os_environ_backup
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa

@@ -657,6 +657,13 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )
         cls.eodag = EODataAccessGateway(user_conf_file_path=tests_wrong_conf)
+        # backup os.environ as it will be modified by tests
+        cls.os_environ_backup = os.environ
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestEODagEndToEndWrongCredentials, cls).tearDownClass()
+        os.environ = cls.os_environ_backup
 
     def test_end_to_end_wrong_credentials_theia(self):
         product = self.execute_search(*THEIA_SEARCH_ARGS)
