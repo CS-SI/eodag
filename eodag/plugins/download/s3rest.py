@@ -62,6 +62,11 @@ class S3RestDownload(AwsDownload):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
