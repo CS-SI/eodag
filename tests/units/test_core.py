@@ -25,6 +25,7 @@ import unittest
 import uuid
 from copy import deepcopy
 
+from pkg_resources import resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -181,6 +182,13 @@ class TestCore(TestCoreBase):
         super(TestCore, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         cls.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+        # backup os.environ as it will be modified by tests
+        cls.os_environ_backup = os.environ
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCore, cls).tearDownClass()
+        os.environ = cls.os_environ_backup
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""  # noqa
@@ -260,6 +268,33 @@ class TestCore(TestCoreBase):
         """The core object must set the locations to an empty list when the file is not found"""  # noqa
         dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
         self.assertEqual(dag.locations_config, [])
+
+    def test_prune_providers_list(self):
+        """Providers needing auth for search but without credentials must be pruned on init"""
+        empty_conf_file = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+        try:
+            # Default conf: no auth needed for search
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            assert not getattr(dag.providers_config["peps"].search, "need_auth", False)
+
+            # auth needed for search without credentials
+            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            assert "peps" not in dag.available_providers()
+
+            # auth needed for search with credentials
+            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            assert "peps" in dag.available_providers()
+            assert getattr(dag.providers_config["peps"].search, "need_auth", False)
+
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
 
     def test_rebuild_index(self):
         """Change product_types_config_md5 and check that whoosh index is rebuilt"""
