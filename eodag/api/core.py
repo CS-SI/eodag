@@ -269,15 +269,15 @@ class EODataAccessGateway(object):
         ...                           'as expected')
         ... except eodag.utils.exceptions.UnsupportedProvider:
         ...     pass
-        >>> dag.set_preferred_provider(u'usgs')
+        >>> dag.set_preferred_provider(u'creodias')
         >>> dag.get_preferred_provider()
-        ('usgs', 2)
+        ('creodias', 2)
         >>> dag.set_preferred_provider(u'theia')
         >>> dag.get_preferred_provider()
         ('theia', 3)
-        >>> dag.set_preferred_provider(u'usgs')
+        >>> dag.set_preferred_provider(u'creodias')
         >>> dag.get_preferred_provider()
-        ('usgs', 4)
+        ('creodias', 4)
         >>> config.close()
         >>> os.unlink(config.name)
 
