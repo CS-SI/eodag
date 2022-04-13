@@ -803,13 +803,6 @@ class ODataV4Search(QueryStringSearch):
         final_result = []
         # Query the products entity set for basic metadata about the product
         for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
-            entity_metadata = {
-                "quicklook": entity["quicklook"],
-                "id": entity["id"],
-                "footprint": entity["footprint"],
-                "downloadable": entity["downloadable"],
-                "offline": entity["offline"],
-            }
             metadata_url = self.get_metadata_search_url(entity)
             try:
                 logger.debug("Sending metadata request: %s", metadata_url)
@@ -822,10 +815,10 @@ class ODataV4Search(QueryStringSearch):
                     self.__class__.__name__,
                 )
             else:
-                entity_metadata.update(
+                entity.update(
                     {item["id"]: item["value"] for item in response.json()["value"]}
                 )
-                final_result.append(entity_metadata)
+                final_result.append(entity)
         return final_result
 
     def get_metadata_search_url(self, entity):
