@@ -19,12 +19,14 @@
 import glob
 import json
 import os
+import re
 import shutil
 import tempfile
 import unittest
 import uuid
 from copy import deepcopy
 
+import yaml
 from pkg_resources import resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
@@ -50,21 +52,37 @@ class TestCoreBase(unittest.TestCase):
     def setUpClass(cls):
         super(TestCoreBase, cls).setUpClass()
         # Mock home and eodag conf directory to tmp dir
-        cls.tmp_home_dir = tempfile.mkdtemp()
+        cls.tmp_home_dir = tempfile.TemporaryDirectory()
         cls.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
         cls.expanduser_mock.start()
+        # use empty config file with fake credentials in order to have full
+        # list for tests and prevent providers to be pruned
+        empty_conf_file_path = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+        with open(os.path.abspath(os.path.realpath(empty_conf_file_path)), "r") as fh:
+            was_empty_conf = yaml.safe_load(fh)
+        for provider, conf in was_empty_conf.items():
+            if "credentials" in conf.get("auth", {}):
+                cred_key = next(iter(conf["auth"]["credentials"]))
+                conf["auth"]["credentials"][cred_key] = "foo"
+            elif "credentials" in conf.get("api", {}):
+                cred_key = next(iter(conf["api"]["credentials"]))
+                was_empty_conf[provider]["api"]["credentials"][cred_key] = "foo"
+        # create eodag conf dir in tmp home dir
+        eodag_conf_dir = os.path.join(cls.tmp_home_dir.name, ".config", "eodag")
+        os.makedirs(eodag_conf_dir, exist_ok=False)
+        with open(os.path.join(eodag_conf_dir, "eodag.yml"), mode="w") as fh:
+            yaml.dump(was_empty_conf, fh, default_flow_style=False)
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreBase, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
-        try:
-            shutil.rmtree(cls.tmp_home_dir)
-        except OSError:
-            pass
+        cls.tmp_home_dir.cleanup()
 
 
 class TestCore(TestCoreBase):
@@ -183,12 +201,19 @@ class TestCore(TestCoreBase):
         cls.dag = EODataAccessGateway()
         cls.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
         # backup os.environ as it will be modified by tests
-        cls.os_environ_backup = os.environ
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
 
     @classmethod
     def tearDownClass(cls):
         super(TestCore, cls).tearDownClass()
-        os.environ = cls.os_environ_backup
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""  # noqa
@@ -317,12 +342,19 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         super(TestCoreConfWithEnvVar, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         # backup os.environ as it will be modified by tests
-        cls.os_environ_backup = os.environ
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        os.environ = cls.os_environ_backup
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa
@@ -336,7 +368,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
                 [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
             )
         finally:
-            os.environ("EODAG_CFG_FILE", None)
+            os.environ.pop("EODAG_LOCS_CFG_FILE", None)
 
     def test_core_object_prioritize_config_file_in_envvar(self):
         """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""  # noqa
@@ -352,7 +384,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
                 dag.providers_config["peps"].download.outputs_prefix, "/data"
             )
         finally:
-            os.environ("EODAG_CFG_FILE", None)
+            os.environ.pop("EODAG_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
