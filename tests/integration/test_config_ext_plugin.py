@@ -16,8 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import tempfile
 import unittest
+from tempfile import TemporaryDirectory
 
 import pkg_resources
 
@@ -30,7 +30,7 @@ class TestExternalPluginConfig(unittest.TestCase):
     def setUp(self):
         super(TestExternalPluginConfig, self).setUp()
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = tempfile.TemporaryDirectory()
+        self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )

@@ -16,8 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import tempfile
 import unittest
+from tempfile import TemporaryDirectory
 
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -36,7 +36,7 @@ class TestSearchStacStatic(unittest.TestCase):
         super(TestSearchStacStatic, self).setUp()
 
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = tempfile.TemporaryDirectory()
+        self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )

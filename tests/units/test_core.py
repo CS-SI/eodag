@@ -21,12 +21,11 @@ import json
 import os
 import re
 import shutil
-import tempfile
 import unittest
 import uuid
 from copy import deepcopy
+from tempfile import TemporaryDirectory
 
-import yaml
 from pkg_resources import resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
@@ -44,7 +43,7 @@ from tests.context import (
     get_geometry_from_various,
     makedirs,
 )
-from tests.utils import mock
+from tests.utils import mock, write_eodag_conf_with_fake_credentials
 
 
 class TestCoreBase(unittest.TestCase):
@@ -52,30 +51,20 @@ class TestCoreBase(unittest.TestCase):
     def setUpClass(cls):
         super(TestCoreBase, cls).setUpClass()
         # Mock home and eodag conf directory to tmp dir
-        cls.tmp_home_dir = tempfile.TemporaryDirectory()
+        cls.tmp_home_dir = TemporaryDirectory()
         cls.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
         cls.expanduser_mock.start()
-        # use empty config file with fake credentials in order to have full
-        # list for tests and prevent providers to be pruned
-        empty_conf_file_path = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
-        )
-        with open(os.path.abspath(os.path.realpath(empty_conf_file_path)), "r") as fh:
-            was_empty_conf = yaml.safe_load(fh)
-        for provider, conf in was_empty_conf.items():
-            if "credentials" in conf.get("auth", {}):
-                cred_key = next(iter(conf["auth"]["credentials"]))
-                conf["auth"]["credentials"][cred_key] = "foo"
-            elif "credentials" in conf.get("api", {}):
-                cred_key = next(iter(conf["api"]["credentials"]))
-                was_empty_conf[provider]["api"]["credentials"][cred_key] = "foo"
+
         # create eodag conf dir in tmp home dir
         eodag_conf_dir = os.path.join(cls.tmp_home_dir.name, ".config", "eodag")
         os.makedirs(eodag_conf_dir, exist_ok=False)
-        with open(os.path.join(eodag_conf_dir, "eodag.yml"), mode="w") as fh:
-            yaml.dump(was_empty_conf, fh, default_flow_style=False)
+        # use empty config file with fake credentials in order to have full
+        # list for tests and prevent providers to be pruned
+        write_eodag_conf_with_fake_credentials(
+            os.path.join(eodag_conf_dir, "eodag.yml")
+        )
 
     @classmethod
     def tearDownClass(cls):
