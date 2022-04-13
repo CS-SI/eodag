@@ -326,25 +326,33 @@ class TestCoreConfWithEnvVar(TestCoreBase):
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa
-        os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_locations_override.yml"
-        )
-        dag = EODataAccessGateway()
-        self.assertEqual(
-            dag.locations_config,
-            [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
-        )
+        try:
+            os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
+                TEST_RESOURCES_PATH, "file_locations_override.yml"
+            )
+            dag = EODataAccessGateway()
+            self.assertEqual(
+                dag.locations_config,
+                [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
+            )
+        finally:
+            os.environ("EODAG_CFG_FILE", None)
 
     def test_core_object_prioritize_config_file_in_envvar(self):
         """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""  # noqa
-        os.environ["EODAG_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_config_override.yml"
-        )
-        dag = EODataAccessGateway()
-        # usgs priority is set to 5 in the test config overrides
-        self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
-        # peps outputs prefix is set to /data
-        self.assertEqual(dag.providers_config["peps"].download.outputs_prefix, "/data")
+        try:
+            os.environ["EODAG_CFG_FILE"] = os.path.join(
+                TEST_RESOURCES_PATH, "file_config_override.yml"
+            )
+            dag = EODataAccessGateway()
+            # usgs priority is set to 5 in the test config overrides
+            self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
+            # peps outputs prefix is set to /data
+            self.assertEqual(
+                dag.providers_config["peps"].download.outputs_prefix, "/data"
+            )
+        finally:
+            os.environ("EODAG_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):

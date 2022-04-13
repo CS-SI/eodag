@@ -344,6 +344,7 @@ class EODataAccessGateway(object):
 
     def _prune_providers_list(self):
         """Removes from config providers needing auth that have no credentials set."""
+        update_needed = False
         for provider in list(self.providers_config.keys()):
             conf = self.providers_config[provider]
 
@@ -357,10 +358,12 @@ class EODataAccessGateway(object):
                 if not credentials_exist:
                     # credentials needed but not found
                     del self.providers_config[provider]
+                    update_needed = True
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
                 if not hasattr(conf, "auth"):
                     # credentials needed but no auth plugin was found
                     del self.providers_config[provider]
+                    update_needed = True
                     continue
                 credentials_exist = any(
                     [
@@ -371,9 +374,15 @@ class EODataAccessGateway(object):
                 if not credentials_exist:
                     # credentials needed but not found
                     del self.providers_config[provider]
+                    update_needed = True
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
                 del self.providers_config[provider]
+                update_needed = True
+
+        if update_needed:
+            # rebuild _plugins_manager with updated providers list
+            self._plugins_manager = PluginManager(self.providers_config)
 
     def set_locations_conf(self, locations_conf_path):
         """Set locations configuration.
