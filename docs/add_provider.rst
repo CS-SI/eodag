@@ -23,6 +23,7 @@ the `STAC client page <notebooks/tutos/tuto_stac_client.ipynb#stac-api>`_, shows
       search:
          type: StacSearch
          api_endpoint: https://tamn.snapplanet.io/search
+         need_auth: false
       products:
          S2_MSI_L1C:
                productType: S2

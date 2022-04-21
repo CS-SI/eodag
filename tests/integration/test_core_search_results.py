@@ -32,9 +32,9 @@ class TestCoreSearchResults(EODagTestCase):
     def setUp(self):
         super(TestCoreSearchResults, self).setUp()
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = tempfile.mkdtemp()
+        self.tmp_home_dir = tempfile.TemporaryDirectory()
         self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
         self.dag = EODataAccessGateway()
@@ -113,10 +113,7 @@ class TestCoreSearchResults(EODagTestCase):
         super(TestCoreSearchResults, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
-        try:
-            shutil.rmtree(self.tmp_home_dir)
-        except OSError:
-            pass
+        self.tmp_home_dir.cleanup()
 
     def test_core_serialize_search_results(self):
         """The core api must serialize a search results to geojson"""

@@ -1,63 +1,63 @@
-parameter,astraea_eod,aws_eos,creodias,earth_search,earth_search_cog,mundi,onda,peps,sobloo,theia,usgs,usgs_satapi_aws
-:abbr:`abstract ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Abstract. (String))`,metadata only,,metadata only,metadata only,metadata only,metadata only,,metadata only,,,,metadata only
-":abbr:`accessConstraint ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Applied to assure the protection of privacy or intellectual property, and any special restrictions or limitations on obtaining the resource (String ))`",,,metadata only,,,metadata only,,metadata only,,metadata only,,
-acquisitionStation,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,,:green:`queryable metadata`
-acquisitionSubType,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,,:green:`queryable metadata`
-acquisitionType,,,,,,metadata only,,metadata only,,,,
-antennaLookDirection,,,,,,metadata only,,,,metadata only,,
-archivingCenter,,,,,,metadata only,,,,metadata only,,
-availabilityTime,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,metadata only,metadata only,,:green:`queryable metadata`
-:abbr:`classification ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Name of the handling restrictions on the resource or metadata (String ))`,,,,,,metadata only,,,,,,
-cloudCover,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`
-completionTimeFromAscendingNode,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`
-:abbr:`compositeType ([OpenSearch Parameters for Collection Search] Type of composite product expressed as time period that the composite product covers (e.g. P10D for a 10 day composite) (String))`,,,,,,metadata only,,,,,,
-creationDate,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,metadata only,metadata only,metadata only,,:green:`queryable metadata`
-":abbr:`dissemination ([OpenSearch Parameters for Collection Search] A string identifying the dissemination method (e.g. EUMETCast, EUMETCast-Europe, DataCentre) (String))`",,,,,,metadata only,,,,,,
-:abbr:`doi ([OpenSearch Parameters for Collection Search] Digital Object Identifier identifying the product (see http://www.doi.org) (String))`,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,,,:green:`queryable metadata`
-dopplerFrequency,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,,:green:`queryable metadata`
-frame,,,,,,metadata only,,,,,,
-":abbr:`hasSecurityConstraints ([OpenSearch Parameters for Collection Search] A string informing if the resource has any security constraints. Possible values: TRUE, FALSE (String))`",,,,,,metadata only,,,,,,
-highestLocation,,,,,,metadata only,,,,,,
-illuminationAzimuthAngle,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,,:green:`queryable metadata`
-illuminationElevationAngle,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,,:green:`queryable metadata`
-illuminationZenithAngle,,,,,,metadata only,,,,metadata only,,
-incidenceAngleVariation,,,,,,metadata only,,,,metadata only,,
-":abbr:`instrument ([OpenSearch Parameters for Collection Search] A string identifying the instrument (e.g. MERIS, AATSR, ASAR, HRVIR. SAR). (String))`",metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,,:green:`queryable metadata`
-:abbr:`keyword ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Commonly used word(s) or formalised word(s) or phrase(s) used to describe the subject. (String))`,,,metadata only,,,metadata only,,metadata only,,metadata only,,
-:abbr:`language ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Language of the intellectual content of the metadata record (String ))`,,,,,,metadata only,,,,,,
-:abbr:`lineage ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] General explanation of the data producer’s knowledge about the lineage of a dataset. (String))`,,,,,,metadata only,,,,,,
-lowestLocation,,,,,,metadata only,,,,,,
-maximumIncidenceAngle,,,,,,metadata only,,,,metadata only,,
-minimumIncidenceAngle,,,,,,metadata only,,,,metadata only,,
-modificationDate,metadata only,,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,metadata only,,metadata only,,:green:`queryable metadata`
-orbitDirection,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,,,:green:`queryable metadata`
-orbitNumber,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,metadata only,,:green:`queryable metadata`
-":abbr:`orbitType ([OpenSearch Parameters for Collection Search] A string identifying the platform orbit type (e.g. LEO, GEO) (String))`",,,,,,metadata only,,,,,,
-:abbr:`organisationName ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] A string identifying the name of the organization responsible for the resource (String))`,,,:green:`queryable metadata`,,,metadata only,,:green:`queryable metadata`,,metadata only,,
-:abbr:`organisationRole ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] The function performed by the responsible party (String ))`,,,,,,metadata only,,,,,,
-:abbr:`otherConstraint ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Other restrictions and legal prerequisites for accessing and using the resource or metadata. (String))`,,,,,,metadata only,,,,,,
-parentIdentifier,,,:green:`queryable metadata`,,,metadata only,,:green:`queryable metadata`,,metadata only,,
-:abbr:`platform ([OpenSearch Parameters for Collection Search] A string with the platform short name (e.g. Sentinel-1) (String))`,metadata only,,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,,:green:`queryable metadata`
-:abbr:`platformSerialIdentifier ([OpenSearch Parameters for Collection Search] A string with the Platform serial identifier (String))`,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,,:green:`queryable metadata`
-processingCenter,,,,,,metadata only,,metadata only,,,,
-processingDate,,,,,,metadata only,metadata only,,,metadata only,,
-:abbr:`processingLevel ([OpenSearch Parameters for Collection Search] A string identifying the processing level applied to the entry (String))`,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,,:green:`queryable metadata`
-processingMode,,,,,,metadata only,,,,metadata only,,
-processorName,,,,,,metadata only,,metadata only,,,,
-productQualityDegradationTag,,,,,,metadata only,,,,,,
-productQualityStatus,,,,,,metadata only,metadata only,metadata only,,,,
-":abbr:`productType ([OpenSearch Parameters for Collection Search] A string identifying the entry type (e.g. ER02_SAR_IM__0P, MER_RR__1P, SM_SLC__1S, GES_DISC_AIRH3STD_V005) (String ))`",:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`
-productVersion,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,metadata only,,metadata only,,:green:`queryable metadata`
-:abbr:`publicationDate ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] The date when the resource was issued (Date time))`,metadata only,,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,metadata only,metadata only,metadata only,,:green:`queryable metadata`
-resolution,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,:green:`queryable metadata`,,metadata only,,:green:`queryable metadata`
-sensorMode,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,metadata only,,:green:`queryable metadata`
-":abbr:`sensorType ([OpenSearch Parameters for Collection Search] A string identifying the sensor type. Suggested values are: OPTICAL, RADAR, ALTIMETRIC, ATMOSPHERIC, LIMB (String))`",,,,,,metadata only,,,,,,
-snowCover,,,:green:`queryable metadata`,,,metadata only,,:green:`queryable metadata`,,metadata only,,
-":abbr:`spectralRange ([OpenSearch Parameters for Collection Search] A string identifying the sensor spectral range (e.g. INFRARED, NEAR-INFRARED, UV, VISIBLE) (String))`",,,,,,metadata only,,,,,,
-startTimeFromAscendingNode,metadata only,,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,metadata only
-swathIdentifier,,,,,,metadata only,,:green:`queryable metadata`,,,,
-:abbr:`title ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] A name given to the resource (String ))`,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only
-:abbr:`topicCategory ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Main theme(s) of the dataset (String ))`,,,,,,metadata only,,metadata only,,,,
-track,,,,,,metadata only,,,,,,
-:abbr:`useLimitation ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] A string identifying informing if the resource has usage limitations (String))`,,,,,,metadata only,,,,,,
-wavelengths,,,,,,metadata only,,,,,,
+parameter,astraea_eod,creodias,earth_search,earth_search_cog,mundi,onda,peps,sobloo,theia,usgs_satapi_aws
+:abbr:`abstract ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Abstract. (String))`,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,,,metadata only
+":abbr:`accessConstraint ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Applied to assure the protection of privacy or intellectual property, and any special restrictions or limitations on obtaining the resource (String ))`",,metadata only,,,metadata only,,metadata only,,metadata only,
+acquisitionStation,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,:green:`queryable metadata`
+acquisitionSubType,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,:green:`queryable metadata`
+acquisitionType,,,,,metadata only,,metadata only,,,
+antennaLookDirection,,,,,metadata only,,,,metadata only,
+archivingCenter,,,,,metadata only,,,,metadata only,
+availabilityTime,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,metadata only,metadata only,:green:`queryable metadata`
+:abbr:`classification ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Name of the handling restrictions on the resource or metadata (String ))`,,,,,metadata only,,,,,
+cloudCover,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+completionTimeFromAscendingNode,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+:abbr:`compositeType ([OpenSearch Parameters for Collection Search] Type of composite product expressed as time period that the composite product covers (e.g. P10D for a 10 day composite) (String))`,,,,,metadata only,,,,,
+creationDate,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,metadata only,metadata only,metadata only,:green:`queryable metadata`
+":abbr:`dissemination ([OpenSearch Parameters for Collection Search] A string identifying the dissemination method (e.g. EUMETCast, EUMETCast-Europe, DataCentre) (String))`",,,,,metadata only,,,,,
+:abbr:`doi ([OpenSearch Parameters for Collection Search] Digital Object Identifier identifying the product (see http://www.doi.org) (String))`,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,,:green:`queryable metadata`
+dopplerFrequency,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,:green:`queryable metadata`
+frame,,,,,metadata only,,,,,
+":abbr:`hasSecurityConstraints ([OpenSearch Parameters for Collection Search] A string informing if the resource has any security constraints. Possible values: TRUE, FALSE (String))`",,,,,metadata only,,,,,
+highestLocation,,,,,metadata only,,,,,
+illuminationAzimuthAngle,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,:green:`queryable metadata`
+illuminationElevationAngle,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,,,metadata only,:green:`queryable metadata`
+illuminationZenithAngle,,,,,metadata only,,,,metadata only,
+incidenceAngleVariation,,,,,metadata only,,,,metadata only,
+":abbr:`instrument ([OpenSearch Parameters for Collection Search] A string identifying the instrument (e.g. MERIS, AATSR, ASAR, HRVIR. SAR). (String))`",metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`
+:abbr:`keyword ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Commonly used word(s) or formalised word(s) or phrase(s) used to describe the subject. (String))`,,metadata only,,,metadata only,,metadata only,,metadata only,
+:abbr:`language ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Language of the intellectual content of the metadata record (String ))`,,,,,metadata only,,,,,
+:abbr:`lineage ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] General explanation of the data producer’s knowledge about the lineage of a dataset. (String))`,,,,,metadata only,,,,,
+lowestLocation,,,,,metadata only,,,,,
+maximumIncidenceAngle,,,,,metadata only,,,,metadata only,
+minimumIncidenceAngle,,,,,metadata only,,,,metadata only,
+modificationDate,metadata only,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,metadata only,,metadata only,:green:`queryable metadata`
+orbitDirection,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,,:green:`queryable metadata`
+orbitNumber,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`
+":abbr:`orbitType ([OpenSearch Parameters for Collection Search] A string identifying the platform orbit type (e.g. LEO, GEO) (String))`",,,,,metadata only,,,,,
+:abbr:`organisationName ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] A string identifying the name of the organization responsible for the resource (String))`,,:green:`queryable metadata`,,,metadata only,,:green:`queryable metadata`,,metadata only,
+:abbr:`organisationRole ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] The function performed by the responsible party (String ))`,,,,,metadata only,,,,,
+:abbr:`otherConstraint ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Other restrictions and legal prerequisites for accessing and using the resource or metadata. (String))`,,,,,metadata only,,,,,
+parentIdentifier,,:green:`queryable metadata`,,,metadata only,,:green:`queryable metadata`,,metadata only,
+:abbr:`platform ([OpenSearch Parameters for Collection Search] A string with the platform short name (e.g. Sentinel-1) (String))`,metadata only,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,:green:`queryable metadata`
+:abbr:`platformSerialIdentifier ([OpenSearch Parameters for Collection Search] A string with the Platform serial identifier (String))`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`
+processingCenter,,,,,metadata only,,metadata only,,,
+processingDate,,,,,metadata only,metadata only,,,metadata only,
+:abbr:`processingLevel ([OpenSearch Parameters for Collection Search] A string identifying the processing level applied to the entry (String))`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`
+processingMode,,,,,metadata only,,,,metadata only,
+processorName,,,,,metadata only,,metadata only,,,
+productQualityDegradationTag,,,,,metadata only,,,,,
+productQualityStatus,,,,,metadata only,metadata only,metadata only,,,
+":abbr:`productType ([OpenSearch Parameters for Collection Search] A string identifying the entry type (e.g. ER02_SAR_IM__0P, MER_RR__1P, SM_SLC__1S, GES_DISC_AIRH3STD_V005) (String ))`",:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+productVersion,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,metadata only,,metadata only,:green:`queryable metadata`
+:abbr:`publicationDate ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] The date when the resource was issued (Date time))`,metadata only,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,metadata only,metadata only,metadata only,:green:`queryable metadata`
+resolution,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,,:green:`queryable metadata`,,metadata only,:green:`queryable metadata`
+sensorMode,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`
+":abbr:`sensorType ([OpenSearch Parameters for Collection Search] A string identifying the sensor type. Suggested values are: OPTICAL, RADAR, ALTIMETRIC, ATMOSPHERIC, LIMB (String))`",,,,,metadata only,,,,,
+snowCover,,:green:`queryable metadata`,,,metadata only,,:green:`queryable metadata`,,metadata only,
+":abbr:`spectralRange ([OpenSearch Parameters for Collection Search] A string identifying the sensor spectral range (e.g. INFRARED, NEAR-INFRARED, UV, VISIBLE) (String))`",,,,,metadata only,,,,,
+startTimeFromAscendingNode,metadata only,:green:`queryable metadata`,metadata only,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only
+swathIdentifier,,,,,metadata only,,:green:`queryable metadata`,,,
+:abbr:`title ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] A name given to the resource (String ))`,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+:abbr:`topicCategory ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] Main theme(s) of the dataset (String ))`,,,,,metadata only,,metadata only,,,
+track,,,,,metadata only,,,,,
+:abbr:`useLimitation ([Additional INSPIRE obligated OpenSearch Parameters for Collection Search] A string identifying informing if the resource has usage limitations (String))`,,,,,metadata only,,,,,
+wavelengths,,,,,metadata only,,,,,
