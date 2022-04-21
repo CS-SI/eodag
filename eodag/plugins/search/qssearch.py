@@ -718,6 +718,10 @@ class QueryStringSearch(Search):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
+            # auth if needed
+            kwargs = {}
+            if getattr(self.config, "need_auth", False) and hasattr(self, "auth"):
+                kwargs["auth"] = self.auth
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
             if hasattr(self.config, "dont_quote"):
@@ -728,7 +732,7 @@ class QueryStringSearch(Search):
                     qry = qry.replace(quote(keep_unquoted), keep_unquoted)
 
                 # prepare req for Response building
-                req = requests.Request(method="GET", url=base_url)
+                req = requests.Request(method="GET", url=base_url, **kwargs)
                 prep = req.prepare()
                 prep.url = base_url + "?" + qry
                 # send urllib req
