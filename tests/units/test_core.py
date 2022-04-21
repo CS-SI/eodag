@@ -19,12 +19,14 @@
 import glob
 import json
 import os
+import re
 import shutil
-import tempfile
 import unittest
 import uuid
 from copy import deepcopy
+from tempfile import TemporaryDirectory
 
+from pkg_resources import resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -41,7 +43,7 @@ from tests.context import (
     get_geometry_from_various,
     makedirs,
 )
-from tests.utils import mock
+from tests.utils import mock, write_eodag_conf_with_fake_credentials
 
 
 class TestCoreBase(unittest.TestCase):
@@ -49,21 +51,27 @@ class TestCoreBase(unittest.TestCase):
     def setUpClass(cls):
         super(TestCoreBase, cls).setUpClass()
         # Mock home and eodag conf directory to tmp dir
-        cls.tmp_home_dir = tempfile.mkdtemp()
+        cls.tmp_home_dir = TemporaryDirectory()
         cls.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
         cls.expanduser_mock.start()
+
+        # create eodag conf dir in tmp home dir
+        eodag_conf_dir = os.path.join(cls.tmp_home_dir.name, ".config", "eodag")
+        os.makedirs(eodag_conf_dir, exist_ok=False)
+        # use empty config file with fake credentials in order to have full
+        # list for tests and prevent providers to be pruned
+        write_eodag_conf_with_fake_credentials(
+            os.path.join(eodag_conf_dir, "eodag.yml")
+        )
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreBase, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
-        try:
-            shutil.rmtree(cls.tmp_home_dir)
-        except OSError:
-            pass
+        cls.tmp_home_dir.cleanup()
 
 
 class TestCore(TestCoreBase):
@@ -181,6 +189,20 @@ class TestCore(TestCoreBase):
         super(TestCore, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         cls.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+        # backup os.environ as it will be modified by tests
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCore, cls).tearDownClass()
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""  # noqa
@@ -261,6 +283,33 @@ class TestCore(TestCoreBase):
         dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
         self.assertEqual(dag.locations_config, [])
 
+    def test_prune_providers_list(self):
+        """Providers needing auth for search but without credentials must be pruned on init"""
+        empty_conf_file = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+        try:
+            # Default conf: no auth needed for search
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            assert not getattr(dag.providers_config["peps"].search, "need_auth", False)
+
+            # auth needed for search without credentials
+            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            assert "peps" not in dag.available_providers()
+
+            # auth needed for search with credentials
+            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            assert "peps" in dag.available_providers()
+            assert getattr(dag.providers_config["peps"].search, "need_auth", False)
+
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
+
     def test_rebuild_index(self):
         """Change product_types_config_md5 and check that whoosh index is rebuilt"""
         index_dir = os.path.join(self.dag.conf_dir, ".index")
@@ -281,36 +330,50 @@ class TestCoreConfWithEnvVar(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreConfWithEnvVar, cls).setUpClass()
         cls.dag = EODataAccessGateway()
+        # backup os.environ as it will be modified by tests
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        if os.getenv("EODAG_CFG_FILE") is not None:
-            os.environ.pop("EODAG_CFG_FILE")
-        if os.getenv("EODAG_LOCS_CFG_FILE") is not None:
-            os.environ.pop("EODAG_LOCS_CFG_FILE")
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa
-        os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_locations_override.yml"
-        )
-        dag = EODataAccessGateway()
-        self.assertEqual(
-            dag.locations_config,
-            [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
-        )
+        try:
+            os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
+                TEST_RESOURCES_PATH, "file_locations_override.yml"
+            )
+            dag = EODataAccessGateway()
+            self.assertEqual(
+                dag.locations_config,
+                [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
+            )
+        finally:
+            os.environ.pop("EODAG_LOCS_CFG_FILE", None)
 
     def test_core_object_prioritize_config_file_in_envvar(self):
         """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""  # noqa
-        os.environ["EODAG_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_config_override.yml"
-        )
-        dag = EODataAccessGateway()
-        # usgs priority is set to 5 in the test config overrides
-        self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
-        # peps outputs prefix is set to /data
-        self.assertEqual(dag.providers_config["peps"].download.outputs_prefix, "/data")
+        try:
+            os.environ["EODAG_CFG_FILE"] = os.path.join(
+                TEST_RESOURCES_PATH, "file_config_override.yml"
+            )
+            dag = EODataAccessGateway()
+            # usgs priority is set to 5 in the test config overrides
+            self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
+            # peps outputs prefix is set to /data
+            self.assertEqual(
+                dag.providers_config["peps"].download.outputs_prefix, "/data"
+            )
+        finally:
+            os.environ.pop("EODAG_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):

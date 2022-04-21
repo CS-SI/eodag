@@ -21,6 +21,7 @@ import glob
 import hashlib
 import multiprocessing
 import os
+import re
 import shutil
 import time
 import unittest
@@ -657,6 +658,20 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )
         cls.eodag = EODataAccessGateway(user_conf_file_path=tests_wrong_conf)
+        # backup os.environ as it will be modified by tests
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestEODagEndToEndWrongCredentials, cls).tearDownClass()
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
 
     def test_end_to_end_wrong_credentials_theia(self):
         product = self.execute_search(*THEIA_SEARCH_ARGS)

@@ -16,9 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import shutil
-import tempfile
 import unittest
+from tempfile import TemporaryDirectory
 
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -37,9 +36,9 @@ class TestSearchStacStatic(unittest.TestCase):
         super(TestSearchStacStatic, self).setUp()
 
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = tempfile.mkdtemp()
+        self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
 
@@ -89,10 +88,7 @@ class TestSearchStacStatic(unittest.TestCase):
         super(TestSearchStacStatic, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
-        try:
-            shutil.rmtree(self.tmp_home_dir)
-        except OSError:
-            pass
+        self.tmp_home_dir.cleanup()
 
     def test_search_stac_static_load_child(self):
         """load_stac_items from child catalog must provide items"""

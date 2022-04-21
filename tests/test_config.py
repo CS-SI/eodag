@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import os
+import re
 import tempfile
 import unittest
 from io import StringIO
@@ -227,6 +228,24 @@ class TestPluginConfig(unittest.TestCase):
 
 
 class TestConfigFunctions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestConfigFunctions, cls).setUpClass()
+        # backup os.environ as it will be modified by tests
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestConfigFunctions, cls).tearDownClass()
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
+
     def test_load_default_config(self):
         """Default config must be successfully loaded"""
         conf = config.load_default_config()

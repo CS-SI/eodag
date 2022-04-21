@@ -118,6 +118,9 @@ class EODataAccessGateway(object):
         # use updated and checked providers_config
         self.providers_config = self._plugins_manager.providers_config
 
+        # filter out providers needing auth that have no credentials set
+        self._prune_providers_list()
+
         # Sort providers taking into account of possible new priority orders
         self._plugins_manager.sort_providers()
 
@@ -266,15 +269,15 @@ class EODataAccessGateway(object):
         ...                           'as expected')
         ... except eodag.utils.exceptions.UnsupportedProvider:
         ...     pass
-        >>> dag.set_preferred_provider(u'usgs')
+        >>> dag.set_preferred_provider(u'creodias')
         >>> dag.get_preferred_provider()
-        ('usgs', 2)
+        ('creodias', 2)
         >>> dag.set_preferred_provider(u'theia')
         >>> dag.get_preferred_provider()
         ('theia', 3)
-        >>> dag.set_preferred_provider(u'usgs')
+        >>> dag.set_preferred_provider(u'creodias')
         >>> dag.get_preferred_provider()
-        ('usgs', 4)
+        ('creodias', 4)
         >>> config.close()
         >>> os.unlink(config.name)
 
@@ -338,6 +341,48 @@ class EODataAccessGateway(object):
         for provider in conf_update.keys():
             provider_config_init(self.providers_config[provider])
         self._plugins_manager = PluginManager(self.providers_config)
+
+    def _prune_providers_list(self):
+        """Removes from config providers needing auth that have no credentials set."""
+        update_needed = False
+        for provider in list(self.providers_config.keys()):
+            conf = self.providers_config[provider]
+
+            if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
+                credentials_exist = any(
+                    [
+                        cred is not None
+                        for cred in getattr(conf.api, "credentials", {}).values()
+                    ]
+                )
+                if not credentials_exist:
+                    # credentials needed but not found
+                    del self.providers_config[provider]
+                    update_needed = True
+            elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
+                if not hasattr(conf, "auth"):
+                    # credentials needed but no auth plugin was found
+                    del self.providers_config[provider]
+                    update_needed = True
+                    continue
+                credentials_exist = any(
+                    [
+                        cred is not None
+                        for cred in getattr(conf.auth, "credentials", {}).values()
+                    ]
+                )
+                if not credentials_exist:
+                    # credentials needed but not found
+                    del self.providers_config[provider]
+                    update_needed = True
+            elif not hasattr(conf, "api") and not hasattr(conf, "search"):
+                # provider should have at least an api or search plugin
+                del self.providers_config[provider]
+                update_needed = True
+
+        if update_needed:
+            # rebuild _plugins_manager with updated providers list
+            self._plugins_manager = PluginManager(self.providers_config)
 
     def set_locations_conf(self, locations_conf_path):
         """Set locations configuration.
