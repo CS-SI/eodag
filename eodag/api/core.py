@@ -359,11 +359,19 @@ class EODataAccessGateway(object):
                     # credentials needed but not found
                     del self.providers_config[provider]
                     update_needed = True
+                    logger.info(
+                        "%s: provider needing auth for search has been pruned because no crendentials could be found",
+                        provider,
+                    )
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
                 if not hasattr(conf, "auth"):
                     # credentials needed but no auth plugin was found
                     del self.providers_config[provider]
                     update_needed = True
+                    logger.info(
+                        "%s: provider needing auth for search has been pruned because no auth plugin could be found",
+                        provider,
+                    )
                     continue
                 credentials_exist = any(
                     [
@@ -375,9 +383,17 @@ class EODataAccessGateway(object):
                     # credentials needed but not found
                     del self.providers_config[provider]
                     update_needed = True
+                    logger.info(
+                        "%s: provider needing auth for search has been pruned because no crendentials could be found",
+                        provider,
+                    )
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
                 del self.providers_config[provider]
+                logger.info(
+                    "%s: provider has been pruned because no api or search plugin could be found",
+                    provider,
+                )
                 update_needed = True
 
         if update_needed:
