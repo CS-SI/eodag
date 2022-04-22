@@ -720,7 +720,11 @@ class QueryStringSearch(Search):
         try:
             # auth if needed
             kwargs = {}
-            if getattr(self.config, "need_auth", False) and hasattr(self, "auth"):
+            if (
+                getattr(self.config, "need_auth", False)
+                and hasattr(self, "auth")
+                and callable(self.auth)
+            ):
                 kwargs["auth"] = self.auth
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
@@ -995,7 +999,11 @@ class PostJsonSearch(QueryStringSearch):
         try:
             # auth if needed
             kwargs = {}
-            if getattr(self.config, "need_auth", False) and hasattr(self, "auth"):
+            if (
+                getattr(self.config, "need_auth", False)
+                and hasattr(self, "auth")
+                and callable(self.auth)
+            ):
                 kwargs["auth"] = self.auth
 
             # perform the request using the next page arguments if they are defined
