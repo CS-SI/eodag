@@ -215,18 +215,22 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(date_time):
+        def convert_to_iso_utc_datetime(date_time, timespec="milliseconds"):
             """Convert a date_time (str) to its ISO 8601 representation in UTC
 
             "2021-04-21" => "2021-04-21T00:00:00.000Z"
             "2021-04-21T00:00:00.000+02:00" => "2021-04-20T22:00:00.000Z"
+
+            The optional argument timespec specifies the number of additional
+            terms of the time to include. Valid options are 'auto', 'hours',
+            'minutes', 'seconds', 'milliseconds' and 'microseconds'.
             """
             dt = isoparse(date_time)
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
             elif dt.tzinfo is not UTC:
                 dt = dt.astimezone(UTC)
-            return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+            return dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
         @staticmethod
         def convert_to_iso_date(datetime_string):
