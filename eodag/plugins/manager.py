@@ -103,12 +103,12 @@ class PluginManager(object):
                     "%s: provider has no product configured and will be skipped"
                     % provider
                 )
-                providers_config.pop(provider)
+                self.providers_config.pop(provider)
                 continue
 
             # provider priority set to lowest if not set
             if getattr(provider_config, "priority", None) is None:
-                provider_config.priority = 0
+                self.providers_config[provider].priority = provider_config.priority = 0
 
             for product_type in provider_config.products:
                 product_type_providers = (

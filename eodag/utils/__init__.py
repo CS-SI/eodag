@@ -41,6 +41,7 @@ from pathlib import Path
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
     parse_qs,
+    parse_qsl,
     quote,
     unquote,
     urlencode,
