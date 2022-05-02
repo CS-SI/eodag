@@ -1027,7 +1027,9 @@ class EODataAccessGateway(object):
         auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
 
         # append auth to search plugin if needed
-        if getattr(search_plugin.config, "need_auth", False):
+        if getattr(search_plugin.config, "need_auth", False) and callable(
+            getattr(auth_plugin, "authenticate", None)
+        ):
             search_plugin.auth = auth_plugin.authenticate()
 
         return dict(search_plugin=search_plugin, auth=auth_plugin, **kwargs)
