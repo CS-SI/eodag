@@ -17,6 +17,8 @@
 # limitations under the License.
 from collections import UserList
 
+from shapely.geometry import GeometryCollection, shape
+
 from eodag.api.product import EOProduct
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
@@ -120,6 +122,19 @@ class SearchResult(UserList):
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],
         }
+
+    def as_shapely_geometry_object(self):
+        """:class:`shapely.geometry.GeometryCollection` representation of SearchResult"""
+        return GeometryCollection(
+            [
+                shape(feature["geometry"]).buffer(0)
+                for feature in self.as_geojson_object()["features"]
+            ]
+        )
+
+    def as_wkt_object(self):
+        """WKT representation of SearchResult"""
+        return self.as_shapely_geometry_object().wkt
 
     @property
     def __geo_interface__(self):
