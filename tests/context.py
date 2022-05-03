@@ -33,6 +33,7 @@ from eodag.api.product.metadata_mapping import format_metadata
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.config import load_default_config, merge_configs
+from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -81,6 +82,8 @@ from eodag.utils import (
     ProgressCallback,
     uri_to_path,
     DownloadedCallback,
+    parse_qsl,
+    urlsplit,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,

@@ -155,6 +155,7 @@ class TestCore(TestCoreBase):
         "VENUS_L2A_MAJA": ["theia"],
         "VENUS_L3A_MAJA": ["theia"],
         "OSO": ["theia"],
+        "TIGGE_CF_SFC": ["ecmwf"],
         GENERIC_PRODUCT_TYPE: [
             "theia",
             "peps",
@@ -167,6 +168,7 @@ class TestCore(TestCoreBase):
             "usgs_satapi_aws",
             "earth_search",
             "earth_search_cog",
+            "ecmwf",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -182,6 +184,7 @@ class TestCore(TestCoreBase):
         "usgs_satapi_aws",
         "earth_search",
         "earth_search_cog",
+        "ecmwf",
     ]
 
     @classmethod
