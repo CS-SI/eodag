@@ -162,6 +162,18 @@ class QueryStringSearch(Search):
         self.query_params = dict()
         self.query_string = ""
         self.next_page_url = None
+        self.next_page_query_obj = None
+        self.next_page_merge = None
+
+    def clear(self):
+        """Clear search context"""
+        super().clear()
+        self.search_urls.clear()
+        self.query_params.clear()
+        self.query_string = ""
+        self.next_page_url = None
+        self.next_page_query_obj = None
+        self.next_page_merge = None
 
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface
@@ -1060,13 +1072,8 @@ class StacSearch(PostJsonSearch):
             **config.__dict__.get("metadata_mapping", {})
         )
 
-        super(QueryStringSearch, self).__init__(provider, config)
-        self.config.__dict__.setdefault("result_type", "json")
-        self.config.__dict__.setdefault("results_entry", "features")
-        self.config.__dict__.setdefault("free_text_search_operations", {})
-        self.search_urls = []
-        self.query_params = dict()
-        self.query_string = ""
+        super(StacSearch, self).__init__(provider, config)
+        self.config.results_entry = "features"
 
         # TODO: fetch /collections to add dynamically product types
         # response = self._request(

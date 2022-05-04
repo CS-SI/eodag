@@ -608,6 +608,7 @@ class EODataAccessGateway(object):
             page=page,
             items_per_page=items_per_page,
         )
+        search_plugin.clear()
         return self._do_search(
             search_plugin, count=True, raise_errors=raise_errors, **search_kwargs
         )
