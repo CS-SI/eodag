@@ -44,6 +44,10 @@ class Search(PluginTopic):
             metas, self.config.metadata_mapping
         )
 
+    def clear(self):
+        """Method used to clear a search context between two searches."""
+        pass
+
     def query(self, *args, count=True, **kwargs):
         """Implementation of how the products must be searched goes here.
 
