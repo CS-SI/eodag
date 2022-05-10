@@ -34,8 +34,11 @@ from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
+    AwsAuth,
+    AwsDownload,
     EODataAccessGateway,
     EOProduct,
+    HTTPDownload,
     NoMatchingProductType,
     PluginImplementationError,
     SearchResult,
@@ -108,7 +111,7 @@ class TestCore(TestCoreBase):
             "astraea_eod",
             "earth_search",
         ],
-        "S2_MSI_L2A_COG": ["earth_search_cog"],
+        "S2_MSI_L2A_COG": ["earth_search"],
         "S2_MSI_L2A_MAJA": ["theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
@@ -166,7 +169,6 @@ class TestCore(TestCoreBase):
             "astraea_eod",
             "usgs_satapi_aws",
             "earth_search",
-            "earth_search_cog",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -181,7 +183,6 @@ class TestCore(TestCoreBase):
         "astraea_eod",
         "usgs_satapi_aws",
         "earth_search",
-        "earth_search_cog",
     ]
 
     @classmethod
@@ -995,6 +996,82 @@ class TestCoreSearch(TestCoreBase):
         sr, _ = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
             self.assertIsNotNone(product.downloader)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_guess_missing_product_type(self, search_plugin):
+        """_do_search must guess product type if missing using properties"""  # noqa
+        search_plugin.provider = "earth_search"
+        search_plugin.query.return_value = (
+            self.search_results.data,
+            self.search_results_size,
+        )
+
+        search_plugin.query.return_value[0][0].properties["processingLevel"] = "L2A"
+        search_plugin.query.return_value[0][0].properties["keywords"] = "COG"
+        for i, _ in enumerate(search_plugin.query.return_value[0]):
+            search_plugin.query.return_value[0][i].product_type = None
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
+        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+
+        self.assertEqual(sr[0].product_type, "S2_MSI_L2A_COG")
+        self.assertEqual(sr[1].product_type, "S2_MSI_L1C")
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_per_product_type_downloader_auth(self, search_plugin):
+        """_do_search must set specific per provider downloader & auth if configured"""  # noqa
+
+        dummy_provider_config = """
+        dummy_provider:
+            priority: 0
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+            products:
+                S2_MSI_L1C:
+                    productType: S2_MSI_L1C
+                S2_MSI_L2A_COG:
+                    productType: S2_MSI_L2A_COG
+                    download:
+                        type: HTTPDownload
+                        base_uri: https://api.my_new_provider
+                    auth:
+            download:
+                type: AwsDownload
+                base_uri: https://api.my_new_provider
+            auth:
+                type: AwsAuth
+        """
+        self.dag.update_providers_config(dummy_provider_config)
+
+        search_plugin.provider = "dummy_provider"
+        search_plugin.query.return_value = (
+            self.search_results.data,
+            self.search_results_size,
+        )
+
+        search_plugin.query.return_value[0][0].properties["processingLevel"] = "L2A"
+        search_plugin.query.return_value[0][0].properties["keywords"] = "COG"
+        search_plugin.query.return_value[0][0].provider = "dummy_provider"
+        search_plugin.query.return_value[0][1].provider = "dummy_provider"
+        for i, _ in enumerate(search_plugin.query.return_value[0]):
+            search_plugin.query.return_value[0][i].product_type = None
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
+        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+
+        self.assertIsInstance(sr[0].downloader, HTTPDownload)
+        self.assertIsNone(sr[0].downloader_auth)
+        self.assertIsInstance(sr[1].downloader, AwsDownload)
+        self.assertIsInstance(sr[1].downloader_auth, AwsAuth)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_doest_not_register_downloader_if_no_search_intersection(

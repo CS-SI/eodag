@@ -505,7 +505,9 @@ def download(ctx, **kwargs):
             if product.downloader is None:
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
+                    auth = satim_api._plugins_manager.get_auth_plugin(
+                        product.provider, product.product_type
+                    )
                 search_results[idx].register_downloader(
                     satim_api._plugins_manager.get_download_plugin(product), auth
                 )
@@ -525,7 +527,9 @@ def download(ctx, **kwargs):
             if product.downloader is None:
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
+                    auth = satim_api._plugins_manager.get_auth_plugin(
+                        product.provider, product.product_type
+                    )
                 search_results[idx].register_downloader(
                     satim_api._plugins_manager.get_download_plugin(product), auth
                 )
