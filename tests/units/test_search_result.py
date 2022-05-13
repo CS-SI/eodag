@@ -20,6 +20,7 @@ import unittest
 from collections import UserList
 
 import geojson
+from shapely.geometry.collection import GeometryCollection
 
 from tests.context import SearchResult
 
@@ -34,6 +35,21 @@ class TestSearchResult(unittest.TestCase):
         geo_interface = geojson.loads(geojson.dumps(self.search_result))
         self.assertEqual(geo_interface["type"], "FeatureCollection")
         self.assertEqual(geo_interface["features"], [])
+
+    def test_search_result_as_geojson_object(self):
+        geojson_object = self.search_result.as_geojson_object()
+        self.assertIsInstance(geojson_object, dict)
+        self.assertTrue("type" in geojson_object)
+        self.assertTrue("features" in geojson_object)
+
+    def test_search_result_as_shapely_geometry_object(self):
+        shapely_geometry_object = self.search_result.as_shapely_geometry_object()
+        self.assertIsInstance(shapely_geometry_object, GeometryCollection)
+
+    def test_search_result_as_wkt_object(self):
+        wkt_object = self.search_result.as_wkt_object()
+        self.assertIsInstance(wkt_object, str)
+        self.assertTrue(wkt_object.startswith("GEOMETRYCOLLECTION"))
 
     def test_search_result_is_list_like(self):
         """SearchResult must provide a list interface"""
