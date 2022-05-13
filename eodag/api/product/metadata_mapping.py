@@ -18,7 +18,7 @@
 import ast
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from string import Formatter
 
 import geojson
@@ -123,6 +123,8 @@ def format_metadata(search_param, *args, **kwargs):
           milliseconds
         - ``to_rounded_wkt``: simplify the WKT of a geometry
         - ``to_bounds_lists``: convert to list(s) of bounds
+        - ``to_nwse_bounds``: convert to North,West,South,East bounds
+        - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
         - ``to_geo_interface``: convert to a GeoJSON via __geo_interface__
         - ``csv_list``: convert to a comma separated list
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
@@ -233,7 +235,7 @@ def format_metadata(search_param, *args, **kwargs):
             return dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
         @staticmethod
-        def convert_to_iso_date(datetime_string):
+        def convert_to_iso_date(datetime_string, time_delta_args_str="0,0,0,0,0,0,0"):
             """Convert an ISO8601 datetime (str) to its ISO8601 date format
 
             "2021-04-21T18:27:19.123Z" => "2021-04-21"
@@ -245,6 +247,8 @@ def format_metadata(search_param, *args, **kwargs):
                 dt = dt.replace(tzinfo=UTC)
             elif dt.tzinfo is not UTC:
                 dt = dt.astimezone(UTC)
+            time_delta_args = ast.literal_eval(time_delta_args_str)
+            dt += timedelta(*time_delta_args)
             return dt.isoformat()[:10]
 
         @staticmethod
@@ -276,6 +280,16 @@ def format_metadata(search_param, *args, **kwargs):
                 return [list(x.bounds[0:4]) for x in geoms]
             else:
                 return [list(input_geom.bounds[0:4])]
+
+        @staticmethod
+        def convert_to_nwse_bounds(input_geom):
+            return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
+
+        @staticmethod
+        def convert_to_nwse_bounds_str(input_geom, separator=","):
+            return separator.join(
+                str(x) for x in MetadataFormatter.convert_to_nwse_bounds(input_geom)
+            )
 
         @staticmethod
         def convert_to_geo_interface(geom):

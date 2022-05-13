@@ -132,6 +132,18 @@ USGS_SEARCH_ARGS = [
     "2017-03-15",
     [50, 50, 50.3, 50.3],
 ]
+ECMWF_SEARCH_ARGS = [
+    "ecmwf",
+    "TIGGE_CF_SFC",
+    "2017-03-01",
+    "2017-03-02",
+    # no need of an additional post-processing area extraction
+    [-180, -90, 180, 90],
+]
+ECMWF_SEARCH_KWARGS = {
+    # request for only 1 parameter instead of all available
+    "param": "tcc",
+}
 
 
 class EndToEndBase(unittest.TestCase):
@@ -146,6 +158,7 @@ class EndToEndBase(unittest.TestCase):
         page=None,
         items_per_page=None,
         check_product=True,
+        search_kwargs_dict={},
     ):
         """Search products on provider:
 
@@ -160,6 +173,7 @@ class EndToEndBase(unittest.TestCase):
             "end": end,
             "geom": geom,
             "raise_errors": True,
+            **search_kwargs_dict,
         }
         if items_per_page:
             search_criteria["items_per_page"] = items_per_page
@@ -398,6 +412,13 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*USGS_SATAPI_AWS_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, wait_sec=15)
+
+    def test_end_to_end_search_download_ecmwf(self):
+        product = self.execute_search(
+            *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS
+        )
+        expected_filename = "{}.grib".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):

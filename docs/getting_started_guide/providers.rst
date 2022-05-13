@@ -19,6 +19,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
 * `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_: USGS Landsatlook SAT API
 * `earth_search <https://www.element84.com/earth-search/>`_: Element84 Earth Search
+* `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 
 Providers available through an external plugin:
 

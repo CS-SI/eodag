@@ -133,3 +133,10 @@ earth_search_cog:
     search:   # Search parameters configuration
     download:
         outputs_prefix:
+ecmwf:
+    priority: # Lower value means lower priority (Default: 0)
+    api:
+        outputs_prefix:
+        credentials:
+            username:
+            password:
