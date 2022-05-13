@@ -26,6 +26,7 @@ import errno
 import functools
 import hashlib
 import inspect
+import json
 import logging as py_logging
 import os
 import re
@@ -964,11 +965,12 @@ class MockResponse(object):
 
 def md5sum(file_path):
     """Get file MD5 checksum
+
     >>> import os
     >>> md5sum(os.devnull)
     'd41d8cd98f00b204e9800998ecf8427e'
 
-    :param file_path: Pairs of key / value
+    :param file_path: input file path
     :type file_path: str
     :returns: MD5 checksum
     :rtype: str
@@ -978,3 +980,17 @@ def md5sum(file_path):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+
+def obj_md5sum(data):
+    """Get MD5 checksum from JSON serializable object
+
+    >>> obj_md5sum(None)
+    '37a6259cc0c1dae299a7866489dff0bd'
+
+    :param data: JSON serializable input object
+    :type data: Any
+    :returns: MD5 checksum
+    :rtype: str
+    """
+    return hashlib.md5(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()

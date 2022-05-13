@@ -15,11 +15,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 import logging
 import os
 import tempfile
 from copy import deepcopy
 
+import requests
 import yaml
 import yaml.constructor
 import yaml.parser
@@ -36,6 +38,8 @@ from eodag.utils import (
 from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.config")
+
+EXT_PRODUCT_TYPES_CONF_URI = "https://raw.githubusercontent.com/CS-SI/eodag/develop/eodag/resources/ext_product_types.json"  # noqa
 
 
 class SimpleYamlProxyConfig(object):
@@ -454,3 +458,39 @@ def load_stac_provider_config():
     return SimpleYamlProxyConfig(
         resource_filename("eodag", os.path.join("resources/", "stac_provider.yml"))
     ).source
+
+
+def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
+    """Read external product types conf
+
+    :param conf_uri: URI to local or remote configuration file
+    :type conf_uri: str
+    :returns: The external product types configuration
+    :rtype: dict
+    """
+    logger.info("Fetching external product types from %s", conf_uri)
+    if conf_uri.lower().startswith("http"):
+        # read from remote
+        try:
+            response = requests.get(conf_uri)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.debug(e)
+            logger.warning(
+                "Could not read remote external product types conf from %s", conf_uri
+            )
+            return {}
+    elif conf_uri.lower().startswith("file"):
+        conf_uri = uri_to_path(conf_uri)
+
+    # read from local
+    try:
+        with open(conf_uri) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        logger.debug(e)
+        logger.warning(
+            "Could not read local external product types conf from %s", conf_uri
+        )
+        return {}

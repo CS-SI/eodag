@@ -977,6 +977,28 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
+    discover_product_types:
+      fetch_url: https://finder.creodias.eu/attributes.json
+      result_type: json
+      results_entry: 'collections[?billing=="free"]'
+      generic_product_type_id: '$.id'
+      generic_product_type_parsable_properties:
+        collection: '$.id'
+      generic_product_type_unparsable_properties:
+        # cloud cover search disabled for unknown product_type
+        metadata_mapping:
+          cloudCover: '$.null'
+      generic_product_type_parsable_metadata:
+        title: '$.displayName'
+        abstract: '$.null'
+        instrument: '$.null'
+        platform: '$.null'
+        platformSerialIdentifier: '$.null'
+        processingLevel: '$.null'
+        keywords: '$.null'
+        sensorType: '$.null'
+        license: '$.null'
+        missionStartDate: '$.null'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -1706,6 +1728,8 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
+    discover_product_types:
+      results_entry: 'collections[?id!="sentinel-s2-l2a-cogs"]'
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1773,6 +1797,8 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
+    discover_product_types:
+      fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1806,6 +1832,8 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
+    discover_product_types:
+      fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the

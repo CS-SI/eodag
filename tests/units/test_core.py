@@ -224,12 +224,12 @@ class TestCore(TestCoreBase):
 
     def test_supported_product_types_in_unit_test(self):
         """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""  # noqa
-        for product_type in self.dag.list_product_types():
+        for product_type in self.dag.list_product_types(fetch_providers=False):
             self.assertIn(product_type["ID"], self.SUPPORTED_PRODUCT_TYPES.keys())
 
     def test_list_product_types_ok(self):
         """Core api must correctly return the list of supported product types"""
-        product_types = self.dag.list_product_types()
+        product_types = self.dag.list_product_types(fetch_providers=False)
         self.assertIsInstance(product_types, list)
         for product_type in product_types:
             self.assertListProductTypesRightStructure(product_type)
@@ -239,7 +239,9 @@ class TestCore(TestCoreBase):
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""  # noqa
         for provider in self.SUPPORTED_PROVIDERS:
-            product_types = self.dag.list_product_types(provider=provider)
+            product_types = self.dag.list_product_types(
+                provider=provider, fetch_providers=False
+            )
             self.assertIsInstance(product_types, list)
             for product_type in product_types:
                 self.assertListProductTypesRightStructure(product_type)
@@ -627,7 +629,9 @@ class TestCoreSearch(TestCoreBase):
         """guess_product_type must run a whoosh search without any limit"""
         # Filter that should give more than 10 products referenced in the catalog.
         opt_prods = [
-            p for p in self.dag.list_product_types() if p["sensorType"] == "OPTICAL"
+            p
+            for p in self.dag.list_product_types(fetch_providers=False)
+            if p["sensorType"] == "OPTICAL"
         ]
         if len(opt_prods) <= 10:
             self.skipTest("This test requires that more than 10 products are 'OPTICAL'")

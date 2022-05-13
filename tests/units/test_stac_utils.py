@@ -116,7 +116,7 @@ class TestStacUtils(unittest.TestCase):
     )
     def test_format_product_types(self, list_pt):
         """format_product_types must return a string representation of the product types"""
-        product_types = eodag_api.list_product_types()
+        product_types = eodag_api.list_product_types(fetch_providers=False)
         self.assertEqual(
             format_product_types(product_types), "* *__S2_MSI_L1C__*: test"
         )
