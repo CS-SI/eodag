@@ -17,6 +17,7 @@
 # limitations under the License.
 search:
   type: StacSearch
+  results_entry: features
   pagination:
     next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
     total_items_nb_key_path: '$.context.matched'

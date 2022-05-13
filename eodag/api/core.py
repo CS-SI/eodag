@@ -34,6 +34,7 @@ from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
     load_default_config,
+    load_stac_provider_config,
     load_yml_config,
     override_config_from_env,
     override_config_from_file,
@@ -112,6 +113,11 @@ class EODataAccessGateway(object):
 
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
+
+        # init updated providers conf
+        stac_provider_config = load_stac_provider_config()
+        for provider in self.providers_config.keys():
+            provider_config_init(self.providers_config[provider], stac_provider_config)
 
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager = PluginManager(self.providers_config)
@@ -338,8 +344,9 @@ class EODataAccessGateway(object):
         """
         conf_update = yaml.safe_load(yaml_conf)
         override_config_from_mapping(self.providers_config, conf_update)
+        stac_provider_config = load_stac_provider_config()
         for provider in conf_update.keys():
-            provider_config_init(self.providers_config[provider])
+            provider_config_init(self.providers_config[provider], stac_provider_config)
         self._plugins_manager = PluginManager(self.providers_config)
 
     def _prune_providers_list(self):

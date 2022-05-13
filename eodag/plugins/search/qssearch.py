@@ -36,7 +36,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.config import load_stac_provider_config
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
@@ -1056,33 +1055,13 @@ class StacSearch(PostJsonSearch):
     """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
 
     def __init__(self, provider, config):
-        stac_provider_config = load_stac_provider_config()
-
-        # search config set to stac defaults overriden with provider config
-        config.__dict__["pagination"] = dict(
-            stac_provider_config.get("search", {}).get("pagination", {}),
-            **config.__dict__.get("pagination", {})
-        )
-        config.__dict__["discover_metadata"] = dict(
-            stac_provider_config.get("search", {}).get("discover_metadata", {}),
-            **config.__dict__.get("discover_metadata", {})
-        )
-        config.__dict__["metadata_mapping"] = dict(
-            stac_provider_config.get("search", {}).get("metadata_mapping", {}),
-            **config.__dict__.get("metadata_mapping", {})
-        )
+        # backup results_entry overwritten by init
+        results_entry = config.results_entry
 
         super(StacSearch, self).__init__(provider, config)
-        self.config.results_entry = "features"
 
-        # TODO: fetch /collections to add dynamically product types
-        # response = self._request(
-        #     config.api_endpoint.replace("/search", "/collections"),
-        # )
-        # collections = [c["id"] for c in response.json().get("collections", {}) if "id" in c.keys()]
-        # for c in collections:
-        #     if c not in str(self.config.products):
-        #         self.config.products[c] = {"productType": c}
+        # restore results_entry overwritten by init
+        self.config.results_entry = results_entry
 
     def normalize_results(self, results, **kwargs):
         """Build EOProducts from provider results"""

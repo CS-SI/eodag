@@ -18,6 +18,7 @@
 import logging
 import os
 import tempfile
+from copy import deepcopy
 
 import yaml
 import yaml.constructor
@@ -29,6 +30,8 @@ from eodag.utils import (
     merge_mappings,
     slugify,
     string_to_jsonpath,
+    update_nested_dict,
+    uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
 
@@ -236,17 +239,20 @@ def load_config(config_path):
         except yaml.parser.ParserError as e:
             logger.error("Unable to load configuration")
             raise e
+        stac_provider_config = load_stac_provider_config()
         for provider_config in providers_configs:
-            provider_config_init(provider_config)
+            provider_config_init(provider_config, stac_provider_config)
             config[provider_config.name] = provider_config
         return config
 
 
-def provider_config_init(provider_config):
+def provider_config_init(provider_config, stac_search_default_conf=None):
     """Applies some default values to provider config
 
     :param provider_config: An eodag provider configuration
     :type provider_config: :class:`~eodag.config.ProviderConfig`
+    :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
+    :type stac_search_default_conf: dict
     """
     # For the provider, set the default outputs_prefix of its download plugin
     # as tempdir in a portable way
@@ -259,6 +265,21 @@ def provider_config_init(provider_config):
                 param_value.delete_archive = True
     # Set default priority to 0
     provider_config.__dict__.setdefault("priority", 0)
+
+    try:
+        if stac_search_default_conf is not None and provider_config.search.type in [
+            "StacSearch",
+            "StaticStacSearch",
+        ]:
+            # search config set to stac defaults overriden with provider config
+            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
+            provider_config.search.__dict__ = update_nested_dict(
+                per_provider_stac_provider_config["search"],
+                provider_config.search.__dict__,
+                allow_empty_values=True,
+            )
+    except AttributeError:
+        pass
 
 
 def override_config_from_file(config, file_path):
