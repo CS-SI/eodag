@@ -1627,8 +1627,8 @@
         tileInfo: '{$.assets.tileInfo.href#replace_str(r"s3(.*)sentinel-s2-l2a/",r"https\1roda.sentinel-hub.com/sentinel-s2-l2a/")}'
         tilePath: |
           $.assets.tileInfo.href.`sub(/.*\/sentinel-s2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
-    L8_OLI_TIRS_C1L1:
-      productType: landsat8_l1tp
+    LANDSAT_C2L1:
+      productType: landsat8_c2l1t1
     MODIS_MCD43A4:
       productType: mcd43a4
     NAIP:
