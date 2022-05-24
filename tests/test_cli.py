@@ -399,7 +399,7 @@ class TestEodagCli(unittest.TestCase):
             for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
             if len(provs) != 0 and pt != GENERIC_PRODUCT_TYPE
         ]
-        result = self.runner.invoke(eodag, ["list"])
+        result = self.runner.invoke(eodag, ["list", "--no-fetch"])
         self.assertEqual(result.exit_code, 0)
         for pt in all_supported_product_types:
             self.assertIn(pt, result.output)
@@ -413,7 +413,7 @@ class TestEodagCli(unittest.TestCase):
             if provider in provs
             if pt != GENERIC_PRODUCT_TYPE
         ]
-        result = self.runner.invoke(eodag, ["list", "-p", provider])
+        result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
         self.assertEqual(result.exit_code, 0)
         for pt in provider_supported_product_types:
             self.assertIn(pt, result.output)
@@ -421,7 +421,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_list_product_type_with_provider_ko(self):
         """Calling eodag list with unsupported provider should fail and print a list of available providers"""  # noqa
         provider = "random"
-        result = self.runner.invoke(eodag, ["list", "-p", provider])
+        result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
         self.assertEqual(result.exit_code, 1)
         self.assertIn("Unsupported provider. You may have a typo", result.output)
         self.assertIn(

@@ -397,12 +397,16 @@ def search_crunch(ctx, **kwargs):
 @click.option(
     "-S", "--sensorType", help="List product types originating from this type of sensor"
 )
+@click.option(
+    "--no-fetch", is_flag=True, help="Do not fetch providers for new product types"
+)
 @click.pass_context
 def list_pt(ctx, **kwargs):
     """Print the list of supported product types"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
+    fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
     guessed_product_types = []
     try:
@@ -436,11 +440,15 @@ def list_pt(ctx, **kwargs):
         if guessed_product_types:
             product_types = [
                 pt
-                for pt in dag.list_product_types(provider=provider)
+                for pt in dag.list_product_types(
+                    provider=provider, fetch_providers=fetch_providers
+                )
                 if pt["ID"] in guessed_product_types
             ]
         else:
-            product_types = dag.list_product_types(provider=provider)
+            product_types = dag.list_product_types(
+                provider=provider, fetch_providers=fetch_providers
+            )
         click.echo("Listing available product types:")
         for product_type in product_types:
             click.echo("\n* {}: ".format(product_type["ID"]))
