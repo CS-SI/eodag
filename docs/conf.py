@@ -242,7 +242,9 @@ extlinks = {
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "python-requests": ("https://docs.python-requests.org/en/master/", None),
+    # python-requests url temporary changed
+    # https://github.com/psf/requests/issues/6140#issuecomment-1135071992
+    "python-requests": ("https://requests.readthedocs.io/en/stable/", None),
     "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
 }
 
