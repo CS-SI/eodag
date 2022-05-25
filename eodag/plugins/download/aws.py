@@ -295,7 +295,7 @@ class AwsDownload(Download):
                             )
                             < prefixes_in_bucket
                         ):
-                            common_prefix = "/".join(prefix_split[0: i - 1])
+                            common_prefix = "/".join(prefix_split[0 : i - 1])
                             break
                     # connect to aws s3 and get bucket auhenticated objects
                     s3_objects = self.get_authenticated_objects(
@@ -494,9 +494,9 @@ class AwsDownload(Download):
     def _get_authenticated_objects_unsigned(self, bucket_name, prefix, auth_dict):
         """Auth strategy using no-sign-request"""
 
-        s3_resource = boto3.resource(service_name="s3",
-                                     endpoint_url=getattr(self.config, "endpoint_url",
-                                                          None))
+        s3_resource = boto3.resource(
+            service_name="s3", endpoint_url=getattr(self.config, "endpoint_url", None)
+        )
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
         )
@@ -511,10 +511,10 @@ class AwsDownload(Download):
 
         if "profile_name" in auth_dict.keys():
             s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
-            s3_resource = s3_session.resource(service_name="s3",
-                                              endpoint_url=getattr(self.config,
-                                                                   "endpoint_url",
-                                                                   None))
+            s3_resource = s3_session.resource(
+                service_name="s3",
+                endpoint_url=getattr(self.config, "endpoint_url", None),
+            )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
                     RequestPayer="requester"
@@ -536,10 +536,10 @@ class AwsDownload(Download):
                 aws_access_key_id=auth_dict["aws_access_key_id"],
                 aws_secret_access_key=auth_dict["aws_secret_access_key"],
             )
-            s3_resource = s3_session.resource(service_name="s3",
-                                              endpoint_url=getattr(self.config,
-                                                                   "endpoint_url",
-                                                                   None))
+            s3_resource = s3_session.resource(
+                service_name="s3",
+                endpoint_url=getattr(self.config, "endpoint_url", None),
+            )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
                     RequestPayer="requester"
@@ -556,9 +556,9 @@ class AwsDownload(Download):
         """Auth strategy using RequestPayer=requester and current environment"""
 
         s3_session = boto3.session.Session()
-        s3_resource = s3_session.resource(service_name="s3",
-                                          endpoint_url=getattr(self.config,
-                                                               "endpoint_url", None))
+        s3_resource = s3_session.resource(
+            service_name="s3", endpoint_url=getattr(self.config, "endpoint_url", None)
+        )
         if self.requester_pays:
             objects = s3_resource.Bucket(bucket_name).objects.filter(
                 RequestPayer="requester"
@@ -590,8 +590,8 @@ class AwsDownload(Download):
                 netloc
                 if netloc
                 else getattr(self.config, "products", {})
-                    .get(product.product_type, {})
-                    .get("default_bucket", "")
+                .get(product.product_type, {})
+                .get("default_bucket", "")
             )
             prefix = path.strip("/")
         elif scheme in ("http", "https", "ftp"):
