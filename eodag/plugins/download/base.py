@@ -149,7 +149,9 @@ class Download(PluginTopic):
         logger.info("Download url: %s", url)
 
         outputs_prefix = (
-            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
+            kwargs.pop("outputs_prefix", None)
+            or getattr(self.config, "outputs_prefix", tempfile.gettempdir())
+            or tempfile.gettempdir()
         )
         outputs_extension = kwargs.get("outputs_extension", ".zip")
 

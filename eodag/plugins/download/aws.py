@@ -162,6 +162,7 @@ class AwsDownload(Download):
 
     def __init__(self, provider, config):
         super(AwsDownload, self).__init__(provider, config)
+        self.requester_pays = getattr(self.config, "requester_pays", False)
         self.s3_session = None
 
     def download(self, product, auth=None, progress_callback=None, **kwargs):
@@ -246,7 +247,9 @@ class AwsDownload(Download):
                     "SAFE metadata fetch format %s not implemented" % fetch_format
                 )
         # if assets are defined, use them instead of scanning product.location
-        if hasattr(product, "assets"):
+        if hasattr(product, "assets") and not getattr(
+            self.config, "ignore_assets", False
+        ):
             bucket_names_and_prefixes = []
             for complementary_url in getattr(product, "assets", {}).values():
                 bucket_names_and_prefixes.append(
@@ -429,11 +432,17 @@ class AwsDownload(Download):
         :rtype: dict
         """
         if self.s3_session is not None:
-            return {"session": self.s3_session, "requester_pays": True}
+            if self.requester_pays:
+                return {"session": self.s3_session, "requester_pays": True}
+            else:
+                return {"session": self.s3_session}
 
         _ = self.get_authenticated_objects(bucket_name, prefix, auth_dict)
         if self.s3_session is not None:
-            return {"session": self.s3_session, "requester_pays": True}
+            if self.requester_pays:
+                return {"session": self.s3_session, "requester_pays": True}
+            else:
+                return {"session": self.s3_session}
         else:
             return {"aws_unsigned": True}
 
@@ -489,7 +498,9 @@ class AwsDownload(Download):
     def _get_authenticated_objects_unsigned(self, bucket_name, prefix, auth_dict):
         """Auth strategy using no-sign-request"""
 
-        s3_resource = boto3.resource("s3")
+        s3_resource = boto3.resource(
+            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
+        )
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
         )
@@ -504,10 +515,16 @@ class AwsDownload(Download):
 
         if "profile_name" in auth_dict.keys():
             s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
-            s3_resource = s3_session.resource("s3")
-            objects = s3_resource.Bucket(bucket_name).objects.filter(
-                RequestPayer="requester"
+            s3_resource = s3_session.resource(
+                service_name="s3",
+                endpoint_url=getattr(self.config, "base_uri", None),
             )
+            if self.requester_pays:
+                objects = s3_resource.Bucket(bucket_name).objects.filter(
+                    RequestPayer="requester"
+                )
+            else:
+                objects = s3_resource.Bucket(bucket_name).objects
             list(objects.filter(Prefix=prefix).limit(1))
             self.s3_session = s3_session
             return objects
@@ -523,10 +540,16 @@ class AwsDownload(Download):
                 aws_access_key_id=auth_dict["aws_access_key_id"],
                 aws_secret_access_key=auth_dict["aws_secret_access_key"],
             )
-            s3_resource = s3_session.resource("s3")
-            objects = s3_resource.Bucket(bucket_name).objects.filter(
-                RequestPayer="requester"
+            s3_resource = s3_session.resource(
+                service_name="s3",
+                endpoint_url=getattr(self.config, "base_uri", None),
             )
+            if self.requester_pays:
+                objects = s3_resource.Bucket(bucket_name).objects.filter(
+                    RequestPayer="requester"
+                )
+            else:
+                objects = s3_resource.Bucket(bucket_name).objects
             list(objects.filter(Prefix=prefix).limit(1))
             self.s3_session = s3_session
             return objects
@@ -537,10 +560,15 @@ class AwsDownload(Download):
         """Auth strategy using RequestPayer=requester and current environment"""
 
         s3_session = boto3.session.Session()
-        s3_resource = s3_session.resource("s3")
-        objects = s3_resource.Bucket(bucket_name).objects.filter(
-            RequestPayer="requester"
+        s3_resource = s3_session.resource(
+            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
         )
+        if self.requester_pays:
+            objects = s3_resource.Bucket(bucket_name).objects.filter(
+                RequestPayer="requester"
+            )
+        else:
+            objects = s3_resource.Bucket(bucket_name).objects
         list(objects.filter(Prefix=prefix).limit(1))
         self.s3_session = s3_session
         return objects
