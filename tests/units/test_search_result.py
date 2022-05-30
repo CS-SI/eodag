@@ -22,13 +22,34 @@ from collections import UserList
 import geojson
 from shapely.geometry.collection import GeometryCollection
 
-from tests.context import SearchResult
+from tests.context import EOProduct, SearchResult
 
 
 class TestSearchResult(unittest.TestCase):
     def setUp(self):
         super(TestSearchResult, self).setUp()
         self.search_result = SearchResult([])
+        self.search_result2 = SearchResult(
+            [
+                EOProduct(
+                    provider=None,
+                    properties={"geometry": "POINT (0 0)", "storageStatus": "ONLINE"},
+                ),
+                EOProduct(
+                    provider=None,
+                    properties={"geometry": "POINT (0 0)", "storageStatus": "OFFLINE"},
+                ),
+            ]
+        )
+
+    def test_search_result_filter_online(self):
+        """SearchResult.filter_online must only keep online results"""
+        filtered_products = self.search_result2.filter_online()
+        origin_size = len(self.search_result2)
+        filtered_size = len(filtered_products)
+        self.assertFalse(origin_size == filtered_size)
+        for product in filtered_products:
+            assert product.properties["storageStatus"] == "ONLINE"
 
     def test_search_result_geo_interface(self):
         """SearchResult must provide a FeatureCollection geo-interface"""

@@ -102,6 +102,13 @@ class SearchResult(UserList):
         """
         return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
+    def filter_online(self):
+        """
+        Use cruncher :class:`~eodag.plugins.crunch.filter_property.FilterProperty`,
+        filter for online products.
+        """
+        return self.filter_property(storageStatus="ONLINE")
+
     @staticmethod
     def from_geojson(feature_collection):
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
