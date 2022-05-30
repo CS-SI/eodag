@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -34,7 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.download.base import Download
-from eodag.utils import ProgressCallback, path_to_uri, urlparse
+from eodag.utils import ProgressCallback, path_to_uri, rename_subfolder, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 
 logger = logging.getLogger("eodag.plugins.download.aws")
@@ -184,6 +184,11 @@ class AwsDownload(Download):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
@@ -207,10 +212,7 @@ class AwsDownload(Download):
             os.remove(product_local_path)
         # create product dest dir
         if not os.path.isdir(product_local_path):
-            product.location = product.remote_location
             os.makedirs(product_local_path)
-        else:
-            return product_local_path
 
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
@@ -245,7 +247,9 @@ class AwsDownload(Download):
                     "SAFE metadata fetch format %s not implemented" % fetch_format
                 )
         # if assets are defined, use them instead of scanning product.location
-        if hasattr(product, "assets"):
+        if hasattr(product, "assets") and not getattr(
+            self.config, "ignore_assets", False
+        ):
             bucket_names_and_prefixes = []
             for complementary_url in getattr(product, "assets", {}).values():
                 bucket_names_and_prefixes.append(
@@ -495,7 +499,7 @@ class AwsDownload(Download):
         """Auth strategy using no-sign-request"""
 
         s3_resource = boto3.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "endpoint_url", None)
+            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
         )
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
@@ -513,7 +517,7 @@ class AwsDownload(Download):
             s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
             s3_resource = s3_session.resource(
                 service_name="s3",
-                endpoint_url=getattr(self.config, "endpoint_url", None),
+                endpoint_url=getattr(self.config, "base_uri", None),
             )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
@@ -538,7 +542,7 @@ class AwsDownload(Download):
             )
             s3_resource = s3_session.resource(
                 service_name="s3",
-                endpoint_url=getattr(self.config, "endpoint_url", None),
+                endpoint_url=getattr(self.config, "base_uri", None),
             )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
@@ -557,7 +561,7 @@ class AwsDownload(Download):
 
         s3_session = boto3.session.Session()
         s3_resource = s3_session.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "endpoint_url", None)
+            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
         )
         if self.requester_pays:
             objects = s3_resource.Bucket(bucket_name).objects.filter(
@@ -660,10 +664,8 @@ class AwsDownload(Download):
                     )
                 )
             )
-            os.rename(
-                os.path.join(safe_path, "GRANULE/0"),
-                os.path.join(safe_path, "GRANULE", tile_id),
-            )
+            granule_folder = os.path.join(safe_path, "GRANULE")
+            rename_subfolder(granule_folder, tile_id)
 
             # datastrip scene dirname
             scene_id = os.path.basename(
@@ -673,12 +675,8 @@ class AwsDownload(Download):
                     )
                 )
             )
-            datastrip_folder = os.path.join(safe_path, "DATASTRIP/0")
-            if os.path.isdir(datastrip_folder):
-                os.rename(
-                    os.path.join(safe_path, "DATASTRIP/0"),
-                    os.path.join(safe_path, "DATASTRIP", scene_id),
-                )
+            datastrip_folder = os.path.join(safe_path, "DATASTRIP")
+            rename_subfolder(datastrip_folder, scene_id)
         except Exception as e:
             logger.exception("Could not finalize SAFE product from downloaded data")
             raise DownloadError(e)

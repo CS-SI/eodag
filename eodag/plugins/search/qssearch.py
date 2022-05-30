@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -162,6 +162,18 @@ class QueryStringSearch(Search):
         self.query_params = dict()
         self.query_string = ""
         self.next_page_url = None
+        self.next_page_query_obj = None
+        self.next_page_merge = None
+
+    def clear(self):
+        """Clear search context"""
+        super().clear()
+        self.search_urls.clear()
+        self.query_params.clear()
+        self.query_string = ""
+        self.next_page_url = None
+        self.next_page_query_obj = None
+        self.next_page_merge = None
 
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface
@@ -718,6 +730,14 @@ class QueryStringSearch(Search):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
+            # auth if needed
+            kwargs = {}
+            if (
+                getattr(self.config, "need_auth", False)
+                and hasattr(self, "auth")
+                and callable(self.auth)
+            ):
+                kwargs["auth"] = self.auth
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
             if hasattr(self.config, "dont_quote"):
@@ -728,7 +748,7 @@ class QueryStringSearch(Search):
                     qry = qry.replace(quote(keep_unquoted), keep_unquoted)
 
                 # prepare req for Response building
-                req = requests.Request(method="GET", url=base_url)
+                req = requests.Request(method="GET", url=base_url, **kwargs)
                 prep = req.prepare()
                 prep.url = base_url + "?" + qry
                 # send urllib req
@@ -803,13 +823,6 @@ class ODataV4Search(QueryStringSearch):
         final_result = []
         # Query the products entity set for basic metadata about the product
         for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
-            entity_metadata = {
-                "quicklook": entity["quicklook"],
-                "id": entity["id"],
-                "footprint": entity["footprint"],
-                "downloadable": entity["downloadable"],
-                "offline": entity["offline"],
-            }
             metadata_url = self.get_metadata_search_url(entity)
             try:
                 logger.debug("Sending metadata request: %s", metadata_url)
@@ -822,10 +835,10 @@ class ODataV4Search(QueryStringSearch):
                     self.__class__.__name__,
                 )
             else:
-                entity_metadata.update(
+                entity.update(
                     {item["id"]: item["value"] for item in response.json()["value"]}
                 )
-                final_result.append(entity_metadata)
+                final_result.append(entity)
         return final_result
 
     def get_metadata_search_url(self, entity):
@@ -996,13 +1009,22 @@ class PostJsonSearch(QueryStringSearch):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
+            # auth if needed
+            kwargs = {}
+            if (
+                getattr(self.config, "need_auth", False)
+                and hasattr(self, "auth")
+                and callable(self.auth)
+            ):
+                kwargs["auth"] = self.auth
+
             # perform the request using the next page arguments if they are defined
             if getattr(self, "next_page_query_obj", None):
                 self.query_params = self.next_page_query_obj
             if info_message:
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
-            response = requests.post(url, json=self.query_params)
+            response = requests.post(url, json=self.query_params, **kwargs)
             response.raise_for_status()
         except (requests.HTTPError, urllib_HTTPError) as err:
             # check if error is identified as auth_error in provider conf
@@ -1050,14 +1072,8 @@ class StacSearch(PostJsonSearch):
             **config.__dict__.get("metadata_mapping", {})
         )
 
-        super(QueryStringSearch, self).__init__(provider, config)
-        self.config.__dict__.setdefault("result_type", "json")
-        self.config.__dict__.setdefault("results_entry", "features")
-        self.config.__dict__.setdefault("free_text_search_operations", {})
-        self.search_urls = []
-        self.query_params = dict()
-        self.query_string = ""
-        self.ignore_assets = getattr(self.config, "ignore_assets", False)
+        super(StacSearch, self).__init__(provider, config)
+        self.config.results_entry = "features"
 
         # TODO: fetch /collections to add dynamically product types
         # response = self._request(
@@ -1074,7 +1090,7 @@ class StacSearch(PostJsonSearch):
         products = super(StacSearch, self).normalize_results(results, **kwargs)
 
         # move assets from properties to product's attr
-        if not self.ignore_assets:
-            for product in products:
-                product.assets = product.properties.pop("assets", [])
+        for product in products:
+            product.assets = product.properties.pop("assets", [])
+
         return products
