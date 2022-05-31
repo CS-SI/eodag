@@ -133,6 +133,15 @@ earth_search_cog:
     search:   # Search parameters configuration
     download:
         outputs_prefix:
+earth_search_gcs:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+    download:
+        outputs_prefix:
 ecmwf:
     priority: # Lower value means lower priority (Default: 0)
     api:
