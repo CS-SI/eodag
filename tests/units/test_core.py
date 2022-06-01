@@ -78,7 +78,14 @@ class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
         "L8_REFLECTANCE": ["theia"],
         "L57_REFLECTANCE": ["theia"],
-        "L8_OLI_TIRS_C1L1": ["onda", "usgs", "aws_eos", "astraea_eod", "earth_search"],
+        "L8_OLI_TIRS_C1L1": [
+            "onda",
+            "usgs",
+            "aws_eos",
+            "astraea_eod",
+            "earth_search",
+            "earth_search_gcs",
+        ],
         "LANDSAT_C2L1": ["usgs_satapi_aws"],
         "LANDSAT_C2L2_SR": ["usgs_satapi_aws"],
         "LANDSAT_C2L2_ST": ["usgs_satapi_aws"],
@@ -122,6 +129,7 @@ class TestCore(TestCoreBase):
             "creodias",
             "astraea_eod",
             "earth_search",
+            "earth_search_gcs",
         ],
         "S3_ERR": ["onda", "creodias"],
         "S3_EFR": ["onda", "creodias"],
@@ -168,6 +176,7 @@ class TestCore(TestCoreBase):
             "usgs_satapi_aws",
             "earth_search",
             "earth_search_cog",
+            "earth_search_gcs",
             "ecmwf",
         ],
     }
@@ -184,6 +193,7 @@ class TestCore(TestCoreBase):
         "usgs_satapi_aws",
         "earth_search",
         "earth_search_cog",
+        "earth_search_gcs",
         "ecmwf",
     ]
 

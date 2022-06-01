@@ -1796,6 +1796,56 @@
     base_uri: 'https://sentinel-cogs.s3.us-west-2.amazonaws.com'
 ---
 !provider
+  name: earth_search_gcs
+  priority: 0
+  roles:
+    - host
+  description: Google Cloud Storage through Earth Search
+  url: https://www.element84.com/earth-search/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    need_auth: false
+    pagination:
+      # Override the default next page url key path of StacSearch because the next link returned
+      # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
+      # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
+      # Remove that entry if Earth Search updates that and returns a valid link.
+      next_page_url_key_path: null
+      # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
+      # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
+      # Let's set it to a more robust number: 500
+      max_items_per_page: 500
+  products:
+    S2_MSI_L1C:
+      productType: sentinel-s2-l1c
+      metadata_mapping:
+        title: '$.properties."sentinel:product_id"'
+        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+        utmZone: '$.properties."sentinel:utm_zone"'
+        latitudeBand: '$.properties."sentinel:latitude_band"'
+        gridSquare: '$.properties."sentinel:grid_square"'
+        downloadLink: 's3://gcp-public-data-sentinel-2/tiles/{utmZone}/{latitudeBand}/{gridSquare}/{title}.SAFE'
+    L8_OLI_TIRS_C1L1:
+      productType: landsat-8-l1-c1
+      metadata_mapping:
+        wrsPath: '$.properties."landsat:wrs_path"'
+        wrsRow: '$.properties."landsat:wrs_row"'
+        downloadLink: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: AwsDownload
+    base_uri: https://storage.googleapis.com
+    ignore_assets: True
+    products:
+      S2_MSI_L1C:
+        default_bucket: 'gcp-public-data-sentinel-2'
+  auth: !plugin
+    type: AwsAuth
+---
+!provider
   name: ecmwf
   priority: 0
   description: ECMWF archive products

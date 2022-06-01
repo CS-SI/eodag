@@ -65,3 +65,14 @@ to each provider supported by ``eodag``:
 
     A credit card number must be provided when creating an AWS account because fees apply
     after a given amount of downloaded data.
+
+* `earth_search_gcs`: you need HMAC keys for Google Cloud Storage:
+
+  * Sign in using a `google account <https://accounts.google.com/signin/v2/identifier>`__.
+
+  * Get or create `HMAC keys <https://cloud.google.com/storage/docs/authentication/hmackeys>`__ for your user account
+    on a project for interoperability API access from this
+    `page <https://console.cloud.google.com/storage/settings;tab=interoperability>`__ (create a default project if
+    none exists).
+
+  * Add these credentials to the user configuration file.
