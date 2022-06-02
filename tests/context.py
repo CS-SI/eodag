@@ -32,7 +32,7 @@ from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.metadata_mapping import format_metadata
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
-from eodag.config import load_default_config, merge_configs
+from eodag.config import load_default_config, merge_configs, load_stac_provider_config
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.crunch.filter_date import FilterDate
