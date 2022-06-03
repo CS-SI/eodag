@@ -354,7 +354,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.crunch.assert_called_with(
                 search_results,
                 search_criteria=criteria,
-                **{cruncher: {"minimum_overlap": "10"}}
+                **{cruncher: {"minimum_overlap": "10"}},
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -393,7 +393,7 @@ class TestEodagCli(unittest.TestCase):
             )
 
     def test_eodag_list_product_type_ok(self):
-        """Calling eodag list without provider return all supported product types"""
+        """Calling eodag list without provider should return all supported product types"""
         all_supported_product_types = [
             pt
             for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
@@ -430,6 +430,73 @@ class TestEodagCli(unittest.TestCase):
             ),
             result.output,
         )
+
+    @mock.patch("eodag.cli.EODataAccessGateway.fetch_product_types_list", autospec=True)
+    def test_eodag_list_product_type_fetch(self, mock_fetch_product_types_list):
+        """Calling eodag list should fetch for new product types depending on passed option"""
+        result = self.runner.invoke(eodag, ["list", "--no-fetch"])
+        self.assertEqual(result.exit_code, 0)
+        assert not mock_fetch_product_types_list.called
+
+        result = self.runner.invoke(eodag, ["list"])
+        self.assertEqual(result.exit_code, 0)
+        mock_fetch_product_types_list.assert_called_once_with(mock.ANY, provider=None)
+
+        result = self.runner.invoke(eodag, ["list", "-p", "peps"])
+        self.assertEqual(result.exit_code, 0)
+        mock_fetch_product_types_list.assert_called_with(mock.ANY, provider="peps")
+        self.assertEqual(mock_fetch_product_types_list.call_count, 2)
+
+    @mock.patch(
+        "eodag.cli.EODataAccessGateway.discover_product_types",
+        autospec=True,
+        return_value={},
+    )
+    def test_eodag_discover_product_types(self, mock_discover_product_types):
+        """Calling eodag discover should fetch providers for new product types"""
+        origin_dir = os.getcwd()
+        try:
+            os.chdir(self.tmp_home_dir.name)
+            default_output_path = os.path.join(
+                self.tmp_home_dir.name, "ext_product_types.json"
+            )
+            self.assertFalse(os.path.isfile(default_output_path))
+
+            # call without any arg
+            result = self.runner.invoke(eodag, ["discover"])
+            self.assertEqual(result.exit_code, 0)
+            mock_discover_product_types.assert_called_once_with(mock.ANY)
+            self.assertTrue(os.path.isfile(default_output_path))
+
+            # call with provider
+            result = self.runner.invoke(eodag, ["discover", "-p", "peps"])
+            self.assertEqual(result.exit_code, 0)
+            mock_discover_product_types.assert_called_with(mock.ANY, provider="peps")
+            self.assertEqual(mock_discover_product_types.call_count, 2)
+            os.remove(default_output_path)
+
+            other_file_path = os.path.join(self.tmp_home_dir.name, "toto")
+            # call with filename without extension
+            self.assertFalse(os.path.isfile(other_file_path))
+            self.assertFalse(os.path.isfile(f"{other_file_path}.json"))
+            result = self.runner.invoke(eodag, ["discover", "--storage", "toto"])
+            self.assertEqual(result.exit_code, 0)
+            mock_discover_product_types.assert_called_with(mock.ANY)
+            self.assertEqual(mock_discover_product_types.call_count, 3)
+            self.assertFalse(os.path.isfile(other_file_path))
+            self.assertTrue(os.path.isfile(f"{other_file_path}.json"))
+            os.remove(f"{other_file_path}.json")
+
+            # call with filename with extension
+            self.assertFalse(os.path.isfile(f"{other_file_path}.json"))
+            result = self.runner.invoke(eodag, ["discover", "--storage", "toto.json"])
+            self.assertEqual(result.exit_code, 0)
+            mock_discover_product_types.assert_called_with(mock.ANY)
+            self.assertEqual(mock_discover_product_types.call_count, 4)
+            self.assertTrue(os.path.isfile(f"{other_file_path}.json"))
+            os.remove(f"{other_file_path}.json")
+        finally:
+            os.chdir(origin_dir)
 
     def test_eodag_download_no_search_results_arg(self):
         """Calling eodag download without a path to a search result should fail"""

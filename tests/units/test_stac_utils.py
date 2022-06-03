@@ -18,39 +18,32 @@
 
 import json
 import os
+import re
 import unittest
+from tempfile import TemporaryDirectory
 
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
-from tests.context import (
-    SearchResult,
-    eodag_api,
-    filter_products,
-    format_product_types,
-    get_arguments_query_paths,
-    get_criterias_from_metadata_mapping,
-    get_date,
-    get_datetime,
-    get_detailled_collections_list,
-    get_home_page_content,
-    get_int,
-    get_metadata_query_paths,
-    get_pagination_info,
-    get_product_types,
-    get_stac_catalogs,
-    get_stac_collection_by_id,
-    get_stac_collections,
-    get_stac_conformance,
-    get_stac_extension_oseo,
-    get_stac_item_by_id,
-    get_templates_path,
-    search_products,
-)
+from tests.context import SearchResult
 
 
 class TestStacUtils(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        super(TestStacUtils, cls).setUpClass()
+
+        # Mock home and eodag conf directory to tmp dir
+        cls.tmp_home_dir = TemporaryDirectory()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
+        )
+        cls.expanduser_mock.start()
+
+        # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
+        import eodag.rest.utils as rest_utils
+
+        cls.rest_utils = rest_utils
+
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
         )
@@ -71,7 +64,28 @@ class TestStacUtils(unittest.TestCase):
         cls.empty_products = SearchResult([])
         cls.empty_arguments = {}
         cls.empty_criterias = {}
-        eodag_api.set_preferred_provider("peps")
+
+        # backup os.environ as it will be modified by tests
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
+
+        # disable product types fetch
+        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestStacUtils, cls).tearDownClass()
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
+
+        # stop Mock and remove tmp config dir
+        cls.expanduser_mock.stop()
+        cls.tmp_home_dir.cleanup()
 
     def test_download_stac_item_by_id(self):
         pass  # TODO
@@ -79,27 +93,29 @@ class TestStacUtils(unittest.TestCase):
     def test_filter_products_unknown_cruncher_raise_error(self):
         """filter_products must raise a ValidationError if an unknown cruncher is given"""
         with self.assertRaises(ValidationError) as context:
-            filter_products(self.products, {"filter": "unknown_cruncher"})
+            self.rest_utils.filter_products(
+                self.products, {"filter": "unknown_cruncher"}
+            )
         self.assertTrue("unknown filter name" in str(context.exception))
 
     def test_filter_products_missing_additional_parameters_raise_error(self):
         """filter_products must raise a ValidationError if additional parameters are required by the cruncher"""
         with self.assertRaises(ValidationError) as context:
-            filter_products(self.products, {"filter": "latestByName"})
+            self.rest_utils.filter_products(self.products, {"filter": "latestByName"})
         self.assertTrue("additional parameters required" in str(context.exception))
 
     def test_filter_products_filter_misuse_raise_error(self):
         """filter_products must raise a ValidationError if the cruncher is not used correctly"""
         with self.assertRaises(ValidationError):
-            filter_products(
+            self.rest_utils.filter_products(
                 self.products,
                 {"filter": "latestByName", "name_pattern": "MisconfiguredError"},
             )
 
     def test_filter_products(self):
         """filter_products returns a SearchResult corresponding to the filter"""
-        products_empty_filter = filter_products(self.products, {})
-        products_filtered = filter_products(
+        products_empty_filter = self.rest_utils.filter_products(self.products, {})
+        products_filtered = self.rest_utils.filter_products(
             self.products,
             {
                 "filter": "latestByName",
@@ -116,9 +132,12 @@ class TestStacUtils(unittest.TestCase):
     )
     def test_format_product_types(self, list_pt):
         """format_product_types must return a string representation of the product types"""
-        product_types = eodag_api.list_product_types(fetch_providers=False)
+        product_types = self.rest_utils.eodag_api.list_product_types(
+            fetch_providers=False
+        )
         self.assertEqual(
-            format_product_types(product_types), "* *__S2_MSI_L1C__*: test"
+            self.rest_utils.format_product_types(product_types),
+            "* *__S2_MSI_L1C__*: test",
         )
 
     def test_get_arguments_query_paths(self):
@@ -127,7 +146,7 @@ class TestStacUtils(unittest.TestCase):
             "another": "example",
             "query": {"eo:cloud_cover": {"lte": "10"}, "foo": {"eq": "bar"}},
         }
-        arguments_query_path = get_arguments_query_paths(arguments)
+        arguments_query_path = self.rest_utils.get_arguments_query_paths(arguments)
         self.assertEqual(
             arguments_query_path,
             {"query.eo:cloud_cover.lte": "10", "query.foo.eq": "bar"},
@@ -159,37 +178,39 @@ class TestStacUtils(unittest.TestCase):
         arguments = {
             "query": {"eo:cloud_cover": {"lte": "10"}, "foo": {"eq": "bar"}},
         }
-        criterias = get_criterias_from_metadata_mapping(metadata_mapping, arguments)
+        criterias = self.rest_utils.get_criterias_from_metadata_mapping(
+            metadata_mapping, arguments
+        )
         self.assertEqual(criterias, {"cloudCover": "10", "foo": "bar"})
 
     def test_get_date(self):
         """Date validation function must correctly validate dates"""
-        get_date("2018-01-01")
-        get_date("2018-01-01T")
-        get_date("2018-01-01T00:00")
-        get_date("2018-01-01T00:00:00")
-        get_date("2018-01-01T00:00:00Z")
-        get_date("20180101")
+        self.rest_utils.get_date("2018-01-01")
+        self.rest_utils.get_date("2018-01-01T")
+        self.rest_utils.get_date("2018-01-01T00:00")
+        self.rest_utils.get_date("2018-01-01T00:00:00")
+        self.rest_utils.get_date("2018-01-01T00:00:00Z")
+        self.rest_utils.get_date("20180101")
 
-        self.assertRaises(ValidationError, get_date, "foo")
-        self.assertRaises(ValidationError, get_date, "foo2018-01-01")
+        self.assertRaises(ValidationError, self.rest_utils.get_date, "foo")
+        self.assertRaises(ValidationError, self.rest_utils.get_date, "foo2018-01-01")
 
-        self.assertIsNone(get_date(None))
+        self.assertIsNone(self.rest_utils.get_date(None))
 
     def test_get_datetime(self):
         """get_datetime must extract start and end datetime from datetime request args"""
         start = "2021-01-01T00:00:00"
         end = "2021-01-28T00:00:00"
 
-        dtstart, dtend = get_datetime({"datetime": f"{start}/{end}"})
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"{start}/{end}"})
         self.assertEqual(dtstart, start)
         self.assertEqual(dtend, end)
 
-        dtstart, dtend = get_datetime({"datetime": start})
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": start})
         self.assertEqual(dtstart, start)
         self.assertIsNone(dtend)
 
-        dtstart, dtend = get_datetime({"dtstart": start, "dtend": end})
+        dtstart, dtend = self.rest_utils.get_datetime({"dtstart": start, "dtend": end})
         self.assertEqual(dtstart, start)
         self.assertEqual(dtend, end)
 
@@ -200,7 +221,7 @@ class TestStacUtils(unittest.TestCase):
     )
     def test_detailled_collections_list(self, list_pt):
         """get_detailled_collections_list returned list is non-empty"""
-        self.assertTrue(get_detailled_collections_list())
+        self.assertTrue(self.rest_utils.get_detailled_collections_list())
         self.assertTrue(list_pt.called)
 
     def test_get_geometry(self):
@@ -208,13 +229,13 @@ class TestStacUtils(unittest.TestCase):
 
     def test_home_page_content(self):
         """get_home_page_content runs without any error"""
-        get_home_page_content("http://127.0.0.1/")
+        self.rest_utils.get_home_page_content("http://127.0.0.1/")
 
     def test_get_int(self):
         """get_int must raise a ValidationError for strings that cannot be interpreted as integers"""
-        get_int("1")
+        self.rest_utils.get_int("1")
         with self.assertRaises(ValidationError):
-            get_int("a")
+            self.rest_utils.get_int("a")
 
     def test_get_metadata_query_paths(self):
         """get_metadata_query_paths returns query paths from metadata_mapping and their corresponding names"""
@@ -224,43 +245,49 @@ class TestStacUtils(unittest.TestCase):
                 '$.properties."eo:cloud_cover"',
             ]
         }
-        metadata_query_paths = get_metadata_query_paths(metadata_mapping)
+        metadata_query_paths = self.rest_utils.get_metadata_query_paths(
+            metadata_mapping
+        )
         self.assertEqual(
             metadata_query_paths, {"query.eo:cloud_cover.lte": "cloudCover"}
         )
 
     def test_get_pagination_info(self):
         """get_pagination_info must raise a ValidationError if wrong values are given"""
-        get_pagination_info({})
+        self.rest_utils.get_pagination_info({})
         with self.assertRaises(ValidationError):
-            get_pagination_info({"page": "-1"})
+            self.rest_utils.get_pagination_info({"page": "-1"})
         with self.assertRaises(ValidationError):
-            get_pagination_info({"limit": "-1"})
+            self.rest_utils.get_pagination_info({"limit": "-1"})
 
     def test_get_product_types(self):
         """get_product_types use"""
-        self.assertTrue(get_product_types())
-        self.assertTrue(get_product_types(filters={"sensorType": "OPTICAL"}))
+        self.assertTrue(self.rest_utils.get_product_types())
+        self.assertTrue(
+            self.rest_utils.get_product_types(filters={"sensorType": "OPTICAL"})
+        )
 
     def test_get_stac_catalogs(self):
         """get_stac_catalogs runs without any error"""
-        get_stac_catalogs(url="")
+        self.rest_utils.get_stac_catalogs(url="")
 
     def test_get_stac_collection_by_id(self):
         """get_stac_collection_by_id runs without any error"""
-        get_stac_collection_by_id(url="", root="", collection_id="S2_MSI_L1C")
+        self.rest_utils.get_stac_collection_by_id(
+            url="", root="", collection_id="S2_MSI_L1C"
+        )
 
     def test_get_stac_collections(self):
         """get_stac_collections runs without any error"""
-        get_stac_collections(url="", root="", arguments={})
+        self.rest_utils.get_stac_collections(url="", root="", arguments={})
 
     def test_get_stac_conformance(self):
         """get_stac_conformance runs without any error"""
-        get_stac_conformance()
+        self.rest_utils.get_stac_conformance()
 
     def test_get_stac_extension_oseo(self):
         """get_stac_extension_oseo runs without any error"""
-        get_stac_extension_oseo(url="")
+        self.rest_utils.get_stac_extension_oseo(url="")
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.do_search", autospec=True
@@ -274,16 +301,20 @@ class TestStacUtils(unittest.TestCase):
             }
         ]
         self.assertIsNotNone(
-            get_stac_item_by_id(url="", item_id="foo", catalogs=["S2_MSI_L1C"])
+            self.rest_utils.get_stac_item_by_id(
+                url="", item_id="foo", catalogs=["S2_MSI_L1C"]
+            )
         )
         mock_do_search.return_value = []
         self.assertIsNone(
-            get_stac_item_by_id(url="", item_id="", catalogs=["S3_MSI_L1C"])
+            self.rest_utils.get_stac_item_by_id(
+                url="", item_id="", catalogs=["S3_MSI_L1C"]
+            )
         )
 
     def test_get_templates_path(self):
         """get_templates_path returns an existing dir path"""
-        self.assertTrue(os.path.isdir(get_templates_path()))
+        self.assertTrue(os.path.isdir(self.rest_utils.get_templates_path()))
 
     def test_search_bbox(self):
         pass  # TODO
@@ -301,10 +332,15 @@ class TestStacUtils(unittest.TestCase):
             }
         ],
     )
-    def test_search_products(self, mock_do_search):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits",
+        autospec=True,
+        return_value=1,
+    )
+    def test_search_products(self, mock_count_hits, mock_do_search):
         """search_products runs without any error"""
-        search_products("S2_MSI_L1C", {})
-        search_products("S2_MSI_L1C", {"unserialized": "true"})
+        self.rest_utils.search_products("S2_MSI_L1C", {})
+        self.rest_utils.search_products("S2_MSI_L1C", {"unserialized": "true"})
 
     def test_search_stac_items(self):
         pass  # TODO
