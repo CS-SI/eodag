@@ -860,7 +860,7 @@ class QueryStringSearch(Search):
                     logger.info(info_message)
                 response = requests.get(url)
                 response.raise_for_status()
-        except (requests.HTTPError, urllib_HTTPError) as err:
+        except (requests.RequestException, urllib_HTTPError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -918,7 +918,7 @@ class ODataV4Search(QueryStringSearch):
                 logger.debug("Sending metadata request: %s", metadata_url)
                 response = requests.get(metadata_url)
                 response.raise_for_status()
-            except requests.HTTPError:
+            except requests.RequestException:
                 logger.exception(
                     "Skipping error while searching for %s %s instance:",
                     self.provider,
@@ -1116,7 +1116,7 @@ class PostJsonSearch(QueryStringSearch):
             logger.debug("Query parameters: %s" % self.query_params)
             response = requests.post(url, json=self.query_params, **kwargs)
             response.raise_for_status()
-        except (requests.HTTPError, urllib_HTTPError) as err:
+        except (requests.RequestException, urllib_HTTPError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):

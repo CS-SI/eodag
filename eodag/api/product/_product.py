@@ -21,7 +21,7 @@ import os
 import re
 
 import requests
-from requests import HTTPError
+from requests import RequestException
 from shapely import geometry, geos, wkb, wkt
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
@@ -403,7 +403,7 @@ class EOProduct(object):
             ) as stream:
                 try:
                     stream.raise_for_status()
-                except HTTPError as e:
+                except RequestException as e:
                     import traceback as tb
 
                     logger.error("Error while getting resource :\n%s", tb.format_exc())

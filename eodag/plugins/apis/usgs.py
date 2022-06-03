@@ -22,7 +22,7 @@ import tarfile
 
 import requests
 from jsonpath_ng.ext import parse
-from requests import HTTPError
+from requests import RequestException
 from usgs import USGSError, api
 
 from eodag.api.product import EOProduct
@@ -245,7 +245,7 @@ class UsgsApi(Download, Api):
         ) as stream:
             try:
                 stream.raise_for_status()
-            except HTTPError:
+            except RequestException:
                 import traceback as tb
 
                 logger.error(

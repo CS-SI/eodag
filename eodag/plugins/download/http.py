@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from time import sleep
 
 import requests
-from requests import HTTPError
+from requests import HTTPError, RequestException
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import (
@@ -120,7 +120,7 @@ class HTTPDownload(Download):
                     ordered_message = response.text
                     logger.debug(ordered_message)
                     logger.info("%s was ordered", product.properties["title"])
-                except HTTPError as e:
+                except RequestException as e:
                     logger.warning(
                         "%s could not be ordered, request returned %s",
                         product.properties["title"],
@@ -153,7 +153,7 @@ class HTTPDownload(Download):
                     ) as stream:
                         try:
                             stream.raise_for_status()
-                        except HTTPError as e:
+                        except RequestException as e:
                             # check if error is identified as auth_error in provider conf
                             auth_errors = getattr(
                                 self.config, "auth_error_code", [None]
@@ -356,7 +356,7 @@ class HTTPDownload(Download):
             ) as stream:
                 try:
                     stream.raise_for_status()
-                except HTTPError as e:
+                except RequestException as e:
                     # check if error is identified as auth_error in provider conf
                     auth_errors = getattr(self.config, "auth_error_code", [None])
                     if not isinstance(auth_errors, list):
