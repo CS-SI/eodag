@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -90,7 +90,7 @@ class ProviderConfig(yaml.YAMLObject):
     :param auth: (optional) The configuration of a plugin of type Authentication
     :type auth: :class:`~eodag.config.PluginConfig`
     :param kwargs: Additional configuration variables for this provider
-    :type kwargs: dict
+    :type kwargs: Any
     """
 
     yaml_loader = yaml.Loader

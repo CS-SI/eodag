@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -133,3 +133,19 @@ earth_search_cog:
     search:   # Search parameters configuration
     download:
         outputs_prefix:
+earth_search_gcs:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+    download:
+        outputs_prefix:
+ecmwf:
+    priority: # Lower value means lower priority (Default: 0)
+    api:
+        outputs_prefix:
+        credentials:
+            username:
+            password:

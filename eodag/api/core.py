@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -117,6 +117,9 @@ class EODataAccessGateway(object):
         self._plugins_manager = PluginManager(self.providers_config)
         # use updated and checked providers_config
         self.providers_config = self._plugins_manager.providers_config
+
+        # filter out providers needing auth that have no credentials set
+        self._prune_providers_list()
 
         # Sort providers taking into account of possible new priority orders
         self._plugins_manager.sort_providers()
@@ -266,15 +269,15 @@ class EODataAccessGateway(object):
         ...                           'as expected')
         ... except eodag.utils.exceptions.UnsupportedProvider:
         ...     pass
-        >>> dag.set_preferred_provider(u'usgs')
+        >>> dag.set_preferred_provider(u'creodias')
         >>> dag.get_preferred_provider()
-        ('usgs', 2)
+        ('creodias', 2)
         >>> dag.set_preferred_provider(u'theia')
         >>> dag.get_preferred_provider()
         ('theia', 3)
-        >>> dag.set_preferred_provider(u'usgs')
+        >>> dag.set_preferred_provider(u'creodias')
         >>> dag.get_preferred_provider()
-        ('usgs', 4)
+        ('creodias', 4)
         >>> config.close()
         >>> os.unlink(config.name)
 
@@ -338,6 +341,64 @@ class EODataAccessGateway(object):
         for provider in conf_update.keys():
             provider_config_init(self.providers_config[provider])
         self._plugins_manager = PluginManager(self.providers_config)
+
+    def _prune_providers_list(self):
+        """Removes from config providers needing auth that have no credentials set."""
+        update_needed = False
+        for provider in list(self.providers_config.keys()):
+            conf = self.providers_config[provider]
+
+            if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
+                credentials_exist = any(
+                    [
+                        cred is not None
+                        for cred in getattr(conf.api, "credentials", {}).values()
+                    ]
+                )
+                if not credentials_exist:
+                    # credentials needed but not found
+                    del self.providers_config[provider]
+                    update_needed = True
+                    logger.info(
+                        "%s: provider needing auth for search has been pruned because no crendentials could be found",
+                        provider,
+                    )
+            elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
+                if not hasattr(conf, "auth"):
+                    # credentials needed but no auth plugin was found
+                    del self.providers_config[provider]
+                    update_needed = True
+                    logger.info(
+                        "%s: provider needing auth for search has been pruned because no auth plugin could be found",
+                        provider,
+                    )
+                    continue
+                credentials_exist = any(
+                    [
+                        cred is not None
+                        for cred in getattr(conf.auth, "credentials", {}).values()
+                    ]
+                )
+                if not credentials_exist:
+                    # credentials needed but not found
+                    del self.providers_config[provider]
+                    update_needed = True
+                    logger.info(
+                        "%s: provider needing auth for search has been pruned because no crendentials could be found",
+                        provider,
+                    )
+            elif not hasattr(conf, "api") and not hasattr(conf, "search"):
+                # provider should have at least an api or search plugin
+                del self.providers_config[provider]
+                logger.info(
+                    "%s: provider has been pruned because no api or search plugin could be found",
+                    provider,
+                )
+                update_needed = True
+
+        if update_needed:
+            # rebuild _plugins_manager with updated providers list
+            self._plugins_manager = PluginManager(self.providers_config)
 
     def set_locations_conf(self, locations_conf_path):
         """Set locations configuration.
@@ -525,7 +586,7 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :type kwargs: dict
+        :type kwargs: Union[int, str, bool, dict]
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -547,6 +608,7 @@ class EODataAccessGateway(object):
             page=page,
             items_per_page=items_per_page,
         )
+        search_plugin.clear()
         return self._do_search(
             search_plugin, count=True, raise_errors=raise_errors, **search_kwargs
         )
@@ -590,7 +652,7 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :type kwargs: dict
+        :type kwargs: Union[int, str, bool, dict]
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
@@ -740,7 +802,7 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :type kwargs: dict
+        :type kwargs: Union[int, str, bool, dict]
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
@@ -803,7 +865,7 @@ class EODataAccessGateway(object):
                          knows this product is available on the given provider
         :type provider: str
         :param kwargs: Search criteria to help finding the right product
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: A search result with one EO product or None at all, and the number
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
@@ -864,7 +926,7 @@ class EODataAccessGateway(object):
                        * id and/or a provider for a search by
                        * search criteria to guess the product type
                        * other criteria compatible with the provider
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: The prepared kwargs to make a query.
         :rtype: dict
         """
@@ -965,6 +1027,12 @@ class EODataAccessGateway(object):
         )
         auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
 
+        # append auth to search plugin if needed
+        if getattr(search_plugin.config, "need_auth", False) and callable(
+            getattr(auth_plugin, "authenticate", None)
+        ):
+            search_plugin.auth = auth_plugin.authenticate()
+
         return dict(search_plugin=search_plugin, auth=auth_plugin, **kwargs)
 
     def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
@@ -978,7 +1046,7 @@ class EODataAccessGateway(object):
                              True, the error is raised
         :type raise_errors: bool
         :param kwargs: Some other criteria that will be used to do the search
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: A collection of EO products matching the criteria and the total
                   number of results found if count is True else None
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
@@ -1201,11 +1269,11 @@ class EODataAccessGateway(object):
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
         :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool) and
-                        `dl_url_params` (dict) can be provided here and will
-                        override any other values defined in a configuration file
-                        or with environment variables.
-        :type kwargs: dict
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
         :returns: A collection of the absolute paths to the downloaded products
         :rtype: list
         """
@@ -1308,7 +1376,7 @@ class EODataAccessGateway(object):
         :type timeout: float
         :param kwargs: Parameters that will be stored in the result as
                        search criteria
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: The search results encoded in `filename`
         :rtype: :class:`~eodag.api.search_result.SearchResult`
 
@@ -1400,7 +1468,7 @@ class EODataAccessGateway(object):
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: dict
+        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`

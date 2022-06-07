@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -55,6 +55,10 @@ class Api(PluginTopic):
       (it certainly indicates that the download didn't complete)
     """
 
+    def clear(self):
+        """Method used to clear a search context between two searches."""
+        pass
+
     def query(self, *args, count=True, **kwargs):
         """Implementation of how the products must be searched goes here.
 
@@ -87,11 +91,11 @@ class Api(PluginTopic):
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
         :type timeout: int
-        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-                       override any other values defined in a configuration file or with
-                       environment variables.
-        :type kwargs: dict
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
             (e.g. '/tmp/product.zip' on Linux or
             'C:\\Users\\username\\AppData\\Local\\Temp\\product.zip' on Windows)
@@ -132,11 +136,11 @@ class Api(PluginTopic):
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
         :type timeout: int
-        :param kwargs: ``outputs_prefix` (``str``), `extract` (``bool``) and
-                       ``dl_url_params`` (``dict``) can be provided as additional kwargs and will
-                       override any other values defined in a configuration file or with
-                       environment variables.
-        :type kwargs: dict
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
         :returns: List of absolute paths to the downloaded products in the local
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)

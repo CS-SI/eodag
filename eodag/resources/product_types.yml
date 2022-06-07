@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -864,6 +864,22 @@ VENUS_L3A_MAJA:
   license: proprietary
   title: Venus Level3-A
   missionStartDate: "2017-08-02T00:00:00Z"
+
+# ECMWF -----------------------------------------------------------------------
+
+TIGGE_CF_SFC:
+  abstract: |
+    TIGGE (THORPEX Interactive Grand Global Ensemble) Surface Control forecast
+    from ECMWF
+  instrument:
+  platform: TIGGE
+  platformSerialIdentifier: TIGGE
+  processingLevel:
+  keywords: THORPEX,TIGGE,CF,SFC,ECMWF
+  sensorType: FORECAST
+  license: proprietary
+  title: TIGGE ECMWF Surface Control forecast
+  missionStartDate: "2003-01-01T00:00:00Z"
 
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:

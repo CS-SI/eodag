@@ -28,9 +28,10 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
     [Growing list of] supported providers
       `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_,
       `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_, `earth_search <https://www.element84.com/earth-search/>`_,
+      `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_,
       `sobloo <https://sobloo.eu/>`_, `usgs <https://earthexplorer.usgs.gov/>`_, `theia <https://theia.cnes.fr/atdistrib/rocket/>`_,
       `peps <https://peps.cnes.fr/rocket/#/home>`_, `aws_eos <https://eos.com/>`_, `creodias <https://creodias.eu/>`_,
-      `mundi <https://mundiwebservices.com/>`_, `onda <https://www.onda-dias.eu/cms/>`_
+      `mundi <https://mundiwebservices.com/>`_, `onda <https://www.onda-dias.eu/cms/>`_, `ecmwf <https://www.ecmwf.int/>`_
 
 EODAG has the following primary features:
 

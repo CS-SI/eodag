@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -20,6 +20,7 @@ import os
 import random
 import unittest
 from contextlib import contextmanager
+from tempfile import TemporaryDirectory
 
 import click
 from click.testing import CliRunner
@@ -38,7 +39,7 @@ from tests.context import (
     setup_logging,
 )
 from tests.units import test_core
-from tests.utils import mock, no_blanks
+from tests.utils import mock, no_blanks, write_eodag_conf_with_fake_credentials
 
 
 class TestEodagCli(unittest.TestCase):
@@ -57,10 +58,29 @@ class TestEodagCli(unittest.TestCase):
         self.runner = CliRunner()
         self.faker = Faker()
 
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = TemporaryDirectory()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        )
+        self.expanduser_mock.start()
+
+        # create eodag conf dir in tmp home dir
+        eodag_conf_dir = os.path.join(self.tmp_home_dir.name, ".config", "eodag")
+        os.makedirs(eodag_conf_dir, exist_ok=False)
+        # use empty config file with fake credentials in order to have full
+        # list for tests and prevent providers to be pruned
+        write_eodag_conf_with_fake_credentials(
+            os.path.join(eodag_conf_dir, "eodag.yml")
+        )
+
     def tearDown(self):
         super(TestEodagCli, self).tearDown()
         # Default logging: no logging but still displays progress bars
         setup_logging(1)
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        self.tmp_home_dir.cleanup()
 
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""

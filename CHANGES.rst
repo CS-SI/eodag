@@ -1,6 +1,28 @@
 Release history
 ---------------
 
+2.5.0 (2022-06-07)
+++++++++++++++++++
+
+* `ecmwf <https://www.ecmwf.int/>`_ as new provider with new API plugin :class:`~eodag.plugins.apis.ecmwf.EcmwfApi`
+  and `tutorial <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_ecmwf.html>`_ (:pull:`452`)
+* ``earth_search_gcs`` as new provider to download on
+  `Google Cloud Storage public datasets <https://cloud.google.com/storage/docs/public-datasets>`_
+  (:pull:`462`, thanks `@robert-werner <https://github.com/robert-werner>`_)
+* STAC search on private servers needing authentication for earch (:pull:`443`)
+* Do not list providers without credentials needing authentication for search (:pull:`442`)
+* New packaging using `pyproject.toml` and `setup.cfg`, following `PEP 517 <https://peps.python.org/pep-0517/>`_
+  recommendations and `setuptools build_meta <https://setuptools.pypa.io/en/latest/build_meta.html>`_ (:pull:`435`)
+* `setuptools_scm` usage to have intermediate `dev` versions between releases (:pull:`431`)
+* New options for :class:`~eodag.plugins.download.aws.AwsDownload` plugin: `requester_pays`, `base_uri`,
+  and `ignore_assets` (:pull:`456`, thanks `@robert-werner <https://github.com/robert-werner>`_)
+* :meth:`~eodag.api.search_result.SearchResult.filter_online` and additional convert methods added to
+  :class:`~eodag.api.search_result.SearchResult` (:pull:`458`)(:pull:`450`)
+* :class:`~eodag.plugins.authentication.token.TokenAuth` can now use headers and url formatting (:pull:`447`)
+* All available metadata for `onda` provider is now retrieved (:pull:`440`)
+* Various minor fixes and improvements (:pull:`430`)(:pull:`433`)(:pull:`434`)(:pull:`436`)(:pull:`438`)(:pull:`444`)
+  (:pull:`448`)(:pull:`449`)(:pull:`451`)(:pull:`460`)(:pull:`464`)
+
 2.4.0 (2022-03-09)
 ++++++++++++++++++
 
@@ -125,8 +147,8 @@ Release history
 - New plugin :class:`~eodag.plugins.authentication.aws_auth.AwsAuth`, enables AWS authentication using no-sign-request,
   profile, ``~/.aws/*``
 - New search plugin :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` and updated
-  `STAC client tutorial <https://eodag.readthedocs.io/en/latest/tutorials/tuto_stac_client.html>`_
-- New tutorial for `Copernicus DEM <https://eodag.readthedocs.io/en/latest/tutorials/tuto_cop_dem.html>`_
+  `STAC client tutorial <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_stac_client.html>`_
+- New tutorial for `Copernicus DEM <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_cop_dem.html>`_
 - Remove ``unidecode`` dependency
 - Start/end dates passed to sobloo are now in UTC, and make it clear that search dates must be in UTC
 - Locations must now be passed to :meth:`~eodag.api.core.EODataAccessGateway.search` method as a dictionnary

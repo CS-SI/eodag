@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -60,7 +60,7 @@ def setup_logging(verbose, no_progress_bar=False):
                 "disable_existing_loggers": False,
                 "formatters": {
                     "standard": {
-                        "format": "%(asctime)s-15s %(name)-32s [%(levelname)-8s] %(message)s"
+                        "format": "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
                     }
                 },
                 "handlers": {
@@ -91,7 +91,7 @@ def setup_logging(verbose, no_progress_bar=False):
                 "disable_existing_loggers": False,
                 "formatters": {
                     "verbose": {
-                        "format": "%(asctime)s-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s"
+                        "format": "%(asctime)-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s"
                     }
                 },
                 "handlers": {

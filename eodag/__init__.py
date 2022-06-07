@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -24,11 +24,22 @@
 """EODAG package"""
 import warnings
 
-from .__meta__ import __version__  # noqa
 from .api.core import EODataAccessGateway  # noqa
 from .api.product import EOProduct  # noqa
 from .api.search_result import SearchResult  # noqa
 from .utils.logging import setup_logging  # noqa
+
+try:
+    from importlib.metadata import PackageNotFoundError, version  # type: ignore
+except ImportError:  # pragma: no cover
+    # for python < 3.8
+    from importlib_metadata import PackageNotFoundError, version  # type: ignore
+
+try:
+    __version__ = version(__name__)
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "0.0.0"
+
 
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")

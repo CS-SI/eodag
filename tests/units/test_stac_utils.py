@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -71,6 +71,7 @@ class TestStacUtils(unittest.TestCase):
         cls.empty_products = SearchResult([])
         cls.empty_arguments = {}
         cls.empty_criterias = {}
+        eodag_api.set_preferred_provider("peps")
 
     def test_download_stac_item_by_id(self):
         pass  # TODO
@@ -261,11 +262,21 @@ class TestStacUtils(unittest.TestCase):
         """get_stac_extension_oseo runs without any error"""
         get_stac_extension_oseo(url="")
 
-    def test_get_stac_item_by_id(self):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.do_search", autospec=True
+    )
+    def test_get_stac_item_by_id(self, mock_do_search):
         """get_stac_item_by_id returns None if no StacItem was found"""
+        mock_do_search.return_value = [
+            {
+                "geometry": "POINT (0 0)",
+                "properties": {"productIdentifier": "foo", "title": "foo"},
+            }
+        ]
         self.assertIsNotNone(
-            get_stac_item_by_id(url="", item_id="", catalogs=["S2_MSI_L1C"])
+            get_stac_item_by_id(url="", item_id="foo", catalogs=["S2_MSI_L1C"])
         )
+        mock_do_search.return_value = []
         self.assertIsNone(
             get_stac_item_by_id(url="", item_id="", catalogs=["S3_MSI_L1C"])
         )
@@ -280,7 +291,17 @@ class TestStacUtils(unittest.TestCase):
     def test_search_product_by_id(self):
         pass  # TODO
 
-    def test_search_products(self):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.do_search",
+        autospec=True,
+        return_value=[
+            {
+                "geometry": "POINT (0 0)",
+                "properties": {"productIdentifier": "foo", "title": "foo"},
+            }
+        ],
+    )
+    def test_search_products(self, mock_do_search):
         """search_products runs without any error"""
         search_products("S2_MSI_L1C", {})
         search_products("S2_MSI_L1C", {"unserialized": "true"})

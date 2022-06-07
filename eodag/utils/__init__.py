@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -34,12 +34,14 @@ import types
 import unicodedata
 import warnings
 from collections import defaultdict
+from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
     parse_qs,
+    parse_qsl,
     quote,
     unquote,
     urlencode,
@@ -496,6 +498,50 @@ def makedirs(dirpath):
         # Reraise the error unless it's about an already existing directory
         if err.errno != errno.EEXIST or not os.path.isdir(dirpath):
             raise
+
+
+def rename_subfolder(dirpath, name):
+    """Rename first subfolder found in dirpath with given name,
+    raise RuntimeError if no subfolder can be found
+
+    :param dirpath: path to the directory containing the subfolder
+    :type dirpath: str
+    :param name: new name of the subfolder
+    :type name: str
+    :raises: RuntimeError
+
+    Example:
+
+    >>> import os
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     somefolder = os.path.join(tmpdir, "somefolder")
+    ...     otherfolder = os.path.join(tmpdir, "otherfolder")
+    ...     os.makedirs(somefolder)
+    ...     assert os.path.isdir(somefolder) and not os.path.isdir(otherfolder)
+    ...     rename_subfolder(tmpdir, "otherfolder")
+    ...     assert not os.path.isdir(somefolder) and os.path.isdir(otherfolder)
+
+    Before:
+        $ tree <tmp-folder>
+        <tmp-folder>
+        └── somefolder
+            └── somefile
+    After:
+        $ tree <tmp-folder>
+        <tmp-folder>
+        └── otherfolder
+            └── somefile
+    """
+    try:
+        subdir, *_ = (p for p in glob(os.path.join(dirpath, "*")) if os.path.isdir(p))
+    except ValueError:
+        raise RuntimeError(f"No subfolder was found in {dirpath}")
+
+    os.rename(
+        subdir,
+        os.path.join(dirpath, name),
+    )
 
 
 def format_dict_items(config_dict, **format_variables):

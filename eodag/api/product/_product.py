@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -62,7 +62,7 @@ class EOProduct(object):
     :ivar remote_location: The remote path to the product
     :vartype remote_location: str
     :ivar search_kwargs: The search kwargs used by eodag to search for the product
-    :vartype search_kwargs: dict
+    :vartype search_kwargs: Any
     :ivar geometry: The geometry of the product
     :vartype geometry: :class:`shapely.geometry.base.BaseGeometry`
     :ivar search_intersection: The intersection between the product's geometry
@@ -247,11 +247,11 @@ class EOProduct(object):
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
         :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool) and
-                        `dl_url_params` (dict) can be provided as additional kwargs
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: dict
+        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product on the local filesystem
         :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`

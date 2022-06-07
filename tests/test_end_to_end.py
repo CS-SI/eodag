@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -21,6 +21,7 @@ import glob
 import hashlib
 import multiprocessing
 import os
+import re
 import shutil
 import time
 import unittest
@@ -92,6 +93,13 @@ EARTH_SEARCH_COG_SEARCH_ARGS = [
     "2020-01-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
+EARTH_SEARCH_GCS_SEARCH_ARGS = [
+    "earth_search_gcs",
+    "S2_MSI_L1C",
+    "2020-01-01",
+    "2020-01-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 USGS_SATAPI_AWS_SEARCH_ARGS = [
     "usgs_satapi_aws",
     "LANDSAT_C2L1",
@@ -131,6 +139,18 @@ USGS_SEARCH_ARGS = [
     "2017-03-15",
     [50, 50, 50.3, 50.3],
 ]
+ECMWF_SEARCH_ARGS = [
+    "ecmwf",
+    "TIGGE_CF_SFC",
+    "2017-03-01",
+    "2017-03-02",
+    # no need of an additional post-processing area extraction
+    [-180, -90, 180, 90],
+]
+ECMWF_SEARCH_KWARGS = {
+    # request for only 1 parameter instead of all available
+    "param": "tcc",
+}
 
 
 class EndToEndBase(unittest.TestCase):
@@ -145,6 +165,7 @@ class EndToEndBase(unittest.TestCase):
         page=None,
         items_per_page=None,
         check_product=True,
+        search_kwargs_dict={},
     ):
         """Search products on provider:
 
@@ -159,6 +180,7 @@ class EndToEndBase(unittest.TestCase):
             "end": end,
             "geom": geom,
             "raise_errors": True,
+            **search_kwargs_dict,
         }
         if items_per_page:
             search_criteria["items_per_page"] = items_per_page
@@ -317,7 +339,7 @@ class TestEODagEndToEnd(EndToEndBase):
         else:
             downloaded_size = os.stat(self.downloaded_file_path).st_size
         # The partially downloaded file should be greater or equal to 5 KB
-        self.assertGreaterEqual(downloaded_size, 5 * 2 ** 10)
+        self.assertGreaterEqual(downloaded_size, 5 * 2**10)
 
     def test_end_to_end_search_download_usgs(self):
         product = self.execute_search(*USGS_SEARCH_ARGS)
@@ -393,10 +415,22 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, wait_sec=20)
 
+    def test_end_to_end_search_download_earth_search_gcs(self):
+        product = self.execute_search(*EARTH_SEARCH_GCS_SEARCH_ARGS)
+        expected_filename = "{}".format(product.properties["title"])
+        self.execute_download(product, expected_filename, wait_sec=20)
+
     def test_end_to_end_search_download_usgs_satapi_aws(self):
         product = self.execute_search(*USGS_SATAPI_AWS_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, wait_sec=15)
+
+    def test_end_to_end_search_download_ecmwf(self):
+        product = self.execute_search(
+            *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS
+        )
+        expected_filename = "{}.grib".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
@@ -413,7 +447,7 @@ class TestEODagEndToEnd(EndToEndBase):
             os.path.dirname(quicklook_file_path),
             os.path.join(product.downloader.config.outputs_prefix, "quicklooks"),
         )
-        self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2 ** 5)
+        self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2**5)
 
     def test__search_by_id_sobloo(self):
         # A single test with sobloo to check that _search_by_id returns
@@ -535,7 +569,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         )
         # Its size should be >= 5 KB
         archive_size = os.stat(archive_file_path).st_size
-        self.assertGreaterEqual(archive_size, 5 * 2 ** 10)
+        self.assertGreaterEqual(archive_size, 5 * 2**10)
         # The product remote_location should be the same
         self.assertEqual(prev_remote_location, product.remote_location)
         # However its location should have been update
@@ -597,7 +631,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         downloaded_size = sum(
             f.stat().st_size for f in Path(product_dir_path).glob("**/*") if f.is_file()
         )
-        self.assertGreaterEqual(downloaded_size, 5 * 2 ** 10)
+        self.assertGreaterEqual(downloaded_size, 5 * 2**10)
         # The product remote_location should be the same
         self.assertEqual(prev_remote_location, product.remote_location)
         # However its location should have been update
@@ -657,6 +691,20 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )
         cls.eodag = EODataAccessGateway(user_conf_file_path=tests_wrong_conf)
+        # backup os.environ as it will be modified by tests
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestEODagEndToEndWrongCredentials, cls).tearDownClass()
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
 
     def test_end_to_end_wrong_credentials_theia(self):
         product = self.execute_search(*THEIA_SEARCH_ARGS)

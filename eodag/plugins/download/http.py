@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -119,6 +119,7 @@ class HTTPDownload(Download):
                     response.raise_for_status()
                     ordered_message = response.text
                     logger.debug(ordered_message)
+                    logger.info("%s was ordered", product.properties["title"])
                 except HTTPError as e:
                     logger.warning(
                         "%s could not be ordered, request returned %s",
@@ -247,7 +248,7 @@ class HTTPDownload(Download):
                 wait_seconds = (product.next_try - datetime.now()).seconds
                 retry_count += 1
                 retry_info = (
-                    "[Retry #%s] Waiting %ss until next download try (retry every %s' for %s')"
+                    "[Retry #%s] Waiting %ss until next download try for ordered product (retry every %s' for %s')"
                     % (retry_count, wait_seconds, wait, timeout)
                 )
                 logger.debug(not_available_info)

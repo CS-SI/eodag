@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS Systemes d'Information, https://www.csgroup.eu/
+# Copyright 2018, CS Systemes d'Information, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -132,7 +132,7 @@ class StacCommon(object):
         :param extension: Extension name
         :type extension: str
         :param kwargs: Additional variables needed for parsing extension
-        :type kwargs: dict
+        :type kwargs: Any
         :returns: STAC extension as dictionnary
         :rtype: dict
         """
@@ -551,6 +551,10 @@ class StacCollection(StacCommon):
                     )
                 ).provider
             )
+            #
+            # if provider not in self.eodag_api.available_providers():
+            #     for p in self.eodag_api._plugins_manager.get_search_plugins(product_type=product_type["ID"]):
+            #         print(p.provider)
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(

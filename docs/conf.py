@@ -17,7 +17,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import eodag
+try:
+    from importlib.metadata import metadata  # type: ignore
+except ImportError:  # pragma: no cover
+    # for python < 3.8
+    from importlib_metadata import metadata  # type: ignore
 
 # -- General configuration ------------------------------------------------
 
@@ -76,16 +80,16 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = eodag.__meta__.__title__
-copyright = eodag.__meta__.__copyright__[10:]
-author = eodag.__meta__.__author__
+project = metadata("eodag")["Name"]
+author = metadata("eodag")["Author"]
+copyright = "2018-2022, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = eodag.__version__
+version = metadata("eodag")["Version"]
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -238,7 +242,9 @@ extlinks = {
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "python-requests": ("https://docs.python-requests.org/en/master/", None),
+    # python-requests url temporary changed
+    # https://github.com/psf/requests/issues/6140#issuecomment-1135071992
+    "python-requests": ("https://requests.readthedocs.io/en/stable/", None),
     "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
 }
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import UserList
+
+from shapely.geometry import GeometryCollection, shape
 
 from eodag.api.product import EOProduct
 from eodag.plugins.crunch.filter_date import FilterDate
@@ -100,6 +102,13 @@ class SearchResult(UserList):
         """
         return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
+    def filter_online(self):
+        """
+        Use cruncher :class:`~eodag.plugins.crunch.filter_property.FilterProperty`,
+        filter for online products.
+        """
+        return self.filter_property(storageStatus="ONLINE")
+
     @staticmethod
     def from_geojson(feature_collection):
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
@@ -120,6 +129,19 @@ class SearchResult(UserList):
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],
         }
+
+    def as_shapely_geometry_object(self):
+        """:class:`shapely.geometry.GeometryCollection` representation of SearchResult"""
+        return GeometryCollection(
+            [
+                shape(feature["geometry"]).buffer(0)
+                for feature in self.as_geojson_object()["features"]
+            ]
+        )
+
+    def as_wkt_object(self):
+        """WKT representation of SearchResult"""
+        return self.as_shapely_geometry_object().wkt
 
     @property
     def __geo_interface__(self):

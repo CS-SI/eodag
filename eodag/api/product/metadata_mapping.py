@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -18,7 +18,7 @@
 import ast
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from string import Formatter
 
 import geojson
@@ -123,6 +123,8 @@ def format_metadata(search_param, *args, **kwargs):
           milliseconds
         - ``to_rounded_wkt``: simplify the WKT of a geometry
         - ``to_bounds_lists``: convert to list(s) of bounds
+        - ``to_nwse_bounds``: convert to North,West,South,East bounds
+        - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
         - ``to_geo_interface``: convert to a GeoJSON via __geo_interface__
         - ``csv_list``: convert to a comma separated list
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
@@ -145,7 +147,7 @@ def format_metadata(search_param, *args, **kwargs):
     :param args: (optional) Additional arguments to use in the formatting process
     :type args: tuple
     :param kwargs: (optional) Additional named-arguments to use when formatting
-    :type kwargs: dict
+    :type kwargs: Any
     :returns: The formatted string
     :rtype: str
     """
@@ -215,21 +217,25 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(date_time):
+        def convert_to_iso_utc_datetime(date_time, timespec="milliseconds"):
             """Convert a date_time (str) to its ISO 8601 representation in UTC
 
             "2021-04-21" => "2021-04-21T00:00:00.000Z"
             "2021-04-21T00:00:00.000+02:00" => "2021-04-20T22:00:00.000Z"
+
+            The optional argument timespec specifies the number of additional
+            terms of the time to include. Valid options are 'auto', 'hours',
+            'minutes', 'seconds', 'milliseconds' and 'microseconds'.
             """
             dt = isoparse(date_time)
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
             elif dt.tzinfo is not UTC:
                 dt = dt.astimezone(UTC)
-            return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+            return dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
         @staticmethod
-        def convert_to_iso_date(datetime_string):
+        def convert_to_iso_date(datetime_string, time_delta_args_str="0,0,0,0,0,0,0"):
             """Convert an ISO8601 datetime (str) to its ISO8601 date format
 
             "2021-04-21T18:27:19.123Z" => "2021-04-21"
@@ -241,6 +247,8 @@ def format_metadata(search_param, *args, **kwargs):
                 dt = dt.replace(tzinfo=UTC)
             elif dt.tzinfo is not UTC:
                 dt = dt.astimezone(UTC)
+            time_delta_args = ast.literal_eval(time_delta_args_str)
+            dt += timedelta(*time_delta_args)
             return dt.isoformat()[:10]
 
         @staticmethod
@@ -272,6 +280,16 @@ def format_metadata(search_param, *args, **kwargs):
                 return [list(x.bounds[0:4]) for x in geoms]
             else:
                 return [list(input_geom.bounds[0:4])]
+
+        @staticmethod
+        def convert_to_nwse_bounds(input_geom):
+            return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
+
+        @staticmethod
+        def convert_to_nwse_bounds_str(input_geom, separator=","):
+            return separator.join(
+                str(x) for x in MetadataFormatter.convert_to_nwse_bounds(input_geom)
+            )
 
         @staticmethod
         def convert_to_geo_interface(geom):
@@ -353,13 +371,16 @@ def format_metadata(search_param, *args, **kwargs):
             id_match = id_regex.match(string)
             if id_match:
                 id_dict = id_match.groupdict()
-                return "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{collection}.json" % (
-                    id_dict["tile1"],
-                    id_dict["tile2"],
-                    id_dict["tile3"],
-                    id_dict["year"],
-                    int(id_dict["month"]),
-                    int(id_dict["day"]),
+                return (
+                    "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{collection}.json"
+                    % (
+                        id_dict["tile1"],
+                        id_dict["tile2"],
+                        id_dict["tile3"],
+                        id_dict["year"],
+                        int(id_dict["month"]),
+                        int(id_dict["day"]),
+                    )
                 )
             else:
                 logger.error("Could not extract title infos from %s" % string)

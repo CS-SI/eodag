@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -16,9 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import shutil
-import tempfile
 import unittest
+from tempfile import TemporaryDirectory
 
 import pkg_resources
 
@@ -31,9 +30,9 @@ class TestExternalPluginConfig(unittest.TestCase):
     def setUp(self):
         super(TestExternalPluginConfig, self).setUp()
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = tempfile.mkdtemp()
+        self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
 
@@ -51,10 +50,7 @@ class TestExternalPluginConfig(unittest.TestCase):
 
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
-        try:
-            shutil.rmtree(self.tmp_home_dir)
-        except OSError:
-            pass
+        self.tmp_home_dir.cleanup()
 
     def test_update_providers_from_ext_plugin(self):
         """Load fake external plugin and check if it updates providers config"""
