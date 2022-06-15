@@ -82,11 +82,10 @@ class TestCore(TestCoreBase):
             "onda",
             "usgs",
             "aws_eos",
-            "astraea_eod",
             "earth_search",
             "earth_search_gcs",
         ],
-        "LANDSAT_C2L1": ["usgs_satapi_aws"],
+        "LANDSAT_C2L1": ["usgs_satapi_aws", "astraea_eod"],
         "LANDSAT_C2L2_SR": ["usgs_satapi_aws"],
         "LANDSAT_C2L2_ST": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_BT": ["usgs_satapi_aws"],
@@ -197,25 +196,23 @@ class TestCore(TestCoreBase):
         "ecmwf",
     ]
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestCore, cls).setUpClass()
-        cls.dag = EODataAccessGateway()
-        cls.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+    def setUp(self):
+        super(TestCore, self).setUp()
+        self.dag = EODataAccessGateway()
+        self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
         # backup os.environ as it will be modified by tests
-        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
-        cls.eodag_env_backup = {
-            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        self.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        self.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if self.eodag_env_pattern.match(k)
         }
 
-    @classmethod
-    def tearDownClass(cls):
-        super(TestCore, cls).tearDownClass()
+    def tearDown(self):
+        super(TestCore, self).tearDown()
         # restore os.environ
         for k, v in os.environ.items():
-            if cls.eodag_env_pattern.match(k):
+            if self.eodag_env_pattern.match(k):
                 os.environ.pop(k)
-        os.environ.update(cls.eodag_env_backup)
+        os.environ.update(self.eodag_env_backup)
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""  # noqa
@@ -224,12 +221,12 @@ class TestCore(TestCoreBase):
 
     def test_supported_product_types_in_unit_test(self):
         """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""  # noqa
-        for product_type in self.dag.list_product_types():
+        for product_type in self.dag.list_product_types(fetch_providers=False):
             self.assertIn(product_type["ID"], self.SUPPORTED_PRODUCT_TYPES.keys())
 
     def test_list_product_types_ok(self):
         """Core api must correctly return the list of supported product types"""
-        product_types = self.dag.list_product_types()
+        product_types = self.dag.list_product_types(fetch_providers=False)
         self.assertIsInstance(product_types, list)
         for product_type in product_types:
             self.assertListProductTypesRightStructure(product_type)
@@ -239,7 +236,9 @@ class TestCore(TestCoreBase):
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""  # noqa
         for provider in self.SUPPORTED_PROVIDERS:
-            product_types = self.dag.list_product_types(provider=provider)
+            product_types = self.dag.list_product_types(
+                provider=provider, fetch_providers=False
+            )
             self.assertIsInstance(product_types, list)
             for product_type in product_types:
                 self.assertListProductTypesRightStructure(product_type)
@@ -255,6 +254,138 @@ class TestCore(TestCoreBase):
             self.dag.list_product_types,
             provider=unsupported_provider,
         )
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_list_product_types_fetch_providers(self, mock_fetch_product_types_list):
+        """Core api must fetch providers for new product types if option is passed to list_product_types"""  # noqa
+        self.dag.list_product_types(fetch_providers=False)
+        assert not mock_fetch_product_types_list.called
+        self.dag.list_product_types(provider="peps", fetch_providers=True)
+        mock_fetch_product_types_list.assert_called_once_with(self.dag, provider="peps")
+
+    def test_update_product_types_list(self):
+        """Core api.update_product_types_list must update eodag product types list"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
+            ext_product_types_conf = json.load(f)
+
+        self.assertNotIn("foo", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("foo", self.dag.product_types_config)
+        self.assertNotIn("bar", self.dag.product_types_config)
+
+        self.dag.update_product_types_list(ext_product_types_conf)
+
+        self.assertIn("foo", self.dag.providers_config["astraea_eod"].products)
+        self.assertIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
+        self.assertEqual(
+            self.dag.product_types_config["bar"]["title"], "Bar collection"
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+        return_value={
+            "providers_config": {"foo": {"productType": "foo"}},
+            "product_types_config": {"foo": {"title": "Foo collection"}},
+        },
+    )
+    def test_discover_product_types(self, mock_plugin_discover_product_types):
+        """Core api must fetch providers for product types"""
+        ext_product_types_conf = self.dag.discover_product_types(provider="astraea_eod")
+        self.assertEqual(
+            ext_product_types_conf["astraea_eod"]["product_types_config"]["foo"][
+                "title"
+            ],
+            "Foo collection",
+        )
+        self.assertEqual(
+            ext_product_types_conf["astraea_eod"]["product_types_config"]["foo"][
+                "title"
+            ],
+            "Foo collection",
+        )
+
+    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+    )
+    def test_fetch_product_types_list(
+        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    ):
+        """Core api must fetch product types list and update if needed"""
+        # check that no provider has already been fetched
+        for provider_config in self.dag.providers_config.values():
+            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+
+        # check that by default get_ext_product_types_conf() is called without args
+        self.dag.fetch_product_types_list()
+        mock_get_ext_product_types_conf.assert_called_with()
+
+        # check that with an empty/mocked ext-conf, no provider has been fetched
+        for provider_config in self.dag.providers_config.values():
+            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+
+        # check that EODAG_EXT_PRODUCT_TYPES_CFG_FILE env var will be used as get_ext_product_types_conf() arg
+        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = "some/file"
+        self.dag.fetch_product_types_list()
+        mock_get_ext_product_types_conf.assert_called_with("some/file")
+        os.environ.pop("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+
+        # check that with a non-empty ext-conf, a provider will be marked as fetched, and eodag conf updated
+        mock_get_ext_product_types_conf.return_value = {
+            "astraea_eod": {
+                "providers_config": {"foo": {"productType": "foo"}},
+                "product_types_config": {"foo": {"title": "Foo collection"}},
+            }
+        }
+        self.dag.fetch_product_types_list()
+        self.assertTrue(self.dag.providers_config["astraea_eod"].product_types_fetched)
+        self.assertEqual(
+            self.dag.providers_config["astraea_eod"].products["foo"],
+            {"productType": "foo"},
+        )
+        self.assertEqual(
+            self.dag.product_types_config.source["foo"], {"title": "Foo collection"}
+        )
+
+        # update existing provider conf and check that discover_product_types() is launched for it
+        self.assertEqual(mock_discover_product_types.call_count, 0)
+        self.dag.update_providers_config(
+            """
+            astraea_eod:
+                search:
+                    discover_product_types:
+                        fetch_url: 'http://new-endpoint'
+            """
+        )
+        self.dag.fetch_product_types_list()
+        mock_discover_product_types.assert_called_once_with(
+            self.dag, provider="astraea_eod"
+        )
+
+        # add new provider conf and check that discover_product_types() is launched for it
+        self.assertEqual(mock_discover_product_types.call_count, 1)
+        self.dag.update_providers_config(
+            """
+            foo_provider:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+            """
+        )
+        self.dag.fetch_product_types_list()
+        mock_discover_product_types.assert_called_with(
+            self.dag, provider="foo_provider"
+        )
+        # discover_product_types() should have been called 2 more times
+        # (once per dynamically configured provider)
+        self.assertEqual(mock_discover_product_types.call_count, 3)
 
     def assertListProductTypesRightStructure(self, structure):
         """Helper method to verify that the structure given is a good result of
@@ -627,7 +758,9 @@ class TestCoreSearch(TestCoreBase):
         """guess_product_type must run a whoosh search without any limit"""
         # Filter that should give more than 10 products referenced in the catalog.
         opt_prods = [
-            p for p in self.dag.list_product_types() if p["sensorType"] == "OPTICAL"
+            p
+            for p in self.dag.list_product_types(fetch_providers=False)
+            if p["sensorType"] == "OPTICAL"
         ]
         if len(opt_prods) <= 10:
             self.skipTest("This test requires that more than 10 products are 'OPTICAL'")

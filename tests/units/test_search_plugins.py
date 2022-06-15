@@ -147,6 +147,46 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_discover_product_types(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must return a well formatted dict"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "creodias"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {
+            "collections": [
+                {
+                    "id": "foo_collection",
+                    "displayName": "The FOO collection",
+                    "billing": "free",
+                },
+                {
+                    "id": "bar_collection",
+                    "displayName": "The BAR non-free collection",
+                    "billing": "non-free",
+                },
+            ]
+        }
+        conf_update_dict = search_plugin.discover_product_types()
+        self.assertIn("foo_collection", conf_update_dict["providers_config"])
+        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertNotIn("bar_collection", conf_update_dict["providers_config"])
+        self.assertNotIn("bar_collection", conf_update_dict["product_types_config"])
+        self.assertEqual(
+            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            "foo_collection",
+        )
+        self.assertEqual(
+            conf_update_dict["product_types_config"]["foo_collection"]["title"],
+            "The FOO collection",
+        )
+
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):

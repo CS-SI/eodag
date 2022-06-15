@@ -33,7 +33,9 @@ from whoosh.qparser import QueryParser
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
+    get_ext_product_types_conf,
     load_default_config,
+    load_stac_provider_config,
     load_yml_config,
     override_config_from_env,
     override_config_from_file,
@@ -48,7 +50,7 @@ from eodag.utils import (
     _deprecated,
     get_geometry_from_various,
     makedirs,
-    md5sum,
+    obj_md5sum,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
@@ -84,7 +86,7 @@ class EODataAccessGateway(object):
             "eodag", os.path.join("resources/", "product_types.yml")
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
-        self.product_types_config_md5 = md5sum(product_types_config_path)
+        self.product_types_config_md5 = obj_md5sum(self.product_types_config.source)
         self.providers_config = load_default_config()
 
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
@@ -112,6 +114,11 @@ class EODataAccessGateway(object):
 
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
+
+        # init updated providers conf
+        stac_provider_config = load_stac_provider_config()
+        for provider in self.providers_config.keys():
+            provider_config_init(self.providers_config[provider], stac_provider_config)
 
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager = PluginManager(self.providers_config)
@@ -232,7 +239,7 @@ class EODataAccessGateway(object):
             non_indexable_fields = []
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
-            for product_type in self.list_product_types():
+            for product_type in self.list_product_types(fetch_providers=False):
                 versioned_product_type = dict(
                     product_type, **{"md5": self.product_types_config_md5}
                 )
@@ -338,8 +345,9 @@ class EODataAccessGateway(object):
         """
         conf_update = yaml.safe_load(yaml_conf)
         override_config_from_mapping(self.providers_config, conf_update)
+        stac_provider_config = load_stac_provider_config()
         for provider in conf_update.keys():
-            provider_config_init(self.providers_config[provider])
+            provider_config_init(self.providers_config[provider], stac_provider_config)
         self._plugins_manager = PluginManager(self.providers_config)
 
     def _prune_providers_list(self):
@@ -438,16 +446,23 @@ class EODataAccessGateway(object):
             )
             self.locations_config = []
 
-    def list_product_types(self, provider=None):
+    def list_product_types(self, provider=None, fetch_providers=True):
         """Lists supported product types.
 
         :param provider: (optional) The name of a provider that must support the product
                          types we are about to list
         :type provider: str
+        :param fetch_providers: (optional) Whether to fetch providers for new product
+                                types or not
+        :type fetch_providers: bool
         :returns: The list of the product types that can be accessed using eodag.
         :rtype: list(dict)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
+        if fetch_providers:
+            # First, update product types list if possible
+            self.fetch_product_types_list(provider=provider)
+
         product_types = []
         if provider is not None:
             if provider in self.providers_config:
@@ -468,12 +483,203 @@ class EODataAccessGateway(object):
             product_types.extend(
                 [
                     pt
-                    for pt in self.list_product_types(provider=provider)
+                    for pt in self.list_product_types(
+                        provider=provider, fetch_providers=False
+                    )
                     if pt["ID"] not in current_product_type_ids
                 ]
             )
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
+
+    def fetch_product_types_list(self, provider=None):
+        """Fetch product types list and update if needed
+
+        :param provider: (optional) The name of a provider for which product types list
+                         should be updated. Defaults to all providers (None value).
+        :type provider: str
+        """
+        if provider is not None and provider not in self.providers_config:
+            return
+        # check if any provider has already been fetched for product types
+        # (no need go get ext_product_types conf)
+        already_fetched = False
+        for provider, provider_config in self.providers_config.items():
+            if getattr(provider_config, "product_types_fetched", False):
+                already_fetched = True
+                break
+
+        if not already_fetched:
+            # get ext_product_types conf
+            if "EODAG_EXT_PRODUCT_TYPES_CFG_FILE" in os.environ:
+                ext_product_types_conf = get_ext_product_types_conf(
+                    os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"]
+                )
+            else:
+                ext_product_types_conf = get_ext_product_types_conf()
+
+                if not ext_product_types_conf:
+                    # empty ext_product_types conf
+                    ext_product_types_conf = self.discover_product_types()
+
+            # update eodag product types list with new conf
+            self.update_product_types_list(ext_product_types_conf)
+
+        # get ext_product_types conf for user modified providers
+        default_providers_config = load_default_config()
+        for provider, user_provider_config in self.providers_config.items():
+            # user discover_product_types conf
+            if hasattr(user_provider_config, "search"):
+                user_provider_search_config = user_provider_config.search
+            elif hasattr(user_provider_config, "api"):
+                user_provider_search_config = user_provider_config.api
+            else:
+                continue
+            user_discovery_conf = getattr(
+                user_provider_search_config, "discover_product_types", {}
+            )
+            # default discover_product_types conf
+            if provider in default_providers_config:
+                default_provider_config = default_providers_config[provider]
+                if hasattr(default_provider_config, "search"):
+                    default_provider_search_config = default_provider_config.search
+                elif hasattr(default_provider_config, "api"):
+                    default_provider_search_config = default_provider_config.api
+                else:
+                    continue
+                default_discovery_conf = getattr(
+                    default_provider_search_config, "discover_product_types", {}
+                )
+                # compare confs
+                if default_discovery_conf == user_discovery_conf:
+                    continue
+
+            # discover product types for user configured provider
+            ext_product_types_conf = self.discover_product_types(provider=provider)
+
+            # update eodag product types list with new conf
+            self.update_product_types_list(ext_product_types_conf)
+
+    def discover_product_types(self, provider=None):
+        """Fetch providers for product types
+
+        :param provider: (optional) The name of a provider to fetch. Defaults to all
+                         providers (None value).
+        :type provider: str
+        :returns: external product types configuration
+        :rtype: dict
+        """
+        ext_product_types_conf = {}
+        providers_to_fetch = [
+            p
+            for p in (
+                [
+                    provider,
+                ]
+                if provider
+                else self.available_providers()
+            )
+        ]
+        for provider in providers_to_fetch:
+            if hasattr(self.providers_config[provider], "search"):
+                search_plugin_config = self.providers_config[provider].search
+            elif hasattr(self.providers_config[provider], "api"):
+                search_plugin_config = self.providers_config[provider].api
+            else:
+                return
+            if getattr(search_plugin_config, "discover_product_types", None):
+                search_plugin = next(
+                    self._plugins_manager.get_search_plugins(provider=provider)
+                )
+                # append auth to search plugin if needed
+                if getattr(search_plugin.config, "need_auth", False):
+                    auth_plugin = self._plugins_manager.get_auth_plugin(
+                        search_plugin.provider
+                    )
+                    if callable(getattr(auth_plugin, "authenticate", None)):
+                        search_plugin.auth = auth_plugin.authenticate()
+
+                ext_product_types_conf[
+                    provider
+                ] = search_plugin.discover_product_types()
+
+        return ext_product_types_conf
+
+    def update_product_types_list(self, ext_product_types_conf):
+        """Update eodag product types list
+
+        :param ext_product_types_conf: external product types configuration
+        :type ext_product_types_conf: dict
+        """
+        for provider, new_product_types_conf in ext_product_types_conf.items():
+            if new_product_types_conf:
+                try:
+                    search_plugin = next(
+                        self._plugins_manager.get_search_plugins(provider=provider)
+                    )
+                except UnsupportedProvider:
+                    logger.debug(
+                        "Ignoring external product types for unknown provider %s",
+                        provider,
+                    )
+                    continue
+                for (
+                    new_product_type,
+                    new_product_type_conf,
+                ) in new_product_types_conf["providers_config"].items():
+                    if new_product_type not in search_plugin.config.products:
+                        for (
+                            existing_product_type
+                        ) in search_plugin.config.products.copy():
+                            # compare parsed extracted conf (without metadata_mapping entry)
+                            unparsable_keys = (
+                                search_plugin.config.discover_product_types.get(
+                                    "generic_product_type_unparsable_properties", {}
+                                ).keys()
+                            )
+                            new_parsed_product_types_conf = {
+                                k: v
+                                for k, v in new_product_type_conf.items()
+                                if k not in unparsable_keys
+                            }
+                            if (
+                                new_parsed_product_types_conf.items()
+                                <= search_plugin.config.products[
+                                    existing_product_type
+                                ].items()
+                            ):
+                                # new_product_types_conf is a subset on an existing conf
+                                break
+                        else:
+                            # new_product_type_conf does not already exist, append it
+                            # to search_plugin.config.products
+                            search_plugin.config.products[
+                                new_product_type
+                            ] = new_product_type_conf
+                            # to self.product_types_config
+                            self.product_types_config.source.update(
+                                {
+                                    new_product_type: new_product_types_conf[
+                                        "product_types_config"
+                                    ][new_product_type]
+                                }
+                            )
+                            self.product_types_config_md5 = obj_md5sum(
+                                self.product_types_config.source
+                            )
+                            ext_product_types_conf[provider] = new_product_types_conf
+                            logger.debug(
+                                f"Added product type {new_product_type} for {provider}"
+                            )
+
+            self.providers_config[provider].product_types_fetched = True
+
+        # re-create _plugins_manager using up-to-date providers_config
+        # self._plugins_manager = PluginManager(self.providers_config)
+        self._plugins_manager.build_product_type_to_provider_config_map()
+
+        # rebuild index after product types list update
+        self.build_index()
 
     def available_providers(self, product_type=None):
         """Gives the sorted list of the available providers
@@ -1006,7 +1212,9 @@ class EODataAccessGateway(object):
             search_plugin.config.product_type_config = dict(
                 [
                     p
-                    for p in self.list_product_types(search_plugin.provider)
+                    for p in self.list_product_types(
+                        search_plugin.provider, fetch_providers=False
+                    )
                     if p["ID"] == product_type
                 ][0],
                 **{"productType": product_type},

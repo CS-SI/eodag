@@ -17,7 +17,7 @@
 # limitations under the License.
 
 import requests
-from requests import HTTPError
+from requests import RequestException
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import RequestsTokenAuth
@@ -55,7 +55,7 @@ class TokenAuth(Authentication):
         )
         try:
             response.raise_for_status()
-        except HTTPError as e:
+        except RequestException as e:
             raise e
         else:
             if getattr(self.config, "token_type", "text") == "json":

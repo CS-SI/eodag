@@ -56,15 +56,20 @@ def format_product_types(product_types):
     return "\n".join(sorted(result))
 
 
-def get_detailled_collections_list(provider=None):
+def get_detailled_collections_list(provider=None, fetch_providers=True):
     """Returns detailled collections / product_types list for a given provider as a list of config dicts
 
     :param provider: (optional) Chosen provider
     :type provider: str
+    :param fetch_providers: (optional) Whether to fetch providers for new product
+                            types or not
+    :type fetch_providers: bool
     :returns: List of config dicts
     :rtype: list
     """
-    return eodag_api.list_product_types(provider=provider)
+    return eodag_api.list_product_types(
+        provider=provider, fetch_providers=fetch_providers
+    )
 
 
 def get_home_page_content(base_url, ipp=None):
@@ -580,7 +585,7 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
     return product_path
 
 
-def get_stac_catalogs(url, root="/", catalogs=[], provider=None):
+def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):
     """Build STAC catalog
 
     :param url: Requested URL
@@ -591,6 +596,9 @@ def get_stac_catalogs(url, root="/", catalogs=[], provider=None):
     :type catalogs: list
     :param provider: (optional) Chosen provider
     :type provider: str
+    :param fetch_providers: (optional) Whether to fetch providers for new product
+                            types or not
+    :type fetch_providers: bool
     :returns: Catalog dictionnary
     :rtype: dict
     """
@@ -601,6 +609,7 @@ def get_stac_catalogs(url, root="/", catalogs=[], provider=None):
         provider=provider,
         eodag_api=eodag_api,
         catalogs=catalogs,
+        fetch_providers=fetch_providers,
     ).get_stac_catalog()
 
 

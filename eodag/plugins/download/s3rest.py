@@ -24,7 +24,7 @@ from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 import requests
-from requests import HTTPError
+from requests import RequestException
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS
 from eodag.plugins.download.aws import AwsDownload
@@ -103,7 +103,7 @@ class S3RestDownload(AwsDownload):
         bucket_contents = requests.get(nodes_list_url, auth=auth)
         try:
             bucket_contents.raise_for_status()
-        except requests.HTTPError as err:
+        except requests.RequestException as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
@@ -212,7 +212,7 @@ class S3RestDownload(AwsDownload):
             ) as stream:
                 try:
                     stream.raise_for_status()
-                except HTTPError:
+                except RequestException:
                     import traceback as tb
 
                     logger.error("Error while getting resource :\n%s", tb.format_exc())

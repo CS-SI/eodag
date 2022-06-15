@@ -56,3 +56,7 @@ class Search(PluginTopic):
         the search criteria. If ``count`` is False, the second element returned must be ``None``.
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
+
+    def discover_product_types(self):
+        """Fetch product types list from provider using `discover_product_types` conf"""
+        return

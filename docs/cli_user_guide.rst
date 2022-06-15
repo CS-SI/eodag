@@ -22,8 +22,8 @@ Then you can start playing with it:
         --help         Show this message and exit.
 
         Commands:
-        deploy-wsgi-app  Configure the settings of the HTTP web app (the
-                        providers...
+        deploy-wsgi-app  Configure the settings of the HTTP web app (the...
+        discover         Fetch providers to discover product types
         download         Download a list of products from a serialized search...
         list             List supported product types
         search           Search satellite images by their product types,...
@@ -52,6 +52,7 @@ Then you can start playing with it:
         -L, --processingLevel TEXT      List product types of processing level
         -S, --sensorType TEXT           List product types originating from this
                                         type of sensor
+        --no-fetch                      Do not fetch providers for new product types
         --help                          Show this message and exit.
 
 * By default the command line interface of eodag is set to the minimum verbosity level. You can print more
@@ -122,3 +123,25 @@ to the provider. For instance, if you want to add foo=1 and bar=2 to the previou
 .. code-block:: console
 
         eodag list -p sobloo
+
+* By default, ``list`` command will also fetch for new product types, which may be slow depending on the network status.
+  To skip fetching, use the following option:
+
+.. code-block:: console
+
+        eodag list --no-fetch
+
+* EODAG can fetch providers (all or only a given one) to discover available product types, using the following command. It
+  will store result in a JSON file (defaults to `ext_product_types.json`):
+
+.. code-block:: console
+
+        eodag discover
+        eodag discover -p astraea_eod
+        eodag discover -p astraea_eod --storage my_product_types_conf.json
+
+This file can then be used in EODAG using the environment variable ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE``.
+
+Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
+For more information on the product types discovery mechanism, please see
+`Python API User Guide / Providers and products / Product types discovery <notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_.

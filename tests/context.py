@@ -32,7 +32,13 @@ from eodag.api.product.drivers.base import NoDriver
 from eodag.api.product.metadata_mapping import format_metadata
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
-from eodag.config import load_default_config, merge_configs
+from eodag.config import (
+    load_default_config,
+    merge_configs,
+    load_stac_provider_config,
+    get_ext_product_types_conf,
+    EXT_PRODUCT_TYPES_CONF_URI,
+)
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.crunch.filter_date import FilterDate
@@ -44,35 +50,6 @@ from eodag.plugins.download.base import Download, DEFAULT_STREAM_REQUESTS_TIMEOU
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
-from eodag.rest import server as eodag_http_server
-from eodag.rest.utils import (
-    download_stac_item_by_id,
-    eodag_api,
-    filter_products,
-    format_product_types,
-    get_arguments_query_paths,
-    get_criterias_from_metadata_mapping,
-    get_date,
-    get_datetime,
-    get_detailled_collections_list,
-    get_geometry,
-    get_home_page_content,
-    get_int,
-    get_metadata_query_paths,
-    get_pagination_info,
-    get_product_types,
-    get_stac_catalogs,
-    get_stac_collection_by_id,
-    get_stac_collections,
-    get_stac_conformance,
-    get_stac_extension_oseo,
-    get_stac_item_by_id,
-    get_templates_path,
-    search_bbox,
-    search_product_by_id,
-    search_products,
-    search_stac_items,
-)
 from eodag.utils import (
     get_geometry_from_various,
     get_timestamp,
@@ -84,6 +61,7 @@ from eodag.utils import (
     DownloadedCallback,
     parse_qsl,
     urlsplit,
+    GENERIC_PRODUCT_TYPE,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,

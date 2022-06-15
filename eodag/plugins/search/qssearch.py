@@ -28,6 +28,7 @@ from lxml import etree
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
     NOT_MAPPED,
     format_metadata,
     get_metadata_path,
@@ -36,7 +37,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.config import load_stac_provider_config
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
@@ -174,6 +174,96 @@ class QueryStringSearch(Search):
         self.next_page_url = None
         self.next_page_query_obj = None
         self.next_page_merge = None
+
+    def discover_product_types(self):
+        """Fetch product types list from provider using `discover_product_types` conf
+
+        :returns: configuration dict containing fetched product types information
+        :rtype: dict
+        """
+        try:
+            fetch_url = self.config.discover_product_types["fetch_url"].format(
+                **self.config.__dict__
+            )
+            response = QueryStringSearch._request(
+                self,
+                fetch_url,
+                info_message="Fetching product types: {}".format(fetch_url),
+                exception_message="Skipping error while fetching product types for "
+                "{} {} instance:".format(self.provider, self.__class__.__name__),
+            )
+        except (RequestError, KeyError, AttributeError):
+            return
+        else:
+            try:
+                if self.config.discover_product_types["result_type"] == "json":
+                    resp_as_json = response.json()
+                    # extract results from response json
+                    result = [
+                        match.value
+                        for match in parse(
+                            self.config.discover_product_types["results_entry"]
+                        ).find(resp_as_json)
+                    ]
+
+                    conf_update_dict = {
+                        "providers_config": {},
+                        "product_types_config": {},
+                    }
+
+                    for product_type_result in result:
+                        # providers_config extraction
+                        mapping_config = {
+                            k: (None, parse(v))
+                            for k, v in self.config.discover_product_types[
+                                "generic_product_type_parsable_properties"
+                            ].items()
+                        }
+                        mapping_config["generic_product_type_id"] = (
+                            None,
+                            parse(
+                                self.config.discover_product_types[
+                                    "generic_product_type_id"
+                                ]
+                            ),
+                        )
+
+                        extracted_mapping = properties_from_json(
+                            product_type_result, mapping_config
+                        )
+                        generic_product_type_id = extracted_mapping.pop(
+                            "generic_product_type_id"
+                        )
+                        conf_update_dict["providers_config"][
+                            generic_product_type_id
+                        ] = dict(
+                            extracted_mapping,
+                            **self.config.discover_product_types[
+                                "generic_product_type_unparsable_properties"
+                            ],
+                        )
+                        # product_types_config extraction
+                        mapping_config = {
+                            k: (None, parse(v))
+                            for k, v in self.config.discover_product_types[
+                                "generic_product_type_parsable_metadata"
+                            ].items()
+                        }
+                        conf_update_dict["product_types_config"][
+                            generic_product_type_id
+                        ] = properties_from_json(product_type_result, mapping_config)
+            except KeyError as e:
+                logger.warning(
+                    "Incomplete %s discover_product_types configuration: %s",
+                    self.provider,
+                    e,
+                )
+                return
+        conf_update_dict["product_types_config"] = dict_items_recursive_apply(
+            conf_update_dict["product_types_config"],
+            lambda k, v: v if v != NOT_AVAILABLE else None,
+        )
+        return conf_update_dict
 
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface
@@ -602,7 +692,7 @@ class QueryStringSearch(Search):
                         "metadata_path", "null"
                     ),
                 ),
-                **kwargs
+                **kwargs,
             )
             # use product_type_config as default properties
             product.properties = dict(
@@ -770,7 +860,7 @@ class QueryStringSearch(Search):
                     logger.info(info_message)
                 response = requests.get(url)
                 response.raise_for_status()
-        except (requests.HTTPError, urllib_HTTPError) as err:
+        except (requests.RequestException, urllib_HTTPError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -828,7 +918,7 @@ class ODataV4Search(QueryStringSearch):
                 logger.debug("Sending metadata request: %s", metadata_url)
                 response = requests.get(metadata_url)
                 response.raise_for_status()
-            except requests.HTTPError:
+            except requests.RequestException:
                 logger.exception(
                     "Skipping error while searching for %s %s instance:",
                     self.provider,
@@ -1026,7 +1116,7 @@ class PostJsonSearch(QueryStringSearch):
             logger.debug("Query parameters: %s" % self.query_params)
             response = requests.post(url, json=self.query_params, **kwargs)
             response.raise_for_status()
-        except (requests.HTTPError, urllib_HTTPError) as err:
+        except (requests.RequestException, urllib_HTTPError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
@@ -1056,33 +1146,13 @@ class StacSearch(PostJsonSearch):
     """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
 
     def __init__(self, provider, config):
-        stac_provider_config = load_stac_provider_config()
-
-        # search config set to stac defaults overriden with provider config
-        config.__dict__["pagination"] = dict(
-            stac_provider_config.get("search", {}).get("pagination", {}),
-            **config.__dict__.get("pagination", {})
-        )
-        config.__dict__["discover_metadata"] = dict(
-            stac_provider_config.get("search", {}).get("discover_metadata", {}),
-            **config.__dict__.get("discover_metadata", {})
-        )
-        config.__dict__["metadata_mapping"] = dict(
-            stac_provider_config.get("search", {}).get("metadata_mapping", {}),
-            **config.__dict__.get("metadata_mapping", {})
-        )
+        # backup results_entry overwritten by init
+        results_entry = config.results_entry
 
         super(StacSearch, self).__init__(provider, config)
-        self.config.results_entry = "features"
 
-        # TODO: fetch /collections to add dynamically product types
-        # response = self._request(
-        #     config.api_endpoint.replace("/search", "/collections"),
-        # )
-        # collections = [c["id"] for c in response.json().get("collections", {}) if "id" in c.keys()]
-        # for c in collections:
-        #     if c not in str(self.config.products):
-        #         self.config.products[c] = {"productType": c}
+        # restore results_entry overwritten by init
+        self.config.results_entry = results_entry
 
     def normalize_results(self, results, **kwargs):
         """Build EOProducts from provider results"""

@@ -53,7 +53,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
         )
         try:
             response.raise_for_status()
-        except requests.HTTPError as e:
+        except requests.RequestException as e:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):

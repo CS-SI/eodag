@@ -66,7 +66,7 @@ stac_config = load_stac_config()
 
 stac_api_config = {"info": {}}
 stac_api_config = load_stac_api_config()
-root_catalog = get_stac_catalogs(url="")
+root_catalog = get_stac_catalogs(url="", fetch_providers=False)
 stac_api_version = stac_api_config["info"]["version"]
 stac_api_config["info"]["title"] = root_catalog["title"] + " / eodag"
 stac_api_config["info"]["description"] = (
@@ -75,7 +75,7 @@ stac_api_config["info"]["description"] = (
     + "".join(
         [
             "\n - [{0}](/collections/{0}): {1}".format(pt["ID"], pt["abstract"])
-            for pt in get_detailled_collections_list()
+            for pt in get_detailled_collections_list(fetch_providers=False)
         ]
     )
 )

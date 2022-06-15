@@ -30,6 +30,7 @@ from pathlib import Path
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
 from tests.context import (
+    GENERIC_PRODUCT_TYPE,
     AuthenticationError,
     EODataAccessGateway,
     SearchResult,
@@ -475,6 +476,148 @@ class TestEODagEndToEnd(EndToEndBase):
         # 23/03/2021: Got 39 products for this search
         results = self.execute_search_all(*ASTRAE_EOD_SEARCH_ARGS, items_per_page=10)
         self.assertGreater(len(results), 10)
+
+    def test_end_to_end_discover_product_types_creodias(self):
+        """discover_product_types() must return an external product types configuration for creodias"""
+        provider = "creodias"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertEqual(
+            "Sentinel1",
+            ext_product_types_conf[provider]["providers_config"]["Sentinel1"][
+                "collection"
+            ],
+        )
+        self.assertEqual(
+            "Sentinel-1",
+            ext_product_types_conf[provider]["product_types_config"]["Sentinel1"][
+                "title"
+            ],
+        )
+        # check that all pre-configured product types are listed by provider
+        provider_product_types = [
+            v["collection"]
+            for k, v in self.eodag.providers_config[provider].products.items()
+            if k != GENERIC_PRODUCT_TYPE
+        ]
+        for provider_product_type in provider_product_types:
+            self.assertIn(
+                provider_product_type,
+                ext_product_types_conf[provider]["providers_config"],
+            )
+
+    def test_end_to_end_discover_product_types_astraea_eod(self):
+        """discover_product_types() must return an external product types configuration for astraea_eod"""
+        provider = "astraea_eod"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertEqual(
+            "sentinel1_l1c_grd",
+            ext_product_types_conf[provider]["providers_config"]["sentinel1_l1c_grd"][
+                "productType"
+            ],
+        )
+        self.assertEqual(
+            "Sentinel-1 L1C GRD",
+            ext_product_types_conf[provider]["product_types_config"][
+                "sentinel1_l1c_grd"
+            ]["title"],
+        )
+        self.assertEqual(
+            "CC-BY-SA-3.0",
+            ext_product_types_conf[provider]["product_types_config"][
+                "sentinel1_l1c_grd"
+            ]["license"],
+        )
+        # check that all pre-configured product types are listed by provider
+        provider_product_types = [
+            v["productType"]
+            for k, v in self.eodag.providers_config[provider].products.items()
+            if k != GENERIC_PRODUCT_TYPE
+        ]
+        for provider_product_type in provider_product_types:
+            self.assertIn(
+                provider_product_type,
+                ext_product_types_conf[provider]["providers_config"],
+            )
+
+    def test_end_to_end_discover_product_types_usgs_satapi_aws(self):
+        """discover_product_types() must return an external product types configuration for usgs_satapi_aws"""
+        provider = "usgs_satapi_aws"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertEqual(
+            "landsat-c2l1",
+            ext_product_types_conf[provider]["providers_config"]["landsat-c2l1"][
+                "productType"
+            ],
+        )
+        self.assertEqual(
+            "Landsat Collection 2 Level-1 Product",
+            ext_product_types_conf[provider]["product_types_config"]["landsat-c2l1"][
+                "title"
+            ],
+        )
+        self.assertEqual(
+            "PDDL-1.0",
+            ext_product_types_conf[provider]["product_types_config"]["landsat-c2l1"][
+                "license"
+            ],
+        )
+        # check that all pre-configured product types are listed by provider
+        provider_product_types = [
+            v["productType"]
+            for k, v in self.eodag.providers_config[provider].products.items()
+            if k != GENERIC_PRODUCT_TYPE
+        ]
+        for provider_product_type in provider_product_types:
+            self.assertIn(
+                provider_product_type,
+                ext_product_types_conf[provider]["providers_config"],
+            )
+
+    def test_end_to_end_discover_product_types_earth_search(self):
+        """discover_product_types() must return an external product types configuration for earth_search"""
+        provider = "earth_search"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertEqual(
+            "sentinel-s2-l1c",
+            ext_product_types_conf[provider]["providers_config"]["sentinel-s2-l1c"][
+                "productType"
+            ],
+        )
+        self.assertEqual(
+            "Sentinel 2 L1C",
+            ext_product_types_conf[provider]["product_types_config"]["sentinel-s2-l1c"][
+                "title"
+            ],
+        )
+        self.assertEqual(
+            "proprietary",
+            ext_product_types_conf[provider]["product_types_config"]["sentinel-s2-l1c"][
+                "license"
+            ],
+        )
+        # check that all pre-configured product types are listed by provider
+        provider_product_types = [
+            v["productType"]
+            for k, v in self.eodag.providers_config[provider].products.items()
+            if k != GENERIC_PRODUCT_TYPE
+        ]
+        for provider_product_type in provider_product_types:
+            self.assertIn(
+                provider_product_type,
+                ext_product_types_conf[provider]["providers_config"],
+            )
+
+    def test_end_to_end_discover_product_types_earth_search_cog(self):
+        """discover_product_types() must return None for earth_search_cog"""
+        provider = "earth_search_cog"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertIsNone(ext_product_types_conf[provider])
+
+    def test_end_to_end_discover_product_types_earth_search_gcs(self):
+        """discover_product_types() must return None for earth_search_gcs"""
+        provider = "earth_search_gcs"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertIsNone(ext_product_types_conf[provider])
 
 
 # @unittest.skip("skip auto run")
