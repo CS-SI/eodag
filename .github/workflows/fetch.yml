@@ -45,10 +45,12 @@ jobs:
         export JSON_OUTPUT_FILE="eodag/resources/ext_product_types.json"
         export JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_PRODUCT_TYPES_CONF_URI)")
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
+        # add empty line at end of file
+        sed -i -e '$a\' ${JSON_OUTPUT_FILE}
         git config user.name "github-actions[bot]"
         git config user.email "'github-actions[bot]@users.noreply.github.com"
         git add "${JSON_OUTPUT_FILE}"
-        git commit -m "fix: update external product types reference"
+        git commit -m "fix: update external product types reference" || true
         echo '### Changed files' >> $GITHUB_STEP_SUMMARY
         COMMIT_SHA=$(git rev-parse HEAD)
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA}"
