@@ -50,7 +50,7 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "'github-actions[bot]@users.noreply.github.com"
         git add "${JSON_OUTPUT_FILE}"
-        git commit -m "fix: update external product types reference" || true
+        git commit -m "fix: update external product types reference" || exit 0
         echo '### Changed files' >> $GITHUB_STEP_SUMMARY
         COMMIT_SHA=$(git rev-parse HEAD)
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA}"
