@@ -158,7 +158,22 @@ S1_IMG_NB_PER_POLAR = {
 
 
 class AwsDownload(Download):
-    """Download on AWS using S3 protocol"""
+    """Download on AWS using S3 protocol.
+
+    :param provider: provider name
+    :type provider: str
+    :param config: Download plugin configuration
+                   config.requester_pays:
+
+    :param config: Download plugin configuration:
+
+                     * ``config.base_uri`` (str) - s3 endpoint url
+                     * ``config.requester_pays`` (bool) - whether download is done from
+                       a requester-pays bucket or not
+                     * ``config.flatten_top_dirs`` (bool) - flatten directory structure
+                     * ``config.products`` (dict) - product_type specific configuration
+    :type config: :class:`~eodag.config.PluginConfig`
+    """
 
     def __init__(self, provider, config):
         super(AwsDownload, self).__init__(provider, config)
