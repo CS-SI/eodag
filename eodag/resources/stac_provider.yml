@@ -135,7 +135,7 @@ search:
     geometry:
       - '{{"intersects":{geometry#to_geo_interface}}}'
       - '$.geometry'
-    downloadLink: '%(base_uri)s/collections/{productType}/items/{id}'
+    downloadLink: '$.links[?(@.rel="self")].href'
     quicklook: '$.assets.quicklook.href'
     thumbnail: '$.assets.thumbnail.href'
     # storageStatus set to ONLINE for consistency between providers

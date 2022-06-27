@@ -466,6 +466,7 @@
 
   download: !plugin
     type: AwsDownload
+    requester_pays: True
     products:
       CBERS4_MUX_L2:
         default_bucket: 'cbers-pds'
@@ -1637,7 +1638,7 @@
       productType: '{productType}'
   download: !plugin
     type: AwsDownload
-    base_uri: https://eod-catalog-svc-prod.astraea.earth
+    requester_pays: True
     flatten_top_dirs: True
     products:
       S1_SAR_GRD:
@@ -1711,7 +1712,7 @@
       productType: '{productType}'
   download: !plugin
     type: AwsDownload
-    base_uri: https://landsatlook.usgs.gov/stac-server
+    requester_pays: True
     flatten_top_dirs: True
   auth: !plugin
     type: AwsAuth
@@ -1767,7 +1768,7 @@
       productType: '{productType}'
   download: !plugin
     type: AwsDownload
-    base_uri: https://earth-search.aws.element84.com/v0
+    requester_pays: True
     flatten_top_dirs: True
     products:
       S2_MSI_L1C:
