@@ -1,6 +1,12 @@
 Release history
 ---------------
 
+2.5.1 (2022-06-27)
+++++++++++++++++++
+
+* Fixed broken :class:`~eodag.plugins.download.aws.AwsDownload` configuration for STAC providers (:pull:`475`)
+* Set ``setuptools_scm`` max version for python3.6 (:pull:`477`)
+
 2.5.0 (2022-06-07)
 ++++++++++++++++++
 
