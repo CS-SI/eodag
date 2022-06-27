@@ -36,5 +36,5 @@ def _get_fallback_version():
 if __name__ == "__main__":
     setuptools.setup(
         use_scm_version={"fallback_version": _get_fallback_version()},
-        setup_requires=["setuptools_scm"],
+        setup_requires=["setuptools_scm<7"],
     )
