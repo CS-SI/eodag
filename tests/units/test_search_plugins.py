@@ -327,6 +327,13 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                             "sentinel:product_id": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
                         },
                     },
+                    {
+                        "id": "bar",
+                        "geometry": geojson_geometry,
+                        "properties": {
+                            "sentinel:product_id": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
+                        },
+                    },
                 ]
             },
         ]
@@ -343,4 +350,8 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertEqual(
             products[1].properties["productPath"],
             "products/2020/9/10/S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
+        )
+        self.assertEqual(
+            products[2].properties["productPath"],
+            "products/2020/10/10/S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
         )
