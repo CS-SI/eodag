@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+2.5.2 (2022-07-05)
+++++++++++++++++++
+
+* Fixes missing ``productPath`` property for some ``earth_search`` products (:pull:`480`)
+
 2.5.1 (2022-06-27)
 ++++++++++++++++++
 
