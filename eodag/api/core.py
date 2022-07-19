@@ -348,7 +348,8 @@ class EODataAccessGateway(object):
         stac_provider_config = load_stac_provider_config()
         for provider in conf_update.keys():
             provider_config_init(self.providers_config[provider], stac_provider_config)
-        self._plugins_manager = PluginManager(self.providers_config)
+        # re-create _plugins_manager using up-to-date providers_config
+        self._plugins_manager.build_product_type_to_provider_config_map()
 
     def _prune_providers_list(self):
         """Removes from config providers needing auth that have no credentials set."""
@@ -675,7 +676,6 @@ class EODataAccessGateway(object):
             self.providers_config[provider].product_types_fetched = True
 
         # re-create _plugins_manager using up-to-date providers_config
-        # self._plugins_manager = PluginManager(self.providers_config)
         self._plugins_manager.build_product_type_to_provider_config_map()
 
         # rebuild index after product types list update
