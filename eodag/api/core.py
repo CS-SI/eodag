@@ -30,6 +30,7 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
+from eodag.api.product.metadata_mapping import mtd_cfg_as_jsonpath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
@@ -338,12 +339,52 @@ class EODataAccessGateway(object):
         >>> dag.providers_config["my_new_provider"].priority
         0
         >>> # run 2nd time (update provider)
+        >>> update_config = '''
+        ...     my_new_provider:
+        ...         search:
+        ...             type: StacSearch
+        ...             api_endpoint: https://api.my_new_provider/search
+        ...         products:
+        ...             GENERIC_PRODUCT_TYPE:
+        ...                 productType: '{productType}'
+        ... '''
         >>> dag.update_providers_config(new_config)
 
         :param yaml_conf: YAML formated provider configuration
         :type yaml_conf: str
         """
         conf_update = yaml.safe_load(yaml_conf)
+        # check if metada-mapping as already been built as jsonpath in providers_config
+        for provider, provider_conf in conf_update.items():
+            if (
+                provider in self.providers_config
+                and "metadata_mapping" in provider_conf.get("search", {})
+            ):
+                search_plugin_key = "search"
+            elif (
+                provider in self.providers_config
+                and "metadata_mapping" in provider_conf.get("api", {})
+            ):
+                search_plugin_key = "api"
+            else:
+                continue
+            # get some already configured value
+            configured_metadata_mapping = getattr(
+                self.providers_config[provider], search_plugin_key
+            ).metadata_mapping
+            some_configured_value = next(iter(configured_metadata_mapping.values()))
+            # check if the configured value has already been built as jsonpath
+            if (
+                isinstance(some_configured_value, list)
+                and isinstance(some_configured_value[1], tuple)
+                or isinstance(some_configured_value, tuple)
+            ):
+                # also build as jsonpath the incoming conf
+                mtd_cfg_as_jsonpath(
+                    conf_update[provider][search_plugin_key]["metadata_mapping"],
+                    conf_update[provider][search_plugin_key]["metadata_mapping"],
+                )
+
         override_config_from_mapping(self.providers_config, conf_update)
         stac_provider_config = load_stac_provider_config()
         for provider in conf_update.keys():
