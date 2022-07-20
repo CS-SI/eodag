@@ -858,7 +858,7 @@ class QueryStringSearch(Search):
             else:
                 if info_message:
                     logger.info(info_message)
-                response = requests.get(url)
+                response = requests.get(url, **kwargs)
                 response.raise_for_status()
         except (requests.RequestException, urllib_HTTPError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
