@@ -18,6 +18,7 @@
 import ast
 import logging
 import re
+from copy import deepcopy
 from datetime import datetime, timedelta
 from string import Formatter
 
@@ -630,7 +631,7 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
     :rtype: dict
     """
     if not dest_dict:
-        dest_dict = src_dict
+        dest_dict = deepcopy(src_dict)
     for metadata in src_dict:
         if metadata not in dest_dict:
             dest_dict[metadata] = (None, NOT_MAPPED)
