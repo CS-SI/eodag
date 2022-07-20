@@ -19,7 +19,7 @@
 import tempfile
 from unittest import TestCase, mock
 
-from tests.context import EODataAccessGateway
+from tests.context import EODataAccessGateway, PluginConfig
 
 
 class TestCoreProvidersConfig(TestCase):
@@ -93,3 +93,18 @@ class TestCoreProvidersConfig(TestCase):
         mock__request.return_value.json.side_effect = mock__request_side_effect
         prods, _ = self.dag.search(raise_errors=True)
         self.assertEqual(prods[0].properties["title"], "baz")
+
+        # update provider with new plugin entry
+        self.dag.update_providers_config(
+            """
+            foo_provider:
+                auth:
+                    type: GenericAuth
+            """
+        )
+        self.assertIsInstance(
+            self.dag.providers_config["foo_provider"].auth, PluginConfig
+        )
+        self.assertEqual(
+            self.dag.providers_config["foo_provider"].auth.type, "GenericAuth"
+        )

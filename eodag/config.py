@@ -163,8 +163,11 @@ class ProviderConfig(yaml.YAMLObject):
         )
         for key in ("api", "search", "download", "auth"):
             current_value = getattr(self, key, None)
+            mapping_value = mapping.get(key, {})
             if current_value is not None:
-                current_value.update(mapping.get(key, {}))
+                current_value.update(mapping_value)
+            elif mapping_value:
+                setattr(self, key, PluginConfig.from_mapping(mapping_value))
 
 
 class PluginConfig(yaml.YAMLObject):
