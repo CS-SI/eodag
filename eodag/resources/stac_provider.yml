@@ -134,7 +134,7 @@ search:
       - '$.id'
     geometry:
       - '{{"intersects":{geometry#to_geo_interface}}}'
-      - '$.geometry'
+      - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
     downloadLink: '$.links[?(@.rel="self")].href'
     quicklook: '$.assets.quicklook.href'
     thumbnail: '$.assets.thumbnail.href'
