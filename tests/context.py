@@ -38,6 +38,7 @@ from eodag.config import (
     load_stac_provider_config,
     get_ext_product_types_conf,
     EXT_PRODUCT_TYPES_CONF_URI,
+    PluginConfig,
 )
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
