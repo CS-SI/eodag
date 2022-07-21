@@ -19,7 +19,13 @@
 import tempfile
 from unittest import TestCase, mock
 
-from tests.context import EODataAccessGateway, PluginConfig
+from tests.context import (
+    AuthenticationError,
+    EODataAccessGateway,
+    HeaderAuth,
+    MisconfiguredError,
+    PluginConfig,
+)
 
 
 class TestCoreProvidersConfig(TestCase):
@@ -108,3 +114,79 @@ class TestCoreProvidersConfig(TestCase):
         self.assertEqual(
             self.dag.providers_config["foo_provider"].auth.type, "GenericAuth"
         )
+
+
+class TestCoreProductTypesConfig(TestCase):
+    def setUp(self):
+        super(TestCoreProductTypesConfig, self).setUp()
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = tempfile.TemporaryDirectory()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        )
+        self.expanduser_mock.start()
+        self.dag = EODataAccessGateway()
+
+    def tearDown(self):
+        super(TestCoreProductTypesConfig, self).tearDown()
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        self.tmp_home_dir.cleanup()
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_core_discover_product_types_auth(self, mock_requests_get):
+        # without auth plugin
+        self.dag.update_providers_config(
+            """
+            foo_provider:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                    discover_product_types:
+                        fetch_url: https://foo.bar/collections
+                    need_auth: true
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+            """
+        )
+        self.assertRaises(
+            AuthenticationError,
+            self.dag.discover_product_types,
+            provider="foo_provider",
+        )
+
+        # with auth plugin but without credentials
+        self.dag.update_providers_config(
+            """
+            foo_provider:
+                auth:
+                    type: HTTPHeaderAuth
+                    headers:
+                        Authorization: "Apikey {apikey}"
+            """
+        )
+        with self.assertRaisesRegex(
+            MisconfiguredError, r"Missing credentials configuration .*"
+        ):
+            self.dag.discover_product_types(provider="foo_provider")
+
+        # with auth plugin and credentials
+        self.dag.update_providers_config(
+            """
+            foo_provider:
+                auth:
+                    credentials:
+                        apikey: my-api-key
+            """
+        )
+        self.dag.discover_product_types(provider="foo_provider")
+
+        mock_requests_get.assert_called_once_with(
+            self.dag.providers_config["foo_provider"].search.discover_product_types[
+                "fetch_url"
+            ],
+            auth=mock.ANY,
+        )
+        call_args, call_kwargs = mock_requests_get.call_args
+        self.assertIsInstance(call_kwargs["auth"], HeaderAuth)
