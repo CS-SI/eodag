@@ -282,7 +282,7 @@ class EOProduct(object):
             # update units as bar may have been previously used for extraction
             progress_callback.unit = "B"
             progress_callback.unit_scale = True
-        progress_callback.desc = self.properties.get("id", "")
+        progress_callback.desc = str(self.properties.get("id", ""))
         progress_callback.refresh()
 
         fs_path = self.downloader.download(

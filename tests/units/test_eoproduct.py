@@ -34,6 +34,7 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     NoDriver,
+    ProgressCallback,
     config,
 )
 from tests.utils import mock
@@ -44,6 +45,12 @@ class TestEOProduct(EODagTestCase):
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
+        self.output_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        super(TestEOProduct, self).tearDown()
+        if os.path.isdir(self.output_dir):
+            shutil.rmtree(self.output_dir)
 
     def test_eoproduct_search_intersection_geom(self):
         """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""  # noqa
@@ -383,3 +390,26 @@ class TestEOProduct(EODagTestCase):
         finally:
             # Teardown (all the created files are within outputs_prefix)
             shutil.rmtree(output_dir)
+
+    def test_eoproduct_download_progress_bar(self):
+        """eoproduct.download must show a progress bar"""
+        product = self._dummy_downloadable_product()
+        product.properties["id"] = 12345
+        progress_callback = ProgressCallback()
+
+        # progress bar did not start
+        self.assertEqual(progress_callback.n, 0)
+
+        # extract=true would replace bar desc with extraction status
+        product.download(
+            progress_callback=progress_callback,
+            outputs_prefix=self.output_dir,
+            extract=False,
+        )
+
+        # should be product id cast to str
+        self.assertEqual(progress_callback.desc, "12345")
+
+        # progress bar finished
+        self.assertEqual(progress_callback.n, progress_callback.total)
+        self.assertGreater(progress_callback.total, 0)
