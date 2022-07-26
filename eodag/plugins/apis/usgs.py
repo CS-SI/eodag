@@ -23,7 +23,7 @@ import tarfile
 import requests
 from jsonpath_ng.ext import parse
 from requests import RequestException
-from usgs import USGSError, api
+from usgs import USGSAuthExpiredError, USGSError, api
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -59,14 +59,23 @@ class UsgsApi(Download, Api):
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
-        try:
-            api.login(
-                getattr(self.config, "credentials", {}).get("username", ""),
-                getattr(self.config, "credentials", {}).get("password", ""),
-                save=True,
-            )
-        except USGSError:
-            raise AuthenticationError("Please check your USGS credentials.") from None
+
+        for i in range(2):
+            try:
+                api.login(
+                    getattr(self.config, "credentials", {}).get("username", ""),
+                    getattr(self.config, "credentials", {}).get("password", ""),
+                    save=True,
+                )
+                break
+            # if API key expired, retry to login once after logout
+            except USGSAuthExpiredError:
+                api.logout()
+                continue
+            except USGSError:
+                raise AuthenticationError(
+                    "Please check your USGS credentials."
+                ) from None
 
         product_type_def_params = self.config.products.get(
             product_type, self.config.products[GENERIC_PRODUCT_TYPE]
