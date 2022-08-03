@@ -39,7 +39,9 @@ from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.config")
 
-EXT_PRODUCT_TYPES_CONF_URI = "https://raw.githubusercontent.com/CS-SI/eodag/develop/eodag/resources/ext_product_types.json"  # noqa
+EXT_PRODUCT_TYPES_CONF_URI = (
+    "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
+)
 
 
 class SimpleYamlProxyConfig(object):
