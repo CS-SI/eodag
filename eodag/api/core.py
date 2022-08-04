@@ -594,14 +594,26 @@ class EODataAccessGateway(object):
                     default_provider_search_config, "discover_product_types", {}
                 )
                 # compare confs
-                if default_discovery_conf == user_discovery_conf:
+                if default_discovery_conf == user_discovery_conf and (
+                    not default_discovery_conf.get("fetch_url", None)
+                    or "ext_product_types_conf" not in locals()
+                    or "ext_product_types_conf" in locals()
+                    and (
+                        provider in ext_product_types_conf
+                        or len(ext_product_types_conf.keys()) == 0
+                    )
+                ):
                     continue
+                # providers not skipped here should be user-modified
+                # or not in ext_product_types_conf (if eodag system conf != eodag conf used for ext_product_types_conf)
 
             # discover product types for user configured provider
-            ext_product_types_conf = self.discover_product_types(provider=provider)
+            provider_ext_product_types_conf = self.discover_product_types(
+                provider=provider
+            )
 
             # update eodag product types list with new conf
-            self.update_product_types_list(ext_product_types_conf)
+            self.update_product_types_list(provider_ext_product_types_conf)
 
     def discover_product_types(self, provider=None):
         """Fetch providers for product types

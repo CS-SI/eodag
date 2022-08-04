@@ -41,6 +41,7 @@ from tests.context import (
     SearchResult,
     UnsupportedProvider,
     get_geometry_from_various,
+    load_default_config,
     makedirs,
 )
 from tests.utils import mock, write_eodag_conf_with_fake_credentials
@@ -341,6 +342,18 @@ class TestCore(TestCoreBase):
                 "product_types_config": {"foo": {"title": "Foo collection"}},
             }
         }
+        # add an empty ext-conf for other providers to prevent them to be fetched
+        for provider, provider_config in self.dag.providers_config.items():
+            if provider != "astraea_eod" and hasattr(provider_config, "search"):
+                provider_search_config = provider_config.search
+            elif provider != "astraea_eod" and hasattr(provider_config, "api"):
+                provider_search_config = provider_config.api
+            else:
+                continue
+            if hasattr(
+                provider_search_config, "discover_product_types"
+            ) and provider_search_config.discover_product_types.get("fetch_url", None):
+                mock_get_ext_product_types_conf.return_value[provider] = {}
         self.dag.fetch_product_types_list()
         self.assertTrue(self.dag.providers_config["astraea_eod"].product_types_fetched)
         self.assertEqual(
@@ -386,6 +399,85 @@ class TestCore(TestCoreBase):
         # discover_product_types() should have been called 2 more times
         # (once per dynamically configured provider)
         self.assertEqual(mock_discover_product_types.call_count, 3)
+
+    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+    )
+    def test_fetch_product_types_list_updated_system_conf(
+        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    ):
+        """fetch_product_types_list must launch product types discovery for new system-wide providers"""
+        # add a new system-wide provider not listed in ext-conf
+        new_default_conf = load_default_config()
+        new_default_conf["new_provider"] = new_default_conf["astraea_eod"]
+
+        with mock.patch(
+            "eodag.api.core.load_default_config",
+            return_value=new_default_conf,
+            autospec=True,
+        ):
+            self.dag = EODataAccessGateway()
+
+            mock_get_ext_product_types_conf.return_value = {}
+
+            # disabled product types discovery
+            os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+            self.dag.fetch_product_types_list()
+            mock_discover_product_types.assert_not_called()
+            os.environ.pop("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+
+            # add an empty ext-conf for other providers to prevent them to be fetched
+            for provider, provider_config in self.dag.providers_config.items():
+                if provider != "new_provider" and hasattr(provider_config, "search"):
+                    provider_search_config = provider_config.search
+                elif provider != "new_provider" and hasattr(provider_config, "api"):
+                    provider_search_config = provider_config.api
+                else:
+                    continue
+                if hasattr(
+                    provider_search_config, "discover_product_types"
+                ) and provider_search_config.discover_product_types.get(
+                    "fetch_url", None
+                ):
+                    mock_get_ext_product_types_conf.return_value[provider] = {}
+
+            self.dag.fetch_product_types_list()
+            mock_discover_product_types.assert_called_once_with(
+                self.dag, provider="new_provider"
+            )
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+    )
+    def test_fetch_product_types_list_disabled(self, mock_discover_product_types):
+        """fetch_product_types_list must not launch product types discovery if disabled"""
+
+        # disable product types discovery
+        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+
+        # default settings
+        self.dag.fetch_product_types_list()
+        mock_discover_product_types.assert_not_called()
+
+        # only user-defined providers must be fetched
+        self.dag.update_providers_config(
+            """
+            astraea_eod:
+                search:
+                    discover_product_types:
+                        fetch_url: 'http://new-endpoint'
+            foo_provider:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+            """
+        )
+        self.dag.fetch_product_types_list()
+        self.assertEqual(mock_discover_product_types.call_count, 2)
 
     def assertListProductTypesRightStructure(self, structure):
         """Helper method to verify that the structure given is a good result of
