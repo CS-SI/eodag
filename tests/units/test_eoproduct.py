@@ -268,8 +268,15 @@ class TestEOProduct(EODagTestCase):
         # Setup
         product = self._dummy_downloadable_product()
         try:
-            # Download
-            product_dir_path = product.download()
+            with self.assertLogs(level="INFO") as cm:
+                # Download
+                product_dir_path = product.download()
+                self.assertIn(
+                    "Download url: %s" % product.remote_location, str(cm.output)
+                )
+                self.assertIn(
+                    "Remote location of the product is still available", str(cm.output)
+                )
 
             # Check that the mocked request was properly called.
             self.requests_http_get.assert_called_with(
@@ -295,6 +302,21 @@ class TestEOProduct(EODagTestCase):
             product_dir_path = pathlib.Path(product_dir_path)
             product_zip = product_dir_path.parent / (product_dir_path.name + ".zip")
             self.assertTrue(zipfile.is_zipfile(product_zip))
+            # check that product is not downloaded again
+            with self.assertLogs(level="INFO") as cm:
+                product.download()
+                self.assertIn(
+                    "Product already present on this platform", str(cm.output)
+                )
+            # check that product is not downloaded again even if location has not been updated
+            product.location = product.remote_location
+            with self.assertLogs(level="INFO") as cm:
+                product.download()
+                self.assertIn("Product already downloaded", str(cm.output))
+                self.assertIn(
+                    "Extraction cancelled, destination directory already exists",
+                    str(cm.output),
+                )
         finally:
             # Teardown
             self._clean_product(product_dir_path)
@@ -320,6 +342,15 @@ class TestEOProduct(EODagTestCase):
             _product_dir_path = pathlib.Path(product_dir_path)
             product_zip = _product_dir_path.parent / (_product_dir_path.name + ".zip")
             self.assertFalse(os.path.exists(product_zip))
+            # check that product is not downloaded again even if location has not been updated
+            product.location = product.remote_location
+            with self.assertLogs(level="INFO") as cm:
+                product.download()
+                self.assertIn("Product already downloaded", str(cm.output))
+                self.assertIn(
+                    "Extraction cancelled, destination directory already exists",
+                    str(cm.output),
+                )
         finally:
             # Teardown
             self._clean_product(product_dir_path)
