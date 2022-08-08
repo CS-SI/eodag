@@ -20,6 +20,7 @@ import tempfile
 from unittest import TestCase, mock
 
 from tests.context import (
+    HTTP_REQ_TIMEOUT,
     AuthenticationError,
     EODataAccessGateway,
     HeaderAuth,
@@ -187,6 +188,7 @@ class TestCoreProductTypesConfig(TestCase):
                 "fetch_url"
             ],
             auth=mock.ANY,
+            timeout=HTTP_REQ_TIMEOUT,
         )
         call_args, call_kwargs = mock_requests_get.call_args
         self.assertIsInstance(call_kwargs["auth"], HeaderAuth)

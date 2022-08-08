@@ -28,6 +28,7 @@ from pkg_resources import resource_filename
 
 from tests.context import (
     EXT_PRODUCT_TYPES_CONF_URI,
+    HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
     EODataAccessGateway,
     ValidationError,
@@ -470,7 +471,9 @@ class TestConfigFunctions(unittest.TestCase):
         mock_get.return_value.json.return_value = {"some_parameter": "a_value"}
 
         ext_product_types_conf = get_ext_product_types_conf()
-        mock_get.assert_called_once_with(url=EXT_PRODUCT_TYPES_CONF_URI)
+        mock_get.assert_called_once_with(
+            EXT_PRODUCT_TYPES_CONF_URI, timeout=HTTP_REQ_TIMEOUT
+        )
         self.assertEqual(ext_product_types_conf, {"some_parameter": "a_value"})
 
         # local conf file

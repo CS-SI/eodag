@@ -21,6 +21,7 @@ import requests
 from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
 class KeycloakOIDCPasswordAuth(Authentication):
@@ -50,6 +51,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                 "password": self.config.credentials["password"],
                 "grant_type": self.GRANT_TYPE,
             },
+            timeout=HTTP_REQ_TIMEOUT,
         )
         try:
             response.raise_for_status()

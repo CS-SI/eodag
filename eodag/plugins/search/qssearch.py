@@ -47,6 +47,7 @@ from eodag.utils import (
     urlencode,
 )
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -858,7 +859,7 @@ class QueryStringSearch(Search):
             else:
                 if info_message:
                     logger.info(info_message)
-                response = requests.get(url, **kwargs)
+                response = requests.get(url, timeout=HTTP_REQ_TIMEOUT, **kwargs)
                 response.raise_for_status()
         except (requests.RequestException, urllib_HTTPError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
@@ -916,7 +917,7 @@ class ODataV4Search(QueryStringSearch):
             metadata_url = self.get_metadata_search_url(entity)
             try:
                 logger.debug("Sending metadata request: %s", metadata_url)
-                response = requests.get(metadata_url)
+                response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
                 response.raise_for_status()
             except requests.RequestException:
                 logger.exception(
@@ -1114,7 +1115,9 @@ class PostJsonSearch(QueryStringSearch):
             if info_message:
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
-            response = requests.post(url, json=self.query_params, **kwargs)
+            response = requests.post(
+                url, json=self.query_params, timeout=HTTP_REQ_TIMEOUT, **kwargs
+            )
             response.raise_for_status()
         except (requests.RequestException, urllib_HTTPError) as err:
             # check if error is identified as auth_error in provider conf
