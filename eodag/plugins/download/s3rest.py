@@ -37,6 +37,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     RequestError,
 )
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.s3rest")
 
@@ -100,7 +101,9 @@ class S3RestDownload(AwsDownload):
 
         # get nodes/files list contained in the bucket
         logger.debug("Retrieving product content from %s", nodes_list_url)
-        bucket_contents = requests.get(nodes_list_url, auth=auth)
+        bucket_contents = requests.get(
+            nodes_list_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
+        )
         try:
             bucket_contents.raise_for_status()
         except requests.RequestException as err:

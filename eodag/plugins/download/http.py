@@ -41,6 +41,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
 )
 from eodag.utils.notebook import NotebookWidgets
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.http")
 
@@ -309,7 +310,9 @@ class HTTPDownload(Download):
         total_size = sum(
             [
                 int(
-                    requests.head(asset_url, auth=auth).headers.get("Content-length", 0)
+                    requests.head(
+                        asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
+                    ).headers.get("Content-length", 0)
                 )
                 for asset_url in assets_urls
             ]
@@ -320,9 +323,9 @@ class HTTPDownload(Download):
                 [
                     int(
                         parse_header(
-                            requests.head(asset_url, auth=auth).headers.get(
-                                "content-disposition", ""
-                            )
+                            requests.head(
+                                asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
+                            ).headers.get("content-disposition", "")
                         )[-1].get("size", 0)
                     )
                     for asset_url in assets_urls
@@ -334,9 +337,9 @@ class HTTPDownload(Download):
         for asset_url in assets_urls:
 
             # get asset filename from header
-            asset_content_disposition = requests.head(asset_url, auth=auth).headers.get(
-                "content-disposition", None
-            )
+            asset_content_disposition = requests.head(
+                asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
+            ).headers.get("content-disposition", None)
             if asset_content_disposition:
                 asset_filename = parse_header(asset_content_disposition)[-1]["filename"]
             else:

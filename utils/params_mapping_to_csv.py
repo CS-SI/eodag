@@ -25,6 +25,7 @@ from lxml import html
 
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_stac_provider_config
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -103,7 +104,7 @@ def params_mapping_to_csv(
 
             # create metadata mapping table rows
             try:
-                page = requests.get(ogc_doc_url)
+                page = requests.get(ogc_doc_url, timeout=HTTP_REQ_TIMEOUT)
                 # page reachable, read infos from remote html
                 tree = html.fromstring(page.content.decode("utf8"))
 

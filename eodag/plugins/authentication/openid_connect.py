@@ -27,6 +27,7 @@ from requests.auth import AuthBase
 from eodag.plugins.authentication import Authentication
 from eodag.utils import parse_qs, repeatfunc, urlencode, urlparse, urlunparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):
@@ -172,7 +173,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             "redirect_uri": self.config.redirect_uri,
         }
         authorization_response = self.session.get(
-            self.config.authorization_uri, params=params
+            self.config.authorization_uri, params=params, timeout=HTTP_REQ_TIMEOUT
         )
 
         login_document = etree.HTML(authorization_response.text)
@@ -194,7 +195,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             auth_uri = login_form.xpath(
                 self.config.login_form_xpath.rstrip("/") + "/@action"
             )[0]
-        return self.session.post(auth_uri, data=login_data)
+        return self.session.post(auth_uri, data=login_data, timeout=HTTP_REQ_TIMEOUT)
 
     def grant_user_consent(self, authentication_response):
         """Grant user consent"""
@@ -207,7 +208,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             key: self._constant_or_xpath_extracted(value, user_consent_form)
             for key, value in self.config.user_consent_form_data.items()
         }
-        return self.session.post(self.config.authorization_uri, data=user_consent_data)
+        return self.session.post(
+            self.config.authorization_uri,
+            data=user_consent_data,
+            timeout=HTTP_REQ_TIMEOUT,
+        )
 
     def exchange_code_for_token(self, authorized_url, state):
         """Get exchange code for token"""
@@ -245,7 +250,9 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         post_request_kwargs = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
-        r = self.session.post(self.config.token_uri, **post_request_kwargs)
+        r = self.session.post(
+            self.config.token_uri, timeout=HTTP_REQ_TIMEOUT, **post_request_kwargs
+        )
         return r.json()[self.config.token_key]
 
     def _constant_or_xpath_extracted(self, value, form_element):

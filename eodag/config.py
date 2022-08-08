@@ -36,6 +36,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.config")
 
@@ -477,7 +478,7 @@ def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
     if conf_uri.lower().startswith("http"):
         # read from remote
         try:
-            response = requests.get(conf_uri)
+            response = requests.get(conf_uri, timeout=HTTP_REQ_TIMEOUT)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:

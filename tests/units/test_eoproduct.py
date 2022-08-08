@@ -163,7 +163,10 @@ class TestEOProduct(EODagTestCase):
 
         quicklook_file_path = product.get_quicklook()
         self.requests_http_get.assert_called_with(
-            "https://fake.url.to/quicklook", stream=True, auth=None
+            "https://fake.url.to/quicklook",
+            stream=True,
+            auth=None,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(quicklook_file_path, "")
 
@@ -183,7 +186,10 @@ class TestEOProduct(EODagTestCase):
 
         quicklook_file_path = product.get_quicklook()
         self.requests_http_get.assert_called_with(
-            "https://fake.url.to/quicklook", stream=True, auth=None
+            "https://fake.url.to/quicklook",
+            stream=True,
+            auth=None,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(
             os.path.basename(quicklook_file_path), product.properties["id"]
@@ -197,7 +203,10 @@ class TestEOProduct(EODagTestCase):
         # Test the same thing as above but with an explicit name given to the downloaded File
         quicklook_file_path = product.get_quicklook(filename="the_quicklook.png")
         self.requests_http_get.assert_called_with(
-            "https://fake.url.to/quicklook", stream=True, auth=None
+            "https://fake.url.to/quicklook",
+            stream=True,
+            auth=None,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(self.requests_http_get.call_count, 2)
         self.assertEqual(os.path.basename(quicklook_file_path), "the_quicklook.png")

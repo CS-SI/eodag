@@ -36,6 +36,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.download.base import Download
 from eodag.utils import ProgressCallback, path_to_uri, rename_subfolder, urlparse
 from eodag.utils.exceptions import AuthenticationError, DownloadError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.aws")
 
@@ -248,7 +249,7 @@ class AwsDownload(Download):
                 **product.properties
             )
             logger.info("Fetching extra metadata from %s" % fetch_url)
-            resp = requests.get(fetch_url)
+            resp = requests.get(fetch_url, timeout=HTTP_REQ_TIMEOUT)
             update_metadata = mtd_cfg_as_jsonpath(update_metadata)
             if fetch_format == "json":
                 json_resp = resp.json()
