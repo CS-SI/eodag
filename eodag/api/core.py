@@ -673,9 +673,13 @@ class EODataAccessGateway(object):
         for provider, new_product_types_conf in ext_product_types_conf.items():
             if new_product_types_conf:
                 try:
-                    search_plugin = next(
-                        self._plugins_manager.get_search_plugins(provider=provider)
-                    )
+                    if hasattr(self.providers_config[provider], "search"):
+                        search_plugin_config = self.providers_config[provider].search
+                    elif hasattr(self.providers_config[provider], "api"):
+                        search_plugin_config = self.providers_config[provider].api
+                    else:
+                        continue
+                    provider_products_config = self.providers_config[provider].products
                 except UnsupportedProvider:
                     logger.debug(
                         "Ignoring external product types for unknown provider %s",
@@ -686,13 +690,11 @@ class EODataAccessGateway(object):
                     new_product_type,
                     new_product_type_conf,
                 ) in new_product_types_conf["providers_config"].items():
-                    if new_product_type not in search_plugin.config.products:
-                        for (
-                            existing_product_type
-                        ) in search_plugin.config.products.copy():
+                    if new_product_type not in provider_products_config:
+                        for existing_product_type in provider_products_config.copy():
                             # compare parsed extracted conf (without metadata_mapping entry)
                             unparsable_keys = (
-                                search_plugin.config.discover_product_types.get(
+                                search_plugin_config.discover_product_types.get(
                                     "generic_product_type_unparsable_properties", {}
                                 ).keys()
                             )
@@ -703,7 +705,7 @@ class EODataAccessGateway(object):
                             }
                             if (
                                 new_parsed_product_types_conf.items()
-                                <= search_plugin.config.products[
+                                <= provider_products_config[
                                     existing_product_type
                                 ].items()
                             ):
@@ -711,8 +713,8 @@ class EODataAccessGateway(object):
                                 break
                         else:
                             # new_product_type_conf does not already exist, append it
-                            # to search_plugin.config.products
-                            search_plugin.config.products[
+                            # to provider_products_config
+                            provider_products_config[
                                 new_product_type
                             ] = new_product_type_conf
                             # to self.product_types_config
