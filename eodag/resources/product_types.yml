@@ -990,6 +990,63 @@ TIGGE_CF_SFC:
   title: TIGGE ECMWF Surface Control forecast
   missionStartDate: "2003-01-01T00:00:00Z"
 
+# ADS ----------------------------------------------------------------------
+CAMS_GACF_AOT:
+  abstract: |
+    CAMS (Copernicus Atmosphere Monitoring Service) Global Atmospheric Composition Forecast
+    of Aerosol Optical Thickness from ADS
+  instrument:
+  platform: CAMS
+  platformSerialIdentifier: CAMS
+  processingLevel:
+  keywords: Copernicus,Atmosphere,Atmospheric,Forecast,CAMS,GACF,AOT,ADS
+  sensorType: FORECAST
+  license: proprietary
+  title: CAMS GACF Aerosol Optical Thickness
+  missionStartDate: "2003-01-01T00:00:00Z"
+
+CAMS_GACF_RH:
+  abstract: |
+    CAMS (Copernicus Atmosphere Monitoring Service) Global Atmospheric Composition Forecast
+    of Relative Humidity from ADS
+  instrument:
+  platform: CAMS
+  platformSerialIdentifier: CAMS
+  processingLevel:
+  keywords: Copernicus,Atmosphere,Atmospheric,Forecast,CAMS,GACF,RH,ADS
+  sensorType: FORECAST
+  license: proprietary
+  title: CAMS GACF Relative Humidity
+  missionStartDate: "2003-01-01T00:00:00Z"
+
+CAMS_GACF_MR:
+  abstract: |
+    CAMS (Copernicus Atmosphere Monitoring Service) Global Atmospheric Composition Forecast
+    of Mixing Ratios from ADS
+  instrument:
+  platform: CAMS
+  platformSerialIdentifier: CAMS
+  processingLevel:
+  keywords: Copernicus,Atmosphere,Atmospheric,Forecast,CAMS,GACF,MR,ADS
+  sensorType: FORECAST
+  license: proprietary
+  title: CAMS GACF Mixing Ratios
+  missionStartDate: "2003-01-01T00:00:00Z"
+
+CAMS_EAC4:
+  abstract: |
+    CAMS (Copernicus Atmosphere Monitoring Service) ECMWF Atmospheric Composition Reanalysis 4
+    from ADS
+  instrument:
+  platform: CAMS
+  platformSerialIdentifier: CAMS
+  processingLevel:
+  keywords: Copernicus,Atmosphere,Atmospheric,Reanalysis,CAMS,EAC4,ADS,ECMWF
+  sensorType: FORECAST
+  license: proprietary
+  title: CAMS ECMWF Atmospheric Composition Reanalysis 4
+  missionStartDate: "2003-01-01T00:00:00Z"
+
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

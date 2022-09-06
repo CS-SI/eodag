@@ -149,3 +149,10 @@ ecmwf:
         credentials:
             username:
             password:
+ads:
+    priority: # Lower value means lower priority (Default: 0)
+    api:
+        outputs_prefix:
+        credentials:
+            username:
+            password:
