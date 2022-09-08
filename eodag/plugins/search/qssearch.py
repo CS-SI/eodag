@@ -23,7 +23,6 @@ from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
 import requests
-from jsonpath_ng.ext import parse
 from lxml import etree
 
 from eodag.api.product import EOProduct
@@ -40,6 +39,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    cached_parse,
     dict_items_recursive_apply,
     format_dict_items,
     quote,
@@ -202,7 +202,7 @@ class QueryStringSearch(Search):
                     # extract results from response json
                     result = [
                         match.value
-                        for match in parse(
+                        for match in cached_parse(
                             self.config.discover_product_types["results_entry"]
                         ).find(resp_as_json)
                     ]
@@ -215,14 +215,14 @@ class QueryStringSearch(Search):
                     for product_type_result in result:
                         # providers_config extraction
                         mapping_config = {
-                            k: (None, parse(v))
+                            k: (None, cached_parse(v))
                             for k, v in self.config.discover_product_types[
                                 "generic_product_type_parsable_properties"
                             ].items()
                         }
                         mapping_config["generic_product_type_id"] = (
                             None,
-                            parse(
+                            cached_parse(
                                 self.config.discover_product_types[
                                     "generic_product_type_id"
                                 ]
@@ -245,7 +245,7 @@ class QueryStringSearch(Search):
                         )
                         # product_types_config extraction
                         mapping_config = {
-                            k: (None, parse(v))
+                            k: (None, cached_parse(v))
                             for k, v in self.config.discover_product_types[
                                 "generic_product_type_parsable_metadata"
                             ].items()
@@ -357,12 +357,12 @@ class QueryStringSearch(Search):
                     if len(self.config.metadata_mapping[metadata]) == 2:
                         self.config.metadata_mapping[metadata][1] = (
                             conversion,
-                            parse(path),
+                            cached_parse(path),
                         )
                     else:
                         self.config.metadata_mapping[metadata] = (
                             conversion,
-                            parse(path),
+                            cached_parse(path),
                         )
                 except Exception:  # jsonpath_ng does not provide a proper exception
                     # Assume the mapping is to be passed as is.
@@ -626,7 +626,7 @@ class QueryStringSearch(Search):
                 else:
                     resp_as_json = response.json()
                     if next_page_url_key_path:
-                        path_parsed = parse(next_page_url_key_path)
+                        path_parsed = cached_parse(next_page_url_key_path)
                         try:
                             self.next_page_url = path_parsed.find(resp_as_json)[0].value
                             logger.debug(
@@ -635,7 +635,7 @@ class QueryStringSearch(Search):
                         except IndexError:
                             logger.debug("Next page URL could not be collected")
                     if next_page_query_obj_key_path:
-                        path_parsed = parse(next_page_query_obj_key_path)
+                        path_parsed = cached_parse(next_page_query_obj_key_path)
                         try:
                             self.next_page_query_obj = path_parsed.find(resp_as_json)[
                                 0
@@ -648,7 +648,7 @@ class QueryStringSearch(Search):
                                 "Next page Query-object could not be collected"
                             )
                     if next_page_merge_key_path:
-                        path_parsed = parse(next_page_merge_key_path)
+                        path_parsed = cached_parse(next_page_merge_key_path)
                         try:
                             self.next_page_merge = path_parsed.find(resp_as_json)[
                                 0
@@ -722,7 +722,9 @@ class QueryStringSearch(Search):
         else:
             count_results = response.json()
             if isinstance(count_results, dict):
-                path_parsed = parse(self.config.pagination["total_items_nb_key_path"])
+                path_parsed = cached_parse(
+                    self.config.pagination["total_items_nb_key_path"]
+                )
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
