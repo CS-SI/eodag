@@ -773,7 +773,7 @@ def string_to_jsonpath(key, str_value):
     """
     if "$." in str(str_value):
         try:
-            return parse(str_value)
+            return cached_parse(str_value)
         except Exception:  # jsonpath_ng does not provide a proper exception
             # If str_value does not contain a jsonpath, return it as is
             return str_value
@@ -994,3 +994,29 @@ def obj_md5sum(data):
     :rtype: str
     """
     return hashlib.md5(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+@functools.lru_cache()
+def cached_parse(str_to_parse):
+    """Cached jsonpath_ng.ext.parse
+
+    >>> cached_parse.cache_clear()
+    >>> cached_parse("$.foo")
+    Child(Root(), Fields('foo'))
+    >>> cached_parse.cache_info()
+    CacheInfo(hits=0, misses=1, maxsize=128, currsize=1)
+    >>> cached_parse("$.foo")
+    Child(Root(), Fields('foo'))
+    >>> cached_parse.cache_info()
+    CacheInfo(hits=1, misses=1, maxsize=128, currsize=1)
+    >>> cached_parse("$.bar")
+    Child(Root(), Fields('bar'))
+    >>> cached_parse.cache_info()
+    CacheInfo(hits=1, misses=2, maxsize=128, currsize=2)
+
+    :param str_to_parse: string to parse as jsonpath
+    :type str_to_parse: str
+    :returns: parsed jsonpath
+    :rtype: :class:`jsonpath_ng.JSONPath`
+    """
+    return parse(str_to_parse)

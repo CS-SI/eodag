@@ -25,13 +25,17 @@ from string import Formatter
 import geojson
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
-from jsonpath_ng.ext import parse
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon
 
-from eodag.utils import get_timestamp, items_recursive_apply, nested_pairs2dict
+from eodag.utils import (
+    cached_parse,
+    get_timestamp,
+    items_recursive_apply,
+    nested_pairs2dict,
+)
 
 logger = logging.getLogger("eodag.api.product.metadata_mapping")
 
@@ -474,7 +478,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
 
     # adds missing discovered properties
     if discovery_pattern and discovery_path:
-        discovered_properties = parse(discovery_path).find(json)
+        discovered_properties = cached_parse(discovery_path).find(json)
         for found_jsonpath in discovered_properties:
             found_key = found_jsonpath.path.fields[-1]
             if (
@@ -640,9 +644,9 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
             try:
                 # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
                 if len(dest_dict[metadata]) == 2:
-                    dest_dict[metadata][1] = (conversion, parse(path))
+                    dest_dict[metadata][1] = (conversion, cached_parse(path))
                 else:
-                    dest_dict[metadata] = (conversion, parse(path))
+                    dest_dict[metadata] = (conversion, cached_parse(path))
             except Exception:  # jsonpath_ng does not provide a proper exception
                 # Keep path as this and its associated conversion
                 if len(dest_dict[metadata]) == 2:

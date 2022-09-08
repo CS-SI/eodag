@@ -11,7 +11,6 @@ from collections import namedtuple
 import dateutil.parser
 import markdown
 from dateutil import tz
-from jsonpath_ng.ext import parse
 from shapely.geometry import Polygon, shape
 
 import eodag
@@ -23,7 +22,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
-from eodag.utils import dict_items_recursive_apply
+from eodag.utils import cached_parse, dict_items_recursive_apply
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -323,7 +322,9 @@ def get_metadata_query_paths(metadata_mapping):
                 # We check if our query path pattern matches one or more of the dict path
                 matches = [
                     (str(match.full_path))
-                    for match in parse(STAC_QUERY_PATTERN).find(metadata_query_dict)
+                    for match in cached_parse(STAC_QUERY_PATTERN).find(
+                        metadata_query_dict
+                    )
                 ]
                 if matches:
                     metadata_query_path = matches[0]
@@ -351,7 +352,7 @@ def get_arguments_query_paths(arguments):
     """
     return dict(
         (str(match.full_path), match.value)
-        for match in parse(STAC_QUERY_PATTERN).find(arguments)
+        for match in cached_parse(STAC_QUERY_PATTERN).find(arguments)
     )
 
 
