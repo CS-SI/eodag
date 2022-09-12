@@ -1047,6 +1047,20 @@ CAMS_EAC4:
   title: CAMS ECMWF Atmospheric Composition Reanalysis 4
   missionStartDate: "2003-01-01T00:00:00Z"
 
+# CDS ----------------------------------------------------------------------
+ERA5_R:
+  abstract: |
+    ECMWF Reanalysis Atmospheric 5 from CDS
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,Reanalysis,Atmospheric,ERA5,CDS
+  sensorType: FORECAST
+  license: proprietary
+  title: ECMWF Reanalysis Atmospheric 5
+  missionStartDate: "1979-01-01T00:00:00Z"
+
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

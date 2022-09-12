@@ -2163,6 +2163,9 @@
       anoffset:
         - anoffset
         - '$.anoffset'
+      api_product_type:
+        - product_type
+        - '$.api_product_type'
       bitmap:
         - bitmap
         - '$.bitmap'
@@ -2181,6 +2184,12 @@
       dataset:
         - dataset
         - '$.dataset'
+      date_range:
+        - date_range
+        - '$.date_range'
+      day:
+        - day
+        - '$.day'
       diagnostic:
         - diagnostic
         - '$.diagnostic'
@@ -2262,6 +2271,9 @@
       model_level:
         - model_level
         - '$.model_level'
+      month:
+        - month
+        - '$.month'
       number:
         - number
         - '$.number'
@@ -2346,6 +2358,9 @@
       variable:
         - variable
         - '$.variable'
+      year:
+        - year
+        - '$.year'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GACF_AOT:
@@ -2573,5 +2588,248 @@
       class: mc
       expver: '0001'
       step: 0
+      time: '00:00'
+      format: netcdf
+---
+!provider
+  name: cds
+  priority: 0
+  description: Climate Data Store
+  roles:
+    - host
+  url: https://cds.climate.copernicus.eu/
+  api: !plugin
+    type: CdsApi
+    api_endpoint: https://cds.climate.copernicus.eu/api/v2
+    extract: false
+    metadata_mapping:
+      productType: '$.productType'
+      title: '$.id'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      completionTimeFromAscendingNode:
+        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      id: '$.id'
+      # The geographic extent of the product
+      geometry:
+        - 'area={geometry#to_nwse_bounds_str(/)}'
+        - '$.geometry'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      downloadLink: 'https://cds.climate.copernicus.eu/cdsapp#!/dataset/{dataset}'
+      # CDS specific parameters
+      accuracy:
+        - accuracy
+        - '$.accuracy'
+      anoffset:
+        - anoffset
+        - '$.anoffset'
+      api_product_type:
+        - product_type
+        - '$.api_product_type'
+      bitmap:
+        - bitmap
+        - '$.bitmap'
+      block:
+        - block
+        - '$.block'
+      channel:
+        - channel
+        - '$.channel'
+      class:
+        - class
+        - '$.class'
+      database:
+        - database
+        - '$.database'
+      dataset:
+        - dataset
+        - '$.dataset'
+      date_range:
+        - date_range
+        - '$.date_range'
+      day:
+        - day
+        - '$.day'
+      diagnostic:
+        - diagnostic
+        - '$.diagnostic'
+      direction:
+        - direction
+        - '$.direction'
+      domain:
+        - domain
+        - '$.domain'
+      duplicates:
+        - duplicates
+        - '$.duplicates'
+      expect:
+        - expect
+        - '$.expect'
+      expver:
+        - expver
+        - '$.expver'
+      fcmonth:
+        - fcmonth
+        - '$.fcmonth'
+      fcperiod:
+        - fcperiod
+        - '$.fcperiod'
+      fieldset:
+        - fieldset
+        - '$.fieldset'
+      filter:
+        - filter
+        - '$.filter'
+      format:
+        - format
+        - '$.format'
+      frame:
+        - frame
+        - '$.frame'
+      frequency:
+        - frequency
+        - '$.frequency'
+      grid:
+        - grid
+        - '$.grid'
+      hdate:
+        - hdate
+        - '$.hdate'
+      ident:
+        - ident
+        - '$.ident'
+      interpolation:
+        - interpolation
+        - '$.interpolation'
+      intgrid:
+        - intgrid
+        - '$.intgrid'
+      iteration:
+        - iteration
+        - '$.iteration'
+      latitude:
+        - latitude
+        - '$.latitude'
+      levelist:
+        - levelist
+        - '$.levelist'
+      leadtime_hour:
+        - leadtime_hour
+        - '$.leadtime_hour'
+      levtype:
+        - levtype
+        - '$.levtype'
+      longitude:
+        - longitude
+        - '$.longitude'
+      lsm:
+        - lsm
+        - '$.lsm'
+      method:
+        - method
+        - '$.method'
+      model_level:
+        - model_level
+        - '$.model_level'
+      month:
+        - month
+        - '$.month'
+      number:
+        - number
+        - '$.number'
+      obsgroup:
+        - obsgroup
+        - '$.obsgroup'
+      obstype:
+        - obstype
+        - '$.obstype'
+      origin:
+        - origin
+        - '$.origin'
+      packing:
+        - packing
+        - '$.packing'
+      padding:
+        - padding
+        - '$.padding'
+      param:
+        - param
+        - '$.param'
+      pressure_level:
+        - pressure_level
+        - '$.pressure_level'
+      priority:
+        - priority
+        - '$.priority'
+      product:
+        - product
+        - '$.product'
+      range:
+        - range
+        - '$.range'
+      refdate:
+        - refdate
+        - '$.refdate'
+      reference:
+        - reference
+        - '$.reference'
+      reportype:
+        - reportype
+        - '$.reportype'
+      repres:
+        - repres
+        - '$.repres'
+      resol:
+        - resol
+        - '$.resol'
+      rotation:
+        - rotation
+        - '$.rotation'
+      section:
+        - section
+        - '$.section'
+      source:
+        - source
+        - '$.source'
+      step:
+        - step
+        - '$.step'
+      stream:
+        - stream
+        - '$.stream'
+      system:
+        - system
+        - '$.system'
+      target:
+        - target
+        - '$.target'
+      time:
+        - time
+        - '$.time'
+      truncation:
+        - truncation
+        - '$.truncation'
+      type:
+        - type
+        - '$.type'
+      use:
+        - use
+        - '$.use'
+      variable:
+        - variable
+        - '$.variable'
+      year:
+        - year
+        - '$.year'
+  products:
+    # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
+    ERA5_R:
+      dataset: reanalysis-era5-single-levels
+      api_product_type: reanalysis
+      time: '00:00'
+      format: netcdf
+    GENERIC_PRODUCT_TYPE:
+      dataset: '{productType}'
       time: '00:00'
       format: netcdf

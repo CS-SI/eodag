@@ -17,6 +17,7 @@
 # limitations under the License.
 import hashlib
 import logging
+from datetime import datetime
 
 import cdsapi
 import requests
@@ -30,7 +31,13 @@ from eodag.plugins.download.base import (
     Download,
 )
 from eodag.plugins.search.qssearch import QueryStringSearch
-from eodag.utils import get_geometry_from_various, parse_qsl, path_to_uri, urlsplit
+from eodag.utils import (
+    datetime_range,
+    get_geometry_from_various,
+    parse_qsl,
+    path_to_uri,
+    urlsplit,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -143,6 +150,25 @@ class CdsApi(Download, Api, QueryStringSearch):
             product,
         ], results_count
 
+    def _get_cds_client(self, **auth_dict):
+        """Returns cdsapi client."""
+        eodag_verbosity = get_logging_verbose()
+        if eodag_verbosity is not None:
+            cds_debug = bool(eodag_verbosity >= 3)
+            cds_quiet = bool(eodag_verbosity == 0)
+            cds_progress = bool(eodag_verbosity == 1)
+        else:
+            cds_debug = False
+            cds_quiet = False
+            cds_progress = True
+        return cdsapi.Client(
+            quiet=cds_quiet,
+            debug=cds_debug,
+            verify=True,
+            progress=cds_progress,
+            **auth_dict,
+        )
+
     def authenticate(self):
         """Returns information needed for auth
 
@@ -160,7 +186,7 @@ class CdsApi(Download, Api, QueryStringSearch):
 
         auth_dict = {"key": f"{uid}:{api_key}", "url": url}
 
-        client = cdsapi.Client(verify=True, **auth_dict)
+        client = self._get_cds_client(**auth_dict)
         try:
             client.status()
             logger.debug("Connection checked on CDS API")
@@ -195,14 +221,16 @@ class CdsApi(Download, Api, QueryStringSearch):
         query_str = "".join(urlsplit(product.location).fragment.split("?", 1)[1:])
         download_request = dict(parse_qsl(query_str))
 
-        # Set verbosity
-        eodag_verbosity = get_logging_verbose()
-        if eodag_verbosity is not None and eodag_verbosity >= 3:
-            # debug verbosity
-            cds_debug = True
-        else:
-            # default verbosity
-            cds_debug = False
+        date_range = download_request.pop("date_range", False)
+        if date_range:
+            date = download_request.pop("date")
+            start, end, *_ = date.split("/")
+            _start = datetime.fromisoformat(start)
+            _end = datetime.fromisoformat(end)
+            d_range = [d for d in datetime_range(_start, _end)]
+            download_request["year"] = [*{str(d.year) for d in d_range}]
+            download_request["month"] = [*{str(d.month) for d in d_range}]
+            download_request["day"] = [*{str(d.day) for d in d_range}]
 
         auth_dict = self.authenticate()
         dataset_name = download_request.pop("dataset")
@@ -214,7 +242,7 @@ class CdsApi(Download, Api, QueryStringSearch):
             download_request,
         )
         try:
-            client = cdsapi.Client(debug=cds_debug, verify=True, **auth_dict)
+            client = self._get_cds_client(**auth_dict)
             client.retrieve(name=dataset_name, request=download_request, target=fs_path)
         except Exception as e:
             logger.error(e)
