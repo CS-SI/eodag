@@ -172,6 +172,11 @@ class TestCore(TestCoreBase):
         "VENUS_L3A_MAJA": ["theia"],
         "OSO": ["theia"],
         "TIGGE_CF_SFC": ["ecmwf"],
+        "CAMS_GACF_AOT": ["ads"],
+        "CAMS_GACF_RH": ["ads"],
+        "CAMS_GACF_MR": ["ads"],
+        "CAMS_EAC4": ["ads"],
+        "ERA5_R": ["cds"],
         GENERIC_PRODUCT_TYPE: [
             "theia",
             "peps",
@@ -186,6 +191,8 @@ class TestCore(TestCoreBase):
             "earth_search_cog",
             "earth_search_gcs",
             "ecmwf",
+            "ads",
+            "cds",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -203,6 +210,8 @@ class TestCore(TestCoreBase):
         "earth_search_cog",
         "earth_search_gcs",
         "ecmwf",
+        "ads",
+        "cds",
     ]
 
     def setUp(self):
