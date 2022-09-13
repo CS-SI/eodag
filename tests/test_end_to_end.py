@@ -152,6 +152,30 @@ ECMWF_SEARCH_KWARGS = {
     # request for only 1 parameter instead of all available
     "param": "tcc",
 }
+ADS_SEARCH_ARGS = [
+    "ads",
+    "CAMS_EAC4",
+    "2021-01-01",
+    "2021-01-05",
+    # no need of an additional post-processing area extraction
+    [-180, -90, 180, 90],
+]
+ADS_SEARCH_KWARGS = {
+    # request for grib file instead of netcdf
+    "format": "grib",
+}
+CDS_SEARCH_ARGS = [
+    "cds",
+    "ERA5_R",
+    "2021-01-01",
+    "2021-01-05",
+    # no need of an additional post-processing area extraction
+    [-180, -90, 180, 90],
+]
+CDS_SEARCH_KWARGS = {
+    # request for grib file instead of netcdf
+    "format": "grib",
+}
 
 
 class EndToEndBase(unittest.TestCase):
@@ -429,6 +453,20 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_end_to_end_search_download_ecmwf(self):
         product = self.execute_search(
             *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS
+        )
+        expected_filename = "{}.grib".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_ads(self):
+        product = self.execute_search(
+            *ADS_SEARCH_ARGS, search_kwargs_dict=ADS_SEARCH_KWARGS
+        )
+        expected_filename = "{}.grib".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_cds(self):
+        product = self.execute_search(
+            *CDS_SEARCH_ARGS, search_kwargs_dict=CDS_SEARCH_KWARGS
         )
         expected_filename = "{}.grib".format(product.properties["title"])
         self.execute_download(product, expected_filename)
