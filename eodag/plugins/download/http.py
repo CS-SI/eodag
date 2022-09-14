@@ -21,8 +21,6 @@ import os
 import shutil
 import zipfile
 from cgi import parse_header
-from datetime import datetime, timedelta
-from time import sleep
 
 import requests
 from requests import HTTPError, RequestException
@@ -40,7 +38,6 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NotAvailableError,
 )
-from eodag.utils.notebook import NotebookWidgets
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.http")
@@ -128,151 +125,118 @@ class HTTPDownload(Download):
                         e,
                     )
 
-        # initiate retry loop
-        start_time = datetime.now()
-        stop_time = datetime.now() + timedelta(minutes=timeout)
-        product.next_try = start_time
-        retry_count = 0
-        not_available_info = "The product could not be downloaded"
-        # another output for notebooks
-        nb_info = NotebookWidgets()
-
-        while "Loop until products download succeeds or timeout is reached":
-
-            if datetime.now() >= product.next_try:
-                product.next_try += timedelta(minutes=wait)
+        @self._download_retry(product, wait, timeout)
+        def download_request(
+            product,
+            fs_path,
+            record_filename,
+            auth,
+            progress_callback,
+            ordered_message,
+            **kwargs
+        ):
+            params = kwargs.pop("dl_url_params", None) or getattr(
+                self.config, "dl_url_params", {}
+            )
+            with requests.get(
+                url,
+                stream=True,
+                auth=auth,
+                params=params,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            ) as self.stream:
                 try:
-                    params = kwargs.pop("dl_url_params", None) or getattr(
-                        self.config, "dl_url_params", {}
-                    )
-                    with requests.get(
-                        url,
-                        stream=True,
-                        auth=auth,
-                        params=params,
-                        timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                    ) as stream:
-                        try:
-                            stream.raise_for_status()
-                        except RequestException as e:
-                            # check if error is identified as auth_error in provider conf
-                            auth_errors = getattr(
-                                self.config, "auth_error_code", [None]
+                    self.stream.raise_for_status()
+
+                except RequestException as e:
+                    # check if error is identified as auth_error in provider conf
+                    auth_errors = getattr(self.config, "auth_error_code", [None])
+                    if not isinstance(auth_errors, list):
+                        auth_errors = [auth_errors]
+                    if e.response.status_code in auth_errors:
+                        raise AuthenticationError(
+                            "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                            % (
+                                e.response.status_code,
+                                e.response.text.strip(),
+                                self.provider,
                             )
-                            if not isinstance(auth_errors, list):
-                                auth_errors = [auth_errors]
-                            if e.response.status_code in auth_errors:
-                                raise AuthenticationError(
-                                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                                    % (
-                                        e.response.status_code,
-                                        e.response.text.strip(),
-                                        self.provider,
-                                    )
-                                )
-                            # product not available
-                            elif (
-                                product.properties.get("storageStatus", ONLINE_STATUS)
-                                != ONLINE_STATUS
-                            ):
-                                msg = (
-                                    ordered_message
-                                    if ordered_message and not e.response.text
-                                    else e.response.text
-                                )
-                                raise NotAvailableError(
-                                    "%s(initially %s) requested, returned: %s"
-                                    % (
-                                        product.properties["title"],
-                                        product.properties["storageStatus"],
-                                        msg,
-                                    )
-                                )
-                            else:
-                                import traceback as tb
-
-                                logger.error(
-                                    "Error while getting resource :\n%s",
-                                    tb.format_exc(),
-                                )
-                        else:
-                            stream_size = int(stream.headers.get("content-length", 0))
-                            if (
-                                stream_size == 0
-                                and "storageStatus" in product.properties
-                                and product.properties["storageStatus"] != ONLINE_STATUS
-                            ):
-                                raise NotAvailableError(
-                                    "%s(initially %s) ordered, got: %s"
-                                    % (
-                                        product.properties["title"],
-                                        product.properties["storageStatus"],
-                                        stream.reason,
-                                    )
-                                )
-                            progress_callback.reset(total=stream_size)
-                            with open(fs_path, "wb") as fhandle:
-                                for chunk in stream.iter_content(chunk_size=64 * 1024):
-                                    if chunk:
-                                        fhandle.write(chunk)
-                                        progress_callback(len(chunk))
-
-                            with open(record_filename, "w") as fh:
-                                fh.write(url)
-                            logger.debug("Download recorded in %s", record_filename)
-
-                            # Check that the downloaded file is really a zip file
-                            if not zipfile.is_zipfile(fs_path):
-                                logger.warning(
-                                    "Downloaded product is not a Zip File. Please check its file type before using it"
-                                )
-                                new_fs_path = fs_path[: fs_path.index(".zip")]
-                                shutil.move(fs_path, new_fs_path)
-                                product.location = path_to_uri(new_fs_path)
-                                return new_fs_path
-                            product_path = self._finalize(
-                                fs_path, progress_callback=progress_callback, **kwargs
-                            )
-                            product.location = path_to_uri(product_path)
-                            return product_path
-
-                except NotAvailableError as e:
-                    if not getattr(self.config, "order_enabled", False):
-                        raise NotAvailableError(
-                            "Product is not available for download and order is not supported for %s, %s"
-                            % (self.provider, e)
                         )
-                    not_available_info = e
-                    pass
+                    # product not available
+                    elif (
+                        product.properties.get("storageStatus", ONLINE_STATUS)
+                        != ONLINE_STATUS
+                    ):
+                        msg = (
+                            ordered_message
+                            if ordered_message and not e.response.text
+                            else e.response.text
+                        )
+                        raise NotAvailableError(
+                            "%s(initially %s) requested, returned: %s"
+                            % (
+                                product.properties["title"],
+                                product.properties["storageStatus"],
+                                msg,
+                            )
+                        )
+                    else:
+                        import traceback as tb
 
-            if datetime.now() < product.next_try and datetime.now() < stop_time:
-                wait_seconds = (product.next_try - datetime.now()).seconds
-                retry_count += 1
-                retry_info = (
-                    "[Retry #%s] Waiting %ss until next download try for ordered product (retry every %s' for %s')"
-                    % (retry_count, wait_seconds, wait, timeout)
-                )
-                logger.debug(not_available_info)
-                # Retry-After info from Response header
-                retry_server_info = stream.headers.get("Retry-After", "")
-                if retry_server_info:
-                    logger.debug(
-                        "[%s response] Retry-After: %s"
-                        % (self.provider, retry_server_info)
+                        logger.error(
+                            "Error while getting resource :\n%s",
+                            tb.format_exc(),
+                        )
+                else:
+                    stream_size = int(self.stream.headers.get("content-length", 0))
+                    if (
+                        stream_size == 0
+                        and "storageStatus" in product.properties
+                        and product.properties["storageStatus"] != ONLINE_STATUS
+                    ):
+                        raise NotAvailableError(
+                            "%s(initially %s) ordered, got: %s"
+                            % (
+                                product.properties["title"],
+                                product.properties["storageStatus"],
+                                self.stream.reason,
+                            )
+                        )
+                    progress_callback.reset(total=stream_size)
+                    with open(fs_path, "wb") as fhandle:
+                        for chunk in self.stream.iter_content(chunk_size=64 * 1024):
+                            if chunk:
+                                fhandle.write(chunk)
+                                progress_callback(len(chunk))
+
+                    with open(record_filename, "w") as fh:
+                        fh.write(url)
+                    logger.debug("Download recorded in %s", record_filename)
+
+                    # Check that the downloaded file is really a zip file
+                    if not zipfile.is_zipfile(fs_path):
+                        logger.warning(
+                            "Downloaded product is not a Zip File. Please check its file type before using it"
+                        )
+                        new_fs_path = fs_path[: fs_path.index(".zip")]
+                        shutil.move(fs_path, new_fs_path)
+                        product.location = path_to_uri(new_fs_path)
+                        return new_fs_path
+                    product_path = self._finalize(
+                        fs_path, progress_callback=progress_callback, **kwargs
                     )
-                logger.info(retry_info)
-                nb_info.display_html(retry_info)
-                sleep(wait_seconds + 1)
-            elif datetime.now() >= stop_time and timeout > 0:
-                if "storageStatus" not in product.properties:
-                    product.properties["storageStatus"] = "N/A status"
-                logger.info(not_available_info)
-                raise NotAvailableError(
-                    "%s is not available (%s) and could not be downloaded, timeout reached"
-                    % (product.properties["title"], product.properties["storageStatus"])
-                )
-            elif datetime.now() >= stop_time:
-                raise NotAvailableError(not_available_info)
+                    product.location = path_to_uri(product_path)
+                    return product_path
+
+        return download_request(
+            product,
+            fs_path,
+            record_filename,
+            auth,
+            progress_callback,
+            ordered_message,
+            **kwargs
+        )
 
     def _download_assets(
         self,

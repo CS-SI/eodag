@@ -419,7 +419,7 @@ class Download(PluginTopic):
         paths = []
         # initiate retry loop
         start_time = datetime.now()
-        stop_time = datetime.now() + timedelta(minutes=timeout)
+        stop_time = start_time + timedelta(minutes=timeout)
         nb_products = len(products)
         retry_count = 0
         # another output for notbooks
@@ -528,3 +528,111 @@ class Download(PluginTopic):
                     break
 
         return paths
+
+    def _download_retry(self, product, wait, timeout):
+        """
+        Download retry decorator.
+
+        Retries the wrapped  download method after `wait` minutes if a NotAvailableError
+        exception is thrown until `timeout` minutes.
+
+        :param product: The EO product to download
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param wait: If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :returns: decorator
+        :rtype: :class:`typing.Any`
+        """
+
+        def decorator(download):
+            def download_and_retry(*args, **kwargs):
+                # initiate retry loop
+                start_time = datetime.now()
+                stop_time = start_time + timedelta(minutes=timeout)
+                product.next_try = start_time
+                retry_count = 0
+                not_available_info = "The product could not be downloaded"
+                # another output for notebooks
+                nb_info = NotebookWidgets()
+
+                while "Loop until products download succeeds or timeout is reached":
+
+                    datetime_now = datetime.now()
+
+                    if datetime_now >= product.next_try:
+                        product.next_try += timedelta(minutes=wait)
+                        try:
+                            return download(*args, **kwargs)
+
+                        except NotAvailableError as e:
+                            if not getattr(self.config, "order_enabled", False):
+                                raise NotAvailableError(
+                                    "Product is not available for download and order is not supported for %s, %s"
+                                    % (self.provider, e)
+                                )
+                            not_available_info = e
+                            pass
+
+                    if datetime_now >= product.next_try and datetime_now < stop_time:
+                        wait_seconds = (
+                            datetime_now - product.next_try + timedelta(minutes=wait)
+                        ).seconds
+                        retry_count += 1
+                        retry_info = (
+                            "[Retry #%s] Waited %ss, trying again to download ordered product (retry every %s' for %s')"
+                            % (retry_count, wait_seconds, wait, timeout)
+                        )
+                        logger.debug(not_available_info)
+                        # Retry-After info from Response header
+                        if hasattr(self, "stream"):
+                            retry_server_info = self.stream.headers.get(
+                                "Retry-After", ""
+                            )
+                            if retry_server_info:
+                                logger.debug(
+                                    "[%s response] Retry-After: %s"
+                                    % (self.provider, retry_server_info)
+                                )
+                        logger.info(retry_info)
+                        nb_info.display_html(retry_info)
+                        product.next_try = datetime_now
+                    elif datetime_now < product.next_try and datetime_now < stop_time:
+                        wait_seconds = (product.next_try - datetime_now).seconds
+                        retry_count += 1
+                        retry_info = (
+                            f"[Retry #{retry_count}] Waiting %ss until next download try"
+                            f" for ordered product (retry every {wait_seconds}' for {timeout}')"
+                        )
+                        logger.debug(not_available_info)
+                        # Retry-After info from Response header
+                        retry_server_info = self.stream.headers.get("Retry-After", "")
+                        if retry_server_info:
+                            logger.debug(
+                                "[%s response] Retry-After: %s"
+                                % (self.provider, retry_server_info)
+                            )
+                        logger.info(retry_info)
+                        nb_info.display_html(retry_info)
+                        sleep(wait_seconds)
+                    elif datetime_now >= stop_time and timeout > 0:
+                        if "storageStatus" not in product.properties:
+                            product.properties["storageStatus"] = "N/A status"
+                        logger.info(not_available_info)
+                        raise NotAvailableError(
+                            "%s is not available (%s) and could not be downloaded, timeout reached"
+                            % (
+                                product.properties["title"],
+                                product.properties["storageStatus"],
+                            )
+                        )
+                    elif datetime_now >= stop_time:
+                        raise NotAvailableError(not_available_info)
+
+                return download(*args, **kwargs)
+
+            return download_and_retry
+
+        return decorator
