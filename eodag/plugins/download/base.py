@@ -135,7 +135,7 @@ class Download(PluginTopic):
             # The fs path of a product is either a file (if 'extract' config is False) or a directory
             if os.path.isfile(fs_path) or os.path.isdir(fs_path):
                 logger.info(
-                    "Product already present on this platform. Identifier: %s", fs_path
+                    f"Product already present on this platform. Identifier: {fs_path}",
                 )
                 # Do not download data if we are on site. Instead give back the absolute path to the data
                 return fs_path, None
@@ -143,10 +143,12 @@ class Download(PluginTopic):
         url = product.remote_location
         if not url:
             logger.debug(
-                "Unable to get download url for %s, skipping download", product
+                f"Unable to get download url for {product}, skipping download",
             )
             return None, None
-        logger.info("Download url: %s", url)
+        logger.info(
+            f"Download url: {url}",
+        )
 
         outputs_prefix = (
             kwargs.pop("outputs_prefix", None)
@@ -165,11 +167,7 @@ class Download(PluginTopic):
             collision_avoidance_suffix = "-" + sanitize(product.properties["id"])
         fs_path = os.path.join(
             prefix,
-            "{}{}{}".format(
-                sanitize(product.properties["title"]),
-                collision_avoidance_suffix,
-                outputs_extension,
-            ),
+            f"{sanitize(product.properties['title'])}{collision_avoidance_suffix}{outputs_extension}",
         )
         fs_dir_path = fs_path.replace(outputs_extension, "")
         download_records_dir = os.path.join(prefix, ".downloaded")
@@ -182,18 +180,22 @@ class Download(PluginTopic):
                 import traceback as tb
 
                 logger.warning(
-                    "Unable to create records directory. Got:\n%s", tb.format_exc()
+                    f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
         url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
         record_filename = os.path.join(download_records_dir, url_hash)
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
-            logger.info("Product already downloaded: %s", fs_path)
+            logger.info(
+                f"Product already downloaded: {fs_path}",
+            )
             return (
                 self._finalize(fs_path, progress_callback=progress_callback, **kwargs),
                 None,
             )
         elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
-            logger.info("Product already downloaded: %s", fs_dir_path)
+            logger.info(
+                f"Product already downloaded: {fs_dir_path}",
+            )
             return (
                 self._finalize(
                     fs_dir_path, progress_callback=progress_callback, **kwargs
@@ -203,9 +205,11 @@ class Download(PluginTopic):
         # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
         elif os.path.isfile(record_filename):
             logger.debug(
-                "Record file found (%s) but not the actual file", record_filename
+                f"Record file found ({record_filename}) but not the actual file",
             )
-            logger.debug("Removing record file : %s", record_filename)
+            logger.debug(
+                f"Removing record file : {record_filename}",
+            )
             os.remove(record_filename)
 
         return fs_path, record_filename
@@ -280,12 +284,8 @@ class Download(PluginTopic):
         product_path_exists = os.path.exists(product_path)
         if product_path_exists and os.path.isfile(product_path):
             logger.info(
-                "Remove existing partially downloaded file: %s (%s/%s)"
-                % (
-                    product_path,
-                    os.stat(product_path).st_size,
-                    os.stat(fs_path).st_size,
-                )
+                f"Remove existing partially downloaded file: {product_path}"
+                f" ({os.stat(product_path).st_size}/{os.stat(fs_path).st_size})"
             )
             os.remove(product_path)
         elif (
@@ -293,9 +293,7 @@ class Download(PluginTopic):
             and os.path.isdir(product_path)
             and len(os.listdir(product_path)) == 0
         ):
-            logger.info(
-                "Remove existing empty destination directory: %s" % product_path
-            )
+            logger.info(f"Remove existing empty destination directory: {product_path}")
             os.rmdir(product_path)
         elif (
             product_path_exists
@@ -303,8 +301,7 @@ class Download(PluginTopic):
             and len(os.listdir(product_path)) > 0
         ):
             logger.info(
-                "Extraction cancelled, destination directory already exists and is not empty: %s"
-                % product_path
+                f"Extraction cancelled, destination directory already exists and is not empty: {product_path}"
             )
             progress_callback(1, total=1)
             product_path = self._resolve_archive_depth(product_path)
@@ -315,8 +312,8 @@ class Download(PluginTopic):
 
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
-            progress_callback.desc = "Extracting files from {}".format(
-                os.path.basename(fs_path)
+            progress_callback.desc = (
+                f"Extracting files from {os.path.basename(fs_path)}"
             )
             progress_callback.refresh()
 
@@ -350,13 +347,11 @@ class Download(PluginTopic):
             tmp_dir.cleanup()
 
             if delete_archive:
-                logger.info("Deleting archive {}".format(os.path.basename(fs_path)))
+                logger.info(f"Deleting archive {os.path.basename(fs_path)}")
                 os.unlink(fs_path)
             else:
                 logger.info(
-                    "Archive deletion is deactivated, keeping {}".format(
-                        os.path.basename(fs_path)
-                    )
+                    f"Archive deletion is deactivated, keeping {os.path.basename(fs_path)}"
                 )
         else:
             progress_callback(1, total=1)
@@ -477,8 +472,7 @@ class Download(PluginTopic):
 
                         except (AuthenticationError, MisconfiguredError):
                             logger.exception(
-                                "Stopped because of credentials problems with provider %s",
-                                self.provider,
+                                f"Stopped because of credentials problems with provider {self.provider}"
                             )
                             raise
 
@@ -486,22 +480,20 @@ class Download(PluginTopic):
                             import traceback as tb
 
                             logger.error(
-                                "A problem occurred during download of product: %s. "
-                                "Skipping it",
-                                product,
+                                f"A problem occurred during download of product: {product}. "
+                                "Skipping it"
                             )
-                            logger.debug("\n%s", tb.format_exc())
+                            logger.debug(f"\n{tb.format_exc()}")
                             stop_time = datetime.now()
 
                         except Exception:
                             import traceback as tb
 
                             logger.warning(
-                                "A problem occurred during download of product: %s. "
+                                f"A problem occurred during download of product: {product}. "
                                 "Skipping it",
-                                product,
                             )
-                            logger.debug("\n%s", tb.format_exc())
+                            logger.debug(f"\n{tb.format_exc()}")
 
                 if (
                     len(products) > 0
@@ -519,9 +511,8 @@ class Download(PluginTopic):
                     sleep(wait_seconds + 1)
                 elif len(products) > 0 and datetime.now() >= stop_time:
                     logger.warning(
-                        "%s products could not be downloaded: %s",
-                        len(products),
-                        [prod.properties["title"] for prod in products],
+                        f"{len(products)} products could not be downloaded:"
+                        f"{' ' + [prod.properties['title'] for prod in products]}",
                     )
                     break
                 elif len(products) == 0:
@@ -570,8 +561,8 @@ class Download(PluginTopic):
                         except NotAvailableError as e:
                             if not getattr(self.config, "order_enabled", False):
                                 raise NotAvailableError(
-                                    "Product is not available for download and order is not supported for %s, %s"
-                                    % (self.provider, e)
+                                    f"Product is not available for download and order is not supported for"
+                                    f" {self.provider}, {e}"
                                 )
                             not_available_info = e
                             pass
@@ -582,8 +573,8 @@ class Download(PluginTopic):
                         ).seconds
                         retry_count += 1
                         retry_info = (
-                            "[Retry #%s] Waited %ss, trying again to download ordered product (retry every %s' for %s')"
-                            % (retry_count, wait_seconds, wait, timeout)
+                            f"[Retry #{retry_count}] Waited {wait_seconds}s, trying again to download ordered product"
+                            f" (retry every {wait}' for {timeout}')"
                         )
                         logger.debug(not_available_info)
                         # Retry-After info from Response header
@@ -593,8 +584,7 @@ class Download(PluginTopic):
                             )
                             if retry_server_info:
                                 logger.debug(
-                                    "[%s response] Retry-After: %s"
-                                    % (self.provider, retry_server_info)
+                                    f"[{self.provider} response] Retry-After: {retry_server_info}"
                                 )
                         logger.info(retry_info)
                         nb_info.display_html(retry_info)
@@ -603,16 +593,15 @@ class Download(PluginTopic):
                         wait_seconds = (product.next_try - datetime_now).seconds
                         retry_count += 1
                         retry_info = (
-                            f"[Retry #{retry_count}] Waiting %ss until next download try"
-                            f" for ordered product (retry every {wait_seconds}' for {timeout}')"
+                            f"[Retry #{retry_count}] Waiting {wait_seconds}s until next download try"
+                            f" for ordered product (retry every {wait}' for {timeout}')"
                         )
                         logger.debug(not_available_info)
                         # Retry-After info from Response header
                         retry_server_info = self.stream.headers.get("Retry-After", "")
                         if retry_server_info:
                             logger.debug(
-                                "[%s response] Retry-After: %s"
-                                % (self.provider, retry_server_info)
+                                f"[{self.provider} response] Retry-After: {retry_server_info}"
                             )
                         logger.info(retry_info)
                         nb_info.display_html(retry_info)
@@ -622,11 +611,8 @@ class Download(PluginTopic):
                             product.properties["storageStatus"] = "N/A status"
                         logger.info(not_available_info)
                         raise NotAvailableError(
-                            "%s is not available (%s) and could not be downloaded, timeout reached"
-                            % (
-                                product.properties["title"],
-                                product.properties["storageStatus"],
-                            )
+                            f"{product.properties['title']} is not available ({product.properties['storageStatus']})"
+                            f" and could not be downloaded, timeout reached"
                         )
                     elif datetime_now >= stop_time:
                         raise NotAvailableError(not_available_info)
