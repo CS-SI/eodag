@@ -16,13 +16,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import shutil
 import stat
 import unittest
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
+from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir, mkdtemp
 from unittest import mock
 
-from tests.context import EOProduct, PluginManager, load_default_config, path_to_uri
+import responses
+
+from tests.context import (
+    OFFLINE_STATUS,
+    EOProduct,
+    NotAvailableError,
+    PluginManager,
+    load_default_config,
+    path_to_uri,
+)
 
 
 class BaseDownloadPluginTest(unittest.TestCase):
@@ -50,6 +60,23 @@ class BaseDownloadPluginTest(unittest.TestCase):
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
 
+    def setUp(self):
+        super(BaseDownloadPluginTest, self).setUp()
+        self.product = EOProduct(
+            "peps",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+        )
+        self.output_dir = mkdtemp()
+
+    def tearDown(self):
+        super(BaseDownloadPluginTest, self).tearDown()
+        if os.path.isdir(self.output_dir):
+            shutil.rmtree(self.output_dir)
+
     def get_download_plugin(self, product):
         return self.plugins_manager.get_download_plugin(product)
 
@@ -58,15 +85,6 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
-    def setUp(self):
-        self.product = EOProduct(
-            "peps",
-            dict(
-                geometry="POINT (0 0)",
-                title="dummy_product",
-            ),
-        )
-
     def test_plugins_download_base_prepare_download_existing(self):
         """Download._prepare_download must detect if product destination already exists"""
 
@@ -124,3 +142,175 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                 self.product, outputs_prefix=outdir.name
             )
             self.assertIn("Unable to create records directory", str(cm.output))
+
+
+class TestDownloadPluginHttp(BaseDownloadPluginTest):
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_ok(self, mock_requests_get):
+        """HTTPDownload.download() must create an outputfile"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isfile(path))
+
+
+class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
+    def setUp(self):
+        super(TestDownloadPluginHttpRetry, self).setUp()
+
+        self.plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.properties["storageStatus"] = OFFLINE_STATUS
+
+    def test_plugins_download_http_retry_error_timeout(self):
+        """HTTPDownload.download() must retry on error until timeout"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            url = "http://somewhere/?issuerId=peps"
+            responses.add(responses.GET, url, status=500)
+
+            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                self.plugin.download(
+                    self.product,
+                    outputs_prefix=self.output_dir,
+                    wait=0.001 / 60,
+                    timeout=0.2 / 60,
+                )
+
+            # there must have been many retries
+            self.assertGreater(len(responses.calls), 2)
+            quick_retry_call_count = len(responses.calls)
+
+            # Same test with longer wait time
+            responses.calls.reset()
+            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                self.plugin.download(
+                    self.product,
+                    outputs_prefix=self.output_dir,
+                    wait=0.01 / 60,
+                    timeout=0.2 / 60,
+                )
+
+            # there must have been many retries, but less than before
+            self.assertGreater(len(responses.calls), 2)
+            self.assertLess(len(responses.calls), quick_retry_call_count)
+
+        run()
+
+    def test_plugins_download_http_retry_notready_timeout(self):
+        """HTTPDownload.download() must retry if not ready until timeout"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            url = "http://somewhere/?issuerId=peps"
+            responses.add(responses.GET, url, status=202)
+
+            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                self.plugin.download(
+                    self.product,
+                    outputs_prefix=self.output_dir,
+                    wait=0.001 / 60,
+                    timeout=0.2 / 60,
+                )
+
+            # there must have been many retries
+            self.assertGreater(len(responses.calls), 2)
+
+        run()
+
+    def test_plugins_download_http_retry_ok(self):
+        """HTTPDownload.download() must retry until request succeeds"""
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            # fail, then succeeds
+            url = "http://somewhere/?issuerId=peps"
+            responses.add(responses.GET, url, status=202)
+            responses.add(responses.GET, url, status=202)
+            responses.add(
+                responses.GET,
+                "http://somewhere/?issuerId=peps",
+                status=200,
+                content_type="application/octet-stream",
+                body=b"something",
+                auto_calculate_content_length=True,
+            )
+
+            self.plugin.download(
+                self.product,
+                outputs_prefix=self.output_dir,
+                wait=0.001 / 60,
+                timeout=0.2 / 60,
+            )
+
+            # there must have been 2 retries
+            self.assertEqual(len(responses.calls), 3)
+
+        run()
+
+    def test_plugins_download_http_retry_short_timeout(self):
+        """HTTPDownload.download() must not retry on very short timeout"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            url = "http://somewhere/?issuerId=peps"
+            responses.add(responses.GET, url, status=202)
+
+            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                self.plugin.download(
+                    self.product,
+                    outputs_prefix=self.output_dir,
+                    wait=0.1 / 60,
+                    timeout=0.001 / 60,
+                )
+
+            # there must have been only one try
+            self.assertEqual(len(responses.calls), 1)
+
+        run()
+
+    def test_plugins_download_http_retry_once_timeout(self):
+        """HTTPDownload.download() must retry once if wait time is equal to timeout"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            url = "http://somewhere/?issuerId=peps"
+            responses.add(responses.GET, url, status=202)
+
+            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                self.plugin.download(
+                    self.product,
+                    outputs_prefix=self.output_dir,
+                    wait=0.1 / 60,
+                    timeout=0.1 / 60,
+                )
+
+            # there must have been one retry
+            self.assertEqual(len(responses.calls), 2)
+
+        run()
+
+    def test_plugins_download_http_retry_timeout_disabled(self):
+        """HTTPDownload.download() must not retry on error if timeout is disabled"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            url = "http://somewhere/?issuerId=peps"
+            responses.add(responses.GET, url, status=202)
+
+            with self.assertRaisesRegex(NotAvailableError, r"^((?!timeout).)*$"):
+                self.plugin.download(
+                    self.product, outputs_prefix=self.output_dir, wait=-1, timeout=-1
+                )
+
+            # there must have been only one try
+            self.assertEqual(len(responses.calls), 1)
+
+        run()

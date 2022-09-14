@@ -29,7 +29,11 @@ from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import NoDriver
-from eodag.api.product.metadata_mapping import format_metadata
+from eodag.api.product.metadata_mapping import (
+    format_metadata,
+    OFFLINE_STATUS,
+    ONLINE_STATUS,
+)
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.config import (
@@ -71,6 +75,7 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NoMatchingProductType,
+    NotAvailableError,
     PluginImplementationError,
     UnsupportedDatasetAddressScheme,
     UnsupportedProvider,

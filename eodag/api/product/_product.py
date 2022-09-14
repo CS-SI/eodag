@@ -32,7 +32,7 @@ from eodag.plugins.download.base import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
 )
 from eodag.utils import ProgressCallback, get_geometry_from_various
-from eodag.utils.exceptions import DownloadError
+from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 try:
     from shapely.errors import TopologicalError
@@ -198,9 +198,14 @@ class EOProduct(object):
     __geo_interface__ = property(as_dict)
 
     def __repr__(self):
-        return "{}(id={}, provider={})".format(
-            self.__class__.__name__, self.properties["id"], self.provider
-        )
+        try:
+            return "{}(id={}, provider={})".format(
+                self.__class__.__name__, self.properties["id"], self.provider
+            )
+        except KeyError as e:
+            raise MisconfiguredError(
+                f"Unable to get {e.args[0]} key from EOProduct.properties"
+            )
 
     def register_downloader(self, downloader, authenticator):
         """Give to the product the information needed to download itself.
@@ -230,7 +235,7 @@ class EOProduct(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """Download the EO product using the provided download plugin and the
         authenticator if necessary.
@@ -295,7 +300,7 @@ class EOProduct(object):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
-            **kwargs
+            **kwargs,
         )
 
         # close progress bar if needed
