@@ -55,6 +55,30 @@
     L8_OLI_TIRS_C1L1:
       dataset: LANDSAT_8_C1
       outputs_extension: .tar.gz
+    LANDSAT_C2L1:
+      dataset: landsat_ot_c2_l1
+      outputs_extension: .tar.gz
+    LANDSAT_C2L2:
+      dataset: landsat_ot_c2_l2
+      outputs_extension: .tar.gz
+    LANDSAT_TM_C1:
+      dataset: landsat_tm_c1
+      outputs_extension: .tar.gz
+    LANDSAT_TM_C2L1:
+      dataset: landsat_tm_c2_l1
+      outputs_extension: .tar.gz
+    LANDSAT_TM_C2L2:
+      dataset: landsat_tm_c2_l2
+      outputs_extension: .tar.gz
+    LANDSAT_ETM_C1:
+      dataset: landsat_etm_c1
+      outputs_extension: .tar.gz
+    LANDSAT_ETM_C2L1:
+      dataset: landsat_etm_c2_l1
+      outputs_extension: .tar.gz
+    LANDSAT_ETM_C2L2:
+      dataset: landsat_etm_c2_l2
+      outputs_extension: .tar.gz
     S2_MSI_L1C:
       dataset: SENTINEL_2A
       outputs_extension: .zip
