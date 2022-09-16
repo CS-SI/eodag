@@ -21,13 +21,23 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
+from shapely.geometry import shape
 
 from tests.context import (
+    DEFAULT_DOWNLOAD_WAIT,
+    ONLINE_STATUS,
+    AuthenticationError,
     EODataAccessGateway,
+    EOProduct,
+    NotAvailableError,
     PluginManager,
     SearchResult,
+    USGSAuthExpiredError,
+    USGSError,
     ValidationError,
+    get_geometry_from_various,
     load_default_config,
     parse_qsl,
     path_to_uri,
@@ -317,3 +327,251 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         assert mock_ecmwfdataserver_retrieve.call_count == 2
         assert len(paths) == 2
+
+
+class TestApisPluginUsgsApi(BaseApisPluginTest):
+    def setUp(self):
+        self.provider = "usgs"
+        self.api_plugin = self.get_search_plugin(provider=self.provider)
+
+    @mock.patch("usgs.api.login", autospec=True)
+    @mock.patch("usgs.api.logout", autospec=True)
+    def test_plugins_apis_usgs_authenticate(self, mock_api_logout, mock_api_login):
+        """UsgsApi.authenticate must return try to login"""
+        # no credential
+        self.api_plugin.authenticate()
+        mock_api_login.assert_called_once_with("", "", save=True)
+        mock_api_logout.assert_not_called()
+        mock_api_login.reset_mock()
+
+        # with credentials
+        self.api_plugin.config.credentials = {
+            "username": "foo",
+            "password": "bar",
+        }
+        self.api_plugin.authenticate()
+        mock_api_login.assert_called_once_with("foo", "bar", save=True)
+        mock_api_logout.assert_not_called()
+        mock_api_login.reset_mock()
+
+        # with USGSAuthExpiredError
+        mock_api_login.side_effect = [USGSAuthExpiredError(), None]
+        self.api_plugin.authenticate()
+        self.assertEqual(mock_api_login.call_count, 2)
+        self.assertEqual(mock_api_logout.call_count, 1)
+        mock_api_login.reset_mock()
+        mock_api_logout.reset_mock()
+
+        # with invalid credentials / USGSError
+        mock_api_login.side_effect = USGSError()
+        with self.assertRaises(AuthenticationError):
+            self.api_plugin.authenticate()
+            self.assertEqual(mock_api_login.call_count, 1)
+            mock_api_logout.assert_not_called()
+
+    @mock.patch("usgs.api.login", autospec=True)
+    @mock.patch("usgs.api.logout", autospec=True)
+    @mock.patch(
+        "usgs.api.scene_search",
+        autospec=True,
+        return_value={
+            "data": {
+                "results": [
+                    {
+                        "browse": [
+                            {
+                                "browsePath": "https://path/to/quicklook.jpg",
+                                "thumbnailPath": "https://path/to/thumbnail.jpg",
+                            },
+                            {},
+                            {},
+                        ],
+                        "cloudCover": "77.46",
+                        "entityId": "LC81780382020041LGN00",
+                        "displayId": "LC08_L1GT_178038_20200210_20200224_01_T2",
+                        "spatialBounds": {
+                            "type": "Polygon",
+                            "coordinates": [
+                                [
+                                    [28.03905, 30.68073],
+                                    [28.03905, 32.79057],
+                                    [30.46294, 32.79057],
+                                    [30.46294, 30.68073],
+                                    [28.03905, 30.68073],
+                                ]
+                            ],
+                        },
+                        "temporalCoverage": {
+                            "endDate": "2020-02-10 00:00:00",
+                            "startDate": "2020-02-10 00:00:00",
+                        },
+                        "publishDate": "2020-02-10 08:24:46",
+                    },
+                ],
+                "recordsReturned": 5,
+                "totalHits": 139,
+                "startingNumber": 6,
+                "nextRecord": 11,
+            }
+        },
+    )
+    @mock.patch(
+        "usgs.api.download_options",
+        autospec=True,
+        return_value={
+            "data": [
+                {
+                    "id": "5e83d0b8e7f6734c",
+                    "entityId": "LC81780382020041LGN00",
+                    "available": True,
+                    "filesize": 9186067,
+                    "productName": "LandsatLook Natural Color Image",
+                    "downloadSystem": "dds",
+                },
+                {
+                    "entityId": "LC81780382020041LGN00",
+                    "available": False,
+                    "downloadSystem": "wms",
+                },
+            ]
+        },
+    )
+    def test_plugins_apis_usgs_query(
+        self,
+        mock_api_download_options,
+        mock_api_scene_search,
+        mock_api_logout,
+        mock_api_login,
+    ):
+        """UsgsApi.query must search using usgs api"""
+
+        search_kwargs = {
+            "productType": "L8_OLI_TIRS_C1L1",
+            "startTimeFromAscendingNode": "2020-02-01",
+            "completionTimeFromAscendingNode": "2020-02-10",
+            "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
+            "items_per_page": 5,
+            "page": 2,
+        }
+        search_results, total_count = self.api_plugin.query(**search_kwargs)
+        mock_api_scene_search.assert_called_once_with(
+            "LANDSAT_8_C1",
+            start_date="2020-02-01",
+            end_date="2020-02-10",
+            ll={"longitude": 10.0, "latitude": 20.0},
+            ur={"longitude": 30.0, "latitude": 40.0},
+            max_results=5,
+            starting_number=6,
+        )
+        self.assertEqual(search_results[0].provider, "usgs")
+        self.assertEqual(search_results[0].product_type, "L8_OLI_TIRS_C1L1")
+        self.assertEqual(
+            search_results[0].geometry,
+            shape(
+                mock_api_scene_search.return_value["data"]["results"][0][
+                    "spatialBounds"
+                ]
+            ),
+        )
+        self.assertEqual(
+            search_results[0].properties["id"],
+            mock_api_scene_search.return_value["data"]["results"][0]["displayId"],
+        )
+        self.assertEqual(
+            search_results[0].properties["cloudCover"],
+            float(
+                mock_api_scene_search.return_value["data"]["results"][0]["cloudCover"]
+            ),
+        )
+        self.assertEqual(search_results[0].properties["storageStatus"], ONLINE_STATUS)
+        self.assertEqual(
+            total_count, mock_api_scene_search.return_value["data"]["totalHits"]
+        )
+
+    @mock.patch("usgs.api.login", autospec=True)
+    @mock.patch("usgs.api.logout", autospec=True)
+    @mock.patch("usgs.api.download_request", autospec=True)
+    def test_plugins_apis_usgs_download(
+        self,
+        mock_api_download_request,
+        mock_api_logout,
+        mock_api_login,
+    ):
+        """UsgsApi.download must donwload using usgs api"""
+
+        @responses.activate
+        def run():
+
+            product = EOProduct(
+                "peps",
+                dict(
+                    geometry="POINT (0 0)",
+                    title="dummy_product",
+                    id="dummy",
+                    entityId="dummyEntityId",
+                    productId="dummyProductId",
+                    productType="L8_OLI_TIRS_C1L1",
+                ),
+            )
+            product.location = product.remote_location = product.properties[
+                "downloadLink"
+            ] = "http://somewhere"
+            product.properties["id"] = "someproduct"
+
+            responses.add(
+                responses.GET,
+                "http://path/to/product",
+                status=200,
+                content_type="application/octet-stream",
+                body=b"something",
+                auto_calculate_content_length=True,
+                match=[
+                    responses.matchers.request_kwargs_matcher(
+                        dict(stream=True, timeout=DEFAULT_DOWNLOAD_WAIT * 60)
+                    )
+                ],
+            )
+
+            # missing download_request return value
+            with self.assertRaises(NotAvailableError):
+                self.api_plugin.download(product, outputs_prefix=self.tmp_home_dir.name)
+
+            # download 1 available product
+            mock_api_download_request.return_value = {
+                "data": {"preparingDownloads": [{"url": "http://path/to/product"}]}
+            }
+
+            path = self.api_plugin.download(
+                product, outputs_prefix=self.tmp_home_dir.name
+            )
+
+            self.assertEqual(len(responses.calls), 1)
+            responses.calls.reset()
+
+            self.assertEqual(
+                path, os.path.join(self.tmp_home_dir.name, "dummy_product")
+            )
+            self.assertTrue(os.path.isfile(path))
+
+            # check file extension
+            # tar
+            os.remove(path)
+            with mock.patch("tarfile.is_tarfile", return_value=True, autospec=True):
+                path = self.api_plugin.download(
+                    product, outputs_prefix=self.tmp_home_dir.name, extract=False
+                )
+                self.assertEqual(
+                    path, os.path.join(self.tmp_home_dir.name, "dummy_product.tar.gz")
+                )
+            # zip
+            os.remove(path)
+            product.product_type = "S2_MSI_L1C"
+            with mock.patch("zipfile.is_zipfile", return_value=True, autospec=True):
+                path = self.api_plugin.download(
+                    product, outputs_prefix=self.tmp_home_dir.name, extract=False
+                )
+                self.assertEqual(
+                    path, os.path.join(self.tmp_home_dir.name, "dummy_product.zip")
+                )
+
+        run()

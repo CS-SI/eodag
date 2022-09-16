@@ -130,6 +130,7 @@ class TestCore(TestCoreBase):
             "astraea_eod",
             "earth_search",
             "earth_search_gcs",
+            "usgs",
         ],
         "S3_ERR": ["onda", "creodias"],
         "S3_EFR": ["onda", "creodias"],
