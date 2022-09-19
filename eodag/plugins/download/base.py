@@ -81,7 +81,7 @@ class Download(PluginTopic):
 
     def __init__(self, provider, config):
         super(Download, self).__init__(provider, config)
-        self.authenticate = bool(getattr(self.config, "authenticate", False))
+        self._authenticate = bool(getattr(self.config, "authenticate", False))
 
     def download(
         self,
@@ -598,11 +598,14 @@ class Download(PluginTopic):
                         )
                         logger.debug(not_available_info)
                         # Retry-After info from Response header
-                        retry_server_info = self.stream.headers.get("Retry-After", "")
-                        if retry_server_info:
-                            logger.debug(
-                                f"[{self.provider} response] Retry-After: {retry_server_info}"
+                        if hasattr(self, "stream"):
+                            retry_server_info = self.stream.headers.get(
+                                "Retry-After", ""
                             )
+                            if retry_server_info:
+                                logger.debug(
+                                    f"[{self.provider} response] Retry-After: {retry_server_info}"
+                                )
                         logger.info(retry_info)
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)

@@ -52,7 +52,11 @@ from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.aws import AwsDownload
-from eodag.plugins.download.base import Download, DEFAULT_STREAM_REQUESTS_TIMEOUT
+from eodag.plugins.download.base import (
+    Download,
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+)
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
@@ -83,3 +87,4 @@ from eodag.utils.exceptions import (
 )
 from eodag.utils.stac_reader import fetch_stac_items, HTTP_REQ_TIMEOUT
 from tests import TESTS_DOWNLOAD_PATH, TEST_RESOURCES_PATH
+from usgs.api import USGSAuthExpiredError, USGSError

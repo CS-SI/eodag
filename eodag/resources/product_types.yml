@@ -187,6 +187,20 @@ LANDSAT_C2L1:
   title: Landsat Collection 2 Level-1 Product
   missionStartDate: "1972-07-25T00:00:00Z"
 
+LANDSAT_C2L2:
+  abstract: |
+    Collection 2 Landsat OLI/TIRS Level-2 Science Products (L2SP) include
+    Surface Reflectance and Surface Temperature scene-based products.
+  instrument: OLI,TIRS
+  platform: LANDSAT
+  platformSerialIdentifier: L8,L9
+  processingLevel: L1
+  keywords: OLI,TIRS,LANDSAT,L8,L9,L2,C2,COLLECTION2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat OLI and TIRS Collection 2 Level-2 Science Products 30-meter multispectral data.
+  missionStartDate: "2013-02-11T00:00:00Z"
+
 LANDSAT_C2L2_SR:
   abstract: |
     The Landsat Surface Reflectance (SR) product measures the fraction of incoming solar radiation that is reflected
@@ -268,6 +282,101 @@ LANDSAT_C2L2ALB_TA:
   license: proprietary
   title: Landsat Collection 2 Level-2 Albers Top of Atmosphere (TA) Reflectance Product
   missionStartDate: "1982-08-22T00:00:00Z"
+
+LANDSAT_TM_C1:
+  abstract: |
+    Landsat 4-5 TM image data files consist of seven spectral bands (See band designations).
+    The resolution is 30 meters for bands 1 to 7.
+    (Thermal infrared band 6 was collected at 120 meters, but was resampled to 30 meters.)
+    The approximate scene size is 170 km north-south by 183 km east-west (106 mi by 114 mi).
+  instrument: TM
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5
+  processingLevel: L1
+  keywords: TM,LANDSAT,L4,L5,L1,C1,COLLECTION1
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat 4-5 Thematic Mapper (TM) Collection-1 Level-1 Data Products
+  missionStartDate: "1982-08-22T00:00:00Z"
+  missionEndDate: "2013-06-06T00:00:00Z"
+
+LANDSAT_TM_C2L1:
+  abstract: |
+    Landsat 4-5 TM image data files consist of seven spectral bands (See band designations).
+    The resolution is 30 meters for bands 1 to 7.
+    (Thermal infrared band 6 was collected at 120 meters, but was resampled to 30 meters.)
+    The approximate scene size is 170 km north-south by 183 km east-west (106 mi by 114 mi).
+  instrument: TM
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5
+  processingLevel: L1
+  keywords: TM,LANDSAT,L4,L5,L1,C2,COLLECTION2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat 4-5 Thematic Mapper (TM) Collection-2 Level-1 Data Products
+  missionStartDate: "1982-08-22T00:00:00Z"
+  missionEndDate: "2013-06-06T00:00:00Z"
+
+LANDSAT_TM_C2L2:
+  abstract: |
+    Collection 2 Landsat 4-5 Thematic Mapper (TM) Level-2 Science Products (L2SP) include
+    Surface Reflectance and Surface Temperature scene-based products.
+  instrument: TM
+  platform: LANDSAT
+  platformSerialIdentifier: L4,L5
+  processingLevel: L2
+  keywords: TM,LANDSAT,L4,L5,L2,C2,COLLECTION2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Landsat 4-5 Thematic Mapper (TM) Collection-2 Level-2 Data Products
+  missionStartDate: "1982-08-22T00:00:00Z"
+  missionEndDate: "2013-06-06T00:00:00Z"
+
+LANDSAT_ETM_C1:
+  abstract: |
+    Landsat 7 ETM+ images consist of eight spectral bands with a spatial resolution of 30 meters for bands 1 to 7.
+    The panchromatic band 8 has a resolution of 15 meters. All bands can collect one of two gain settings (high or low)
+    for increased radiometric sensitivity and dynamic range, while Band 6 collects both high and low gain for all
+    scenes. Approximate scene size is 170 km north-south by 183 km east-west (106 mi by 114 mi).
+  instrument: ETM+
+  platform: LANDSAT
+  platformSerialIdentifier: L7
+  processingLevel: L1
+  keywords: ETM,ETM+,LANDSAT,L7,L1,C1,COLLECTION1
+  sensorType: OPTICAL
+  license: proprietary
+  title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-1 Level-1 data from Landsat 7
+  missionStartDate: "1999-04-15T00:00:00Z"
+
+LANDSAT_ETM_C2L1:
+  abstract: |
+    Landsat 7 ETM+ images consist of eight spectral bands with a spatial resolution of 30 meters for bands 1 to 7.
+    The panchromatic band 8 has a resolution of 15 meters. All bands can collect one of two gain settings (high or low)
+    for increased radiometric sensitivity and dynamic range, while Band 6 collects both high and low gain for all
+    scenes. Approximate scene size is 170 km north-south by 183 km east-west (106 mi by 114 mi).
+  instrument: ETM+
+  platform: LANDSAT
+  platformSerialIdentifier: L7
+  processingLevel: L1
+  keywords: ETM,ETM+,LANDSAT,L7,L1,C2,COLLECTION2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-2 Level-1 data from Landsat 7
+  missionStartDate: "1999-04-15T00:00:00Z"
+
+LANDSAT_ETM_C2L2:
+  abstract: |
+    Collection 2 Landsat 7 ETM+ Level-2 Science Products (L2SP) include Surface Reflectance and Surface Temperature
+    scene-based products.
+  instrument: ETM+
+  platform: LANDSAT
+  platformSerialIdentifier: L7
+  processingLevel: L2
+  keywords: ETM,ETM+,LANDSAT,L7,L2,C2,COLLECTION2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-2 Level-2 data from Landsat 7
+  missionStartDate: "1999-04-15T00:00:00Z"
 
 # MODIS -----------------------------------------------------------------------
 MODIS_MCD43A4:
