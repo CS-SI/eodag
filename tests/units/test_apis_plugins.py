@@ -579,7 +579,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
 
 class TestApisPluginCdsApi(BaseApisPluginTest):
     def setUp(self):
-        self.provider = "ads"
+        self.provider = "cop_ads"
         self.api_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
             "startTimeFromAscendingNode": "2020-01-01",
@@ -731,7 +731,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         }
 
         dag = EODataAccessGateway()
-        dag.set_preferred_provider("cds")
+        dag.set_preferred_provider("cop_ads")
         output_data_path = os.path.join(os.path.expanduser("~"), "data")
 
         # public dataset request
@@ -773,7 +773,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         }
 
         dag = EODataAccessGateway()
-        dag.set_preferred_provider("ads")
+        dag.set_preferred_provider("cop_ads")
 
         eoproducts = SearchResult([])
 

@@ -2131,7 +2131,7 @@
       dataset: '{productType}'
 ---
 !provider
-  name: ads
+  name: cop_ads
   priority: 0
   description: Atmosphere Data Store
   roles:
@@ -2156,7 +2156,7 @@
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://ads.atmosphere.copernicus.eu/cdsapp#!/dataset/{dataset}'
-      # ADS specific parameters
+      # Copernicus ADS specific parameters
       accuracy:
         - accuracy
         - '$.accuracy'
@@ -2448,7 +2448,7 @@
       format: netcdf
 ---
 !provider
-  name: cds
+  name: cop_cds
   priority: 0
   description: Climate Data Store
   roles:
@@ -2473,7 +2473,7 @@
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://cds.climate.copernicus.eu/cdsapp#!/dataset/{dataset}'
-      # CDS specific parameters
+      # Copernicus CDS specific parameters
       accuracy:
         - accuracy
         - '$.accuracy'

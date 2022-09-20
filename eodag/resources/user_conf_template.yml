@@ -149,14 +149,14 @@ ecmwf:
         credentials:
             username:
             password:
-ads:
+cop_ads:
     priority: # Lower value means lower priority (Default: 0)
     api:
         outputs_prefix:
         credentials:
             username:
             password:
-cds:
+cop_cds:
     priority: # Lower value means lower priority (Default: 0)
     api:
         outputs_prefix:
