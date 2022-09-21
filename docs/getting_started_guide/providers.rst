@@ -21,8 +21,8 @@ Products from the following providers are made avaiable through ``eodag``:
 * `earth_search and earth_search_cog <https://www.element84.com/earth-search/>`_: Element84 Earth Search
 * `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_: Element84 Earth Search and Google Cloud Storage download
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
-* `ads <https://ads.atmosphere.copernicus.eu>`_: Atmosphere Data Store
-* `cds <https://cds.climate.copernicus.eu>`_: Climate Data Store
+* `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
+* `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
 
 Providers available through an external plugin:
 

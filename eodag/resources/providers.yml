@@ -2133,7 +2133,7 @@
 !provider
   name: cop_ads
   priority: 0
-  description: Atmosphere Data Store
+  description: Copernicus Atmosphere Data Store
   roles:
     - host
   url: https://ads.atmosphere.copernicus.eu/
@@ -2450,7 +2450,7 @@
 !provider
   name: cop_cds
   priority: 0
-  description: Climate Data Store
+  description: Copernicus Climate Data Store
   roles:
     - host
   url: https://cds.climate.copernicus.eu/
