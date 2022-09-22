@@ -1048,18 +1048,20 @@ CAMS_EAC4:
   missionStartDate: "2003-01-01T00:00:00Z"
 
 # COPERNICUS CDS ----------------------------------------------------------------------
-ERA5_R:
+ERA5_SL:
   abstract: |
-    ECMWF Reanalysis Atmospheric 5 from Copernicus CDS
+    ERA5 ECMWF climate reanalysis data on many atmospheric, land-surface and sea-state
+    parameters together with estimates of uncertainty.
+    Hourly data on Single Levels from 1959 to present.
   instrument:
-  platform:
-  platformSerialIdentifier:
+  platform: ERA5
+  platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: ECMWF,Reanalysis,Atmospheric,ERA5,CDS
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels
   sensorType: FORECAST
   license: proprietary
-  title: ECMWF Reanalysis Atmospheric 5
-  missionStartDate: "1979-01-01T00:00:00Z"
+  title: ERA5 Hourly data on Single Levels
+  missionStartDate: "1959-01-01T00:00:00Z"
 
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:

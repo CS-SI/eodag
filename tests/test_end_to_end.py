@@ -166,7 +166,7 @@ COP_ADS_SEARCH_KWARGS = {
 }
 COP_CDS_SEARCH_ARGS = [
     "cop_cds",
-    "ERA5_R",
+    "ERA5_SL",
     "2021-01-01",
     "2021-01-05",
     # no need of an additional post-processing area extraction

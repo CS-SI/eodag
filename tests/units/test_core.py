@@ -176,7 +176,7 @@ class TestCore(TestCoreBase):
         "CAMS_GACF_RH": ["cop_ads"],
         "CAMS_GACF_MR": ["cop_ads"],
         "CAMS_EAC4": ["cop_ads"],
-        "ERA5_R": ["cop_cds"],
+        "ERA5_SL": ["cop_cds"],
         GENERIC_PRODUCT_TYPE: [
             "theia",
             "peps",

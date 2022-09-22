@@ -2680,7 +2680,7 @@
         - '$.year'
   products:
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
-    ERA5_R:
+    ERA5_SL:
       dataset: reanalysis-era5-single-levels
       api_product_type: reanalysis
       time: '00:00'
