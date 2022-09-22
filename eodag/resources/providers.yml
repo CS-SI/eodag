@@ -2129,3 +2129,563 @@
       time: 00:00
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
+---
+!provider
+  name: cop_ads
+  priority: 0
+  description: Copernicus Atmosphere Data Store
+  roles:
+    - host
+  url: https://ads.atmosphere.copernicus.eu/
+  api: !plugin
+    type: CdsApi
+    api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
+    extract: false
+    metadata_mapping:
+      productType: '$.productType'
+      title: '$.id'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      completionTimeFromAscendingNode:
+        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      id: '$.id'
+      # The geographic extent of the product
+      geometry:
+        - 'area={geometry#to_nwse_bounds_str(/)}'
+        - '$.geometry'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      downloadLink: 'https://ads.atmosphere.copernicus.eu/cdsapp#!/dataset/{dataset}'
+      # Copernicus ADS specific parameters
+      accuracy:
+        - accuracy
+        - '$.accuracy'
+      anoffset:
+        - anoffset
+        - '$.anoffset'
+      api_product_type:
+        - product_type
+        - '$.api_product_type'
+      bitmap:
+        - bitmap
+        - '$.bitmap'
+      block:
+        - block
+        - '$.block'
+      channel:
+        - channel
+        - '$.channel'
+      class:
+        - class
+        - '$.class'
+      database:
+        - database
+        - '$.database'
+      dataset:
+        - dataset
+        - '$.dataset'
+      date_range:
+        - date_range
+        - '$.date_range'
+      day:
+        - day
+        - '$.day'
+      diagnostic:
+        - diagnostic
+        - '$.diagnostic'
+      direction:
+        - direction
+        - '$.direction'
+      domain:
+        - domain
+        - '$.domain'
+      duplicates:
+        - duplicates
+        - '$.duplicates'
+      expect:
+        - expect
+        - '$.expect'
+      expver:
+        - expver
+        - '$.expver'
+      fcmonth:
+        - fcmonth
+        - '$.fcmonth'
+      fcperiod:
+        - fcperiod
+        - '$.fcperiod'
+      fieldset:
+        - fieldset
+        - '$.fieldset'
+      filter:
+        - filter
+        - '$.filter'
+      format:
+        - format
+        - '$.format'
+      frame:
+        - frame
+        - '$.frame'
+      frequency:
+        - frequency
+        - '$.frequency'
+      grid:
+        - grid
+        - '$.grid'
+      hdate:
+        - hdate
+        - '$.hdate'
+      ident:
+        - ident
+        - '$.ident'
+      interpolation:
+        - interpolation
+        - '$.interpolation'
+      intgrid:
+        - intgrid
+        - '$.intgrid'
+      iteration:
+        - iteration
+        - '$.iteration'
+      latitude:
+        - latitude
+        - '$.latitude'
+      levelist:
+        - levelist
+        - '$.levelist'
+      leadtime_hour:
+        - leadtime_hour
+        - '$.leadtime_hour'
+      levtype:
+        - levtype
+        - '$.levtype'
+      longitude:
+        - longitude
+        - '$.longitude'
+      lsm:
+        - lsm
+        - '$.lsm'
+      method:
+        - method
+        - '$.method'
+      model_level:
+        - model_level
+        - '$.model_level'
+      month:
+        - month
+        - '$.month'
+      number:
+        - number
+        - '$.number'
+      obsgroup:
+        - obsgroup
+        - '$.obsgroup'
+      obstype:
+        - obstype
+        - '$.obstype'
+      origin:
+        - origin
+        - '$.origin'
+      packing:
+        - packing
+        - '$.packing'
+      padding:
+        - padding
+        - '$.padding'
+      param:
+        - param
+        - '$.param'
+      pressure_level:
+        - pressure_level
+        - '$.pressure_level'
+      priority:
+        - priority
+        - '$.priority'
+      product:
+        - product
+        - '$.product'
+      range:
+        - range
+        - '$.range'
+      refdate:
+        - refdate
+        - '$.refdate'
+      reference:
+        - reference
+        - '$.reference'
+      reportype:
+        - reportype
+        - '$.reportype'
+      repres:
+        - repres
+        - '$.repres'
+      resol:
+        - resol
+        - '$.resol'
+      rotation:
+        - rotation
+        - '$.rotation'
+      section:
+        - section
+        - '$.section'
+      source:
+        - source
+        - '$.source'
+      step:
+        - step
+        - '$.step'
+      stream:
+        - stream
+        - '$.stream'
+      system:
+        - system
+        - '$.system'
+      target:
+        - target
+        - '$.target'
+      time:
+        - time
+        - '$.time'
+      truncation:
+        - truncation
+        - '$.truncation'
+      type:
+        - type
+        - '$.type'
+      use:
+        - use
+        - '$.use'
+      variable:
+        - variable
+        - '$.variable'
+      year:
+        - year
+        - '$.year'
+  products:
+    # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
+    CAMS_GACF_AOT:
+      dataset: cams-global-atmospheric-composition-forecasts
+      stream: oper
+      class: mc
+      expver: '0001'
+      step: 0
+      levtype: SFC
+      variable:
+        - sea_salt_aerosol_optical_depth_550nm
+        - dust_aerosol_optical_depth_550nm
+        - organic_matter_aerosol_optical_depth_550nm
+        - black_carbon_aerosol_optical_depth_550nm
+        - sulphate_aerosol_optical_depth_550nm
+      time: '00:00'
+      leadtime_hour: 0
+      type: forecast
+      format: netcdf
+    CAMS_GACF_RH:
+      dataset: cams-global-atmospheric-composition-forecasts
+      stream: oper
+      class: mc
+      expver: '0001'
+      step: 0
+      variable: 'relative_humidity'
+      pressure_level: ['1', '2', '3', '5', '7', '10', '20', '30', '50', '70', '100', '150', '200', '250', '300', '400', '500', '600', '700', '850', '925', '1000']
+      time: '00:00'
+      leadtime_hour: 0
+      type: forecast
+      format: netcdf
+    CAMS_GACF_MR:
+      dataset: cams-global-atmospheric-composition-forecasts
+      stream: oper
+      class: mc
+      expver: '0001'
+      step: 0
+      variable:
+        - sea_salt_aerosol_0.03-0.5um_mixing_ratio
+        - sea_salt_aerosol_0.5-5um_mixing_ratio
+        - sea_salt_aerosol_5-20um_mixing_ratio
+        - dust_aerosol_0.03-0.55um_mixing_ratio
+        - dust_aerosol_0.55-0.9um_mixing_ratio
+        - dust_aerosol_0.9-20um_mixing_ratio
+        - hydrophilic_organic_matter_aerosol_mixing_ratio
+        - hydrophobic_organic_matter_aerosol_mixing_ratio
+        - hydrophilic_black_carbon_aerosol_mixing_ratio
+        - hydrophobic_black_carbon_aerosol_mixing_ratio
+        - sulphate_aerosol_mixing_ratio
+      model_level: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59', '60', '61']
+      time: '00:00'
+      leadtime_hour: 0
+      type: forecast
+      format: netcdf
+    CAMS_EAC4:
+      dataset: cams-global-reanalysis-eac4
+      stream: oper
+      class: mc
+      expver: '0001'
+      step: 0
+      variable:
+        - dust_aerosol_0.03-0.55um_mixing_ratio
+        - dust_aerosol_0.55-0.9um_mixing_ratio
+        - dust_aerosol_0.9-20um_mixing_ratio
+        - dust_aerosol_optical_depth_550nm
+        - hydrophilic_black_carbon_aerosol_mixing_ratio
+        - hydrophilic_organic_matter_aerosol_mixing_ratio
+        - hydrophobic_black_carbon_aerosol_mixing_ratio
+        - hydrophobic_organic_matter_aerosol_mixing_ratio
+        - sea_salt_aerosol_0.03-0.5um_mixing_ratio
+        - sea_salt_aerosol_0.5-5um_mixing_ratio
+        - sea_salt_aerosol_5-20um_mixing_ratio
+        - sea_salt_aerosol_optical_depth_550nm
+        - sulphate_aerosol_optical_depth_550nm
+      model_level: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59', '60']
+      time: '00:00'
+      format: netcdf
+    GENERIC_PRODUCT_TYPE:
+      dataset: '{productType}'
+      stream: oper
+      class: mc
+      expver: '0001'
+      step: 0
+      time: '00:00'
+      format: netcdf
+---
+!provider
+  name: cop_cds
+  priority: 0
+  description: Copernicus Climate Data Store
+  roles:
+    - host
+  url: https://cds.climate.copernicus.eu/
+  api: !plugin
+    type: CdsApi
+    api_endpoint: https://cds.climate.copernicus.eu/api/v2
+    extract: false
+    metadata_mapping:
+      productType: '$.productType'
+      title: '$.id'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      completionTimeFromAscendingNode:
+        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      id: '$.id'
+      # The geographic extent of the product
+      geometry:
+        - 'area={geometry#to_nwse_bounds_str(/)}'
+        - '$.geometry'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      downloadLink: 'https://cds.climate.copernicus.eu/cdsapp#!/dataset/{dataset}'
+      # Copernicus CDS specific parameters
+      accuracy:
+        - accuracy
+        - '$.accuracy'
+      anoffset:
+        - anoffset
+        - '$.anoffset'
+      api_product_type:
+        - product_type
+        - '$.api_product_type'
+      bitmap:
+        - bitmap
+        - '$.bitmap'
+      block:
+        - block
+        - '$.block'
+      channel:
+        - channel
+        - '$.channel'
+      class:
+        - class
+        - '$.class'
+      database:
+        - database
+        - '$.database'
+      dataset:
+        - dataset
+        - '$.dataset'
+      date_range:
+        - date_range
+        - '$.date_range'
+      day:
+        - day
+        - '$.day'
+      diagnostic:
+        - diagnostic
+        - '$.diagnostic'
+      direction:
+        - direction
+        - '$.direction'
+      domain:
+        - domain
+        - '$.domain'
+      duplicates:
+        - duplicates
+        - '$.duplicates'
+      expect:
+        - expect
+        - '$.expect'
+      expver:
+        - expver
+        - '$.expver'
+      fcmonth:
+        - fcmonth
+        - '$.fcmonth'
+      fcperiod:
+        - fcperiod
+        - '$.fcperiod'
+      fieldset:
+        - fieldset
+        - '$.fieldset'
+      filter:
+        - filter
+        - '$.filter'
+      format:
+        - format
+        - '$.format'
+      frame:
+        - frame
+        - '$.frame'
+      frequency:
+        - frequency
+        - '$.frequency'
+      grid:
+        - grid
+        - '$.grid'
+      hdate:
+        - hdate
+        - '$.hdate'
+      ident:
+        - ident
+        - '$.ident'
+      interpolation:
+        - interpolation
+        - '$.interpolation'
+      intgrid:
+        - intgrid
+        - '$.intgrid'
+      iteration:
+        - iteration
+        - '$.iteration'
+      latitude:
+        - latitude
+        - '$.latitude'
+      levelist:
+        - levelist
+        - '$.levelist'
+      leadtime_hour:
+        - leadtime_hour
+        - '$.leadtime_hour'
+      levtype:
+        - levtype
+        - '$.levtype'
+      longitude:
+        - longitude
+        - '$.longitude'
+      lsm:
+        - lsm
+        - '$.lsm'
+      method:
+        - method
+        - '$.method'
+      model_level:
+        - model_level
+        - '$.model_level'
+      month:
+        - month
+        - '$.month'
+      number:
+        - number
+        - '$.number'
+      obsgroup:
+        - obsgroup
+        - '$.obsgroup'
+      obstype:
+        - obstype
+        - '$.obstype'
+      origin:
+        - origin
+        - '$.origin'
+      packing:
+        - packing
+        - '$.packing'
+      padding:
+        - padding
+        - '$.padding'
+      param:
+        - param
+        - '$.param'
+      pressure_level:
+        - pressure_level
+        - '$.pressure_level'
+      priority:
+        - priority
+        - '$.priority'
+      product:
+        - product
+        - '$.product'
+      range:
+        - range
+        - '$.range'
+      refdate:
+        - refdate
+        - '$.refdate'
+      reference:
+        - reference
+        - '$.reference'
+      reportype:
+        - reportype
+        - '$.reportype'
+      repres:
+        - repres
+        - '$.repres'
+      resol:
+        - resol
+        - '$.resol'
+      rotation:
+        - rotation
+        - '$.rotation'
+      section:
+        - section
+        - '$.section'
+      source:
+        - source
+        - '$.source'
+      step:
+        - step
+        - '$.step'
+      stream:
+        - stream
+        - '$.stream'
+      system:
+        - system
+        - '$.system'
+      target:
+        - target
+        - '$.target'
+      time:
+        - time
+        - '$.time'
+      truncation:
+        - truncation
+        - '$.truncation'
+      type:
+        - type
+        - '$.type'
+      use:
+        - use
+        - '$.use'
+      variable:
+        - variable
+        - '$.variable'
+      year:
+        - year
+        - '$.year'
+  products:
+    # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
+    ERA5_SL:
+      dataset: reanalysis-era5-single-levels
+      api_product_type: reanalysis
+      time: '00:00'
+      format: netcdf
+    GENERIC_PRODUCT_TYPE:
+      dataset: '{productType}'
+      time: '00:00'
+      format: netcdf

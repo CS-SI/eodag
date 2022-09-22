@@ -22,6 +22,7 @@ this package should go here
 """
 import ast
 import copy
+import datetime
 import errno
 import functools
 import hashlib
@@ -401,6 +402,13 @@ def get_timestamp(date_time):
     if not dt.tzinfo:
         dt = dt.replace(tzinfo=UTC)
     return dt.timestamp()
+
+
+def datetime_range(start, end):
+    """Generator function for all dates in-between start and end date."""
+    delta = end - start
+    for nday in range(delta.days + 1):
+        yield start + datetime.timedelta(days=nday)
 
 
 class DownloadedCallback:
