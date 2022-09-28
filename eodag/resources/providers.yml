@@ -1173,9 +1173,9 @@
     archive_depth: 2
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
-    auth_base_uri: 'https://auth.creodias.eu/auth'
+    auth_base_uri: 'https://identity.cloudferro.com/auth'
     realm: 'dias'
-    client_id: 'CLOUDFERRO_PARTNERS'
+    client_id: 'CLOUDFERRO_PUBLIC'
     client_secret: 'dc0aca03-2dc6-4798-a5de-fc5aeb6c8ee1'
     token_provision: qs
     token_qs_key: 'token'
