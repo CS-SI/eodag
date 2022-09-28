@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import logging
 import os
 import unittest
 from tempfile import TemporaryDirectory
@@ -41,6 +42,7 @@ from tests.context import (
     load_default_config,
     parse_qsl,
     path_to_uri,
+    setup_logging,
     urlsplit,
 )
 
@@ -621,6 +623,29 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             "time": "00:00",
             "format": "grib",
         }
+
+    def test_plugins_apis_cds_logging(self):
+        """CdsApi must init client with logging level"""
+
+        # auth dict needed for client init
+        auth_dict = {"key": "foo", "url": "https://bar"}
+
+        # 0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG
+        setup_logging(0)
+        client = self.api_plugin._get_cds_client(**auth_dict)
+        self.assertEqual(client.logger.level, logging.WARNING)
+
+        setup_logging(1)
+        client = self.api_plugin._get_cds_client(**auth_dict)
+        self.assertEqual(client.logger.level, logging.WARNING)
+
+        setup_logging(2)
+        client = self.api_plugin._get_cds_client(**auth_dict)
+        self.assertEqual(client.logger.level, logging.INFO)
+
+        setup_logging(3)
+        client = self.api_plugin._get_cds_client(**auth_dict)
+        self.assertEqual(client.logger.level, logging.DEBUG)
 
     def test_plugins_apis_cds_query_mandatory_params_missing(self):
         """CdsApi.query must fails if mandatory parameters are missing"""

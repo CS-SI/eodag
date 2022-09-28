@@ -152,22 +152,31 @@ class CdsApi(Download, Api, QueryStringSearch):
 
     def _get_cds_client(self, **auth_dict):
         """Returns cdsapi client."""
+        # eodag logging info
         eodag_verbosity = get_logging_verbose()
-        if eodag_verbosity is not None:
-            cds_debug = bool(eodag_verbosity >= 3)
-            cds_quiet = bool(eodag_verbosity == 0)
-            cds_progress = bool(eodag_verbosity == 1)
-        else:
-            cds_debug = False
-            cds_quiet = False
-            cds_progress = True
-        return cdsapi.Client(
-            quiet=cds_quiet,
-            debug=cds_debug,
+        eodag_logger = logging.getLogger("eodag")
+
+        client = cdsapi.Client(
+            # disable cdsapi default logging and handle it on eodag side
+            # until https://github.com/ecmwf/cdsapi/pull/47 is merged
+            quiet=True,
             verify=True,
-            progress=cds_progress,
             **auth_dict,
         )
+
+        if eodag_verbosity is None or eodag_verbosity == 1:
+            client.logger.setLevel(logging.WARNING)
+        if eodag_verbosity == 2:
+            client.logger.setLevel(logging.INFO)
+        elif eodag_verbosity == 3:
+            client.logger.setLevel(logging.DEBUG)
+        else:
+            client.logger.setLevel(logging.WARNING)
+
+        if eodag_logger.hasHandlers():
+            client.logger.addHandler(eodag_logger.handlers[0])
+
+        return client
 
     def authenticate(self):
         """Returns information needed for auth
