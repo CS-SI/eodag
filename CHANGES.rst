@@ -1,6 +1,23 @@
 Release history
 ---------------
 
+2.6.0 (2022-10-07)
+++++++++++++++++++
+
+* New `product types automatic discovery\
+  <https://eodag.rtfd.io/en/latest/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
+  (:pull:`480`)(:pull:`467`)(:pull:`470`)(:pull:`471`)(:pull:`472`)(:pull:`473`)(:pull:`481`)(:pull:`486`)(:pull:`493`)
+  (:pull:`491`)(:pull:`500`)
+* New providers `cop_ads <https://ads.atmosphere.copernicus.eu>`_ and `cop_cds <https://cds.climate.copernicus.eu>`_
+  for Copernicus Atmosphere and Climate Data Stores using :class:`~eodag.plugins.apis.cds.CdsApi` plugin, developed in
+  the context of DOMINO-X (:pull:`504`)(:pull:`513`)
+* :class:`~eodag.plugins.apis.usgs.UsgsApi` plugin fixed and updated (:pull:`489`)(:pull:`508`)
+* Cache usage for ``jsonpath.parse()`` (:pull:`502`)
+* Refactored download retry mechanism and more tests (:pull:`506`)
+* Drop support of Python 3.6 (:pull:`505`)
+* Various minor fixes and improvements (:pull:`469`)(:pull:`483`)(:pull:`484`)(:pull:`485`)(:pull:`490`)(:pull:`492`)
+  (:pull:`494`)(:pull:`495`)(:pull:`496`)(:pull:`497`)(:pull:`510`)(:pull:`511`)(:pull:`514`)(:pull:`517`)
+
 2.5.2 (2022-07-05)
 ++++++++++++++++++
 
@@ -16,7 +33,8 @@ Release history
 ++++++++++++++++++
 
 * `ecmwf <https://www.ecmwf.int/>`_ as new provider with new API plugin :class:`~eodag.plugins.apis.ecmwf.EcmwfApi`
-  and `tutorial <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_ecmwf.html>`_ (:pull:`452`)
+  and `tutorial <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_ecmwf.html>`_, developed in the context
+  of DOMINO-X (:pull:`452`)
 * ``earth_search_gcs`` as new provider to download on
   `Google Cloud Storage public datasets <https://cloud.google.com/storage/docs/public-datasets>`_
   (:pull:`462`, thanks `@robert-werner <https://github.com/robert-werner>`_)
