@@ -29,6 +29,14 @@ to each provider supported by ``eodag``:
   EODAG can be used to request for public datasets as for operational archive. Please note that for public datasets you
   might need to accept a license (e.g. for `TIGGE <https://apps.ecmwf.int/datasets/data/tigge/licence/>`__)
 
+* `cop_ads`: create an account `here <https://ads.atmosphere.copernicus.eu/user/register>`__.
+  Then go to your profile and use from the section named "API key" the *UID* as *username* and *API Key* as *password* in eodag credentials.
+  EODAG can be used to request for public datasets, you can browse them `here <https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset>`__.
+
+* `cop_cds`: create an account `here <https://cds.climate.copernicus.eu/user/register>`__.
+  Then go to your profile and use from the section named "API key" use *UID* as *username* and *API Key* as *password* in eodag credentials.
+  EODAG can be used to request for public datasets, you can browse them `here <https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset>`__.
+
 * `aws_eos`: you need credentials for both EOS (search) and AWS (download):
 
   * Create an account on `EOS <https://auth.eos.com>`__

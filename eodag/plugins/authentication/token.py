@@ -17,11 +17,12 @@
 # limitations under the License.
 
 import requests
-from requests import HTTPError
+from requests import RequestException
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import RequestsTokenAuth
 from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
 class TokenAuth(Authentication):
@@ -51,11 +52,14 @@ class TokenAuth(Authentication):
 
         # First get the token
         response = requests.post(
-            self.config.auth_uri, data=self.config.credentials, **req_kwargs
+            self.config.auth_uri,
+            data=self.config.credentials,
+            timeout=HTTP_REQ_TIMEOUT,
+            **req_kwargs,
         )
         try:
             response.raise_for_status()
-        except HTTPError as e:
+        except RequestException as e:
             raise e
         else:
             if getattr(self.config, "token_type", "text") == "json":

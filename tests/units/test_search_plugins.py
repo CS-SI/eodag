@@ -147,6 +147,46 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_discover_product_types(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must return a well formatted dict"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "creodias"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {
+            "collections": [
+                {
+                    "id": "foo_collection",
+                    "displayName": "The FOO collection",
+                    "billing": "free",
+                },
+                {
+                    "id": "bar_collection",
+                    "displayName": "The BAR non-free collection",
+                    "billing": "non-free",
+                },
+            ]
+        }
+        conf_update_dict = search_plugin.discover_product_types()
+        self.assertIn("foo_collection", conf_update_dict["providers_config"])
+        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertNotIn("bar_collection", conf_update_dict["providers_config"])
+        self.assertNotIn("bar_collection", conf_update_dict["product_types_config"])
+        self.assertEqual(
+            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            "foo_collection",
+        )
+        self.assertEqual(
+            conf_update_dict["product_types_config"]["foo_collection"]["title"],
+            "The FOO collection",
+        )
+
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
@@ -355,3 +395,40 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products[2].properties["productPath"],
             "products/2020/10/10/S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
         )
+
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_default_geometry(self, mock__request):
+        """The metadata mapping for a stac provider should return a default geometry"""
+
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "context": {"matched": 3},
+            },
+            {
+                "features": [
+                    {
+                        "id": "foo",
+                        "geometry": geojson_geometry,
+                    },
+                    {
+                        "id": "bar",
+                        "geometry": None,
+                    },
+                ]
+            },
+        ]
+
+        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+
+        products, estimate = search_plugin.query(
+            page=1,
+            items_per_page=3,
+            auth=None,
+        )
+        self.assertEqual(
+            products[0].geometry, self.search_criteria_s2_msi_l1c["geometry"]
+        )
+        self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))

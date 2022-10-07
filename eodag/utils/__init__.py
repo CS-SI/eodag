@@ -22,10 +22,12 @@ this package should go here
 """
 import ast
 import copy
+import datetime
 import errno
 import functools
 import hashlib
 import inspect
+import json
 import logging as py_logging
 import os
 import re
@@ -402,6 +404,13 @@ def get_timestamp(date_time):
     return dt.timestamp()
 
 
+def datetime_range(start, end):
+    """Generator function for all dates in-between start and end date."""
+    delta = end - start
+    for nday in range(delta.days + 1):
+        yield start + datetime.timedelta(days=nday)
+
+
 class DownloadedCallback:
     """Example class for callback after each download in :meth:`~eodag.api.core.EODataAccessGateway.download_all`"""
 
@@ -583,7 +592,9 @@ def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
     return dict_items_recursive_apply(jsonpath_dict, parse_jsonpath, **values_dict)
 
 
-def update_nested_dict(old_dict, new_dict, extend_list_values=False):
+def update_nested_dict(
+    old_dict, new_dict, extend_list_values=False, allow_empty_values=False
+):
     """Update recursively old_dict items with new_dict ones
 
     >>> update_nested_dict(
@@ -597,6 +608,17 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
     ...     extend_list_values=True
     ... ) == {'a': {'a.a': [1, 2, 10]}}
     True
+    >>> update_nested_dict(
+    ...     {"a": {"a.a": 1, "a.b": 2}, "b": 3},
+    ...     {"a": {"a.a": None}},
+    ... ) == {'a': {'a.a': 1, 'a.b': 2}, 'b': 3}
+    True
+    >>> update_nested_dict(
+    ...     {"a": {"a.a": 1, "a.b": 2}, "b": 3},
+    ...     {"a": {"a.a": None}},
+    ...     allow_empty_values=True
+    ... ) == {'a': {'a.a': None, 'a.b': 2}, 'b': 3}
+    True
 
     :param old_dict: Dict to be updated
     :type old_dict: dict
@@ -604,6 +626,8 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
     :type new_dict: dict
     :param extend_list_values: (optional) Extend old_dict value if both old/new values are lists
     :type extend_list_values: bool
+    :param allow_empty_values: (optional) Allow update with empty values
+    :type allow_empty_values: bool
     :returns: Updated dict
     :rtype: dict
     """
@@ -611,7 +635,10 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
         if k in old_dict.keys():
             if isinstance(v, dict) and isinstance(old_dict[k], dict):
                 old_dict[k] = update_nested_dict(
-                    old_dict[k], v, extend_list_values=extend_list_values
+                    old_dict[k],
+                    v,
+                    extend_list_values=extend_list_values,
+                    allow_empty_values=allow_empty_values,
                 )
             elif (
                 extend_list_values
@@ -619,7 +646,7 @@ def update_nested_dict(old_dict, new_dict, extend_list_values=False):
                 and isinstance(v, list)
             ):
                 old_dict[k].extend(v)
-            elif v:
+            elif (v and not allow_empty_values) or allow_empty_values:
                 old_dict[k] = v
         else:
             old_dict[k] = v
@@ -754,7 +781,7 @@ def string_to_jsonpath(key, str_value):
     """
     if "$." in str(str_value):
         try:
-            return parse(str_value)
+            return cached_parse(str_value)
         except Exception:  # jsonpath_ng does not provide a proper exception
             # If str_value does not contain a jsonpath, return it as is
             return str_value
@@ -946,11 +973,12 @@ class MockResponse(object):
 
 def md5sum(file_path):
     """Get file MD5 checksum
+
     >>> import os
     >>> md5sum(os.devnull)
     'd41d8cd98f00b204e9800998ecf8427e'
 
-    :param file_path: Pairs of key / value
+    :param file_path: input file path
     :type file_path: str
     :returns: MD5 checksum
     :rtype: str
@@ -960,3 +988,43 @@ def md5sum(file_path):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+
+def obj_md5sum(data):
+    """Get MD5 checksum from JSON serializable object
+
+    >>> obj_md5sum(None)
+    '37a6259cc0c1dae299a7866489dff0bd'
+
+    :param data: JSON serializable input object
+    :type data: Any
+    :returns: MD5 checksum
+    :rtype: str
+    """
+    return hashlib.md5(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+@functools.lru_cache()
+def cached_parse(str_to_parse):
+    """Cached jsonpath_ng.ext.parse
+
+    >>> cached_parse.cache_clear()
+    >>> cached_parse("$.foo")
+    Child(Root(), Fields('foo'))
+    >>> cached_parse.cache_info()
+    CacheInfo(hits=0, misses=1, maxsize=128, currsize=1)
+    >>> cached_parse("$.foo")
+    Child(Root(), Fields('foo'))
+    >>> cached_parse.cache_info()
+    CacheInfo(hits=1, misses=1, maxsize=128, currsize=1)
+    >>> cached_parse("$.bar")
+    Child(Root(), Fields('bar'))
+    >>> cached_parse.cache_info()
+    CacheInfo(hits=1, misses=2, maxsize=128, currsize=2)
+
+    :param str_to_parse: string to parse as jsonpath
+    :type str_to_parse: str
+    :returns: parsed jsonpath
+    :rtype: :class:`jsonpath_ng.JSONPath`
+    """
+    return parse(str_to_parse)

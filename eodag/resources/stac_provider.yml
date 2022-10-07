@@ -17,6 +17,7 @@
 # limitations under the License.
 search:
   type: StacSearch
+  results_entry: features
   pagination:
     next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
     total_items_nb_key_path: '$.context.matched'
@@ -28,6 +29,27 @@ search:
     metadata_pattern: '^[a-zA-Z0-9_:-]+$'
     search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
     metadata_path: '$.properties.*'
+  discover_product_types:
+      fetch_url: '{api_endpoint}/../collections'
+      result_type: json
+      results_entry: 'collections[*]'
+      generic_product_type_id: '$.id'
+      generic_product_type_parsable_properties:
+        productType: '$.id'
+      generic_product_type_unparsable_properties:
+        # cloud cover search disabled for unknown product_type
+        metadata_mapping:
+          cloudCover: '$.null'
+      generic_product_type_parsable_metadata:
+        abstract: '$.description'
+        instrument: '$.summaries.instruments'
+        platform: '$.summaries.constellation'
+        platformSerialIdentifier: '$.summaries.platform'
+        processingLevel: '$.summaries."processing:level"'
+        keywords: '$.keywords'
+        license: '$.license'
+        title: '$.title'
+        missionStartDate: '$.extent.temporal.interval[0][0]'
   metadata_mapping:
     # OpenSearch Parameters for Collection Search (Table 3)
     productType:
@@ -112,7 +134,7 @@ search:
       - '$.id'
     geometry:
       - '{{"intersects":{geometry#to_geo_interface}}}'
-      - '$.geometry'
+      - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
     downloadLink: '$.links[?(@.rel="self")].href'
     quicklook: '$.assets.quicklook.href'
     thumbnail: '$.assets.thumbnail.href'

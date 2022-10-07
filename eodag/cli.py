@@ -30,6 +30,7 @@ Options:
 Commands:
   deploy-wsgi-app  Configure the settings of the HTTP web app (the
                    providers...
+  discover         Fetch providers to discover product types
   download         Download a list of products from a serialized search...
   list             List supported product types
   search           Search satellite images by their product types,...
@@ -397,12 +398,16 @@ def search_crunch(ctx, **kwargs):
 @click.option(
     "-S", "--sensorType", help="List product types originating from this type of sensor"
 )
+@click.option(
+    "--no-fetch", is_flag=True, help="Do not fetch providers for new product types"
+)
 @click.pass_context
 def list_pt(ctx, **kwargs):
     """Print the list of supported product types"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
+    fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
     guessed_product_types = []
     try:
@@ -436,11 +441,15 @@ def list_pt(ctx, **kwargs):
         if guessed_product_types:
             product_types = [
                 pt
-                for pt in dag.list_product_types(provider=provider)
+                for pt in dag.list_product_types(
+                    provider=provider, fetch_providers=fetch_providers
+                )
                 if pt["ID"] in guessed_product_types
             ]
         else:
-            product_types = dag.list_product_types(provider=provider)
+            product_types = dag.list_product_types(
+                provider=provider, fetch_providers=fetch_providers
+            )
         click.echo("Listing available product types:")
         for product_type in product_types:
             click.echo("\n* {}: ".format(product_type["ID"]))
@@ -458,6 +467,37 @@ def list_pt(ctx, **kwargs):
             "Available providers: {}".format(", ".join(dag.available_providers()))
         )
         sys.exit(1)
+
+
+@eodag.command(name="discover", help="Fetch providers to discover product types")
+@click.option("-p", "--provider", help="Fetch only the given provider")
+@click.option(
+    "--storage",
+    type=click.Path(dir_okay=False, writable=True, readable=False),
+    default="ext_product_types.json",
+    help="Path to the file where to store external product types configuration "
+    "(.json extension will be automatically appended to the filename). "
+    "DEFAULT: ext_product_types.json",
+)
+@click.pass_context
+def discover_pt(ctx, **kwargs):
+    """Fetch external product types configuration and save result"""
+    setup_logging(verbose=ctx.obj["verbosity"])
+    dag = EODataAccessGateway()
+    provider = kwargs.pop("provider")
+
+    ext_product_types_conf = (
+        dag.discover_product_types(provider=provider)
+        if provider
+        else dag.discover_product_types()
+    )
+
+    storage_filepath = kwargs.pop("storage")
+    if not storage_filepath.endswith(".json"):
+        storage_filepath += ".json"
+    with open(storage_filepath, "w") as f:
+        json.dump(ext_product_types_conf, f)
+    click.echo("Results stored at '{}'".format(storage_filepath))
 
 
 @eodag.command(help="Download a list of products from a serialized search result")

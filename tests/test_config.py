@@ -21,10 +21,23 @@ import re
 import tempfile
 import unittest
 from io import StringIO
+from tempfile import TemporaryDirectory
 
 import yaml.parser
+from pkg_resources import resource_filename
 
-from tests.context import ValidationError, config, merge_configs
+from tests.context import (
+    EXT_PRODUCT_TYPES_CONF_URI,
+    HTTP_REQ_TIMEOUT,
+    TEST_RESOURCES_PATH,
+    EODataAccessGateway,
+    ValidationError,
+    config,
+    get_ext_product_types_conf,
+    load_stac_provider_config,
+    merge_configs,
+)
+from tests.utils import mock
 
 
 class TestProviderConfig(unittest.TestCase):
@@ -445,3 +458,143 @@ class TestConfigFunctions(unittest.TestCase):
 
         peps_conf = default_config["peps"]
         self.assertEqual(peps_conf.download.outputs_prefix, "/data")
+
+    @mock.patch("requests.get", autospec=True)
+    def test_get_ext_product_types_conf(self, mock_get):
+        """External product types configuration must be loadable from remote or local file"""
+        ext_product_types_path = os.path.join(
+            TEST_RESOURCES_PATH, "ext_product_types.json"
+        )
+
+        # mock get request response for remote conf file (default value)
+        mock_get.return_value = mock.Mock()
+        mock_get.return_value.json.return_value = {"some_parameter": "a_value"}
+
+        ext_product_types_conf = get_ext_product_types_conf()
+        mock_get.assert_called_once_with(
+            EXT_PRODUCT_TYPES_CONF_URI, timeout=HTTP_REQ_TIMEOUT
+        )
+        self.assertEqual(ext_product_types_conf, {"some_parameter": "a_value"})
+
+        # local conf file
+        ext_product_types_conf = get_ext_product_types_conf(ext_product_types_path)
+        self.assertIsInstance(ext_product_types_conf, dict)
+        self.assertIn("foo", ext_product_types_conf["astraea_eod"]["providers_config"])
+
+
+class TestStacProviderConfig(unittest.TestCase):
+    def setUp(self):
+        super(TestStacProviderConfig, self).setUp()
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = TemporaryDirectory()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        )
+        self.expanduser_mock.start()
+
+        self.dag = EODataAccessGateway()
+
+    def tearDown(self):
+        super(TestStacProviderConfig, self).tearDown()
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        self.tmp_home_dir.cleanup()
+
+    def test_existing_stac_provider_conf(self):
+        """Existing / pre-configured STAC providers conf should mix providers.yml and  stac_provider.yml infos."""
+        with open(resource_filename("eodag", "resources/providers.yml"), "r") as fh:
+            providers_configs = {
+                p.name: p for p in yaml.load_all(fh, Loader=yaml.Loader)
+            }
+
+        raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
+        common_stac_provider_search_conf = load_stac_provider_config()["search"]
+        provider_search_conf = self.dag.providers_config[
+            "usgs_satapi_aws"
+        ].search.__dict__
+
+        # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
+        self.assertIn(
+            "resolution", common_stac_provider_search_conf["metadata_mapping"]
+        )
+        self.assertNotIn("resolution", raw_provider_search_conf["metadata_mapping"])
+        self.assertIn("resolution", provider_search_conf["metadata_mapping"])
+
+        self.assertIn("discover_metadata", common_stac_provider_search_conf)
+        self.assertNotIn("discover_metadata", raw_provider_search_conf)
+        self.assertIn("discover_metadata", provider_search_conf)
+
+        # raw_provider conf (providers.yml) should overwrite common conf (stac_provider.yml)
+        self.assertEqual(
+            raw_provider_search_conf["metadata_mapping"]["assets"],
+            provider_search_conf["metadata_mapping"]["assets"],
+        )
+        self.assertNotEqual(
+            common_stac_provider_search_conf["metadata_mapping"]["assets"],
+            provider_search_conf["metadata_mapping"]["assets"],
+        )
+
+        # check if raw_provider_search_conf is a subset of provider_search_conf
+        for k, v in raw_provider_search_conf.items():
+            if isinstance(v, dict):
+                assert (
+                    raw_provider_search_conf[k].items()
+                    <= provider_search_conf[k].items()
+                )
+            else:
+                self.assertEqual(v, provider_search_conf[k])
+
+    def test_custom_stac_provider_conf(self):
+        """Custom STAC providers conf should mix providers.yml and stac_provider.yml infos."""
+        custom_stac_provider_conf_yml = """
+            foo:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                    metadata_mapping:
+                        title: '$.properties."foo:bar_baz"'
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+                download:
+                    type: HTTPDownload
+                    base_uri: https://foo.bar
+        """
+        self.dag.update_providers_config(custom_stac_provider_conf_yml)
+        custom_stac_provider_conf = yaml.safe_load(custom_stac_provider_conf_yml)[
+            "foo"
+        ]["search"]
+
+        common_stac_provider_search_conf = load_stac_provider_config()["search"]
+        provider_search_conf = self.dag.providers_config["foo"].search.__dict__
+
+        # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
+        self.assertIn(
+            "resolution", common_stac_provider_search_conf["metadata_mapping"]
+        )
+        self.assertNotIn("resolution", custom_stac_provider_conf["metadata_mapping"])
+        self.assertIn("resolution", provider_search_conf["metadata_mapping"])
+
+        self.assertIn("discover_metadata", common_stac_provider_search_conf)
+        self.assertNotIn("discover_metadata", custom_stac_provider_conf)
+        self.assertIn("discover_metadata", provider_search_conf)
+
+        # raw_provider conf (providers.yml) should overwrite common conf (stac_provider.yml)
+        self.assertEqual(
+            custom_stac_provider_conf["metadata_mapping"]["title"],
+            provider_search_conf["metadata_mapping"]["title"],
+        )
+        self.assertNotEqual(
+            common_stac_provider_search_conf["metadata_mapping"]["title"],
+            provider_search_conf["metadata_mapping"]["title"],
+        )
+
+        # check if custom_stac_provider_conf is a subset of provider_search_conf
+        for k, v in custom_stac_provider_conf.items():
+            if isinstance(v, dict):
+                assert (
+                    custom_stac_provider_conf[k].items()
+                    <= provider_search_conf[k].items()
+                )
+            else:
+                self.assertEqual(v, provider_search_conf[k])

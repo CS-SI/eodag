@@ -21,6 +21,7 @@ import requests
 from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
 class KeycloakOIDCPasswordAuth(Authentication):
@@ -50,10 +51,11 @@ class KeycloakOIDCPasswordAuth(Authentication):
                 "password": self.config.credentials["password"],
                 "grant_type": self.GRANT_TYPE,
             },
+            timeout=HTTP_REQ_TIMEOUT,
         )
         try:
             response.raise_for_status()
-        except requests.HTTPError as e:
+        except requests.RequestException as e:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):

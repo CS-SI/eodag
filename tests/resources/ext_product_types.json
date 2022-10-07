@@ -1,0 +1,42 @@
+{
+  "astraea_eod": {
+    "providers_config": {
+      "foo": {
+        "productType": "foo",
+        "metadata_mapping": {
+          "cloudCover": "$.null"
+        }
+      },
+      "bar": {
+        "productType": "bar",
+        "metadata_mapping": {
+          "cloudCover": "$.null"
+        }
+      }
+    },
+    "product_types_config": {
+      "foo": {
+        "abstract": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus.",
+        "instrument": "Not Available",
+        "platform": "Not Available",
+        "platformSerialIdentifier": "Not Available",
+        "processingLevel": "Not Available",
+        "keywords": "Not Available",
+        "license": "WTFPL",
+        "title": "Foo collection",
+        "missionStartDate": "2001-01-01T00:00:00.000Z"
+      },
+      "bar": {
+        "abstract": "Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.",
+        "instrument": "Not Available",
+        "platform": "Not Available",
+        "platformSerialIdentifier": "Not Available",
+        "processingLevel": "Not Available",
+        "keywords": "Not Available",
+        "license": "WTFPL",
+        "title": "Bar collection",
+        "missionStartDate": "2012-12-12T00:00:00.000Z"
+      }
+    }
+  }
+}

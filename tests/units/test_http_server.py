@@ -17,21 +17,60 @@
 # limitations under the License.
 
 import json
+import os
+import re
 import unittest
+from tempfile import TemporaryDirectory
 
 import geojson
 
 from tests import mock
-from tests.context import DEFAULT_ITEMS_PER_PAGE, SearchResult, eodag_http_server
+from tests.context import DEFAULT_ITEMS_PER_PAGE, SearchResult
 
 
 class RequestTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        super(RequestTestCase, cls).setUpClass()
+
         cls.tested_product_type = "S2_MSI_L1C"
 
+        # Mock home and eodag conf directory to tmp dir
+        cls.tmp_home_dir = TemporaryDirectory()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
+        )
+        cls.expanduser_mock.start()
+
+        # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
+        from eodag.rest import server as eodag_http_server
+
+        cls.eodag_http_server = eodag_http_server
+
+        # backup os.environ as it will be modified by tests
+        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
+        cls.eodag_env_backup = {
+            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
+        }
+
+        # disable product types fetch
+        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+
+    @classmethod
+    def tearDownClass(cls):
+        super(RequestTestCase, cls).tearDownClass()
+        # restore os.environ
+        for k, v in os.environ.items():
+            if cls.eodag_env_pattern.match(k):
+                os.environ.pop(k)
+        os.environ.update(cls.eodag_env_backup)
+
+        # stop Mock and remove tmp config dir
+        cls.expanduser_mock.stop()
+        cls.tmp_home_dir.cleanup()
+
     def setUp(self):
-        self.app = eodag_http_server.app.test_client()
+        self.app = self.eodag_http_server.app.test_client()
 
     def test_route(self):
         response = self.app.get("/", follow_redirects=True)

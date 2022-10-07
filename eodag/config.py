@@ -15,10 +15,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 import logging
 import os
 import tempfile
+from copy import deepcopy
 
+import requests
 import yaml
 import yaml.constructor
 import yaml.parser
@@ -29,10 +32,17 @@ from eodag.utils import (
     merge_mappings,
     slugify,
     string_to_jsonpath,
+    update_nested_dict,
+    uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.config")
+
+EXT_PRODUCT_TYPES_CONF_URI = (
+    "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
+)
 
 
 class SimpleYamlProxyConfig(object):
@@ -156,8 +166,11 @@ class ProviderConfig(yaml.YAMLObject):
         )
         for key in ("api", "search", "download", "auth"):
             current_value = getattr(self, key, None)
+            mapping_value = mapping.get(key, {})
             if current_value is not None:
-                current_value.update(mapping.get(key, {}))
+                current_value.update(mapping_value)
+            elif mapping_value:
+                setattr(self, key, PluginConfig.from_mapping(mapping_value))
 
 
 class PluginConfig(yaml.YAMLObject):
@@ -236,17 +249,20 @@ def load_config(config_path):
         except yaml.parser.ParserError as e:
             logger.error("Unable to load configuration")
             raise e
+        stac_provider_config = load_stac_provider_config()
         for provider_config in providers_configs:
-            provider_config_init(provider_config)
+            provider_config_init(provider_config, stac_provider_config)
             config[provider_config.name] = provider_config
         return config
 
 
-def provider_config_init(provider_config):
+def provider_config_init(provider_config, stac_search_default_conf=None):
     """Applies some default values to provider config
 
     :param provider_config: An eodag provider configuration
     :type provider_config: :class:`~eodag.config.ProviderConfig`
+    :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
+    :type stac_search_default_conf: dict
     """
     # For the provider, set the default outputs_prefix of its download plugin
     # as tempdir in a portable way
@@ -259,6 +275,21 @@ def provider_config_init(provider_config):
                 param_value.delete_archive = True
     # Set default priority to 0
     provider_config.__dict__.setdefault("priority", 0)
+
+    try:
+        if stac_search_default_conf is not None and provider_config.search.type in [
+            "StacSearch",
+            "StaticStacSearch",
+        ]:
+            # search config set to stac defaults overriden with provider config
+            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
+            provider_config.search.__dict__ = update_nested_dict(
+                per_provider_stac_provider_config["search"],
+                provider_config.search.__dict__,
+                allow_empty_values=True,
+            )
+    except AttributeError:
+        pass
 
 
 def override_config_from_file(config, file_path):
@@ -433,3 +464,39 @@ def load_stac_provider_config():
     return SimpleYamlProxyConfig(
         resource_filename("eodag", os.path.join("resources/", "stac_provider.yml"))
     ).source
+
+
+def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
+    """Read external product types conf
+
+    :param conf_uri: URI to local or remote configuration file
+    :type conf_uri: str
+    :returns: The external product types configuration
+    :rtype: dict
+    """
+    logger.info("Fetching external product types from %s", conf_uri)
+    if conf_uri.lower().startswith("http"):
+        # read from remote
+        try:
+            response = requests.get(conf_uri, timeout=HTTP_REQ_TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.debug(e)
+            logger.warning(
+                "Could not read remote external product types conf from %s", conf_uri
+            )
+            return {}
+    elif conf_uri.lower().startswith("file"):
+        conf_uri = uri_to_path(conf_uri)
+
+    # read from local
+    try:
+        with open(conf_uri) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        logger.debug(e)
+        logger.warning(
+            "Could not read local external product types conf from %s", conf_uri
+        )
+        return {}

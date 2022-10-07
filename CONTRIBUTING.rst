@@ -75,7 +75,7 @@ To run the entire tests (units, integraton and end-to-end):
       you, please `install <https://pandoc.org/installing.html>`_ pandoc and try
       again.
 
-    * eodag is tested against python versions 3.6, 3.7, 3.8, 3.9 and 3.10. Ensure you have
+    * eodag is tested against python versions 3.7, 3.8, 3.9 and 3.10. Ensure you have
       these versions installed before you run tox. You can use
       `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
       of python

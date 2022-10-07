@@ -34,6 +34,7 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     NoDriver,
+    ProgressCallback,
     config,
 )
 from tests.utils import mock
@@ -44,6 +45,12 @@ class TestEOProduct(EODagTestCase):
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
+        self.output_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        super(TestEOProduct, self).tearDown()
+        if os.path.isdir(self.output_dir):
+            shutil.rmtree(self.output_dir)
 
     def test_eoproduct_search_intersection_geom(self):
         """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""  # noqa
@@ -156,7 +163,10 @@ class TestEOProduct(EODagTestCase):
 
         quicklook_file_path = product.get_quicklook()
         self.requests_http_get.assert_called_with(
-            "https://fake.url.to/quicklook", stream=True, auth=None
+            "https://fake.url.to/quicklook",
+            stream=True,
+            auth=None,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(quicklook_file_path, "")
 
@@ -176,7 +186,10 @@ class TestEOProduct(EODagTestCase):
 
         quicklook_file_path = product.get_quicklook()
         self.requests_http_get.assert_called_with(
-            "https://fake.url.to/quicklook", stream=True, auth=None
+            "https://fake.url.to/quicklook",
+            stream=True,
+            auth=None,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(
             os.path.basename(quicklook_file_path), product.properties["id"]
@@ -190,7 +203,10 @@ class TestEOProduct(EODagTestCase):
         # Test the same thing as above but with an explicit name given to the downloaded File
         quicklook_file_path = product.get_quicklook(filename="the_quicklook.png")
         self.requests_http_get.assert_called_with(
-            "https://fake.url.to/quicklook", stream=True, auth=None
+            "https://fake.url.to/quicklook",
+            stream=True,
+            auth=None,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(self.requests_http_get.call_count, 2)
         self.assertEqual(os.path.basename(quicklook_file_path), "the_quicklook.png")
@@ -261,8 +277,15 @@ class TestEOProduct(EODagTestCase):
         # Setup
         product = self._dummy_downloadable_product()
         try:
-            # Download
-            product_dir_path = product.download()
+            with self.assertLogs(level="INFO") as cm:
+                # Download
+                product_dir_path = product.download()
+                self.assertIn(
+                    "Download url: %s" % product.remote_location, str(cm.output)
+                )
+                self.assertIn(
+                    "Remote location of the product is still available", str(cm.output)
+                )
 
             # Check that the mocked request was properly called.
             self.requests_http_get.assert_called_with(
@@ -288,6 +311,21 @@ class TestEOProduct(EODagTestCase):
             product_dir_path = pathlib.Path(product_dir_path)
             product_zip = product_dir_path.parent / (product_dir_path.name + ".zip")
             self.assertTrue(zipfile.is_zipfile(product_zip))
+            # check that product is not downloaded again
+            with self.assertLogs(level="INFO") as cm:
+                product.download()
+                self.assertIn(
+                    "Product already present on this platform", str(cm.output)
+                )
+            # check that product is not downloaded again even if location has not been updated
+            product.location = product.remote_location
+            with self.assertLogs(level="INFO") as cm:
+                product.download()
+                self.assertIn("Product already downloaded", str(cm.output))
+                self.assertIn(
+                    "Extraction cancelled, destination directory already exists",
+                    str(cm.output),
+                )
         finally:
             # Teardown
             self._clean_product(product_dir_path)
@@ -313,6 +351,15 @@ class TestEOProduct(EODagTestCase):
             _product_dir_path = pathlib.Path(product_dir_path)
             product_zip = _product_dir_path.parent / (_product_dir_path.name + ".zip")
             self.assertFalse(os.path.exists(product_zip))
+            # check that product is not downloaded again even if location has not been updated
+            product.location = product.remote_location
+            with self.assertLogs(level="INFO") as cm:
+                product.download()
+                self.assertIn("Product already downloaded", str(cm.output))
+                self.assertIn(
+                    "Extraction cancelled, destination directory already exists",
+                    str(cm.output),
+                )
         finally:
             # Teardown
             self._clean_product(product_dir_path)
@@ -383,3 +430,26 @@ class TestEOProduct(EODagTestCase):
         finally:
             # Teardown (all the created files are within outputs_prefix)
             shutil.rmtree(output_dir)
+
+    def test_eoproduct_download_progress_bar(self):
+        """eoproduct.download must show a progress bar"""
+        product = self._dummy_downloadable_product()
+        product.properties["id"] = 12345
+        progress_callback = ProgressCallback()
+
+        # progress bar did not start
+        self.assertEqual(progress_callback.n, 0)
+
+        # extract=true would replace bar desc with extraction status
+        product.download(
+            progress_callback=progress_callback,
+            outputs_prefix=self.output_dir,
+            extract=False,
+        )
+
+        # should be product id cast to str
+        self.assertEqual(progress_callback.desc, "12345")
+
+        # progress bar finished
+        self.assertEqual(progress_callback.n, progress_callback.total)
+        self.assertGreater(progress_callback.total, 0)

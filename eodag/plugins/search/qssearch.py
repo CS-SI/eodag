@@ -23,11 +23,11 @@ from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
 import requests
-from jsonpath_ng.ext import parse
 from lxml import etree
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
     NOT_MAPPED,
     format_metadata,
     get_metadata_path,
@@ -36,10 +36,10 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.config import load_stac_provider_config
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    cached_parse,
     dict_items_recursive_apply,
     format_dict_items,
     quote,
@@ -47,6 +47,7 @@ from eodag.utils import (
     urlencode,
 )
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -175,6 +176,96 @@ class QueryStringSearch(Search):
         self.next_page_query_obj = None
         self.next_page_merge = None
 
+    def discover_product_types(self):
+        """Fetch product types list from provider using `discover_product_types` conf
+
+        :returns: configuration dict containing fetched product types information
+        :rtype: dict
+        """
+        try:
+            fetch_url = self.config.discover_product_types["fetch_url"].format(
+                **self.config.__dict__
+            )
+            response = QueryStringSearch._request(
+                self,
+                fetch_url,
+                info_message="Fetching product types: {}".format(fetch_url),
+                exception_message="Skipping error while fetching product types for "
+                "{} {} instance:".format(self.provider, self.__class__.__name__),
+            )
+        except (RequestError, KeyError, AttributeError):
+            return
+        else:
+            try:
+                if self.config.discover_product_types["result_type"] == "json":
+                    resp_as_json = response.json()
+                    # extract results from response json
+                    result = [
+                        match.value
+                        for match in cached_parse(
+                            self.config.discover_product_types["results_entry"]
+                        ).find(resp_as_json)
+                    ]
+
+                    conf_update_dict = {
+                        "providers_config": {},
+                        "product_types_config": {},
+                    }
+
+                    for product_type_result in result:
+                        # providers_config extraction
+                        mapping_config = {
+                            k: (None, cached_parse(v))
+                            for k, v in self.config.discover_product_types[
+                                "generic_product_type_parsable_properties"
+                            ].items()
+                        }
+                        mapping_config["generic_product_type_id"] = (
+                            None,
+                            cached_parse(
+                                self.config.discover_product_types[
+                                    "generic_product_type_id"
+                                ]
+                            ),
+                        )
+
+                        extracted_mapping = properties_from_json(
+                            product_type_result, mapping_config
+                        )
+                        generic_product_type_id = extracted_mapping.pop(
+                            "generic_product_type_id"
+                        )
+                        conf_update_dict["providers_config"][
+                            generic_product_type_id
+                        ] = dict(
+                            extracted_mapping,
+                            **self.config.discover_product_types[
+                                "generic_product_type_unparsable_properties"
+                            ],
+                        )
+                        # product_types_config extraction
+                        mapping_config = {
+                            k: (None, cached_parse(v))
+                            for k, v in self.config.discover_product_types[
+                                "generic_product_type_parsable_metadata"
+                            ].items()
+                        }
+                        conf_update_dict["product_types_config"][
+                            generic_product_type_id
+                        ] = properties_from_json(product_type_result, mapping_config)
+            except KeyError as e:
+                logger.warning(
+                    "Incomplete %s discover_product_types configuration: %s",
+                    self.provider,
+                    e,
+                )
+                return
+        conf_update_dict["product_types_config"] = dict_items_recursive_apply(
+            conf_update_dict["product_types_config"],
+            lambda k, v: v if v != NOT_AVAILABLE else None,
+        )
+        return conf_update_dict
+
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface
 
@@ -266,12 +357,12 @@ class QueryStringSearch(Search):
                     if len(self.config.metadata_mapping[metadata]) == 2:
                         self.config.metadata_mapping[metadata][1] = (
                             conversion,
-                            parse(path),
+                            cached_parse(path),
                         )
                     else:
                         self.config.metadata_mapping[metadata] = (
                             conversion,
-                            parse(path),
+                            cached_parse(path),
                         )
                 except Exception:  # jsonpath_ng does not provide a proper exception
                     # Assume the mapping is to be passed as is.
@@ -535,7 +626,7 @@ class QueryStringSearch(Search):
                 else:
                     resp_as_json = response.json()
                     if next_page_url_key_path:
-                        path_parsed = parse(next_page_url_key_path)
+                        path_parsed = cached_parse(next_page_url_key_path)
                         try:
                             self.next_page_url = path_parsed.find(resp_as_json)[0].value
                             logger.debug(
@@ -544,7 +635,7 @@ class QueryStringSearch(Search):
                         except IndexError:
                             logger.debug("Next page URL could not be collected")
                     if next_page_query_obj_key_path:
-                        path_parsed = parse(next_page_query_obj_key_path)
+                        path_parsed = cached_parse(next_page_query_obj_key_path)
                         try:
                             self.next_page_query_obj = path_parsed.find(resp_as_json)[
                                 0
@@ -557,7 +648,7 @@ class QueryStringSearch(Search):
                                 "Next page Query-object could not be collected"
                             )
                     if next_page_merge_key_path:
-                        path_parsed = parse(next_page_merge_key_path)
+                        path_parsed = cached_parse(next_page_merge_key_path)
                         try:
                             self.next_page_merge = path_parsed.find(resp_as_json)[
                                 0
@@ -602,7 +693,7 @@ class QueryStringSearch(Search):
                         "metadata_path", "null"
                     ),
                 ),
-                **kwargs
+                **kwargs,
             )
             # use product_type_config as default properties
             product.properties = dict(
@@ -631,7 +722,9 @@ class QueryStringSearch(Search):
         else:
             count_results = response.json()
             if isinstance(count_results, dict):
-                path_parsed = parse(self.config.pagination["total_items_nb_key_path"])
+                path_parsed = cached_parse(
+                    self.config.pagination["total_items_nb_key_path"]
+                )
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
@@ -768,9 +861,9 @@ class QueryStringSearch(Search):
             else:
                 if info_message:
                     logger.info(info_message)
-                response = requests.get(url)
+                response = requests.get(url, timeout=HTTP_REQ_TIMEOUT, **kwargs)
                 response.raise_for_status()
-        except (requests.HTTPError, urllib_HTTPError) as err:
+        except (requests.RequestException, urllib_HTTPError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -826,9 +919,9 @@ class ODataV4Search(QueryStringSearch):
             metadata_url = self.get_metadata_search_url(entity)
             try:
                 logger.debug("Sending metadata request: %s", metadata_url)
-                response = requests.get(metadata_url)
+                response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
                 response.raise_for_status()
-            except requests.HTTPError:
+            except requests.RequestException:
                 logger.exception(
                     "Skipping error while searching for %s %s instance:",
                     self.provider,
@@ -1024,9 +1117,11 @@ class PostJsonSearch(QueryStringSearch):
             if info_message:
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
-            response = requests.post(url, json=self.query_params, **kwargs)
+            response = requests.post(
+                url, json=self.query_params, timeout=HTTP_REQ_TIMEOUT, **kwargs
+            )
             response.raise_for_status()
-        except (requests.HTTPError, urllib_HTTPError) as err:
+        except (requests.RequestException, urllib_HTTPError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
@@ -1056,33 +1151,13 @@ class StacSearch(PostJsonSearch):
     """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
 
     def __init__(self, provider, config):
-        stac_provider_config = load_stac_provider_config()
-
-        # search config set to stac defaults overriden with provider config
-        config.__dict__["pagination"] = dict(
-            stac_provider_config.get("search", {}).get("pagination", {}),
-            **config.__dict__.get("pagination", {})
-        )
-        config.__dict__["discover_metadata"] = dict(
-            stac_provider_config.get("search", {}).get("discover_metadata", {}),
-            **config.__dict__.get("discover_metadata", {})
-        )
-        config.__dict__["metadata_mapping"] = dict(
-            stac_provider_config.get("search", {}).get("metadata_mapping", {}),
-            **config.__dict__.get("metadata_mapping", {})
-        )
+        # backup results_entry overwritten by init
+        results_entry = config.results_entry
 
         super(StacSearch, self).__init__(provider, config)
-        self.config.results_entry = "features"
 
-        # TODO: fetch /collections to add dynamically product types
-        # response = self._request(
-        #     config.api_endpoint.replace("/search", "/collections"),
-        # )
-        # collections = [c["id"] for c in response.json().get("collections", {}) if "id" in c.keys()]
-        # for c in collections:
-        #     if c not in str(self.config.products):
-        #         self.config.products[c] = {"productType": c}
+        # restore results_entry overwritten by init
+        self.config.results_entry = results_entry
 
     def normalize_results(self, results, **kwargs):
         """Build EOProducts from provider results"""

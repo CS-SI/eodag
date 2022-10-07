@@ -95,6 +95,11 @@ class PluginManager(object):
                         merge_configs(plugin_providers_config, self.providers_config)
                         self.providers_config = plugin_providers_config
 
+        self.build_product_type_to_provider_config_map()
+        self._built_plugins_cache = {}
+
+    def build_product_type_to_provider_config_map(self):
+        """Build mapping conf between product types and providers"""
         self.product_type_to_provider_config_map = {}
         for provider in list(self.providers_config):
             provider_config = self.providers_config[provider]
@@ -118,7 +123,6 @@ class PluginManager(object):
                 )
                 product_type_providers.append(provider_config)
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)
-        self._built_plugins_cache = {}
 
     def get_search_plugins(self, product_type=None, provider=None):
         """Build and return all the search plugins supporting the given product type,

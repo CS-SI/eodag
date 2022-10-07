@@ -21,14 +21,18 @@ import os
 import re
 
 import requests
-from requests import HTTPError
+from requests import RequestException
 from shapely import geometry, geos, wkb, wkt
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
-from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
+from eodag.plugins.download.base import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+)
 from eodag.utils import ProgressCallback, get_geometry_from_various
-from eodag.utils.exceptions import DownloadError
+from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 try:
     from shapely.errors import TopologicalError
@@ -194,9 +198,14 @@ class EOProduct(object):
     __geo_interface__ = property(as_dict)
 
     def __repr__(self):
-        return "{}(id={}, provider={})".format(
-            self.__class__.__name__, self.properties["id"], self.provider
-        )
+        try:
+            return "{}(id={}, provider={})".format(
+                self.__class__.__name__, self.properties["id"], self.provider
+            )
+        except KeyError as e:
+            raise MisconfiguredError(
+                f"Unable to get {e.args[0]} key from EOProduct.properties"
+            )
 
     def register_downloader(self, downloader, authenticator):
         """Give to the product the information needed to download itself.
@@ -226,7 +235,7 @@ class EOProduct(object):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """Download the EO product using the provided download plugin and the
         authenticator if necessary.
@@ -282,7 +291,7 @@ class EOProduct(object):
             # update units as bar may have been previously used for extraction
             progress_callback.unit = "B"
             progress_callback.unit_scale = True
-        progress_callback.desc = self.properties.get("id", "")
+        progress_callback.desc = str(self.properties.get("id", ""))
         progress_callback.refresh()
 
         fs_path = self.downloader.download(
@@ -291,7 +300,7 @@ class EOProduct(object):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
-            **kwargs
+            **kwargs,
         )
 
         # close progress bar if needed
@@ -399,11 +408,14 @@ class EOProduct(object):
                 else None
             )
             with requests.get(
-                self.properties["quicklook"], stream=True, auth=auth
+                self.properties["quicklook"],
+                stream=True,
+                auth=auth,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             ) as stream:
                 try:
                     stream.raise_for_status()
-                except HTTPError as e:
+                except RequestException as e:
                     import traceback as tb
 
                     logger.error("Error while getting resource :\n%s", tb.format_exc())
