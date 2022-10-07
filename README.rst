@@ -33,7 +33,7 @@
 
 ..
 
-    Checkout the **new Jupyterlab extension**: `eodag-labextension <https://github.com/CS-SI/eodag-labextension>`_!
+    Checkout **EODAG Jupyterlab extension**: `eodag-labextension <https://github.com/CS-SI/eodag-labextension>`_!
     This will bring a fiendly UI to your notebook and help you search and browse for EO products using ``eodag``.
 
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
