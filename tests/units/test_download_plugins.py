@@ -194,7 +194,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
                 self.plugin.download(
                     self.product,
                     outputs_prefix=self.output_dir,
-                    wait=0.01 / 60,
+                    wait=0.1 / 60,
                     timeout=0.2 / 60,
                 )
 
