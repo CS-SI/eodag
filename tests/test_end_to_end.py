@@ -450,6 +450,10 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, wait_sec=15)
 
+    @unittest.skip(
+        "The public datasets service will not be available during the DHS Move, "
+        + "see https://confluence.ecmwf.int/x/jSKADQ"
+    )
     def test_end_to_end_search_download_ecmwf(self):
         product = self.execute_search(
             *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS
@@ -594,9 +598,9 @@ class TestEODagEndToEnd(EndToEndBase):
             ],
         )
         self.assertEqual(
-            "PDDL-1.0",
+            "1972-07-25T00:00:00.000Z",
             ext_product_types_conf[provider]["product_types_config"]["landsat-c2l1"][
-                "license"
+                "missionStartDate"
             ],
         )
         # check that all pre-configured product types are listed by provider
@@ -713,6 +717,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # Search for products that are ONLINE and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
+        self.eodag.set_preferred_provider("peps")
         search_results, _ = self.eodag.search(
             productType="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
