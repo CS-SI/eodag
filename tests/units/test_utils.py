@@ -25,6 +25,7 @@ from io import StringIO
 from tests.context import (
     DownloadedCallback,
     ProgressCallback,
+    get_bucket_name_and_prefix,
     get_timestamp,
     merge_mappings,
     path_to_uri,
@@ -162,3 +163,51 @@ class TestUtils(unittest.TestCase):
         mapping = {"keyA": True}
         merge_mappings(mapping, {"keya": "bar"})
         self.assertEqual(mapping, {"keyA": True})
+
+    def test_get_bucket_name_and_prefix(self):
+        """get_bucket_name_and_prefix must extract bucket and prefix from url"""
+        self.assertEqual(
+            get_bucket_name_and_prefix(
+                "s3://sentinel-s2-l1c/tiles/50/R/LR/2021/6/8/0/B02.jp2"
+            ),
+            ("sentinel-s2-l1c", "tiles/50/R/LR/2021/6/8/0/B02.jp2"),
+        )
+        self.assertEqual(
+            get_bucket_name_and_prefix(
+                "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/44/2022/10/S2B_20221011/B01.tif"
+            ),
+            (
+                "sentinel-cogs",
+                "sentinel-s2-l2a-cogs/44/2022/10/S2B_20221011/B01.tif",
+            ),
+        )
+        self.assertEqual(
+            get_bucket_name_and_prefix(
+                "https://obs.eu-de.otc.t-systems.com/s2-l1c-2021-q4/30/T/2021/11/14/S2A_MSIL1C_20211114T110321_N0301",
+                0,
+            ),
+            ("s2-l1c-2021-q4", "30/T/2021/11/14/S2A_MSIL1C_20211114T110321_N0301"),
+        )
+        self.assertEqual(
+            get_bucket_name_and_prefix(
+                "products/2021/1/5/S2A_MSIL1C_20210105T105441_N0209_R051_T30TYN_20210105T130129",
+            ),
+            (
+                None,
+                "products/2021/1/5/S2A_MSIL1C_20210105T105441_N0209_R051_T30TYN_20210105T130129",
+            ),
+        )
+        self.assertEqual(
+            get_bucket_name_and_prefix(
+                "bucket/path/to/product",
+                0,
+            ),
+            ("bucket", "path/to/product"),
+        )
+        self.assertEqual(
+            get_bucket_name_and_prefix(
+                "http://foo/bar/bucket/path/to/product",
+                1,
+            ),
+            ("bucket", "path/to/product"),
+        )

@@ -61,6 +61,7 @@ from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.utils import (
+    get_bucket_name_and_prefix,
     get_geometry_from_various,
     get_timestamp,
     makedirs,
