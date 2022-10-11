@@ -18,6 +18,7 @@
 
 import os
 import random
+import re
 import unittest
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
@@ -25,6 +26,7 @@ from tempfile import TemporaryDirectory
 import click
 from click.testing import CliRunner
 from faker import Faker
+from packaging import version
 from pkg_resources import resource_filename
 
 from eodag.utils import GENERIC_PRODUCT_TYPE
@@ -93,6 +95,12 @@ class TestEodagCli(unittest.TestCase):
         result = self.runner.invoke(eodag, ["-v"])
         self.assertIn("Error: Missing command.", result.output)
         self.assertNotEqual(result.exit_code, 0)
+
+    def test_eodag_cli_version(self):
+        """Calling eodag version should return the version"""
+        result = self.runner.invoke(eodag, ["version"])
+        version_str = re.search(r"eodag .* version (.+)\s*$", result.output).group(1)
+        self.assertGreater(version.parse(version_str), version.parse("2.0.0"))
 
     def test_eodag_search_without_args(self):
         """Calling eodag search subcommand without arguments should print help message and return error code"""  # noqa
