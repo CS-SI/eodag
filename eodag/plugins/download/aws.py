@@ -34,7 +34,12 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.download.base import Download
-from eodag.utils import ProgressCallback, path_to_uri, rename_subfolder, urlparse
+from eodag.utils import (
+    ProgressCallback,
+    get_bucket_name_and_prefix,
+    path_to_uri,
+    rename_subfolder,
+)
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
@@ -601,22 +606,20 @@ class AwsDownload(Download):
         """
         if not url:
             url = product.location
-        bucket, prefix = None, None
-        # Assume the bucket is encoded into the product location as a URL or given as the 'default_bucket' config
-        # param
-        scheme, netloc, path, params, query, fragment = urlparse(url)
-        if not scheme or scheme == "s3":
+
+        bucket_path_level = getattr(self.config, "bucket_path_level", None)
+
+        bucket, prefix = get_bucket_name_and_prefix(
+            url=url, bucket_path_level=bucket_path_level
+        )
+
+        if bucket is None:
             bucket = (
-                netloc
-                if netloc
-                else getattr(self.config, "products", {})
+                getattr(self.config, "products", {})
                 .get(product.product_type, {})
                 .get("default_bucket", "")
             )
-            prefix = path.strip("/")
-        elif scheme in ("http", "https", "ftp"):
-            parts = path.split("/")
-            bucket, prefix = parts[1], "/{}".format("/".join(parts[2:]))
+
         return bucket, prefix
 
     def check_manifest_file_list(self, product_path):
