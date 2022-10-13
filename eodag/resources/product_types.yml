@@ -985,7 +985,7 @@ TIGGE_CF_SFC:
   platformSerialIdentifier: TIGGE
   processingLevel:
   keywords: THORPEX,TIGGE,CF,SFC,ECMWF
-  sensorType: FORECAST
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: TIGGE ECMWF Surface Control forecast
   missionStartDate: "2003-01-01T00:00:00Z"
@@ -1000,7 +1000,7 @@ CAMS_GACF_AOT:
   platformSerialIdentifier: CAMS
   processingLevel:
   keywords: Copernicus,Atmosphere,Atmospheric,Forecast,CAMS,GACF,AOT,ADS
-  sensorType: FORECAST
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS GACF Aerosol Optical Thickness
   missionStartDate: "2003-01-01T00:00:00Z"
@@ -1014,7 +1014,7 @@ CAMS_GACF_RH:
   platformSerialIdentifier: CAMS
   processingLevel:
   keywords: Copernicus,Atmosphere,Atmospheric,Forecast,CAMS,GACF,RH,ADS
-  sensorType: FORECAST
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS GACF Relative Humidity
   missionStartDate: "2003-01-01T00:00:00Z"
@@ -1028,7 +1028,7 @@ CAMS_GACF_MR:
   platformSerialIdentifier: CAMS
   processingLevel:
   keywords: Copernicus,Atmosphere,Atmospheric,Forecast,CAMS,GACF,MR,ADS
-  sensorType: FORECAST
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS GACF Mixing Ratios
   missionStartDate: "2003-01-01T00:00:00Z"
@@ -1042,7 +1042,7 @@ CAMS_EAC4:
   platformSerialIdentifier: CAMS
   processingLevel:
   keywords: Copernicus,Atmosphere,Atmospheric,Reanalysis,CAMS,EAC4,ADS,ECMWF
-  sensorType: FORECAST
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS ECMWF Atmospheric Composition Reanalysis 4
   missionStartDate: "2003-01-01T00:00:00Z"
@@ -1058,7 +1058,7 @@ ERA5_SL:
   platformSerialIdentifier: ERA5
   processingLevel:
   keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels
-  sensorType: FORECAST
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: ERA5 Hourly data on Single Levels
   missionStartDate: "1959-01-01T00:00:00Z"
