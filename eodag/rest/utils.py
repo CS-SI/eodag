@@ -381,13 +381,15 @@ def get_criterias_from_metadata_mapping(metadata_mapping, arguments):
     return criterias
 
 
-def search_products(product_type, arguments):
+def search_products(product_type, arguments, stac_formatted=True):
     """Returns product search results
 
     :param product_type: The product type criteria
     :type product_type: str
     :param arguments: Request args
     :type arguments: dict
+    :param stac_formatted: Whether input is STAC-formatted or not
+    :type stac_formatted: bool
     :returns: A search result
     :rtype serialized GeoJSON response"""
 
@@ -409,13 +411,16 @@ def search_products(product_type, arguments):
             "geom": geom,
         }
 
-        stac_provider_metadata_mapping = stac_provider_config.get("search", {}).get(
-            "metadata_mapping", {}
-        )
-        extra_criterias = get_criterias_from_metadata_mapping(
-            stac_provider_metadata_mapping, arguments
-        )
-        criterias.update(extra_criterias)
+        if stac_formatted:
+            stac_provider_metadata_mapping = stac_provider_config.get("search", {}).get(
+                "metadata_mapping", {}
+            )
+            extra_criterias = get_criterias_from_metadata_mapping(
+                stac_provider_metadata_mapping, arguments
+            )
+            criterias.update(extra_criterias)
+        else:
+            criterias.update(arguments)
 
         # We remove potential None values to use the default values of the search method
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)
