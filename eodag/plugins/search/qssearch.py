@@ -239,9 +239,9 @@ class QueryStringSearch(Search):
                             generic_product_type_id
                         ] = dict(
                             extracted_mapping,
-                            **self.config.discover_product_types[
-                                "generic_product_type_unparsable_properties"
-                            ],
+                            **self.config.discover_product_types.get(
+                                "generic_product_type_unparsable_properties", {}
+                            ),
                         )
                         # product_types_config extraction
                         mapping_config = {
