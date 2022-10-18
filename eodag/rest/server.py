@@ -30,7 +30,7 @@ from flasgger import Swagger
 from flask import abort, jsonify, make_response, request, send_file
 
 from eodag.config import load_stac_api_config
-from eodag.rest.utils import (  # get_stac_landing_page,; get_stac_product_types_catalog,; search_products,
+from eodag.rest.utils import (
     download_stac_item_by_id,
     get_detailled_collections_list,
     get_stac_catalogs,
@@ -39,7 +39,6 @@ from eodag.rest.utils import (  # get_stac_landing_page,; get_stac_product_types
     get_stac_conformance,
     get_stac_extension_oseo,
     get_stac_item_by_id,
-    load_stac_config,
     search_stac_items,
 )
 from eodag.utils.exceptions import (
@@ -61,10 +60,7 @@ metadata_str = distribution.get_metadata(distribution.PKG_INFO)
 metadata_obj = dist.DistributionMetadata()
 metadata_obj.read_pkg_file(io.StringIO(metadata_str))
 
-# confs from resources yaml files
-stac_config = load_stac_config()
-
-stac_api_config = {"info": {}}
+# conf from resources/stac_api.yml
 stac_api_config = load_stac_api_config()
 root_catalog = get_stac_catalogs(url="", fetch_providers=False)
 stac_api_version = stac_api_config["info"]["version"]
@@ -98,7 +94,24 @@ stac_api_config["specs"] = [
 stac_api_config["static_url_path"] = "/service-static"
 stac_api_config["specs_route"] = "/service-doc/"
 stac_api_config.pop("servers", None)
-swagger = Swagger(app, config=stac_api_config, merge=True)
+
+
+def run_swagger(app=None, config=None, merge=True, **kwargs):
+    """Run `flasgger.Swagger`.
+    Needs to be run once after `eodag.rest.server` module import.
+
+    :param app: flask application that will run flasgger
+    :type app: :class:`~flask.Flask`
+    :param config: flasgger configuration
+    :type config: dict
+    :param merge: merge config with flasgger defaults
+    :type merge: bool
+    :param kwargs: keyword arguments passed to `flasgger.Swagger` constructor
+    :type kwargs: Any
+    :returns: running Swagger object
+    :rtype: :class:`~flasgger.Swagger`
+    """
+    return Swagger(app=app, config=config, merge=True, **kwargs)
 
 
 def cross_origin(request_handler):
