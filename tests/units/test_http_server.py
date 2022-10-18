@@ -47,6 +47,13 @@ class RequestTestCase(unittest.TestCase):
 
         cls.eodag_http_server = eodag_http_server
 
+        # run swagger / service-doc
+        eodag_http_server.run_swagger(
+            app=eodag_http_server.app,
+            config=eodag_http_server.stac_api_config,
+            merge=True,
+        )
+
         # backup os.environ as it will be modified by tests
         cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
         cls.eodag_env_backup = {
