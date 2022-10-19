@@ -1,6 +1,18 @@
 Release history
 ---------------
 
+2.6.1 (2022-10-19)
+++++++++++++++++++
+
+* Swagger UI now needs to be manually run when using python API (:pull:`529`)
+* Removed `cloudCover` restriction in product types discovery (:pull:`530`)
+* Some `sensorType` values changed in product types settings to align to `OpenSearch extension for Earth Observation\
+  <http://docs.opengeospatial.org/is/13-026r9/13-026r9.html>`_ (:pull:`528`)
+* Fixed CSS glitch in `online documentation parameters tables\
+  <https://eodag.rtfd.io/en/stable/add_provider.html#parameters-mapping>`_ (:pull:`527`)
+* Fixed S3 bucket extraction (:pull:`524`)
+* Various minor fixes and improvements (:pull:`522`)(:pull:`523`)(:pull:`525`)(:pull:`526`)
+
 2.6.0 (2022-10-07)
 ++++++++++++++++++
 
