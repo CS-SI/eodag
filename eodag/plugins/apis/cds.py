@@ -166,14 +166,14 @@ class CdsApi(Download, Api, QueryStringSearch):
 
         if eodag_verbosity is None or eodag_verbosity == 1:
             client.logger.setLevel(logging.WARNING)
-        if eodag_verbosity == 2:
+        elif eodag_verbosity == 2:
             client.logger.setLevel(logging.INFO)
         elif eodag_verbosity == 3:
             client.logger.setLevel(logging.DEBUG)
         else:
             client.logger.setLevel(logging.WARNING)
 
-        if eodag_logger.hasHandlers():
+        if len(eodag_logger.handlers) > 0:
             client.logger.addHandler(eodag_logger.handlers[0])
 
         return client

@@ -342,5 +342,76 @@ class TestStacUtils(unittest.TestCase):
         self.rest_utils.search_products("S2_MSI_L1C", {})
         self.rest_utils.search_products("S2_MSI_L1C", {"unserialized": "true"})
 
+        # STAC formatted
+        self.rest_utils.search_products(
+            "S2_MSI_L1C",
+            {
+                "intersects": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [0.25, 43.2],
+                            [0.25, 43.9],
+                            [2.8, 43.9],
+                            [2.8, 43.2],
+                            [0.25, 43.2],
+                        ]
+                    ],
+                },
+                "query": {"eo:cloud_cover": {"lte": 50}},
+                "dtstart": "2020-02-01T00:00:00.000Z",
+                "dtend": "2021-02-20T00:00:00.000Z",
+                "product_type": "S2_MSI_L1C",
+                "unserialized": "true",
+            },
+        )
+        call_args, call_kwargs = mock_do_search.call_args
+        self.assertDictContainsSubset(
+            {
+                "productType": "S2_MSI_L1C",
+                "cloudCover": 50,
+                "startTimeFromAscendingNode": "2020-02-01T00:00:00",
+                "completionTimeFromAscendingNode": "2021-02-20T00:00:00",
+            },
+            call_kwargs,
+        )
+        self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
+
+        # Not STAC formatted
+        self.rest_utils.search_products(
+            "S2_MSI_L1C",
+            {
+                "geom": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [0.25, 43.2],
+                            [0.25, 43.9],
+                            [2.8, 43.9],
+                            [2.8, 43.2],
+                            [0.25, 43.2],
+                        ]
+                    ],
+                },
+                "cloudCover": 50,
+                "dtstart": "2020-02-01T00:00:00.000Z",
+                "dtend": "2021-02-20T00:00:00.000Z",
+                "product_type": "S2_MSI_L1C",
+                "unserialized": "true",
+            },
+            stac_formatted=False,
+        )
+        call_args, call_kwargs = mock_do_search.call_args
+        self.assertDictContainsSubset(
+            {
+                "productType": "S2_MSI_L1C",
+                "cloudCover": 50,
+                "startTimeFromAscendingNode": "2020-02-01T00:00:00",
+                "completionTimeFromAscendingNode": "2021-02-20T00:00:00",
+            },
+            call_kwargs,
+        )
+        self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
+
     def test_search_stac_items(self):
         pass  # TODO

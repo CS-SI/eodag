@@ -679,7 +679,10 @@ def serve_rest(ctx, daemon, world, port, config, locs, debug):
     if locs:
         os.environ["EODAG_LOCS_CFG_FILE"] = locs
 
-    from eodag.rest.server import app
+    from eodag.rest.server import app, run_swagger, stac_api_config
+
+    # run swagger / service-doc
+    run_swagger(app=app, config=stac_api_config)
 
     bind_host = "127.0.0.1"
     if world:

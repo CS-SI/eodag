@@ -1019,10 +1019,6 @@
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
         collection: '$.id'
-      generic_product_type_unparsable_properties:
-        # cloud cover search disabled for unknown product_type
-        metadata_mapping:
-          cloudCover: '$.null'
       generic_product_type_parsable_metadata:
         title: '$.displayName'
         abstract: '$.null'
@@ -1261,7 +1257,7 @@
   url: https://mundiwebservices.com/
   search: !plugin
     type: QueryStringSearch
-    api_endpoint: 'https://mundiwebservices.com/acdc/catalog/proxy/search/{collection}/opensearch'
+    api_endpoint: 'https://{collection}.browse.catalog.mundiwebservices.com/opensearch'
     need_auth: false
     result_type: 'xml'
     results_entry: '//ns:entry'
@@ -1390,6 +1386,7 @@
     base_uri: 'https://mundiwebservices.com/dp'
     extract: true
     auth_error_code: 401
+    bucket_path_level: 0
   auth: !plugin
     type: HTTPHeaderAuth
     headers:

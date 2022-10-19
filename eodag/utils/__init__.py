@@ -1028,3 +1028,33 @@ def cached_parse(str_to_parse):
     :rtype: :class:`jsonpath_ng.JSONPath`
     """
     return parse(str_to_parse)
+
+
+def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
+    """Extract bucket name and prefix from URL
+
+    :param url: (optional) URL to use as product.location
+    :type url: str
+    :param bucket_path_level: (optional) bucket location index in path.split('/')
+    :type bucket_path_level: int
+    :returns: bucket_name and prefix as str
+    :rtype: tuple
+    """
+    bucket, prefix = None, None
+
+    scheme, netloc, path, params, query, fragment = urlparse(url)
+    subdomain = netloc.split(".")[0]
+    path = path.strip("/")
+
+    if scheme and bucket_path_level is None:
+        bucket = subdomain
+        prefix = path
+    elif not scheme and bucket_path_level is None:
+        prefix = path
+    elif bucket_path_level is not None:
+        parts = path.split("/")
+        bucket, prefix = parts[bucket_path_level], "/".join(
+            parts[(bucket_path_level + 1) :]
+        )
+
+    return bucket, prefix

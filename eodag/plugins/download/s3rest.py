@@ -27,10 +27,15 @@ import requests
 from requests import RequestException
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS
-from eodag.plugins.download.aws import AwsDownload
-from eodag.plugins.download.base import DEFAULT_STREAM_REQUESTS_TIMEOUT
+from eodag.plugins.download.base import DEFAULT_STREAM_REQUESTS_TIMEOUT, Download
 from eodag.plugins.download.http import HTTPDownload
-from eodag.utils import ProgressCallback, path_to_uri, unquote, urljoin
+from eodag.utils import (
+    ProgressCallback,
+    get_bucket_name_and_prefix,
+    path_to_uri,
+    unquote,
+    urljoin,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -42,7 +47,7 @@ from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 logger = logging.getLogger("eodag.plugins.download.s3rest")
 
 
-class S3RestDownload(AwsDownload):
+class S3RestDownload(Download):
     """Http download on S3-like object storage location
     for example using Mundi REST API (free account)
     https://mundiwebservices.com/keystoneapi/uploads/documents/CWS-DATA-MUT-087-EN-Mundi_Download_v1.1.pdf#page=13
@@ -78,7 +83,9 @@ class S3RestDownload(AwsDownload):
             progress_callback = ProgressCallback(disable=True)
 
         # get bucket urls
-        bucket_name, prefix = self.get_bucket_name_and_prefix(product)
+        bucket_name, prefix = get_bucket_name_and_prefix(
+            url=product.location, bucket_path_level=self.config.bucket_path_level
+        )
 
         if (
             bucket_name is None

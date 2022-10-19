@@ -9,7 +9,6 @@ import re
 from collections import namedtuple
 
 import dateutil.parser
-import markdown
 from dateutil import tz
 from shapely.geometry import Polygon, shape
 
@@ -22,7 +21,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
-from eodag.utils import cached_parse, dict_items_recursive_apply
+from eodag.utils import _deprecated, cached_parse, dict_items_recursive_apply
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -43,6 +42,10 @@ stac_provider_config = load_stac_provider_config()
 STAC_QUERY_PATTERN = "query.*.*"
 
 
+@_deprecated(
+    reason="Function internally used by get_home_page_content, also deprecated",
+    version="2.6.1",
+)
 def format_product_types(product_types):
     """Format product_types
 
@@ -71,6 +74,7 @@ def get_detailled_collections_list(provider=None, fetch_providers=True):
     )
 
 
+@_deprecated(reason="No more needed with STAC API + Swagger", version="2.6.1")
 def get_home_page_content(base_url, ipp=None):
     """Compute eodag service home page content
 
@@ -79,18 +83,18 @@ def get_home_page_content(base_url, ipp=None):
     :param ipp: (optional) Items per page number
     :type ipp: int
     """
-
-    with open(os.path.join(os.path.dirname(__file__), "description.md"), "rt") as fp:
-        content = fp.read()
-    content = content.format(
-        base_url=base_url,
-        product_types=format_product_types(eodag_api.list_product_types()),
-        ipp=ipp or DEFAULT_ITEMS_PER_PAGE,
-    )
-    content = markdown.markdown(content)
+    base_url = base_url.rstrip("/") + "/"
+    content = f"""<h1>EODAG Server</h1><br />
+    <a href='{base_url}'>root</a><br />
+    <a href='{base_url}service-doc'>service-doc</a><br />
+    """
     return content
 
 
+@_deprecated(
+    reason="Used to format output from deprecated function get_home_page_content",
+    version="2.6.1",
+)
 def get_templates_path():
     """Returns Jinja templates path"""
     return os.path.join(os.path.dirname(__file__), "templates")
@@ -381,13 +385,15 @@ def get_criterias_from_metadata_mapping(metadata_mapping, arguments):
     return criterias
 
 
-def search_products(product_type, arguments):
+def search_products(product_type, arguments, stac_formatted=True):
     """Returns product search results
 
     :param product_type: The product type criteria
     :type product_type: str
     :param arguments: Request args
     :type arguments: dict
+    :param stac_formatted: Whether input is STAC-formatted or not
+    :type stac_formatted: bool
     :returns: A search result
     :rtype serialized GeoJSON response"""
 
@@ -409,13 +415,16 @@ def search_products(product_type, arguments):
             "geom": geom,
         }
 
-        stac_provider_metadata_mapping = stac_provider_config.get("search", {}).get(
-            "metadata_mapping", {}
-        )
-        extra_criterias = get_criterias_from_metadata_mapping(
-            stac_provider_metadata_mapping, arguments
-        )
-        criterias.update(extra_criterias)
+        if stac_formatted:
+            stac_provider_metadata_mapping = stac_provider_config.get("search", {}).get(
+                "metadata_mapping", {}
+            )
+            extra_criterias = get_criterias_from_metadata_mapping(
+                stac_provider_metadata_mapping, arguments
+            )
+            criterias.update(extra_criterias)
+        else:
+            criterias.update(arguments)
 
         # We remove potential None values to use the default values of the search method
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)

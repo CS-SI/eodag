@@ -2,10 +2,11 @@
     color: green;
 }
 table.params {
-    table-layout: fixed;
-    width: 100%;
-    overflow: auto;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
     height: 500px;
+    font-size: smaller;
 }
 table.params td{
     padding-top: 0;
