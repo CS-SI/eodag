@@ -21,6 +21,7 @@ import random
 import re
 import unittest
 from contextlib import contextmanager
+from datetime import datetime
 from tempfile import TemporaryDirectory
 
 import click
@@ -400,6 +401,180 @@ class TestEodagCli(unittest.TestCase):
                 locations=None,
             )
 
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_query(self, dag):
+        """Calling eodag search with --query argument"""
+        with self.user_conf() as conf_file:
+            product_type = "whatever"
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    product_type,
+                    "--query",
+                    "foo=1&bar=2&bar=3",
+                ],
+            )
+            api_obj = dag.return_value
+            api_obj.search.assert_called_once_with(
+                page=1,
+                items_per_page=20,
+                geometry=None,
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None,
+                cloudCover=None,
+                productType=product_type,
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                id=None,
+                foo="1",
+                bar=["2", "3"],
+                locations=None,
+            )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_locations(self, dag):
+        """Calling eodag search with --locations argument"""
+        with self.user_conf() as conf_file:
+            product_type = "whatever"
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    product_type,
+                    "--locations",
+                    "country=FRA&continent=Africa",
+                ],
+            )
+            api_obj = dag.return_value
+            api_obj.search.assert_called_once_with(
+                page=1,
+                items_per_page=20,
+                geometry=None,
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None,
+                cloudCover=None,
+                productType=product_type,
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                id=None,
+                locations={"country": "FRA", "continent": "Africa"},
+            )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_start_date(self, dag):
+        """Calling eodag search with --start argument"""
+        with self.user_conf() as conf_file:
+            product_type = "whatever"
+            start_date_str = "2022-01-01"
+            start_date_datetime = datetime.strptime(
+                start_date_str, "%Y-%m-%d"
+            ).isoformat()
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    product_type,
+                    "--start",
+                    start_date_str,
+                ],
+            )
+            api_obj = dag.return_value
+            api_obj.search.assert_called_once_with(
+                page=1,
+                items_per_page=20,
+                geometry=None,
+                startTimeFromAscendingNode=start_date_datetime,
+                completionTimeFromAscendingNode=None,
+                cloudCover=None,
+                productType=product_type,
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                id=None,
+                locations=None,
+            )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_stop_date(self, dag):
+        """Calling eodag search with --end argument"""
+        with self.user_conf() as conf_file:
+            product_type = "whatever"
+            stop_date_str = "2022-01-01"
+            stop_date_datetime = datetime.strptime(
+                stop_date_str, "%Y-%m-%d"
+            ).isoformat()
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "-p",
+                    product_type,
+                    "--end",
+                    stop_date_str,
+                ],
+            )
+            api_obj = dag.return_value
+            api_obj.search.assert_called_once_with(
+                page=1,
+                items_per_page=20,
+                geometry=None,
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=stop_date_datetime,
+                cloudCover=None,
+                productType=product_type,
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                id=None,
+                locations=None,
+            )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_locs(self, dag):
+        """Calling eodag search with --locs argument"""
+        with self.user_conf() as conf_file:
+            locs_file = os.path.join(TEST_RESOURCES_PATH, "file_locations_override.yml")
+
+            product_type = "whatever"
+            self.runner.invoke(
+                eodag,
+                [
+                    "search",
+                    "--conf",
+                    conf_file,
+                    "--locs",
+                    locs_file,
+                    "-p",
+                    product_type,
+                ],
+            )
+
+            dag.assert_called_once_with(
+                user_conf_file_path=conf_file, locations_conf_path=locs_file
+            )
+
     def test_eodag_list_product_type_ok(self):
         """Calling eodag list without provider should return all supported product types"""
         all_supported_product_types = [
@@ -454,6 +629,46 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         mock_fetch_product_types_list.assert_called_with(mock.ANY, provider="peps")
         self.assertEqual(mock_fetch_product_types_list.call_count, 2)
+
+    @mock.patch("eodag.cli.EODataAccessGateway.list_product_types", autospec=True)
+    @mock.patch("eodag.cli.EODataAccessGateway.guess_product_type", autospec=True)
+    def test_eodag_guess_product_type_ok(
+        self, mock_guess_product_type, mock_list_product_types
+    ):
+        """Calling eodag list with one or several valid product type feature(s) should return all supported product types with this (these) feature(s) among the ones of its provider and with or without fetching provider according to the command"""  # noqa
+        provider = "peps"
+        mock_guess_product_type.return_value = ["foo", "bar"]
+        mock_list_product_types.return_value = [
+            {"ID": "foo", "title": "this is foo"},
+            {"ID": "bar", "title": "this is bar"},
+            {"ID": "baz", "title": "this is baz"},
+        ]
+
+        result = self.runner.invoke(
+            eodag,
+            ["list", "-p", provider, "--platformSerialIdentifier", "S2A", "--no-fetch"],
+        )
+        self.assertEqual(result.exit_code, 0)
+
+        self.assertIn("foo", result.output)
+        self.assertIn("bar", result.output)
+        self.assertNotIn("baz", result.output)
+
+        mock_list_product_types.assert_called_with(
+            mock.ANY, provider=provider, fetch_providers=False
+        )
+
+    def test_eodag_guess_product_type_ko(self):
+        """Calling eodag list with invalid product type feature(s) should print a 'no matching' type message and return error code"""  # noqa
+        result = self.runner.invoke(
+            eodag,
+            ["list", "--platformSerialIdentifier", "fake_identifier", "--no-fetch"],
+        )
+        self.assertIn(
+            "No product type match the following criteria you provided:\n",
+            result.output,
+        )
+        self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch(
         "eodag.cli.EODataAccessGateway.discover_product_types",
@@ -550,6 +765,23 @@ class TestEodagCli(unittest.TestCase):
             "A file may have been downloaded but we cannot locate it\n", result.output
         )
 
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_download_ko(self, dag):
+        """Calling eodag download with all args well formed fails"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.download_all.return_value = []
+        result = self.runner.invoke(
+            eodag,
+            ["download", "--search-results", search_results_path, "-f", config_path],
+        )
+        self.assertEqual(
+            "Error during download, a file may have been downloaded but we cannot locate it\n",
+            result.output,
+        )
+
     def test_eodag_download_missingcredentials(self):
         """Calling eodag download with missing credentials must raise MisconfiguredError"""
         search_results_path = os.path.join(
@@ -594,3 +826,50 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertIsInstance(result.exception, AuthenticationError)
         self.assertEqual(download.call_count, 1)
+
+    @mock.patch("eodag.api.product._product.EOProduct.get_quicklook", autospec=True)
+    def test_eodag_download_quicklooks(self, mock_get_quicklook):
+        """Calling eodag download with --quicklooks argument"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        mock_get_quicklook.return_value = "/fake_path"
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--quicklooks",
+            ],
+        )
+        self.assertIn(
+            "Flag 'quicklooks' specified, downloading only quicklooks of products\n",
+            result.output,
+        )
+
+        # 2 quicklooks are called in search_results_path
+        self.assertEqual(mock_get_quicklook.call_count, 2)
+        self.assertIn("Downloaded /fake_path\n", result.output)
+
+        # Testing the case when no quicklook path is returned
+        mock_get_quicklook.return_value = None
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--quicklooks",
+            ],
+        )
+        self.assertIn(
+            "A quicklook may have been downloaded but we cannot locate it. "
+            "Increase verbosity for more details: `eodag -v download [OPTIONS]`",
+            result.output,
+        )

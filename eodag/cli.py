@@ -674,8 +674,6 @@ def serve_rest(ctx, daemon, world, port, config, locs, debug):
     if config:
         os.environ["EODAG_CFG_FILE"] = config
 
-    if config:
-        os.environ["EODAG_CFG_FILE"] = config
     if locs:
         os.environ["EODAG_LOCS_CFG_FILE"] = locs
 
