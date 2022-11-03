@@ -764,7 +764,7 @@ class EODataAccessGateway(object):
 
         :param kwargs: A set of search parameters as keywords arguments
         :returns: The best match for the given parameters
-        :rtype: str
+        :rtype: list[str]
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
         """
         supported_params = {
