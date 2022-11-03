@@ -1708,7 +1708,7 @@ class EODataAccessGateway(object):
         If the metadata mapping for ``downloadLink`` is set to something that can be
         interpreted as a link on a
         local filesystem, the download is skipped (by now, only a link starting
-        with ``file://`` is supported). Therefore, any user that knows how to extract
+        with ``file:/`` is supported). Therefore, any user that knows how to extract
         product location from product metadata on a provider can override the
         ``downloadLink`` metadata mapping in the right way. For example, using the
         environment variable:
@@ -1742,7 +1742,7 @@ class EODataAccessGateway(object):
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
-        if product.location.startswith("file://"):
+        if product.location.startswith("file:/"):
             logger.info("Local product detected. Download skipped")
             return uri_to_path(product.location)
         if product.downloader is None:

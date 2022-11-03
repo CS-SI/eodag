@@ -1498,3 +1498,34 @@ class TestCoreSearch(TestCoreBase):
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(productType="S2_MSI_L1C", items_per_page=7)
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
+
+
+class TestCoreDownload(TestCoreBase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreDownload, cls).setUpClass()
+        cls.dag = EODataAccessGateway()
+
+    def test_download_local_product(self):
+        """download must skip local products"""
+        product = EOProduct("dummy", dict(geometry="POINT (0 0)", id="dummy_product"))
+
+        product.location = "file:///some/path"
+        with self.assertLogs(level="INFO") as cm:
+            self.dag.download(product)
+            self.assertIn("Local product detected. Download skipped", str(cm.output))
+
+        product.location = "file:/some/path"
+        with self.assertLogs(level="INFO") as cm:
+            self.dag.download(product)
+            self.assertIn("Local product detected. Download skipped", str(cm.output))
+
+        product.location = "file:///c:/some/path"
+        with self.assertLogs(level="INFO") as cm:
+            self.dag.download(product)
+            self.assertIn("Local product detected. Download skipped", str(cm.output))
+
+        product.location = "file:/c:/some/path"
+        with self.assertLogs(level="INFO") as cm:
+            self.dag.download(product)
+            self.assertIn("Local product detected. Download skipped", str(cm.output))
