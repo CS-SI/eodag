@@ -158,6 +158,86 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isfile(path))
 
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_filename_from_href(
+        self, mock_requests_get, mock_requests_head
+    ):
+        """HTTPDownload.download() must create an outputfile"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/something?foo=bar#baz"}
+        }
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "content-disposition": ""
+        }
+        mock_requests_head.return_value.headers = {"content-disposition": ""}
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
+        self.assertTrue(
+            os.path.isfile(os.path.join(self.output_dir, "dummy_product", "something"))
+        )
+
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_filename_from_get(
+        self, mock_requests_get, mock_requests_head
+    ):
+        """HTTPDownload.download() must create an outputfile"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets = {"foo": {"href": "http://somewhere/something"}}
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "content-disposition": '; filename = "somethingelse"'
+        }
+        mock_requests_head.return_value.headers = {"content-disposition": ""}
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(self.output_dir, "dummy_product", "somethingelse")
+            )
+        )
+
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_filename_from_head(
+        self, mock_requests_get, mock_requests_head
+    ):
+        """HTTPDownload.download() must create an outputfile"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets = {"foo": {"href": "http://somewhere/something"}}
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "content-disposition": '; filename = "somethingelse"'
+        }
+        mock_requests_head.return_value.headers = {
+            "content-disposition": '; filename = "anotherthing"'
+        }
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(self.output_dir, "dummy_product", "anotherthing")
+            )
+        )
+
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
     def setUp(self):
