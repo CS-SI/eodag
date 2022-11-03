@@ -254,10 +254,6 @@ class EODataAccessGateway(object):
                     }
                 )
             ix_writer.commit()
-        else:
-            if self._product_types_index is None:
-                logger.debug("Opening product types index in %s", index_dir)
-                self._product_types_index = open_dir(index_dir)
 
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
