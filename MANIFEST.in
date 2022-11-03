@@ -1,5 +1,4 @@
 include README.rst LICENSE NOTICE requirements.txt
-include eodag/rest/description.md
 include eodag/rest/server.wsgi
 recursive-include docs *.rst
 graft eodag/resources
