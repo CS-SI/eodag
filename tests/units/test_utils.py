@@ -62,10 +62,14 @@ class TestUtils(unittest.TestCase):
         if sys.platform == "win32":
             expected_path = r"C:\tmp\file.txt"
             tested_uri = r"file:///C:/tmp/file.txt"
+            other_tested_uri = r"file:/C:/tmp/file.txt"
         else:
             expected_path = "/tmp/file.txt"
             tested_uri = "file:///tmp/file.txt"
+            other_tested_uri = "file:/tmp/file.txt"
         actual_path = uri_to_path(tested_uri)
+        self.assertEqual(actual_path, expected_path)
+        actual_path = uri_to_path(other_tested_uri)
         self.assertEqual(actual_path, expected_path)
         with self.assertRaises(ValueError):
             uri_to_path("not_a_uri")
