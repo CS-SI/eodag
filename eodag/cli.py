@@ -811,14 +811,6 @@ def deploy_wsgi_app(
         )
     )
     shutil.copy(os.path.join(webapp_src_path, "server.wsgi"), wsgi_path)
-    shutil.copy(
-        os.path.join(webapp_src_path, "description.md"),
-        os.path.join(webapp_dst_path, "description.md"),
-    )
-    shutil.copytree(
-        os.path.join(webapp_src_path, "templates"),
-        os.path.join(webapp_dst_path, "templates"),
-    )
 
     click.echo(
         "Overriding eodag HTTP server config with values: {}".format(server_config)
