@@ -24,12 +24,14 @@ import shutil
 import unittest
 import uuid
 from copy import deepcopy
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from pkg_resources import resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
+from eodag import __version__ as eodag_version
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -305,6 +307,64 @@ class TestCore(TestCoreBase):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
         autospec=True,
+    )
+    def test_update_product_types_list_with_api_plugin(
+        self, mock_plugin_discover_product_types
+    ):
+        """Core api.update_product_types_list with the api plugin must update eodag product types list"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
+            ext_product_types_conf = json.load(f)
+
+        # we keep the existing ext-conf to use it for a provider with an api plugin
+        ext_product_types_conf["ecmwf"] = ext_product_types_conf.pop("astraea_eod")
+
+        self.assertNotIn("foo", self.dag.providers_config["ecmwf"].products)
+        self.assertNotIn("bar", self.dag.providers_config["ecmwf"].products)
+        self.assertNotIn("foo", self.dag.product_types_config)
+        self.assertNotIn("bar", self.dag.product_types_config)
+
+        # ecmwf must have discover_product_types attribute to allow the launch of update_product_types_list
+        self.dag.update_providers_config(
+            """
+            ecmwf:
+                api:
+                    discover_product_types:
+                        fetch_url: 'http://new-endpoint'
+                    need_auth: False
+            """
+        )
+
+        self.dag.update_product_types_list(ext_product_types_conf)
+
+        self.assertIn("foo", self.dag.providers_config["ecmwf"].products)
+        self.assertIn("bar", self.dag.providers_config["ecmwf"].products)
+        self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
+        self.assertEqual(
+            self.dag.product_types_config["bar"]["title"], "Bar collection"
+        )
+
+    def test_update_product_types_list_without_plugin(self):
+        """Core api.update_product_types_list without search and api plugin do nothing"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
+            ext_product_types_conf = json.load(f)
+
+        self.assertNotIn("foo", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("foo", self.dag.product_types_config)
+        self.assertNotIn("bar", self.dag.product_types_config)
+
+        delattr(self.dag.providers_config["astraea_eod"], "search")
+
+        self.dag.update_product_types_list(ext_product_types_conf)
+
+        self.assertNotIn("foo", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("foo", self.dag.product_types_config)
+        self.assertNotIn("bar", self.dag.product_types_config)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
         return_value={
             "providers_config": {"foo": {"productType": "foo"}},
             "product_types_config": {"foo": {"title": "Foo collection"}},
@@ -314,16 +374,56 @@ class TestCore(TestCoreBase):
         """Core api must fetch providers for product types"""
         ext_product_types_conf = self.dag.discover_product_types(provider="astraea_eod")
         self.assertEqual(
-            ext_product_types_conf["astraea_eod"]["product_types_config"]["foo"][
-                "title"
+            ext_product_types_conf["astraea_eod"]["providers_config"]["foo"][
+                "productType"
             ],
-            "Foo collection",
+            "foo",
         )
         self.assertEqual(
             ext_product_types_conf["astraea_eod"]["product_types_config"]["foo"][
                 "title"
             ],
             "Foo collection",
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+        return_value={
+            "providers_config": {"foo": {"productType": "foo"}},
+            "product_types_config": {"foo": {"title": "Foo collection"}},
+        },
+    )
+    def test_discover_product_types_with_api_plugin(
+        self, mock_plugin_discover_product_types
+    ):
+        """Core api must fetch providers with api plugin for product types"""
+        self.dag.update_providers_config(
+            """
+            ecmwf:
+                api:
+                    discover_product_types:
+                        fetch_url: 'http://new-endpoint'
+                    need_auth: False
+            """
+        )
+        ext_product_types_conf = self.dag.discover_product_types(provider="ecmwf")
+        self.assertEqual(
+            ext_product_types_conf["ecmwf"]["providers_config"]["foo"]["productType"],
+            "foo",
+        )
+        self.assertEqual(
+            ext_product_types_conf["ecmwf"]["product_types_config"]["foo"]["title"],
+            "Foo collection",
+        )
+
+    def test_discover_product_types_without_plugin(self):
+        """Core api must not fetch providers without search and api plugins"""
+        delattr(self.dag.providers_config["astraea_eod"], "search")
+        ext_product_types_conf = self.dag.discover_product_types(provider="astraea_eod")
+        self.assertEqual(
+            ext_product_types_conf,
+            None,
         )
 
     @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
@@ -416,6 +516,27 @@ class TestCore(TestCoreBase):
         # discover_product_types() should have been called 2 more times
         # (once per dynamically configured provider)
         self.assertEqual(mock_discover_product_types.call_count, 3)
+
+    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+    )
+    def test_fetch_product_types_list_without_ext_conf(
+        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    ):
+        """Core api must not fetch product types list and must discover product types without ext-conf"""
+        # check that no provider has already been fetched
+        for provider_config in self.dag.providers_config.values():
+            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+
+        # check that without an ext-conf, discover_product_types() is launched for it
+        mock_get_ext_product_types_conf.return_value = {}
+        self.dag.fetch_product_types_list()
+        self.assertEqual(mock_discover_product_types.call_count, 1)
+
+        # check that without an ext-conf, no provider has been fetched
+        for provider_config in self.dag.providers_config.values():
+            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
 
     @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
     @mock.patch(
@@ -563,6 +684,55 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
 
+    def test_prune_providers_list_for_search_without_auth(self):
+        """Providers needing auth for search but without auth plugin must be pruned on init"""
+        empty_conf_file = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+        try:
+            # auth needed for search with need_auth but without auth plugin
+            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            delattr(dag.providers_config["peps"], "auth")
+            assert "peps" in dag.available_providers()
+            assert getattr(dag.providers_config["peps"].search, "need_auth", False)
+            assert not hasattr(dag.providers_config["peps"], "auth")
+
+            with self.assertLogs(level="INFO") as cm:
+                dag._prune_providers_list()
+                self.assertNotIn("peps", dag.providers_config.keys())
+                self.assertIn(
+                    "peps: provider needing auth for search has been pruned because no auth plugin could be found",
+                    str(cm.output),
+                )
+
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
+
+    def test_prune_providers_list_without_api_or_search_plugin(self):
+        """Providers without api or search plugin must be pruned on init"""
+        empty_conf_file = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+        delattr(dag.providers_config["peps"], "search")
+        assert "peps" in dag.available_providers()
+        assert not hasattr(dag.providers_config["peps"], "api")
+        assert not hasattr(dag.providers_config["peps"], "search")
+
+        assert "peps" in dag.available_providers()
+
+        with self.assertLogs(level="INFO") as cm:
+            dag._prune_providers_list()
+            self.assertNotIn("peps", dag.providers_config.keys())
+            self.assertIn(
+                "peps: provider has been pruned because no api or search plugin could be found",
+                str(cm.output),
+            )
+
     def test_rebuild_index(self):
         """Change product_types_config_md5 and check that whoosh index is rebuilt"""
         index_dir = os.path.join(self.dag.conf_dir, ".index")
@@ -576,6 +746,41 @@ class TestCore(TestCoreBase):
 
         # check that index_dir has beeh re-created
         self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
+
+    def test_get_version(self):
+        """Test if the version we get is the current one"""
+        version_str = self.dag.get_version()
+        self.assertEqual(eodag_version, version_str)
+
+    @mock.patch("eodag.api.core.exists_in", autospec=True)
+    def test_build_index_ko(self, exists_in_mock):
+        """
+        Trying to build index with unsupported pickle version or other reason leads to ValueError
+        and may delete the current index to rebuild it
+        """
+        exists_in_mock.side_effect = ValueError("unsupported pickle protocol")
+        index_dir = os.path.join(self.conf_dir, ".index")
+        path = Path(index_dir)
+        self.assertTrue(path.is_dir())
+        last_index_modif_date = os.stat(index_dir).st_atime_ns
+        with self.assertLogs(level="DEBUG") as cm:
+            self.dag.build_index()
+            new_index_modif_date = os.stat(index_dir).st_atime_ns
+            self.assertIn(
+                f"Need to recreate whoosh .index: '{exists_in_mock.side_effect}'",
+                str(cm.output),
+            )
+            self.assertNotEqual(last_index_modif_date, new_index_modif_date)
+
+        exists_in_mock.side_effect = ValueError("dummy error")
+        with self.assertLogs(level="ERROR") as cm_logs:
+            with self.assertRaisesRegex(ValueError, "dummy error"):
+                self.dag.build_index()
+            self.assertIn(
+                "Error while opening .index using whoosh, "
+                f"please report this issue and try to delete '{index_dir}' manually",
+                str(cm_logs.output),
+            )
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
