@@ -778,7 +778,7 @@ class TestCore(TestCoreBase):
                 self.dag.build_index()
             self.assertIn(
                 "Error while opening .index using whoosh, "
-                f"please report this issue and try to delete '{index_dir}' manually",
+                "please report this issue and try to delete",
                 str(cm_logs.output),
             )
 
