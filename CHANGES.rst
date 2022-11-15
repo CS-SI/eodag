@@ -4,10 +4,10 @@ Release history
 2.6.2 (2022-11-15)
 ++++++++++++++++++
 
-* Added new methods to get assets filename from header (:pull:542)
-* All local files URI formats are now supported (:pull:545)
-* More tests (:pull:539)(:pull:549)
-* Various minor fixes and improvements (#535)(:pull:540)(:pull:541)(:pull:543)(:pull:544)
+* Added new methods to get assets filename from header (:pull:`542`)
+* All local files URI formats are now supported (:pull:`545`)
+* More tests (:pull:`539`)(:pull:`549`)
+* Various minor fixes and improvements (:pull:`535`)(:pull:`540`)(:pull:`541`)(:pull:`543`)(:pull:`544`)(:pull:`553`)
 
 2.6.1 (2022-10-19)
 ++++++++++++++++++
