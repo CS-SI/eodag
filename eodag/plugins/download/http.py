@@ -21,6 +21,7 @@ import os
 import shutil
 import zipfile
 from cgi import parse_header
+from urllib.parse import urlparse
 
 import requests
 from requests import HTTPError, RequestException
@@ -305,7 +306,9 @@ class HTTPDownload(Download):
                 asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
             ).headers.get("content-disposition", None)
             if asset_content_disposition:
-                asset_filename = parse_header(asset_content_disposition)[-1]["filename"]
+                asset_filename = parse_header(asset_content_disposition)[-1].get(
+                    "filename", None
+                )
             else:
                 asset_filename = None
 
@@ -342,15 +345,26 @@ class HTTPDownload(Download):
                         logger.warning("Skipping %s" % asset_url)
                     error_messages.add(str(e))
                 else:
-                    if asset_filename is not None:
-                        asset_rel_path = asset_filename
-                    else:
-                        asset_rel_path = (
-                            asset_url.replace(product.location, "")
-                            .replace("https://", "")
-                            .replace("http://", "")
+                    asset_rel_path = urlparse(asset_url).path.strip("/")
+                    asset_rel_dir = os.path.dirname(asset_rel_path)
+
+                    if asset_filename is None:
+                        # try getting content-disposition header from GET if not in HEAD result
+                        asset_content_disposition = stream.headers.get(
+                            "content-disposition", None
                         )
-                    asset_abs_path = os.path.join(fs_dir_path, asset_rel_path)
+                        if asset_content_disposition:
+                            asset_filename = parse_header(asset_content_disposition)[
+                                -1
+                            ].get("filename", None)
+
+                    if asset_filename is None:
+                        # default filename extracted from path
+                        asset_filename = os.path.basename(asset_rel_path)
+
+                    asset_abs_path = os.path.join(
+                        fs_dir_path, asset_rel_dir, asset_filename
+                    )
                     asset_abs_path_dir = os.path.dirname(asset_abs_path)
                     if not os.path.isdir(asset_abs_path_dir):
                         os.makedirs(asset_abs_path_dir)
