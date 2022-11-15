@@ -668,7 +668,9 @@ class TestEodagCli(unittest.TestCase):
         side_effect=NoMatchingProductType(),
     )
     def test_eodag_guess_product_type_ko(self, mock_guess_product_type):
-        """Calling eodag list with invalid product type feature(s) should print a 'no matching' type message and return error code"""  # noqa
+        """Calling eodag list with invalid product type feature(s) should print a
+        'no matching' type message and return error code.
+        """
         result = self.runner.invoke(
             eodag,
             ["list", "--platformSerialIdentifier", "fake_identifier", "--no-fetch"],
