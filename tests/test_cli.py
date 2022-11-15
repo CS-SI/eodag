@@ -636,7 +636,10 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_guess_product_type_ok(
         self, mock_guess_product_type, mock_list_product_types
     ):
-        """Calling eodag list with one or several valid product type feature(s) should return all supported product types with this (these) feature(s) among the ones of its provider and with or without fetching provider according to the command"""  # noqa
+        """Calling eodag list with one or several valid product type feature(s) should return
+        all supported product types with this (these) feature(s) among the ones of its provider
+        and with or without fetching provider according to the command.
+        """
         provider = "peps"
         mock_guess_product_type.return_value = ["foo", "bar"]
         mock_list_product_types.return_value = [
