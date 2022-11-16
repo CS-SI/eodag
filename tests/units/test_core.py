@@ -40,6 +40,7 @@ from tests.context import (
     EOProduct,
     NoMatchingProductType,
     PluginImplementationError,
+    RequestError,
     SearchResult,
     UnsupportedProvider,
     get_geometry_from_various,
@@ -1703,6 +1704,32 @@ class TestCoreSearch(TestCoreBase):
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(productType="S2_MSI_L1C", items_per_page=7)
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_search_all_request_error(self, mocked_request):
+        """search_all must stop iteration if a request exception is raised"""
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: 'dummy_next_page_url_tpl'
+                    next_page_url_key_path: '$.links[?(@.rel="next")].href'
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        mocked_request.side_effect = RequestError()
+        dag.update_providers_config(dummy_provider_config)
+        dag.set_preferred_provider("dummy_provider")
+        results = dag.search_all(productType="S2_MSI_L1C")
+        self.assertEqual(len(results), 0)
 
 
 class TestCoreDownload(TestCoreBase):
