@@ -24,7 +24,6 @@ from tests.context import (
     AuthenticationError,
     EODataAccessGateway,
     HeaderAuth,
-    MisconfiguredError,
     PluginConfig,
 )
 
@@ -151,11 +150,15 @@ class TestCoreProductTypesConfig(TestCase):
                         productType: '{productType}'
             """
         )
-        self.assertRaises(
-            AuthenticationError,
-            self.dag.discover_product_types,
-            provider="foo_provider",
-        )
+        with self.assertLogs(level="WARNING") as cm:
+            ext_product_types_conf = self.dag.discover_product_types(
+                provider="foo_provider"
+            )
+            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.assertIn(
+                "Could not authenticate on foo_provider using None plugin",
+                str(cm.output),
+            )
 
         # with auth plugin but without credentials
         self.dag.update_providers_config(
@@ -167,12 +170,17 @@ class TestCoreProductTypesConfig(TestCase):
                         Authorization: "Apikey {apikey}"
             """
         )
-        with self.assertRaisesRegex(
-            MisconfiguredError, r"Missing credentials configuration .*"
-        ):
-            self.dag.discover_product_types(provider="foo_provider")
+        with self.assertLogs(level="WARNING") as cm:
+            ext_product_types_conf = self.dag.discover_product_types(
+                provider="foo_provider"
+            )
+            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.assertIn(
+                "Could not authenticate on foo_provider: Missing credentials",
+                str(cm.output),
+            )
 
-        # with auth plugin and credentials
+        # succeeds with auth plugin and credentials
         self.dag.update_providers_config(
             """
             foo_provider:
@@ -192,3 +200,20 @@ class TestCoreProductTypesConfig(TestCase):
         )
         call_args, call_kwargs = mock_requests_get.call_args
         self.assertIsInstance(call_kwargs["auth"], HeaderAuth)
+
+        # warning if another AuthenticationError
+        with mock.patch(
+            "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        ) as mock_get_auth_plugin:
+            mock_get_auth_plugin.return_value.authenticate.side_effect = (
+                AuthenticationError("cannot auth for test")
+            )
+            with self.assertLogs(level="WARNING") as cm:
+                ext_product_types_conf = self.dag.discover_product_types(
+                    provider="foo_provider"
+                )
+                self.assertIsNone(ext_product_types_conf["foo_provider"])
+                self.assertIn(
+                    "Could not authenticate on foo_provider: cannot auth for test",
+                    str(cm.output),
+                )

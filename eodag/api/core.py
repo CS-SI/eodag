@@ -56,6 +56,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
+    MisconfiguredError,
     NoMatchingProductType,
     PluginImplementationError,
     UnsupportedProvider,
@@ -648,11 +649,20 @@ class EODataAccessGateway(object):
                         search_plugin.provider
                     )
                     if callable(getattr(auth_plugin, "authenticate", None)):
-                        search_plugin.auth = auth_plugin.authenticate()
+                        try:
+                            search_plugin.auth = auth_plugin.authenticate()
+                        except (AuthenticationError, MisconfiguredError) as e:
+                            logger.warning(
+                                f"Could not authenticate on {provider}: {str(e)}"
+                            )
+                            ext_product_types_conf[provider] = None
+                            continue
                     else:
-                        raise AuthenticationError(
-                            f"Could not authenticate using {auth_plugin} plugin"
+                        logger.warning(
+                            f"Could not authenticate on {provider} using {auth_plugin} plugin"
                         )
+                        ext_product_types_conf[provider] = None
+                        continue
 
                 ext_product_types_conf[
                     provider

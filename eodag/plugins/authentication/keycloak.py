@@ -39,21 +39,21 @@ class KeycloakOIDCPasswordAuth(Authentication):
         Makes authentication request
         """
         self.validate_config_credentials()
-        response = self.session.post(
-            self.TOKEN_URL_TEMPLATE.format(
-                auth_base_uri=self.config.auth_base_uri.rstrip("/"),
-                realm=self.config.realm,
-            ),
-            data={
-                "client_id": self.config.client_id,
-                "client_secret": self.config.client_secret,
-                "username": self.config.credentials["username"],
-                "password": self.config.credentials["password"],
-                "grant_type": self.GRANT_TYPE,
-            },
-            timeout=HTTP_REQ_TIMEOUT,
-        )
         try:
+            response = self.session.post(
+                self.TOKEN_URL_TEMPLATE.format(
+                    auth_base_uri=self.config.auth_base_uri.rstrip("/"),
+                    realm=self.config.realm,
+                ),
+                data={
+                    "client_id": self.config.client_id,
+                    "client_secret": self.config.client_secret,
+                    "username": self.config.credentials["username"],
+                    "password": self.config.credentials["password"],
+                    "grant_type": self.GRANT_TYPE,
+                },
+                timeout=HTTP_REQ_TIMEOUT,
+            )
             response.raise_for_status()
         except requests.RequestException as e:
             # check if error is identified as auth_error in provider conf
