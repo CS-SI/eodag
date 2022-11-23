@@ -783,7 +783,7 @@ S3_ERR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L2,ERR
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,ERR
   sensorType: OPTICAL
   license: proprietary
   title: SENTINEL3 ERR
