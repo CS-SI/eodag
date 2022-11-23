@@ -782,82 +782,27 @@ S3_ERR:
   instrument: OLCI
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
-  processingLevel: L1,L2
+  processingLevel: L1
   keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L2,ERR
   sensorType: OPTICAL
   license: proprietary
   title: SENTINEL3 ERR
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_SLSTR_L1RBT:
+S3_RAC:
   abstract: |
-    SLSTR Level-1 observation mode products consisting of full resolution,
-    geolocated, co-located nadir and along track view, Top of Atmosphere
-    (TOA) brightness temperatures (in the case of thermal IR channels) or
-    radiances (in the case of visible, NIR and SWIR channels) from all
-    SLSTR channels, and quality flags, pixel classification information
-    and meteorological annotations
-  instrument: SLSTR
+    Sentinel 3 OLCI products output during Radiometric Calibration mode
+  instrument: OLCI
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L2,RAC
   sensorType: OPTICAL
   license: proprietary
-  title: SENTINEL3 SLSTR Level-1
+  title: SENTINEL3 RAC
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_SRA:
-  abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL3 SRAL Level-1
-  missionStartDate: "2016-02-16T00:00:00Z"
-
-S3_WAT:
-  abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL3 SRAL Level-2 WAT
-  missionStartDate: "2016-02-16T00:00:00Z"
-
-S3_LAN:
-  abstract: LAN or SR_2_LAN___ (peps)
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL3 SRAL Level-2 LAN
-  missionStartDate: "2016-02-16T00:00:00Z"
-
-S3_SLSTR_L2LST:
-  abstract: |
-    The SLSTR Level-2 LST product provides land surface parameters generated on the wide 1 km measurement grid.
-    It contains measurement file with Land Surface Temperature (LST) values with associated parameters (LST
-    parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
-  instrument: SLSTR
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2LST,LST
-  sensorType: OPTICAL
-  license: proprietary
-  title: SENTINEL3 SLSTR Level-2 LST
-  missionStartDate: "2016-02-16T00:00:00Z"
-
+  # S3 OLCI L2
 S3_OLCI_L2LRR:
   abstract: |
     The OLCI Level-2 Land Reduced Resolution (OL_2_LRR) products contain land and atmospheric geophysical products
@@ -891,6 +836,292 @@ S3_OLCI_L2LFR:
   license: proprietary
   title: SENTINEL3 OLCI Level-2 Land Full Resolution
   missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_OLCI_L2WRR:
+  abstract: |
+    The OLCI Level-2 Water Reduced Resolution (OL_2_WRR) products contain water and atmospheric geophysical products
+    at Reduced resolution with a spatial sampling of approximately 1.2 km. The products are assumed to be computed
+    in Near Real Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical
+    (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
+    Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-water
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Water Reduced Resolution
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_OLCI_L2LFR:
+  abstract: |
+    The OLCI Level-2 Water Full Resolution (OL_2_WFR) products contain water and atmospheric geophysical products at Full
+    resolution with a spatial sampling of approximately 300 m. The products are assumed to be computed in Near Real
+    Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical (NTC) (i.e.
+    within 1 month after acquisition) or in re-processed NTC.
+    Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-water
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Water Full Resolution
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_OLCI_L2WFR:
+  abstract: |
+    The OLCI Level-2 Water Full Resolution (OL_2_WRR) products contain water and atmospheric geophysical products
+    at Full resolution with a spatial sampling of approximately 1.2 km. The products are assumed to be computed
+    in Near Real Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical
+    (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
+    Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-water
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Water Full Resolution
+  missionStartDate: "2016-02-16T00:00:00Z"
+# S3 SLSTR
+S3_SLSTR_L1RBT:
+  abstract: |
+    SLSTR Level-1 observation mode products consisting of full resolution,
+    geolocated, co-located nadir and along track view, Top of Atmosphere
+    (TOA) brightness temperatures (in the case of thermal IR channels) or
+    radiances (in the case of visible, NIR and SWIR channels) from all
+    SLSTR channels, and quality flags, pixel classification information
+    and meteorological annotations
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-1
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L2LST:
+  abstract: |
+    The SLSTR Level-2 LST product provides land surface parameters generated on the wide 1 km measurement grid.
+    It contains measurement file with Land Surface Temperature (LST) values with associated parameters (LST
+    parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2LST,LST
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2 LST
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L2WST:
+  abstract: |
+    The SLSTR Level-2 WST product provides land surface parameters generated on the wide 1 km measurement grid.
+    It contains measurement file with Water Surface Temperature (WST) values with associated parameters (WST
+    parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2 WST
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L2AOD:
+  abstract: |
+    The Copernicus NRT S3 AOD processor quantifies the abundance of aerosol particles and monitors their global
+    distribution and long-range transport, at the scale of 9.5 x 9.5 km2. All observations are made available in
+    less than three hours from the SLSTR observation sensing time. It is only applicable during daytime.
+    NOTE: The SLSTR L2 AOD product is generated by EUMETSAT in NRT only. An offline (NTC) AOD product is generated
+    from SYN data by ESA, exploiting the synergy between the SLSTR and OLCI instruments.
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2AOD,AOD
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2 AOD
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L2FRP:
+  abstract: |
+    The SLSTR Level-2 FRP product is providing one measurement data file, FRP_in.nc, with Fire Radiative Power (FRP)
+    values and associated parameters generated for each fire detected over land and projected on the SLSTR 1 km grid.
+    The fire detection is based on a mixed thermal band, combining S7 radiometric measurements and,
+    for pixels associated with a saturated value of S7 (i.e. above 311 K), F1 radiometric measurements.
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2FRP,FRP
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2 FRP
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+# S3 SRAL
+S3_SRA:
+  abstract: ""
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SRA_A:
+  abstract: |
+    A Level 1A SRAL product contains one "measurement data file" containing the L1A measurements parameters:
+    ECHO_SAR_Ku: L1A Tracking measurements (sorted and calibrated) in SAR mode – Ku-band (80-Hz)
+    ECHO_PLRM: L1A Tracking measurements (sorted and calibrated) in pseudo-LRM mode – Ku and C bands (80-Hz)
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1 SRA_A
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SRA_BS:
+  abstract: |
+    A Level 1B-S SRAL product contains one "measurement data file" containing the L1b measurements parameters:
+    ECHO_SAR_Ku : L1b Tracking measurements in SAR mode - Ku band (20-Hz) as defined in the L1b MEAS product
+                  completed with SAR expert information
+    ECHO_PLRM : L1b Tracking measurements in pseudo-LRM mode – Ku and C bands (20-Hz) as defined in the L1b
+                MEAS product
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1 SRA_BS
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_WAT:
+  abstract: ""
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 WAT
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_LAN:
+  abstract: LAN or SR_2_LAN___ (peps)
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 LAN
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+# S3 SYNERGY
+# Synergy data products are generally combinations of OLCI and SLSTR instruments
+S3_SY_SYN:
+  abstract: |
+    The Level-2 SYN product (SY_2_SYN) is produced by the Synergy Level-1/2 SDR software and contains
+    surface reflectance and aerosol parameters over land. All measurement datasets are provided on the
+    OLCI image grid, similar to the one included in the OLCI L1b product.
+    Some sub-sampled annotations and atmospheric datasets are provided on the OLCI tie-points grid.
+    Several associated variables are also provided in annotation data files.
+  instrument: SYNERGY
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,SYN
+  sensorType: OPTICAL,RADAR
+  license: proprietary
+  title: SENTINEL3 SYNERGY Level-2 SYN
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SY_AOD:
+  abstract: |
+    The Level-2 SYN AOD product (SY_2_AOD) is produced by a dedicated processor including the whole
+    SYN L1 processing module and a global synergy level 2 processing module retrieving, over land and
+    sea, aerosol optical thickness. The resolution of this product is wider than classic S3 products,
+    as the dataset are provided on a 4.5 km² resolution
+  instrument: SYNERGY
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,AOD
+  sensorType: OPTICAL,RADAR
+  license: proprietary
+  title: SENTINEL3 SYNERGY Level-2 AOD
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+
+S3_SY_V10:
+  abstract: |
+    The Level-2 VG1 and V10 SYN products (SY_2_VG1 and SY_2_V10 respectively) are produced by the
+    SYNERGY Level-2 processor and contain 1 km VEGETATION-like product, 1 and 10 days synthesis surface
+    reflectances and NDVI. The product grid and the four spectral bands are similar to the SYN Level-2
+    VGP product.
+  instrument: SYNERGY
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: LEVEL-2W
+  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,V10
+  sensorType: OPTICAL,RADAR
+  license: proprietary
+  title: SENTINEL3 SYNERGY Level-2 V10
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SY_VG1:
+  abstract: |
+    The Level-2 VG1 and V10 SYN products (SY_2_VG1 and SY_2_V10 respectively) are produced by the
+    SYNERGY Level-2 processor and contain 1 km VEGETATION-like product, 1 and 10 days synthesis surface
+    reflectances and NDVI. The product grid and the four spectral bands are similar to the SYN Level-2
+    VGP product.
+  instrument: SYNERGY
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: LEVEL-2
+  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,VG1
+  sensorType: OPTICAL,RADAR
+  license: proprietary
+  title: SENTINEL3 SYNERGY Level-2 VG1
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SY_VGP:
+  abstract: |
+    The Level-2 VGP SYN product (SY_2_VGP) is produced by the Global Synergy Level-1/2 software and
+    contains 1 km VEGETATION-like product TOA reflectances. The "1 km VEGETATION-like product" label
+    means that measurements are provided on a regular latitude-longitude grid, with an equatorial
+    sampling distance of approximately 1 km. This product is restricted in longitude, including only filled ones.
+  instrument: SYNERGY
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: LEVEL-2
+  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,VGP
+  sensorType: OPTICAL,RADAR
+  license: proprietary
+  title: SENTINEL3 SYNERGY Level-2 VGP
+  missionStartDate: "2016-02-16T00:00:00Z"
+
 
 # SPOT ------------------------------------------------------------------------
 SPOT_SWH:
