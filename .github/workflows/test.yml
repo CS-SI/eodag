@@ -87,6 +87,7 @@ jobs:
 
     - name: Publish Unit Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
+      continue-on-error: true
       with:
         files: artifacts/**/*junit-report.xml
     - name: Publish Coverage Report
