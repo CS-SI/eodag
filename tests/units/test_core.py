@@ -518,6 +518,13 @@ class TestCore(TestCoreBase):
         # (once per dynamically configured provider)
         self.assertEqual(mock_discover_product_types.call_count, 3)
 
+        # now check that if provider is specified, only this one is fetched
+        mock_discover_product_types.reset_mock()
+        self.dag.fetch_product_types_list(provider="foo_provider")
+        mock_discover_product_types.assert_called_once_with(
+            self.dag, provider="foo_provider"
+        )
+
     @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
