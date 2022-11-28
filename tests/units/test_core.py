@@ -236,12 +236,12 @@ class TestCore(TestCoreBase):
         os.environ.update(self.eodag_env_backup)
 
     def test_supported_providers_in_unit_test(self):
-        """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""  # noqa
+        """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""
         for provider in self.dag.available_providers():
             self.assertIn(provider, self.SUPPORTED_PROVIDERS)
 
     def test_supported_product_types_in_unit_test(self):
-        """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""  # noqa
+        """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
         for product_type in self.dag.list_product_types(fetch_providers=False):
             self.assertIn(product_type["ID"], self.SUPPORTED_PRODUCT_TYPES.keys())
 
@@ -255,7 +255,7 @@ class TestCore(TestCoreBase):
         self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
 
     def test_list_product_types_for_provider_ok(self):
-        """Core api must correctly return the list of supported product types for a given provider"""  # noqa
+        """Core api must correctly return the list of supported product types for a given provider"""
         for provider in self.SUPPORTED_PROVIDERS:
             product_types = self.dag.list_product_types(
                 provider=provider, fetch_providers=False
@@ -268,7 +268,7 @@ class TestCore(TestCoreBase):
                 )
 
     def test_list_product_types_for_unsupported_provider(self):
-        """Core api must raise UnsupportedProvider error for list_product_types with unsupported provider"""  # noqa
+        """Core api must raise UnsupportedProvider error for list_product_types with unsupported provider"""
         unsupported_provider = "a"
         self.assertRaises(
             UnsupportedProvider,
@@ -280,7 +280,7 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_list_product_types_fetch_providers(self, mock_fetch_product_types_list):
-        """Core api must fetch providers for new product types if option is passed to list_product_types"""  # noqa
+        """Core api must fetch providers for new product types if option is passed to list_product_types"""
         self.dag.list_product_types(fetch_providers=False)
         assert not mock_fetch_product_types_list.called
         self.dag.list_product_types(provider="peps", fetch_providers=True)
@@ -650,7 +650,7 @@ class TestCore(TestCoreBase):
         open_dir_mock.assert_called_with(index_dir)
 
     def test_core_object_set_default_locations_config(self):
-        """The core object must set the default locations config on instantiation"""  # noqa
+        """The core object must set the default locations config on instantiation"""
         default_shpfile = os.path.join(
             self.conf_dir, "shp", "ne_110m_admin_0_map_units.shp"
         )
@@ -661,7 +661,7 @@ class TestCore(TestCoreBase):
         )
 
     def test_core_object_locations_file_not_found(self):
-        """The core object must set the locations to an empty list when the file is not found"""  # noqa
+        """The core object must set the locations to an empty list when the file is not found"""
         dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
         self.assertEqual(dag.locations_config, [])
 
@@ -812,7 +812,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         os.environ.update(cls.eodag_env_backup)
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
-        """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""  # noqa
+        """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""
         try:
             os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_locations_override.yml"
@@ -826,7 +826,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ.pop("EODAG_LOCS_CFG_FILE", None)
 
     def test_core_object_prioritize_config_file_in_envvar(self):
-        """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""  # noqa
+        """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""
         try:
             os.environ["EODAG_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_config_override.yml"
@@ -887,7 +887,7 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
                     shutil.move(old, current)
 
     def test_core_object_creates_config_standard_location(self):
-        """The core object must create a user config file in standard user config location on instantiation"""  # noqa
+        """The core object must create a user config file in standard user config location on instantiation"""
         self.execution_involving_conf_dir(inspect="eodag.yml")
 
     def test_core_object_creates_index_if_not_exist(self):
@@ -1092,7 +1092,7 @@ class TestCoreSearch(TestCoreBase):
         self.assertGreater(len(guesses), 10)
 
     def test__prepare_search_no_parameters(self):
-        """_prepare_search must create some kwargs even when no parameter has been provided"""  # noqa
+        """_prepare_search must create some kwargs even when no parameter has been provided"""
         prepared_search = self.dag._prepare_search()
         expected = {
             "geometry": None,
@@ -1219,7 +1219,7 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_search_plugin_has_generic_product_properties(self):
-        """_prepare_search must be able to attach the generic product properties to the search plugin"""  # noqa
+        """_prepare_search must be able to attach the generic product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
@@ -1234,7 +1234,7 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_peps_plugins_product_available(self):
-        """_prepare_search must return the search and auth plugins when productType is defined"""  # noqa
+        """_prepare_search must return the search and auth plugins when productType is defined"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
@@ -1246,14 +1246,14 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_no_plugins_when_search_by_id(self):
-        """_prepare_search must not return the search and auth plugins for a search by id"""  # noqa
+        """_prepare_search must not return the search and auth plugins for a search by id"""
         base = {"id": "some_id", "provider": "some_provider"}
         prepared_search = self.dag._prepare_search(**base)
         self.assertNotIn("search_plugin", prepared_search)
         self.assertNotIn("auth", prepared_search)
 
     def test__prepare_search_peps_plugins_product_not_available(self):
-        """_prepare_search can use another set of search and auth plugins than the ones of the preferred provider"""  # noqa
+        """_prepare_search can use another set of search and auth plugins than the ones of the preferred provider"""
         # Document a special behaviour whereby the search and auth plugins don't
         # correspond to the preferred one. This occurs whenever the searched product
         # isn't available for the preferred provider but is made available by  another
@@ -1268,6 +1268,22 @@ class TestCoreSearch(TestCoreBase):
             self.assertEqual(prepared_search["auth"].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_unknown_product_type(self, mock_fetch_product_types_list):
+        """_prepare_search must fetch product types if product_type is unknown"""
+        self.dag._prepare_search(product_type="foo")
+        mock_fetch_product_types_list.assert_called_once_with(self.dag)
+
+    @mock.patch("eodag.plugins.manager.PluginManager.get_search_plugins", autospec=True)
+    def test__search_by_id(self, mock_get_search_plugins):
+        """_search_by_id must filter search plugins using given kwargs"""
+        self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+        mock_get_search_plugins.assert_called_once_with(
+            self.dag._plugins_manager, product_type="bar", provider="baz"
+        )
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
@@ -1328,7 +1344,7 @@ class TestCoreSearch(TestCoreBase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
-        """_do_search must provide a best estimate when a provider doesn't return a count"""  # noqa
+        """_do_search must provide a best estimate when a provider doesn't return a count"""
         search_plugin.provider = "peps"
         # If the provider doesn't return a count, .query returns 0
         search_plugin.query.return_value = (self.search_results.data, 0)
@@ -1350,7 +1366,7 @@ class TestCoreSearch(TestCoreBase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_fuzzy_count(self, search_plugin):
-        """_do_search must provide a best estimate when a provider returns a fuzzy count"""  # noqa
+        """_do_search must provide a best estimate when a provider returns a fuzzy count"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data * 4,  # 8 products returned
@@ -1380,7 +1396,7 @@ class TestCoreSearch(TestCoreBase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_null_count(self, search_plugin):
-        """_do_search must provide a best estimate when a provider returns a null count"""  # noqa
+        """_do_search must provide a best estimate when a provider returns a null count"""
         # TODO: check the underlying implementation, it doesn't make so much sense since
         # this case is already covered with nb_res = len(res) * page. This one uses
         # nb_res = items_per_page * (page - 1) whick actually makes more sense. Choose
@@ -1448,7 +1464,7 @@ class TestCoreSearch(TestCoreBase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_register_downloader_if_search_intersection(self, search_plugin):
-        """_do_search must register each product's downloader if search_intersection is not None"""  # noqa
+        """_do_search must register each product's downloader if search_intersection is not None"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,
@@ -1511,7 +1527,7 @@ class TestCoreSearch(TestCoreBase):
     def test_search_iter_page_exhaust_get_all_pages_and_quit_early(
         self, search_plugin, prepare_seach
     ):
-        """search_iter_page must stop as soon as less than items_per_page products were retrieved"""  # noqa
+        """search_iter_page must stop as soon as less than items_per_page products were retrieved"""
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = [
             (self.search_results.data, None),
@@ -1619,7 +1635,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_search_all_must_collect_them_all(self, search_plugin, prepare_seach):
-        """search_all must return all the products available"""  # noqa
+        """search_all must return all the products available"""
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = [
             (self.search_results.data, None),
@@ -1646,7 +1662,7 @@ class TestCoreSearch(TestCoreBase):
 
     @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
     def test_search_all_use_max_items_per_page(self, mocked_search_iter_page):
-        """search_all must use the configured parameter max_items_per_page if available"""  # noqa
+        """search_all must use the configured parameter max_items_per_page if available"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
         dummy_provider:
@@ -1669,7 +1685,7 @@ class TestCoreSearch(TestCoreBase):
 
     @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
     def test_search_all_use_default_value(self, mocked_search_iter_page):
-        """search_all must use the DEFAULT_MAX_ITEMS_PER_PAGE if the provider's one wasn't configured"""  # noqa
+        """search_all must use the DEFAULT_MAX_ITEMS_PER_PAGE if the provider's one wasn't configured"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
         dummy_provider:
@@ -1737,6 +1753,18 @@ class TestCoreSearch(TestCoreBase):
         dag.set_preferred_provider("dummy_provider")
         results = dag.search_all(productType="S2_MSI_L1C")
         self.assertEqual(len(results), 0)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_all_unknown_product_type(
+        self, mock_fetch_product_types_list, mock_search_iter_page
+    ):
+        """search_all must fetch product types if product_type is unknown"""
+        self.dag.search_all(productType="foo")
+        mock_fetch_product_types_list.assert_called_once_with(self.dag)
+        mock_search_iter_page.assert_called_once()
 
 
 class TestCoreDownload(TestCoreBase):

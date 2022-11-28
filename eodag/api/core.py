@@ -1105,6 +1105,17 @@ class EODataAccessGateway(object):
             )
         except NoMatchingProductType:
             product_type = GENERIC_PRODUCT_TYPE
+        else:
+            # fetch product types list if product_type is unknown
+            if (
+                product_type
+                not in self._plugins_manager.product_type_to_provider_config_map.keys()
+            ):
+                logger.debug(
+                    f"Fetching external product types sources to find {product_type} product type"
+                )
+                self.fetch_product_types_list()
+
         search_plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
         )
@@ -1160,7 +1171,12 @@ class EODataAccessGateway(object):
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
         """
-        for plugin in self._plugins_manager.get_search_plugins(provider=provider):
+        get_search_plugins_kwargs = dict(
+            provider=provider, product_type=kwargs.get("productType", None)
+        )
+        for plugin in self._plugins_manager.get_search_plugins(
+            **get_search_plugins_kwargs
+        ):
             logger.info(
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
@@ -1272,6 +1288,16 @@ class EODataAccessGateway(object):
         for arg in locations_dict.keys():
             kwargs.pop(arg, None)
         del kwargs["locations"]
+
+        # fetch product types list if product_type is unknown
+        if (
+            product_type
+            not in self._plugins_manager.product_type_to_provider_config_map.keys()
+        ):
+            logger.debug(
+                f"Fetching external product types sources to find {product_type} product type"
+            )
+            self.fetch_product_types_list()
 
         search_plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
