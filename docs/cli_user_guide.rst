@@ -79,9 +79,9 @@ Then you can start playing with it:
         --all \
         --storage my_search.geojson
 
-The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches internally all
-the products that match these criteria. Without ``--all``, it would only fetch the products found on the first result page.
-It finally saves the results in a GeoJSON file.
+The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches
+internally all the products that match these criteria. Without ``--all``, it would only fetch the products found on the
+first result page. It finally saves the results in a GeoJSON file.
 
 You can pass arguments to a cruncher on the command line by doing this (example with using ``FilterOverlap`` cruncher
 which takes ``minimum_overlap`` as argument):
@@ -92,19 +92,19 @@ which takes ``minimum_overlap`` as argument):
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10
 
-The request above means : "Give me all the products of type `S2_MSI_L1C`, use ``FilterOverlap`` to keep only those products
-that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (``minimum_overlap``) of the surface
-of this bbox"
+The request above means : "Give me all the products of type `S2_MSI_L1C`, use ``FilterOverlap`` to keep only those
+products that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (``minimum_overlap``)
+of the surface of this bbox".
 
-You can use ``eaodag search`` with custom parameters. Custom parameters will be used as is in the query string search sent
-to the provider. For instance, if you want to add foo=1 and bar=2 to the previous query:
+You can use ``eaodag search`` with custom query parameters. Custom query parameters will be used as is in the query
+string search sent to the provider. For instance, if you want to add foo=1 and bar=2 to the previous query:
 
 .. code-block:: console
 
         eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
                      --cruncher FilterOverlap \
-                     --cruncher-args FilterOverlap minimum_overlap 1 \
-                     --custom "foo=1&bar=2"
+                     --cruncher-args FilterOverlap minimum_overlap 10 \
+                     --query "foo=1&bar=2"
 
 * To download the result of a previous call to ``search``:
 
@@ -131,8 +131,8 @@ to the provider. For instance, if you want to add foo=1 and bar=2 to the previou
 
         eodag list --no-fetch
 
-* EODAG can fetch providers (all or only a given one) to discover available product types, using the following command. It
-  will store result in a JSON file (defaults to `ext_product_types.json`):
+* EODAG can fetch providers (all or only a given one) to discover available product types, using the following command.
+  It will store result in a JSON file (defaults to `ext_product_types.json`):
 
 .. code-block:: console
 
