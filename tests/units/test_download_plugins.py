@@ -32,6 +32,7 @@ from tests.context import (
     PluginManager,
     load_default_config,
     path_to_uri,
+    uri_to_path,
 )
 
 
@@ -237,6 +238,65 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 os.path.join(self.output_dir, "dummy_product", "anotherthing")
             )
         )
+
+    def test_plugins_download_http_one_local_asset(
+        self,
+    ):
+        """HTTPDownload.download() must handle one local asset"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets = {
+            "foo": {
+                "href": path_to_uri(
+                    os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
+                )
+            }
+        }
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(path, uri_to_path(self.product.assets["foo"]["href"]))
+        # empty product download directory should have been removed
+        self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
+
+    def test_plugins_download_http_several_local_assets(
+        self,
+    ):
+        """HTTPDownload.download() must handle several local assets"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets = {
+            "foo": {
+                "href": path_to_uri(
+                    os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
+                )
+            },
+            "bar": {
+                "href": path_to_uri(
+                    os.path.abspath(
+                        os.path.join(os.sep, "somewhere", "something", "else")
+                    )
+                )
+            },
+            "baz": {
+                "href": path_to_uri(
+                    os.path.abspath(
+                        os.path.join(os.sep, "somewhere", "another", "thing")
+                    )
+                )
+            },
+        }
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        # assets common path
+        self.assertEqual(path, os.path.abspath(os.path.join(os.sep, "somewhere")))
+        # empty product download directory should have been removed
+        self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
 
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
