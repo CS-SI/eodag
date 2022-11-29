@@ -55,13 +55,13 @@ To run the default test suite in parallel:
 
     tox -p
 
-To only run end-to-end test:
+To only run end-to-end tests:
 
 .. code-block:: bash
 
     tox -- tests/test_end_to_end.py
 
-To run the entire tests (units, integraton and end-to-end):
+To run the entire tests (units, integration and end-to-end):
 
 .. code-block:: bash
 

@@ -56,6 +56,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
+    MisconfiguredError,
     NoMatchingProductType,
     PluginImplementationError,
     UnsupportedProvider,
@@ -540,13 +541,32 @@ class EODataAccessGateway(object):
         """
         if provider is not None and provider not in self.providers_config:
             return
-        # check if any provider has already been fetched for product types
-        # (no need go get ext_product_types conf)
-        already_fetched = False
-        for provider, provider_config in self.providers_config.items():
-            if getattr(provider_config, "product_types_fetched", False):
-                already_fetched = True
-                break
+
+        # providers discovery confs that are fetchable
+        providers_discovery_configs_fetchable = {}
+        # check if any provider has not already been fetched for product types
+        already_fetched = True
+        for provider_to_fetch, provider_config in (
+            {provider: self.providers_config[provider]}.items()
+            if provider
+            else self.providers_config.items()
+        ):
+            # get discovery conf
+            if hasattr(provider_config, "search"):
+                provider_search_config = provider_config.search
+            elif hasattr(provider_config, "api"):
+                provider_search_config = provider_config.api
+            else:
+                continue
+            discovery_conf = getattr(
+                provider_search_config, "discover_product_types", {}
+            )
+            if discovery_conf.get("fetch_url", None):
+                providers_discovery_configs_fetchable[
+                    provider_to_fetch
+                ] = discovery_conf
+                if not getattr(provider_config, "product_types_fetched", False):
+                    already_fetched = False
 
         if not already_fetched:
             # get ext_product_types conf
@@ -559,24 +579,23 @@ class EODataAccessGateway(object):
 
                 if not ext_product_types_conf:
                     # empty ext_product_types conf
-                    ext_product_types_conf = self.discover_product_types()
+                    discover_kwargs = dict(provider=provider) if provider else {}
+                    ext_product_types_conf = self.discover_product_types(
+                        **discover_kwargs
+                    )
 
             # update eodag product types list with new conf
             self.update_product_types_list(ext_product_types_conf)
 
+        # Compare current provider with default one to see if it has been modified
+        # and product types list would need to be fetched
+
         # get ext_product_types conf for user modified providers
         default_providers_config = load_default_config()
-        for provider, user_provider_config in self.providers_config.items():
-            # user discover_product_types conf
-            if hasattr(user_provider_config, "search"):
-                user_provider_search_config = user_provider_config.search
-            elif hasattr(user_provider_config, "api"):
-                user_provider_search_config = user_provider_config.api
-            else:
-                continue
-            user_discovery_conf = getattr(
-                user_provider_search_config, "discover_product_types", {}
-            )
+        for (
+            provider,
+            user_discovery_conf,
+        ) in providers_discovery_configs_fetchable.items():
             # default discover_product_types conf
             if provider in default_providers_config:
                 default_provider_config = default_providers_config[provider]
@@ -648,11 +667,20 @@ class EODataAccessGateway(object):
                         search_plugin.provider
                     )
                     if callable(getattr(auth_plugin, "authenticate", None)):
-                        search_plugin.auth = auth_plugin.authenticate()
+                        try:
+                            search_plugin.auth = auth_plugin.authenticate()
+                        except (AuthenticationError, MisconfiguredError) as e:
+                            logger.warning(
+                                f"Could not authenticate on {provider}: {str(e)}"
+                            )
+                            ext_product_types_conf[provider] = None
+                            continue
                     else:
-                        raise AuthenticationError(
-                            f"Could not authenticate using {auth_plugin} plugin"
+                        logger.warning(
+                            f"Could not authenticate on {provider} using {auth_plugin} plugin"
                         )
+                        ext_product_types_conf[provider] = None
+                        continue
 
                 ext_product_types_conf[
                     provider
@@ -1077,6 +1105,17 @@ class EODataAccessGateway(object):
             )
         except NoMatchingProductType:
             product_type = GENERIC_PRODUCT_TYPE
+        else:
+            # fetch product types list if product_type is unknown
+            if (
+                product_type
+                not in self._plugins_manager.product_type_to_provider_config_map.keys()
+            ):
+                logger.debug(
+                    f"Fetching external product types sources to find {product_type} product type"
+                )
+                self.fetch_product_types_list()
+
         search_plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)
         )
@@ -1132,7 +1171,12 @@ class EODataAccessGateway(object):
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
         """
-        for plugin in self._plugins_manager.get_search_plugins(provider=provider):
+        get_search_plugins_kwargs = dict(
+            provider=provider, product_type=kwargs.get("productType", None)
+        )
+        for plugin in self._plugins_manager.get_search_plugins(
+            **get_search_plugins_kwargs
+        ):
             logger.info(
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
@@ -1244,6 +1288,16 @@ class EODataAccessGateway(object):
         for arg in locations_dict.keys():
             kwargs.pop(arg, None)
         del kwargs["locations"]
+
+        # fetch product types list if product_type is unknown
+        if (
+            product_type
+            not in self._plugins_manager.product_type_to_provider_config_map.keys()
+        ):
+            logger.debug(
+                f"Fetching external product types sources to find {product_type} product type"
+            )
+            self.fetch_product_types_list()
 
         search_plugin = next(
             self._plugins_manager.get_search_plugins(product_type=product_type)

@@ -597,8 +597,7 @@ class QueryStringSearch(Search):
                     "instance:".format(self.provider, self.__class__.__name__),
                 )
             except RequestError:
-                # Signal the end of iteration (see PEP-479)
-                return
+                return []
             else:
                 next_page_url_key_path = self.config.pagination.get(
                     "next_page_url_key_path", None

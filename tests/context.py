@@ -82,6 +82,7 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
     PluginImplementationError,
+    RequestError,
     UnsupportedDatasetAddressScheme,
     UnsupportedProvider,
     ValidationError,
