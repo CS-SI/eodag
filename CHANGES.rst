@@ -1,6 +1,15 @@
 Release history
 ---------------
 
+2.7.0 (2022-11-29)
+++++++++++++++++++
+
+* Fetch external product types before searching for an unkown product type (:pull:`559`)
+* Handle local assets in :class:`~eodag.plugins.download.http.HTTPDownload` plugin (:pull:`561`)
+* Fetch external product types only for given provider if one is specified (:pull:`557`)
+* Fixed request error handling during :meth:`~eodag.api.core.EODataAccessGateway.search_all` (:pull:`554`)
+* Various minor fixes and improvements (:pull:`555`)(:pull:`558`)(:pull:`562`)
+
 2.6.2 (2022-11-15)
 ++++++++++++++++++
 
