@@ -33,7 +33,7 @@ from eodag.plugins.download.base import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
-from eodag.utils import ProgressCallback, path_to_uri
+from eodag.utils import ProgressCallback, path_to_uri, uri_to_path
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -61,7 +61,7 @@ class HTTPDownload(Download):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """Download a product using HTTP protocol.
 
@@ -91,7 +91,7 @@ class HTTPDownload(Download):
                 record_filename,
                 auth,
                 progress_callback,
-                **kwargs
+                **kwargs,
             )
             product.location = path_to_uri(fs_path)
             return fs_path
@@ -134,7 +134,7 @@ class HTTPDownload(Download):
             auth,
             progress_callback,
             ordered_message,
-            **kwargs
+            **kwargs,
         ):
             params = kwargs.pop("dl_url_params", None) or getattr(
                 self.config, "dl_url_params", {}
@@ -236,7 +236,7 @@ class HTTPDownload(Download):
             auth,
             progress_callback,
             ordered_message,
-            **kwargs
+            **kwargs,
         )
 
     def _download_assets(
@@ -246,7 +246,7 @@ class HTTPDownload(Download):
         record_filename,
         auth=None,
         progress_callback=None,
-        **kwargs
+        **kwargs,
     ):
         """Download product assets if they exist"""
         assets_urls = [
@@ -271,35 +271,36 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
         )
 
-        # get total size using header[Content-length] of each asset
         total_size = sum(
             [
+                # get total size using header[Content-length] of each asset
                 int(
                     requests.head(
                         asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
                     ).headers.get("Content-length", 0)
                 )
+                or int(  # alternative: get total size using header[content-disposition][size] of each asset
+                    parse_header(
+                        requests.head(
+                            asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
+                        ).headers.get("content-disposition", "")
+                    )[-1].get("size", 0)
+                )
                 for asset_url in assets_urls
+                if not asset_url.startswith("file:")
             ]
         )
-        if total_size == 0:
-            # alternative: get total size using header[content-disposition][size] of each asset
-            total_size = sum(
-                [
-                    int(
-                        parse_header(
-                            requests.head(
-                                asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
-                            ).headers.get("content-disposition", "")
-                        )[-1].get("size", 0)
-                    )
-                    for asset_url in assets_urls
-                ]
-            )
         progress_callback.reset(total=total_size)
         error_messages = set()
 
+        local_assets_count = 0
+
         for asset_url in assets_urls:
+
+            if asset_url.startswith("file:"):
+                logger.info(f"Local asset detected. Download skipped for {asset_url}")
+                local_assets_count += 1
+                continue
 
             # get asset filename from header
             asset_content_disposition = requests.head(
@@ -376,8 +377,21 @@ class HTTPDownload(Download):
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
 
-        # could not download any file
-        if len(os.listdir(fs_dir_path)) == 0:
+        # only one local asset
+        if local_assets_count == len(assets_urls) and local_assets_count == 1:
+            # remove empty {fs_dir_path}
+            shutil.rmtree(fs_dir_path)
+            # and return assets_urls[0] path
+            fs_dir_path = uri_to_path(assets_urls[0])
+        # several local assets
+        elif local_assets_count == len(assets_urls) and local_assets_count > 0:
+            common_path = os.path.commonpath([uri_to_path(uri) for uri in assets_urls])
+            # remove empty {fs_dir_path}
+            shutil.rmtree(fs_dir_path)
+            # and return assets_urls common path
+            fs_dir_path = common_path
+        # no assets downloaded but some should have been
+        elif len(os.listdir(fs_dir_path)) == 0:
             raise HTTPError(", ".join(error_messages))
 
         # flatten directory structure
@@ -405,7 +419,7 @@ class HTTPDownload(Download):
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ):
         """
         Download all using parent (base plugin) method
@@ -417,5 +431,5 @@ class HTTPDownload(Download):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
-            **kwargs
+            **kwargs,
         )
