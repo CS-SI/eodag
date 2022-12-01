@@ -252,6 +252,9 @@ class HTTPDownload(Download):
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
+        assets_values = [
+            a for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
 
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
@@ -271,55 +274,77 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
         )
 
-        total_size = sum(
-            [
-                # get total size using header[Content-length] of each asset
-                int(
-                    requests.head(
-                        asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
-                    ).headers.get("Content-length", 0)
-                )
-                or int(  # alternative: get total size using header[content-disposition][size] of each asset
-                    parse_header(
-                        requests.head(
-                            asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
-                        ).headers.get("content-disposition", "")
-                    )[-1].get("size", 0)
-                )
-                for asset_url in assets_urls
-                if not asset_url.startswith("file:")
-            ]
+        # get extra parameters to pass to the query
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
         )
+
+        total_size = 0
+        # loop for assets size & filename
+        for asset in assets_values:
+            if not asset["href"].startswith("file:"):
+                # HEAD request for size & filename
+                asset_headers = requests.head(
+                    asset["href"], auth=auth, timeout=HTTP_REQ_TIMEOUT
+                ).headers
+                header_content_disposition_dict = {}
+
+                if not asset.get("size", 0):
+                    # size from HEAD header / Content-length
+                    asset["size"] = int(asset_headers.get("Content-length", 0))
+
+                if not asset.get("size", 0) or not asset.get("filename", 0):
+                    # header content-disposition
+                    header_content_disposition_dict = parse_header(
+                        asset_headers.get("content-disposition", "")
+                    )[-1]
+                if not asset.get("size", 0):
+                    # size from HEAD header / content-disposition / size
+                    asset["size"] = int(header_content_disposition_dict.get("size", 0))
+                if not asset.get("filename", 0):
+                    # filename from HEAD header / content-disposition / size
+                    asset["filename"] = header_content_disposition_dict.get(
+                        "filename", None
+                    )
+
+                if not asset.get("size", 0):
+                    # GET request for size
+                    with requests.get(
+                        asset["href"],
+                        stream=True,
+                        auth=auth,
+                        params=params,
+                        timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    ) as stream:
+                        # size from GET header / Content-length
+                        asset["size"] = int(stream.headers.get("Content-length", 0))
+                        if not asset.get("size", 0):
+                            # size from GET header / content-disposition / size
+                            asset["size"] = int(
+                                parse_header(
+                                    stream.headers.get("content-disposition", "")
+                                )[-1].get("size", 0)
+                            )
+
+                total_size += asset["size"]
+
         progress_callback.reset(total=total_size)
         error_messages = set()
 
         local_assets_count = 0
 
-        for asset_url in assets_urls:
+        # loop for assets download
+        for asset in assets_values:
 
-            if asset_url.startswith("file:"):
-                logger.info(f"Local asset detected. Download skipped for {asset_url}")
+            if asset["href"].startswith("file:"):
+                logger.info(
+                    f"Local asset detected. Download skipped for {asset['href']}"
+                )
                 local_assets_count += 1
                 continue
 
-            # get asset filename from header
-            asset_content_disposition = requests.head(
-                asset_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
-            ).headers.get("content-disposition", None)
-            if asset_content_disposition:
-                asset_filename = parse_header(asset_content_disposition)[-1].get(
-                    "filename", None
-                )
-            else:
-                asset_filename = None
-
-            # get extra parameters to pass to the query
-            params = kwargs.pop("dl_url_params", None) or getattr(
-                self.config, "dl_url_params", {}
-            )
-
             with requests.get(
-                asset_url,
+                asset["href"],
                 stream=True,
                 auth=auth,
                 params=params,
@@ -343,28 +368,28 @@ class HTTPDownload(Download):
                         )
                     else:
                         logger.warning("Unexpected error: %s" % e)
-                        logger.warning("Skipping %s" % asset_url)
+                        logger.warning("Skipping %s" % asset["href"])
                     error_messages.add(str(e))
                 else:
-                    asset_rel_path = urlparse(asset_url).path.strip("/")
+                    asset_rel_path = urlparse(asset["href"]).path.strip("/")
                     asset_rel_dir = os.path.dirname(asset_rel_path)
 
-                    if asset_filename is None:
-                        # try getting content-disposition header from GET if not in HEAD result
-                        asset_content_disposition = stream.headers.get(
+                    if not asset.get("filename", None):
+                        # try getting filename in GET header if was not found in HEAD result
+                        asset_content_disposition_dict = stream.headers.get(
                             "content-disposition", None
                         )
-                        if asset_content_disposition:
-                            asset_filename = parse_header(asset_content_disposition)[
-                                -1
-                            ].get("filename", None)
+                        if asset_content_disposition_dict:
+                            asset["filename"] = parse_header(
+                                asset_content_disposition_dict
+                            )[-1].get("filename", None)
 
-                    if asset_filename is None:
+                    if not asset.get("filename", None):
                         # default filename extracted from path
-                        asset_filename = os.path.basename(asset_rel_path)
+                        asset["filename"] = os.path.basename(asset_rel_path)
 
                     asset_abs_path = os.path.join(
-                        fs_dir_path, asset_rel_dir, asset_filename
+                        fs_dir_path, asset_rel_dir, asset["filename"]
                     )
                     asset_abs_path_dir = os.path.dirname(asset_abs_path)
                     if not os.path.isdir(asset_abs_path_dir):

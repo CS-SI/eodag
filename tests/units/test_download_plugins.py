@@ -239,6 +239,73 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
         )
 
+    @mock.patch("eodag.utils.ProgressCallback.reset", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_size(
+        self, mock_requests_get, mock_requests_head, mock_progress_callback_reset
+    ):
+        """HTTPDownload.download() must get assets sizes"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+
+        mock_requests_head.return_value.headers = {
+            "Content-length": "1",
+            "content-disposition": '; size = "2"',
+        }
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "Content-length": "3",
+            "content-disposition": '; size = "4"',
+        }
+
+        # size from HEAD / Content-length
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=1 + 1)
+
+        # size from HEAD / content-disposition
+        mock_requests_head.return_value.headers.pop("Content-length")
+        mock_progress_callback_reset.reset_mock()
+        self.product.location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=2 + 2)
+
+        # size from GET / Content-length
+        mock_requests_head.return_value.headers.pop("content-disposition")
+        mock_progress_callback_reset.reset_mock()
+        self.product.location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=3 + 3)
+
+        # size from GET / content-disposition
+        mock_requests_get.return_value.__enter__.return_value.headers.pop(
+            "Content-length"
+        )
+        mock_progress_callback_reset.reset_mock()
+        self.product.location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=4 + 4)
+
     def test_plugins_download_http_one_local_asset(
         self,
     ):
