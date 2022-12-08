@@ -19,7 +19,7 @@ import os
 import unittest
 
 from tests import TEST_RESOURCES_PATH
-from tests.context import fetch_stac_items
+from tests.context import STACOpenerError, _TextOpener, fetch_stac_items
 
 
 class TestStacReader(unittest.TestCase):
@@ -80,3 +80,12 @@ class TestStacReader(unittest.TestCase):
         self.assertIsInstance(items, list)
         self.assertEqual(len(items), self.singlefile_cat_len)
         self.assertEqual(items[0]["type"], "Feature")
+
+    def test_stact_reader_invalid_local_json(self):
+        """read_local_json must raise a STACOpenerError on invalid local file path"""
+        self.assertRaises(
+            STACOpenerError,
+            _TextOpener.read_local_json,
+            "http://data.example.org/",
+            True,
+        )
