@@ -31,6 +31,7 @@ import json
 import logging as py_logging
 import os
 import re
+import shutil
 import string
 import types
 import unicodedata
@@ -39,6 +40,7 @@ from collections import defaultdict
 from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
+from tempfile import mkdtemp
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -1058,3 +1060,25 @@ def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
         )
 
     return bucket, prefix
+
+
+def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
+    """Flatten directory structure, removing common empty sub-directories
+
+    :param nested_dir_root: Absolute path of the directory structure to flatten
+    :type nested_dir_root: str
+    :param common_subdirs_path: (optional) Absolute path of the desired subdirectory to remove
+    :type common_subdirs_path: str
+    """
+    if not common_subdirs_path:
+        subpaths_list = [p for p in Path(nested_dir_root).glob("**/*") if p.is_file()]
+        common_subdirs_path = os.path.commonpath(subpaths_list)
+
+    if nested_dir_root != common_subdirs_path:
+        logger.debug(f"Flatten {common_subdirs_path} to {nested_dir_root}")
+        tmp_path = mkdtemp()
+        # need to delete tmp_path to prevent FileExistsError with copytree. Use dirs_exist_ok with py > 3.7
+        shutil.rmtree(tmp_path)
+        shutil.copytree(common_subdirs_path, tmp_path)
+        shutil.rmtree(nested_dir_root)
+        shutil.move(tmp_path, nested_dir_root)
