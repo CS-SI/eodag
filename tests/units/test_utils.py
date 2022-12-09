@@ -16,15 +16,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import sys
 import unittest
 from contextlib import closing
 from datetime import datetime
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from tests.context import (
     DownloadedCallback,
     ProgressCallback,
+    flatten_top_directories,
     get_bucket_name_and_prefix,
     get_timestamp,
     merge_mappings,
@@ -215,3 +219,46 @@ class TestUtils(unittest.TestCase):
             ),
             ("bucket", "path/to/product"),
         )
+
+    def test_flatten_top_dirs(self):
+        """flatten_top_dirs must flatten directory structure"""
+        with TemporaryDirectory() as nested_dir_root:
+            os.makedirs(os.path.join(nested_dir_root, "a", "b", "c1"))
+            os.makedirs(os.path.join(nested_dir_root, "a", "b", "c2"))
+            # create empty files
+            open(os.path.join(nested_dir_root, "a", "b", "c1", "foo"), "a").close()
+            open(os.path.join(nested_dir_root, "a", "b", "c2", "bar"), "a").close()
+            open(os.path.join(nested_dir_root, "a", "b", "c2", "baz"), "a").close()
+
+            flatten_top_directories(nested_dir_root)
+
+            dir_content = list(Path(nested_dir_root).glob("**/*"))
+
+            self.assertEqual(len(dir_content), 5)
+            self.assertIn(Path(nested_dir_root) / "c1", dir_content)
+            self.assertIn(Path(nested_dir_root) / "c1" / "foo", dir_content)
+            self.assertIn(Path(nested_dir_root) / "c2", dir_content)
+            self.assertIn(Path(nested_dir_root) / "c2" / "bar", dir_content)
+            self.assertIn(Path(nested_dir_root) / "c2" / "baz", dir_content)
+
+    def test_flatten_top_dirs_given_subdir(self):
+        """flatten_top_dirs must flatten directory structure using given subdirectory"""
+        with TemporaryDirectory() as nested_dir_root:
+            os.makedirs(os.path.join(nested_dir_root, "a", "b", "c1"))
+            os.makedirs(os.path.join(nested_dir_root, "a", "b", "c2"))
+            # create empty files
+            open(os.path.join(nested_dir_root, "a", "b", "c1", "foo"), "a").close()
+            open(os.path.join(nested_dir_root, "a", "b", "c2", "bar"), "a").close()
+            open(os.path.join(nested_dir_root, "a", "b", "c2", "baz"), "a").close()
+
+            flatten_top_directories(nested_dir_root, os.path.join(nested_dir_root, "a"))
+
+            dir_content = list(Path(nested_dir_root).glob("**/*"))
+
+            self.assertEqual(len(dir_content), 6)
+            self.assertIn(Path(nested_dir_root) / "b", dir_content)
+            self.assertIn(Path(nested_dir_root) / "b" / "c1", dir_content)
+            self.assertIn(Path(nested_dir_root) / "b" / "c1" / "foo", dir_content)
+            self.assertIn(Path(nested_dir_root) / "b" / "c2", dir_content)
+            self.assertIn(Path(nested_dir_root) / "b" / "c2" / "bar", dir_content)
+            self.assertIn(Path(nested_dir_root) / "b" / "c2" / "baz", dir_content)

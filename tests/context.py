@@ -73,6 +73,7 @@ from eodag.utils import (
     parse_qsl,
     urlsplit,
     GENERIC_PRODUCT_TYPE,
+    flatten_top_directories,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,
