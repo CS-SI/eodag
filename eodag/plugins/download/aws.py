@@ -19,7 +19,6 @@
 import logging
 import os
 import re
-import shutil
 from pathlib import Path
 
 import boto3
@@ -36,6 +35,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     ProgressCallback,
+    flatten_top_directories,
     get_bucket_name_and_prefix,
     path_to_uri,
     rename_subfolder,
@@ -421,13 +421,7 @@ class AwsDownload(Download):
             self.finalize_s2_safe_product(product_local_path)
         # flatten directory structure
         elif flatten_top_dirs:
-            tmp_product_local_path = "%s-tmp" % product_local_path
-            for d, dirs, files in os.walk(product_local_path):
-                if len(files) != 0:
-                    shutil.copytree(d, tmp_product_local_path)
-                    shutil.rmtree(product_local_path)
-                    os.rename(tmp_product_local_path, product_local_path)
-                    break
+            flatten_top_directories(product_local_path, common_prefix)
 
         if build_safe:
             self.check_manifest_file_list(product_local_path)

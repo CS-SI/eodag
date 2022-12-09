@@ -33,7 +33,12 @@ from eodag.plugins.download.base import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
-from eodag.utils import ProgressCallback, path_to_uri, uri_to_path
+from eodag.utils import (
+    ProgressCallback,
+    flatten_top_directories,
+    path_to_uri,
+    uri_to_path,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -421,13 +426,7 @@ class HTTPDownload(Download):
 
         # flatten directory structure
         if flatten_top_dirs:
-            tmp_product_local_path = "%s-tmp" % fs_dir_path
-            for d, dirs, files in os.walk(fs_dir_path):
-                if len(files) != 0:
-                    shutil.copytree(d, tmp_product_local_path)
-                    shutil.rmtree(fs_dir_path)
-                    os.rename(tmp_product_local_path, fs_dir_path)
-                    break
+            flatten_top_directories(fs_dir_path)
 
         # save hash/record file
         with open(record_filename, "w") as fh:
