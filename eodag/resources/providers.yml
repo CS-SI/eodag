@@ -2737,7 +2737,6 @@
         - '$.properties.organisationName'
       publicationDate: '$.properties.published'
       accessConstraint: '$.properties.license'
-
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier:
         - 'parentIdentifier'
@@ -2777,7 +2776,6 @@
       polarizationMode:
         - 'polarisation'
         - '$.properties.polarisation'
-
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'productIdentifier={id#remove_extension}'
@@ -2790,12 +2788,6 @@
       quicklook: '$.properties.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      # Create download link from NCI THREDDS dataserver. NCI is the backbone for SARA,
-      # and is provided freely
-      # Alternativly you can use the download link provided (.properties.services.download.url), which
-      # requires autentication, or the copernicus-dtn.nci.org.au server (change the .png quicklook to .zip)
-      _ql: '{$.properties.quicklook#slice_str(41,-4,1)}' # remove first part of url, which is always consistent
-      NCIdownloadLink: https://dapds00.nci.org.au/thredds/fileServer/fj7/Copernicus/{_ql}.zip
       downloadLink: '$.properties.services.download.url'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
 
