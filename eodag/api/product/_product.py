@@ -35,9 +35,10 @@ from eodag.utils import ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 try:
-    from shapely.errors import TopologicalError
+    from shapely.errors import GEOSException
 except ImportError:
-    from shapely.geos import TopologicalError
+    # shapely < 2.0 compatibility
+    from shapely.errors import TopologicalError as GEOSException
 
 
 logger = logging.getLogger("eodag.api.product")
@@ -129,7 +130,7 @@ class EOProduct(object):
             )
             try:
                 self.search_intersection = self.geometry.intersection(searched_geom)
-            except TopologicalError:
+            except GEOSException:
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
                     "geometry: %s",
