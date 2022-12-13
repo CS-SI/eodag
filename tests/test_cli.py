@@ -215,7 +215,8 @@ class TestEodagCli(unittest.TestCase):
                 eodag,
                 ["search", "--conf", conf_file, "-p", "whatever", "-g", "not a wkt"],
             )
-            self.assertIn("WKTReadingError", str(result))
+            # GEOSException for shapely >= 2.0
+            assert "WKTReadingError" in str(result) or "GEOSException" in str(result)
             self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)

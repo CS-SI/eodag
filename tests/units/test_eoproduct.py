@@ -58,7 +58,7 @@ class TestEOProduct(EODagTestCase):
         self.assertEqual(product.geometry, product.search_intersection)
 
     def test_eoproduct_search_intersection_none(self):
-        """EOProduct search_intersection attr must be None if shapely.errors.TopologicalError when intersecting"""  # noqa
+        """EOProduct search_intersection attr must be None if shapely.errors.GEOSException when intersecting"""  # noqa
         # Invalid geometry
         self.eoproduct_props["geometry"] = {
             "type": "Polygon",
