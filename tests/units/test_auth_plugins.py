@@ -20,9 +20,10 @@ import unittest
 from unittest import mock
 
 from requests.auth import AuthBase
+from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
-from tests.context import MisconfiguredError, PluginManager
+from tests.context import AuthenticationError, MisconfiguredError, PluginManager
 
 
 class BaseAuthPluginTest(unittest.TestCase):
@@ -167,3 +168,18 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         req = mock.Mock(headers={})
         auth(req)
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
+
+    @mock.patch("eodag.plugins.authentication.token.requests.post", autospec=True)
+    def test_plugins_auth_tokenauth_request_error(self, mock_requests_post):
+        """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""
+        auth_plugin = self.get_auth_plugin("provider_json_token_simple_url")
+
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        # mock token post request response
+        mock_requests_post.side_effect = RequestException
+
+        self.assertRaises(
+            AuthenticationError,
+            auth_plugin.authenticate,
+        )
