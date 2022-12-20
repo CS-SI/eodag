@@ -283,6 +283,9 @@ class QueryStringSearch(Search):
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
             return [], 0
+        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
+        kwargs.pop("product_type", None)
+
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = (
@@ -787,7 +790,7 @@ class QueryStringSearch(Search):
             )
         return collections
 
-    def map_product_type(self, product_type, **kwargs):
+    def map_product_type(self, product_type):
         """Map the eodag product type to the provider product type"""
         if product_type is None:
             return
@@ -950,7 +953,9 @@ class PostJsonSearch(QueryStringSearch):
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
-        provider_product_type = self.map_product_type(product_type, **kwargs)
+        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
+        kwargs.pop("product_type", None)
+        provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
         if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
