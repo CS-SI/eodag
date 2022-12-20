@@ -221,15 +221,30 @@ class EOProduct(object):
         """
         self.downloader = downloader
         self.downloader_auth = authenticator
+
         # resolve locations and properties if needed with downloader configuration
-        self.location = self.location % vars(self.downloader.config)
-        self.remote_location = self.remote_location % vars(self.downloader.config)
+        location_attrs = ("location", "remote_location")
+        for location_attr in location_attrs:
+            try:
+                setattr(
+                    self,
+                    location_attr,
+                    getattr(self, location_attr) % vars(self.downloader.config),
+                )
+            except ValueError as e:
+                logger.debug(
+                    f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
+                    f" in register_downloader: {str(e)}"
+                )
+
         for k, v in self.properties.items():
             if isinstance(v, str):
                 try:
                     self.properties[k] = v % vars(self.downloader.config)
-                except TypeError:
-                    pass
+                except (TypeError, ValueError) as e:
+                    logger.debug(
+                        f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
+                    )
 
     def download(
         self,
