@@ -279,7 +279,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
 
 class CodeAuthorizedAuth(AuthBase):
-    """CodeAuthorizedAuth authentication plugin"""
+    """CodeAuthorizedAuth custom authentication class to be used with requests module"""
 
     def __init__(self, token, where, key=None):
         self.token = token

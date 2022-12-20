@@ -21,7 +21,7 @@ from requests import RequestException
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import RequestsTokenAuth
-from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
@@ -49,18 +49,17 @@ class TokenAuth(Authentication):
         req_kwargs = (
             {"headers": self.config.headers} if hasattr(self.config, "headers") else {}
         )
-
-        # First get the token
-        response = requests.post(
-            self.config.auth_uri,
-            data=self.config.credentials,
-            timeout=HTTP_REQ_TIMEOUT,
-            **req_kwargs,
-        )
         try:
+            # First get the token
+            response = requests.post(
+                self.config.auth_uri,
+                data=self.config.credentials,
+                timeout=HTTP_REQ_TIMEOUT,
+                **req_kwargs,
+            )
             response.raise_for_status()
         except RequestException as e:
-            raise e
+            raise AuthenticationError(f"Could no get authentication token: {str(e)}")
         else:
             if getattr(self.config, "token_type", "text") == "json":
                 token = response.json()[self.config.token_key]
