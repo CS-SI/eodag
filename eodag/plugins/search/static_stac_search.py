@@ -60,6 +60,14 @@ class StaticStacSearch(StacSearch):
         self.config.__dict__.setdefault("max_connections", 100)
         self.config.__dict__.setdefault("timeout", HTTP_REQ_TIMEOUT)
 
+    def discover_product_types(self):
+        """Fetch product types is disabled for `StaticStacSearch`
+
+        :returns: empty dict
+        :rtype: dict
+        """
+        return {}
+
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on a static STAC Catalog"""
 
