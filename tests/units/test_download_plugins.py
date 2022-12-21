@@ -146,7 +146,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_ok(self, mock_requests_get):
         """HTTPDownload.download() must create an outputfile"""
 
