@@ -155,7 +155,9 @@ class Download(PluginTopic):
             or getattr(self.config, "outputs_prefix", tempfile.gettempdir())
             or tempfile.gettempdir()
         )
-        outputs_extension = kwargs.get("outputs_extension", ".zip")
+        outputs_extension = kwargs.get("outputs_extension", None) or getattr(
+            self.config, "outputs_extension", ".zip"
+        )
 
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
