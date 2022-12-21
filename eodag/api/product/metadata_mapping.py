@@ -232,7 +232,10 @@ def format_metadata(search_param, *args, **kwargs):
             terms of the time to include. Valid options are 'auto', 'hours',
             'minutes', 'seconds', 'milliseconds' and 'microseconds'.
             """
-            dt = isoparse(date_time)
+            try:
+                dt = isoparse(date_time)
+            except ValueError:
+                return date_time
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
             elif dt.tzinfo is not UTC:

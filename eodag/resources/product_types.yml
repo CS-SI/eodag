@@ -1294,6 +1294,42 @@ ERA5_SL:
   title: ERA5 Hourly data on Single Levels
   missionStartDate: "1959-01-01T00:00:00Z"
 
+# METEOBLUE --------------------------------------------------------------------------
+NEMSGLOBAL_TCDC:
+  abstract: |
+    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
+    NEMSGLOBAL has 30km spatial and 1h temporal resolutions and produces seamless
+    datasets from 1984 to 7 days ahead.
+  instrument:
+  platform: NEMSGLOBAL
+  platformSerialIdentifier: NEMSGLOBAL
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSGLOBAL,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: NEMSGLOBAL Total Cloud Cover daily mean
+  missionStartDate: "1984-01-01T00:00:00Z"
+
+NEMSAUTO_TCDC:
+  abstract: |
+    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) automatic
+    domain switch. NEMSAUTO is the automatic delivery of the highest resolution meteoblue
+    model available for any requested period of time and location. The NEMS model family
+    are improved NMM successors (operational since 2013). NEMS is a multi-scale model
+    (used from global down to local domains) and significantly improves cloud-development
+    and precipitation forecast.
+    Note that Automatic domain switching is only supported for multi point queries.
+    Support for polygons may follow later.
+  instrument:
+  platform: NEMSAUTO
+  platformSerialIdentifier: NEMSAUTO
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: NEMSAUTO Total Cloud Cover daily mean
+  missionStartDate: "1984-01-01T00:00:00Z"
+
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:
