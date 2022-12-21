@@ -95,6 +95,7 @@
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
     need_auth: true
     auth_error_code: 403
+    results_entry: 'results'
     pagination:
       next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
       total_items_nb_key_path: '$.meta.found'
