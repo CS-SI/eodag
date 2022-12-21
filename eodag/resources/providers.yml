@@ -112,7 +112,7 @@
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
-        - '{{"search":{{"shape": {geometry#to_geo_interface} }} }}'
+        - '{{"search":{{"shape": {geometry#to_geojson} }} }}'
         - '$.dataGeometry'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'

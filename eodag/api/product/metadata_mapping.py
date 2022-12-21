@@ -130,7 +130,7 @@ def format_metadata(search_param, *args, **kwargs):
         - ``to_bounds_lists``: convert to list(s) of bounds
         - ``to_nwse_bounds``: convert to North,West,South,East bounds
         - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
-        - ``to_geo_interface``: convert to a GeoJSON via __geo_interface__
+        - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
         - ``csv_list``: convert to a comma separated list
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
           milliseconds to a utc iso datetime
@@ -297,8 +297,8 @@ def format_metadata(search_param, *args, **kwargs):
             )
 
         @staticmethod
-        def convert_to_geo_interface(geom):
-            return geojson.dumps(geom.__geo_interface__)
+        def convert_to_geojson(string):
+            return geojson.dumps(string)
 
         @staticmethod
         def convert_csv_list(values_list):
