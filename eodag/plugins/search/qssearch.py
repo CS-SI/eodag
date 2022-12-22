@@ -33,6 +33,7 @@ from eodag.api.product.metadata_mapping import (
     get_metadata_path,
     get_metadata_path_value,
     get_search_param,
+    mtd_cfg_as_jsonpath,
     properties_from_json,
     properties_from_xml,
 )
@@ -214,19 +215,19 @@ class QueryStringSearch(Search):
 
                     for product_type_result in result:
                         # providers_config extraction
-                        mapping_config = {
-                            k: (None, cached_parse(v))
-                            for k, v in self.config.discover_product_types[
-                                "generic_product_type_parsable_properties"
-                            ].items()
-                        }
-                        mapping_config["generic_product_type_id"] = (
-                            None,
-                            cached_parse(
+                        mapping_config = {}
+                        mapping_config = mtd_cfg_as_jsonpath(
+                            dict(
                                 self.config.discover_product_types[
-                                    "generic_product_type_id"
-                                ]
+                                    "generic_product_type_parsable_properties"
+                                ],
+                                **{
+                                    "generic_product_type_id": self.config.discover_product_types[
+                                        "generic_product_type_id"
+                                    ]
+                                },
                             ),
+                            mapping_config,
                         )
 
                         extracted_mapping = properties_from_json(
@@ -244,15 +245,52 @@ class QueryStringSearch(Search):
                             ),
                         )
                         # product_types_config extraction
-                        mapping_config = {
-                            k: (None, cached_parse(v))
-                            for k, v in self.config.discover_product_types[
+                        mapping_config = {}
+                        mapping_config = mtd_cfg_as_jsonpath(
+                            self.config.discover_product_types[
                                 "generic_product_type_parsable_metadata"
-                            ].items()
-                        }
+                            ],
+                            mapping_config,
+                        )
                         conf_update_dict["product_types_config"][
                             generic_product_type_id
                         ] = properties_from_json(product_type_result, mapping_config)
+
+                        # update keywords
+                        keywords_fields = [
+                            "instrument",
+                            "platform",
+                            "platformSerialIdentifier",
+                            "processingLevel",
+                            "keywords",
+                        ]
+                        keywords_values_str = ",".join(
+                            [generic_product_type_id]
+                            + [
+                                str(
+                                    conf_update_dict["product_types_config"][
+                                        generic_product_type_id
+                                    ][kf]
+                                )
+                                for kf in keywords_fields
+                                if conf_update_dict["product_types_config"][
+                                    generic_product_type_id
+                                ][kf]
+                                != NOT_AVAILABLE
+                            ]
+                        )
+                        keywords_values_str = keywords_values_str.replace(
+                            ", ", ","
+                        ).replace(" ", "-")
+                        keywords_values_str = re.sub(
+                            r"[\[\]'\"]", "", keywords_values_str
+                        )
+                        keywords_values_str = ",".join(
+                            set(keywords_values_str.split(","))
+                        )
+                        conf_update_dict["product_types_config"][
+                            generic_product_type_id
+                        ]["keywords"] = keywords_values_str
             except KeyError as e:
                 logger.warning(
                     "Incomplete %s discover_product_types configuration: %s",

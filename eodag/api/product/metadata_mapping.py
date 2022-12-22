@@ -302,7 +302,10 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_csv_list(values_list):
-            return ",".join([str(x) for x in values_list])
+            if isinstance(values_list, list):
+                return ",".join([str(x) for x in values_list])
+            else:
+                return values_list
 
         @staticmethod
         def convert_remove_extension(string):
