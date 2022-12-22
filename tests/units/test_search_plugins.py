@@ -187,6 +187,50 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "The FOO collection",
         )
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_discover_product_types_keywords(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must return a dict with well formatted keywords"""
+        # One of the providers that has a QueryStringSearch Search plugin and keywords configured
+        provider = "astraea_eod"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {
+            "collections": [
+                {
+                    "id": "foo_collection",
+                    "keywords": ["foo", "bar"],
+                    "summaries": {
+                        "instruments": ["baz"],
+                        "constellation": "qux,foo",
+                        "platform": ["quux", "corge", "bar"],
+                        "processing:level": "grault",
+                    },
+                },
+            ]
+        }
+        conf_update_dict = search_plugin.discover_product_types()
+        keywords_list = conf_update_dict["product_types_config"]["foo_collection"][
+            "keywords"
+        ].split(",")
+
+        self.assertEqual(len(keywords_list), 8)
+        for k in [
+            "foo_collection",
+            "foo",
+            "bar",
+            "baz",
+            "qux",
+            "quux",
+            "corge",
+            "grault",
+        ]:
+            self.assertIn(k, keywords_list)
+
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
