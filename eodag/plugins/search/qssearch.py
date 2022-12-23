@@ -279,14 +279,19 @@ class QueryStringSearch(Search):
                                 != NOT_AVAILABLE
                             ]
                         )
-                        keywords_values_str = keywords_values_str.replace(
-                            ", ", ","
-                        ).replace(" ", "-")
+                        # cleanup str list from unwanted characters
+                        keywords_values_str = (
+                            keywords_values_str.replace(", ", ",")
+                            .replace(" ", "-")
+                            .replace("_", "-")
+                            .lower()
+                        )
                         keywords_values_str = re.sub(
                             r"[\[\]'\"]", "", keywords_values_str
                         )
+                        # sorted list of unique lowercase keywords
                         keywords_values_str = ",".join(
-                            set(keywords_values_str.split(","))
+                            sorted(set(keywords_values_str.split(",")))
                         )
                         conf_update_dict["product_types_config"][
                             generic_product_type_id
