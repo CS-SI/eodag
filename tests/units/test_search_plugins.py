@@ -205,10 +205,10 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                     "id": "foo_collection",
                     "keywords": ["foo", "bar"],
                     "summaries": {
-                        "instruments": ["baz"],
+                        "instruments": ["baZ"],
                         "constellation": "qux,foo",
                         "platform": ["quux", "corge", "bar"],
-                        "processing:level": "grault",
+                        "processing:level": "GRAULT",
                     },
                 },
             ]
@@ -218,18 +218,19 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "keywords"
         ].split(",")
 
-        self.assertEqual(len(keywords_list), 8)
-        for k in [
-            "foo_collection",
-            "foo",
-            "bar",
-            "baz",
-            "qux",
-            "quux",
-            "corge",
-            "grault",
-        ]:
-            self.assertIn(k, keywords_list)
+        self.assertEqual(
+            [
+                "bar",
+                "baz",
+                "corge",
+                "foo",
+                "foo-collection",
+                "grault",
+                "quux",
+                "qux",
+            ],
+            keywords_list,
+        )
 
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
