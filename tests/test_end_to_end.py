@@ -135,9 +135,9 @@ ONDA_SEARCH_ARGS = [
 ]
 USGS_SEARCH_ARGS = [
     "usgs",
-    "L8_OLI_TIRS_C1L1",
-    "2017-03-01",
-    "2017-03-15",
+    "LANDSAT_C2L1",
+    (today - 6 * week_span).isoformat(),
+    (today - 5 * week_span).isoformat(),
     [50, 50, 50.3, 50.3],
 ]
 ECMWF_SEARCH_ARGS = [

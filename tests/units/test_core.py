@@ -84,7 +84,6 @@ class TestCore(TestCoreBase):
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": [
             "onda",
-            "usgs",
             "aws_eos",
             "earth_search",
             "earth_search_gcs",

@@ -448,7 +448,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         """UsgsApi.query must search using usgs api"""
 
         search_kwargs = {
-            "productType": "L8_OLI_TIRS_C1L1",
+            "productType": "LANDSAT_C2L1",
             "startTimeFromAscendingNode": "2020-02-01",
             "completionTimeFromAscendingNode": "2020-02-10",
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
@@ -457,7 +457,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         }
         search_results, total_count = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
-            "LANDSAT_8_C1",
+            "landsat_ot_c2_l1",
             start_date="2020-02-01",
             end_date="2020-02-10",
             ll={"longitude": 10.0, "latitude": 20.0},
@@ -466,7 +466,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             starting_number=6,
         )
         self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].product_type, "L8_OLI_TIRS_C1L1")
+        self.assertEqual(search_results[0].product_type, "LANDSAT_C2L1")
         self.assertEqual(
             search_results[0].geometry,
             shape(
