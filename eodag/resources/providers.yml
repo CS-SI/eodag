@@ -52,9 +52,6 @@
   products:
     # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt may be outdated
     # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
-    L8_OLI_TIRS_C1L1:
-      dataset: LANDSAT_8_C1
-      outputs_extension: .tar.gz
     LANDSAT_C2L1:
       dataset: landsat_ot_c2_l1
       outputs_extension: .tar.gz
