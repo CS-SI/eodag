@@ -1383,6 +1383,7 @@
     base_uri: 'https://mundiwebservices.com/dp'
     extract: true
     auth_error_code: 401
+    bucket_path_level: 0
   auth: !plugin
     type: HTTPHeaderAuth
     headers:
