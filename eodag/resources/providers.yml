@@ -2950,8 +2950,3 @@
   auth: !plugin
     type: GenericAuth
     method: basic
-
-
-
-
-
