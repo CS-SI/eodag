@@ -37,6 +37,8 @@ to each provider supported by ``eodag``:
   Then go to your profile and use from the section named "API key" use *UID* as *username* and *API Key* as *password* in eodag credentials.
   EODAG can be used to request for public datasets, you can browse them `here <https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset>`__.
 
+* `sara`: create an account `here <https://copernicus.nci.org.au/sara.client/#/register>`__, then use your email as `username` in eodag credentials.
+
 * `aws_eos`: you need credentials for both EOS (search) and AWS (download):
 
   * Create an account on `EOS <https://auth.eos.com>`__

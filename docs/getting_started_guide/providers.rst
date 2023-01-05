@@ -23,6 +23,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
+* `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Acces
 
 Providers available through an external plugin:
 

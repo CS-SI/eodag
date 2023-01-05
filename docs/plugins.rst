@@ -60,6 +60,12 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------+-------------------+--------------------------+----------------+
 | ecmwf            | EcmwfApi          | EcmwfApi                 | EcmwfApi       |
 +------------------+-------------------+--------------------------+----------------+
+| cop_ads          | CdsApi            | CdsApi                   | CdsApi         |
++------------------+-------------------+--------------------------+----------------+
+| cop_cds          | CdsApi            | CdsApi                   | CdsApi         |
++------------------+-------------------+--------------------------+----------------+
+| sara             | QueryStringSearch | GenericAuth              | HTTPDownload   |
++------------------+-------------------+--------------------------+----------------+
 
 .. _creating_plugins:
 
