@@ -176,6 +176,13 @@ COP_CDS_SEARCH_KWARGS = {
     # request for grib file instead of netcdf
     "format": "grib",
 }
+SARA_SEARCH_ARGS = [
+    "sara",
+    "S2_MSI_L1C",
+    "2020-03-01",
+    "2020-03-15",
+    [150, -33, 151, -32],
+]
 
 
 class EndToEndBase(unittest.TestCase):
@@ -473,6 +480,11 @@ class TestEODagEndToEnd(EndToEndBase):
             *COP_CDS_SEARCH_ARGS, search_kwargs_dict=COP_CDS_SEARCH_KWARGS
         )
         expected_filename = "{}.grib".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_sara(self):
+        product = self.execute_search(*SARA_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
