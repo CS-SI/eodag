@@ -142,7 +142,7 @@ class TestCore(TestCoreBase):
             "earth_search",
             "earth_search_gcs",
             "usgs",
-            "sara"
+            "sara",
         ],
         "S3_ERR": ["onda", "creodias", "sara"],
         "S3_EFR": ["onda", "creodias", "sara"],
