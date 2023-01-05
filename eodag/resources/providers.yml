@@ -2683,3 +2683,267 @@
       dataset: '{productType}'
       time: '00:00'
       format: netcdf
+---
+!provider
+  name: sara
+  priority: 0
+  search: !plugin
+    type: QueryStringSearch
+    # The endpoint is based off of the collection. There is a generic endpoint,
+    # but can be very slow if not enough metdata is provided.
+    api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{collection}/search.json'
+    need_auth: false
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
+      # 2021/03/19: 500 is the max, no error if greater
+      max_items_per_page: 500
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
+    metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      productType:
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier:
+        - platform
+        - '$.properties.platform'
+      instrument:
+        - instrument
+        - '$.properties.instrument'
+      processingLevel:
+        - processingLevel
+        - '$.properties.processingLevel'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '$.properties.title'
+      topicCategory: '$.properties.topicCategory'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      resolution:
+        - 'resolution'
+        - '$.properties.resolution'
+      organisationName:
+        - 'organisationName'
+        - '$.properties.organisationName'
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier:
+        - 'parentIdentifier'
+        - '$.properties.parentIdentifier'
+      acquisitionType: '$.properties.acquisitionType'
+      orbitNumber:
+        - 'orbitNumber'
+        - '$.properties.orbitNumber'
+      orbitDirection:
+        - 'orbitDirection'
+        - '$.properties.orbitDirection'
+      swathIdentifier:
+        - 'swath'
+        - '$.properties.swath'
+      cloudCover:
+        - 'cloudCover=[0,{cloudCover}]'
+        - '$.properties.cloudCover'
+      snowCover:
+        - 'snowCover=[0,{snowCover}]'
+        - '$.properties.snowCover'
+      productVersion: '$.properties.version'
+      productQualityStatus: '$.properties.onlineQualityCheck'
+      processorName: '$.properties.processingName'
+      processingCenter: '$.properties.processingCenter'
+      creationDate: '$.properties.dhusIngestDate'
+      modificationDate: '$.properties.updated'
+      sensorMode:
+        - 'sensorMode'
+        - '$.properties.sensorMode'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
+      polarizationMode:
+        - 'polarisation'
+        - '$.properties.polarisation'
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - 'productIdentifier={id#remove_extension}'
+        - '$.properties.productIdentifier'
+      # The geographic extent of the product
+      geometry:
+        - 'geometry={geometry#to_rounded_wkt}'
+        - '$.geometry'
+      # The url of the quicklook
+      quicklook: '$.properties.quicklook'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      downloadLink: '$.properties.services.download.url'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      thumbnail: '$.properties.thumbnail'
+  products:
+    # Sentinel 1
+    S1_SAR_OCN:
+      productType: OCN
+      collection: S1
+      instrument: C-SAR
+    S1_SAR_GRD:
+      productType: GRD
+      collection: S1
+      instrument: C-SAR
+    S1_SAR_SLC:
+      productType: SLC
+      collection: S1
+      instrument: C-SAR
+    # Sentinel 2
+    S2_MSI_L1C:
+      collection: S2
+      productType: S2MSIL1C
+      instrument: MSI
+      processingLevel: L1C
+    S2_MSI_L2A:
+      collection: S2
+      productType: S2MSIL2A
+      instrument: MSI
+      processingLevel: L2A
+    # OLCI products
+    # L1
+    S3_EFR:
+      productType: OL_1_EFR___
+      collection: S3
+      instrument: OLCI
+      processingLevel: LEVEL-1
+    S3_ERR:
+      productType: OL_1_ERR___
+      collection: S3
+      instrument: OLCI
+      processingLevel: LEVEL-1
+    # output during radiometric calibration mode
+    S3_RAC:
+      productType: OL_1_RAC___
+      collection: S3
+      instrument: OLCI
+      processingLevel: LEVEL-1
+    # L2
+    S3_OLCI_L2LRR:
+      productType: OL_2_LRR___
+      collection: S3
+      instrument: OLCI
+      processingLevel: LEVEL-2
+    S3_OLCI_L2LFR:
+      productType: OL_2_LFR___
+      collection: S3
+      instrument: OLCI
+      processingLevel: LEVEL-2
+    S3_OLCI_L2WRR:
+      productType: OL_2_WRR___
+      collection: S3
+      instrument: OLCI
+      processingLevel: LEVEL-2
+    S3_OLCI_L2WFR:
+      productType: OL_2_WFR___
+      collection: S3
+      instrument: OLCI
+      processingLevel: LEVEL-2
+    # SLSTR products
+    S3_SLSTR_L1RBT:
+      productType: SL_1_RBT___
+      collection: S3
+      instrument: SLSTR
+      processingLevel: LEVEL-1
+    S3_SLSTR_L2LST:
+      productType: SL_2_LST___
+      collection: S3
+      instrument: SLSTR
+      processingLevel: LEVEL-2
+    S3_SLSTR_L2WST:
+      productType: SL_2_WST___
+      collection: S3
+      instrument: SLSTR
+      processingLevel: LEVEL-2
+    S3_SLSTR_L2AOD:
+      productType: SL_2_AOD___
+      collection: S3
+      instrument: SLSTR
+      processingLevel: LEVEL-2
+    S3_SLSTR_L2FRP:
+      productType: SL_2_FRP___
+      collection: S3
+      instrument: SLSTR
+      processingLevel: LEVEL-2
+    # SRAL
+    # L1
+    S3_SRA:
+      productType: SR_1_SRA___
+      collection: S3
+      instrument: SRAL
+      processingLevel: LEVEL-1
+    S3_SRA_A:
+      productType: SR_1_SRA_A_
+      collection: S3
+      instrument: SRAL
+      processingLevel: LEVEL-1
+    S3_SRA_BS:
+      productType: SR_1_SRA_BS
+      collection: S3
+      instrument: SRAL
+      processingLevel: LEVEL-1
+    # L2
+    S3_LAN:
+      productType: SR_2_LAN___
+      collection: S3
+      instrument: SRAL
+      processingLevel: LEVEL-2
+    S3_WAT:
+      productType: SR_2_WAT___
+      collection: S3
+      instrument: SRAL
+      processingLevel: LEVEL-2
+    # Synergy products
+    S3_SY_AOD:
+      productType: SY_2_AOD___
+      collection: S3
+      instrument: SYNERGY
+      processingLevel: LEVEL-2
+    S3_SY_SYN:
+      productType: SY_2_SYN___
+      collection: S3
+      instrument: SYNERGY
+      processingLevel: LEVEL-2
+    S3_SY_V10:
+      productType: SY_2_V10___
+      collection: S3
+      instrument: SYNERGY
+      processingLevel: LEVEL-2W
+    S3_SY_VG1:
+      productType: SY_2_VG1___
+      collection: S3
+      instrument: SYNERGY
+      processingLevel: LEVEL-2
+    S3_SY_VGP:
+      productType: SY_2_VGP___
+      collection: S3
+      instrument: SYNERGY
+      processingLevel: LEVEL-2
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+      collection: '{collection}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://copernicus.nci.org.au/'
+    extract: true
+    archive_depth: 2
+    order_enabled: true
+    auth_error_code: 403
+  auth: !plugin
+    type: GenericAuth
+    method: basic
