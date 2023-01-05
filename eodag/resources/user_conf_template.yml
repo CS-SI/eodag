@@ -163,3 +163,14 @@ cop_cds:
         credentials:
             username:
             password:
+sara:
+    priority: # Lower value means lower priority (Default: 0)
+    search:  # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+        delete_archive:
+    auth:
+        credentials:
+            username:
+            password:
