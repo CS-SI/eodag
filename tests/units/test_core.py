@@ -110,7 +110,7 @@ class TestCore(TestCoreBase):
             "creodias",
             "aws_eos",
             "astraea_eod",
-            "sara"
+            "sara",
         ],
         "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias", "sara"],
         "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
