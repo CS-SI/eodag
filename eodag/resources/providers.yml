@@ -1016,10 +1016,6 @@
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
         collection: '$.id'
-      generic_product_type_unparsable_properties:
-        # cloud cover search disabled for unknown product_type
-        metadata_mapping:
-          cloudCover: '$.null'
       generic_product_type_parsable_metadata:
         title: '$.displayName'
         abstract: '$.null'
