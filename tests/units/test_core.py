@@ -124,7 +124,7 @@ class TestCore(TestCoreBase):
             "sobloo",
             "astraea_eod",
             "earth_search",
-            "sara"
+            "sara",
         ],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
         "S2_MSI_L2A_MAJA": ["theia"],
