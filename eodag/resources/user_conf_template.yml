@@ -174,3 +174,11 @@ sara:
         credentials:
             username:
             password:
+meteoblue:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            apikey:
+    download:
+        outputs_prefix:

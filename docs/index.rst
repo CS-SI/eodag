@@ -33,7 +33,8 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `peps <https://peps.cnes.fr/rocket/#/home>`_, `aws_eos <https://eos.com/>`_, `creodias <https://creodias.eu/>`_,
       `mundi <https://mundiwebservices.com/>`_, `onda <https://www.onda-dias.eu/cms/>`_, `ecmwf <https://www.ecmwf.int/>`_,
       `cop_ads <https://ads.atmosphere.copernicus.eu>`_, `cop_cds <https://cds.climate.copernicus.eu>`_,
-      `sara <https://copernicus.nci.org.au>`_
+      `sara <https://copernicus.nci.org.au>`_,
+      `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_
 
 EODAG has the following primary features:
 
