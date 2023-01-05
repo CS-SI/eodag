@@ -2789,8 +2789,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
-      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
   products:
