@@ -85,8 +85,7 @@ Click on the link below to display its full content.
    </details>
    </br>
 
-The following table makes your search faster and easier by allowing you to dynamically find information.
-It lists the metadata parameters of the product types, and shows whether these product types are available for providers or not.
+The following table lists the metadata parameters of the product types, and shows whether these product types are available for providers or not. The table allows you to display desired columns only, sort, and filter its content.
 
 Product types information (`CSV <../_static/product_types_information.csv>`__)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
