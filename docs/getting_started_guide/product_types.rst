@@ -83,3 +83,24 @@ Click on the link below to display its full content.
 .. raw:: html
 
    </details>
+   </br>
+
+The following table lists the metadata parameters of the product types, and shows whether these product types are available for providers or not. The table allows you to display desired columns only, sort, and filter its content.
+
+Product types information (`CSV <../_static/product_types_information.csv>`__)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. raw:: html
+
+   <p id="column_links"></p>
+   <span id="table_0_span">
+
+.. csv-table::
+   :file: ../_static/product_types_information.csv
+   :header-rows: 1
+   :stub-columns: 1
+   :class: datatable
+
+.. raw:: html
+
+   </span>
