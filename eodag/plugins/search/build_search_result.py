@@ -30,6 +30,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.search.qssearch import PostJsonSearch
+from eodag.utils import dict_items_recursive_sort
 from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.plugins.search.build_search_result")
@@ -139,7 +140,10 @@ class BuildPostSearchResult(PostJsonSearch):
         }
 
         # query hash, will be used to build a product id
-        qs = geojson.dumps(unpaginated_query_params)
+        sorted_unpaginated_query_params = dict_items_recursive_sort(
+            unpaginated_query_params
+        )
+        qs = geojson.dumps(sorted_unpaginated_query_params)
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 
         # build product id

@@ -768,6 +768,80 @@ def list_items_recursive_apply(config_list, apply_method, **apply_method_paramet
     return result_list
 
 
+def items_recursive_sort(input_obj):
+    """Recursive sort dict items contained in input object (dict or list)
+
+    >>> items_recursive_sort(
+    ...     {"b": {"b": "c", "a": 0}, "a": ["b", {2: 0, 0: 1, 1: 2}]},
+    ... ) == {"a": ["b", {0: 1, 1: 2, 2: 0}], "b": {"a": 0, "b": "c"}}
+    True
+    >>> items_recursive_sort(["b", {2: 0, 0: 1, 1:2}])
+    ['b', {0: 1, 1: 2, 2: 0}]
+    >>> items_recursive_sort("foo")
+    'foo'
+
+    :param input_obj: Input object (dict or list)
+    :type input_obj: Union[dict,list]
+    :returns: Updated object
+    :rtype: Union[dict, list]
+    """
+    if isinstance(input_obj, dict):
+        return dict_items_recursive_sort(input_obj)
+    elif isinstance(input_obj, list):
+        return list_items_recursive_sort(input_obj)
+    else:
+        logger.warning("Could not use items_recursive_sort on %s" % type(input_obj))
+        return input_obj
+
+
+def dict_items_recursive_sort(config_dict):
+    """Recursive sort dict elements
+
+    >>> dict_items_recursive_sort(
+    ...     {"b": {"b": "c", "a": 0}, "a": ["b", {2: 0, 0: 1, 1: 2}]},
+    ... ) == {"a": ["b", {0: 1, 1: 2, 2: 0}], "b": {"a": 0, "b": "c"}}
+    True
+
+    :param config_dict: Input nested dictionnary
+    :type config_dict: dict
+    :returns: Updated dict
+    :rtype: dict
+    """
+    result_dict = copy.deepcopy(config_dict)
+    for dict_k, dict_v in result_dict.items():
+        if isinstance(dict_v, dict):
+            result_dict[dict_k] = dict_items_recursive_sort(dict_v)
+        elif any(isinstance(dict_v, t) for t in (list, tuple)):
+            result_dict[dict_k] = list_items_recursive_sort(dict_v)
+        else:
+            result_dict[dict_k] = dict_v
+
+    return dict(sorted(result_dict.items()))
+
+
+def list_items_recursive_sort(config_list):
+    """Recursive sort dicts in list elements
+
+    >>> list_items_recursive_sort(["b", {2: 0, 0: 1, 1: 2}])
+    ['b', {0: 1, 1: 2, 2: 0}]
+
+    :param config_list: Input list containing nested lists/dicts
+    :type config_list: list
+    :returns: Updated list
+    :rtype: list
+    """
+    result_list = copy.deepcopy(config_list)
+    for list_idx, list_v in enumerate(result_list):
+        if isinstance(list_v, dict):
+            result_list[list_idx] = dict_items_recursive_sort(list_v)
+        elif any(isinstance(list_v, t) for t in (list, tuple)):
+            result_list[list_idx] = list_items_recursive_sort(list_v)
+        else:
+            result_list[list_idx] = list_v
+
+    return result_list
+
+
 def string_to_jsonpath(key, str_value):
     """Get jsonpath for "$.foo.bar" like string
 
