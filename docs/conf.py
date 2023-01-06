@@ -42,6 +42,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "sphinx_copybutton",
+    "sphinxcontrib.jquery",
 ]
 
 # Notebook integration parameters
@@ -100,7 +101,7 @@ today_fmt = "%Y-%m-%d"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -165,6 +166,12 @@ html_static_path = ["_static"]
 # or fully qualified paths (eg. https://...)
 html_css_files = [
     "custom.css",
+    "https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css",
+]
+
+html_js_files = [
+    "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
+    "product_types.js",
 ]
 
 # Custom sidebar templates, must be a dictionary that maps document names
@@ -235,8 +242,8 @@ texinfo_documents = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/CS-SI/eodag/issues/%s", "#"),
-    "pull": ("https://github.com/CS-SI/eodag/pull/%s", "#"),
+    "issue": ("https://github.com/CS-SI/eodag/issues/%s", "#%s"),
+    "pull": ("https://github.com/CS-SI/eodag/pull/%s", "#%s"),
 }
 
 # Example configuration for intersphinx: refer to the Python standard library.
