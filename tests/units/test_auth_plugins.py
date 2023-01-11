@@ -19,6 +19,7 @@
 import unittest
 from unittest import mock
 
+from requests import Request
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
@@ -178,6 +179,78 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # mock token post request response
         mock_requests_post.side_effect = RequestException
+
+        self.assertRaises(
+            AuthenticationError,
+            auth_plugin.authenticate,
+        )
+
+
+class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
+    @classmethod
+    def setUpClass(cls):
+        super(TestAuthPluginHttpQueryStringAuth, cls).setUpClass()
+        override_config_from_mapping(
+            cls.providers_config,
+            {
+                "foo_provider": {
+                    "products": {},
+                    "auth": {
+                        "type": "HttpQueryStringAuth",
+                        "auth_uri": "http://foo.bar",
+                    },
+                },
+            },
+        )
+        cls.plugins_manager = PluginManager(cls.providers_config)
+
+    def test_plugins_auth_qsauth_validate_credentials_empty(self):
+        """HttpQueryStringAuth.validate_credentials must raise an error on empty credentials"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+
+    def test_plugins_auth_qsauth_validate_credentials_ok(self):
+        """HttpQueryStringAuth.validate_credentials must be ok on non-empty credentials"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+
+        auth_plugin.config.credentials = {"foo": "bar"}
+        auth_plugin.validate_config_credentials()
+
+    @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
+    def test_plugins_auth_qsauth_authenticate(self, mock_requests_get):
+        """HttpQueryStringAuth.authenticate must return a QueryStringAuth object using query string"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        # check if returned auth object is an instance of requests.AuthBase
+        auth = auth_plugin.authenticate()
+        self.assertIsInstance(auth, AuthBase)
+
+        # check auth query string
+        self.assertEqual(auth.parse_args, auth_plugin.config.credentials)
+
+        # check if query string is integrated to the request
+        req = Request("GET", "https://httpbin.org/get").prepare()
+        auth(req)
+        self.assertEqual(req.url, "https://httpbin.org/get?foo=bar")
+
+        another_req = Request("GET", "https://httpbin.org/get?baz=qux").prepare()
+        auth(another_req)
+        self.assertEqual(another_req.url, "https://httpbin.org/get?baz=qux&foo=bar")
+
+    @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
+    def test_plugins_auth_qsauth_request_error(self, mock_requests_get):
+        """HttpQueryStringAuth.authenticate must raise an AuthenticationError if a request error occurs"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        # mock auth get request response
+        mock_requests_get.side_effect = RequestException
 
         self.assertRaises(
             AuthenticationError,
