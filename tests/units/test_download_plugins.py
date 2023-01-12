@@ -365,6 +365,60 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # empty product download directory should have been removed
         self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
 
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order(self, mock_request):
+        """HTTPDownload.orderDownload() must request using orderLink"""
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["storageStatus"] = OFFLINE_STATUS
+
+        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        plugin.orderDownload(self.product, auth=auth)
+
+        mock_request.assert_called_once_with(
+            method="get",
+            url=self.product.properties["orderLink"],
+            auth=auth,
+            headers={},
+        )
+
+    def test_plugins_download_http_order_status(self):
+        """HTTPDownload.orderDownloadStatus() must request status using orderStatusLink"""
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.order_status_percent = "progress_percentage"
+        plugin.config.order_status_error = {"that": "failed"}
+        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+
+        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            url = "http://somewhere/order-status"
+            responses.add(
+                responses.GET,
+                url,
+                status=200,
+                json={"progress_percentage": 50, "that": "failed"},
+            )
+
+            with self.assertLogs(level="INFO") as cm:
+                plugin.orderDownloadStatus(self.product, auth=auth)
+                self.assertEqual(
+                    [
+                        f"INFO:eodag.plugins.download.http:{self.product.properties['title']} order status: 50%",
+                        'WARNING:eodag.plugins.download.http:{"progress_percentage": 50, "that": "failed"}',
+                    ],
+                    cm.output,
+                )
+            self.assertEqual(len(responses.calls), 1)
+
+        run()
+
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
     def setUp(self):
