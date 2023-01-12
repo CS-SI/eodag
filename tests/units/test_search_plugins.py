@@ -22,6 +22,7 @@ from pathlib import Path
 from unittest import mock
 
 from tests.context import (
+    HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
     EOProduct,
     PluginManager,
@@ -477,3 +478,33 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products[0].geometry, self.search_criteria_s2_msi_l1c["geometry"]
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
+
+
+class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
+    @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
+    def setUp(self, mock_requests_get):
+        # One of the providers that has a BuildPostSearchResult Search plugin
+        provider = "meteoblue"
+        self.search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin.config.credentials = {"cred": "entials"}
+        self.search_plugin.auth = self.auth_plugin.authenticate()
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    def test_plugins_search_buildpostsearchresult_count_and_search(
+        self, mock_requests_post
+    ):
+        """A query with a BuildPostSearchResult must return a single result"""
+
+        products, estimate = self.search_plugin.query(
+            auth=self.auth_plugin,
+        )
+
+        mock_requests_post.assert_called_with(
+            self.search_plugin.config.api_endpoint,
+            json=mock.ANY,
+            timeout=HTTP_REQ_TIMEOUT,
+            auth=self.search_plugin.auth,
+        )
+        self.assertEqual(estimate, 1)
+        self.assertIsInstance(products[0], EOProduct)
