@@ -129,7 +129,7 @@ search:
       - '{{"ids":["{id}"]}}'
       - '$.id'
     geometry:
-      - '{{"intersects":{geometry#to_geo_interface}}}'
+      - '{{"intersects":{geometry#to_geojson}}}'
       - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
     downloadLink: '$.links[?(@.rel="self")].href'
     quicklook: '$.assets.quicklook.href'

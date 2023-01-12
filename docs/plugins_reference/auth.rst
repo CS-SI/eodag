@@ -21,3 +21,4 @@ This table lists all the authentication plugins currently available:
    eodag.plugins.authentication.oauth.OAuth
    eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth
    eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth
+   eodag.plugins.authentication.qsauth.HttpQueryStringAuth

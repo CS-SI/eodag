@@ -288,7 +288,8 @@ class TestEOProduct(EODagTestCase):
                 )
 
             # Check that the mocked request was properly called.
-            self.requests_http_get.assert_called_with(
+            self.requests_request.assert_called_with(
+                "get",
                 self.download_url,
                 stream=True,
                 auth=None,
@@ -338,7 +339,8 @@ class TestEOProduct(EODagTestCase):
             # Download
             product_dir_path = product.download()
             # Check that the mocked request was properly called.
-            self.requests_http_get.assert_called_with(
+            self.requests_request.assert_called_with(
+                "get",
                 self.download_url,
                 stream=True,
                 auth=None,
@@ -409,7 +411,8 @@ class TestEOProduct(EODagTestCase):
                 dl_url_params={"fakeparam": "dummy"},
             )
             # Check that dl_url_params are properly passed to the GET request
-            self.requests_http_get.assert_called_with(
+            self.requests_request.assert_called_with(
+                "get",
                 self.download_url,
                 stream=True,
                 auth=None,

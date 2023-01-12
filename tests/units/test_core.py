@@ -194,6 +194,8 @@ class TestCore(TestCoreBase):
         "CAMS_GACF_MR": ["cop_ads"],
         "CAMS_EAC4": ["cop_ads"],
         "ERA5_SL": ["cop_cds"],
+        "NEMSGLOBAL_TCDC": ["meteoblue"],
+        "NEMSAUTO_TCDC": ["meteoblue"],
         GENERIC_PRODUCT_TYPE: [
             "theia",
             "peps",
@@ -210,6 +212,7 @@ class TestCore(TestCoreBase):
             "ecmwf",
             "cop_ads",
             "cop_cds",
+            "meteoblue",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -230,6 +233,7 @@ class TestCore(TestCoreBase):
         "cop_ads",
         "cop_cds",
         "sara",
+        "meteoblue",
     ]
 
     def setUp(self):

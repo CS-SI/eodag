@@ -19,6 +19,7 @@
 import json
 import logging
 import re
+from copy import deepcopy
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
@@ -989,10 +990,6 @@ class ODataV4Search(QueryStringSearch):
 class PostJsonSearch(QueryStringSearch):
     """A specialisation of a QueryStringSearch that uses POST method"""
 
-    def __init__(self, provider, config):
-        super(PostJsonSearch, self).__init__(provider, config)
-        self.config.results_entry = "results"
-
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
@@ -1122,6 +1119,8 @@ class PostJsonSearch(QueryStringSearch):
                                 **count_pagination_params
                             )
                         )
+                        # keep a copy of query parameters without count params
+                        self.query_params_unpaginated = deepcopy(self.query_params)
                         update_nested_dict(self.query_params, count_params)
                         _total_results = self.count_hits(
                             search_endpoint, result_type=self.config.result_type
@@ -1190,6 +1189,7 @@ class PostJsonSearch(QueryStringSearch):
                     self.provider,
                     self.__class__.__name__,
                 )
+            logger.debug(response.content)
             raise RequestError(str(err))
         return response
 

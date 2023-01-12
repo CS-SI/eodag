@@ -31,5 +31,6 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/tutos/tuto_cop_dem.ipynb
    notebooks/tutos/tuto_ecmwf.ipynb
    notebooks/tutos/tuto_cds.ipynb
+   notebooks/tutos/tuto_meteoblue.ipynb
    notebooks/tutos/tuto_ship_detection.ipynb
    notebooks/tutos/tuto_burnt_areas_snappy.ipynb

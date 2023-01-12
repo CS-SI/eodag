@@ -126,6 +126,7 @@ MUNDI_SEARCH_ARGS = [
 # Trying here to retrieve the most recent products which are more likely to be online.
 today = datetime.date.today()
 week_span = datetime.timedelta(days=7)
+day_span = datetime.timedelta(days=1)
 ONDA_SEARCH_ARGS = [
     "onda",
     "S2_MSI_L1C",
@@ -182,6 +183,13 @@ SARA_SEARCH_ARGS = [
     "2020-03-01",
     "2020-03-15",
     [150, -33, 151, -32],
+]
+METEOBLUE_SEARCH_ARGS = [
+    "meteoblue",
+    "NEMSGLOBAL_TCDC",
+    (today + day_span).isoformat(),
+    (today + 2 * day_span).isoformat(),
+    [0.2, 43.2, 0.5, 43.5],
 ]
 
 
@@ -485,6 +493,11 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_end_to_end_search_download_sara(self):
         product = self.execute_search(*SARA_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_meteoblue(self):
+        product = self.execute_search(*METEOBLUE_SEARCH_ARGS)
+        expected_filename = "{}.nc".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")

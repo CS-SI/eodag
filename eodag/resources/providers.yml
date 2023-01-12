@@ -95,6 +95,7 @@
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
     need_auth: true
     auth_error_code: 403
+    results_entry: 'results'
     pagination:
       next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
       total_items_nb_key_path: '$.meta.found'
@@ -111,7 +112,7 @@
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
-        - '{{"search":{{"shape": {geometry#to_geo_interface} }} }}'
+        - '{{"search":{{"shape": {geometry#to_geojson} }} }}'
         - '$.dataGeometry'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
@@ -2947,3 +2948,87 @@
   auth: !plugin
     type: GenericAuth
     method: basic
+---
+!provider
+  name: meteoblue
+  priority: 0
+  roles:
+    - host
+  description: Meteoblue
+  url: https://www.meteoblue.com
+  search: !plugin
+    type: BuildPostSearchResult
+    api_endpoint: 'https://my.meteoblue.com/dataset/query'
+    need_auth: true
+    pagination:
+      next_page_query_obj: '{{"checkOnly":true,"format":"json"}}'
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      search_param: '{{{{"{metadata}":{{{metadata}#to_geojson}} }}}}'
+      metadata_path: '$.*'
+    metadata_mapping:
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      completionTimeFromAscendingNode:
+        - '{{"timeIntervals": [ "{startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}" ] }}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+      geometry:
+        - '{{"geometry": {geometry#to_geojson} }}'
+        - '$.geometry'
+      productType: '$.queries[0].domain'
+      storageStatus: '{$.requiresJobQueue#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
+      downloadLink: 'https://my.meteoblue.com/dataset/query'
+      # Meteoblue specific parameters
+      datapoints: '$.datapoints'
+      requiresJobQueue: '$.requiresJobQueue'
+      requiresComplexJobQueue: '$.requiresComplexJobQueue'
+      units:
+        - '{{"units": {units#to_geojson} }}'
+        - '$.units'
+      queries:
+        - '{{"queries": {queries#to_geojson} }}'
+        - '$.queries'
+      format:
+        - '{{"format": {format#to_geojson} }}'
+        - '$.format'
+      timeIntervalsAlignment:
+        - '{{"timeIntervalsAlignment": {timeIntervalsAlignment#to_geojson} }}'
+        - '$.timeIntervalsAlignment'
+      orderLink: '{downloadLink#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
+  products:
+    NEMSGLOBAL_TCDC:
+      queries: [{'domain':'NEMSGLOBAL','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
+      format: netCDF
+      units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
+      timeIntervalsAlignment:
+      geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
+    NEMSAUTO_TCDC:
+      queries: [{'domain':'NEMSAUTO','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
+      format: netCDF
+      units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
+      timeIntervalsAlignment:
+      geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+      geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://my.meteoblue.com/dataset/query'
+    method: POST
+    extract: False
+    order_enabled: true
+    order_method: 'POST'
+    order_on_response:
+      metadata_mapping:
+        order_id: '$.id'
+        downloadLink: 'http://queueresults.meteoblue.com/{order_id}'
+        downloadMethod: '{$.null#replace_str("Not Available","GET")}'
+        orderStatusLink: 'http://my.meteoblue.com/queue/status/{order_id}'
+    order_status_method: 'GET'
+    order_status_percent: percentCompleted
+    order_status_error:
+      status: error
+    outputs_extension: .nc
+  auth: !plugin
+    type: HttpQueryStringAuth
+    auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
