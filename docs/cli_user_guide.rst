@@ -122,7 +122,7 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
 
 .. code-block:: console
 
-        eodag list -p sobloo
+        eodag list -p creodias
 
 * By default, ``list`` command will also fetch for new product types, which may be slow depending on the network status.
   To skip fetching, use the following option:

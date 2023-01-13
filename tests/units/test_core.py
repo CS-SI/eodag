@@ -104,7 +104,6 @@ class TestCore(TestCoreBase):
         "LANDSAT_ETM_C2L2": ["usgs"],
         "S1_SAR_GRD": [
             "peps",
-            "sobloo",
             "onda",
             "mundi",
             "creodias",
@@ -112,16 +111,15 @@ class TestCore(TestCoreBase):
             "astraea_eod",
             "sara",
         ],
-        "S1_SAR_OCN": ["peps", "sobloo", "onda", "creodias", "sara"],
-        "S1_SAR_RAW": ["sobloo", "onda", "creodias"],
-        "S1_SAR_SLC": ["peps", "sobloo", "onda", "mundi", "creodias", "sara"],
+        "S1_SAR_OCN": ["peps", "onda", "creodias", "sara"],
+        "S1_SAR_RAW": ["onda", "creodias"],
+        "S1_SAR_SLC": ["peps", "onda", "mundi", "creodias", "sara"],
         "S2_MSI_L2A": [
             "onda",
             "mundi",
             "creodias",
             "peps",
             "aws_eos",
-            "sobloo",
             "astraea_eod",
             "earth_search",
             "sara",
@@ -134,7 +132,6 @@ class TestCore(TestCoreBase):
         "S2_MSI_L1C": [
             "aws_eos",
             "peps",
-            "sobloo",
             "onda",
             "mundi",
             "creodias",
@@ -199,7 +196,6 @@ class TestCore(TestCoreBase):
         GENERIC_PRODUCT_TYPE: [
             "theia",
             "peps",
-            "sobloo",
             "onda",
             "mundi",
             "usgs",
@@ -219,7 +215,6 @@ class TestCore(TestCoreBase):
         "peps",
         "usgs",
         "theia",
-        "sobloo",
         "creodias",
         "mundi",
         "onda",
@@ -1205,7 +1200,7 @@ class TestCoreSearch(TestCoreBase):
 
     def test__prepare_search_with_id(self):
         """_prepare_search must handle a search by id"""
-        base = {"id": "dummy-id", "provider": "sobloo"}
+        base = {"id": "dummy-id", "provider": "creodias"}
         prepared_search = self.dag._prepare_search(**base)
         expected = base
         self.assertDictEqual(expected, prepared_search)

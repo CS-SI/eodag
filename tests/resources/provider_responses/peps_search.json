@@ -1,0 +1,464 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "title": "",
+    "id": "3ca70a6a-c4c0-569d-bbcd-d8d22d758a53",
+    "totalResults": 47,
+    "exactCount": true,
+    "startIndex": 1,
+    "itemsPerPage": 2,
+    "totalItemsPerPage": "2",
+    "query": {
+      "searchFilters": {
+        "time:start": "2020-08-08",
+        "time:end": "2020-08-16",
+        "geo:geometry": "POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))",
+        "eo:productType": "S2MSI1C",
+        "count": "2",
+        "startPage": "1"
+      },
+      "analysis": {
+        "query": ""
+      },
+      "processingTime": 0.08792901039123535
+    },
+    "links": [
+      {
+        "rel": "self",
+        "type": "application/json",
+        "title": "self",
+        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=1"
+      },
+      {
+        "rel": "search",
+        "type": "application/opensearchdescription+xml",
+        "title": "OpenSearch Description Document",
+        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/describe.xml"
+      },
+      {
+        "rel": "next",
+        "type": "application/json",
+        "title": "next",
+        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=2"
+      },
+      {
+        "rel": "last",
+        "type": "application/json",
+        "title": "last",
+        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=24"
+      }
+    ]
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "01f888ef-3368-59ff-a639-52242d159d7c",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                146.07570757577,
+                13.478316386477
+              ],
+              [
+                147.09017897872,
+                13.480000948125
+              ],
+              [
+                147.09056628434,
+                14.472812699207
+              ],
+              [
+                146.07173856054,
+                14.470999017171
+              ],
+              [
+                146.07570757577,
+                13.478316386477
+              ]
+            ]
+          ]
+        ]
+      },
+      "_geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                146.07570757577,
+                13.478316386477
+              ],
+              [
+                147.09017897872,
+                13.480000948125
+              ],
+              [
+                147.09056628434,
+                14.472812699207
+              ],
+              [
+                146.07173856054,
+                14.470999017171
+              ],
+              [
+                146.07570757577,
+                13.478316386477
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "collection": "S2ST",
+        "productIdentifier": "S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440",
+        "parentIdentifier": "urn:ogc:def:EOP:ESA::SENTINEL-2:",
+        "title": "S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440",
+        "description": null,
+        "organisationName": "ESA",
+        "startDate": "2020-08-15T00:52:51.024Z",
+        "completionDate": "2020-08-15T00:52:51.024Z",
+        "productType": "S2MSI1C",
+        "processingLevel": "LEVEL1C",
+        "platform": "S2A",
+        "instrument": "MSI",
+        "resolution": null,
+        "sensorMode": "INS-NOBS",
+        "orbitNumber": 26883,
+        "quicklook": "https://peps.cnes.fr/quicklook/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440_quicklook.jpg",
+        "thumbnail": null,
+        "resourceSize": 781865648,
+        "resourceChecksum": "64FFCA4B9CD13D094ED05554E010DB5A",
+        "updated": "2020-08-15T12:20:16.569Z",
+        "published": "2020-08-15T12:20:16.569Z",
+        "snowCover": null,
+        "cloudCover": 20.5218,
+        "keywords": {
+          "6278eea013ff0d3": {
+            "name": "Summer",
+            "type": "season",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Summer"
+          },
+          "45038f3c2322ea3": {
+            "name": "S2ST",
+            "type": "collection",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2ST"
+          },
+          "6219554ecf5905c": {
+            "name": "S2MSI1C",
+            "type": "productType",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2MSI1C"
+          },
+          "44b15c0a6e62129": {
+            "name": "LEVEL1C",
+            "type": "processingLevel",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=LEVEL1C"
+          },
+          "afe9ad14455c260": {
+            "name": "s2A",
+            "type": "platform",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=s2A"
+          },
+          "503f8f6199f3e44": {
+            "name": "msi",
+            "type": "instrument",
+            "parentHash": "afe9ad14455c260",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=msi"
+          },
+          "3f85bb5d775e1fc": {
+            "name": "INS-NOBS",
+            "type": "sensorMode",
+            "parentHash": "503f8f6199f3e44",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=INS-NOBS"
+          },
+          "e8f96b7c46c0d54": {
+            "name": "Descending",
+            "type": "orbitDirection",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Descending"
+          },
+          "a56dfb1210d361d": {
+            "name": "Nominal",
+            "type": "realtime",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Nominal"
+          },
+          "6414a4147122d1b": {
+            "name": "2020",
+            "type": "year",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=2020"
+          },
+          "a12bb6d777c8553": {
+            "name": "August",
+            "type": "month",
+            "parentHash": "6414a4147122d1b",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=August"
+          },
+          "51a4136a792e6e4": {
+            "name": "15",
+            "type": "day",
+            "parentHash": "a12bb6d777c8553",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=15"
+          }
+        },
+        "visible": 1,
+        "orbitDirection": "descending",
+        "newVersion": null,
+        "isNrt": 0,
+        "realtime": "Nominal",
+        "dhusIngestDate": "2020-08-15T12:17:15.246Z",
+        "relativeOrbitNumber": 2,
+        "useDatalake": null,
+        "s2TakeId": "GS2A_20200815T005251_026883_N02.09",
+        "mgrs": "55PDR",
+        "bareSoil": null,
+        "highProbaClouds": null,
+        "mediumProbaClouds": null,
+        "lowProbaClouds": null,
+        "snowIce": null,
+        "vegetation": null,
+        "water": null,
+        "isRefined": null,
+        "nrtResource": "/data/NRT/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440.zip",
+        "services": {
+          "browse": {
+            "title": "Display full resolution product on map",
+            "layer": {
+              "type": "WMS",
+              "url": "https://peps.cnes.fr/cgi-bin/mapserver?map=WMS_S2ST&data=2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440",
+              "layers": ""
+            }
+          },
+          "download": {
+            "url": "https://peps.cnes.fr/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c/download",
+            "mimeType": "application/zip",
+            "size": 781865648,
+            "checksum": "64FFCA4B9CD13D094ED05554E010DB5A"
+          }
+        },
+        "links": [
+          {
+            "rel": "alternate",
+            "type": "application/json",
+            "title": "GeoJSON link for 01f888ef-3368-59ff-a639-52242d159d7c",
+            "href": "https://peps.cnes.fr/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c.json?&lang=en"
+          },
+          {
+            "rel": "alternate",
+            "type": "application/atom+xml",
+            "title": "ATOM link for 01f888ef-3368-59ff-a639-52242d159d7c",
+            "href": "https://peps.cnes.fr/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c.atom?&lang=en"
+          }
+        ],
+        "storage": {
+          "mode": "disk"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                145.15240891496,
+                13.473221732964
+              ],
+              [
+                146.16661441549,
+                13.478634478603
+              ],
+              [
+                146.16303564755,
+                14.471341490669
+              ],
+              [
+                145.14447930135,
+                14.465513874233
+              ],
+              [
+                145.15240891496,
+                13.473221732964
+              ]
+            ]
+          ]
+        ]
+      },
+      "_geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                145.15240891496,
+                13.473221732964
+              ],
+              [
+                146.16661441549,
+                13.478634478603
+              ],
+              [
+                146.16303564755,
+                14.471341490669
+              ],
+              [
+                145.14447930135,
+                14.465513874233
+              ],
+              [
+                145.15240891496,
+                13.473221732964
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "collection": "S2ST",
+        "productIdentifier": "S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440",
+        "parentIdentifier": "urn:ogc:def:EOP:ESA::SENTINEL-2:",
+        "title": "S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440",
+        "description": null,
+        "organisationName": "ESA",
+        "startDate": "2020-08-15T00:52:51.024Z",
+        "completionDate": "2020-08-15T00:52:51.024Z",
+        "productType": "S2MSI1C",
+        "processingLevel": "LEVEL1C",
+        "platform": "S2A",
+        "instrument": "MSI",
+        "resolution": null,
+        "sensorMode": "INS-NOBS",
+        "orbitNumber": 26883,
+        "quicklook": "https://peps.cnes.fr/quicklook/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440_quicklook.jpg",
+        "thumbnail": null,
+        "resourceSize": 659478453,
+        "resourceChecksum": "9FC37A160E4E23823679FCF21DEF1596",
+        "updated": "2020-08-15T12:19:49.501Z",
+        "published": "2020-08-15T12:19:49.501Z",
+        "snowCover": null,
+        "cloudCover": 2.6607,
+        "keywords": {
+          "6278eea013ff0d3": {
+            "name": "Summer",
+            "type": "season",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Summer"
+          },
+          "45038f3c2322ea3": {
+            "name": "S2ST",
+            "type": "collection",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2ST"
+          },
+          "6219554ecf5905c": {
+            "name": "S2MSI1C",
+            "type": "productType",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2MSI1C"
+          },
+          "44b15c0a6e62129": {
+            "name": "LEVEL1C",
+            "type": "processingLevel",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=LEVEL1C"
+          },
+          "afe9ad14455c260": {
+            "name": "s2A",
+            "type": "platform",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=s2A"
+          },
+          "503f8f6199f3e44": {
+            "name": "msi",
+            "type": "instrument",
+            "parentHash": "afe9ad14455c260",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=msi"
+          },
+          "3f85bb5d775e1fc": {
+            "name": "INS-NOBS",
+            "type": "sensorMode",
+            "parentHash": "503f8f6199f3e44",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=INS-NOBS"
+          },
+          "e8f96b7c46c0d54": {
+            "name": "Descending",
+            "type": "orbitDirection",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Descending"
+          },
+          "a56dfb1210d361d": {
+            "name": "Nominal",
+            "type": "realtime",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Nominal"
+          },
+          "6414a4147122d1b": {
+            "name": "2020",
+            "type": "year",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=2020"
+          },
+          "a12bb6d777c8553": {
+            "name": "August",
+            "type": "month",
+            "parentHash": "6414a4147122d1b",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=August"
+          },
+          "51a4136a792e6e4": {
+            "name": "15",
+            "type": "day",
+            "parentHash": "a12bb6d777c8553",
+            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=15"
+          }
+        },
+        "visible": 1,
+        "orbitDirection": "descending",
+        "newVersion": null,
+        "isNrt": 0,
+        "realtime": "Nominal",
+        "dhusIngestDate": "2020-08-15T12:17:13.510Z",
+        "relativeOrbitNumber": 2,
+        "useDatalake": null,
+        "s2TakeId": "GS2A_20200815T005251_026883_N02.09",
+        "mgrs": "55PCR",
+        "bareSoil": null,
+        "highProbaClouds": null,
+        "mediumProbaClouds": null,
+        "lowProbaClouds": null,
+        "snowIce": null,
+        "vegetation": null,
+        "water": null,
+        "isRefined": null,
+        "nrtResource": "/data/NRT/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440.zip",
+        "services": {
+          "browse": {
+            "title": "Display full resolution product on map",
+            "layer": {
+              "type": "WMS",
+              "url": "https://peps.cnes.fr/cgi-bin/mapserver?map=WMS_S2ST&data=2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440",
+              "layers": ""
+            }
+          },
+          "download": {
+            "url": "https://peps.cnes.fr/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31/download",
+            "mimeType": "application/zip",
+            "size": 659478453,
+            "checksum": "9FC37A160E4E23823679FCF21DEF1596"
+          }
+        },
+        "links": [
+          {
+            "rel": "alternate",
+            "type": "application/json",
+            "title": "GeoJSON link for 0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31",
+            "href": "https://peps.cnes.fr/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31.json?&lang=en"
+          },
+          {
+            "rel": "alternate",
+            "type": "application/atom+xml",
+            "title": "ATOM link for 0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31",
+            "href": "https://peps.cnes.fr/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31.atom?&lang=en"
+          }
+        ],
+        "storage": {
+          "mode": "tape"
+        }
+      }
+    }
+  ]
+}

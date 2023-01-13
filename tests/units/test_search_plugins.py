@@ -61,53 +61,59 @@ class BaseSearchPluginTest(unittest.TestCase):
 class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def setUp(self):
         # One of the providers that has a QueryStringSearch Search plugin
-        provider = "sobloo"
-        self.sobloo_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.sobloo_auth_plugin = self.get_auth_plugin(provider)
+        provider = "peps"
+        self.peps_search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.peps_auth_plugin = self.get_auth_plugin(provider)
         # Some expected results
-        with open(self.provider_resp_dir / "sobloo_count.json") as f:
-            self.sobloo_resp_count = json.load(f)
-        self.sobloo_url_count = "https://sobloo.eu/api/v1/services/search?f=acquisition.beginViewingDate:gte:1596844800000&f=acquisition.endViewingDate:lte:1597536000000&f=identification.type:eq:S2MSI1C&gintersect=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&size=1&from=0"  # noqa
-        self.sobloo_products_count = 47
+        with open(self.provider_resp_dir / "peps_count.json") as f:
+            self.peps_resp_count = json.load(f)
+        self.peps_url_count = (
+            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08"
+            "&completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=1&page=1"
+        )
+        self.peps_products_count = 47
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_count_and_search_sobloo(
-        self, mock__request
-    ):
-        """A query with a QueryStringSearch (sobloo here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
-        with open(self.provider_resp_dir / "sobloo_search.json") as f:
-            sobloo_resp_search = json.load(f)
+    def test_plugins_search_querystringseach_count_and_search_peps(self, mock__request):
+        """A query with a QueryStringSearch (peps here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
+        with open(self.provider_resp_dir / "peps_search.json") as f:
+            peps_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
-            self.sobloo_resp_count,
-            sobloo_resp_search,
+            self.peps_resp_count,
+            peps_resp_search,
         ]
-        products, estimate = self.sobloo_search_plugin.query(
+        products, estimate = self.peps_search_plugin.query(
             page=1,
             items_per_page=2,
-            auth=self.sobloo_auth_plugin,
+            auth=self.peps_auth_plugin,
             **self.search_criteria_s2_msi_l1c
         )
 
         # Specific expected results
-        sobloo_url_search = "https://sobloo.eu/api/v1/services/search?f=acquisition.beginViewingDate:gte:1596844800000&f=acquisition.endViewingDate:lte:1597536000000&f=identification.type:eq:S2MSI1C&gintersect=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&size=2&from=0"  # noqa
+        peps_url_search = (
+            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08&"
+            "completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=2&page=1"
+        )
         number_of_products = 2
 
         mock__request.assert_any_call(
             mock.ANY,
-            self.sobloo_url_count,
+            self.peps_url_count,
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
         mock__request.assert_called_with(
             mock.ANY,
-            sobloo_url_search,
+            peps_url_search,
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
-        self.assertEqual(estimate, self.sobloo_products_count)
+        self.assertEqual(estimate, self.peps_products_count)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
@@ -117,30 +123,34 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_no_count_and_search_sobloo(
+    def test_plugins_search_querystringseach_no_count_and_search_peps(
         self, mock__request, mock_count_hits
     ):
-        """A query with a QueryStringSearch (here sobloo) without a count"""
-        with open(self.provider_resp_dir / "sobloo_search.json") as f:
-            sobloo_resp_search = json.load(f)
+        """A query with a QueryStringSearch (here peps) without a count"""
+        with open(self.provider_resp_dir / "peps_search.json") as f:
+            peps_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
-        mock__request.return_value.json.return_value = sobloo_resp_search
-        products, estimate = self.sobloo_search_plugin.query(
+        mock__request.return_value.json.return_value = peps_resp_search
+        products, estimate = self.peps_search_plugin.query(
             count=False,
             page=1,
             items_per_page=2,
-            auth=self.sobloo_auth_plugin,
+            auth=self.peps_auth_plugin,
             **self.search_criteria_s2_msi_l1c
         )
 
         # Specific expected results
-        sobloo_url_search = "https://sobloo.eu/api/v1/services/search?f=acquisition.beginViewingDate:gte:1596844800000&f=acquisition.endViewingDate:lte:1597536000000&f=identification.type:eq:S2MSI1C&gintersect=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&size=2&from=0"  # noqa
+        peps_url_search = (
+            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08&"
+            "completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=2&page=1"
+        )
         number_of_products = 2
 
         mock_count_hits.assert_not_called()
         mock__request.assert_called_once_with(
             mock.ANY,
-            sobloo_url_search,
+            peps_url_search,
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
