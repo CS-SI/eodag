@@ -15,8 +15,6 @@ to each provider supported by ``eodag``:
 
 * `peps`: create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as `username` in eodag credentials.
 
-* `sobloo`: create an account `here <https://sobloo.eu/>`__ and get an API key
-
 * `creodias`: create an account `here <https://portal.creodias.eu/register.php>`__
 
 * `onda`: create an account `here: <https://www.onda-dias.eu/cms/>`__

@@ -44,13 +44,6 @@ THEIA_SEARCH_ARGS = [
     "2019-03-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-SOBLOO_SEARCH_ARGS = [
-    "sobloo",
-    "S2_MSI_L1C",
-    "2021-10-01",
-    "2021-11-01",
-    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
-]
 PEPS_BEFORE_20161205_SEARCH_ARGS = [
     "peps",
     "S2_MSI_L1C",
@@ -386,20 +379,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.tar.gz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_sobloo(self):
-        product = self.execute_search(*SOBLOO_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
-
-    def test_end_to_end_search_download_sobloo_noresult(self):
-        """Requesting a page on sobloo with no results must return an empty SearchResult"""
-        # As of 2021-03-19 this search at page 1 returns 66 products, so at page 2 there
-        # are no products available and sobloo returns a response without products (`hits`).
-        product = self.execute_search(
-            *SOBLOO_SEARCH_ARGS, page=2, items_per_page=100, check_product=False
-        )
-        self.assertEqual(len(product), 0)
-
     # may take up to 10 minutes
     @unittest.skip("Long test skipped")
     def test_end_to_end_search_download_peps_before_20161205(self):
@@ -428,6 +407,15 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_creodias_noresult(self):
+        """Requesting a page on creodias with no results must return an empty SearchResult"""
+        # As of 2021-03-19 this search at page 1 returns 31 products, so at page 2 there
+        # are no products available and creodias returns a response without products (`hits`).
+        product = self.execute_search(
+            *CREODIAS_SEARCH_ARGS, page=2, items_per_page=50, check_product=False
+        )
+        self.assertEqual(len(product), 0)
 
     def test_end_to_end_search_download_onda(self):
         product = self.execute_search(*ONDA_SEARCH_ARGS)
@@ -517,11 +505,11 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2**5)
 
-    def test__search_by_id_sobloo(self):
-        # A single test with sobloo to check that _search_by_id returns
+    def test__search_by_id_creodias(self):
+        # A single test with creodias to check that _search_by_id returns
         # correctly the exact product looked for.
         uid = "S2A_MSIL1C_20200810T030551_N0209_R075_T53WPU_20200810T050611"
-        provider = "sobloo"
+        provider = "creodias"
 
         products, _ = self.eodag._search_by_id(uid=uid, provider=provider)
         product = products[0]
@@ -919,11 +907,6 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_theia(self):
         product = self.execute_search(*THEIA_SEARCH_ARGS)
-        with self.assertRaises(AuthenticationError):
-            self.eodag.download(product)
-
-    def test_end_to_end_wrong_credentials_sobloo(self):
-        product = self.execute_search(*SOBLOO_SEARCH_ARGS)
         with self.assertRaises(AuthenticationError):
             self.eodag.download(product)
 

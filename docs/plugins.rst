@@ -38,8 +38,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------+-----------------------+--------------------------+----------------+
 | peps             | QueryStringSearch     | GenericAuth              | HTTPDownload   |
 +------------------+-----------------------+--------------------------+----------------+
-| sobloo           | QueryStringSearch     | HTTPHeaderAuth           | HTTPDownload   |
-+------------------+-----------------------+--------------------------+----------------+
 | creodias         | QueryStringSearch     | KeycloakOIDCPasswordAuth | HTTPDownload   |
 +------------------+-----------------------+--------------------------+----------------+
 | mundi            | QueryStringSearch     | HTTPHeaderAuth           | S3RestDownload |

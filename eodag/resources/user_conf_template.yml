@@ -59,16 +59,6 @@ aws_eos:
             aws_profile:
     download:
         outputs_prefix:
-sobloo:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        outputs_prefix:
-        dl_url_params:
-    auth:
-        credentials:
-            apikey:
 creodias:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
