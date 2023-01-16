@@ -912,10 +912,14 @@ class AwsDownload(Download):
                     product.properties["title"],
                     found_dict["file"],
                 )
+            # out of SAFE format
+            else:
+                logger.debug(f"{chunk.key} out of SAFE matching pattern")
+                product_path = chunk.key.split(dir_prefix.strip("/") + "/")[-1]
         # no SAFE format
         else:
             product_path = chunk.key.split(dir_prefix.strip("/") + "/")[-1]
-        logger.debug("Downloading %s to %s" % (chunk.key, product_path))
+        logger.debug(f"Downloading {chunk.key} to {product_path}")
         return product_path
 
     def download_all(
