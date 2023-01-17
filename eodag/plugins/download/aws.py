@@ -274,18 +274,20 @@ class AwsDownload(Download):
             bucket_names_and_prefixes = []
             for complementary_url in getattr(product, "assets", {}).values():
                 bucket_names_and_prefixes.append(
-                    self.get_bucket_name_and_prefix(
+                    self.get_product_bucket_name_and_prefix(
                         product, complementary_url.get("href", "")
                     )
                 )
         else:
-            bucket_names_and_prefixes = [self.get_bucket_name_and_prefix(product)]
+            bucket_names_and_prefixes = [
+                self.get_product_bucket_name_and_prefix(product)
+            ]
 
         # add complementary urls
         try:
             for complementary_url_key in product_conf.get("complementary_url_key", []):
                 bucket_names_and_prefixes.append(
-                    self.get_bucket_name_and_prefix(
+                    self.get_product_bucket_name_and_prefix(
                         product, product.properties[complementary_url_key]
                     )
                 )
@@ -588,7 +590,7 @@ class AwsDownload(Download):
         self.s3_session = s3_session
         return objects
 
-    def get_bucket_name_and_prefix(self, product, url=None):
+    def get_product_bucket_name_and_prefix(self, product, url=None):
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download

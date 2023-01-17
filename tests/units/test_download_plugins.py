@@ -589,26 +589,25 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             ),
             productType="S2_MSI_L2A",
         )
-
-    def test_plugins_download_aws_get_bucket_prefix(self):
-        """AwsDownload.get_bucket_name_and_prefix() must extract bucket & prefix from location"""
-
-        plugin = self.get_download_plugin(self.product)
-        plugin.config.products["S2_MSI_L2A"]["default_bucket"] = "default_bucket"
-        self.product.properties["id"] = "someproduct"
-
         self.product.location = (
             self.product.remote_location
         ) = "http://somebucket.somehost.com/path/to/some/product"
-        bucket, prefix = plugin.get_bucket_name_and_prefix(self.product)
+
+    def test_plugins_download_aws_get_bucket_prefix(self):
+        """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location"""
+
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.products["S2_MSI_L2A"]["default_bucket"] = "default_bucket"
+
+        bucket, prefix = plugin.get_product_bucket_name_and_prefix(self.product)
         self.assertEqual((bucket, prefix), ("somebucket", "path/to/some/product"))
 
         plugin.config.bucket_path_level = 1
-        bucket, prefix = plugin.get_bucket_name_and_prefix(self.product)
+        bucket, prefix = plugin.get_product_bucket_name_and_prefix(self.product)
         self.assertEqual((bucket, prefix), ("to", "some/product"))
         del plugin.config.bucket_path_level
 
-        bucket, prefix = plugin.get_bucket_name_and_prefix(
+        bucket, prefix = plugin.get_product_bucket_name_and_prefix(
             self.product, url="/somewhere/else"
         )
         self.assertEqual((bucket, prefix), ("default_bucket", "somewhere/else"))
