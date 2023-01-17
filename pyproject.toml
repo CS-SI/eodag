@@ -3,4 +3,4 @@ requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-fallback_version = "2.7.1.dev0"
+fallback_version = "2.8.1.dev0"
