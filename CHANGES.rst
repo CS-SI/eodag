@@ -1,6 +1,24 @@
 Release history
 ---------------
 
+2.8.0 (2023-01-17)
+++++++++++++++++++
+
+* `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_ as new forecast provider,
+  in the context of DOMINO-X (:pull:`604`)
+* `SARA <https://copernicus.nci.org.au/sara.client>`_ (Sentinel Australasia Regional Access) as new provider
+  (:pull:`578`, thanks `@catchSheep <https://github.com/catchSheep>`_)(:pull:`602`)
+* Removes unavailable `sobloo` provider (:pull:`607`)
+* Landsat collection-1 data no more available on `usgs` (:pull:`601`)
+* `Product types catalog\
+  <https://eodag.readthedocs.io/en/latest/getting_started_guide/product_types.html#product-types-information-csv>`_
+  more visible in documentation (:pull:`603`)
+* Added support for `python3.11` (:pull:`552`)
+* Improved http asset size discovery in :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`566`)
+* Various minor fixes and improvements (:pull:`572`)(:pull:`574`)(:pull:`576`)(:pull:`579`)(:pull:`580`)(:pull:`582`)
+  (:pull:`586`)(:pull:`588`)(:pull:`589`)(:pull:`590`)(:pull:`592`)(:pull:`593`)(:pull:`595`)(:pull:`597`)(:pull:`598`)
+  (:pull:`599`)(:pull:`609`)(:pull:`610`)
+
 2.7.0 (2022-11-29)
 ++++++++++++++++++
 
