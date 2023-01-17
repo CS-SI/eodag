@@ -22,7 +22,7 @@ from eodag.plugins.authentication import Authentication
 
 
 class HTTPHeaderAuth(Authentication):
-    """A Generic Authentication plugin.
+    """HTTPHeaderAuth Authentication plugin.
 
     This plugin enables implementation of custom HTTP authentication scheme (other than Basic, Digest, Token
     negotiation et al.) using HTTP headers.
@@ -65,7 +65,7 @@ class HTTPHeaderAuth(Authentication):
 
 
 class HeaderAuth(requests.auth.AuthBase):
-    """HeaderAuth authentication plugin"""
+    """HeaderAuth custom authentication class to be used with requests module"""
 
     def __init__(self, authentication_headers):
         self.auth_headers = authentication_headers

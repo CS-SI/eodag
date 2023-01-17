@@ -50,7 +50,7 @@ class _TextOpener:
                     return json.load(f)
                 else:
                     return f.read()
-        except FileNotFoundError:
+        except OSError:
             logger.debug("read_local_json is not the right STAC opener")
             raise STACOpenerError
 

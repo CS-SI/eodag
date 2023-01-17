@@ -19,6 +19,7 @@
 import json
 import logging
 import re
+from copy import deepcopy
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
@@ -33,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
     get_metadata_path,
     get_metadata_path_value,
     get_search_param,
+    mtd_cfg_as_jsonpath,
     properties_from_json,
     properties_from_xml,
 )
@@ -214,19 +216,19 @@ class QueryStringSearch(Search):
 
                     for product_type_result in result:
                         # providers_config extraction
-                        mapping_config = {
-                            k: (None, cached_parse(v))
-                            for k, v in self.config.discover_product_types[
-                                "generic_product_type_parsable_properties"
-                            ].items()
-                        }
-                        mapping_config["generic_product_type_id"] = (
-                            None,
-                            cached_parse(
+                        mapping_config = {}
+                        mapping_config = mtd_cfg_as_jsonpath(
+                            dict(
                                 self.config.discover_product_types[
-                                    "generic_product_type_id"
-                                ]
+                                    "generic_product_type_parsable_properties"
+                                ],
+                                **{
+                                    "generic_product_type_id": self.config.discover_product_types[
+                                        "generic_product_type_id"
+                                    ]
+                                },
                             ),
+                            mapping_config,
                         )
 
                         extracted_mapping = properties_from_json(
@@ -244,15 +246,57 @@ class QueryStringSearch(Search):
                             ),
                         )
                         # product_types_config extraction
-                        mapping_config = {
-                            k: (None, cached_parse(v))
-                            for k, v in self.config.discover_product_types[
+                        mapping_config = {}
+                        mapping_config = mtd_cfg_as_jsonpath(
+                            self.config.discover_product_types[
                                 "generic_product_type_parsable_metadata"
-                            ].items()
-                        }
+                            ],
+                            mapping_config,
+                        )
                         conf_update_dict["product_types_config"][
                             generic_product_type_id
                         ] = properties_from_json(product_type_result, mapping_config)
+
+                        # update keywords
+                        keywords_fields = [
+                            "instrument",
+                            "platform",
+                            "platformSerialIdentifier",
+                            "processingLevel",
+                            "keywords",
+                        ]
+                        keywords_values_str = ",".join(
+                            [generic_product_type_id]
+                            + [
+                                str(
+                                    conf_update_dict["product_types_config"][
+                                        generic_product_type_id
+                                    ][kf]
+                                )
+                                for kf in keywords_fields
+                                if conf_update_dict["product_types_config"][
+                                    generic_product_type_id
+                                ][kf]
+                                != NOT_AVAILABLE
+                            ]
+                        )
+                        # cleanup str list from unwanted characters
+                        keywords_values_str = (
+                            keywords_values_str.replace(", ", ",")
+                            .replace(" ", "-")
+                            .replace("_", "-")
+                            .lower()
+                        )
+                        keywords_values_str = re.sub(
+                            r"[\[\]'\"]", "", keywords_values_str
+                        )
+                        # sorted list of unique lowercase keywords
+                        keywords_values_str = ",".join(
+                            sorted(set(keywords_values_str.split(",")))
+                        )
+                        conf_update_dict["product_types_config"][
+                            generic_product_type_id
+                        ]["keywords"] = keywords_values_str
             except KeyError as e:
                 logger.warning(
                     "Incomplete %s discover_product_types configuration: %s",
@@ -283,6 +327,9 @@ class QueryStringSearch(Search):
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
             return [], 0
+        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
+        kwargs.pop("product_type", None)
+
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = (
@@ -787,7 +834,7 @@ class QueryStringSearch(Search):
             )
         return collections
 
-    def map_product_type(self, product_type, **kwargs):
+    def map_product_type(self, product_type):
         """Map the eodag product type to the provider product type"""
         if product_type is None:
             return
@@ -943,14 +990,12 @@ class ODataV4Search(QueryStringSearch):
 class PostJsonSearch(QueryStringSearch):
     """A specialisation of a QueryStringSearch that uses POST method"""
 
-    def __init__(self, provider, config):
-        super(PostJsonSearch, self).__init__(provider, config)
-        self.config.results_entry = "results"
-
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
-        provider_product_type = self.map_product_type(product_type, **kwargs)
+        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
+        kwargs.pop("product_type", None)
+        provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
         if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
@@ -1074,6 +1119,8 @@ class PostJsonSearch(QueryStringSearch):
                                 **count_pagination_params
                             )
                         )
+                        # keep a copy of query parameters without count params
+                        self.query_params_unpaginated = deepcopy(self.query_params)
                         update_nested_dict(self.query_params, count_params)
                         _total_results = self.count_hits(
                             search_endpoint, result_type=self.config.result_type
@@ -1125,7 +1172,10 @@ class PostJsonSearch(QueryStringSearch):
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
-            if err.response.status_code in auth_errors:
+            if (
+                hasattr(err.response, "status_code")
+                and err.response.status_code in auth_errors
+            ):
                 raise AuthenticationError(
                     "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
                         err.response.status_code,
@@ -1142,6 +1192,8 @@ class PostJsonSearch(QueryStringSearch):
                     self.provider,
                     self.__class__.__name__,
                 )
+            if "response" in locals():
+                logger.debug(response.content)
             raise RequestError(str(err))
         return response
 

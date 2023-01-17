@@ -15,8 +15,6 @@ to each provider supported by ``eodag``:
 
 * `peps`: create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as `username` in eodag credentials.
 
-* `sobloo`: create an account `here <https://sobloo.eu/>`__ and get an API key
-
 * `creodias`: create an account `here <https://portal.creodias.eu/register.php>`__
 
 * `onda`: create an account `here: <https://www.onda-dias.eu/cms/>`__
@@ -36,6 +34,12 @@ to each provider supported by ``eodag``:
 * `cop_cds`: create an account `here <https://cds.climate.copernicus.eu/user/register>`__.
   Then go to your profile and use from the section named "API key" use *UID* as *username* and *API Key* as *password* in eodag credentials.
   EODAG can be used to request for public datasets, you can browse them `here <https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset>`__.
+
+* `sara`: create an account `here <https://copernicus.nci.org.au/sara.client/#/register>`__, then use your email as `username` in eodag credentials.
+
+* `meteoblue`: eodag uses `dataset API <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_
+  which requires the access level `Access Gold <https://content.meteoblue.com/en/business-solutions/weather-apis/pricing>`_.
+  Contact `support@meteoblue.com <mailto:support@meteoblue.com>`_ to apply for a free API key trial.
 
 * `aws_eos`: you need credentials for both EOS (search) and AWS (download):
 

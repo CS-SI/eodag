@@ -21,10 +21,15 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import responses
+
 from tests.context import (
+    HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
+    AuthenticationError,
     EOProduct,
     PluginManager,
+    RequestError,
     get_geometry_from_various,
     load_default_config,
 )
@@ -60,53 +65,59 @@ class BaseSearchPluginTest(unittest.TestCase):
 class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def setUp(self):
         # One of the providers that has a QueryStringSearch Search plugin
-        provider = "sobloo"
-        self.sobloo_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.sobloo_auth_plugin = self.get_auth_plugin(provider)
+        provider = "peps"
+        self.peps_search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.peps_auth_plugin = self.get_auth_plugin(provider)
         # Some expected results
-        with open(self.provider_resp_dir / "sobloo_count.json") as f:
-            self.sobloo_resp_count = json.load(f)
-        self.sobloo_url_count = "https://sobloo.eu/api/v1/services/search?f=acquisition.beginViewingDate:gte:1596844800000&f=acquisition.endViewingDate:lte:1597536000000&f=identification.type:eq:S2MSI1C&gintersect=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&size=1&from=0"  # noqa
-        self.sobloo_products_count = 47
+        with open(self.provider_resp_dir / "peps_count.json") as f:
+            self.peps_resp_count = json.load(f)
+        self.peps_url_count = (
+            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08"
+            "&completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=1&page=1"
+        )
+        self.peps_products_count = 47
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_count_and_search_sobloo(
-        self, mock__request
-    ):
-        """A query with a QueryStringSearch (sobloo here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
-        with open(self.provider_resp_dir / "sobloo_search.json") as f:
-            sobloo_resp_search = json.load(f)
+    def test_plugins_search_querystringseach_count_and_search_peps(self, mock__request):
+        """A query with a QueryStringSearch (peps here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
+        with open(self.provider_resp_dir / "peps_search.json") as f:
+            peps_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
-            self.sobloo_resp_count,
-            sobloo_resp_search,
+            self.peps_resp_count,
+            peps_resp_search,
         ]
-        products, estimate = self.sobloo_search_plugin.query(
+        products, estimate = self.peps_search_plugin.query(
             page=1,
             items_per_page=2,
-            auth=self.sobloo_auth_plugin,
+            auth=self.peps_auth_plugin,
             **self.search_criteria_s2_msi_l1c
         )
 
         # Specific expected results
-        sobloo_url_search = "https://sobloo.eu/api/v1/services/search?f=acquisition.beginViewingDate:gte:1596844800000&f=acquisition.endViewingDate:lte:1597536000000&f=identification.type:eq:S2MSI1C&gintersect=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&size=2&from=0"  # noqa
+        peps_url_search = (
+            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08&"
+            "completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=2&page=1"
+        )
         number_of_products = 2
 
         mock__request.assert_any_call(
             mock.ANY,
-            self.sobloo_url_count,
+            self.peps_url_count,
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
         mock__request.assert_called_with(
             mock.ANY,
-            sobloo_url_search,
+            peps_url_search,
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
-        self.assertEqual(estimate, self.sobloo_products_count)
+        self.assertEqual(estimate, self.peps_products_count)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
@@ -116,30 +127,34 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_no_count_and_search_sobloo(
+    def test_plugins_search_querystringseach_no_count_and_search_peps(
         self, mock__request, mock_count_hits
     ):
-        """A query with a QueryStringSearch (here sobloo) without a count"""
-        with open(self.provider_resp_dir / "sobloo_search.json") as f:
-            sobloo_resp_search = json.load(f)
+        """A query with a QueryStringSearch (here peps) without a count"""
+        with open(self.provider_resp_dir / "peps_search.json") as f:
+            peps_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
-        mock__request.return_value.json.return_value = sobloo_resp_search
-        products, estimate = self.sobloo_search_plugin.query(
+        mock__request.return_value.json.return_value = peps_resp_search
+        products, estimate = self.peps_search_plugin.query(
             count=False,
             page=1,
             items_per_page=2,
-            auth=self.sobloo_auth_plugin,
+            auth=self.peps_auth_plugin,
             **self.search_criteria_s2_msi_l1c
         )
 
         # Specific expected results
-        sobloo_url_search = "https://sobloo.eu/api/v1/services/search?f=acquisition.beginViewingDate:gte:1596844800000&f=acquisition.endViewingDate:lte:1597536000000&f=identification.type:eq:S2MSI1C&gintersect=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&size=2&from=0"  # noqa
+        peps_url_search = (
+            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08&"
+            "completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=2&page=1"
+        )
         number_of_products = 2
 
         mock_count_hits.assert_not_called()
         mock__request.assert_called_once_with(
             mock.ANY,
-            sobloo_url_search,
+            peps_url_search,
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
@@ -187,6 +202,51 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "The FOO collection",
         )
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_discover_product_types_keywords(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must return a dict with well formatted keywords"""
+        # One of the providers that has a QueryStringSearch Search plugin and keywords configured
+        provider = "astraea_eod"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {
+            "collections": [
+                {
+                    "id": "foo_collection",
+                    "keywords": ["foo", "bar"],
+                    "summaries": {
+                        "instruments": ["baZ"],
+                        "constellation": "qux,foo",
+                        "platform": ["quux", "corge", "bar"],
+                        "processing:level": "GRAULT",
+                    },
+                },
+            ]
+        }
+        conf_update_dict = search_plugin.discover_product_types()
+        keywords_list = conf_update_dict["product_types_config"]["foo_collection"][
+            "keywords"
+        ].split(",")
+
+        self.assertEqual(
+            [
+                "bar",
+                "baz",
+                "corge",
+                "foo",
+                "foo-collection",
+                "grault",
+                "quux",
+                "qux",
+            ],
+            keywords_list,
+        )
+
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
@@ -202,6 +262,46 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "https://gate.eos.com/api/lms/search/v2/sentinel2?api_key=dummyapikey"
         )
         self.awseos_products_count = 44
+
+    def test_plugins_search_postjsonsearch_request_error(self):
+        """A query with a PostJsonSearch must handle requests errors"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            responses.add(
+                responses.POST, self.awseos_url, status=500, body=b"test error message"
+            )
+
+            with self.assertRaises(RequestError):
+                with self.assertLogs(level="DEBUG") as cm:
+                    products, estimate = self.awseos_search_plugin.query(
+                        page=1,
+                        items_per_page=2,
+                        auth=self.awseos_auth_plugin,
+                        **self.search_criteria_s2_msi_l1c
+                    )
+                self.assertIn("test error message", cm.output)
+
+        run()
+
+    def test_plugins_search_postjsonsearch_request_auth_error(self):
+        """A query with a PostJsonSearch must handle auth errors"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            responses.add(
+                responses.POST, self.awseos_url, status=403, body=b"test error message"
+            )
+
+            with self.assertRaisesRegex(AuthenticationError, "test error message"):
+                products, estimate = self.awseos_search_plugin.query(
+                    page=1,
+                    items_per_page=2,
+                    auth=self.awseos_auth_plugin,
+                    **self.search_criteria_s2_msi_l1c
+                )
+
+        run()
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_postjsonsearch_count_and_search_awseos(self, mock__request):
@@ -432,3 +532,33 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products[0].geometry, self.search_criteria_s2_msi_l1c["geometry"]
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
+
+
+class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
+    @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
+    def setUp(self, mock_requests_get):
+        # One of the providers that has a BuildPostSearchResult Search plugin
+        provider = "meteoblue"
+        self.search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin.config.credentials = {"cred": "entials"}
+        self.search_plugin.auth = self.auth_plugin.authenticate()
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    def test_plugins_search_buildpostsearchresult_count_and_search(
+        self, mock_requests_post
+    ):
+        """A query with a BuildPostSearchResult must return a single result"""
+
+        products, estimate = self.search_plugin.query(
+            auth=self.auth_plugin,
+        )
+
+        mock_requests_post.assert_called_with(
+            self.search_plugin.config.api_endpoint,
+            json=mock.ANY,
+            timeout=HTTP_REQ_TIMEOUT,
+            auth=self.search_plugin.auth,
+        )
+        self.assertEqual(estimate, 1)
+        self.assertIsInstance(products[0], EOProduct)

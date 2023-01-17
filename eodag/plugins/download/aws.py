@@ -19,7 +19,6 @@
 import logging
 import os
 import re
-import shutil
 from pathlib import Path
 
 import boto3
@@ -36,11 +35,12 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     ProgressCallback,
+    flatten_top_directories,
     get_bucket_name_and_prefix,
     path_to_uri,
     rename_subfolder,
 )
-from eodag.utils.exceptions import AuthenticationError, DownloadError
+from eodag.utils.exceptions import AuthenticationError, DownloadError, NotAvailableError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.aws")
@@ -274,23 +274,25 @@ class AwsDownload(Download):
             bucket_names_and_prefixes = []
             for complementary_url in getattr(product, "assets", {}).values():
                 bucket_names_and_prefixes.append(
-                    self.get_bucket_name_and_prefix(
+                    self.get_product_bucket_name_and_prefix(
                         product, complementary_url.get("href", "")
                     )
                 )
         else:
-            bucket_names_and_prefixes = [self.get_bucket_name_and_prefix(product)]
+            bucket_names_and_prefixes = [
+                self.get_product_bucket_name_and_prefix(product)
+            ]
 
         # add complementary urls
         try:
             for complementary_url_key in product_conf.get("complementary_url_key", []):
                 bucket_names_and_prefixes.append(
-                    self.get_bucket_name_and_prefix(
+                    self.get_product_bucket_name_and_prefix(
                         product, product.properties[complementary_url_key]
                     )
                 )
         except KeyError:
-            logger.error(
+            logger.warning(
                 "complementary_url_key %s is missing in %s properties"
                 % (complementary_url_key, product.properties["id"])
             )
@@ -375,12 +377,16 @@ class AwsDownload(Download):
         progress_callback.reset(total=total_size)
         try:
             for product_chunk in unique_product_chunks:
-                chunk_rel_path = self.get_chunk_dest_path(
-                    product,
-                    product_chunk,
-                    build_safe=build_safe,
-                    dir_prefix=prefix,
-                )
+                try:
+                    chunk_rel_path = self.get_chunk_dest_path(
+                        product,
+                        product_chunk,
+                        build_safe=build_safe,
+                    )
+                except NotAvailableError as e:
+                    # out of SAFE format chunk
+                    logger.warning(e)
+                    continue
                 chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
                 chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
                 if not os.path.isdir(chunk_abs_path_dir):
@@ -421,13 +427,7 @@ class AwsDownload(Download):
             self.finalize_s2_safe_product(product_local_path)
         # flatten directory structure
         elif flatten_top_dirs:
-            tmp_product_local_path = "%s-tmp" % product_local_path
-            for d, dirs, files in os.walk(product_local_path):
-                if len(files) != 0:
-                    shutil.copytree(d, tmp_product_local_path)
-                    shutil.rmtree(product_local_path)
-                    os.rename(tmp_product_local_path, product_local_path)
-                    break
+            flatten_top_directories(product_local_path)
 
         if build_safe:
             self.check_manifest_file_list(product_local_path)
@@ -594,7 +594,7 @@ class AwsDownload(Download):
         self.s3_session = s3_session
         return objects
 
-    def get_bucket_name_and_prefix(self, product, url=None):
+    def get_product_bucket_name_and_prefix(self, product, url=None):
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download
@@ -700,8 +700,8 @@ class AwsDownload(Download):
             logger.exception("Could not finalize SAFE product from downloaded data")
             raise DownloadError(e)
 
-    def get_chunk_dest_path(self, product, chunk, dir_prefix, build_safe=False):
-        """Get chunk destination path"""
+    def get_chunk_dest_path(self, product, chunk, dir_prefix=None, build_safe=False):
+        """Get chunk SAFE destination path"""
         if build_safe:
             # S2 common
             if "S2_MSI" in product.product_type:
@@ -918,10 +918,17 @@ class AwsDownload(Download):
                     product.properties["title"],
                     found_dict["file"],
                 )
+            # out of SAFE format
+            else:
+                raise NotAvailableError(
+                    f"Ignored {chunk.key} out of SAFE matching pattern"
+                )
         # no SAFE format
         else:
+            if not dir_prefix:
+                dir_prefix = chunk.key
             product_path = chunk.key.split(dir_prefix.strip("/") + "/")[-1]
-        logger.debug("Downloading %s to %s" % (chunk.key, product_path))
+        logger.debug(f"Downloading {chunk.key} to {product_path}")
         return product_path
 
     def download_all(

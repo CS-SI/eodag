@@ -31,6 +31,7 @@ import json
 import logging as py_logging
 import os
 import re
+import shutil
 import string
 import types
 import unicodedata
@@ -39,6 +40,7 @@ from collections import defaultdict
 from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
+from tempfile import mkdtemp
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -766,6 +768,80 @@ def list_items_recursive_apply(config_list, apply_method, **apply_method_paramet
     return result_list
 
 
+def items_recursive_sort(input_obj):
+    """Recursive sort dict items contained in input object (dict or list)
+
+    >>> items_recursive_sort(
+    ...     {"b": {"b": "c", "a": 0}, "a": ["b", {2: 0, 0: 1, 1: 2}]},
+    ... ) == {"a": ["b", {0: 1, 1: 2, 2: 0}], "b": {"a": 0, "b": "c"}}
+    True
+    >>> items_recursive_sort(["b", {2: 0, 0: 1, 1:2}])
+    ['b', {0: 1, 1: 2, 2: 0}]
+    >>> items_recursive_sort("foo")
+    'foo'
+
+    :param input_obj: Input object (dict or list)
+    :type input_obj: Union[dict,list]
+    :returns: Updated object
+    :rtype: Union[dict, list]
+    """
+    if isinstance(input_obj, dict):
+        return dict_items_recursive_sort(input_obj)
+    elif isinstance(input_obj, list):
+        return list_items_recursive_sort(input_obj)
+    else:
+        logger.warning("Could not use items_recursive_sort on %s" % type(input_obj))
+        return input_obj
+
+
+def dict_items_recursive_sort(config_dict):
+    """Recursive sort dict elements
+
+    >>> dict_items_recursive_sort(
+    ...     {"b": {"b": "c", "a": 0}, "a": ["b", {2: 0, 0: 1, 1: 2}]},
+    ... ) == {"a": ["b", {0: 1, 1: 2, 2: 0}], "b": {"a": 0, "b": "c"}}
+    True
+
+    :param config_dict: Input nested dictionnary
+    :type config_dict: dict
+    :returns: Updated dict
+    :rtype: dict
+    """
+    result_dict = copy.deepcopy(config_dict)
+    for dict_k, dict_v in result_dict.items():
+        if isinstance(dict_v, dict):
+            result_dict[dict_k] = dict_items_recursive_sort(dict_v)
+        elif any(isinstance(dict_v, t) for t in (list, tuple)):
+            result_dict[dict_k] = list_items_recursive_sort(dict_v)
+        else:
+            result_dict[dict_k] = dict_v
+
+    return dict(sorted(result_dict.items()))
+
+
+def list_items_recursive_sort(config_list):
+    """Recursive sort dicts in list elements
+
+    >>> list_items_recursive_sort(["b", {2: 0, 0: 1, 1: 2}])
+    ['b', {0: 1, 1: 2, 2: 0}]
+
+    :param config_list: Input list containing nested lists/dicts
+    :type config_list: list
+    :returns: Updated list
+    :rtype: list
+    """
+    result_list = copy.deepcopy(config_list)
+    for list_idx, list_v in enumerate(result_list):
+        if isinstance(list_v, dict):
+            result_list[list_idx] = dict_items_recursive_sort(list_v)
+        elif any(isinstance(list_v, t) for t in (list, tuple)):
+            result_list[list_idx] = list_items_recursive_sort(list_v)
+        else:
+            result_list[list_idx] = list_v
+
+    return result_list
+
+
 def string_to_jsonpath(key, str_value):
     """Get jsonpath for "$.foo.bar" like string
 
@@ -1058,3 +1134,25 @@ def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
         )
 
     return bucket, prefix
+
+
+def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
+    """Flatten directory structure, removing common empty sub-directories
+
+    :param nested_dir_root: Absolute path of the directory structure to flatten
+    :type nested_dir_root: str
+    :param common_subdirs_path: (optional) Absolute path of the desired subdirectory to remove
+    :type common_subdirs_path: str
+    """
+    if not common_subdirs_path:
+        subpaths_list = [p for p in Path(nested_dir_root).glob("**/*") if p.is_file()]
+        common_subdirs_path = os.path.commonpath(subpaths_list)
+
+    if nested_dir_root != common_subdirs_path:
+        logger.debug(f"Flatten {common_subdirs_path} to {nested_dir_root}")
+        tmp_path = mkdtemp()
+        # need to delete tmp_path to prevent FileExistsError with copytree. Use dirs_exist_ok with py > 3.7
+        shutil.rmtree(tmp_path)
+        shutil.copytree(common_subdirs_path, tmp_path)
+        shutil.rmtree(nested_dir_root)
+        shutil.move(tmp_path, nested_dir_root)

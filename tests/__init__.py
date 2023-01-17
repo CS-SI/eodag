@@ -46,10 +46,9 @@ TESTS_DOWNLOAD_PATH = jp(tempfile.gettempdir(), "eodag_tests")
 
 class EODagTestCase(unittest.TestCase):
     def setUp(self):
-        self.provider = "sobloo"
+        self.provider = "creodias"
         self.download_url = (
-            "https://sobloo.eu/api/v1/services/download/8ff765a2-e089-465d-a48f-"
-            "cc27008a0962"
+            "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
         )
         self.local_filename = (
             "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE"
@@ -123,13 +122,13 @@ class EODagTestCase(unittest.TestCase):
         )
 
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
-        self.requests_http_post_patcher = mock.patch("requests.post", autospec=True)
+        self.requests_request_patcher = mock.patch("requests.request", autospec=True)
         self.requests_http_get = self.requests_http_get_patcher.start()
-        self.requests_http_post = self.requests_http_post_patcher.start()
+        self.requests_request = self.requests_request_patcher.start()
 
     def tearDown(self):
         self.requests_http_get_patcher.stop()
-        self.requests_http_post_patcher.stop()
+        self.requests_request_patcher.stop()
         unwanted_product_dir = jp(
             dirn(self.local_product_as_archive_path), self.local_filename
         )
@@ -329,7 +328,8 @@ class EODagTestCase(unittest.TestCase):
             os.remove(product_zip)
 
     def _set_download_simulation(self):
-        self.requests_http_get.return_value = self._download_response_archive()
+        self.requests_request.return_value = self._download_response_archive()
+        # self.requests_http_get.return_value = self._download_response_archive()
 
     def _download_response_archive(self):
         class Response(object):

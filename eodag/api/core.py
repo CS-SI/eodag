@@ -1762,9 +1762,9 @@ class EODataAccessGateway(object):
         product location from product metadata on a provider can override the
         ``downloadLink`` metadata mapping in the right way. For example, using the
         environment variable:
-        ``EODAG__SOBLOO__SEARCH__METADATA_MAPPING__DOWNLOADLINK="file:///{id}"`` will
+        ``EODAG__CREODIAS__SEARCH__METADATA_MAPPING__DOWNLOADLINK="file:///{id}"`` will
         lead to all :class:`~eodag.api.product._product.EOProduct`'s originating from the
-        provider ``sobloo`` to have their ``downloadLink`` metadata point to something like:
+        provider ``creodias`` to have their ``downloadLink`` metadata point to something like:
         ``file:///12345-678``, making this method immediately return the later string without
         trying to download the product.
 

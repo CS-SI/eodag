@@ -58,7 +58,7 @@ class TestEOProduct(EODagTestCase):
         self.assertEqual(product.geometry, product.search_intersection)
 
     def test_eoproduct_search_intersection_none(self):
-        """EOProduct search_intersection attr must be None if shapely.errors.TopologicalError when intersecting"""  # noqa
+        """EOProduct search_intersection attr must be None if shapely.errors.GEOSException when intersecting"""  # noqa
         # Invalid geometry
         self.eoproduct_props["geometry"] = {
             "type": "Polygon",
@@ -288,7 +288,8 @@ class TestEOProduct(EODagTestCase):
                 )
 
             # Check that the mocked request was properly called.
-            self.requests_http_get.assert_called_with(
+            self.requests_request.assert_called_with(
+                "get",
                 self.download_url,
                 stream=True,
                 auth=None,
@@ -338,7 +339,8 @@ class TestEOProduct(EODagTestCase):
             # Download
             product_dir_path = product.download()
             # Check that the mocked request was properly called.
-            self.requests_http_get.assert_called_with(
+            self.requests_request.assert_called_with(
+                "get",
                 self.download_url,
                 stream=True,
                 auth=None,
@@ -409,7 +411,8 @@ class TestEOProduct(EODagTestCase):
                 dl_url_params={"fakeparam": "dummy"},
             )
             # Check that dl_url_params are properly passed to the GET request
-            self.requests_http_get.assert_called_with(
+            self.requests_request.assert_called_with(
+                "get",
                 self.download_url,
                 stream=True,
                 auth=None,
@@ -453,3 +456,84 @@ class TestEOProduct(EODagTestCase):
         # progress bar finished
         self.assertEqual(progress_callback.n, progress_callback.total)
         self.assertGreater(progress_callback.total, 0)
+
+    def test_eoproduct_register_downloader(self):
+        """eoproduct.register_donwloader must set download and auth plugins"""
+        product = self._dummy_product()
+
+        self.assertIsNone(product.downloader)
+        self.assertIsNone(product.downloader_auth)
+
+        downloader = mock.MagicMock()
+        downloader_auth = mock.MagicMock()
+
+        product.register_downloader(downloader, downloader_auth)
+
+        self.assertEqual(product.downloader, downloader)
+        self.assertEqual(product.downloader_auth, downloader_auth)
+
+    def test_eoproduct_register_downloader_resolve_ok(self):
+        """eoproduct.register_donwloader must resolve locations and properties"""
+        downloadable_product = self._dummy_downloadable_product(
+            product=self._dummy_product(
+                properties=dict(
+                    self.eoproduct_props,
+                    **{
+                        "downloadLink": "%(base_uri)s/is/resolved",
+                        "otherProperty": "%(outputs_prefix)s/also/resolved",
+                    },
+                )
+            )
+        )
+        self.assertEqual(
+            downloadable_product.location,
+            f"{downloadable_product.downloader.config.base_uri}/is/resolved",
+        )
+        self.assertEqual(
+            downloadable_product.remote_location,
+            f"{downloadable_product.downloader.config.base_uri}/is/resolved",
+        )
+        self.assertEqual(
+            downloadable_product.properties["downloadLink"],
+            f"{downloadable_product.downloader.config.base_uri}/is/resolved",
+        )
+        self.assertEqual(
+            downloadable_product.properties["otherProperty"],
+            f"{downloadable_product.downloader.config.outputs_prefix}/also/resolved",
+        )
+
+    def test_eoproduct_register_downloader_resolve_ignored(self):
+        """eoproduct.register_donwloader must ignore unresolvable locations and properties"""
+        with self.assertLogs(level="DEBUG") as cm:
+            downloadable_product = self._dummy_downloadable_product(
+                product=self._dummy_product(
+                    properties=dict(
+                        self.eoproduct_props,
+                        **{
+                            "downloadLink": "%257B/cannot/be/resolved",
+                            "otherProperty": "%/%s/neither/resolved",
+                        },
+                    )
+                )
+            )
+            self.assertEqual(downloadable_product.location, "%257B/cannot/be/resolved")
+            self.assertEqual(
+                downloadable_product.remote_location, "%257B/cannot/be/resolved"
+            )
+            self.assertEqual(
+                downloadable_product.properties["downloadLink"],
+                "%257B/cannot/be/resolved",
+            )
+            self.assertEqual(
+                downloadable_product.properties["otherProperty"],
+                "%/%s/neither/resolved",
+            )
+
+            needed_logs = [
+                f"Could not resolve product.location ({downloadable_product.location})",
+                f"Could not resolve product.remote_location ({downloadable_product.remote_location})",
+                f"Could not resolve downloadLink property ({downloadable_product.properties['downloadLink']})",
+                f"Could not resolve otherProperty property ({downloadable_product.properties['otherProperty']})",
+            ]
+            for needed_log in needed_logs:
+                self.assertTrue(any(needed_log in log for log in cm.output))

@@ -130,7 +130,7 @@ def format_metadata(search_param, *args, **kwargs):
         - ``to_bounds_lists``: convert to list(s) of bounds
         - ``to_nwse_bounds``: convert to North,West,South,East bounds
         - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
-        - ``to_geo_interface``: convert to a GeoJSON via __geo_interface__
+        - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
         - ``csv_list``: convert to a comma separated list
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
           milliseconds to a utc iso datetime
@@ -232,7 +232,10 @@ def format_metadata(search_param, *args, **kwargs):
             terms of the time to include. Valid options are 'auto', 'hours',
             'minutes', 'seconds', 'milliseconds' and 'microseconds'.
             """
-            dt = isoparse(date_time)
+            try:
+                dt = isoparse(date_time)
+            except ValueError:
+                return date_time
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
             elif dt.tzinfo is not UTC:
@@ -297,12 +300,15 @@ def format_metadata(search_param, *args, **kwargs):
             )
 
         @staticmethod
-        def convert_to_geo_interface(geom):
-            return geojson.dumps(geom.__geo_interface__)
+        def convert_to_geojson(string):
+            return geojson.dumps(string)
 
         @staticmethod
         def convert_csv_list(values_list):
-            return ",".join([str(x) for x in values_list])
+            if isinstance(values_list, list):
+                return ",".join([str(x) for x in values_list])
+            else:
+                return values_list
 
         @staticmethod
         def convert_remove_extension(string):

@@ -224,7 +224,7 @@ Start playing with the CLI:
 
 - To list available product types on a specified supported provider::
 
-     eodag list -p sobloo
+     eodag list -p creodias
 
 - To see all the available options and commands::
 

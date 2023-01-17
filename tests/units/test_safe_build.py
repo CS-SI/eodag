@@ -28,6 +28,7 @@ from tests.context import (
     TESTS_DOWNLOAD_PATH,
     AwsDownload,
     EOProduct,
+    NotAvailableError,
 )
 
 
@@ -48,7 +49,53 @@ class TestSafeBuild(unittest.TestCase):
         if os.path.isdir(TESTS_DOWNLOAD_PATH):
             rmtree(TESTS_DOWNLOAD_PATH)
 
-    def test_s1_sar_grd_safe_build(self):
+    def test_safe_build_out_of_pattern(self):
+        """Cannot build SAFE product from out of pattern file"""
+        prod = EOProduct(
+            provider="some_provider",
+            properties=self.aws_sentinel_chunks["S1_SAR_GRD"]["properties"],
+            productType="S1_SAR_GRD",
+        )
+
+        def chunk():
+            return None
+
+        chunk.key = "path/to/some/dummy_chunk"
+
+        with self.assertRaisesRegex(
+            NotAvailableError, f"Ignored {chunk.key} out of SAFE matching pattern"
+        ):
+            self.awsd.get_chunk_dest_path(
+                prod,
+                chunk,
+                build_safe=True,
+            )
+
+    def test_safe_build_no_safe(self):
+        """Do not use patterns if no SAFE is asked"""
+        prod = EOProduct(
+            provider="some_provider",
+            properties=self.aws_sentinel_chunks["S1_SAR_GRD"]["properties"],
+            productType="S1_SAR_GRD",
+        )
+
+        def chunk():
+            return None
+
+        chunk.key = "path/to/some/dummy_chunk"
+        chunk_dest_path = self.awsd.get_chunk_dest_path(
+            prod,
+            chunk,
+            build_safe=False,
+        )
+        self.assertEqual(chunk_dest_path, chunk.key)
+
+        chunk_dest_path = self.awsd.get_chunk_dest_path(
+            prod, chunk, build_safe=False, dir_prefix="path/to"
+        )
+        self.assertEqual(chunk_dest_path, "some/dummy_chunk")
+
+    def test_safe_build_s1_sar_grd(self):
         """build S1_SAR_GRD SAFE product with empty files and check content"""
 
         prod = EOProduct(
@@ -65,7 +112,9 @@ class TestSafeBuild(unittest.TestCase):
         for chunk_key in self.aws_sentinel_chunks["S1_SAR_GRD"]["chunks"]:
             chunk.key = chunk_key
             chunk_dest_rel_path = self.awsd.get_chunk_dest_path(
-                prod, chunk, build_safe=True, dir_prefix=""
+                prod,
+                chunk,
+                build_safe=True,
             )
 
             chunk_abs_path = os.path.join(product_path, chunk_dest_rel_path)
@@ -90,7 +139,7 @@ class TestSafeBuild(unittest.TestCase):
         self.assertEqual(len(cm.output), 1)
         self.assertIn("Dummy warning", cm.output[0])
 
-    def test_s2_msi_l2a_safe_build(self):
+    def test_safe_build_s2_msi_l2a(self):
         """build S2_MSI_L2A SAFE product with empty files and check content"""
 
         prod = EOProduct(
@@ -107,7 +156,9 @@ class TestSafeBuild(unittest.TestCase):
         for chunk_key in self.aws_sentinel_chunks["S2_MSI_L2A"]["chunks"]:
             chunk.key = chunk_key
             chunk_dest_rel_path = self.awsd.get_chunk_dest_path(
-                prod, chunk, build_safe=True, dir_prefix=""
+                prod,
+                chunk,
+                build_safe=True,
             )
 
             chunk_abs_path = os.path.join(product_path, chunk_dest_rel_path)
@@ -134,7 +185,7 @@ class TestSafeBuild(unittest.TestCase):
         self.assertEqual(len(cm.output), 1)
         self.assertIn("Dummy warning", cm.output[0])
 
-    def test_s2_msi_l1c_safe_build(self):
+    def test_safe_build_s2_msi_l1c(self):
         """build S2_MSI_L1C SAFE product with empty files and check content"""
 
         prod = EOProduct(
@@ -151,7 +202,9 @@ class TestSafeBuild(unittest.TestCase):
         for chunk_key in self.aws_sentinel_chunks["S2_MSI_L1C"]["chunks"]:
             chunk.key = chunk_key
             chunk_dest_rel_path = self.awsd.get_chunk_dest_path(
-                prod, chunk, build_safe=True, dir_prefix=""
+                prod,
+                chunk,
+                build_safe=True,
             )
 
             chunk_abs_path = os.path.join(product_path, chunk_dest_rel_path)

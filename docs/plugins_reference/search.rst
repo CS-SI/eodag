@@ -20,4 +20,5 @@ This table lists all the search plugins currently available:
    eodag.plugins.search.qssearch.PostJsonSearch
    eodag.plugins.search.qssearch.StacSearch
    eodag.plugins.search.static_stac_search.StaticStacSearch
+   eodag.plugins.search.build_search_result.BuildPostSearchResult
    eodag.plugins.search.csw.CSWSearch

@@ -96,7 +96,7 @@ See for instance the following configuration extracted from YAML file:
 
 .. code-block:: yaml
 
-   sobloo:
+   creodias:
        download:
            extract: True
            outputs_prefix: /absolute/path/to/a/folder/
@@ -107,9 +107,9 @@ The same configuration could be achieved by setting environment variables:
 
 .. code-block:: bash
 
-   export EODAG__SOBLOO__DOWNLOAD__EXTRACT=True
-   export EODAG__SOBLOO__DOWNLOAD__OUTPUTS_PREFIX=/absolute/path/to/a/folder/
-   export EODAG__SOBLOO__DOWNLOAD__DELETE_ARCHIVE=False
+   export EODAG__CREODIAS__DOWNLOAD__EXTRACT=True
+   export EODAG__CREODIAS__DOWNLOAD__OUTPUTS_PREFIX=/absolute/path/to/a/folder/
+   export EODAG__CREODIAS__DOWNLOAD__DELETE_ARCHIVE=False
 
 
 Each configuration parameter can be set with an environment variable.
@@ -189,25 +189,27 @@ Edit your configuration file ``$HOME/.config/eodag/eodag.yml`` with the followin
 
 .. code-block:: yaml
 
-   sobloo:
+   creodias:
        priority: 2
        download:
            extract: False
            outputs_prefix: /home/user/eodagworkspace/
        auth:
            credentials:
-               apikey: my_secret_sobloo_api_key
+               username: my_creodias_username
+               password: my_creodias_password
 
-It updates and completes the settings of the provider `sobloo` by:
+It updates and completes the settings of the provider `creodias` by:
 
 * Setting its priority to ``2``, which is higher than the default maximum priority (*PEPS* at 1).
-  Products will then be searched through `sobloo`'s catalog.
+  Products will then be searched through `creodias`'s catalog.
 
 * The products downloaded should not be extracted automatically by ``eodag``.
 
 * The products should be downloaded to the folder ``/home/user/eodagworkspace/``.
 
-* An API key obtained from `sobloo` is saved there, it will be used to authenticate to the provider.
+* Credentials (username and password) obtained from `creodias` are saved there, it will be used to authenticate to the
+  provider.
 
 This file can be used to download products with the API:
 

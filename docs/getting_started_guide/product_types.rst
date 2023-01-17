@@ -47,7 +47,7 @@ The catalog is used in different ways by ``eodag``:
   .. code-block:: console
 
      eodag search --conf peps_conf.yml -p S2_MSI_L2A
-     eodag search --conf sobloo_conf.yml -p S2_MSI_L2A
+     eodag search --conf creodias_conf.yml -p S2_MSI_L2A
 
 * Some of the metadata mapped can be used to search for products without specifying any identifier.
   In other terms, this catalog can be queried.
@@ -83,3 +83,24 @@ Click on the link below to display its full content.
 .. raw:: html
 
    </details>
+   </br>
+
+The following table lists the metadata parameters of the product types, and shows whether these product types are available for providers or not. The table allows you to display desired columns only, sort, and filter its content.
+
+Product types information (`CSV <../_static/product_types_information.csv>`__)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. raw:: html
+
+   <p id="column_links"></p>
+   <span id="table_0_span">
+
+.. csv-table::
+   :file: ../_static/product_types_information.csv
+   :header-rows: 1
+   :stub-columns: 1
+   :class: datatable
+
+.. raw:: html
+
+   </span>

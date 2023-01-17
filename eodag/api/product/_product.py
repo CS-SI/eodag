@@ -35,9 +35,10 @@ from eodag.utils import ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 try:
-    from shapely.errors import TopologicalError
+    from shapely.errors import GEOSException
 except ImportError:
-    from shapely.geos import TopologicalError
+    # shapely < 2.0 compatibility
+    from shapely.errors import TopologicalError as GEOSException
 
 
 logger = logging.getLogger("eodag.api.product")
@@ -129,7 +130,7 @@ class EOProduct(object):
             )
             try:
                 self.search_intersection = self.geometry.intersection(searched_geom)
-            except TopologicalError:
+            except GEOSException:
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
                     "geometry: %s",
@@ -220,15 +221,30 @@ class EOProduct(object):
         """
         self.downloader = downloader
         self.downloader_auth = authenticator
+
         # resolve locations and properties if needed with downloader configuration
-        self.location = self.location % vars(self.downloader.config)
-        self.remote_location = self.remote_location % vars(self.downloader.config)
+        location_attrs = ("location", "remote_location")
+        for location_attr in location_attrs:
+            try:
+                setattr(
+                    self,
+                    location_attr,
+                    getattr(self, location_attr) % vars(self.downloader.config),
+                )
+            except ValueError as e:
+                logger.debug(
+                    f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
+                    f" in register_downloader: {str(e)}"
+                )
+
         for k, v in self.properties.items():
             if isinstance(v, str):
                 try:
                     self.properties[k] = v % vars(self.downloader.config)
-                except TypeError:
-                    pass
+                except (TypeError, ValueError) as e:
+                    logger.debug(
+                        f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
+                    )
 
     def download(
         self,

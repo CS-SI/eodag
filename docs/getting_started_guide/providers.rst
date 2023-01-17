@@ -8,7 +8,6 @@ Description
 
 Products from the following providers are made avaiable through ``eodag``:
 
-* `sobloo <https://sobloo.eu/>`_: Airbus DIAS
 * `usgs <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
 * `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
 * `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Copernicus (Sentinel 1, 2, 3) products
@@ -23,6 +22,8 @@ Products from the following providers are made avaiable through ``eodag``:
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
+* `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Acces
+* `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
 
 Providers available through an external plugin:
 

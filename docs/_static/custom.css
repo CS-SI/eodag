@@ -18,9 +18,39 @@ table.params thead tr th {
     z-index: 1;
     background-color: #fafafa;
 }
+table.params thead tr th:first-child {
+    z-index: 3;
+}
 table.params th:first-child, table.params td:first-child {
     background-color: #fafafa;
     z-index: 2;
     position: sticky;
     left: 0;
+}
+a.hidden:hover, a.highlighted:hover {
+    cursor: pointer;
+}
+table.datatable thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #fafafa;
+    border-right: 1px solid #ddd;
+    border-bottom: 2px solid #ddd;
+}
+table.datatable thead tr th:first-child {
+    z-index: 3;
+    border-left: 1px solid #ddd;
+}
+table.datatable thead tr th:last-child {
+    border-right: 1px solid #ddd;
+}
+table.datatable th:first-child, table.datatable td:first-child {
+    background-color: #fafafa;
+    z-index: 2;
+    position: sticky;
+    left: 0;
+}
+table.datatable tbody tr:last-child th, table.datatable tbody tr:last-child td {
+    border-bottom: 1px solid #ddd;
 }

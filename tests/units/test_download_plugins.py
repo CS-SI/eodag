@@ -146,7 +146,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_ok(self, mock_requests_get):
         """HTTPDownload.download() must create an outputfile"""
 
@@ -239,6 +239,73 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
         )
 
+    @mock.patch("eodag.utils.ProgressCallback.reset", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_size(
+        self, mock_requests_get, mock_requests_head, mock_progress_callback_reset
+    ):
+        """HTTPDownload.download() must get assets sizes"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+
+        mock_requests_head.return_value.headers = {
+            "Content-length": "1",
+            "content-disposition": '; size = "2"',
+        }
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "Content-length": "3",
+            "content-disposition": '; size = "4"',
+        }
+
+        # size from HEAD / Content-length
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=1 + 1)
+
+        # size from HEAD / content-disposition
+        mock_requests_head.return_value.headers.pop("Content-length")
+        mock_progress_callback_reset.reset_mock()
+        self.product.location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=2 + 2)
+
+        # size from GET / Content-length
+        mock_requests_head.return_value.headers.pop("content-disposition")
+        mock_progress_callback_reset.reset_mock()
+        self.product.location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=3 + 3)
+
+        # size from GET / content-disposition
+        mock_requests_get.return_value.__enter__.return_value.headers.pop(
+            "Content-length"
+        )
+        mock_progress_callback_reset.reset_mock()
+        self.product.location = "http://somewhere"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/a"},
+            "bar": {"href": "http://somewhere/b"},
+        }
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=4 + 4)
+
     def test_plugins_download_http_one_local_asset(
         self,
     ):
@@ -297,6 +364,60 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(path, os.path.abspath(os.path.join(os.sep, "somewhere")))
         # empty product download directory should have been removed
         self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order(self, mock_request):
+        """HTTPDownload.orderDownload() must request using orderLink"""
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["storageStatus"] = OFFLINE_STATUS
+
+        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        plugin.orderDownload(self.product, auth=auth)
+
+        mock_request.assert_called_once_with(
+            method="get",
+            url=self.product.properties["orderLink"],
+            auth=auth,
+            headers={},
+        )
+
+    def test_plugins_download_http_order_status(self):
+        """HTTPDownload.orderDownloadStatus() must request status using orderStatusLink"""
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.order_status_percent = "progress_percentage"
+        plugin.config.order_status_error = {"that": "failed"}
+        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+
+        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            url = "http://somewhere/order-status"
+            responses.add(
+                responses.GET,
+                url,
+                status=200,
+                json={"progress_percentage": 50, "that": "failed"},
+            )
+
+            with self.assertLogs(level="INFO") as cm:
+                plugin.orderDownloadStatus(self.product, auth=auth)
+                self.assertEqual(
+                    [
+                        f"INFO:eodag.plugins.download.http:{self.product.properties['title']} order status: 50%",
+                        'WARNING:eodag.plugins.download.http:{"progress_percentage": 50, "that": "failed"}',
+                    ],
+                    cm.output,
+                )
+            self.assertEqual(len(responses.calls), 1)
+
+        run()
 
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
@@ -468,26 +589,252 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             ),
             productType="S2_MSI_L2A",
         )
-
-    def test_plugins_download_aws_get_bucket_prefix(self):
-        """AwsDownload.get_bucket_name_and_prefix() must extract bucket & prefix from location"""
-
-        plugin = self.get_download_plugin(self.product)
-        plugin.config.products["S2_MSI_L2A"]["default_bucket"] = "default_bucket"
-        self.product.properties["id"] = "someproduct"
-
         self.product.location = (
             self.product.remote_location
         ) = "http://somebucket.somehost.com/path/to/some/product"
-        bucket, prefix = plugin.get_bucket_name_and_prefix(self.product)
+
+    def test_plugins_download_aws_get_bucket_prefix(self):
+        """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location"""
+
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.products["S2_MSI_L2A"]["default_bucket"] = "default_bucket"
+
+        bucket, prefix = plugin.get_product_bucket_name_and_prefix(self.product)
         self.assertEqual((bucket, prefix), ("somebucket", "path/to/some/product"))
 
         plugin.config.bucket_path_level = 1
-        bucket, prefix = plugin.get_bucket_name_and_prefix(self.product)
+        bucket, prefix = plugin.get_product_bucket_name_and_prefix(self.product)
         self.assertEqual((bucket, prefix), ("to", "some/product"))
         del plugin.config.bucket_path_level
 
-        bucket, prefix = plugin.get_bucket_name_and_prefix(
+        bucket, prefix = plugin.get_product_bucket_name_and_prefix(
             self.product, url="/somewhere/else"
         )
         self.assertEqual((bucket, prefix), ("default_bucket", "somewhere/else"))
+
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.finalize_s2_safe_product", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    def test_plugins_download_aws_no_safe_build_no_flatten_top_dirs(
+        self,
+        mock_requests_get,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_finalize_s2_safe_product,
+        mock_check_manifest_file_list,
+        mock_flatten_top_directories,
+    ):
+        """AwsDownload.download() must not call safe build methods if not needed"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+
+        # no SAFE build and no flatten_top_dirs
+        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.flatten_top_dirs = False
+
+        plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        mock_get_authenticated_objects.assert_called_once_with(
+            plugin, "somebucket", "path/to/some", None
+        )
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 0)
+        self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
+        self.assertEqual(mock_check_manifest_file_list.call_count, 0)
+        self.assertEqual(mock_flatten_top_directories.call_count, 0)
+
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.finalize_s2_safe_product", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    def test_plugins_download_aws_no_safe_build_flatten_top_dirs(
+        self,
+        mock_requests_get,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_finalize_s2_safe_product,
+        mock_check_manifest_file_list,
+        mock_flatten_top_directories,
+    ):
+        """AwsDownload.download() must not call safe build methods if not needed"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+
+        # no SAFE build and flatten_top_dirs
+        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.flatten_top_dirs = True
+
+        plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        mock_get_authenticated_objects.assert_called_once_with(
+            plugin, "somebucket", "path/to/some", None
+        )
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 0)
+        self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
+        self.assertEqual(mock_check_manifest_file_list.call_count, 0)
+        mock_flatten_top_directories.assert_called_once_with(
+            os.path.join(self.output_dir, self.product.properties["title"]),
+        )
+
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.finalize_s2_safe_product", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    def test_plugins_download_aws_safe_build(
+        self,
+        mock_requests_get,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_finalize_s2_safe_product,
+        mock_check_manifest_file_list,
+        mock_flatten_top_directories,
+    ):
+        """AwsDownload.download() must call safe build methods if needed"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+        execpected_output = os.path.join(
+            self.output_dir, self.product.properties["title"]
+        )
+        # fetch_metadata return
+        mock_requests_get.return_value.json.return_value = {
+            "title": "foo",
+            "productPath": "s3://example/here/is/productPath",
+        }
+        # authenticated objects mock
+        mock_get_authenticated_objects.return_value.keys.return_value = [
+            "somebucket",
+            "example",
+        ]
+        mock_get_authenticated_objects.return_value.filter.side_effect = (
+            lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
+        )
+        # # chunk dest path mock
+        mock_get_chunk_dest_path.side_effect = lambda *x, **y: x[2].key
+
+        # SAFE build
+        plugin.config.products[self.product.product_type]["build_safe"] = True
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(mock_get_authenticated_objects.call_count, 2)
+        mock_get_authenticated_objects.assert_any_call(
+            plugin, "somebucket", "path/to/some", None
+        )
+        mock_get_authenticated_objects.assert_any_call(
+            plugin, "example", "here/is", None
+        )
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 2)
+        mock_get_chunk_dest_path.assert_any_call(
+            plugin, product=self.product, chunk=mock.ANY, build_safe=True
+        )
+        mock_finalize_s2_safe_product.assert_called_once_with(plugin, execpected_output)
+        mock_check_manifest_file_list.assert_called_once_with(plugin, execpected_output)
+        self.assertEqual(mock_flatten_top_directories.call_count, 0)
+
+        self.assertEqual(path, execpected_output)
+
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.finalize_s2_safe_product", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    def test_plugins_download_aws_safe_build_assets(
+        self,
+        mock_requests_get,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_finalize_s2_safe_product,
+        mock_check_manifest_file_list,
+        mock_flatten_top_directories,
+    ):
+        """AwsDownload.download() must call safe build methods if needed"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+        self.product.properties["tilePath"] = "http://example.com/tilePath"
+        self.product.assets = {
+            "file1": {"href": "http://example.com/path/to/file1"},
+            "file2": {"href": "http://example.com/path/to/file2"},
+        }
+        execpected_output = os.path.join(
+            self.output_dir, self.product.properties["title"]
+        )
+        # fetch_metadata return
+        mock_requests_get.return_value.json.return_value = {
+            "title": "foo",
+            "productPath": "s3://example/here/is/productPath",
+        }
+        # authenticated objects mock
+        mock_get_authenticated_objects.return_value.keys.return_value = [
+            "somebucket",
+            "example",
+        ]
+        mock_get_authenticated_objects.return_value.filter.side_effect = (
+            lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
+        )
+        # chunk dest path mock
+        mock_get_chunk_dest_path.side_effect = lambda *x, **y: x[2].key
+
+        # SAFE build
+        plugin.config.products[self.product.product_type]["build_safe"] = True
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        mock_get_authenticated_objects.assert_called_once_with(
+            plugin, "example", "", None
+        )
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 4)
+        mock_get_chunk_dest_path.assert_any_call(
+            plugin, product=self.product, chunk=mock.ANY, build_safe=True
+        )
+        mock_finalize_s2_safe_product.assert_called_once_with(plugin, execpected_output)
+        mock_check_manifest_file_list.assert_called_once_with(plugin, execpected_output)
+        self.assertEqual(mock_flatten_top_directories.call_count, 0)
+
+        self.assertEqual(path, execpected_output)
