@@ -21,11 +21,15 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import responses
+
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
+    AuthenticationError,
     EOProduct,
     PluginManager,
+    RequestError,
     get_geometry_from_various,
     load_default_config,
 )
@@ -258,6 +262,46 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "https://gate.eos.com/api/lms/search/v2/sentinel2?api_key=dummyapikey"
         )
         self.awseos_products_count = 44
+
+    def test_plugins_search_postjsonsearch_request_error(self):
+        """A query with a PostJsonSearch must handle requests errors"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            responses.add(
+                responses.POST, self.awseos_url, status=500, body=b"test error message"
+            )
+
+            with self.assertRaises(RequestError):
+                with self.assertLogs(level="DEBUG") as cm:
+                    products, estimate = self.awseos_search_plugin.query(
+                        page=1,
+                        items_per_page=2,
+                        auth=self.awseos_auth_plugin,
+                        **self.search_criteria_s2_msi_l1c
+                    )
+                self.assertIn("test error message", cm.output)
+
+        run()
+
+    def test_plugins_search_postjsonsearch_request_auth_error(self):
+        """A query with a PostJsonSearch must handle auth errors"""
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            responses.add(
+                responses.POST, self.awseos_url, status=403, body=b"test error message"
+            )
+
+            with self.assertRaisesRegex(AuthenticationError, "test error message"):
+                products, estimate = self.awseos_search_plugin.query(
+                    page=1,
+                    items_per_page=2,
+                    auth=self.awseos_auth_plugin,
+                    **self.search_criteria_s2_msi_l1c
+                )
+
+        run()
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_postjsonsearch_count_and_search_awseos(self, mock__request):

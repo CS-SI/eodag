@@ -1172,7 +1172,10 @@ class PostJsonSearch(QueryStringSearch):
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
-            if err.response.status_code in auth_errors:
+            if (
+                hasattr(err.response, "status_code")
+                and err.response.status_code in auth_errors
+            ):
                 raise AuthenticationError(
                     "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
                         err.response.status_code,
@@ -1189,7 +1192,8 @@ class PostJsonSearch(QueryStringSearch):
                     self.provider,
                     self.__class__.__name__,
                 )
-            logger.debug(response.content)
+            if "response" in locals():
+                logger.debug(response.content)
             raise RequestError(str(err))
         return response
 
