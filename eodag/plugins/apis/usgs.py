@@ -141,7 +141,18 @@ class UsgsApi(Download, Api):
             )
             if download_options.get("data", None) is not None:
                 for download_option in download_options["data"]:
-                    if "dds" in download_option["downloadSystem"]:
+                    # update results with available downloadSystem
+                    if (
+                        "dds" in download_option["downloadSystem"]
+                        and download_option["available"]
+                    ):
+                        results_by_entity_id[download_option["entityId"]].update(
+                            download_option
+                        )
+                    elif (
+                        "zip" in download_option["downloadSystem"]
+                        and download_option["available"]
+                    ):
                         results_by_entity_id[download_option["entityId"]].update(
                             download_option
                         )
@@ -271,12 +282,12 @@ class UsgsApi(Download, Api):
                 ) as stream:
                     try:
                         stream.raise_for_status()
-                    except RequestException:
-                        import traceback as tb
-
-                        logger.error(
-                            f"Error while getting resource :\n{tb.format_exc()}",
-                        )
+                    except RequestException as e:
+                        if hasattr(e, "response") and hasattr(e.response, "content"):
+                            error_message = f"{e.response.content} - {e}"
+                        else:
+                            error_message = str(e)
+                        raise NotAvailableError(error_message)
                     else:
                         stream_size = int(stream.headers.get("content-length", 0))
                         progress_callback.reset(total=stream_size)
@@ -286,7 +297,11 @@ class UsgsApi(Download, Api):
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
             except requests.exceptions.Timeout as e:
-                raise NotAvailableError(str(e))
+                if hasattr(e, "response") and hasattr(e.response, "content"):
+                    error_message = f"{e.response.content} - {e}"
+                else:
+                    error_message = str(e)
+                raise NotAvailableError(error_message)
 
         download_request(product, fs_path, progress_callback, **kwargs)
 
