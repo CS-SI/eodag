@@ -127,11 +127,18 @@ ONDA_SEARCH_ARGS = [
     today.isoformat(),
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-USGS_SEARCH_ARGS = [
+USGS_RECENT_SEARCH_ARGS = [
     "usgs",
     "LANDSAT_C2L1",
     (today - 6 * week_span).isoformat(),
     (today - 5 * week_span).isoformat(),
+    [50, 50, 50.3, 50.3],
+]
+USGS_OLD_SEARCH_ARGS = [
+    "usgs",
+    "LANDSAT_C2L1",
+    "2017-03-01",
+    "2017-03-10",
     [50, 50, 50.3, 50.3],
 ]
 ECMWF_SEARCH_ARGS = [
@@ -374,8 +381,13 @@ class TestEODagEndToEnd(EndToEndBase):
         # The partially downloaded file should be greater or equal to 5 KB
         self.assertGreaterEqual(downloaded_size, 5 * 2**10)
 
-    def test_end_to_end_search_download_usgs(self):
-        product = self.execute_search(*USGS_SEARCH_ARGS)
+    def test_end_to_end_search_download_usgs_recent(self):
+        product = self.execute_search(*USGS_RECENT_SEARCH_ARGS)
+        expected_filename = "{}.tar.gz".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_usgs_old(self):
+        product = self.execute_search(*USGS_OLD_SEARCH_ARGS)
         expected_filename = "{}.tar.gz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
@@ -980,11 +992,14 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_search_usgs(self):
         # It should already fail while searching for the products.
-        self.eodag.set_preferred_provider(USGS_SEARCH_ARGS[0])
+        self.eodag.set_preferred_provider(USGS_RECENT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["productType", "start", "end", "geom"], USGS_SEARCH_ARGS[1:])
+                    zip(
+                        ["productType", "start", "end", "geom"],
+                        USGS_RECENT_SEARCH_ARGS[1:],
+                    )
                 ),
             )
