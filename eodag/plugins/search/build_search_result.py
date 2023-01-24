@@ -121,12 +121,7 @@ class BuildPostSearchResult(PostJsonSearch):
         parsed_properties = properties_from_json(
             result,
             self.config.metadata_mapping,
-            discovery_pattern=getattr(self.config, "discover_metadata", {}).get(
-                "metadata_pattern", None
-            ),
-            discovery_path=getattr(self.config, "discover_metadata", {}).get(
-                "metadata_path", "null"
-            ),
+            discovery_config=getattr(self.config, "discover_metadata", {}),
         )
 
         if not product_type:
