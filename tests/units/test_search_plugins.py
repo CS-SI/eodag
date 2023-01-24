@@ -385,7 +385,13 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         # Some expected results
         with open(self.provider_resp_dir / "onda_count.json") as f:
             self.onda_resp_count = json.load(f)
-        self.onda_url_count = 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?productType=S2MSI1C&$search="footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"'  # noqa
+        self.onda_url_count = (
+            'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?$search="footprint:"'
+            "Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, "
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"'
+        )
+
         self.onda_products_count = 47
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
@@ -419,7 +425,12 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
 
         # Specific expected results
         number_of_products = 2
-        onda_url_search = 'https://catalogue.onda-dias.eu/dias-catalogue/Products?productType=S2MSI1C&$format=json&$search="footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"&$top=2&$skip=0'  # noqa
+        onda_url_search = (
+            'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
+            'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"&$top=2&$skip=0&$expand=Metadata'
+        )
 
         mock__request.assert_any_call(
             mock.ANY,

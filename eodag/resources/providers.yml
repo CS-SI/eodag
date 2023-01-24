@@ -1315,7 +1315,7 @@
       - ':'
     pagination:
       count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}'
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Metadata'
       # 2021/03/19: 2000 is the max, if greater 200 response but contains an error message
       max_items_per_page: 2_000
     results_entry: 'value'
@@ -1334,6 +1334,17 @@
             - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
             - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
             - '{id#remove_extension}'
+            - 'platformSerialIdentifier:{platformSerialIdentifier}'
+            - 'instrumentShortName:{instrument}'
+            - 'processingLevel:{processingLevel}'
+            - 'sensorType:{sensorType}'
+            - 'topicCategory:{topicCategory}'
+            - 'lineage:{lineage}'
+            - 'orbitNumber:{orbitNumber}'
+            - 'orbitDirection:{orbitDirection}'
+            - 'processingBaseline:{productVersion}'
+            - 'generalQualityFlag:{productQualityStatus}'
+            - 'sensorOperationalMode:{sensorMode}'
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^[a-zA-Z0-9]+$'
@@ -1343,42 +1354,74 @@
             operations:
               AND:
                 - '{metadata}:{{{metadata}}}'
-      metadata_path: '$.*'
+      metadata_path: '$.Metadata[*]'
+      metadata_path_id: 'id'
+      metadata_path_value: 'value'
+    per_product_metadata_query: false
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
+      # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
+      #   but `free_text_search_operations.$search.operations.AND` entries are then used instead.
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
-        - 'productType'
-        - '$.productType'
+        - null
+        - '$.Metadata[?(@.id="productType")].value'
       platform:
-        - platform
-        - '$.platformName'
-      platformSerialIdentifier: '$.platformSerialIdentifier'
-      instrument: '$.instrumentName'
-      processingLevel: '$.processingLevel'
+        - null
+        - '$.Metadata[?(@.id="platformName")].value'
+      platformSerialIdentifier:
+        - null
+        - '$.Metadata[?(@.id="platformSerialIdentifier")].value'
+      instrument:
+        - null
+        - '$.Metadata[?(@.id="instrumentShortName")].value'
+      processingLevel:
+        - null
+        - '$.Metadata[?(@.id="processingLevel")].value'
+      sensorType:
+        - null
+        - '$.Metadata[?(@.id="sensorType")].value'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.filename'
+      title: '$.Metadata[?(@.id="filename")].value'
+      topicCategory:
+        - null
+        - '$.Metadata[?(@.id="topicCategory")].value'
+      lineage:
+        - null
+        - '$.Metadata[?(@.id="lineage")].value'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      orbitNumber: '$.orbitNumber'
-      orbitDirection: '$.orbitDirection'
-      cloudCover: '$.cloudCoverPercentage'
-      productVersion: '$.processingBaseline'
-      productQualityStatus: '$.generalQualityFlag'
-      creationDate: '$.creationDate'
-      processingDate: '$.processingDate'
-      sensorMode: '$.sensorOperationalMode'
+      orbitNumber:
+        - null
+        - '$.Metadata[?(@.id="orbitNumber")].value'
+      orbitDirection:
+        - null
+        - '$.Metadata[?(@.id="orbitDirection")].value'
+      cloudCover:
+        - null
+        - '$.Metadata[?(@.id="cloudCoverPercentage")].value'
+      productVersion:
+        - null
+        - '$.Metadata[?(@.id="processingBaseline")].value'
+      productQualityStatus:
+        - null
+        - '$.Metadata[?(@.id="generalQualityFlag")].value'
+      creationDate: '$.Metadata[?(@.id="creationDate")].value'
+      processingDate: '$.Metadata[?(@.id="processingDate")].value'
+      sensorMode:
+        - null
+        - '$.Metadata[?(@.id="sensorOperationalMode")].value'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode: '$.beginPosition'
       completionTimeFromAscendingNode: '$.endPosition'
-      polarizationChannels: '{$.polarisationChannels#replace_str(","," ")}'
+      polarizationChannels: '{$.Metadata[?(@.id="polarisationChannels")].value#replace_str(","," ")}'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '{$.filename#remove_extension}'
+      id: '{$.Metadata[?(@.id="filename")].value#remove_extension}'
       # The geographic extent of the product
       geometry: '$.footprint'
       # The url of the quicklook
