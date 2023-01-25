@@ -389,7 +389,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?$search="footprint:"'
             "Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, "
             '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
-            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"'
+            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"'
         )
 
         self.onda_products_count = 47
@@ -420,6 +420,8 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.onda_auth_plugin,
+            # custom query argument that must be mapped using discovery_metata.search_param
+            foo="bar",
             **self.search_criteria_s2_msi_l1c
         )
 
@@ -429,7 +431,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
             'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
             '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
-            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"&$top=2&$skip=0&$expand=Metadata'
+            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"&$top=2&$skip=0&$expand=Metadata'
         )
 
         mock__request.assert_any_call(

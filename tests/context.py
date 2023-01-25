@@ -33,6 +33,8 @@ from eodag.api.product.metadata_mapping import (
     format_metadata,
     OFFLINE_STATUS,
     ONLINE_STATUS,
+    properties_from_json,
+    NOT_AVAILABLE,
 )
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
