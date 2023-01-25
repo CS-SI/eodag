@@ -25,6 +25,7 @@ from string import Formatter
 import geojson
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
+from jsonpath_ng.jsonpath import Child
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
@@ -407,7 +408,7 @@ def format_metadata(search_param, *args, **kwargs):
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
-def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=None):
+def properties_from_json(json, mapping, discovery_config=None):
     """Extract properties from a provider json result.
 
     :param json: The representation of a provider result as a json object
@@ -442,7 +443,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
             match = path_or_text.find(json)
             if len(match) == 1:
                 extracted_value = match[0].value
-                used_jsonpaths.append(match[0].path)
+                used_jsonpaths.append(match[0].full_path)
             else:
                 extracted_value = NOT_AVAILABLE
             if extracted_value is None:
@@ -483,16 +484,43 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
         properties[metadata] = template.format(**properties)
 
     # adds missing discovered properties
+    if not discovery_config:
+        discovery_config = {}
+    discovery_pattern = discovery_config.get("metadata_pattern", None)
+    discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
         discovered_properties = cached_parse(discovery_path).find(json)
         for found_jsonpath in discovered_properties:
-            found_key = found_jsonpath.path.fields[-1]
+            if "metadata_path_id" in discovery_config.keys():
+                found_key_paths = cached_parse(
+                    discovery_config["metadata_path_id"]
+                ).find(found_jsonpath.value)
+                if not found_key_paths:
+                    continue
+                found_key = found_key_paths[0].value
+                used_jsonpath = Child(
+                    found_jsonpath.full_path,
+                    cached_parse(discovery_config["metadata_path_value"]),
+                )
+            else:
+                # default key got from metadata_path
+                found_key = found_jsonpath.path.fields[-1]
+                used_jsonpath = found_jsonpath.full_path
             if (
                 re.compile(discovery_pattern).match(found_key)
                 and found_key not in properties.keys()
-                and found_jsonpath.path not in used_jsonpaths
+                and used_jsonpath not in used_jsonpaths
             ):
-                properties[found_key] = found_jsonpath.value
+                if "metadata_path_value" in discovery_config.keys():
+                    found_value_path = cached_parse(
+                        discovery_config["metadata_path_value"]
+                    ).find(found_jsonpath.value)
+                    properties[found_key] = (
+                        found_value_path[0].value if found_value_path else NOT_AVAILABLE
+                    )
+                else:
+                    # default value got from metadata_path
+                    properties[found_key] = found_jsonpath.value
 
     return properties
 

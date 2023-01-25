@@ -732,12 +732,7 @@ class QueryStringSearch(Search):
                 QueryStringSearch.extract_properties[self.config.result_type](
                     result,
                     self.config.metadata_mapping,
-                    discovery_pattern=getattr(self.config, "discover_metadata", {}).get(
-                        "metadata_pattern", None
-                    ),
-                    discovery_path=getattr(self.config, "discover_metadata", {}).get(
-                        "metadata_path", "null"
-                    ),
+                    discovery_config=getattr(self.config, "discover_metadata", {}),
                 ),
                 **kwargs,
             )
@@ -956,29 +951,31 @@ class ODataV4Search(QueryStringSearch):
     all products metadata"""
 
     def do_search(self, *args, **kwargs):
-        """Do a two step search, as the metadata are not given into the search result"""
-        # TODO: This plugin is still very specific to the ONDA provider.
-        #       Be careful to generalize it if needed when the chance to do so arrives
-        final_result = []
-        # Query the products entity set for basic metadata about the product
-        for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
-            metadata_url = self.get_metadata_search_url(entity)
-            try:
-                logger.debug("Sending metadata request: %s", metadata_url)
-                response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
-                response.raise_for_status()
-            except requests.RequestException:
-                logger.exception(
-                    "Skipping error while searching for %s %s instance:",
-                    self.provider,
-                    self.__class__.__name__,
-                )
-            else:
-                entity.update(
-                    {item["id"]: item["value"] for item in response.json()["value"]}
-                )
-                final_result.append(entity)
-        return final_result
+        """A two step search can be performed if the metadata are not given into the search result"""
+
+        if getattr(self.config, "per_product_metadata_query", False):
+            final_result = []
+            # Query the products entity set for basic metadata about the product
+            for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
+                metadata_url = self.get_metadata_search_url(entity)
+                try:
+                    logger.debug("Sending metadata request: %s", metadata_url)
+                    response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
+                    response.raise_for_status()
+                except requests.RequestException:
+                    logger.exception(
+                        "Skipping error while searching for %s %s instance:",
+                        self.provider,
+                        self.__class__.__name__,
+                    )
+                else:
+                    entity.update(
+                        {item["id"]: item["value"] for item in response.json()["value"]}
+                    )
+                    final_result.append(entity)
+            return final_result
+        else:
+            return super(ODataV4Search, self).do_search(*args, **kwargs)
 
     def get_metadata_search_url(self, entity):
         """Build the metadata link for the given entity"""
