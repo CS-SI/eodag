@@ -558,6 +558,12 @@ def properties_from_json(json, mapping, discovery_config=None):
                     # default value got from metadata_path
                     properties[found_key] = found_jsonpath.value
 
+                # properties as python objects when possible (format_metadata returns only strings)
+                try:
+                    properties[found_key] = ast.literal_eval(properties[found_key])
+                except Exception:
+                    pass
+
     return properties
 
 

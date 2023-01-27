@@ -394,6 +394,30 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
 
         self.onda_products_count = 47
 
+    def test_plugins_search_odatav4search_normalize_results_onda(self):
+        """ODataV4Search.normalize_results must use metada pre-mapping if configured"""
+
+        self.assertTrue(hasattr(self.onda_search_plugin.config, "metadata_pre_mapping"))
+        self.assertDictEqual(
+            self.onda_search_plugin.config.metadata_pre_mapping,
+            {
+                "metadata_path": "$.Metadata",
+                "metadata_path_id": "id",
+                "metadata_path_value": "value",
+            },
+        )
+        self.assertEqual(
+            self.onda_search_plugin.config.discover_metadata["metadata_path"],
+            "$.Metadata.*",
+        )
+
+        raw_results = [
+            {"Metadata": [{"id": "foo", "value": "bar"}], "footprint": "POINT (0 0)"}
+        ]
+        products = self.onda_search_plugin.normalize_results(raw_results)
+
+        self.assertEqual(products[0].properties["foo"], "bar")
+
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True

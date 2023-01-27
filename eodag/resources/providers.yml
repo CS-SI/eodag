@@ -1354,10 +1354,13 @@
             operations:
               AND:
                 - '{metadata}:{{{metadata}}}'
-      metadata_path: '$.Metadata[*]'
+      metadata_path: '$.Metadata.*'
+    per_product_metadata_query: false
+    metadata_pre_mapping:
+      metadata_path: '$.Metadata'
       metadata_path_id: 'id'
       metadata_path_value: 'value'
-    per_product_metadata_query: false
+
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -1367,61 +1370,61 @@
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - null
-        - '$.Metadata[?(@.id="productType")].value'
+        - '$.Metadata.productType'
       platform:
         - null
-        - '$.Metadata[?(@.id="platformName")].value'
+        - '$.Metadata.platformName'
       platformSerialIdentifier:
         - null
-        - '$.Metadata[?(@.id="platformSerialIdentifier")].value'
+        - '$.Metadata.platformSerialIdentifier'
       instrument:
         - null
-        - '$.Metadata[?(@.id="instrumentShortName")].value'
+        - '$.Metadata.instrumentShortName'
       processingLevel:
         - null
-        - '$.Metadata[?(@.id="processingLevel")].value'
+        - '$.Metadata.processingLevel'
       sensorType:
         - null
-        - '$.Metadata[?(@.id="sensorType")].value'
+        - '$.Metadata.sensorType'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.Metadata[?(@.id="filename")].value'
+      title: '$.Metadata.filename'
       topicCategory:
         - null
-        - '$.Metadata[?(@.id="topicCategory")].value'
+        - '$.Metadata.topicCategory'
       lineage:
         - null
-        - '$.Metadata[?(@.id="lineage")].value'
+        - '$.Metadata.lineage'
 
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
         - null
-        - '$.Metadata[?(@.id="orbitNumber")].value'
+        - '$.Metadata.orbitNumber'
       orbitDirection:
         - null
-        - '$.Metadata[?(@.id="orbitDirection")].value'
+        - '$.Metadata.orbitDirection'
       cloudCover:
         - null
-        - '$.Metadata[?(@.id="cloudCoverPercentage")].value'
+        - '$.Metadata.cloudCoverPercentage'
       productVersion:
         - null
-        - '$.Metadata[?(@.id="processingBaseline")].value'
+        - '$.Metadata.processingBaseline'
       productQualityStatus:
         - null
-        - '$.Metadata[?(@.id="generalQualityFlag")].value'
-      creationDate: '$.Metadata[?(@.id="creationDate")].value'
-      processingDate: '$.Metadata[?(@.id="processingDate")].value'
+        - '$.Metadata.generalQualityFlag'
+      creationDate: '$.Metadata.creationDate'
+      processingDate: '$.Metadata.processingDate'
       sensorMode:
         - null
-        - '$.Metadata[?(@.id="sensorOperationalMode")].value'
+        - '$.Metadata.sensorOperationalMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode: '$.beginPosition'
       completionTimeFromAscendingNode: '$.endPosition'
-      polarizationChannels: '{$.Metadata[?(@.id="polarisationChannels")].value#replace_str(","," ")}'
+      polarizationChannels: '{$.Metadata.polarisationChannels#replace_str(","," ")}'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '{$.Metadata[?(@.id="filename")].value#remove_extension}'
+      id: '{$.Metadata.filename#remove_extension}'
       # The geographic extent of the product
       geometry: '$.footprint'
       # The url of the quicklook
