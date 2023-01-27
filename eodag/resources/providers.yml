@@ -876,19 +876,49 @@
     - host
   url: https://creodias.eu/
   search: !plugin
-    type: QueryStringSearch
-    api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
+    type: ODataV4Search
+    api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
     need_auth: false
+    dont_quote:
+      - '['
+      - ']'
+      - '$'
+      - '='
+      - '&'
+      - ':'
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
-      total_items_nb_key_path: '$.properties.totalResults'
-      # 2021/03/19: 2000 is the max, 400 error if greater
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
+      total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 2_000
+    results_entry: 'value'
+    literal_search_params:
+      $format: json
+    free_text_search_operations:
+      $filter:
+        union: ' or '
+        wrapper: '{}'
+        operations:
+          and:
+            - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
+            - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value lt {cloudCover})"
+            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
+            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - '{id#remove_extension}'
+
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
-      search_param: '{metadata}={{{metadata}}}'
-      metadata_path: '$.properties.*'
+      search_param:
+        free_text_search_operations:
+          $filter:
+            operations:
+              and:
+                - '{metadata}:{{{metadata}}}'
+      metadata_path: '$.Attributes[*]'
+      metadata_path_name: 'Name'
+      metadata_path_value: 'Value'
     discover_product_types:
       fetch_url: https://finder.creodias.eu/attributes.json
       result_type: json
@@ -908,137 +938,144 @@
         license: '$.null'
         missionStartDate: '$.null'
     common_metadata_mapping_path: '$'
+    per_product_metadata_query: false
     metadata_mapping:
+      ### Commented parameters below are the ones existing with Resto API method not found for OData method yet
+      productIdentifier: '$.S3Path'
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
-      uid: '$.id'
+      # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
+      #   but `free_text_search_operations.$filter.operations.and` entries are then used instead.
+      uid: '$.Id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
-        - productType
-        - '$.properties.productType'
-      platform: '$.properties.collection'
+        - null
+        - '$.Attributes[?(@.Name="productType")].Value'
+      platform:
+        - null
+        - '$.Attributes[?(@.Name="platformShortName")].Value'
       platformSerialIdentifier:
         - platform
-        - '$.properties.platform'
+        - '$.Attributes[?(@.Name="platformSerialIdentifier")].Value'
       instrument:
         - instrument
-        - '$.properties.instrument'
+        - '$.Attributes[?(@.Name="instrumentShortName")].Value'
       processingLevel:
         - processingLevel
-        - '$.properties.processingLevel'
+        - '$.Attributes[?(@.Name="processingLevel")].Value'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.properties.title'
-      keyword: '$.properties.keywords'
-      abstract: '$.properties.description'
+      title: '$.Name'
+      # keyword: '$.properties.keywords'
+      # abstract: '$.properties.description'
       resolution:
         - resolution
-        - '$.properties.resolution'
+        - '$.Attributes[?(@.Name="spatialResolution")].Value'
       organisationName:
         - organisationName
-        - '$.properties.organisationName'
-      publicationDate: '$.properties.published'
-      accessConstraint: '$.properties.license'
+        - '$.Attributes[?(@.Name="authority")].Value'
+      publicationDate: '$.PublicationDate'
+      # accessConstraint: '$.properties.license'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier:
-        - parentIdentifier
-        - '$.properties.parentIdentifier'
+      # parentIdentifier:
+      #   - parentIdentifier
+      #   - '$.properties.parentIdentifier'
       orbitNumber:
         - orbitNumber
-        - '$.properties.orbitNumber'
+        - '$.Attributes[?(@.Name="orbitNumber")].Value'
       orbitDirection:
         - orbitDirection
-        - '$.properties.orbitDirection'
+        - '$.Attributes[?(@.Name="orbitDirection")].Value'
       cloudCover:
-        - 'cloudCover=[0,{cloudCover}]'
-        - '$.properties.cloudCover'
-      snowCover:
-        - snowCover
-        - '$.properties.snowCover'
-      modificationDate: '$.properties.updated'
+        # - 'cloudCover=[0,{cloudCover}]'
+        # - '$.properties.cloudCover'
+        - null
+        - '$.Attributes[?(@.Name="cloudCover")].Value'
+      # snowCover:
+      #   - snowCover
+      #   - '$.properties.snowCover'
+      modificationDate: '$.Attributes[?(@.Name="ModificationDate")].Value'
       sensorMode:
         - sensorMode
-        - '$.properties.sensorMode'
+        - '$.Attributes[?(@.Name="operationalMode")].Value'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
-        - startDate
-        - '$.properties.startDate'
+        - null
+        - '$.ContentDate.Start'
       completionTimeFromAscendingNode:
-        - completionDate
-        - '$.properties.completionDate'
-      polarizationChannels: '$.properties.polarisation'
+        - null
+        - '$.ContentDate.End'
+      # polarizationChannels: '$.properties.polarisation'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'productIdentifier=%{id#remove_extension}%'
-        - '{$.properties.title#remove_extension}'
+        - '{$.Name#remove_extension}'
       # The geographic extent of the product
       geometry:
-        - 'geometry={geometry#to_rounded_wkt}'
-        - '$.geometry'
+        - null
+        - '$.Footprint.`sub(^(?P<proj>[A-Za-z]+=[0-9]+);(?P<wkt>.*)$, \\1)`#from_ewkt'
       # The url of the quicklook
-      quicklook: '{thumbnail}'
+      ## quicklook: '{thumbnail}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://zipper.creodias.eu/download/{uid}'
+      ## downloadLink: 'https://zipper.creodias.eu/download/{uid}'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
+      ## storageStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
+      storageStatus: '{$.Online}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      thumbnail: '$.properties.thumbnail'
-      cultivatedCover:
-        - cultivatedCover
-        - '$.properties.cultivatedCover'
-      desertCover:
-        - desertCover
-        - '$.properties.desertCover'
-      floodedCover:
-        - floodedCover
-        - '$.properties.floodedCover'
-      forestCover:
-        - forestCover
-        - '$.properties.forestCover'
-      herbaceousCover:
-        - herbaceousCover
-        - '$.properties.herbaceousCover'
-      iceCover:
-        - iceCover
-        - '$.properties.iceCover'
-      urbanCover:
-        - urbanCover
-        - '$.properties.urbanCover'
-      waterCover:
-        - waterCover
-        - '$.properties.waterCover'
-      processingBaseline:
-        - processingBaseline
-        - '$.properties.processingBaseline'
+      ## thumbnail: '$.properties.thumbnail'
+      # cultivatedCover:
+      #   - cultivatedCover
+      #   - '$.properties.cultivatedCover'
+      # desertCover:
+      #   - desertCover
+      #   - '$.properties.desertCover'
+      # floodedCover:
+      #   - floodedCover
+      #   - '$.properties.floodedCover'
+      # forestCover:
+      #   - forestCover
+      #   - '$.properties.forestCover'
+      # herbaceousCover:
+      #   - herbaceousCover
+      #   - '$.properties.herbaceousCover'
+      # iceCover:
+      #   - iceCover
+      #   - '$.properties.iceCover'
+      # urbanCover:
+      #   - urbanCover
+      #   - '$.properties.urbanCover'
+      # waterCover:
+      #   - waterCover
+      #   - '$.properties.waterCover'
+      # processingBaseline:
+      #   - processingBaseline
+      #   - '$.properties.processingBaseline'
       publishedAfter:
         - publishedAfter
-        - '$.properties.publishedAfter'
-      publishedBefore:
-        - publishedBefore
-        - '$.properties.publishedBefore'
+        - '$.PublicationDate' # not sure about this one
+      # publishedBefore:
+      #   - publishedBefore
+      #   - '$.properties.publishedBefore'
       relativeOrbitNumber:
         - relativeOrbitNumber
-        - '$.properties.relativeOrbitNumber'
-      relativeOrbitNumber:
-        - relativeOrbitNumber
-        - '$.properties.relativeOrbitNumber'
-      sortOrder:
-        - sortOrder
-        - '$.properties.sortOrder'
-      sortParam:
-        - sortParam
-        - '$.properties.sortParam'
+        - '$.Attributes[?(@.Name="relativeOrbitNumber")].Value'
+      # sortOrder:
+      #   - sortOrder
+      #   - '$.properties.sortOrder'
+      # sortParam:
+      #   - sortParam
+      #   - '$.properties.sortParam'
       status:
         - status
-        - '$.properties.status'
-      timeliness:
-        - timeliness
-        - '$.properties.timeliness'
+        - '{$.Online}'
+      # timeliness:
+      #   - timeliness
+      #   - '$.properties.timeliness'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
