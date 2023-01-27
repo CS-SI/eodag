@@ -102,10 +102,10 @@ class HTTPDownload(Download):
             # separate url & parameters
             parts = urlparse(product.properties["orderLink"])
             query_dict = parse_qs(parts.query)
-            if not query_dict:
+            if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             order_url = parts._replace(query=None).geturl()
-            order_kwargs = {"json": query_dict}
+            order_kwargs = {"json": query_dict} if query_dict else {}
         else:
             order_url = product.properties["orderLink"]
             order_kwargs = {}
@@ -182,10 +182,10 @@ class HTTPDownload(Download):
             # separate url & parameters
             parts = urlparse(product.properties["orderStatusLink"])
             query_dict = parse_qs(parts.query)
-            if not query_dict:
+            if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             status_url = parts._replace(query=None).geturl()
-            status_kwargs = {"json": query_dict}
+            status_kwargs = {"json": query_dict} if query_dict else {}
         else:
             status_url = product.properties["orderStatusLink"]
             status_kwargs = {}
@@ -308,10 +308,10 @@ class HTTPDownload(Download):
                 # separate url & parameters
                 parts = urlparse(url)
                 query_dict = parse_qs(parts.query)
-                if not query_dict:
+                if not query_dict and parts.query:
                     query_dict = geojson.loads(parts.query)
                 req_url = parts._replace(query=None).geturl()
-                req_kwargs = {"json": query_dict}
+                req_kwargs = {"json": query_dict} if query_dict else {}
             else:
                 req_url = url
                 req_kwargs = {}
