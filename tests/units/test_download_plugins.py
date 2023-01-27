@@ -561,7 +561,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
                     self.product,
                     outputs_prefix=self.output_dir,
                     wait=0.1 / 60,
-                    timeout=0.001 / 60,
+                    timeout=1e-9 / 60,
                 )
 
             # there must have been only one try

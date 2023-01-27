@@ -592,7 +592,9 @@ class Download(PluginTopic):
                         nb_info.display_html(retry_info)
                         product.next_try = datetime_now
                     elif datetime_now < product.next_try and datetime_now < stop_time:
-                        wait_seconds = (product.next_try - datetime_now).seconds
+                        wait_seconds = (product.next_try - datetime_now).seconds + (
+                            product.next_try - datetime_now
+                        ).microseconds / 1e6
                         retry_count += 1
                         retry_info = (
                             f"[Retry #{retry_count}] Waiting {wait_seconds}s until next download try"
