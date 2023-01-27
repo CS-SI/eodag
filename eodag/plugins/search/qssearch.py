@@ -983,6 +983,34 @@ class ODataV4Search(QueryStringSearch):
             self.config.api_endpoint.rstrip("/"), entity["id"]
         )
 
+    def normalize_results(self, results, **kwargs):
+        """Build EOProducts from provider results
+
+        If configured, a metadata pre-mapping can be applied to simplify further metadata extraction.
+        For example, going from '$.Metadata[?(@.id="foo")].value' to '$.Metadata.foo.value'
+        """
+        metadata_pre_mapping = getattr(self.config, "metadata_pre_mapping", {})
+        metadata_path = metadata_pre_mapping.get("metadata_path", None)
+        metadata_path_id = metadata_pre_mapping.get("metadata_path_id", None)
+        metadata_path_value = metadata_pre_mapping.get("metadata_path_value", None)
+
+        if metadata_path and metadata_path_id and metadata_path_value:
+            parsed_metadata_path = cached_parse(metadata_path)
+            for result in results:
+                found_metadata = parsed_metadata_path.find(result)
+                if found_metadata:
+                    metadata_update = {}
+                    for metadata_dict in found_metadata[0].value:
+                        metada_id = metadata_dict[metadata_path_id]
+                        metada_value = metadata_dict[metadata_path_value]
+                        metadata_update[metada_id] = metada_value
+                    parsed_metadata_path.update(result, metadata_update)
+
+        # once metadata pre-mapping applied execute QueryStringSearch.normalize_results()
+        products = super(ODataV4Search, self).normalize_results(results, **kwargs)
+
+        return products
+
 
 class PostJsonSearch(QueryStringSearch):
     """A specialisation of a QueryStringSearch that uses POST method"""
