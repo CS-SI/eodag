@@ -366,8 +366,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order(self, mock_request):
-        """HTTPDownload.orderDownload() must request using orderLink"""
+    def test_plugins_download_http_order_get(self, mock_request):
+        """HTTPDownload.orderDownload() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["orderLink"] = "http://somewhere/order"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
@@ -383,6 +383,38 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             url=self.product.properties["orderLink"],
             auth=auth,
             headers={},
+        )
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order_post(self, mock_request):
+        """HTTPDownload.orderDownload() must request using orderLink and POST protocol"""
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["storageStatus"] = OFFLINE_STATUS
+        plugin.config.order_method = "POST"
+
+        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        # orderLink without query query args
+        self.product.properties["orderLink"] = "http://somewhere/order"
+        plugin.orderDownload(self.product, auth=auth)
+        mock_request.assert_called_once_with(
+            method="post",
+            url=self.product.properties["orderLink"],
+            auth=auth,
+            headers={},
+        )
+        # orderLink with query query args
+        mock_request.reset_mock()
+        self.product.properties["orderLink"] = "http://somewhere/order?foo=bar"
+        plugin.orderDownload(self.product, auth=auth)
+        mock_request.assert_called_once_with(
+            method="post",
+            url="http://somewhere/order",
+            auth=auth,
+            headers={},
+            json={"foo": ["bar"]},
         )
 
     def test_plugins_download_http_order_status(self):
