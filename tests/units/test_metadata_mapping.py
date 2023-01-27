@@ -18,6 +18,7 @@
 import unittest
 
 from jsonpath_ng.ext import parse
+from shapely import wkt
 
 from tests.context import (
     NOT_AVAILABLE,
@@ -121,6 +122,23 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, fieldname=geom),
             '{"type": "Point", "coordinates": [0.11, 1.22]}',
+        )
+
+    def test_convert_from_ewkt(self):
+        to_format = "{fieldname#from_ewkt}"
+        wkt_str = format_metadata(
+            to_format, fieldname="SRID=3857;POINT (321976 5390999)"
+        )
+        geom = wkt.loads(wkt_str)
+        self.assertEqual(round(geom.x, 1), 43.5)
+        self.assertEqual(round(geom.y, 1), 2.9)
+
+    def test_convert_to_ewkt(self):
+        to_format = "{fieldname#to_ewkt}"
+        geom = get_geometry_from_various(geometry="POINT (0.11 1.22)")
+        self.assertEqual(
+            format_metadata(to_format, fieldname=geom),
+            "SRID=4326;POINT (0.1100 1.2200)",
         )
 
     def test_convert_csv_list(self):

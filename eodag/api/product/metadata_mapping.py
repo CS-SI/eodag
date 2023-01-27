@@ -20,9 +20,11 @@ import logging
 import re
 from copy import deepcopy
 from datetime import datetime, timedelta
+from functools import partial
 from string import Formatter
 
 import geojson
+import pyproj
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
 from jsonpath_ng.jsonpath import Child
@@ -30,8 +32,10 @@ from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon
+from shapely.ops import transform
 
 from eodag.utils import (
+    DEFAULT_PROJ,
     cached_parse,
     get_timestamp,
     items_recursive_apply,
@@ -132,6 +136,8 @@ def format_metadata(search_param, *args, **kwargs):
         - ``to_nwse_bounds``: convert to North,West,South,East bounds
         - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
         - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
+        - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
+        - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
         - ``csv_list``: convert to a comma separated list
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
           milliseconds to a utc iso datetime
@@ -305,6 +311,36 @@ def format_metadata(search_param, *args, **kwargs):
             return geojson.dumps(string)
 
         @staticmethod
+        def convert_from_ewkt(ewkt_string):
+            """Convert EWKT (Extended Well-Known text) to shapely geometry"""
+
+            ewkt_regex = re.compile(r"^(?P<proj>[A-Za-z]+=[0-9]+);(?P<wkt>.*)$")
+            ewkt_match = ewkt_regex.match(ewkt_string)
+            if ewkt_match:
+                g = ewkt_match.groupdict()
+                from_proj = g["proj"].replace("SRID", "EPSG").replace("=", ":")
+                input_geom = wkt.loads(g["wkt"])
+
+                from_proj = pyproj.Proj(from_proj)
+                to_proj = pyproj.Proj(DEFAULT_PROJ)
+
+                project = partial(pyproj.transform, from_proj, to_proj)
+
+                return transform(project, input_geom)
+            else:
+                logger.warning(f"Could not read {ewkt_string} as EWKT")
+                return ewkt_string
+
+        @staticmethod
+        def convert_to_ewkt(input_geom):
+            """Convert shapely geometry to EWKT (Extended Well-Known text)"""
+
+            proj = DEFAULT_PROJ.upper().replace("EPSG", "SRID").replace(":", "=")
+            wkt_geom = MetadataFormatter.convert_to_rounded_wkt(input_geom)
+
+            return f"{proj};{wkt_geom}"
+
+        @staticmethod
         def convert_csv_list(values_list):
             if isinstance(values_list, list):
                 return ",".join([str(x) for x in values_list])
@@ -339,7 +375,7 @@ def format_metadata(search_param, *args, **kwargs):
             return items_recursive_apply(
                 input_obj,
                 lambda k, v, x, y: re.sub(x, y, v) if isinstance(v, str) else v,
-                **{"x": old, "y": new}
+                **{"x": old, "y": new},
             )
 
         @staticmethod
@@ -471,7 +507,7 @@ def properties_from_json(json, mapping, discovery_config=None):
 
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
-                        **{metadata: extracted_value}
+                        **{metadata: extracted_value},
                     )
         # properties as python objects when possible (format_metadata returns only strings)
         try:
@@ -587,7 +623,7 @@ def properties_from_xml(
                         conversion_or_none = conversion_or_none[0]
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
-                        **{metadata: extracted_value[0]}
+                        **{metadata: extracted_value[0]},
                     )
                 # store element tag in used_xpaths
                 used_xpaths.append(
@@ -616,7 +652,7 @@ def properties_from_xml(
                                 SEP,
                                 conversion_or_none,
                             ),  # Re-build conversion format identifier
-                            **{metadata: extracted_value_item}
+                            **{metadata: extracted_value_item},
                         )
                         for extracted_value_item in extracted_value
                     ]
@@ -785,5 +821,5 @@ DEFAULT_METADATA_MAPPING = dict(
         # either after the search result is obtained from the provider or during the eodag
         # download phase)
         "downloadLink": "$.properties.downloadLink",
-    }
+    },
 )
