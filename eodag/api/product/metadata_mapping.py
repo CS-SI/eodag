@@ -27,7 +27,7 @@ import geojson
 import pyproj
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
-from jsonpath_ng.jsonpath import Child
+from jsonpath_ng.jsonpath import Child, Fields, Index
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
@@ -707,7 +707,9 @@ def properties_from_xml(
     return properties
 
 
-def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
+def mtd_cfg_as_jsonpath(
+    src_dict, dest_dict={}, common_jsonpath=None, keep_conversion=True
+):
     """Metadata configuration dictionary to jsonpath objects dictionnay
     Transform every src_dict value from jsonpath str to jsonpath object
 
@@ -715,9 +717,21 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
     :type src_dict: dict
     :param dest_dict: (optional) Output dict containing jsonpath objects as values
     :type dest_dict: dict
+    :param common_jsonpath: (optional) common jsonpath used optimize jsonpath build process
+    :type common_jsonpath: str
+    :param keep_conversion: (optional) whether to keep conversion on parse error or not
+    :type keep_conversion: bool
     :returns: dest_dict
     :rtype: dict
     """
+    if common_jsonpath:
+        common_jsonpath_parsed = cached_parse(common_jsonpath)
+        common_jsonpath_match = re.compile(
+            rf"^{re.escape(common_jsonpath)}\.[a-zA-Z0-9-_:\.\[\]\"]+$"
+        )
+        array_field_match = re.compile(r"^[a-zA-Z0-9-_:]+\[[0-9]+\]$")
+    else:
+        common_jsonpath_match = None
     if not dest_dict:
         dest_dict = deepcopy(src_dict)
     for metadata in src_dict:
@@ -726,17 +740,47 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
         else:
             conversion, path = get_metadata_path(dest_dict[metadata])
             try:
+                # combine with common jsonpath if possible
+                if common_jsonpath_match and common_jsonpath_match.match(path):
+                    path_suffix = path[len(common_jsonpath) + 1 :]
+                    path_splits = path_suffix.split(".")
+                    parsed_path = common_jsonpath_parsed
+                    for path_split in path_splits:
+                        path_split = path_split.strip("'").strip('"')
+                        if "[" in path_split and array_field_match.match(path_split):
+                            # simple array field
+                            indexed_path, index = path_split[:-1].split("[")
+                            index = int(index)
+                            parsed_path = Child(
+                                Child(parsed_path, Fields(indexed_path)),
+                                Index(index=index),
+                            )
+                            continue
+                        elif "[" in path_split:
+                            # nested array field
+                            parsed_path = cached_parse(path)
+                            break
+                        else:
+                            parsed_path = Child(parsed_path, Fields(path_split))
+                else:
+                    parsed_path = cached_parse(path)
                 # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
                 if len(dest_dict[metadata]) == 2:
-                    dest_dict[metadata][1] = (conversion, cached_parse(path))
+                    dest_dict[metadata][1] = (conversion, parsed_path)
                 else:
-                    dest_dict[metadata] = (conversion, cached_parse(path))
+                    dest_dict[metadata] = (conversion, parsed_path)
             except Exception:  # jsonpath_ng does not provide a proper exception
-                # Keep path as this and its associated conversion
+                # Keep path as this and its associated conversion (or None if not keep_conversion)
+                if not keep_conversion:
+                    conversion = None
                 if len(dest_dict[metadata]) == 2:
                     dest_dict[metadata][1] = (conversion, path)
                 else:
                     dest_dict[metadata] = (conversion, path)
+
+            # Put the updated mapping at the end
+            dest_dict[metadata] = dest_dict.pop(metadata)
+
     return dest_dict
 
 

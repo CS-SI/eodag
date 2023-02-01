@@ -46,6 +46,7 @@ search:
         license: '$.license'
         title: '$.title'
         missionStartDate: '$.extent.temporal.interval[0][0]'
+  common_metadata_mapping_path: '$'
   metadata_mapping:
     # OpenSearch Parameters for Collection Search (Table 3)
     productType:

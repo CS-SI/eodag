@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import shutil
+from copy import deepcopy
 from operator import itemgetter
 
 import geojson
@@ -379,7 +380,9 @@ class EODataAccessGateway(object):
             ):
                 # also build as jsonpath the incoming conf
                 mtd_cfg_as_jsonpath(
-                    conf_update[provider][search_plugin_key]["metadata_mapping"],
+                    deepcopy(
+                        conf_update[provider][search_plugin_key]["metadata_mapping"]
+                    ),
                     conf_update[provider][search_plugin_key]["metadata_mapping"],
                 )
 

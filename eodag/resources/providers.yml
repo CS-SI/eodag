@@ -30,6 +30,7 @@
     pagination:
       max_items_per_page: 5000
       total_items_nb_key_path: '$.totalHits'
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       id: '$.displayId'
       geometry: '$.spatialBounds'
@@ -109,6 +110,7 @@
       metadata_pattern: '^[a-zA-Z0-9_]+$'
       search_param: '{{{{"search":{{{{"{metadata}":"{{{metadata}}}" }}}} }}}}'
       metadata_path: '$.*'
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
@@ -558,6 +560,7 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -733,6 +736,7 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -903,6 +907,7 @@
         sensorType: '$.null'
         license: '$.null'
         missionStartDate: '$.null'
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -1360,7 +1365,7 @@
       metadata_path: '$.Metadata'
       metadata_path_id: 'id'
       metadata_path_value: 'value'
-
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -1835,6 +1840,7 @@
     type: EcmwfApi
     api_endpoint: https://api.ecmwf.int/v1
     extract: false
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2057,6 +2063,7 @@
     type: CdsApi
     api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
     extract: false
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2374,6 +2381,7 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2625,6 +2633,7 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -2888,6 +2897,7 @@
       metadata_pattern: '^[a-zA-Z0-9_]+$'
       search_param: '{{{{"{metadata}":{{{metadata}#to_geojson}} }}}}'
       metadata_path: '$.*'
+    common_metadata_mapping_path: '$'
     metadata_mapping:
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
