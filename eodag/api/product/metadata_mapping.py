@@ -453,11 +453,10 @@ def properties_from_json(json, mapping, discovery_config=None):
                     keys and the location of the values of these properties in the json
                     representation, expressed as a
                     `jsonpath <http://goessner.net/articles/JsonPath/>`_
-    :param discovery_pattern: (optional) Regex pattern for metadata key discovery,
-                              e.g. "^[a-zA-Z]+$"
-    :type discovery_pattern: str
-    :param discovery_path: (optional) String representation of jsonpath
-    :type discovery_path: str
+    :param discovery_config: (optional) metadata discovery configuration dict, accepting among other items
+                             `discovery_pattern` (Regex pattern for metadata key discovery, e.g. "^[a-zA-Z]+$"),
+                             `discovery_path` (String representation of jsonpath)
+    :type discovery_config: dict
     :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
@@ -517,7 +516,14 @@ def properties_from_json(json, mapping, discovery_config=None):
 
     # Resolve templates
     for metadata, template in templates.items():
-        properties[metadata] = template.format(**properties)
+        try:
+            properties[metadata] = template.format(**properties)
+        except ValueError:
+            logger.warning(
+                f"Could not parse {metadata} ({template}) using product properties"
+            )
+            logger.debug(f"available properties: {properties}")
+            properties[metadata] = NOT_AVAILABLE
 
     # adds missing discovered properties
     if not discovery_config:
@@ -571,8 +577,7 @@ def properties_from_xml(
     xml_as_text,
     mapping,
     empty_ns_prefix="ns",
-    discovery_pattern=None,
-    discovery_path=None,
+    discovery_config=None,
 ):
     """Extract properties from a provider xml result.
 
@@ -588,11 +593,10 @@ def properties_from_xml(
                             xpath in `mapping` must use this value to be able to
                             correctly reach empty-namespace prefixed elements
     :type empty_ns_prefix: str
-    :param discovery_pattern: (optional) Regex pattern for metadata key discovery,
-                              e.g. "^[a-zA-Z]+$"
-    :type discovery_pattern: str
-    :param discovery_path: (optional) String representation of jsonpath
-    :type discovery_path: str
+    :param discovery_config: (optional) metadata discovery configuration dict, accepting among other items
+                             `discovery_pattern` (Regex pattern for metadata key discovery, e.g. "^[a-zA-Z]+$"),
+                             `discovery_path` (String representation of xpath)
+    :type discovery_config: dict
     :returns: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
@@ -681,6 +685,10 @@ def properties_from_xml(
         properties[metadata] = template.format(**properties)
 
     # adds missing discovered properties
+    if not discovery_config:
+        discovery_config = {}
+    discovery_pattern = discovery_config.get("metadata_pattern", None)
+    discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
         # discovered_properties = discovery_path.find(json)
         discovered_properties = root.xpath(
