@@ -506,7 +506,8 @@ class QueryStringSearch(Search):
                     format_metadata(operand, **kwargs)
                     for operand in operands
                     if any(
-                        kw in operand and val is not None for kw, val in kwargs.items()
+                        re.search(rf"{{{kw}[}}#]", operand) and val is not None
+                        for kw, val in kwargs.items()
                     )
                 )
                 # Finally wrap the operation string as specified by the wrapper and add
