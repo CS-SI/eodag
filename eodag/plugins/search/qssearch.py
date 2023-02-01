@@ -31,7 +31,6 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
     format_metadata,
-    get_metadata_path,
     get_metadata_path_value,
     get_search_param,
     mtd_cfg_as_jsonpath,
@@ -392,39 +391,24 @@ class QueryStringSearch(Search):
     def update_metadata_mapping(self, metadata_mapping):
         """Update plugin metadata_mapping with input metadata_mapping configuration"""
         self.config.metadata_mapping.update(metadata_mapping)
-        for metadata in metadata_mapping:
-            path = get_metadata_path_value(self.config.metadata_mapping[metadata])
-            # check if path has already been parsed
-            if isinstance(path, str):
-                conversion, path = get_metadata_path(
-                    self.config.metadata_mapping[metadata]
-                )
-                try:
-                    # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (
-                            conversion,
-                            cached_parse(path),
-                        )
-                    else:
-                        self.config.metadata_mapping[metadata] = (
-                            conversion,
-                            cached_parse(path),
-                        )
-                except Exception:  # jsonpath_ng does not provide a proper exception
-                    # Assume the mapping is to be passed as is.
-                    # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                    # it further
-                    _, text = get_metadata_path(self.config.metadata_mapping[metadata])
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (None, text)
-                    else:
-                        self.config.metadata_mapping[metadata] = (None, text)
-
-                # Put the updated mapping at the end
-                self.config.metadata_mapping[
-                    metadata
-                ] = self.config.metadata_mapping.pop(metadata)
+        unparsed_metadata = {
+            k: v
+            for k, v in metadata_mapping.items()
+            if isinstance(get_metadata_path_value(self.config.metadata_mapping[k]), str)
+        }
+        # common_jsonpath usage to optimize jsonpath build process
+        # On error, assume the mapping is to be passed as is. Ignore any transformation specified.
+        #   If a value is to be passed as is, we don't want to transform it further
+        mtd_cfg_as_jsonpath_options = {"keep_conversion": False}
+        if hasattr(self.config, "common_metadata_mapping_path"):
+            mtd_cfg_as_jsonpath_options[
+                "common_jsonpath"
+            ] = self.config.common_metadata_mapping_path
+        self.config.metadata_mapping = mtd_cfg_as_jsonpath(
+            unparsed_metadata,
+            self.config.metadata_mapping,
+            **mtd_cfg_as_jsonpath_options,
+        )
 
     def build_query_string(self, product_type, **kwargs):
         """Build The query string using the search parameters"""

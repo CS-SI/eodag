@@ -167,7 +167,13 @@ class UsgsApi(Download, Api):
             # A deepcopy is done to prevent self.config.metadata_mapping from being modified when metas[metadata]
             # is a list and is modified
             metas.update(copy.deepcopy(self.config.metadata_mapping))
-            metas = mtd_cfg_as_jsonpath(metas)
+            # common_jsonpath usage to optimize jsonpath build process
+            mtd_cfg_as_jsonpath_options = {}
+            if hasattr(self.config, "common_metadata_mapping_path"):
+                mtd_cfg_as_jsonpath_options[
+                    "common_jsonpath"
+                ] = self.config.common_metadata_mapping_path
+            metas = mtd_cfg_as_jsonpath(metas, **mtd_cfg_as_jsonpath_options)
 
             for result in results["data"]["results"]:
 

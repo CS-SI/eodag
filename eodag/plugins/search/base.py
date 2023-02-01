@@ -40,8 +40,14 @@ class Search(PluginTopic):
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata
         metas.update(self.config.metadata_mapping)
+        # common_jsonpath usage to optimize jsonpath build process
+        mtd_cfg_as_jsonpath_options = {}
+        if hasattr(self.config, "common_metadata_mapping_path"):
+            mtd_cfg_as_jsonpath_options[
+                "common_jsonpath"
+            ] = self.config.common_metadata_mapping_path
         self.config.metadata_mapping = mtd_cfg_as_jsonpath(
-            metas, self.config.metadata_mapping
+            metas, self.config.metadata_mapping, **mtd_cfg_as_jsonpath_options
         )
 
     def clear(self):
