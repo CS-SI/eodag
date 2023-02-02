@@ -814,7 +814,7 @@ class QueryStringSearch(Search):
             )
         return collections
 
-    def map_product_type(self, product_type):
+    def map_product_type(self, product_type, **kwargs):
         """Map the eodag product type to the provider product type"""
         if product_type is None:
             return
