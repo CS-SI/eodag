@@ -44,15 +44,7 @@ THEIA_SEARCH_ARGS = [
     "2019-03-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-PEPS_BEFORE_20161205_SEARCH_ARGS = [
-    "peps",
-    "S2_MSI_L1C",
-    "2016-06-05",
-    "2016-06-16",
-    [137.772897, -37.134202, 153.749135, 73.885986],
-    True,
-]
-PEPS_AFTER_20161205_SEARCH_ARGS = [
+PEPS_SEARCH_ARGS = [
     "peps",
     "S2_MSI_L1C",
     "2020-08-08",
@@ -391,16 +383,9 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.tar.gz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    # may take up to 10 minutes
-    @unittest.skip("Long test skipped")
-    def test_end_to_end_search_download_peps_before_20161205(self):
-        product = self.execute_search(*PEPS_BEFORE_20161205_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
-        self.execute_download(product, expected_filename, wait_sec=30, timeout_sec=600)
-
     # @unittest.skip("service unavailable for the moment")
-    def test_end_to_end_search_download_peps_after_20161205(self):
-        product = self.execute_search(*PEPS_AFTER_20161205_SEARCH_ARGS)
+    def test_end_to_end_search_download_peps(self):
+        product = self.execute_search(*PEPS_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
@@ -923,7 +908,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.eodag.download(product)
 
     def test_end_to_end_wrong_credentials_peps(self):
-        product = self.execute_search(*PEPS_AFTER_20161205_SEARCH_ARGS)
+        product = self.execute_search(*PEPS_SEARCH_ARGS)
         with self.assertRaises(AuthenticationError):
             self.eodag.download(product)
 
