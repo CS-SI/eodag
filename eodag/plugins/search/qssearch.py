@@ -781,37 +781,15 @@ class QueryStringSearch(Search):
             else:
                 collections.add(collection)
             return tuple(collections)
-        if self.provider == "peps":
-            if product_type == "S2_MSI_L1C":
-                date = kwargs.get("startTimeFromAscendingNode")
-                # If there is no criteria on date, we want to query all the collections
-                # known for providing L1C products
-                if date is None:
-                    collections = ("S2", "S2ST")
-                else:
-                    match = re.match(
-                        r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", date
-                    ).groupdict()
-                    year, month, day = (
-                        int(match["year"]),
-                        int(match["month"]),
-                        int(match["day"]),
-                    )
-                    if year > 2016 or (year == 2016 and month == 12 and day > 5):
-                        collections = ("S2ST",)
-                    else:
-                        collections = ("S2", "S2ST")
-            else:
-                collections = (self.product_type_def_params.get("collection", ""),)
-        else:
-            collection = getattr(self.config, "collection", None)
-            if collection is None:
-                collection = (
-                    self.product_type_def_params.get("collection", None) or product_type
-                )
-            collections = (
-                (collection,) if not isinstance(collection, list) else tuple(collection)
+
+        collection = getattr(self.config, "collection", None)
+        if collection is None:
+            collection = (
+                self.product_type_def_params.get("collection", None) or product_type
             )
+        collections = (
+            (collection,) if not isinstance(collection, list) else tuple(collection)
+        )
         return collections
 
     def map_product_type(self, product_type):
