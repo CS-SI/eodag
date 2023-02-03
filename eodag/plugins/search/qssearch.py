@@ -19,7 +19,6 @@
 import json
 import logging
 import re
-from copy import deepcopy
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
@@ -383,7 +382,14 @@ class QueryStringSearch(Search):
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
+        if not count and hasattr(self, "total_items_nb"):
+            # do not try to extract total_items from search results if count is False
+            del self.total_items_nb
+            del self.need_count
+
         provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
+        if count and total_items is None and hasattr(self, "total_items_nb"):
+            total_items = self.total_items_nb
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
@@ -564,6 +570,13 @@ class QueryStringSearch(Search):
         """Build paginated urls"""
         urls = []
         total_results = 0 if count else None
+
+        if "count_endpoint" not in self.config.pagination:
+            # if count_endpoint is not set, total_results should be extracted from search result
+            total_results = None
+            self.need_count = True
+            self.total_items_nb = None
+
         for collection in self.get_collections(**kwargs):
             # skip empty collection if one is required in api_endpoint
             if "{collection}" in self.config.api_endpoint and not collection:
@@ -581,22 +594,10 @@ class QueryStringSearch(Search):
                         _total_results = self.count_hits(
                             count_url, result_type=self.config.result_type
                         )
-                    else:
-                        # First do one request querying only one element (lightweight
-                        # request to schedule the pagination)
-                        next_url_tpl = self.config.pagination["next_page_url_tpl"]
-                        count_url = next_url_tpl.format(
-                            url=search_endpoint,
-                            search=self.query_string,
-                            items_per_page=1,
-                            page=1,
-                            skip=0,
-                            skip_base_1=1,
-                        )
-                        _total_results = self.count_hits(
-                            count_url, result_type=self.config.result_type
-                        )
-                    total_results += _total_results or 0
+                        if getattr(self.config, "merge_responses", False):
+                            total_results = _total_results or 0
+                        else:
+                            total_results += _total_results or 0
                 next_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=self.query_string,
@@ -619,6 +620,14 @@ class QueryStringSearch(Search):
         :param items_per_page: (optional) The number of items to return for one page
         :type items_per_page: int
         """
+        if getattr(self, "need_count", False):
+            # extract total_items_nb from search results
+            total_items_nb = 0
+            if self.config.result_type == "json":
+                total_items_nb_key_path_parsed = cached_parse(
+                    self.config.pagination["total_items_nb_key_path"]
+                )
+
         results = []
         for search_url in self.search_urls:
             try:
@@ -629,7 +638,10 @@ class QueryStringSearch(Search):
                     "instance:".format(self.provider, self.__class__.__name__),
                 )
             except RequestError:
-                return []
+                if kwargs.get("raise_errors", False):
+                    raise
+                else:
+                    return []
             else:
                 next_page_url_key_path = self.config.pagination.get(
                     "next_page_url_key_path", None
@@ -654,6 +666,25 @@ class QueryStringSearch(Search):
                             "Setting the next page url from an XML response has not "
                             "been implemented yet"
                         )
+                    if getattr(self, "need_count", False):
+                        # extract total_items_nb from search results
+                        try:
+                            total_nb_results = root_node.xpath(
+                                self.config.pagination["total_items_nb_key_path"],
+                                namespaces={
+                                    k or "ns": v for k, v in root_node.nsmap.items()
+                                },
+                            )[0]
+                            _total_items_nb = int(total_nb_results)
+
+                            if getattr(self.config, "merge_responses", False):
+                                total_items_nb = _total_items_nb or 0
+                            else:
+                                total_items_nb += _total_items_nb or 0
+                        except IndexError:
+                            logger.debug(
+                                "Could not extract total_items_nb from search results"
+                            )
                 else:
                     resp_as_json = response.json()
                     if next_page_url_key_path:
@@ -691,6 +722,21 @@ class QueryStringSearch(Search):
                             logger.debug("Next page merge could not be collected")
 
                     result = resp_as_json.get(self.config.results_entry, [])
+
+                    if getattr(self, "need_count", False):
+                        # extract total_items_nb from search results
+                        try:
+                            _total_items_nb = total_items_nb_key_path_parsed.find(
+                                resp_as_json
+                            )[0].value
+                            if getattr(self.config, "merge_responses", False):
+                                total_items_nb = _total_items_nb or 0
+                            else:
+                                total_items_nb += _total_items_nb or 0
+                        except IndexError:
+                            logger.debug(
+                                "Could not extract total_items_nb from search results"
+                            )
                 if getattr(self.config, "merge_responses", False):
                     results = (
                         [dict(r, **result[i]) for i, r in enumerate(results)]
@@ -699,6 +745,9 @@ class QueryStringSearch(Search):
                     )
                 else:
                     results.extend(result)
+            if getattr(self, "need_count", False):
+                self.total_items_nb = total_items_nb
+                del self.need_count
             if items_per_page is not None and len(results) == items_per_page:
                 return results
         return results
@@ -1064,7 +1113,13 @@ class PostJsonSearch(QueryStringSearch):
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
+        if not count and getattr(self, "need_count", False):
+            # do not try to extract total_items from search results if count is False
+            del self.total_items_nb
+            del self.need_count
         provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
+        if count and total_items is None and hasattr(self, "total_items_nb"):
+            total_items = self.total_items_nb
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
@@ -1073,6 +1128,13 @@ class PostJsonSearch(QueryStringSearch):
         """Adds pagination to query parameters, and auth to url"""
         urls = []
         total_results = 0 if count else None
+
+        if "count_endpoint" not in self.config.pagination:
+            # if count_endpoint is not set, total_results should be extracted from search result
+            total_results = None
+            self.need_count = True
+            self.total_items_nb = None
+
         if hasattr(kwargs["auth"], "config"):
             auth_conf_dict = getattr(kwargs["auth"].config, "credentials", {})
         else:
@@ -1096,27 +1158,10 @@ class PostJsonSearch(QueryStringSearch):
                         _total_results = self.count_hits(
                             count_endpoint, result_type=self.config.result_type
                         )
-                    else:
-                        # Update the query params with a pagination requesting 1 product only
-                        # which is enough to obtain the count hits.
-                        count_pagination_params = dict(
-                            items_per_page=1, page=1, skip=0, skip_base_1=1
-                        )
-                        count_params = json.loads(
-                            self.config.pagination["next_page_query_obj"].format(
-                                **count_pagination_params
-                            )
-                        )
-                        # keep a copy of query parameters without count params
-                        self.query_params_unpaginated = deepcopy(self.query_params)
-                        update_nested_dict(self.query_params, count_params)
-                        _total_results = self.count_hits(
-                            search_endpoint, result_type=self.config.result_type
-                        )
-                    if getattr(self.config, "merge_responses", False):
-                        total_results = _total_results or 0
-                    else:
-                        total_results += _total_results or 0
+                        if getattr(self.config, "merge_responses", False):
+                            total_results = _total_results or 0
+                        else:
+                            total_results += _total_results or 0
                 if isinstance(self.config.pagination["next_page_query_obj"], str):
                     # next_page_query_obj needs to be parsed
                     next_page_query_obj = self.config.pagination[
