@@ -1105,7 +1105,10 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertGreater(len(guesses), 10)
 
-    def test__prepare_search_no_parameters(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_no_parameters(self, mock_fetch_product_types_list):
         """_prepare_search must create some kwargs even when no parameter has been provided"""
         prepared_search = self.dag._prepare_search()
         expected = {
@@ -1115,7 +1118,10 @@ class TestCoreSearch(TestCoreBase):
         expected = set(["geometry", "productType", "auth", "search_plugin"])
         self.assertSetEqual(expected, set(prepared_search))
 
-    def test__prepare_search_dates(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_dates(self, mock_fetch_product_types_list):
         """_prepare_search must handle start & end dates"""
         base = {
             "start": "2020-01-01",
@@ -1127,7 +1133,10 @@ class TestCoreSearch(TestCoreBase):
             prepared_search["completionTimeFromAscendingNode"], base["end"]
         )
 
-    def test__prepare_search_geom(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_geom(self, mock_fetch_product_types_list):
         """_prepare_search must handle geom, box and bbox"""
         # The default way to provide a geom is through the 'geom' argument.
         base = {"geom": (0, 50, 2, 52)}
@@ -1153,7 +1162,10 @@ class TestCoreSearch(TestCoreBase):
         self.assertNotIn("bbox", prepared_search)
         self.assertIsInstance(prepared_search["geometry"], Polygon)
 
-    def test__prepare_search_locations(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_locations(self, mock_fetch_product_types_list):
         """_prepare_search must handle a location search"""
         # When locations where introduced they could be passed
         # as regular kwargs. The new and recommended way to provide
@@ -1232,7 +1244,12 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    def test__prepare_search_search_plugin_has_generic_product_properties(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_search_plugin_has_generic_product_properties(
+        self, mock_fetch_product_types_list
+    ):
         """_prepare_search must be able to attach the generic product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
