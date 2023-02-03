@@ -30,10 +30,10 @@ from shapely import geometry
 from tests import EODagTestCase
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    DatasetDriver,
     Download,
     EOProduct,
     HTTPDownload,
-    NoDriver,
     ProgressCallback,
     config,
 )
@@ -85,9 +85,9 @@ class TestEOProduct(EODagTestCase):
         self.assertIsNone(product.search_intersection)
 
     def test_eoproduct_default_driver_unsupported_product_type(self):
-        """EOProduct driver attr must be NoDriver if its product type is not associated with a eodag dataset driver"""  # noqa
+        """EOProduct driver attr must be set even if its product type is not supported"""
         product = self._dummy_product(productType=self.NOT_ASSOCIATED_PRODUCT_TYPE)
-        self.assertIsInstance(product.driver, NoDriver)
+        self.assertIsInstance(product.driver, DatasetDriver)
 
     def test_eoproduct_geointerface(self):
         """EOProduct must provide a geo-interface with a set of specific properties"""
