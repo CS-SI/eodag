@@ -18,7 +18,6 @@
 
 import io
 import os
-import pathlib
 import random
 import shutil
 import tempfile
@@ -41,7 +40,6 @@ dirn = os.path.dirname
 
 TEST_RESOURCES_PATH = jp(dirn(__file__), "resources")
 RESOURCES_PATH = jp(dirn(__file__), "..", "eodag", "resources")
-TESTS_DOWNLOAD_PATH = jp(tempfile.gettempdir(), "eodag_tests")
 
 
 class EODagTestCase(unittest.TestCase):
@@ -302,10 +300,11 @@ class EODagTestCase(unittest.TestCase):
         delete_archive=None,
     ):
         self._set_download_simulation()
+        self.tmp_download_dir = tempfile.TemporaryDirectory()
         dl_config = config.PluginConfig.from_mapping(
             {
                 "base_uri": "fake_base_uri" if base_uri is None else base_uri,
-                "outputs_prefix": tempfile.gettempdir()
+                "outputs_prefix": self.tmp_download_dir.name
                 if outputs_prefix is None
                 else outputs_prefix,
                 "extract": True if extract is None else extract,
@@ -319,13 +318,7 @@ class EODagTestCase(unittest.TestCase):
         return product
 
     def _clean_product(self, product_path):
-        product_path = pathlib.Path(product_path)
-        download_records_dir = product_path.parent / ".downloaded"
-        product_zip = product_path.parent / (product_path.name + ".zip")
-        shutil.rmtree(product_path)
-        shutil.rmtree(download_records_dir)
-        if os.path.exists(product_zip):
-            os.remove(product_zip)
+        self.tmp_download_dir.cleanup()
 
     def _set_download_simulation(self):
         self.requests_request.return_value = self._download_response_archive()

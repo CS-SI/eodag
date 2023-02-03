@@ -92,5 +92,5 @@ from eodag.utils.exceptions import (
     STACOpenerError,
 )
 from eodag.utils.stac_reader import fetch_stac_items, HTTP_REQ_TIMEOUT, _TextOpener
-from tests import TESTS_DOWNLOAD_PATH, TEST_RESOURCES_PATH
+from tests import TEST_RESOURCES_PATH
 from usgs.api import USGSAuthExpiredError, USGSError
