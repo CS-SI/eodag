@@ -26,9 +26,10 @@ import shutil
 import time
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
-from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
+from tests import TEST_RESOURCES_PATH
 from tests.context import (
     GENERIC_PRODUCT_TYPE,
     AuthenticationError,
@@ -283,16 +284,16 @@ class TestEODagEndToEnd(EndToEndBase):
         else:
             cls.eodag = EODataAccessGateway()
 
-        # create TESTS_DOWNLOAD_PATH is not exists
-        if not os.path.exists(TESTS_DOWNLOAD_PATH):
-            os.makedirs(TESTS_DOWNLOAD_PATH)
+        # temp download directory
+        cls.tmp_download_dir = TemporaryDirectory()
+        cls.tmp_download_path = cls.tmp_download_dir.name
 
         for provider, conf in cls.eodag.providers_config.items():
-            # Change download directory to TESTS_DOWNLOAD_PATH for tests
+            # Change download directory to cls.tmp_download_path for tests
             if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
-                conf.download.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.download.outputs_prefix = cls.tmp_download_path
             elif hasattr(conf, "api") and hasattr(conf.api, "outputs_prefix"):
-                conf.api.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.api.outputs_prefix = cls.tmp_download_path
             else:
                 # no outputs_prefix found for provider
                 pass
@@ -313,14 +314,9 @@ class TestEODagEndToEnd(EndToEndBase):
     def setUp(self):
         self.downloaded_file_path = ""
 
-    def tearDown(self):
-        try:
-            if os.path.isdir(self.downloaded_file_path):
-                shutil.rmtree(self.downloaded_file_path)
-            else:
-                os.remove(self.downloaded_file_path)
-        except OSError:
-            pass
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_download_dir.cleanup()
 
     def execute_download(self, product, expected_filename, wait_sec=5, timeout_sec=120):
         """Download the product in a child process, avoiding to perform the entire
@@ -338,7 +334,7 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         max_wait_time = timeout_sec
         while (
-            not glob.glob("%s/[!quicklooks]*" % TESTS_DOWNLOAD_PATH)
+            not glob.glob("%s/[!quicklooks]*" % self.tmp_download_path)
             and max_wait_time > 0
         ):
             # check every 2s if download has start
@@ -692,16 +688,16 @@ class TestEODagEndToEndComplete(unittest.TestCase):
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
         )
 
-        # create TESTS_DOWNLOAD_PATH is not exists
-        if not os.path.exists(TESTS_DOWNLOAD_PATH):
-            os.makedirs(TESTS_DOWNLOAD_PATH)
+        # temp download directory
+        cls.tmp_download_dir = TemporaryDirectory()
+        cls.tmp_download_path = cls.tmp_download_dir.name
 
         for provider, conf in cls.eodag.providers_config.items():
-            # Change download directory to TESTS_DOWNLOAD_PATH for tests
+            # Change download directory to cls.tmp_download_path for tests
             if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
-                conf.download.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.download.outputs_prefix = cls.tmp_download_path
             elif hasattr(conf, "api") and hasattr(conf.api, "outputs_prefix"):
-                conf.api.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.api.outputs_prefix = cls.tmp_download_path
             else:
                 # no outputs_prefix found for provider
                 pass
@@ -714,13 +710,9 @@ class TestEODagEndToEndComplete(unittest.TestCase):
             ):
                 conf.search.product_location_scheme = "https"
 
-    def tearDown(self):
-        """Clear the test directory"""
-        for p in Path(TESTS_DOWNLOAD_PATH).glob("**/*"):
-            try:
-                os.remove(p)
-            except OSError:
-                shutil.rmtree(p)
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_download_dir.cleanup()
 
     def test_end_to_end_complete_peps(self):
         """Complete end-to-end test with PEPS for download and download_all"""
@@ -775,7 +767,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # That points to the downloaded archive
         self.assertEqual(uri_to_path(product.location), archive_file_path)
         # A .downloaded folder must have been created
-        record_dir = os.path.join(TESTS_DOWNLOAD_PATH, ".downloaded")
+        record_dir = os.path.join(self.tmp_download_path, ".downloaded")
         self.assertTrue(os.path.isdir(record_dir))
         # It must contain a file per product downloade, whose name is
         # the MD5 hash of the product's remote location

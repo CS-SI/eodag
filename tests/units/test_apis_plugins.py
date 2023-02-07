@@ -222,6 +222,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert auth_dict["url"] == self.api_plugin.config.api_endpoint
         del self.api_plugin.config.credentials
 
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
@@ -230,6 +233,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
+        mock_fetch_product_types_list,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
 
@@ -295,12 +299,16 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
     def test_plugins_apis_ecmwf_download_all(
         self,
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
+        mock_fetch_product_types_list,
     ):
         """EcmwfApi.download_all must call the appriate ecmwf api service"""
 
@@ -744,10 +752,13 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert auth_dict["url"] == self.api_plugin.config.api_endpoint
         del self.api_plugin.config.credentials
 
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
     @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
     @mock.patch("cdsapi.api.Client.retrieve", autospec=True)
     def test_plugins_apis_cds_download(
-        self, mock_client_retrieve, mock_cds_authenticate
+        self, mock_client_retrieve, mock_cds_authenticate, mock_fetch_product_types_list
     ):
         """CdsApi.download must call the authenticate function and cdsapi Client retrieve"""
         mock_cds_authenticate.return_value = {
@@ -785,11 +796,18 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert path == expected_path
         assert path_to_uri(expected_path) == eoproduct.location
 
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
     @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
     @mock.patch("eodag.plugins.apis.cds.CdsApi.download", autospec=True)
     @mock.patch("cdsapi.api.Client.retrieve", autospec=True)
     def test_plugins_apis_cds_download_all(
-        self, mock_client_retrieve, mock_cds_download, mock_cds_authenticate
+        self,
+        mock_client_retrieve,
+        mock_cds_download,
+        mock_cds_authenticate,
+        mock_fetch_product_types_list,
     ):
         """CdsApi.download_all must call download on each product"""
         mock_cds_authenticate.return_value = {

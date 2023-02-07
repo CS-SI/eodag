@@ -260,34 +260,6 @@ class EODataAccessGateway(object):
     def set_preferred_provider(self, provider):
         """Set max priority for the given provider.
 
-        >>> import tempfile, os
-        >>> config = tempfile.NamedTemporaryFile(delete=False)
-        >>> dag = EODataAccessGateway(user_conf_file_path=os.path.join(
-        ...     tempfile.gettempdir(), config.name))
-        >>> # This also tests get_preferred_provider method by the way
-        >>> dag.get_preferred_provider()
-        ('peps', 1)
-        >>> # For the following lines, see
-        >>> # http://python3porting.com/problems.html#handling-expected-exceptions
-        >>> import eodag.utils.exceptions
-        >>> try:
-        ...     dag.set_preferred_provider(u'unknown')
-        ...     raise AssertionError(u'UnsupportedProvider exception was not raised'
-        ...                           'as expected')
-        ... except eodag.utils.exceptions.UnsupportedProvider:
-        ...     pass
-        >>> dag.set_preferred_provider(u'creodias')
-        >>> dag.get_preferred_provider()
-        ('creodias', 2)
-        >>> dag.set_preferred_provider(u'theia')
-        >>> dag.get_preferred_provider()
-        ('theia', 3)
-        >>> dag.set_preferred_provider(u'creodias')
-        >>> dag.get_preferred_provider()
-        ('creodias', 4)
-        >>> config.close()
-        >>> os.unlink(config.name)
-
         :param provider: The name of the provider that should be considered as the
                          preferred provider to be used for this instance
         :type provider: str
@@ -319,35 +291,6 @@ class EODataAccessGateway(object):
         """Update providers configuration with given input.
         Can be used to add a provider to existing configuration or update
         an existing one.
-
-        >>> from eodag import EODataAccessGateway
-        >>> dag = EODataAccessGateway()
-        >>> new_config = '''
-        ...     my_new_provider:
-        ...         search:
-        ...             type: StacSearch
-        ...             api_endpoint: https://api.my_new_provider/search
-        ...         products:
-        ...             GENERIC_PRODUCT_TYPE:
-        ...                 productType: '{productType}'
-        ... '''
-        >>> # add new provider
-        >>> dag.update_providers_config(new_config)
-        >>> type(dag.providers_config["my_new_provider"])
-        <class 'eodag.config.ProviderConfig'>
-        >>> dag.providers_config["my_new_provider"].priority
-        0
-        >>> # run 2nd time (update provider)
-        >>> update_config = '''
-        ...     my_new_provider:
-        ...         search:
-        ...             type: StacSearch
-        ...             api_endpoint: https://api.my_new_provider/search
-        ...         products:
-        ...             GENERIC_PRODUCT_TYPE:
-        ...                 productType: '{productType}'
-        ... '''
-        >>> dag.update_providers_config(new_config)
 
         :param yaml_conf: YAML formated provider configuration
         :type yaml_conf: str
@@ -519,7 +462,9 @@ class EODataAccessGateway(object):
                     if product_type_id not in product_types:
                         product_types.append(product_type)
                 return sorted(product_types, key=itemgetter("ID"))
-            raise UnsupportedProvider("The requested provider is not (yet) supported")
+            raise UnsupportedProvider(
+                f"The requested provider is not (yet) supported: {provider}"
+            )
         # Only get the product types supported by the available providers
         for provider in self.available_providers():
             current_product_type_ids = [pt["ID"] for pt in product_types]

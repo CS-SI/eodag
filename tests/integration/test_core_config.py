@@ -45,8 +45,13 @@ class TestCoreProvidersConfig(TestCase):
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
-    def test_core_providers_config_update(self, mock__request):
+    def test_core_providers_config_update(
+        self, mock__request, mock_fetch_product_types_list
+    ):
         """Providers config must be updatable"""
         mock__request.return_value = mock.Mock()
         mock__request_side_effect = [
