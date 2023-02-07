@@ -369,14 +369,15 @@ class TestStacUtils(unittest.TestCase):
             },
         )
         call_args, call_kwargs = mock_do_search.call_args
-        self.assertDictContainsSubset(
+        # check if call_kwargs contains subset
+        self.assertLessEqual(
             {
                 "productType": "S2_MSI_L1C",
                 "cloudCover": 50,
                 "startTimeFromAscendingNode": "2020-02-01T00:00:00",
                 "completionTimeFromAscendingNode": "2021-02-20T00:00:00",
-            },
-            call_kwargs,
+            }.items(),
+            call_kwargs.items(),
         )
         self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
 
@@ -405,14 +406,15 @@ class TestStacUtils(unittest.TestCase):
             stac_formatted=False,
         )
         call_args, call_kwargs = mock_do_search.call_args
-        self.assertDictContainsSubset(
+        # check if call_kwargs contains subset
+        self.assertLessEqual(
             {
                 "productType": "S2_MSI_L1C",
                 "cloudCover": 50,
                 "startTimeFromAscendingNode": "2020-02-01T00:00:00",
                 "completionTimeFromAscendingNode": "2021-02-20T00:00:00",
-            },
-            call_kwargs,
+            }.items(),
+            call_kwargs.items(),
         )
         self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
 
