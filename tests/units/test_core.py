@@ -40,6 +40,7 @@ from tests.context import (
     EOProduct,
     NoMatchingProductType,
     PluginImplementationError,
+    ProviderConfig,
     RequestError,
     SearchResult,
     UnsupportedProvider,
@@ -270,6 +271,8 @@ class TestCore(TestCoreBase):
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
+        # raise Exception({p:pc.api.credentials for p,pc in self.dag.providers_config.items() if hasattr(pc, "api")})
+        # raise Exception(self.dag.conf_dir)
         for provider in self.SUPPORTED_PROVIDERS:
             product_types = self.dag.list_product_types(
                 provider=provider, fetch_providers=False
@@ -803,6 +806,47 @@ class TestCore(TestCoreBase):
                 "please report this issue and try to delete",
                 str(cm_logs.output),
             )
+
+    def test_set_preferred_provider(self):
+        """set_preferred_provider must set the preferred provider with increasing priority"""
+
+        self.assertEqual(self.dag.get_preferred_provider(), ("peps", 1))
+
+        self.assertRaises(
+            UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
+        )
+
+        self.dag.set_preferred_provider("creodias")
+        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 2))
+
+        self.dag.set_preferred_provider("theia")
+        self.assertEqual(self.dag.get_preferred_provider(), ("theia", 3))
+
+        self.dag.set_preferred_provider("creodias")
+        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 4))
+
+    def test_update_providers_config(self):
+        """update_providers_config must update providers configuration"""
+
+        new_config = """
+            my_new_provider:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://api.my_new_provider/search
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+            """
+        # add new provider
+        self.dag.update_providers_config(new_config)
+        self.assertIsInstance(
+            self.dag.providers_config["my_new_provider"], ProviderConfig
+        )
+
+        self.assertEqual(self.dag.providers_config["my_new_provider"].priority, 0)
+
+        # run a 2nd time: check that it does not raise an error
+        self.dag.update_providers_config(new_config)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

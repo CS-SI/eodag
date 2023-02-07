@@ -45,6 +45,7 @@ from eodag.config import (
     get_ext_product_types_conf,
     EXT_PRODUCT_TYPES_CONF_URI,
     PluginConfig,
+    ProviderConfig,
 )
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
