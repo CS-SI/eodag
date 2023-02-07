@@ -66,6 +66,13 @@ class BuildPostSearchResult(PostJsonSearch):
         """Count method that will always return 1."""
         return 1
 
+    def collect_search_urls(self, page=None, items_per_page=None, count=True, **kwargs):
+        """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
+        urls, _ = super(BuildPostSearchResult, self).collect_search_urls(
+            page=page, items_per_page=items_per_page, count=count, **kwargs
+        )
+        return urls, 1
+
     def do_search(self, *args, **kwargs):
         """Perform the actual search request, and return result in a single element."""
         search_url = self.search_urls[0]

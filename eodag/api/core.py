@@ -1348,7 +1348,7 @@ class EODataAccessGateway(object):
                 # the following request (look for the value of properties.totalResults)
                 # https://theia-landsat.cnes.fr/resto/api/collections/Landsat/search.json?
                 # maxRecords=1&page=1
-                if nb_res == 0:
+                if not nb_res:
                     nb_res = len(res) * page
 
                 # Attempt to ensure a little bit more coherence. Some providers return

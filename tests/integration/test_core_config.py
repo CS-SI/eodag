@@ -58,16 +58,14 @@ class TestCoreProvidersConfig(TestCase):
             {
                 "context": {
                     "matched": 1,
-                }
-            },
-            {
+                },
                 "features": [
                     {
                         "id": "foo",
                         "bar": "baz",
                         "geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
                     }
-                ]
+                ],
             },
         ]
         mock__request.return_value.json.side_effect = mock__request_side_effect
