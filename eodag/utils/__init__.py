@@ -1148,6 +1148,9 @@ def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
         subpaths_list = [p for p in Path(nested_dir_root).glob("**/*") if p.is_file()]
         common_subdirs_path = os.path.commonpath(subpaths_list)
 
+    if Path(common_subdirs_path).is_file():
+        common_subdirs_path = os.path.dirname(common_subdirs_path)
+
     if nested_dir_root != common_subdirs_path:
         logger.debug(f"Flatten {common_subdirs_path} to {nested_dir_root}")
         tmp_path = mkdtemp()
