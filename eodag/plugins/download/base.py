@@ -513,8 +513,8 @@ class Download(PluginTopic):
                     sleep(wait_seconds + 1)
                 elif len(products) > 0 and datetime.now() >= stop_time:
                     logger.warning(
-                        f"{len(products)} products could not be downloaded:"
-                        f"{' ' + [prod.properties['title'] for prod in products]}",
+                        f"{len(products)} products could not be downloaded: "
+                        + str([prod.properties["title"] for prod in products])
                     )
                     break
                 elif len(products) == 0:
