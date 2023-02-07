@@ -241,6 +241,20 @@ class TestUtils(unittest.TestCase):
             self.assertIn(Path(nested_dir_root) / "c2" / "bar", dir_content)
             self.assertIn(Path(nested_dir_root) / "c2" / "baz", dir_content)
 
+    def test_flatten_top_dirs_single_file(self):
+        """flatten_top_dirs must flatten directory structure containing a single file"""
+        with TemporaryDirectory() as nested_dir_root:
+            os.makedirs(os.path.join(nested_dir_root, "a", "b", "c1"))
+            # create empty file
+            open(os.path.join(nested_dir_root, "a", "b", "c1", "foo"), "a").close()
+
+            flatten_top_directories(nested_dir_root)
+
+            dir_content = list(Path(nested_dir_root).glob("**/*"))
+
+            self.assertEqual(len(dir_content), 1)
+            self.assertIn(Path(nested_dir_root) / "foo", dir_content)
+
     def test_flatten_top_dirs_given_subdir(self):
         """flatten_top_dirs must flatten directory structure using given subdirectory"""
         with TemporaryDirectory() as nested_dir_root:
