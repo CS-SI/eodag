@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 import json
 import os
 import re
@@ -41,6 +42,8 @@ class TestStacUtils(unittest.TestCase):
 
         # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
         import eodag.rest.utils as rest_utils
+
+        importlib.reload(rest_utils)
 
         cls.rest_utils = rest_utils
 

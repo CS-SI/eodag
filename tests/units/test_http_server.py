@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 import json
 import os
 import re
@@ -43,6 +44,10 @@ class RequestTestCase(unittest.TestCase):
         cls.expanduser_mock.start()
 
         # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
+        # reload eodag.rest.utils to prevent eodag_api cache conflicts
+        import eodag.rest.utils
+
+        importlib.reload(eodag.rest.utils)
         from eodag.rest import server as eodag_http_server
 
         cls.eodag_http_server = eodag_http_server
