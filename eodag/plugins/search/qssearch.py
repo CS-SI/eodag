@@ -496,7 +496,9 @@ class QueryStringSearch(Search):
                     format_metadata(operand, **kwargs)
                     for operand in operands
                     if any(
-                        re.search(rf"{{{kw}[}}#]", operand) and val is not None
+                        re.search(rf"{{{kw}[}}#]", operand)
+                        and val is not None
+                        and isinstance(self.config.metadata_mapping.get(kw, []), list)
                         for kw, val in kwargs.items()
                     )
                 )
@@ -1104,10 +1106,14 @@ class PostJsonSearch(QueryStringSearch):
                     items_per_page=items_per_page, page=page, **kwargs
                 )
 
-        # If we were not able to build query params but have search criteria, this means
-        # the provider does not support the search criteria given. If so, stop searching
-        # right away
-        if not qp and keywords:
+        # If we were not able to build query params but have queryable search criteria,
+        # this means the provider does not support the search criteria given. If so,
+        # stop searching right away
+        if not qp and any(
+            k
+            for k in keywords.keys()
+            if isinstance(self.config.metadata_mapping.get(k, []), list)
+        ):
             return [], 0
         self.query_params = qp
         self.search_urls, total_items = self.collect_search_urls(
