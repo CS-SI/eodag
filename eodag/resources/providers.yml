@@ -1424,14 +1424,22 @@
         - '$.Metadata.sensorOperationalMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      startTimeFromAscendingNode: '$.beginPosition'
-      completionTimeFromAscendingNode: '$.endPosition'
+      startTimeFromAscendingNode:
+        - null
+        - '$.beginPosition'
+      completionTimeFromAscendingNode:
+        - null
+        - '$.endPosition'
       polarizationChannels: '{$.Metadata.polarisationChannels#replace_str(","," ")}'
 
       # Custom parameters (not defined in the base document referenced above)
-      id: '{$.Metadata.filename#remove_extension}'
+      id:
+        - null
+        - '{$.Metadata.filename#remove_extension}'
       # The geographic extent of the product
-      geometry: '$.footprint'
+      geometry:
+        - null
+        - '$.footprint'
       # The url of the quicklook
       quicklook: '$.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result

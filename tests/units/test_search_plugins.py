@@ -248,6 +248,23 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
+    def test_plugins_search_querystringseach_search_cloudcover_peps(
+        self, mock__request
+    ):
+        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar product types"""  # noqa
+
+        self.peps_search_plugin.query(productType="S2_MSI_L1C", cloudCover=50)
+        mock__request.assert_called()
+        self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1])
+        mock__request.reset_mock()
+
+        self.peps_search_plugin.query(productType="S1_SAR_GRD", cloudCover=50)
+        mock__request.assert_called()
+        self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1])
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
     def test_plugins_search_querystringseach_discover_product_types(
         self, mock__request
     ):
@@ -461,6 +478,27 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # products count should not have been extracted from search results
         self.assertIsNone(getattr(self.awseos_search_plugin, "total_items_nb", None))
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    def test_plugins_search_postjsonsearch_search_cloudcover_awseos(
+        self, mock_requests_post
+    ):
+        """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar product types"""  # noqa
+
+        self.awseos_search_plugin.query(
+            auth=self.awseos_auth_plugin, productType="S2_MSI_L1C", cloudCover=50
+        )
+        mock_requests_post.assert_called()
+        self.assertIn("cloudCoverage", str(mock_requests_post.call_args_list[-1][1]))
+        mock_requests_post.reset_mock()
+
+        self.awseos_search_plugin.query(
+            auth=self.awseos_auth_plugin, productType="S1_SAR_GRD", cloudCover=50
+        )
+        mock_requests_post.assert_called()
+        self.assertNotIn(
+            "cloudCoverPercentage", str(mock_requests_post.call_args_list[-1][1])
+        )
+
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def setUp(self):
@@ -561,6 +599,21 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.assertIsInstance(products[0], EOProduct)
         # products count non extracted from search results as count endpoint is specified
         self.assertFalse(hasattr(self.onda_search_plugin, "total_items_nb"))
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_search_cloudcover_onda(self, mock__request):
+        """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar product types"""
+
+        self.onda_search_plugin.query(productType="S2_MSI_L1C", cloudCover=50)
+        mock__request.assert_called()
+        self.assertIn("cloudCoverPercentage", mock__request.call_args_list[-1][0][1])
+        mock__request.reset_mock()
+
+        self.onda_search_plugin.query(productType="S1_SAR_GRD", cloudCover=50)
+        mock__request.assert_called()
+        self.assertNotIn("cloudCoverPercentage", mock__request.call_args_list[-1][0][1])
 
 
 class TestSearchPluginStacSearch(BaseSearchPluginTest):
