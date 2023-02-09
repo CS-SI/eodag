@@ -897,6 +897,7 @@
         wrapper: '{}'
         operations:
           and:
+            - "Collection/Name eq '{collection}'"
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
@@ -922,6 +923,23 @@
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
     common_metadata_mapping_path: '$'
+    discover_product_types:
+      fetch_url: 'https://datahub.creodias.eu/stac/collections'
+      result_type: json
+      results_entry: 'collections[*]'
+      generic_product_type_id: '$.id'
+      generic_product_type_parsable_properties:
+        collection: '$.id'
+      generic_product_type_parsable_metadata:
+        abstract: '$.description'
+        instrument: '{$.summaries.instruments#csv_list}'
+        platform: '{$.summaries.constellation#csv_list}'
+        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
+        processingLevel: '$.summaries."processing:level"'
+        keywords: '{$.keywords#csv_list}'
+        license: '$.license'
+        title: '$.title'
+        missionStartDate: '$.extent.temporal.interval[0][0]'
     per_product_metadata_query: false
     metadata_pre_mapping:
       metadata_path: '$.Attributes'
@@ -997,6 +1015,9 @@
       downloadLink: 'https://datahub.creodias.eu/odata/v1/Products({uid})/$value'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+      collection:
+        - null
+        - $.null
       # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
   download: !plugin
@@ -1017,109 +1038,109 @@
   products:
     # S2
     S2_MSI_L1C:
-      platform: SENTINEL-2
+      collection: SENTINEL-2
       productType: S2MSI1C
     S2_MSI_L2A:
-      platform: SENTINEL-2
+      collection: SENTINEL-2
       productType: S2MSI2A
     # S1
     S1_SAR_RAW:
       productType: RAW
-      platform: SENTINEL-1
+      collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_GRD:
       productType: GRD
-      platform: SENTINEL-1
+      collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_SLC:
       productType: SLC
-      platform: SENTINEL-1
+      collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_OCN:
       productType: OCN
-      platform: SENTINEL-1
+      collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_A:
       productType: SR_1_SRA_A_
-      platform: SENTINEL-3
+      collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_BS:
       productType: SR_1_SRA_BS
-      platform: SENTINEL-3
+      collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
     S3_LAN:
       productType: SR_2_LAN___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
     S3_WAT:
       productType: SR_2_WAT___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
     # S3 OLCI
     S3_EFR:
       productType: OL_1_EFR___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_ERR:
       productType: OL_1_ERR___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_OLCI_L2LRR:
       productType: OL_2_LRR___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_OLCI_L2LFR:
       productType: OL_2_LFR___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_OLCI_L2WRR:
       productType: OL_2_WRR___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_OLCI_L2WFR:
       productType: OL_2_WFR___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       productType: SL_1_RBT___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SLSTR_L2LST:
       productType: SL_2_LST___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SLSTR_L2WST:
       productType: SL_2_WST___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SLSTR_L2AOD:
       productType: SL_2_AOD___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SLSTR_L2FRP:
       productType: SL_2_FRP___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     # S3 SY
     S3_SY_AOD:
       productType: SY_2_AOD___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SY_SYN:
       productType: SY_2_SYN___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SY_V10:
       productType: SY_2_V10___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SY_VG1:
       productType: SY_2_VG1___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     S3_SY_VGP:
       productType: SY_2_VGP___
-      platform: SENTINEL-3
+      collection: SENTINEL-3
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
