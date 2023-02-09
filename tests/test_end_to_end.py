@@ -28,6 +28,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -186,6 +188,7 @@ METEOBLUE_SEARCH_ARGS = [
 ]
 
 
+@pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
     def execute_search(
         self,
@@ -530,14 +533,14 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "creodias"
         ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
         self.assertEqual(
-            "Sentinel1",
-            ext_product_types_conf[provider]["providers_config"]["Sentinel1"][
+            "SENTINEL-1",
+            ext_product_types_conf[provider]["providers_config"]["SENTINEL-1"][
                 "collection"
             ],
         )
         self.assertEqual(
-            "Sentinel-1",
-            ext_product_types_conf[provider]["product_types_config"]["Sentinel1"][
+            "SENTINEL-1",
+            ext_product_types_conf[provider]["product_types_config"]["SENTINEL-1"][
                 "title"
             ],
         )
