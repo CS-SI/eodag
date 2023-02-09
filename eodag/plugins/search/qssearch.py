@@ -890,7 +890,7 @@ class QueryStringSearch(Search):
             # use urllib instead of requests if req must be sent unquoted
             if hasattr(self.config, "dont_quote"):
                 # keep unquoted desired params
-                base_url, params = url.split("?")
+                base_url, params = url.split("?") if "?" in url else (url, "")
                 qry = quote(params)
                 for keep_unquoted in self.config.dont_quote:
                     qry = qry.replace(quote(keep_unquoted), keep_unquoted)
