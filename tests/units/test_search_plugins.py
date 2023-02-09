@@ -270,20 +270,26 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
         # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
-        provider = "creodias"
+        provider = "astraea_eod"
         search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        # change onfiguration for this test to filter out some collections
+        results_entry = search_plugin.config.discover_product_types["results_entry"]
+        search_plugin.config.discover_product_types[
+            "results_entry"
+        ] = 'collections[?billing=="free"]'
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = {
             "collections": [
                 {
                     "id": "foo_collection",
-                    "displayName": "The FOO collection",
+                    "title": "The FOO collection",
                     "billing": "free",
                 },
                 {
                     "id": "bar_collection",
-                    "displayName": "The BAR non-free collection",
+                    "title": "The BAR non-free collection",
                     "billing": "non-free",
                 },
             ]
@@ -294,13 +300,15 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertNotIn("bar_collection", conf_update_dict["providers_config"])
         self.assertNotIn("bar_collection", conf_update_dict["product_types_config"])
         self.assertEqual(
-            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            conf_update_dict["providers_config"]["foo_collection"]["productType"],
             "foo_collection",
         )
         self.assertEqual(
             conf_update_dict["product_types_config"]["foo_collection"]["title"],
             "The FOO collection",
         )
+        # restore configuration
+        search_plugin.config.discover_product_types["results_entry"] = results_entry
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True

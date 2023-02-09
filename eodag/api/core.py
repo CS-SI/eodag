@@ -651,6 +651,9 @@ class EODataAccessGateway(object):
                         search_plugin_config = self.providers_config[provider].api
                     else:
                         continue
+                    if not hasattr(search_plugin_config, "discover_product_types"):
+                        # conf has been updated and provider product types are no more discoverable
+                        continue
                     provider_products_config = self.providers_config[provider].products
                 except UnsupportedProvider:
                     logger.debug(
