@@ -1015,73 +1015,111 @@
     token_qs_key: 'token'
     auth_error_code: 401
   products:
+    # S2
     S2_MSI_L1C:
-      productType: L1C
-      collection: Sentinel2
+      platform: SENTINEL-2
+      productType: S2MSI1C
     S2_MSI_L2A:
-      productType: L2A
-      collection: Sentinel2
+      platform: SENTINEL-2
+      productType: S2MSI2A
+    # S1
     S1_SAR_RAW:
       productType: RAW
-      collection: Sentinel1
+      platform: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_GRD:
       productType: GRD
-      collection: Sentinel1
+      platform: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_SLC:
       productType: SLC
-      collection: Sentinel1
+      platform: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_OCN:
       productType: OCN
-      collection: Sentinel1
+      platform: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
-    S3_LAN:
-      productType: LAN
-      collection: Sentinel3
-      metadata_mapping:
-        cloudCover: '$.null'
+    # S3 SRAL
     S3_SRA:
-      productType: SRA
-      collection: Sentinel3
+      productType: SR_1_SRA___
+      platform: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_SRA_A:
+      productType: SR_1_SRA_A_
+      platform: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_BS:
-      productType: SRA_BS
-      collection: Sentinel3
+      productType: SR_1_SRA_BS
+      platform: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
-    S3_SRA_A_BS:
-      productType: SRA_A
-      collection: Sentinel3
+    S3_LAN:
+      productType: SR_2_LAN___
+      platform: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
-    S3_EFR:
-      productType: EFR
-      collection: Sentinel3
-    S3_ERR:
-      productType: ERR
-      collection: Sentinel3
     S3_WAT:
-      productType: WAT
-      collection: Sentinel3
-    S3_SLSTR_L2LST:
-      productType: LST
-      collection: Sentinel3
+      productType: SR_2_WAT___
+      platform: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    # S3 OLCI
+    S3_EFR:
+      productType: OL_1_EFR___
+      platform: SENTINEL-3
+    S3_ERR:
+      productType: OL_1_ERR___
+      platform: SENTINEL-3
     S3_OLCI_L2LRR:
-      productType: LRR
-      collection: Sentinel3
+      productType: OL_2_LRR___
+      platform: SENTINEL-3
     S3_OLCI_L2LFR:
-      productType: LFR
-      collection: Sentinel3
+      productType: OL_2_LFR___
+      platform: SENTINEL-3
+    S3_OLCI_L2WRR:
+      productType: OL_2_WRR___
+      platform: SENTINEL-3
+    S3_OLCI_L2WFR:
+      productType: OL_2_WFR___
+      platform: SENTINEL-3
+    # S3 SLSTR
     S3_SLSTR_L1RBT:
-      productType: RBT
-      collection: Sentinel3
+      productType: SL_1_RBT___
+      platform: SENTINEL-3
+    S3_SLSTR_L2LST:
+      productType: SL_2_LST___
+      platform: SENTINEL-3
+    S3_SLSTR_L2WST:
+      productType: SL_2_WST___
+      platform: SENTINEL-3
+    S3_SLSTR_L2AOD:
+      productType: SL_2_AOD___
+      platform: SENTINEL-3
+    S3_SLSTR_L2FRP:
+      productType: SL_2_FRP___
+      platform: SENTINEL-3
+    # S3 SY
+    S3_SY_AOD:
+      productType: SY_2_AOD___
+      platform: SENTINEL-3
+    S3_SY_SYN:
+      productType: SY_2_SYN___
+      platform: SENTINEL-3
+    S3_SY_V10:
+      productType: SY_2_V10___
+      platform: SENTINEL-3
+    S3_SY_VG1:
+      productType: SY_2_VG1___
+      platform: SENTINEL-3
+    S3_SY_VGP:
+      productType: SY_2_VGP___
+      platform: SENTINEL-3
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
