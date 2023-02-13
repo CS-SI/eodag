@@ -468,7 +468,6 @@ class ProgressCallback(tqdm):
             self.reset(total=total)
 
         self.update(increment)
-        self.refresh()
 
     def copy(self, *args, **kwargs):
         """Returns another progress callback using the same initial
