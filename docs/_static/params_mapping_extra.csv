@@ -1,30 +1,16 @@
 parameter,astraea_eod,cop_ads,cop_cds,creodias,earth_search,earth_search_cog,earth_search_gcs,ecmwf,mundi,onda,peps,sara,theia,usgs_satapi_aws
 assets,metadata only,,,,metadata only,metadata only,metadata only,,,,,,,metadata only
 awsProductId,,,,,,,,,,,,,,metadata only
-cultivatedCover,,,,:green:`queryable metadata`,,,,,,,,,,
-desertCover,,,,:green:`queryable metadata`,,,,,,,,,,
+collection,,,,:green:`queryable metadata`,,,,,,,,,,
 downloadLink,metadata only,,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-floodedCover,,,,:green:`queryable metadata`,,,,,,,,,,
-forestCover,,,,:green:`queryable metadata`,,,,,,,,,,
-geometry,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
-herbaceousCover,,,,:green:`queryable metadata`,,,,,,,,,,
-iceCover,,,,:green:`queryable metadata`,,,,,,,,,,
-id,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
+geometry,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+id,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
 orderLink,,,,,,,,,,metadata only,,,,
-polarizationChannels,metadata only,,,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,metadata only,metadata only,,,metadata only,:green:`queryable metadata`
+polarizationChannels,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,metadata only,metadata only,,,metadata only,:green:`queryable metadata`
 polarizationMode,,,,,,metadata only,,,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,
-processingBaseline,,,,:green:`queryable metadata`,,,,,,,,,,
-publishedAfter,,,,:green:`queryable metadata`,,,,,,,,,,
-publishedBefore,,,,:green:`queryable metadata`,,,,,,,,,,
-quicklook,metadata only,,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-relativeOrbitNumber,,,,:green:`queryable metadata`,,,,,,,,,,
-sortOrder,,,,:green:`queryable metadata`,,,,,,,,,,
-sortParam,,,,:green:`queryable metadata`,,,,,,,,,,
+productIdentifier,,,,metadata only,,,,,,,,,,
+quicklook,metadata only,,,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 specification,,,,,,,,,metadata only,,,,,
-status,,,,:green:`queryable metadata`,,,,,,,,,,
 storageStatus,metadata only,,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-thumbnail,metadata only,,,metadata only,metadata only,metadata only,metadata only,,metadata only,,metadata only,metadata only,metadata only,metadata only
-timeliness,,,,:green:`queryable metadata`,,,,,,,,,,
+thumbnail,metadata only,,,,metadata only,metadata only,metadata only,,metadata only,,metadata only,metadata only,metadata only,metadata only
 uid,,,,metadata only,,,,,metadata only,metadata only,metadata only,metadata only,metadata only,
-urbanCover,,,,:green:`queryable metadata`,,,,,,,,,,
-waterCover,,,,:green:`queryable metadata`,,,,,,,,,,
