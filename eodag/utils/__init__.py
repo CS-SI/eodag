@@ -118,13 +118,17 @@ def _deprecated(reason="", version=None):
 class RequestsTokenAuth(AuthBase):
     """A custom authentication class to be used with requests module"""
 
-    def __init__(self, token, where, qs_key=None):
+    def __init__(self, token, where, qs_key=None, headers=None):
         self.token = token
         self.where = where
         self.qs_key = qs_key
+        self.headers = headers
 
     def __call__(self, request):
         """Perform the actual authentication"""
+        if self.headers and isinstance(self.headers, dict):
+            for k, v in self.headers.items():
+                request.headers[k] = v
         if self.where == "qs":
             parts = urlparse(request.url)
             qs = parse_qs(parts.query)

@@ -36,6 +36,11 @@ class TokenAuth(Authentication):
             self.config.auth_uri = self.config.auth_uri.format(
                 **self.config.credentials
             )
+            # format headers if needed
+            self.config.headers = {
+                header: value.format(**self.config.credentials)
+                for header, value in getattr(self.config, "headers", {}).items()
+            }
         except KeyError as e:
             raise MisconfiguredError(
                 f"Missing credentials inputs for provider {self.provider}: {e}"
@@ -66,4 +71,4 @@ class TokenAuth(Authentication):
             else:
                 token = response.text
             # Return auth class set with obtained token
-            return RequestsTokenAuth(token, "header")
+            return RequestsTokenAuth(token, "header", headers=self.config.headers)
