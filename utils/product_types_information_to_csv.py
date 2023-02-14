@@ -17,6 +17,7 @@
 # limitations under the License.
 import csv
 import os
+import re
 
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_default_config
@@ -35,16 +36,31 @@ def product_types_info_to_csv(
     :param product_types_csv_file_path: (optional) Path to product types information csv output file
     :type product_types_csv_file_path: str
     """
-    dag = EODataAccessGateway()
-
     config = {}
     for provider_config in load_default_config().values():
         config[provider_config.name] = list(provider_config.products.keys())
 
+    # backup os.environ as it will be modified by the script
+    eodag_env_pattern = re.compile(r"EODAG_\w+")
+    eodag_env_backup = {
+        k: v for k, v in os.environ.items() if eodag_env_pattern.match(k)
+    }
+
+    providers = sorted(load_default_config().keys())
+    for provider in providers:
+        os.environ[f"EODAG__{provider}__AUTH__CREDENTIALS__FOO"] = "bar"
+
+    dag = EODataAccessGateway()
+
+    # restore os.environ
+    for k, v in os.environ.items():
+        if eodag_env_pattern.match(k):
+            os.environ.pop(k)
+    os.environ.update(eodag_env_backup)
+
     product_types = dag.list_product_types(fetch_providers=False)
     product_types_names = [product_type["ID"] for product_type in product_types]
     metadata_params = list(k for k in product_types[0].keys() if k != "ID")
-    providers = sorted(load_default_config().keys())
 
     # csv fieldnames
     fieldnames = ["product type"] + metadata_params + providers
