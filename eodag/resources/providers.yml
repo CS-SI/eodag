@@ -2918,7 +2918,7 @@
     api_endpoint: 'https://my.meteoblue.com/dataset/query'
     need_auth: true
     pagination:
-      next_page_query_obj: '{{"checkOnly":true,"format":"json"}}'
+      next_page_query_obj: '{{"checkOnly":true}}'
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^[a-zA-Z0-9_]+$'
