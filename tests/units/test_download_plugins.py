@@ -451,6 +451,54 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         run()
 
+    def test_plugins_download_http_order_status_search_again(self):
+        """HTTPDownload.orderDownloadStatus() must search again after success if needed"""
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.order_status_success = {"status": "great-success"}
+        plugin.config.order_status_on_success = {
+            "need_search": True,
+            "result_type": "xml",
+            "results_entry": "//entry",
+            "metadata_mapping": {
+                "downloadLink": "foo/text()",
+            },
+        }
+        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+        self.product.properties["searchLink"] = "http://somewhere/search-gain"
+
+        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            responses.add(
+                responses.GET,
+                "http://somewhere/order-status",
+                status=200,
+                json={"status": "great-success"},
+            )
+            responses.add(
+                responses.GET,
+                "http://somewhere/search-gain",
+                status=200,
+                body=(
+                    b"<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
+                    b"<feed>"
+                    b"<entry><foo>http://new-download-link</foo><bar>something else</bar></entry>"
+                    b"</feed>"
+                ),
+            )
+
+            plugin.orderDownloadStatus(self.product, auth=auth)
+
+            self.assertEqual(
+                self.product.properties["downloadLink"], "http://new-download-link"
+            )
+            self.assertEqual(len(responses.calls), 2)
+
+        run()
+
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
     def setUp(self):
