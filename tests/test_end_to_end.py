@@ -507,7 +507,9 @@ class TestEODagEndToEnd(EndToEndBase):
         uid = "S2A_MSIL1C_20200810T030551_N0209_R075_T53WPU_20200810T050611"
         provider = "creodias"
 
-        products, _ = self.eodag._search_by_id(uid=uid, provider=provider)
+        products, _ = self.eodag._search_by_id(
+            uid=uid, provider=provider, productType="S2_MSI_L1C"
+        )
         product = products[0]
 
         self.assertEqual(product.properties["id"], uid)
