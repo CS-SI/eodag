@@ -16,17 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import shutil
 import stat
 import unittest
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir, mkdtemp
+from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from unittest import mock
 
 import responses
 
 from tests.context import (
     OFFLINE_STATUS,
+    ONLINE_STATUS,
     EOProduct,
     NotAvailableError,
     PluginManager,
@@ -71,12 +71,12 @@ class BaseDownloadPluginTest(unittest.TestCase):
                 id="dummy",
             ),
         )
-        self.output_dir = mkdtemp()
+        self.tmp_dir = TemporaryDirectory()
+        self.output_dir = self.tmp_dir.name
 
     def tearDown(self):
         super(BaseDownloadPluginTest, self).tearDown()
-        if os.path.isdir(self.output_dir):
-            shutil.rmtree(self.output_dir)
+        self.tmp_dir.cleanup()
 
     def get_download_plugin(self, product):
         return self.plugins_manager.get_download_plugin(product)
@@ -448,6 +448,54 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     cm.output,
                 )
             self.assertEqual(len(responses.calls), 1)
+
+        run()
+
+    def test_plugins_download_http_order_status_search_again(self):
+        """HTTPDownload.orderDownloadStatus() must search again after success if needed"""
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.order_status_success = {"status": "great-success"}
+        plugin.config.order_status_on_success = {
+            "need_search": True,
+            "result_type": "xml",
+            "results_entry": "//entry",
+            "metadata_mapping": {
+                "downloadLink": "foo/text()",
+            },
+        }
+        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+        self.product.properties["searchLink"] = "http://somewhere/search-gain"
+
+        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            responses.add(
+                responses.GET,
+                "http://somewhere/order-status",
+                status=200,
+                json={"status": "great-success"},
+            )
+            responses.add(
+                responses.GET,
+                "http://somewhere/search-gain",
+                status=200,
+                body=(
+                    b"<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
+                    b"<feed>"
+                    b"<entry><foo>http://new-download-link</foo><bar>something else</bar></entry>"
+                    b"</feed>"
+                ),
+            )
+
+            plugin.orderDownloadStatus(self.product, auth=auth)
+
+            self.assertEqual(
+                self.product.properties["downloadLink"], "http://new-download-link"
+            )
+            self.assertEqual(len(responses.calls), 2)
 
         run()
 
@@ -870,3 +918,195 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.assertEqual(mock_flatten_top_directories.call_count, 0)
 
         self.assertEqual(path, execpected_output)
+
+
+class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
+    def setUp(self):
+        super(TestDownloadPluginS3Rest, self).setUp()
+
+        self.product = EOProduct(
+            "mundi",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+                downloadLink="http://somewhere/some-bucket/path/to/the/product",
+            ),
+            productType="S2_MSI_L1C",
+        )
+
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload.orderDownloadStatus", autospec=True
+    )
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.orderDownload", autospec=True)
+    def test_plugins_download_s3rest_online(self, mock_order, mock_order_status):
+        """S3RestDownload.download() must create outputfiles"""
+
+        self.product.properties["storageStatus"] = ONLINE_STATUS
+
+        plugin = self.get_download_plugin(self.product)
+        auth = self.get_auth_plugin(self.product.provider)
+        self.product.register_downloader(plugin, auth)
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            # List bucket content
+            responses.add(
+                responses.GET,
+                f"{plugin.config.base_uri}/some-bucket?prefix=path/to/the/product",
+                status=200,
+                body=(
+                    b"<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
+                    b"<ListBucketResult>"
+                    b"<Contents><Key>0/1/2/3/4/5/path/to/some.file</Key><Size>2</Size></Contents>"
+                    b"<Contents><Key>0/1/2/3/4/5/path/to/another.file</Key><Size>5</Size></Contents>"
+                    b"</ListBucketResult>"
+                ),
+            )
+            # 1st file download response
+            responses.add(
+                responses.GET,
+                f"{plugin.config.base_uri}/some-bucket/0/1/2/3/4/5/path/to/some.file",
+                status=200,
+                content_type="application/octet-stream",
+                body=b"something",
+                auto_calculate_content_length=True,
+            )
+            # 2nd file download response
+            responses.add(
+                responses.GET,
+                f"{plugin.config.base_uri}/some-bucket/0/1/2/3/4/5/path/to/another.file",
+                status=200,
+                content_type="application/octet-stream",
+                body=b"something else",
+                auto_calculate_content_length=True,
+            )
+            path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+            # there must have been 3 calls (list, 1st download, 2nd download)
+            self.assertEqual(len(responses.calls), 3)
+
+            self.assertEqual(path, os.path.join(self.output_dir, "product"))
+            self.assertTrue(
+                os.path.isfile(
+                    os.path.join(self.output_dir, "product", "path", "to", "some.file")
+                )
+            )
+            self.assertTrue(
+                os.path.isfile(
+                    os.path.join(
+                        self.output_dir, "product", "path", "to", "another.file"
+                    )
+                )
+            )
+
+        run()
+
+        mock_order.assert_not_called()
+        mock_order_status.assert_not_called()
+
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload.orderDownloadStatus", autospec=True
+    )
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.orderDownload", autospec=True)
+    def test_plugins_download_s3rest_offline(self, mock_order, mock_order_status):
+        """S3RestDownload.download() must order offline products"""
+
+        self.product.properties["storageStatus"] = OFFLINE_STATUS
+        self.product.properties["orderLink"] = "https://some/order/api"
+        self.product.properties["orderStatusLink"] = "https://some/order/status/api"
+
+        valid_remote_location = self.product.location
+        # unvalid location
+        self.product.location = self.product.remote_location = "somewhere"
+
+        plugin = self.get_download_plugin(self.product)
+        auth = self.get_auth_plugin(self.product.provider)
+        self.product.register_downloader(plugin, auth)
+
+        # no retry
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            # bucket list request
+            responses.add(
+                responses.GET,
+                "https://mundiwebservices.com/dp/somewhere?prefix=",
+                status=403,
+            )
+            with self.assertRaises(NotAvailableError):
+                plugin.download(
+                    self.product,
+                    outputs_prefix=self.output_dir,
+                    wait=-1,
+                    timeout=-1,
+                )
+            # there must have been 1 try
+            self.assertEqual(len(responses.calls), 1)
+
+        run()
+        mock_order.assert_called_once_with(mock.ANY, self.product, auth=None)
+        mock_order_status.assert_called_once_with(mock.ANY, self.product, auth=None)
+
+        mock_order.reset_mock()
+        mock_order_status.reset_mock()
+        responses.calls.reset()
+
+        # retry and success
+        self.product.retries = 0
+
+        def order_status_function(*args, **kwargs):
+            if kwargs["product"].retries >= 1:
+                kwargs["product"].properties["storageStatus"] = ONLINE_STATUS
+                kwargs["product"].properties["downloadLink"] = kwargs[
+                    "product"
+                ].location = kwargs["product"].remote_location = valid_remote_location
+            kwargs["product"].retries += 1
+
+        mock_order_status.side_effect = order_status_function
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            # 1st bucket list request
+            responses.add(
+                responses.GET,
+                "https://mundiwebservices.com/dp/somewhere?prefix=",
+                status=403,
+            )
+            # 2nd bucket list request
+            responses.add(
+                responses.GET,
+                f"{plugin.config.base_uri}/some-bucket?prefix=path/to/the/product",
+                status=200,
+                body=(
+                    b"<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
+                    b"<ListBucketResult>"
+                    b"<Contents><Key>0/1/2/3/4/5/path/to/some.file</Key><Size>2</Size></Contents>"
+                    b"</ListBucketResult>"
+                ),
+            )
+            # file download response
+            responses.add(
+                responses.GET,
+                f"{plugin.config.base_uri}/some-bucket/0/1/2/3/4/5/path/to/some.file",
+                status=200,
+                content_type="application/octet-stream",
+                body=b"something",
+                auto_calculate_content_length=True,
+            )
+            path = plugin.download(
+                self.product,
+                outputs_prefix=self.output_dir,
+                wait=0.001 / 60,
+                timeout=0.2 / 60,
+            )
+            # there must have been 2 tries and 1 download
+            self.assertEqual(len(responses.calls), 3)
+
+            self.assertEqual(path, os.path.join(self.output_dir, "product"))
+            self.assertTrue(
+                os.path.isfile(os.path.join(self.output_dir, "product", "some.file"))
+            )
+
+        run()
+        mock_order.assert_called_once_with(mock.ANY, self.product, auth=None)
+        self.assertEqual(mock_order_status.call_count, 2)

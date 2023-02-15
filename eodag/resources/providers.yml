@@ -1275,7 +1275,9 @@
       downloadLink: 'ns:link[@rel="enclosure"]/@href'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: 'DIAS:onlineStatus/text()'
-
+      # order link formated for POST request usage
+      orderLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request?{{"productId":"{id}","collectionId":"{platform}"}}'
+      searchLink: 'https://{platform}.browse.catalog.mundiwebservices.com/opensearch?uid={id}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: 'media:group/media:content[media:category="THUMBNAIL"]/@url'
   download: !plugin
@@ -1284,9 +1286,38 @@
     extract: true
     auth_error_code: 401
     bucket_path_level: 0
+    # order mechanism
+    order_enabled: true
+    order_method: 'POST'
+    order_headers:
+      accept: application/json
+      Content-Type: application/json
+    order_on_response:
+      metadata_mapping:
+        order_id: '{$.requestId#replace_str("Not Available","")}'
+        reorder_id: '{$.message.`sub(/.*requestId: ([a-z0-9]+)/, \\1)`#replace_str("Not Available","")}'
+        orderStatusLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request/{order_id}{reorder_id}'
+    order_status_method: 'GET'
+    order_status_percent: status
+    order_status_success:
+      status: Success
+    order_status_on_success:
+      need_search: true
+      result_type: 'xml'
+      results_entry: '//ns:entry'
+      metadata_mapping:
+        downloadLink: 'ns:link[@rel="enclosure"]/@href'
+        storageStatus: 'DIAS:onlineStatus/text()'
   auth: !plugin
-    type: HTTPHeaderAuth
+    # Mixed HTTPHeaderAuth and TokenAuth
+    type: TokenAuth
+    auth_uri: 'https://apis.mundiwebservices.com/token'
+    token_type: json
+    token_key: access_token
+    credentials:
+      grant_type: password
     headers:
+      Authorization: Basic cXJic1pTVjBUWTdkZzlNRGQ0Q3ZQVXkyQV9NYToxMU5oNGtFQjFva2NvZlBlRkRYemhudWxGR3dh
       Cookie: "seeedtoken={apikey}"
   products:
     S1_SAR_GRD:

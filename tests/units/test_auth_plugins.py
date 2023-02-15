@@ -73,6 +73,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "headers": {
                             "Content-Type": "application/json;charset=UTF-8",
                             "Accept": "application/json",
+                            "foo": "{foo}",
                         },
                     },
                 },
@@ -146,6 +147,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         req = mock.Mock(headers={})
         auth(req)
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
+        assert req.headers["foo"] == "bar"
 
     @mock.patch("eodag.plugins.authentication.token.requests.post", autospec=True)
     def test_plugins_auth_tokenauth_json_token_authenticate(self, mock_requests_post):
