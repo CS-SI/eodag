@@ -157,7 +157,7 @@ class TestCore(TestCoreBase):
         "S3_SRA": ["onda", "creodias", "sara"],
         "S3_SRA_A": ["sara", "creodias"],
         "S3_SRA_BS": ["onda", "creodias", "sara"],
-        "S3_SRA_A_BS": ["onda", "creodias"],
+        "S3_SRA_A_BS": ["onda"],
         "S3_LAN": ["onda", "creodias", "sara"],
         "S3_WAT": ["onda", "creodias", "sara"],
         "S3_SY_AOD": ["sara", "creodias"],
