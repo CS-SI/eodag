@@ -40,6 +40,7 @@ from tests.context import (
     EOProduct,
     NoMatchingProductType,
     PluginImplementationError,
+    ProviderConfig,
     RequestError,
     SearchResult,
     UnsupportedProvider,
@@ -146,24 +147,24 @@ class TestCore(TestCoreBase):
         "S3_RAC": ["sara"],
         "S3_OLCI_L2LFR": ["onda", "creodias", "mundi", "sara"],
         "S3_OLCI_L2LRR": ["onda", "creodias", "sara"],
-        "S3_OLCI_L2WRR": ["sara"],
-        "S3_OLCI_L2WFR": ["sara"],
+        "S3_OLCI_L2WRR": ["sara", "creodias"],
+        "S3_OLCI_L2WFR": ["sara", "creodias"],
         "S3_SLSTR_L1RBT": ["onda", "creodias", "sara"],
         "S3_SLSTR_L2LST": ["onda", "creodias", "sara"],
-        "S3_SLSTR_L2WST": ["sara"],
-        "S3_SLSTR_L2AOD": ["sara"],
-        "S3_SLSTR_L2FRP": ["sara"],
+        "S3_SLSTR_L2WST": ["sara", "creodias"],
+        "S3_SLSTR_L2AOD": ["sara", "creodias"],
+        "S3_SLSTR_L2FRP": ["sara", "creodias"],
         "S3_SRA": ["onda", "creodias", "sara"],
-        "S3_SRA_A": ["sara"],
+        "S3_SRA_A": ["sara", "creodias"],
         "S3_SRA_BS": ["onda", "creodias", "sara"],
-        "S3_SRA_A_BS": ["onda", "creodias"],
+        "S3_SRA_A_BS": ["onda"],
         "S3_LAN": ["onda", "creodias", "sara"],
         "S3_WAT": ["onda", "creodias", "sara"],
-        "S3_SY_AOD": ["sara"],
-        "S3_SY_SYN": ["sara"],
-        "S3_SY_V10": ["sara"],
-        "S3_SY_VG1": ["sara"],
-        "S3_SY_VGP": ["sara"],
+        "S3_SY_AOD": ["sara", "creodias"],
+        "S3_SY_SYN": ["sara", "creodias"],
+        "S3_SY_V10": ["sara", "creodias"],
+        "S3_SY_VG1": ["sara", "creodias"],
+        "S3_SY_VGP": ["sara", "creodias"],
         "PLD_PAN": ["theia"],
         "PLD_XS": ["theia"],
         "PLD_BUNDLE": ["theia"],
@@ -270,6 +271,8 @@ class TestCore(TestCoreBase):
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
+        # raise Exception({p:pc.api.credentials for p,pc in self.dag.providers_config.items() if hasattr(pc, "api")})
+        # raise Exception(self.dag.conf_dir)
         for provider in self.SUPPORTED_PROVIDERS:
             product_types = self.dag.list_product_types(
                 provider=provider, fetch_providers=False
@@ -804,6 +807,47 @@ class TestCore(TestCoreBase):
                 str(cm_logs.output),
             )
 
+    def test_set_preferred_provider(self):
+        """set_preferred_provider must set the preferred provider with increasing priority"""
+
+        self.assertEqual(self.dag.get_preferred_provider(), ("peps", 1))
+
+        self.assertRaises(
+            UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
+        )
+
+        self.dag.set_preferred_provider("creodias")
+        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 2))
+
+        self.dag.set_preferred_provider("theia")
+        self.assertEqual(self.dag.get_preferred_provider(), ("theia", 3))
+
+        self.dag.set_preferred_provider("creodias")
+        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 4))
+
+    def test_update_providers_config(self):
+        """update_providers_config must update providers configuration"""
+
+        new_config = """
+            my_new_provider:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://api.my_new_provider/search
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+            """
+        # add new provider
+        self.dag.update_providers_config(new_config)
+        self.assertIsInstance(
+            self.dag.providers_config["my_new_provider"], ProviderConfig
+        )
+
+        self.assertEqual(self.dag.providers_config["my_new_provider"].priority, 0)
+
+        # run a 2nd time: check that it does not raise an error
+        self.dag.update_providers_config(new_config)
+
 
 class TestCoreConfWithEnvVar(TestCoreBase):
     @classmethod
@@ -1105,7 +1149,10 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertGreater(len(guesses), 10)
 
-    def test__prepare_search_no_parameters(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_no_parameters(self, mock_fetch_product_types_list):
         """_prepare_search must create some kwargs even when no parameter has been provided"""
         prepared_search = self.dag._prepare_search()
         expected = {
@@ -1115,7 +1162,10 @@ class TestCoreSearch(TestCoreBase):
         expected = set(["geometry", "productType", "auth", "search_plugin"])
         self.assertSetEqual(expected, set(prepared_search))
 
-    def test__prepare_search_dates(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_dates(self, mock_fetch_product_types_list):
         """_prepare_search must handle start & end dates"""
         base = {
             "start": "2020-01-01",
@@ -1127,7 +1177,10 @@ class TestCoreSearch(TestCoreBase):
             prepared_search["completionTimeFromAscendingNode"], base["end"]
         )
 
-    def test__prepare_search_geom(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_geom(self, mock_fetch_product_types_list):
         """_prepare_search must handle geom, box and bbox"""
         # The default way to provide a geom is through the 'geom' argument.
         base = {"geom": (0, 50, 2, 52)}
@@ -1153,7 +1206,10 @@ class TestCoreSearch(TestCoreBase):
         self.assertNotIn("bbox", prepared_search)
         self.assertIsInstance(prepared_search["geometry"], Polygon)
 
-    def test__prepare_search_locations(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_locations(self, mock_fetch_product_types_list):
         """_prepare_search must handle a location search"""
         # When locations where introduced they could be passed
         # as regular kwargs. The new and recommended way to provide
@@ -1232,7 +1288,12 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    def test__prepare_search_search_plugin_has_generic_product_properties(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_search_plugin_has_generic_product_properties(
+        self, mock_fetch_product_types_list
+    ):
         """_prepare_search must be able to attach the generic product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:

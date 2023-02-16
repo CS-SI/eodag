@@ -90,7 +90,10 @@ class TestSearchStacStatic(unittest.TestCase):
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
-    def test_search_stac_static_load_child(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_load_child(self, mock_fetch_product_types_list):
         """load_stac_items from child catalog must provide items"""
         items = self.dag.load_stac_items(
             self.child_cat, recursive=True, provider=self.stac_provider
@@ -101,7 +104,12 @@ class TestSearchStacStatic(unittest.TestCase):
         # if no product_type is provided, product_type should be guessed from properties
         self.assertEqual(items[0].product_type, "S2_MSI_L1C")
 
-    def test_search_stac_static_load_root_not_recursive(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_load_root_not_recursive(
+        self, mock_fetch_product_types_list
+    ):
         """load_stac_items from root must provide an empty list when no recursive"""
         items = self.dag.load_stac_items(
             self.root_cat, recursive=False, provider=self.stac_provider
@@ -121,7 +129,10 @@ class TestSearchStacStatic(unittest.TestCase):
             self.assertEqual(item.provider, self.stac_provider)
             self.assertEqual(item.product_type, self.product_type)
 
-    def test_search_stac_static(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search all items"""
         items, nb = self.dag.search()
         self.assertEqual(len(items), self.root_cat_len)
@@ -129,7 +140,10 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in items:
             self.assertEqual(item.provider, self.static_stac_provider)
 
-    def test_search_stac_static_load_item(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_load_item(self, mock_fetch_product_types_list):
         """load_stac_items from a single item must provide it"""
         item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
         self.assertIsInstance(item, SearchResult)
@@ -138,7 +152,12 @@ class TestSearchStacStatic(unittest.TestCase):
         # if no product_type is provided, product_type should be guessed from properties
         self.assertEqual(item[0].product_type, "S2_MSI_L1C")
 
-    def test_search_stac_static_load_item_updated_provider(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_load_item_updated_provider(
+        self, mock_fetch_product_types_list
+    ):
         """load_stac_items from a single item using updated provider"""
         item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
 
@@ -204,7 +223,10 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in filtered_items:
             self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
 
-    def test_search_stac_static_by_date(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_by_date(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by date"""
         filtered_items, nb = self.dag.search(start="2018-01-01", end="2019-01-01")
         self.assertEqual(len(filtered_items), self.child_cat_len)
@@ -264,7 +286,10 @@ class TestSearchStacStatic(unittest.TestCase):
         )
         self.assertEqual(len(filtered_items), 1)
 
-    def test_search_stac_static_by_geom(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_by_geom(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by geometry"""
         items, nb = self.dag.search(
             geom=self.extent_big,
@@ -295,13 +320,19 @@ class TestSearchStacStatic(unittest.TestCase):
         )
         self.assertEqual(len(filtered_items), 1)
 
-    def test_search_stac_static_by_property(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_by_property(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by property"""
         items, nb = self.dag.search(orbitNumber=110)
         self.assertEqual(len(items), 3)
         self.assertEqual(nb, 3)
 
-    def test_search_stac_static_by_cloudcover(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_search_stac_static_by_cloudcover(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by cloud cover"""
         items, nb = self.dag.search(cloudCover=10)
         self.assertEqual(len(items), 1)

@@ -26,9 +26,12 @@ import shutil
 import time
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import pytest
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
-from tests import TEST_RESOURCES_PATH, TESTS_DOWNLOAD_PATH
+from tests import TEST_RESOURCES_PATH
 from tests.context import (
     GENERIC_PRODUCT_TYPE,
     AuthenticationError,
@@ -44,15 +47,7 @@ THEIA_SEARCH_ARGS = [
     "2019-03-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-PEPS_BEFORE_20161205_SEARCH_ARGS = [
-    "peps",
-    "S2_MSI_L1C",
-    "2016-06-05",
-    "2016-06-16",
-    [137.772897, -37.134202, 153.749135, 73.885986],
-    True,
-]
-PEPS_AFTER_20161205_SEARCH_ARGS = [
+PEPS_SEARCH_ARGS = [
     "peps",
     "S2_MSI_L1C",
     "2020-08-08",
@@ -127,11 +122,18 @@ ONDA_SEARCH_ARGS = [
     today.isoformat(),
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-USGS_SEARCH_ARGS = [
+USGS_RECENT_SEARCH_ARGS = [
     "usgs",
     "LANDSAT_C2L1",
     (today - 6 * week_span).isoformat(),
     (today - 5 * week_span).isoformat(),
+    [50, 50, 50.3, 50.3],
+]
+USGS_OLD_SEARCH_ARGS = [
+    "usgs",
+    "LANDSAT_C2L1",
+    "2017-03-01",
+    "2017-03-10",
     [50, 50, 50.3, 50.3],
 ]
 ECMWF_SEARCH_ARGS = [
@@ -186,6 +188,7 @@ METEOBLUE_SEARCH_ARGS = [
 ]
 
 
+@pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
     def execute_search(
         self,
@@ -284,16 +287,16 @@ class TestEODagEndToEnd(EndToEndBase):
         else:
             cls.eodag = EODataAccessGateway()
 
-        # create TESTS_DOWNLOAD_PATH is not exists
-        if not os.path.exists(TESTS_DOWNLOAD_PATH):
-            os.makedirs(TESTS_DOWNLOAD_PATH)
+        # temp download directory
+        cls.tmp_download_dir = TemporaryDirectory()
+        cls.tmp_download_path = cls.tmp_download_dir.name
 
         for provider, conf in cls.eodag.providers_config.items():
-            # Change download directory to TESTS_DOWNLOAD_PATH for tests
+            # Change download directory to cls.tmp_download_path for tests
             if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
-                conf.download.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.download.outputs_prefix = cls.tmp_download_path
             elif hasattr(conf, "api") and hasattr(conf.api, "outputs_prefix"):
-                conf.api.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.api.outputs_prefix = cls.tmp_download_path
             else:
                 # no outputs_prefix found for provider
                 pass
@@ -314,14 +317,9 @@ class TestEODagEndToEnd(EndToEndBase):
     def setUp(self):
         self.downloaded_file_path = ""
 
-    def tearDown(self):
-        try:
-            if os.path.isdir(self.downloaded_file_path):
-                shutil.rmtree(self.downloaded_file_path)
-            else:
-                os.remove(self.downloaded_file_path)
-        except OSError:
-            pass
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_download_dir.cleanup()
 
     def execute_download(self, product, expected_filename, wait_sec=5, timeout_sec=120):
         """Download the product in a child process, avoiding to perform the entire
@@ -339,7 +337,7 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         max_wait_time = timeout_sec
         while (
-            not glob.glob("%s/[!quicklooks]*" % TESTS_DOWNLOAD_PATH)
+            not glob.glob("%s/[!quicklooks]*" % self.tmp_download_path)
             and max_wait_time > 0
         ):
             # check every 2s if download has start
@@ -374,21 +372,19 @@ class TestEODagEndToEnd(EndToEndBase):
         # The partially downloaded file should be greater or equal to 5 KB
         self.assertGreaterEqual(downloaded_size, 5 * 2**10)
 
-    def test_end_to_end_search_download_usgs(self):
-        product = self.execute_search(*USGS_SEARCH_ARGS)
+    def test_end_to_end_search_download_usgs_recent(self):
+        product = self.execute_search(*USGS_RECENT_SEARCH_ARGS)
         expected_filename = "{}.tar.gz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    # may take up to 10 minutes
-    @unittest.skip("Long test skipped")
-    def test_end_to_end_search_download_peps_before_20161205(self):
-        product = self.execute_search(*PEPS_BEFORE_20161205_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
-        self.execute_download(product, expected_filename, wait_sec=30, timeout_sec=600)
+    def test_end_to_end_search_download_usgs_old(self):
+        product = self.execute_search(*USGS_OLD_SEARCH_ARGS)
+        expected_filename = "{}.tar.gz".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
-    def test_end_to_end_search_download_peps_after_20161205(self):
-        product = self.execute_search(*PEPS_AFTER_20161205_SEARCH_ARGS)
+    def test_end_to_end_search_download_peps(self):
+        product = self.execute_search(*PEPS_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
@@ -511,7 +507,9 @@ class TestEODagEndToEnd(EndToEndBase):
         uid = "S2A_MSIL1C_20200810T030551_N0209_R075_T53WPU_20200810T050611"
         provider = "creodias"
 
-        products, _ = self.eodag._search_by_id(uid=uid, provider=provider)
+        products, _ = self.eodag._search_by_id(
+            uid=uid, provider=provider, productType="S2_MSI_L1C"
+        )
         product = products[0]
 
         self.assertEqual(product.properties["id"], uid)
@@ -537,14 +535,14 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "creodias"
         ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
         self.assertEqual(
-            "Sentinel1",
-            ext_product_types_conf[provider]["providers_config"]["Sentinel1"][
+            "SENTINEL-1",
+            ext_product_types_conf[provider]["providers_config"]["SENTINEL-1"][
                 "collection"
             ],
         )
         self.assertEqual(
-            "Sentinel-1",
-            ext_product_types_conf[provider]["product_types_config"]["Sentinel1"][
+            "SENTINEL-1",
+            ext_product_types_conf[provider]["product_types_config"]["SENTINEL-1"][
                 "title"
             ],
         )
@@ -695,16 +693,16 @@ class TestEODagEndToEndComplete(unittest.TestCase):
             user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
         )
 
-        # create TESTS_DOWNLOAD_PATH is not exists
-        if not os.path.exists(TESTS_DOWNLOAD_PATH):
-            os.makedirs(TESTS_DOWNLOAD_PATH)
+        # temp download directory
+        cls.tmp_download_dir = TemporaryDirectory()
+        cls.tmp_download_path = cls.tmp_download_dir.name
 
         for provider, conf in cls.eodag.providers_config.items():
-            # Change download directory to TESTS_DOWNLOAD_PATH for tests
+            # Change download directory to cls.tmp_download_path for tests
             if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
-                conf.download.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.download.outputs_prefix = cls.tmp_download_path
             elif hasattr(conf, "api") and hasattr(conf.api, "outputs_prefix"):
-                conf.api.outputs_prefix = TESTS_DOWNLOAD_PATH
+                conf.api.outputs_prefix = cls.tmp_download_path
             else:
                 # no outputs_prefix found for provider
                 pass
@@ -717,13 +715,9 @@ class TestEODagEndToEndComplete(unittest.TestCase):
             ):
                 conf.search.product_location_scheme = "https"
 
-    def tearDown(self):
-        """Clear the test directory"""
-        for p in Path(TESTS_DOWNLOAD_PATH).glob("**/*"):
-            try:
-                os.remove(p)
-            except OSError:
-                shutil.rmtree(p)
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_download_dir.cleanup()
 
     def test_end_to_end_complete_peps(self):
         """Complete end-to-end test with PEPS for download and download_all"""
@@ -778,7 +772,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # That points to the downloaded archive
         self.assertEqual(uri_to_path(product.location), archive_file_path)
         # A .downloaded folder must have been created
-        record_dir = os.path.join(TESTS_DOWNLOAD_PATH, ".downloaded")
+        record_dir = os.path.join(self.tmp_download_path, ".downloaded")
         self.assertTrue(os.path.isdir(record_dir))
         # It must contain a file per product downloade, whose name is
         # the MD5 hash of the product's remote location
@@ -911,7 +905,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.eodag.download(product)
 
     def test_end_to_end_wrong_credentials_peps(self):
-        product = self.execute_search(*PEPS_AFTER_20161205_SEARCH_ARGS)
+        product = self.execute_search(*PEPS_SEARCH_ARGS)
         with self.assertRaises(AuthenticationError):
             self.eodag.download(product)
 
@@ -980,11 +974,14 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_search_usgs(self):
         # It should already fail while searching for the products.
-        self.eodag.set_preferred_provider(USGS_SEARCH_ARGS[0])
+        self.eodag.set_preferred_provider(USGS_RECENT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["productType", "start", "end", "geom"], USGS_SEARCH_ARGS[1:])
+                    zip(
+                        ["productType", "start", "end", "geom"],
+                        USGS_RECENT_SEARCH_ARGS[1:],
+                    )
                 ),
             )

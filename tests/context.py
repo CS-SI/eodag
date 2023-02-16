@@ -28,11 +28,13 @@ from eodag import EODataAccessGateway, api, config, setup_logging
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
-from eodag.api.product.drivers.base import NoDriver
+from eodag.api.product.drivers.base import DatasetDriver
 from eodag.api.product.metadata_mapping import (
     format_metadata,
     OFFLINE_STATUS,
     ONLINE_STATUS,
+    properties_from_json,
+    NOT_AVAILABLE,
 )
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
@@ -43,6 +45,7 @@ from eodag.config import (
     get_ext_product_types_conf,
     EXT_PRODUCT_TYPES_CONF_URI,
     PluginConfig,
+    ProviderConfig,
 )
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
@@ -90,5 +93,5 @@ from eodag.utils.exceptions import (
     STACOpenerError,
 )
 from eodag.utils.stac_reader import fetch_stac_items, HTTP_REQ_TIMEOUT, _TextOpener
-from tests import TESTS_DOWNLOAD_PATH, TEST_RESOURCES_PATH
+from tests import TEST_RESOURCES_PATH
 from usgs.api import USGSAuthExpiredError, USGSError

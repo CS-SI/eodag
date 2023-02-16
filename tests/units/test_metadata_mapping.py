@@ -17,7 +17,15 @@
 # limitations under the License.
 import unittest
 
-from tests.context import format_metadata, get_geometry_from_various
+from jsonpath_ng.ext import parse
+from shapely import wkt
+
+from tests.context import (
+    NOT_AVAILABLE,
+    format_metadata,
+    get_geometry_from_various,
+    properties_from_json,
+)
 
 
 class TestMetadataFormatter(unittest.TestCase):
@@ -116,6 +124,23 @@ class TestMetadataFormatter(unittest.TestCase):
             '{"type": "Point", "coordinates": [0.11, 1.22]}',
         )
 
+    def test_convert_from_ewkt(self):
+        to_format = "{fieldname#from_ewkt}"
+        wkt_str = format_metadata(
+            to_format, fieldname="SRID=3857;POINT (321976 5390999)"
+        )
+        geom = wkt.loads(wkt_str)
+        self.assertEqual(round(geom.x, 1), 43.5)
+        self.assertEqual(round(geom.y, 1), 2.9)
+
+    def test_convert_to_ewkt(self):
+        to_format = "{fieldname#to_ewkt}"
+        geom = get_geometry_from_various(geometry="POINT (0.11 1.22)")
+        self.assertEqual(
+            format_metadata(to_format, fieldname=geom),
+            "SRID=4326;POINT (0.1100 1.2200)",
+        )
+
     def test_convert_csv_list(self):
         to_format = "{fieldname#csv_list}"
         self.assertEqual(
@@ -194,4 +219,68 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, **{"some_extension:a_parameter": "value"}),
             "value",
+        )
+
+    def test_properties_from_json_discovery_config(self):
+        """properties_from_json must extract and discover metadata"""
+        json = {
+            "foo": "foo-val",
+            "bar": "bar-val",
+            "baz": {"baaz": "baz-val"},
+            "qux": [
+                {"somekey": "a", "someval": "a-val"},
+                {"somekey": "b", "someval": "b-val", "some": "thing"},
+                {"somekey": "c"},
+                {"someval": "d-val"},
+            ],
+            "ignored": "ignored-val",
+        }
+        mapping = {
+            "fooProperty": (None, parse("$.foo")),
+            "missingProperty": (None, parse("$.missing")),
+        }
+        # basic discovery
+        discovery_config = {
+            "auto_discovery": True,
+            "metadata_pattern": r"^(?!ignored)[a-zA-Z0-9_]+$",
+            "metadata_path": "$.*",
+        }
+        properties = properties_from_json(
+            json=json, mapping=mapping, discovery_config=discovery_config
+        )
+        self.assertDictEqual(
+            properties,
+            {
+                "fooProperty": "foo-val",
+                "bar": "bar-val",
+                "baz": {"baaz": "baz-val"},
+                "missingProperty": NOT_AVAILABLE,
+                "qux": [
+                    {"somekey": "a", "someval": "a-val"},
+                    {"somekey": "b", "someval": "b-val", "some": "thing"},
+                    {"somekey": "c"},
+                    {"someval": "d-val"},
+                ],
+            },
+        )
+        # advanced discovery
+        discovery_config = {
+            "auto_discovery": True,
+            "metadata_pattern": r"^(?!ignored)[a-zA-Z0-9_]+$",
+            "metadata_path": "$.qux[*]",
+            "metadata_path_id": "somekey",
+            "metadata_path_value": "someval",
+        }
+        properties = properties_from_json(
+            json=json, mapping=mapping, discovery_config=discovery_config
+        )
+        self.assertDictEqual(
+            properties,
+            {
+                "fooProperty": "foo-val",
+                "missingProperty": NOT_AVAILABLE,
+                "a": "a-val",
+                "b": "b-val",
+                "c": NOT_AVAILABLE,
+            },
         )

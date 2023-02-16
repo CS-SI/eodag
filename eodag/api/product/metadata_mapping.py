@@ -20,17 +20,22 @@ import logging
 import re
 from copy import deepcopy
 from datetime import datetime, timedelta
+from functools import partial
 from string import Formatter
 
 import geojson
+import pyproj
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
+from jsonpath_ng.jsonpath import Child, Fields, Index
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon
+from shapely.ops import transform
 
 from eodag.utils import (
+    DEFAULT_PROJ,
     cached_parse,
     get_timestamp,
     items_recursive_apply,
@@ -131,6 +136,8 @@ def format_metadata(search_param, *args, **kwargs):
         - ``to_nwse_bounds``: convert to North,West,South,East bounds
         - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
         - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
+        - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
+        - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
         - ``csv_list``: convert to a comma separated list
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
           milliseconds to a utc iso datetime
@@ -304,6 +311,36 @@ def format_metadata(search_param, *args, **kwargs):
             return geojson.dumps(string)
 
         @staticmethod
+        def convert_from_ewkt(ewkt_string):
+            """Convert EWKT (Extended Well-Known text) to shapely geometry"""
+
+            ewkt_regex = re.compile(r"^(?P<proj>[A-Za-z]+=[0-9]+);(?P<wkt>.*)$")
+            ewkt_match = ewkt_regex.match(ewkt_string)
+            if ewkt_match:
+                g = ewkt_match.groupdict()
+                from_proj = g["proj"].replace("SRID", "EPSG").replace("=", ":")
+                input_geom = wkt.loads(g["wkt"])
+
+                from_proj = pyproj.Proj(from_proj)
+                to_proj = pyproj.Proj(DEFAULT_PROJ)
+
+                project = partial(pyproj.transform, from_proj, to_proj)
+
+                return transform(project, input_geom)
+            else:
+                logger.warning(f"Could not read {ewkt_string} as EWKT")
+                return ewkt_string
+
+        @staticmethod
+        def convert_to_ewkt(input_geom):
+            """Convert shapely geometry to EWKT (Extended Well-Known text)"""
+
+            proj = DEFAULT_PROJ.upper().replace("EPSG", "SRID").replace(":", "=")
+            wkt_geom = MetadataFormatter.convert_to_rounded_wkt(input_geom)
+
+            return f"{proj};{wkt_geom}"
+
+        @staticmethod
         def convert_csv_list(values_list):
             if isinstance(values_list, list):
                 return ",".join([str(x) for x in values_list])
@@ -338,7 +375,7 @@ def format_metadata(search_param, *args, **kwargs):
             return items_recursive_apply(
                 input_obj,
                 lambda k, v, x, y: re.sub(x, y, v) if isinstance(v, str) else v,
-                **{"x": old, "y": new}
+                **{"x": old, "y": new},
             )
 
         @staticmethod
@@ -407,7 +444,7 @@ def format_metadata(search_param, *args, **kwargs):
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
-def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=None):
+def properties_from_json(json, mapping, discovery_config=None):
     """Extract properties from a provider json result.
 
     :param json: The representation of a provider result as a json object
@@ -416,11 +453,10 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
                     keys and the location of the values of these properties in the json
                     representation, expressed as a
                     `jsonpath <http://goessner.net/articles/JsonPath/>`_
-    :param discovery_pattern: (optional) Regex pattern for metadata key discovery,
-                              e.g. "^[a-zA-Z]+$"
-    :type discovery_pattern: str
-    :param discovery_path: (optional) String representation of jsonpath
-    :type discovery_path: str
+    :param discovery_config: (optional) metadata discovery configuration dict, accepting among other items
+                             `discovery_pattern` (Regex pattern for metadata key discovery, e.g. "^[a-zA-Z]+$"),
+                             `discovery_path` (String representation of jsonpath)
+    :type discovery_config: dict
     :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
@@ -442,7 +478,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
             match = path_or_text.find(json)
             if len(match) == 1:
                 extracted_value = match[0].value
-                used_jsonpaths.append(match[0].path)
+                used_jsonpaths.append(match[0].full_path)
             else:
                 extracted_value = NOT_AVAILABLE
             if extracted_value is None:
@@ -470,7 +506,7 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
 
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
-                        **{metadata: extracted_value}
+                        **{metadata: extracted_value},
                     )
         # properties as python objects when possible (format_metadata returns only strings)
         try:
@@ -480,19 +516,59 @@ def properties_from_json(json, mapping, discovery_pattern=None, discovery_path=N
 
     # Resolve templates
     for metadata, template in templates.items():
-        properties[metadata] = template.format(**properties)
+        try:
+            properties[metadata] = template.format(**properties)
+        except ValueError:
+            logger.warning(
+                f"Could not parse {metadata} ({template}) using product properties"
+            )
+            logger.debug(f"available properties: {properties}")
+            properties[metadata] = NOT_AVAILABLE
 
     # adds missing discovered properties
+    if not discovery_config:
+        discovery_config = {}
+    discovery_pattern = discovery_config.get("metadata_pattern", None)
+    discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
         discovered_properties = cached_parse(discovery_path).find(json)
         for found_jsonpath in discovered_properties:
-            found_key = found_jsonpath.path.fields[-1]
+            if "metadata_path_id" in discovery_config.keys():
+                found_key_paths = cached_parse(
+                    discovery_config["metadata_path_id"]
+                ).find(found_jsonpath.value)
+                if not found_key_paths:
+                    continue
+                found_key = found_key_paths[0].value
+                used_jsonpath = Child(
+                    found_jsonpath.full_path,
+                    cached_parse(discovery_config["metadata_path_value"]),
+                )
+            else:
+                # default key got from metadata_path
+                found_key = found_jsonpath.path.fields[-1]
+                used_jsonpath = found_jsonpath.full_path
             if (
                 re.compile(discovery_pattern).match(found_key)
                 and found_key not in properties.keys()
-                and found_jsonpath.path not in used_jsonpaths
+                and used_jsonpath not in used_jsonpaths
             ):
-                properties[found_key] = found_jsonpath.value
+                if "metadata_path_value" in discovery_config.keys():
+                    found_value_path = cached_parse(
+                        discovery_config["metadata_path_value"]
+                    ).find(found_jsonpath.value)
+                    properties[found_key] = (
+                        found_value_path[0].value if found_value_path else NOT_AVAILABLE
+                    )
+                else:
+                    # default value got from metadata_path
+                    properties[found_key] = found_jsonpath.value
+
+                # properties as python objects when possible (format_metadata returns only strings)
+                try:
+                    properties[found_key] = ast.literal_eval(properties[found_key])
+                except Exception:
+                    pass
 
     return properties
 
@@ -501,8 +577,7 @@ def properties_from_xml(
     xml_as_text,
     mapping,
     empty_ns_prefix="ns",
-    discovery_pattern=None,
-    discovery_path=None,
+    discovery_config=None,
 ):
     """Extract properties from a provider xml result.
 
@@ -518,11 +593,10 @@ def properties_from_xml(
                             xpath in `mapping` must use this value to be able to
                             correctly reach empty-namespace prefixed elements
     :type empty_ns_prefix: str
-    :param discovery_pattern: (optional) Regex pattern for metadata key discovery,
-                              e.g. "^[a-zA-Z]+$"
-    :type discovery_pattern: str
-    :param discovery_path: (optional) String representation of jsonpath
-    :type discovery_path: str
+    :param discovery_config: (optional) metadata discovery configuration dict, accepting among other items
+                             `discovery_pattern` (Regex pattern for metadata key discovery, e.g. "^[a-zA-Z]+$"),
+                             `discovery_path` (String representation of xpath)
+    :type discovery_config: dict
     :returns: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
@@ -559,7 +633,7 @@ def properties_from_xml(
                         conversion_or_none = conversion_or_none[0]
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
-                        **{metadata: extracted_value[0]}
+                        **{metadata: extracted_value[0]},
                     )
                 # store element tag in used_xpaths
                 used_xpaths.append(
@@ -588,7 +662,7 @@ def properties_from_xml(
                                 SEP,
                                 conversion_or_none,
                             ),  # Re-build conversion format identifier
-                            **{metadata: extracted_value_item}
+                            **{metadata: extracted_value_item},
                         )
                         for extracted_value_item in extracted_value
                     ]
@@ -611,6 +685,10 @@ def properties_from_xml(
         properties[metadata] = template.format(**properties)
 
     # adds missing discovered properties
+    if not discovery_config:
+        discovery_config = {}
+    discovery_pattern = discovery_config.get("metadata_pattern", None)
+    discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
         # discovered_properties = discovery_path.find(json)
         discovered_properties = root.xpath(
@@ -629,7 +707,9 @@ def properties_from_xml(
     return properties
 
 
-def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
+def mtd_cfg_as_jsonpath(
+    src_dict, dest_dict={}, common_jsonpath=None, keep_conversion=True
+):
     """Metadata configuration dictionary to jsonpath objects dictionnay
     Transform every src_dict value from jsonpath str to jsonpath object
 
@@ -637,9 +717,21 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
     :type src_dict: dict
     :param dest_dict: (optional) Output dict containing jsonpath objects as values
     :type dest_dict: dict
+    :param common_jsonpath: (optional) common jsonpath used optimize jsonpath build process
+    :type common_jsonpath: str
+    :param keep_conversion: (optional) whether to keep conversion on parse error or not
+    :type keep_conversion: bool
     :returns: dest_dict
     :rtype: dict
     """
+    if common_jsonpath:
+        common_jsonpath_parsed = cached_parse(common_jsonpath)
+        common_jsonpath_match = re.compile(
+            rf"^{re.escape(common_jsonpath)}\.[a-zA-Z0-9-_:\.\[\]\"]+$"
+        )
+        array_field_match = re.compile(r"^[a-zA-Z0-9-_:]+\[[0-9]+\]$")
+    else:
+        common_jsonpath_match = None
     if not dest_dict:
         dest_dict = deepcopy(src_dict)
     for metadata in src_dict:
@@ -648,17 +740,47 @@ def mtd_cfg_as_jsonpath(src_dict, dest_dict={}):
         else:
             conversion, path = get_metadata_path(dest_dict[metadata])
             try:
+                # combine with common jsonpath if possible
+                if common_jsonpath_match and common_jsonpath_match.match(path):
+                    path_suffix = path[len(common_jsonpath) + 1 :]
+                    path_splits = path_suffix.split(".")
+                    parsed_path = common_jsonpath_parsed
+                    for path_split in path_splits:
+                        path_split = path_split.strip("'").strip('"')
+                        if "[" in path_split and array_field_match.match(path_split):
+                            # simple array field
+                            indexed_path, index = path_split[:-1].split("[")
+                            index = int(index)
+                            parsed_path = Child(
+                                Child(parsed_path, Fields(indexed_path)),
+                                Index(index=index),
+                            )
+                            continue
+                        elif "[" in path_split:
+                            # nested array field
+                            parsed_path = cached_parse(path)
+                            break
+                        else:
+                            parsed_path = Child(parsed_path, Fields(path_split))
+                else:
+                    parsed_path = cached_parse(path)
                 # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
                 if len(dest_dict[metadata]) == 2:
-                    dest_dict[metadata][1] = (conversion, cached_parse(path))
+                    dest_dict[metadata][1] = (conversion, parsed_path)
                 else:
-                    dest_dict[metadata] = (conversion, cached_parse(path))
+                    dest_dict[metadata] = (conversion, parsed_path)
             except Exception:  # jsonpath_ng does not provide a proper exception
-                # Keep path as this and its associated conversion
+                # Keep path as this and its associated conversion (or None if not keep_conversion)
+                if not keep_conversion:
+                    conversion = None
                 if len(dest_dict[metadata]) == 2:
                     dest_dict[metadata][1] = (conversion, path)
                 else:
                     dest_dict[metadata] = (conversion, path)
+
+            # Put the updated mapping at the end
+            dest_dict[metadata] = dest_dict.pop(metadata)
+
     return dest_dict
 
 
@@ -757,5 +879,5 @@ DEFAULT_METADATA_MAPPING = dict(
         # either after the search result is obtained from the provider or during the eodag
         # download phase)
         "downloadLink": "$.properties.downloadLink",
-    }
+    },
 )

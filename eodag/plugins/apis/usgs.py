@@ -141,7 +141,18 @@ class UsgsApi(Download, Api):
             )
             if download_options.get("data", None) is not None:
                 for download_option in download_options["data"]:
-                    if "dds" in download_option["downloadSystem"]:
+                    # update results with available downloadSystem
+                    if (
+                        "dds" in download_option["downloadSystem"]
+                        and download_option["available"]
+                    ):
+                        results_by_entity_id[download_option["entityId"]].update(
+                            download_option
+                        )
+                    elif (
+                        "zip" in download_option["downloadSystem"]
+                        and download_option["available"]
+                    ):
                         results_by_entity_id[download_option["entityId"]].update(
                             download_option
                         )
@@ -156,7 +167,13 @@ class UsgsApi(Download, Api):
             # A deepcopy is done to prevent self.config.metadata_mapping from being modified when metas[metadata]
             # is a list and is modified
             metas.update(copy.deepcopy(self.config.metadata_mapping))
-            metas = mtd_cfg_as_jsonpath(metas)
+            # common_jsonpath usage to optimize jsonpath build process
+            mtd_cfg_as_jsonpath_options = {}
+            if hasattr(self.config, "common_metadata_mapping_path"):
+                mtd_cfg_as_jsonpath_options[
+                    "common_jsonpath"
+                ] = self.config.common_metadata_mapping_path
+            metas = mtd_cfg_as_jsonpath(metas, **mtd_cfg_as_jsonpath_options)
 
             for result in results["data"]["results"]:
 
@@ -271,12 +288,12 @@ class UsgsApi(Download, Api):
                 ) as stream:
                     try:
                         stream.raise_for_status()
-                    except RequestException:
-                        import traceback as tb
-
-                        logger.error(
-                            f"Error while getting resource :\n{tb.format_exc()}",
-                        )
+                    except RequestException as e:
+                        if hasattr(e, "response") and hasattr(e.response, "content"):
+                            error_message = f"{e.response.content} - {e}"
+                        else:
+                            error_message = str(e)
+                        raise NotAvailableError(error_message)
                     else:
                         stream_size = int(stream.headers.get("content-length", 0))
                         progress_callback.reset(total=stream_size)
@@ -286,7 +303,11 @@ class UsgsApi(Download, Api):
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
             except requests.exceptions.Timeout as e:
-                raise NotAvailableError(str(e))
+                if hasattr(e, "response") and hasattr(e.response, "content"):
+                    error_message = f"{e.response.content} - {e}"
+                else:
+                    error_message = str(e)
+                raise NotAvailableError(error_message)
 
         download_request(product, fs_path, progress_callback, **kwargs)
 

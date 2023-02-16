@@ -1,6 +1,23 @@
 Release history
 ---------------
 
+2.9.0 (2023-02-16)
+++++++++++++++++++
+
+* Optimizes search time mixing count and search requests when possible (:pull:`632`)
+* Optimizes search time with rewritten `JSONPath.parse` usage now based on a
+  `common_metadata_mapping_path` (:pull:`626`)
+* `creodias` API update, from resto to OData (:pull:`623`)(:pull:`639`)
+* Optimizes and updates `onda` search (:pull:`616`)(:pull:`636`)
+* Fixes OFFLINE products order mechanism for `mundi` provider (:pull:`645`)
+* Download progress bar adjustable refresh time (:pull:`643`)
+* Simplify `OData` metadata mapping using pre-mapping (:pull:`622`)
+* Fixes download error for single-asset products on STAC providers (:pull:`634`)
+* Tests execution optimized (:pull:`631`)
+* Various minor fixes and improvements (:pull:`612`)(:pull:`619`)(:pull:`620`)(:pull:`621`)(:pull:`624`)(:pull:`625`)
+  (:pull:`629`)(:pull:`630`)(:pull:`635`)(:pull:`638`)(:pull:`640`)(:pull:`641`)(:pull:`642`)(:pull:`644`)(:pull:`646`)
+  (:pull:`647`)
+
 2.8.0 (2023-01-17)
 ++++++++++++++++++
 

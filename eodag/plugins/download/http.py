@@ -25,6 +25,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
+from lxml import etree
 from requests import HTTPError, RequestException
 
 from eodag.api.product.metadata_mapping import (
@@ -32,6 +33,7 @@ from eodag.api.product.metadata_mapping import (
     ONLINE_STATUS,
     mtd_cfg_as_jsonpath,
     properties_from_json,
+    properties_from_xml,
 )
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -47,6 +49,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
+    DownloadError,
     MisconfiguredError,
     NotAvailableError,
 )
@@ -102,10 +105,10 @@ class HTTPDownload(Download):
             # separate url & parameters
             parts = urlparse(product.properties["orderLink"])
             query_dict = parse_qs(parts.query)
-            if not query_dict:
+            if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             order_url = parts._replace(query=None).geturl()
-            order_kwargs = {"json": query_dict}
+            order_kwargs = {"json": query_dict} if query_dict else {}
         else:
             order_url = product.properties["orderLink"]
             order_kwargs = {}
@@ -126,7 +129,7 @@ class HTTPDownload(Download):
                 logger.warning(
                     "%s could not be ordered, request returned %s",
                     product.properties["title"],
-                    e,
+                    f"{e.response.content} - {e}",
                 )
 
         order_metadata_mapping = getattr(self.config, "order_on_response", {}).get(
@@ -182,10 +185,10 @@ class HTTPDownload(Download):
             # separate url & parameters
             parts = urlparse(product.properties["orderStatusLink"])
             query_dict = parse_qs(parts.query)
-            if not query_dict:
+            if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             status_url = parts._replace(query=None).geturl()
-            status_kwargs = {"json": query_dict}
+            status_kwargs = {"json": query_dict} if query_dict else {}
         else:
             status_url = product.properties["orderStatusLink"]
             status_kwargs = {}
@@ -206,8 +209,11 @@ class HTTPDownload(Download):
                     self.config, "order_status_percent", None
                 )
                 if order_status_percent_key and order_status_percent_key in status_dict:
+                    order_status_value = str(status_dict[order_status_percent_key])
+                    if order_status_value.isdigit():
+                        order_status_value += "%"
                     logger.info(
-                        f"{product.properties['title']} order status: {status_dict[order_status_percent_key]}%"
+                        f"{product.properties['title']} order status: {order_status_value}"
                     )
                 # display error if any
                 order_status_error_dict = getattr(self.config, "order_status_error", {})
@@ -219,6 +225,79 @@ class HTTPDownload(Download):
                     logger.warning(status_message)
                 else:
                     logger.debug(status_message)
+                # check if succeeds and need search again
+                order_status_success_dict = getattr(
+                    self.config, "order_status_success", {}
+                )
+                if (
+                    order_status_success_dict
+                    and order_status_success_dict.items() <= status_dict.items()
+                    and getattr(self.config, "order_status_on_success", {}).get(
+                        "need_search"
+                    )
+                ):
+                    logger.debug(
+                        f"Search for new location: {product.properties['searchLink']}"
+                    )
+                    # search again
+                    response = requests.get(product.properties["searchLink"])
+                    response.raise_for_status()
+                    if (
+                        self.config.order_status_on_success.get("result_type", "json")
+                        == "xml"
+                    ):
+                        root_node = etree.fromstring(response.content)
+                        namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
+                        results = [
+                            etree.tostring(entry)
+                            for entry in root_node.xpath(
+                                self.config.order_status_on_success["results_entry"],
+                                namespaces=namespaces,
+                            )
+                        ]
+                        if isinstance(results, list) and len(results) != 1:
+                            raise DownloadError(
+                                "Could not get a single result after order success for "
+                                f"{product.properties['searchLink']} request. "
+                                f"Please search and download {product} again"
+                            )
+                            return
+                        try:
+                            assert isinstance(
+                                results, list
+                            ), "results must be in a list"
+                            # single result
+                            result = results[0]
+                            # parse result
+                            new_search_metadata_mapping = (
+                                self.config.order_status_on_success["metadata_mapping"]
+                            )
+                            order_metadata_mapping_jsonpath = {}
+                            order_metadata_mapping_jsonpath = mtd_cfg_as_jsonpath(
+                                new_search_metadata_mapping,
+                                order_metadata_mapping_jsonpath,
+                            )
+                            properties_update = properties_from_xml(
+                                result,
+                                order_metadata_mapping_jsonpath,
+                            )
+                        except Exception as e:
+                            logger.debug(e)
+                            raise DownloadError(
+                                f"Could not parse result after order success for {product.properties['searchLink']} "
+                                f"request. Please search and download {product} again"
+                            )
+                        # update product
+                        product.properties.update(properties_update)
+                        product.location = product.remote_location = product.properties[
+                            "downloadLink"
+                        ]
+                    else:
+                        logger.warning(
+                            "JSON response parsing is not implemented yet for new searches "
+                            f"after order success. Please search and download {product} again"
+                        )
+
             except RequestException as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
@@ -308,10 +387,10 @@ class HTTPDownload(Download):
                 # separate url & parameters
                 parts = urlparse(url)
                 query_dict = parse_qs(parts.query)
-                if not query_dict:
+                if not query_dict and parts.query:
                     query_dict = geojson.loads(parts.query)
                 req_url = parts._replace(query=None).geturl()
-                req_kwargs = {"json": query_dict}
+                req_kwargs = {"json": query_dict} if query_dict else {}
             else:
                 req_url = url
                 req_kwargs = {}

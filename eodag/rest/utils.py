@@ -299,15 +299,6 @@ def get_datetime(arguments):
 def get_metadata_query_paths(metadata_mapping):
     """Get dict of query paths and their names from metadata_mapping
 
-    >>> metadata_mapping = {
-    ...     'cloudCover': [
-    ...         '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}',
-    ...         '$.properties."eo:cloud_cover"'
-    ...     ]
-    ... }
-    >>> get_metadata_query_paths(metadata_mapping)
-    {'query.eo:cloud_cover.lte': 'cloudCover'}
-
     :param metadata_mapping: STAC metadata mapping (see 'resources/stac_provider.yml')
     :type metadata_mapping: dict
     :returns: Mapping of query paths with their corresponding names
@@ -344,10 +335,6 @@ def get_arguments_query_paths(arguments):
     Build a mapping of the query paths present in the arguments
     with their values. All matching paths of our STAC_QUERY_PATTERN
     ('query.*.*') are used.
-
-    >>> arguments = {'another': 'example', 'query': {'eo:cloud_cover': {'lte': '10'}, 'foo': {'eq': 'bar'}}}
-    >>> get_arguments_query_paths(arguments)
-    {'query.eo:cloud_cover.lte': '10', 'query.foo.eq': 'bar'}
 
     :param arguments: Request args
     :type arguments: dict

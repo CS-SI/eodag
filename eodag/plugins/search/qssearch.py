@@ -19,7 +19,6 @@
 import json
 import logging
 import re
-from copy import deepcopy
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import urlopen
 
@@ -31,7 +30,6 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
     format_metadata,
-    get_metadata_path,
     get_metadata_path_value,
     get_search_param,
     mtd_cfg_as_jsonpath,
@@ -384,7 +382,14 @@ class QueryStringSearch(Search):
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
+        if not count and hasattr(self, "total_items_nb"):
+            # do not try to extract total_items from search results if count is False
+            del self.total_items_nb
+            del self.need_count
+
         provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
+        if count and total_items is None and hasattr(self, "total_items_nb"):
+            total_items = self.total_items_nb
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
@@ -392,39 +397,24 @@ class QueryStringSearch(Search):
     def update_metadata_mapping(self, metadata_mapping):
         """Update plugin metadata_mapping with input metadata_mapping configuration"""
         self.config.metadata_mapping.update(metadata_mapping)
-        for metadata in metadata_mapping:
-            path = get_metadata_path_value(self.config.metadata_mapping[metadata])
-            # check if path has already been parsed
-            if isinstance(path, str):
-                conversion, path = get_metadata_path(
-                    self.config.metadata_mapping[metadata]
-                )
-                try:
-                    # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (
-                            conversion,
-                            cached_parse(path),
-                        )
-                    else:
-                        self.config.metadata_mapping[metadata] = (
-                            conversion,
-                            cached_parse(path),
-                        )
-                except Exception:  # jsonpath_ng does not provide a proper exception
-                    # Assume the mapping is to be passed as is.
-                    # Ignore any transformation specified. If a value is to be passed as is, we don't want to transform
-                    # it further
-                    _, text = get_metadata_path(self.config.metadata_mapping[metadata])
-                    if len(self.config.metadata_mapping[metadata]) == 2:
-                        self.config.metadata_mapping[metadata][1] = (None, text)
-                    else:
-                        self.config.metadata_mapping[metadata] = (None, text)
-
-                # Put the updated mapping at the end
-                self.config.metadata_mapping[
-                    metadata
-                ] = self.config.metadata_mapping.pop(metadata)
+        unparsed_metadata = {
+            k: v
+            for k, v in metadata_mapping.items()
+            if isinstance(get_metadata_path_value(self.config.metadata_mapping[k]), str)
+        }
+        # common_jsonpath usage to optimize jsonpath build process
+        # On error, assume the mapping is to be passed as is. Ignore any transformation specified.
+        #   If a value is to be passed as is, we don't want to transform it further
+        mtd_cfg_as_jsonpath_options = {"keep_conversion": False}
+        if hasattr(self.config, "common_metadata_mapping_path"):
+            mtd_cfg_as_jsonpath_options[
+                "common_jsonpath"
+            ] = self.config.common_metadata_mapping_path
+        self.config.metadata_mapping = mtd_cfg_as_jsonpath(
+            unparsed_metadata,
+            self.config.metadata_mapping,
+            **mtd_cfg_as_jsonpath_options,
+        )
 
     def build_query_string(self, product_type, **kwargs):
         """Build The query string using the search parameters"""
@@ -506,7 +496,10 @@ class QueryStringSearch(Search):
                     format_metadata(operand, **kwargs)
                     for operand in operands
                     if any(
-                        kw in operand and val is not None for kw, val in kwargs.items()
+                        re.search(rf"{{{kw}[}}#]", operand)
+                        and val is not None
+                        and isinstance(self.config.metadata_mapping.get(kw, []), list)
+                        for kw, val in kwargs.items()
                     )
                 )
                 # Finally wrap the operation string as specified by the wrapper and add
@@ -579,6 +572,13 @@ class QueryStringSearch(Search):
         """Build paginated urls"""
         urls = []
         total_results = 0 if count else None
+
+        if "count_endpoint" not in self.config.pagination:
+            # if count_endpoint is not set, total_results should be extracted from search result
+            total_results = None
+            self.need_count = True
+            self.total_items_nb = None
+
         for collection in self.get_collections(**kwargs):
             # skip empty collection if one is required in api_endpoint
             if "{collection}" in self.config.api_endpoint and not collection:
@@ -596,22 +596,10 @@ class QueryStringSearch(Search):
                         _total_results = self.count_hits(
                             count_url, result_type=self.config.result_type
                         )
-                    else:
-                        # First do one request querying only one element (lightweight
-                        # request to schedule the pagination)
-                        next_url_tpl = self.config.pagination["next_page_url_tpl"]
-                        count_url = next_url_tpl.format(
-                            url=search_endpoint,
-                            search=self.query_string,
-                            items_per_page=1,
-                            page=1,
-                            skip=0,
-                            skip_base_1=1,
-                        )
-                        _total_results = self.count_hits(
-                            count_url, result_type=self.config.result_type
-                        )
-                    total_results += _total_results or 0
+                        if getattr(self.config, "merge_responses", False):
+                            total_results = _total_results or 0
+                        else:
+                            total_results += _total_results or 0
                 next_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=self.query_string,
@@ -634,6 +622,14 @@ class QueryStringSearch(Search):
         :param items_per_page: (optional) The number of items to return for one page
         :type items_per_page: int
         """
+        if getattr(self, "need_count", False):
+            # extract total_items_nb from search results
+            total_items_nb = 0
+            if self.config.result_type == "json":
+                total_items_nb_key_path_parsed = cached_parse(
+                    self.config.pagination["total_items_nb_key_path"]
+                )
+
         results = []
         for search_url in self.search_urls:
             try:
@@ -644,7 +640,10 @@ class QueryStringSearch(Search):
                     "instance:".format(self.provider, self.__class__.__name__),
                 )
             except RequestError:
-                return []
+                if kwargs.get("raise_errors", False):
+                    raise
+                else:
+                    return []
             else:
                 next_page_url_key_path = self.config.pagination.get(
                     "next_page_url_key_path", None
@@ -669,6 +668,25 @@ class QueryStringSearch(Search):
                             "Setting the next page url from an XML response has not "
                             "been implemented yet"
                         )
+                    if getattr(self, "need_count", False):
+                        # extract total_items_nb from search results
+                        try:
+                            total_nb_results = root_node.xpath(
+                                self.config.pagination["total_items_nb_key_path"],
+                                namespaces={
+                                    k or "ns": v for k, v in root_node.nsmap.items()
+                                },
+                            )[0]
+                            _total_items_nb = int(total_nb_results)
+
+                            if getattr(self.config, "merge_responses", False):
+                                total_items_nb = _total_items_nb or 0
+                            else:
+                                total_items_nb += _total_items_nb or 0
+                        except IndexError:
+                            logger.debug(
+                                "Could not extract total_items_nb from search results"
+                            )
                 else:
                     resp_as_json = response.json()
                     if next_page_url_key_path:
@@ -706,6 +724,21 @@ class QueryStringSearch(Search):
                             logger.debug("Next page merge could not be collected")
 
                     result = resp_as_json.get(self.config.results_entry, [])
+
+                    if getattr(self, "need_count", False):
+                        # extract total_items_nb from search results
+                        try:
+                            _total_items_nb = total_items_nb_key_path_parsed.find(
+                                resp_as_json
+                            )[0].value
+                            if getattr(self.config, "merge_responses", False):
+                                total_items_nb = _total_items_nb or 0
+                            else:
+                                total_items_nb += _total_items_nb or 0
+                        except IndexError:
+                            logger.debug(
+                                "Could not extract total_items_nb from search results"
+                            )
                 if getattr(self.config, "merge_responses", False):
                     results = (
                         [dict(r, **result[i]) for i, r in enumerate(results)]
@@ -714,6 +747,9 @@ class QueryStringSearch(Search):
                     )
                 else:
                     results.extend(result)
+            if getattr(self, "need_count", False):
+                self.total_items_nb = total_items_nb
+                del self.need_count
             if items_per_page is not None and len(results) == items_per_page:
                 return results
         return results
@@ -732,12 +768,7 @@ class QueryStringSearch(Search):
                 QueryStringSearch.extract_properties[self.config.result_type](
                     result,
                     self.config.metadata_mapping,
-                    discovery_pattern=getattr(self.config, "discover_metadata", {}).get(
-                        "metadata_pattern", None
-                    ),
-                    discovery_path=getattr(self.config, "discover_metadata", {}).get(
-                        "metadata_path", "null"
-                    ),
+                    discovery_config=getattr(self.config, "discover_metadata", {}),
                 ),
                 **kwargs,
             )
@@ -801,40 +832,18 @@ class QueryStringSearch(Search):
             else:
                 collections.add(collection)
             return tuple(collections)
-        if self.provider == "peps":
-            if product_type == "S2_MSI_L1C":
-                date = kwargs.get("startTimeFromAscendingNode")
-                # If there is no criteria on date, we want to query all the collections
-                # known for providing L1C products
-                if date is None:
-                    collections = ("S2", "S2ST")
-                else:
-                    match = re.match(
-                        r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})", date
-                    ).groupdict()
-                    year, month, day = (
-                        int(match["year"]),
-                        int(match["month"]),
-                        int(match["day"]),
-                    )
-                    if year > 2016 or (year == 2016 and month == 12 and day > 5):
-                        collections = ("S2ST",)
-                    else:
-                        collections = ("S2", "S2ST")
-            else:
-                collections = (self.product_type_def_params.get("collection", ""),)
-        else:
-            collection = getattr(self.config, "collection", None)
-            if collection is None:
-                collection = (
-                    self.product_type_def_params.get("collection", None) or product_type
-                )
-            collections = (
-                (collection,) if not isinstance(collection, list) else tuple(collection)
+
+        collection = getattr(self.config, "collection", None)
+        if collection is None:
+            collection = (
+                self.product_type_def_params.get("collection", None) or product_type
             )
+        collections = (
+            (collection,) if not isinstance(collection, list) else tuple(collection)
+        )
         return collections
 
-    def map_product_type(self, product_type):
+    def map_product_type(self, product_type, **kwargs):
         """Map the eodag product type to the provider product type"""
         if product_type is None:
             return
@@ -881,7 +890,7 @@ class QueryStringSearch(Search):
             # use urllib instead of requests if req must be sent unquoted
             if hasattr(self.config, "dont_quote"):
                 # keep unquoted desired params
-                base_url, params = url.split("?")
+                base_url, params = url.split("?") if "?" in url else (url, "")
                 qry = quote(params)
                 for keep_unquoted in self.config.dont_quote:
                     qry = qry.replace(quote(keep_unquoted), keep_unquoted)
@@ -956,35 +965,65 @@ class ODataV4Search(QueryStringSearch):
     all products metadata"""
 
     def do_search(self, *args, **kwargs):
-        """Do a two step search, as the metadata are not given into the search result"""
-        # TODO: This plugin is still very specific to the ONDA provider.
-        #       Be careful to generalize it if needed when the chance to do so arrives
-        final_result = []
-        # Query the products entity set for basic metadata about the product
-        for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
-            metadata_url = self.get_metadata_search_url(entity)
-            try:
-                logger.debug("Sending metadata request: %s", metadata_url)
-                response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
-                response.raise_for_status()
-            except requests.RequestException:
-                logger.exception(
-                    "Skipping error while searching for %s %s instance:",
-                    self.provider,
-                    self.__class__.__name__,
-                )
-            else:
-                entity.update(
-                    {item["id"]: item["value"] for item in response.json()["value"]}
-                )
-                final_result.append(entity)
-        return final_result
+        """A two step search can be performed if the metadata are not given into the search result"""
+
+        if getattr(self.config, "per_product_metadata_query", False):
+            final_result = []
+            # Query the products entity set for basic metadata about the product
+            for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
+                metadata_url = self.get_metadata_search_url(entity)
+                try:
+                    logger.debug("Sending metadata request: %s", metadata_url)
+                    response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
+                    response.raise_for_status()
+                except requests.RequestException:
+                    logger.exception(
+                        "Skipping error while searching for %s %s instance:",
+                        self.provider,
+                        self.__class__.__name__,
+                    )
+                else:
+                    entity.update(
+                        {item["id"]: item["value"] for item in response.json()["value"]}
+                    )
+                    final_result.append(entity)
+            return final_result
+        else:
+            return super(ODataV4Search, self).do_search(*args, **kwargs)
 
     def get_metadata_search_url(self, entity):
         """Build the metadata link for the given entity"""
         return "{}({})/Metadata".format(
             self.config.api_endpoint.rstrip("/"), entity["id"]
         )
+
+    def normalize_results(self, results, **kwargs):
+        """Build EOProducts from provider results
+
+        If configured, a metadata pre-mapping can be applied to simplify further metadata extraction.
+        For example, going from '$.Metadata[?(@.id="foo")].value' to '$.Metadata.foo.value'
+        """
+        metadata_pre_mapping = getattr(self.config, "metadata_pre_mapping", {})
+        metadata_path = metadata_pre_mapping.get("metadata_path", None)
+        metadata_path_id = metadata_pre_mapping.get("metadata_path_id", None)
+        metadata_path_value = metadata_pre_mapping.get("metadata_path_value", None)
+
+        if metadata_path and metadata_path_id and metadata_path_value:
+            parsed_metadata_path = cached_parse(metadata_path)
+            for result in results:
+                found_metadata = parsed_metadata_path.find(result)
+                if found_metadata:
+                    metadata_update = {}
+                    for metadata_dict in found_metadata[0].value:
+                        metada_id = metadata_dict[metadata_path_id]
+                        metada_value = metadata_dict[metadata_path_value]
+                        metadata_update[metada_id] = metada_value
+                    parsed_metadata_path.update(result, metadata_update)
+
+        # once metadata pre-mapping applied execute QueryStringSearch.normalize_results()
+        products = super(ODataV4Search, self).normalize_results(results, **kwargs)
+
+        return products
 
 
 class PostJsonSearch(QueryStringSearch):
@@ -1067,16 +1106,26 @@ class PostJsonSearch(QueryStringSearch):
                     items_per_page=items_per_page, page=page, **kwargs
                 )
 
-        # If we were not able to build query params but have search criteria, this means
-        # the provider does not support the search criteria given. If so, stop searching
-        # right away
-        if not qp and keywords:
+        # If we were not able to build query params but have queryable search criteria,
+        # this means the provider does not support the search criteria given. If so,
+        # stop searching right away
+        if not qp and any(
+            k
+            for k in keywords.keys()
+            if isinstance(self.config.metadata_mapping.get(k, []), list)
+        ):
             return [], 0
         self.query_params = qp
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
+        if not count and getattr(self, "need_count", False):
+            # do not try to extract total_items from search results if count is False
+            del self.total_items_nb
+            del self.need_count
         provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
+        if count and total_items is None and hasattr(self, "total_items_nb"):
+            total_items = self.total_items_nb
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
@@ -1085,6 +1134,13 @@ class PostJsonSearch(QueryStringSearch):
         """Adds pagination to query parameters, and auth to url"""
         urls = []
         total_results = 0 if count else None
+
+        if "count_endpoint" not in self.config.pagination:
+            # if count_endpoint is not set, total_results should be extracted from search result
+            total_results = None
+            self.need_count = True
+            self.total_items_nb = None
+
         if hasattr(kwargs["auth"], "config"):
             auth_conf_dict = getattr(kwargs["auth"].config, "credentials", {})
         else:
@@ -1108,27 +1164,10 @@ class PostJsonSearch(QueryStringSearch):
                         _total_results = self.count_hits(
                             count_endpoint, result_type=self.config.result_type
                         )
-                    else:
-                        # Update the query params with a pagination requesting 1 product only
-                        # which is enough to obtain the count hits.
-                        count_pagination_params = dict(
-                            items_per_page=1, page=1, skip=0, skip_base_1=1
-                        )
-                        count_params = json.loads(
-                            self.config.pagination["next_page_query_obj"].format(
-                                **count_pagination_params
-                            )
-                        )
-                        # keep a copy of query parameters without count params
-                        self.query_params_unpaginated = deepcopy(self.query_params)
-                        update_nested_dict(self.query_params, count_params)
-                        _total_results = self.count_hits(
-                            search_endpoint, result_type=self.config.result_type
-                        )
-                    if getattr(self.config, "merge_responses", False):
-                        total_results = _total_results or 0
-                    else:
-                        total_results += _total_results or 0
+                        if getattr(self.config, "merge_responses", False):
+                            total_results = _total_results or 0
+                        else:
+                            total_results += _total_results or 0
                 if isinstance(self.config.pagination["next_page_query_obj"], str):
                     # next_page_query_obj needs to be parsed
                     next_page_query_obj = self.config.pagination[

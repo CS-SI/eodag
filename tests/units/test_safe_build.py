@@ -19,17 +19,12 @@ import logging
 import os
 import unittest
 from pathlib import Path
-from shutil import copyfile, rmtree
+from shutil import copyfile
+from tempfile import TemporaryDirectory
 
 import yaml
 
-from tests.context import (
-    TEST_RESOURCES_PATH,
-    TESTS_DOWNLOAD_PATH,
-    AwsDownload,
-    EOProduct,
-    NotAvailableError,
-)
+from tests.context import TEST_RESOURCES_PATH, AwsDownload, EOProduct, NotAvailableError
 
 
 class TestSafeBuild(unittest.TestCase):
@@ -39,6 +34,9 @@ class TestSafeBuild(unittest.TestCase):
         self.awsd = AwsDownload("some_provider", {})
         self.logger = logging.getLogger("eodag.plugins.download.aws")
 
+        self.tmp_download_dir = TemporaryDirectory()
+        self.tmp_download_path = self.tmp_download_dir.name
+
         with open(
             os.path.join(TEST_RESOURCES_PATH, "safe_build", "aws_sentinel_chunks.yml"),
             "r",
@@ -46,8 +44,7 @@ class TestSafeBuild(unittest.TestCase):
             self.aws_sentinel_chunks = yaml.load(fh, Loader=yaml.SafeLoader)
 
     def tearDown(self):
-        if os.path.isdir(TESTS_DOWNLOAD_PATH):
-            rmtree(TESTS_DOWNLOAD_PATH)
+        self.tmp_download_dir.cleanup()
 
     def test_safe_build_out_of_pattern(self):
         """Cannot build SAFE product from out of pattern file"""
@@ -104,7 +101,7 @@ class TestSafeBuild(unittest.TestCase):
             productType="S1_SAR_GRD",
         )
 
-        product_path = os.path.join(TESTS_DOWNLOAD_PATH, prod.properties["title"])
+        product_path = os.path.join(self.tmp_download_path, prod.properties["title"])
 
         def chunk():
             return None
@@ -148,7 +145,7 @@ class TestSafeBuild(unittest.TestCase):
             productType="S2_MSI_L2A",
         )
 
-        product_path = os.path.join(TESTS_DOWNLOAD_PATH, prod.properties["title"])
+        product_path = os.path.join(self.tmp_download_path, prod.properties["title"])
 
         def chunk():
             return None
@@ -194,7 +191,7 @@ class TestSafeBuild(unittest.TestCase):
             productType="S2_MSI_L1C",
         )
 
-        product_path = os.path.join(TESTS_DOWNLOAD_PATH, prod.properties["title"])
+        product_path = os.path.join(self.tmp_download_path, prod.properties["title"])
 
         def chunk():
             return None

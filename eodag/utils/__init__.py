@@ -118,13 +118,17 @@ def _deprecated(reason="", version=None):
 class RequestsTokenAuth(AuthBase):
     """A custom authentication class to be used with requests module"""
 
-    def __init__(self, token, where, qs_key=None):
+    def __init__(self, token, where, qs_key=None, headers=None):
         self.token = token
         self.where = where
         self.qs_key = qs_key
+        self.headers = headers
 
     def __call__(self, request):
         """Perform the actual authentication"""
+        if self.headers and isinstance(self.headers, dict):
+            for k, v in self.headers.items():
+                request.headers[k] = v
         if self.where == "qs":
             parts = urlparse(request.url)
             qs = parse_qs(parts.query)
@@ -468,7 +472,6 @@ class ProgressCallback(tqdm):
             self.reset(total=total)
 
         self.update(increment)
-        self.refresh()
 
     def copy(self, *args, **kwargs):
         """Returns another progress callback using the same initial
@@ -1147,6 +1150,9 @@ def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
     if not common_subdirs_path:
         subpaths_list = [p for p in Path(nested_dir_root).glob("**/*") if p.is_file()]
         common_subdirs_path = os.path.commonpath(subpaths_list)
+
+    if Path(common_subdirs_path).is_file():
+        common_subdirs_path = os.path.dirname(common_subdirs_path)
 
     if nested_dir_root != common_subdirs_path:
         logger.debug(f"Flatten {common_subdirs_path} to {nested_dir_root}")

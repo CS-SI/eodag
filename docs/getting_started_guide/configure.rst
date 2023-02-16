@@ -114,6 +114,16 @@ The same configuration could be achieved by setting environment variables:
 
 Each configuration parameter can be set with an environment variable.
 
+.. note::
+
+   Setting credentials must be done according to the `provider's plugin <https://eodag.readthedocs.io/en/stable/plugins.html#plugins-available>`_ (auth | api):
+
+   * Authentication plugin: ``EODAG__<PROVIDER>__AUTH__CREDENTIALS__<KEY>``
+
+   * API plugin: ``EODAG__<PROVIDER>__API__CREDENTIALS__<KEY>``
+
+   ``<KEY>`` should be replaced with the adapted credentials key (``USERNAME``, ``PASSWORD``, ``APIKEY``, ...) according to the provider configuration template in `the YAML configuration file <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-configuration-file>`_.
+
 CLI configuration
 ^^^^^^^^^^^^^^^^^
 

@@ -62,21 +62,106 @@ class BaseSearchPluginTest(unittest.TestCase):
         return self.plugins_manager.get_auth_plugin(provider)
 
 
+class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
+    def setUp(self):
+        # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
+        provider = "mundi"
+        self.mundi_search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.mundi_auth_plugin = self.get_auth_plugin(provider)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_xml_count_and_search_mundi(
+        self, mock__request
+    ):
+        """A query with a QueryStringSearch (mundi here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
+        with open(self.provider_resp_dir / "mundi_search.xml", "rb") as f:
+            mundi_resp_search = f.read()
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.content = mundi_resp_search
+
+        products, estimate = self.mundi_search_plugin.query(
+            page=1,
+            items_per_page=2,
+            auth=self.mundi_auth_plugin,
+            **self.search_criteria_s2_msi_l1c
+        )
+
+        # Specific expected results
+        mundi_url_search = (
+            "https://Sentinel2.browse.catalog.mundiwebservices.com/opensearch?timeStart=2020-08-08T00:00:00.000Z&"
+            "timeEnd=2020-08-16T00:00:00.000Z&geometry="
+            "POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&"
+            "productType=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
+        )
+        mundi_products_count = 47
+        number_of_products = 2
+
+        mock__request.assert_called_once_with(
+            mock.ANY,
+            mundi_url_search,
+            info_message=mock.ANY,
+            exception_message=mock.ANY,
+        )
+        self.assertEqual(estimate, mundi_products_count)
+        self.assertEqual(len(products), number_of_products)
+        self.assertIsInstance(products[0], EOProduct)
+        # products count extracted from search results
+        self.assertEqual(self.mundi_search_plugin.total_items_nb, mundi_products_count)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_xml_no_count_and_search_mundi(
+        self, mock__request, mock_count_hits
+    ):
+        """A query with a QueryStringSearch (here mundi) without a count"""
+        with open(self.provider_resp_dir / "mundi_search.xml", "rb") as f:
+            mundi_resp_search = f.read()
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.content = mundi_resp_search
+
+        products, estimate = self.mundi_search_plugin.query(
+            count=False,
+            page=1,
+            items_per_page=2,
+            auth=self.mundi_auth_plugin,
+            **self.search_criteria_s2_msi_l1c
+        )
+
+        # Specific expected results
+        mundi_url_search = (
+            "https://Sentinel2.browse.catalog.mundiwebservices.com/opensearch?timeStart=2020-08-08T00:00:00.000Z&"
+            "timeEnd=2020-08-16T00:00:00.000Z&geometry="
+            "POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&"
+            "productType=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
+        )
+        number_of_products = 2
+
+        mock_count_hits.assert_not_called()
+        mock__request.assert_called_once_with(
+            mock.ANY,
+            mundi_url_search,
+            info_message=mock.ANY,
+            exception_message=mock.ANY,
+        )
+        self.assertIsNone(estimate)
+        self.assertEqual(len(products), number_of_products)
+        self.assertIsInstance(products[0], EOProduct)
+        # products count should not have been extracted from search results
+        self.assertIsNone(getattr(self.mundi_search_plugin, "total_items_nb", None))
+
+
 class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def setUp(self):
         # One of the providers that has a QueryStringSearch Search plugin
         provider = "peps"
         self.peps_search_plugin = self.get_search_plugin(self.product_type, provider)
         self.peps_auth_plugin = self.get_auth_plugin(provider)
-        # Some expected results
-        with open(self.provider_resp_dir / "peps_count.json") as f:
-            self.peps_resp_count = json.load(f)
-        self.peps_url_count = (
-            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08"
-            "&completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
-            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=1&page=1"
-        )
-        self.peps_products_count = 47
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -87,7 +172,6 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             peps_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
-            self.peps_resp_count,
             peps_resp_search,
         ]
         products, estimate = self.peps_search_plugin.query(
@@ -103,23 +187,20 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
             "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=2&page=1"
         )
+        peps_products_count = 47
         number_of_products = 2
 
-        mock__request.assert_any_call(
-            mock.ANY,
-            self.peps_url_count,
-            info_message=mock.ANY,
-            exception_message=mock.ANY,
-        )
-        mock__request.assert_called_with(
+        mock__request.assert_called_once_with(
             mock.ANY,
             peps_url_search,
             info_message=mock.ANY,
             exception_message=mock.ANY,
         )
-        self.assertEqual(estimate, self.peps_products_count)
+        self.assertEqual(estimate, peps_products_count)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
+        # products count extracted from search results
+        self.assertEqual(self.peps_search_plugin.total_items_nb, peps_products_count)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
@@ -161,6 +242,25 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertIsNone(estimate)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
+        # products count should not have been extracted from search results
+        self.assertIsNone(getattr(self.peps_search_plugin, "total_items_nb", None))
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_search_cloudcover_peps(
+        self, mock__request
+    ):
+        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar product types"""  # noqa
+
+        self.peps_search_plugin.query(productType="S2_MSI_L1C", cloudCover=50)
+        mock__request.assert_called()
+        self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1])
+        mock__request.reset_mock()
+
+        self.peps_search_plugin.query(productType="S1_SAR_GRD", cloudCover=50)
+        mock__request.assert_called()
+        self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1])
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -170,20 +270,26 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
         # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
-        provider = "creodias"
+        provider = "astraea_eod"
         search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        # change onfiguration for this test to filter out some collections
+        results_entry = search_plugin.config.discover_product_types["results_entry"]
+        search_plugin.config.discover_product_types[
+            "results_entry"
+        ] = 'collections[?billing=="free"]'
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = {
             "collections": [
                 {
                     "id": "foo_collection",
-                    "displayName": "The FOO collection",
+                    "title": "The FOO collection",
                     "billing": "free",
                 },
                 {
                     "id": "bar_collection",
-                    "displayName": "The BAR non-free collection",
+                    "title": "The BAR non-free collection",
                     "billing": "non-free",
                 },
             ]
@@ -194,13 +300,15 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertNotIn("bar_collection", conf_update_dict["providers_config"])
         self.assertNotIn("bar_collection", conf_update_dict["product_types_config"])
         self.assertEqual(
-            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            conf_update_dict["providers_config"]["foo_collection"]["productType"],
             "foo_collection",
         )
         self.assertEqual(
             conf_update_dict["product_types_config"]["foo_collection"]["title"],
             "The FOO collection",
         )
+        # restore configuration
+        search_plugin.config.discover_product_types["results_entry"] = results_entry
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -255,13 +363,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.awseos_search_plugin = self.get_search_plugin(self.product_type, provider)
         self.awseos_auth_plugin = self.get_auth_plugin(provider)
         self.awseos_auth_plugin.config.credentials = dict(apikey="dummyapikey")
-        # Some expected results
-        with open(self.provider_resp_dir / "awseos_count.json") as f:
-            self.awseos_resp_count = json.load(f)
         self.awseos_url = (
             "https://gate.eos.com/api/lms/search/v2/sentinel2?api_key=dummyapikey"
         )
-        self.awseos_products_count = 44
 
     def test_plugins_search_postjsonsearch_request_error(self):
         """A query with a PostJsonSearch must handle requests errors"""
@@ -272,15 +376,16 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 responses.POST, self.awseos_url, status=500, body=b"test error message"
             )
 
-            with self.assertRaises(RequestError):
-                with self.assertLogs(level="DEBUG") as cm:
+            with self.assertLogs(level="DEBUG") as cm:
+                with self.assertRaises(RequestError):
                     products, estimate = self.awseos_search_plugin.query(
                         page=1,
                         items_per_page=2,
                         auth=self.awseos_auth_plugin,
+                        raise_errors=True,
                         **self.search_criteria_s2_msi_l1c
                     )
-                self.assertIn("test error message", cm.output)
+                self.assertIn("test error message", str(cm.output))
 
         run()
 
@@ -310,7 +415,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             awseos_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
-            self.awseos_resp_count,
             awseos_resp_search,
         ]
         products, estimate = self.awseos_search_plugin.query(
@@ -321,6 +425,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
 
         # Specific expected results
+        awseos_products_count = 44
         number_of_products = 2
 
         mock__request.assert_any_call(
@@ -336,9 +441,13 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             exception_message=mock.ANY,
         )
 
-        self.assertEqual(estimate, self.awseos_products_count)
+        self.assertEqual(estimate, awseos_products_count)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
+        # products count extracted from search results
+        self.assertEqual(
+            self.awseos_search_plugin.total_items_nb, awseos_products_count
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
@@ -374,6 +483,29 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.assertIsNone(estimate)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
+        # products count should not have been extracted from search results
+        self.assertIsNone(getattr(self.awseos_search_plugin, "total_items_nb", None))
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    def test_plugins_search_postjsonsearch_search_cloudcover_awseos(
+        self, mock_requests_post
+    ):
+        """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar product types"""  # noqa
+
+        self.awseos_search_plugin.query(
+            auth=self.awseos_auth_plugin, productType="S2_MSI_L1C", cloudCover=50
+        )
+        mock_requests_post.assert_called()
+        self.assertIn("cloudCoverage", str(mock_requests_post.call_args_list[-1][1]))
+        mock_requests_post.reset_mock()
+
+        self.awseos_search_plugin.query(
+            auth=self.awseos_auth_plugin, productType="S1_SAR_GRD", cloudCover=50
+        )
+        mock_requests_post.assert_called()
+        self.assertNotIn(
+            "cloudCoverPercentage", str(mock_requests_post.call_args_list[-1][1])
+        )
 
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
@@ -385,8 +517,37 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         # Some expected results
         with open(self.provider_resp_dir / "onda_count.json") as f:
             self.onda_resp_count = json.load(f)
-        self.onda_url_count = 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?productType=S2MSI1C&$search="footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"'  # noqa
+        self.onda_url_count = (
+            'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?$search="footprint:"'
+            "Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, "
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"'
+        )
         self.onda_products_count = 47
+
+    def test_plugins_search_odatav4search_normalize_results_onda(self):
+        """ODataV4Search.normalize_results must use metada pre-mapping if configured"""
+
+        self.assertTrue(hasattr(self.onda_search_plugin.config, "metadata_pre_mapping"))
+        self.assertDictEqual(
+            self.onda_search_plugin.config.metadata_pre_mapping,
+            {
+                "metadata_path": "$.Metadata",
+                "metadata_path_id": "id",
+                "metadata_path_value": "value",
+            },
+        )
+        self.assertEqual(
+            self.onda_search_plugin.config.discover_metadata["metadata_path"],
+            "$.Metadata.*",
+        )
+
+        raw_results = [
+            {"Metadata": [{"id": "foo", "value": "bar"}], "footprint": "POINT (0 0)"}
+        ]
+        products = self.onda_search_plugin.normalize_results(raw_results)
+
+        self.assertEqual(products[0].properties["foo"], "bar")
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
@@ -414,12 +575,19 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.onda_auth_plugin,
+            # custom query argument that must be mapped using discovery_metata.search_param
+            foo="bar",
             **self.search_criteria_s2_msi_l1c
         )
 
         # Specific expected results
         number_of_products = 2
-        onda_url_search = 'https://catalogue.onda-dias.eu/dias-catalogue/Products?productType=S2MSI1C&$format=json&$search="footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] AND endPosition:[* TO 2020-08-16T00:00:00.000Z]"&$top=2&$skip=0'  # noqa
+        onda_url_search = (
+            'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
+            'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"&$top=2&$skip=0&$expand=Metadata'
+        )
 
         mock__request.assert_any_call(
             mock.ANY,
@@ -437,6 +605,23 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.assertEqual(estimate, self.onda_products_count)
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
+        # products count non extracted from search results as count endpoint is specified
+        self.assertFalse(hasattr(self.onda_search_plugin, "total_items_nb"))
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_search_cloudcover_onda(self, mock__request):
+        """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar product types"""
+
+        self.onda_search_plugin.query(productType="S2_MSI_L1C", cloudCover=50)
+        mock__request.assert_called()
+        self.assertIn("cloudCoverPercentage", mock__request.call_args_list[-1][0][1])
+        mock__request.reset_mock()
+
+        self.onda_search_plugin.query(productType="S1_SAR_GRD", cloudCover=50)
+        mock__request.assert_called()
+        self.assertNotIn("cloudCoverPercentage", mock__request.call_args_list[-1][0][1])
 
 
 class TestSearchPluginStacSearch(BaseSearchPluginTest):
@@ -450,8 +635,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock__request.return_value.json.side_effect = [
             {
                 "context": {"page": 1, "limit": 2, "matched": 1, "returned": 2},
-            },
-            {
                 "features": [
                     {
                         "id": "foo",
@@ -474,7 +657,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                             "sentinel:product_id": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
                         },
                     },
-                ]
+                ],
             },
         ]
 
@@ -506,8 +689,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock__request.return_value.json.side_effect = [
             {
                 "context": {"matched": 3},
-            },
-            {
                 "features": [
                     {
                         "id": "foo",
@@ -517,7 +698,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                         "id": "bar",
                         "geometry": None,
                     },
-                ]
+                ],
             },
         ]
 
