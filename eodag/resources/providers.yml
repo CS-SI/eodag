@@ -889,7 +889,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
-      max_items_per_page: 2_000
+      max_items_per_page: 1_000
     results_entry: 'value'
     free_text_search_operations:
       $filter:
