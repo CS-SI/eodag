@@ -92,7 +92,17 @@ class EOProduct(object):
             for key, value in properties.items()
             if key != "geometry" and value not in [NOT_MAPPED, NOT_AVAILABLE]
         }
-        product_geometry = properties["geometry"]
+        if "geometry" not in properties or (
+            properties["geometry"] == NOT_AVAILABLE
+            and "defaultGeometry" not in properties
+        ):
+            raise MisconfiguredError(
+                f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
+            )
+        elif properties["geometry"] == NOT_AVAILABLE:
+            product_geometry = properties["defaultGeometry"]
+        else:
+            product_geometry = properties["geometry"]
         # Let's try 'latmin lonmin latmax lonmax'
         if isinstance(product_geometry, str):
             bbox_pattern = re.compile(
