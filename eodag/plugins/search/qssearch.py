@@ -559,7 +559,10 @@ class QueryStringSearch(Search):
                         for k, v in search_param_cfg_parsed.items():
                             if getattr(self.config, k, None):
                                 update_nested_dict(
-                                    getattr(self.config, k), v, extend_list_values=True
+                                    getattr(self.config, k),
+                                    v,
+                                    extend_list_values=True,
+                                    allow_extend_duplicates=False,
                                 )
                             else:
                                 logger.warning(
