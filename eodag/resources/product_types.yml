@@ -739,32 +739,7 @@ S2_MSI_L3A_WASP:
   title: SENTINEL2 Level-3A
 
 # Sentinel 3 ------------------------------------------------------------------
-S3_SRA_BS:
-  abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,BS
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL3 SRAL Level-1
-  missionStartDate: "2016-02-16T00:00:00Z"
-
-S3_SRA_A_BS:
-  abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,BS
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL3 SRAL Level-1
-  missionStartDate: "2016-02-16T00:00:00Z"
-
-# See examples of product type namings for sentinel 3 here:
-# https://www.onda-dias.eu/cms/data/catalogue/sentinel-3/
+# S3 OLCI L1
 S3_EFR:
   abstract: ""
   instrument: OLCI
@@ -802,7 +777,7 @@ S3_RAC:
   title: SENTINEL3 RAC
   missionStartDate: "2016-02-16T00:00:00Z"
 
-  # S3 OLCI L2
+# S3 OLCI L2
 S3_OLCI_L2LRR:
   abstract: |
     The OLCI Level-2 Land Reduced Resolution (OL_2_LRR) products contain land and atmospheric geophysical products
@@ -901,7 +876,7 @@ S3_SLSTR_L1RBT:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-1
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -916,7 +891,7 @@ S3_SLSTR_L2LST:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2LST,LST
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 LST
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -931,7 +906,7 @@ S3_SLSTR_L2WST:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 WST
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -948,7 +923,7 @@ S3_SLSTR_L2AOD:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2AOD,AOD
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 AOD
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -964,7 +939,7 @@ S3_SLSTR_L2FRP:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2FRP,FRP
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 FRP
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -985,8 +960,8 @@ S3_SRA:
 S3_SRA_A:
   abstract: |
     A Level 1A SRAL product contains one "measurement data file" containing the L1A measurements parameters:
-    ECHO_SAR_Ku: L1A Tracking measurements (sorted and calibrated) in SAR mode – Ku-band (80-Hz)
-    ECHO_PLRM: L1A Tracking measurements (sorted and calibrated) in pseudo-LRM mode – Ku and C bands (80-Hz)
+    ECHO_SAR_Ku: L1A Tracking measurements (sorted and calibrated) in SAR mode - Ku-band (80-Hz)
+    ECHO_PLRM: L1A Tracking measurements (sorted and calibrated) in pseudo-LRM mode - Ku and C bands (80-Hz)
   instrument: SRAL
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -1002,7 +977,7 @@ S3_SRA_BS:
     A Level 1B-S SRAL product contains one "measurement data file" containing the L1b measurements parameters:
     ECHO_SAR_Ku : L1b Tracking measurements in SAR mode - Ku band (20-Hz) as defined in the L1b MEAS product
                   completed with SAR expert information
-    ECHO_PLRM : L1b Tracking measurements in pseudo-LRM mode – Ku and C bands (20-Hz) as defined in the L1b
+    ECHO_PLRM : L1b Tracking measurements in pseudo-LRM mode - Ku and C bands (20-Hz) as defined in the L1b
                 MEAS product
   instrument: SRAL
   platform: SENTINEL3
@@ -1072,7 +1047,6 @@ S3_SY_AOD:
   license: proprietary
   title: SENTINEL3 SYNERGY Level-2 AOD
   missionStartDate: "2016-02-16T00:00:00Z"
-
 
 S3_SY_V10:
   abstract: |

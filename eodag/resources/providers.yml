@@ -1395,18 +1395,28 @@
       Authorization: Basic cXJic1pTVjBUWTdkZzlNRGQ0Q3ZQVXkyQV9NYToxMU5oNGtFQjFva2NvZlBlRkRYemhudWxGR3dh
       Cookie: "seeedtoken={apikey}"
   products:
+    # S1
     S1_SAR_GRD:
       productType: GRD
-      processingLevel: L1_
       collection: Sentinel1
       metadata_mapping:
         cloudCover: 'null/text()'
     S1_SAR_SLC:
       productType: SLC
-      processingLevel: L1_
       collection: Sentinel1
       metadata_mapping:
         cloudCover: 'null/text()'
+    S1_SAR_OCN:
+      productType: OCN
+      collection: Sentinel1
+      metadata_mapping:
+        cloudCover: 'null/text()'
+    S1_SAR_RAW:
+      productType: RAW
+      collection: Sentinel1
+      metadata_mapping:
+        cloudCover: 'null/text()'
+    # S2
     S2_MSI_L1C:
       productType: IMAGE
       processingLevel: L1C
@@ -1415,9 +1425,62 @@
       productType: IMAGE
       processingLevel: L2A
       collection: Sentinel2
+    # S3 SRAL
+    S3_SRA:
+      productType: SR_1_SRA___
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: 'null/text()'
+    S3_SRA_A:
+      productType: SR_1_SRA_A_
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: 'null/text()'
+    S3_SRA_BS:
+      productType: SR_1_SRA_BS
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: 'null/text()'
+    S3_LAN:
+      productType: SR_2_LAN___
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: 'null/text()'
+    # S3 OLCI
+    S3_EFR:
+      productType: OL_1_EFR___
+      collection: Sentinel3
+    S3_ERR:
+      productType: OL_1_ERR___
+      collection: Sentinel3
+    S3_OLCI_L2LRR:
+      productType: OL_2_LRR___
+      collection: Sentinel3
     S3_OLCI_L2LFR:
       productType: OL_2_LFR___
-      instrument: OLCI
+      collection: Sentinel3
+    # S3 SLSTR
+    S3_SLSTR_L1RBT:
+      productType: SL_1_RBT___
+      collection: Sentinel3
+    S3_SLSTR_L2LST:
+      productType: SL_2_LST___
+      collection: Sentinel3
+    S3_SLSTR_L2FRP:
+      productType: SL_2_FRP___
+      collection: Sentinel3
+    # S3 SY
+    S3_SY_SYN:
+      productType: SY_2_SYN___
+      collection: Sentinel3
+    S3_SY_V10:
+      productType: SY_2_V10___
+      collection: Sentinel3
+    S3_SY_VG1:
+      productType: SY_2_VG1___
+      collection: Sentinel3
+    S3_SY_VGP:
+      productType: SY_2_VGP___
       collection: Sentinel3
     # S5P L1
     S5P_L1B_IR_SIR:
@@ -1649,6 +1712,7 @@
       # Url used for ordering product if it is offline/archived
       orderLink: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
   products:
+    # S1
     S1_SAR_OCN:
       productType: '*OCN*'
       metadata_mapping:
@@ -1665,10 +1729,33 @@
       productType: '*RAW*'
       metadata_mapping:
         cloudCover: '$.null'
+    # S2
     S2_MSI_L1C:
       productType: S2MSI1C
     S2_MSI_L2A:
       productType: S2MSI2A
+    # S3 SRAL
+    S3_SRA:
+      productType: SR_1_SRA___
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_SRA_A:
+      productType: SR_1_SRA_A_
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_SRA_BS:
+      productType: SR_1_SRA_BS
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN:
+      productType: SR_2_LAN___
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_WAT:
+      productType: SR_2_WAT___
+      metadata_mapping:
+        cloudCover: '$.null'
+    # S3 OLCI
     S3_EFR:
       productType: OL_1_EFR___
     S3_ERR:
@@ -1677,30 +1764,30 @@
       productType: OL_2_LFR___
     S3_OLCI_L2LRR:
       productType: OL_2_LRR___
+    S3_OLCI_L2WRR:
+      productType: OL_2_WRR___
+    S3_OLCI_L2WFR:
+      productType: OL_2_WFR___
+    # S3 SLSTR
     S3_SLSTR_L1RBT:
       productType: SL_1_RBT___
     S3_SLSTR_L2LST:
       productType: SL_2_LST___
-    S3_LAN:
-      productType: SR_2_LAN___
-      metadata_mapping:
-        cloudCover: '$.null'
-    S3_SRA:
-      productType: SR_1_SRA_A_
-      metadata_mapping:
-        cloudCover: '$.null'
-    S3_SRA_BS:
-      productType: SR_1_SRA_BS
-      metadata_mapping:
-        cloudCover: '$.null'
-    S3_SRA_A_BS:
-      productType: SR_1_SRA___
-      metadata_mapping:
-        cloudCover: '$.null'
-    S3_WAT:
-      productType: SR_2_WAT___
-      metadata_mapping:
-        cloudCover: '$.null'
+    S3_SLSTR_L2WST:
+      productType: SL_2_WST___
+    S3_SLSTR_L2FRP:
+      productType: SL_2_FRP___
+    # S3 SY
+    S3_SY_AOD:
+      productType: SY_2_AOD___
+    S3_SY_SYN:
+      productType: SY_2_SYN___
+    S3_SY_V10:
+      productType: SY_2_V10___
+    S3_SY_VG1:
+      productType: SY_2_VG1___
+    S3_SY_VGP:
+      productType: SY_2_VGP___
     # S5P L1
     S5P_L1B_RA_BD1:
       productType: L1B_RA_BD1

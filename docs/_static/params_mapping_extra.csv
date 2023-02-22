@@ -2,14 +2,16 @@ parameter,astraea_eod,cop_ads,cop_cds,creodias,earth_search,earth_search_cog,ear
 assets,metadata only,,,,metadata only,metadata only,metadata only,,,,,,,metadata only
 awsProductId,,,,,,,,,,,,,,metadata only
 collection,,,,:green:`queryable metadata`,,,,,,,,,,
+defaultGeometry,,,,,,,,,metadata only,,,,,
 downloadLink,metadata only,,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 geometry,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 id,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
-orderLink,,,,,,,,,,metadata only,,,,
+orderLink,,,,,,,,,metadata only,metadata only,,,,
 polarizationChannels,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,metadata only,metadata only,,,metadata only,:green:`queryable metadata`
 polarizationMode,,,,,,metadata only,,,metadata only,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,
 productIdentifier,,,,metadata only,,,,,,,,,,
 quicklook,metadata only,,,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+searchLink,,,,,,,,,metadata only,,,,,
 specification,,,,,,,,,metadata only,,,,,
 storageStatus,metadata only,,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 thumbnail,metadata only,,,,metadata only,metadata only,metadata only,,metadata only,,metadata only,metadata only,metadata only,metadata only
