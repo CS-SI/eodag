@@ -183,12 +183,12 @@ class TestMetadataFormatter(unittest.TestCase):
         )
         wkt_str = format_metadata(to_format, fieldname=georss)
         geom = wkt.loads(wkt_str)
-        self.assertEqual(len(geom), 2)
+        self.assertEqual(len(geom.geoms), 2)
         self.assertEqual(
-            [round(x, 2) for x in geom[0].bounds], [1.23, 43.42, 1.68, 43.76]
+            [round(x, 2) for x in geom.geoms[0].bounds], [1.23, 43.42, 1.68, 43.76]
         )
         self.assertEqual(
-            [round(x, 2) for x in geom[1].bounds], [2.23, 43.42, 3.68, 43.76]
+            [round(x, 2) for x in geom.geoms[1].bounds], [2.23, 43.42, 3.68, 43.76]
         )
 
     def test_convert_csv_list(self):
