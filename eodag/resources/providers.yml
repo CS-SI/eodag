@@ -1141,6 +1141,80 @@
     S3_SY_VGP:
       productType: SY_2_VGP___
       collection: SENTINEL-3
+    # S5P L1
+    S5P_L1B_IR_SIR:
+      productType: L1B_IR_SIR
+      collection: SENTINEL-5P
+    S5P_L1B_IR_UVN:
+      productType: L1B_IR_UVN
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD1:
+      productType: L1B_RA_BD1
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD2:
+      productType: L1B_RA_BD2
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD3:
+      productType: L1B_RA_BD3
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD4:
+      productType: L1B_RA_BD4
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD5:
+      productType: L1B_RA_BD5
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD6:
+      productType: L1B_RA_BD6
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD7:
+      productType: L1B_RA_BD7
+      collection: SENTINEL-5P
+    S5P_L1B_RA_BD8:
+      productType: L1B_RA_BD8
+      collection: SENTINEL-5P
+    # S5P L2
+    S5P_L2_NO2:
+      productType: L2__NO2___
+      collection: SENTINEL-5P
+    S5P_L2_CLOUD:
+      productType: L2__CLOUD_
+      collection: SENTINEL-5P
+    S5P_L2_O3:
+      productType: L2__O3____
+      collection: SENTINEL-5P
+    S5P_L2_CO:
+      productType: L2__CO____
+      collection: SENTINEL-5P
+    S5P_L2_AER_AI:
+      productType: L2__AER_AI
+      collection: SENTINEL-5P
+    S5P_L2_O3_PR:
+      productType: L2__O3__PR
+      collection: SENTINEL-5P
+    S5P_L2_O3_TCL:
+      productType: L2__O3_TCL
+      collection: SENTINEL-5P
+    S5P_L2_AER_LH:
+      productType: L2__AER_LH
+      collection: SENTINEL-5P
+    S5P_L2_HCHO:
+      productType: L2__HCHO__
+      collection: SENTINEL-5P
+    S5P_L2_CH4:
+      productType: L2__CH4___
+      collection: SENTINEL-5P
+    S5P_L2_NP_BD3:
+      productType: L2__NP_BD3
+      collection: SENTINEL-5P
+    S5P_L2_NP_BD6:
+      productType: L2__NP_BD6
+      collection: SENTINEL-5P
+    S5P_L2_NP_BD7:
+      productType: L2__NP_BD7
+      collection: SENTINEL-5P
+    S5P_L2_SO2:
+      productType: L2__SO2___
+      collection: SENTINEL-5P
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
@@ -1345,6 +1419,80 @@
       productType: OL_2_LFR___
       instrument: OLCI
       collection: Sentinel3
+    # S5P L1
+    S5P_L1B_IR_SIR:
+      productType: L1B_IR_SIR
+      collection: Sentinel5p
+    S5P_L1B_IR_UVN:
+      productType: L1B_IR_UVN
+      collection: Sentinel5p
+    S5P_L1B_RA_BD1:
+      productType: L1B_RA_BD1
+      collection: Sentinel5p
+    S5P_L1B_RA_BD2:
+      productType: L1B_RA_BD2
+      collection: Sentinel5p
+    S5P_L1B_RA_BD3:
+      productType: L1B_RA_BD3
+      collection: Sentinel5p
+    S5P_L1B_RA_BD4:
+      productType: L1B_RA_BD4
+      collection: Sentinel5p
+    S5P_L1B_RA_BD5:
+      productType: L1B_RA_BD5
+      collection: Sentinel5p
+    S5P_L1B_RA_BD6:
+      productType: L1B_RA_BD6
+      collection: Sentinel5p
+    S5P_L1B_RA_BD7:
+      productType: L1B_RA_BD7
+      collection: Sentinel5p
+    S5P_L1B_RA_BD8:
+      productType: L1B_RA_BD8
+      collection: Sentinel5p
+    # S5P L2
+    S5P_L2_NO2:
+      productType: L2__NO2___
+      collection: Sentinel5p
+    S5P_L2_CLOUD:
+      productType: L2__CLOUD_
+      collection: Sentinel5p
+    S5P_L2_O3:
+      productType: L2__O3____
+      collection: Sentinel5p
+    S5P_L2_CO:
+      productType: L2__CO____
+      collection: Sentinel5p
+    S5P_L2_AER_AI:
+      productType: L2__AER_AI
+      collection: Sentinel5p
+    S5P_L2_O3_PR:
+      productType: L2__O3__PR
+      collection: Sentinel5p
+    S5P_L2_O3_TCL:
+      productType: L2__O3_TCL
+      collection: Sentinel5p
+    S5P_L2_AER_LH:
+      productType: L2__AER_LH
+      collection: Sentinel5p
+    S5P_L2_HCHO:
+      productType: L2__HCHO__
+      collection: Sentinel5p
+    S5P_L2_CH4:
+      productType: L2__CH4___
+      collection: Sentinel5p
+    S5P_L2_NP_BD3:
+      productType: L2__NP_BD3
+      collection: Sentinel5p
+    S5P_L2_NP_BD6:
+      productType: L2__NP_BD6
+      collection: Sentinel5p
+    S5P_L2_NP_BD7:
+      productType: L2__NP_BD7
+      collection: Sentinel5p
+    S5P_L2_SO2:
+      productType: L2__SO2___
+      collection: Sentinel5p
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
@@ -1553,6 +1701,51 @@
       productType: SR_2_WAT___
       metadata_mapping:
         cloudCover: '$.null'
+    # S5P L1
+    S5P_L1B_RA_BD1:
+      productType: L1B_RA_BD1
+    S5P_L1B_RA_BD2:
+      productType: L1B_RA_BD2
+    S5P_L1B_RA_BD3:
+      productType: L1B_RA_BD3
+    S5P_L1B_RA_BD4:
+      productType: L1B_RA_BD4
+    S5P_L1B_RA_BD5:
+      productType: L1B_RA_BD5
+    S5P_L1B_RA_BD6:
+      productType: L1B_RA_BD6
+    S5P_L1B_RA_BD7:
+      productType: L1B_RA_BD7
+    S5P_L1B_RA_BD8:
+      productType: L1B_RA_BD8
+    # S5P L2
+    S5P_L2_NO2:
+      productType: L2__NO2___
+    S5P_L2_CLOUD:
+      productType: L2__CLOUD_
+    S5P_L2_O3:
+      productType: L2__O3____
+    S5P_L2_CO:
+      productType: L2__CO____
+    S5P_L2_AER_AI:
+      productType: L2__AER_AI
+    S5P_L2_O3_PR:
+      productType: L2__O3__PR
+    S5P_L2_AER_LH:
+      productType: L2__AER_LH
+    S5P_L2_HCHO:
+      productType: L2__HCHO__
+    S5P_L2_CH4:
+      productType: L2__CH4___
+    S5P_L2_NP_BD3:
+      productType: L2__NP_BD3
+    S5P_L2_NP_BD6:
+      productType: L2__NP_BD6
+    S5P_L2_NP_BD7:
+      productType: L2__NP_BD7
+    S5P_L2_SO2:
+      productType: L2__SO2___
+    # Landsat
     L8_OLI_TIRS_C1L1:
       platform: 'Landsat-*'
     GENERIC_PRODUCT_TYPE:
