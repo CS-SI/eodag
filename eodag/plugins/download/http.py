@@ -42,6 +42,7 @@ from eodag.plugins.download.base import (
     Download,
 )
 from eodag.utils import (
+    USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
     path_to_uri,
@@ -117,7 +118,7 @@ class HTTPDownload(Download):
             method=order_method,
             url=order_url,
             auth=auth,
-            headers=getattr(self.config, "order_headers", {}),
+            headers=dict(getattr(self.config, "order_headers", {}), **USER_AGENT),
             **order_kwargs,
         ) as response:
             try:
@@ -197,7 +198,9 @@ class HTTPDownload(Download):
             method=status_method,
             url=status_url,
             auth=auth,
-            headers=getattr(self.config, "order_status_headers", {}),
+            headers=dict(
+                getattr(self.config, "order_status_headers", {}), **USER_AGENT
+            ),
             **status_kwargs,
         ) as response:
             try:
@@ -401,6 +404,7 @@ class HTTPDownload(Download):
                 stream=True,
                 auth=auth,
                 params=params,
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
                 **req_kwargs,
             ) as self.stream:
@@ -547,7 +551,10 @@ class HTTPDownload(Download):
             if not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 asset_headers = requests.head(
-                    asset["href"], auth=auth, timeout=HTTP_REQ_TIMEOUT
+                    asset["href"],
+                    auth=auth,
+                    headers=USER_AGENT,
+                    timeout=HTTP_REQ_TIMEOUT,
                 ).headers
                 header_content_disposition_dict = {}
 
@@ -576,6 +583,7 @@ class HTTPDownload(Download):
                         stream=True,
                         auth=auth,
                         params=params,
+                        headers=USER_AGENT,
                         timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
                     ) as stream:
                         # size from GET header / Content-length
@@ -610,6 +618,7 @@ class HTTPDownload(Download):
                 stream=True,
                 auth=auth,
                 params=params,
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             ) as stream:
                 try:

@@ -25,8 +25,11 @@ from unittest import mock
 import responses
 
 from tests.context import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    HTTP_REQ_TIMEOUT,
     OFFLINE_STATUS,
     ONLINE_STATUS,
+    USER_AGENT,
     EOProduct,
     NotAvailableError,
     PluginManager,
@@ -158,6 +161,15 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isfile(path))
+        mock_requests_get.assert_called_once_with(
+            "get",
+            self.product.remote_location,
+            stream=True,
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
@@ -183,6 +195,24 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertTrue(os.path.isdir(path))
         self.assertTrue(
             os.path.isfile(os.path.join(self.output_dir, "dummy_product", "something"))
+        )
+
+        # Check if the GET request has been called for both size request and download request
+        self.assertEqual(mock_requests_get.call_count, 2)
+        mock_requests_get.assert_called_with(
+            self.product.assets["foo"]["href"],
+            stream=True,
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
+        # Check if the HEAD request has been called once for size & filename request
+        mock_requests_head.assert_called_once_with(
+            self.product.assets["foo"]["href"],
+            auth=None,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -382,7 +412,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             method="get",
             url=self.product.properties["orderLink"],
             auth=auth,
-            headers={},
+            headers=USER_AGENT,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
@@ -403,7 +433,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             method="post",
             url=self.product.properties["orderLink"],
             auth=auth,
-            headers={},
+            headers=USER_AGENT,
         )
         # orderLink with query query args
         mock_request.reset_mock()
@@ -413,7 +443,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             method="post",
             url="http://somewhere/order",
             auth=auth,
-            headers={},
+            headers=USER_AGENT,
             json={"foo": ["bar"]},
         )
 
@@ -447,6 +477,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     ],
                     cm.output,
                 )
+            self.assertIn(
+                list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
+            )
             self.assertEqual(len(responses.calls), 1)
 
         run()
@@ -832,6 +865,11 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         path = plugin.download(self.product, outputs_prefix=self.output_dir)
 
+        mock_requests_get.assert_called_once_with(
+            self.product.properties["tileInfo"],
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+        )
         self.assertEqual(mock_get_authenticated_objects.call_count, 2)
         mock_get_authenticated_objects.assert_any_call(
             plugin, "somebucket", "path/to/some", None
@@ -906,6 +944,11 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         path = plugin.download(self.product, outputs_prefix=self.output_dir)
 
+        mock_requests_get.assert_called_once_with(
+            self.product.properties["tileInfo"],
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+        )
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "example", "", None
         )

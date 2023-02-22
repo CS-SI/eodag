@@ -29,6 +29,7 @@ from shapely.geometry import shape
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
     ONLINE_STATUS,
+    USER_AGENT,
     AuthenticationError,
     EODataAccessGateway,
     EOProduct,
@@ -556,6 +557,9 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             )
 
             self.assertEqual(len(responses.calls), 1)
+            self.assertIn(
+                list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
+            )
             responses.calls.reset()
 
             self.assertEqual(

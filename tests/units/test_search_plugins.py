@@ -17,15 +17,18 @@
 # limitations under the License.
 
 import json
+import re
 import unittest
 from pathlib import Path
 from unittest import mock
 
 import responses
+from requests import RequestException
 
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
+    USER_AGENT,
     AuthenticationError,
     EOProduct,
     PluginManager,
@@ -85,7 +88,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.mundi_auth_plugin,
-            **self.search_criteria_s2_msi_l1c
+            **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
@@ -130,7 +133,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.mundi_auth_plugin,
-            **self.search_criteria_s2_msi_l1c
+            **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
@@ -178,7 +181,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.peps_auth_plugin,
-            **self.search_criteria_s2_msi_l1c
+            **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
@@ -221,7 +224,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.peps_auth_plugin,
-            **self.search_criteria_s2_msi_l1c
+            **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
@@ -383,7 +386,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                         items_per_page=2,
                         auth=self.awseos_auth_plugin,
                         raise_errors=True,
-                        **self.search_criteria_s2_msi_l1c
+                        **self.search_criteria_s2_msi_l1c,
                     )
                 self.assertIn("test error message", str(cm.output))
 
@@ -403,7 +406,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                     page=1,
                     items_per_page=2,
                     auth=self.awseos_auth_plugin,
-                    **self.search_criteria_s2_msi_l1c
+                    **self.search_criteria_s2_msi_l1c,
                 )
 
         run()
@@ -421,7 +424,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.awseos_auth_plugin,
-            **self.search_criteria_s2_msi_l1c
+            **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
@@ -466,7 +469,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             page=1,
             items_per_page=2,
             auth=self.awseos_auth_plugin,
-            **self.search_criteria_s2_msi_l1c
+            **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
@@ -557,6 +560,13 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self, mock__request, mock_requests_get
     ):
         """A query with a ODataV4Search (here onda) must return tuple with a list of EOProduct and a number of available products"""  # noqa
+        # per_product_metadata_query parameter is updated to False if it is necessary
+        per_product_metadata_query = (
+            self.onda_search_plugin.config.per_product_metadata_query
+        )
+        if per_product_metadata_query:
+            self.onda_search_plugin.config.per_product_metadata_query = False
+
         with open(self.provider_resp_dir / "onda_search.json") as f:
             onda_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
@@ -577,8 +587,16 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             auth=self.onda_auth_plugin,
             # custom query argument that must be mapped using discovery_metata.search_param
             foo="bar",
-            **self.search_criteria_s2_msi_l1c
+            **self.search_criteria_s2_msi_l1c,
         )
+        # restore per_product_metadata_query initial value if it is necessary
+        if (
+            self.onda_search_plugin.config.per_product_metadata_query
+            != per_product_metadata_query
+        ):
+            self.onda_search_plugin.config.per_product_metadata_query = (
+                per_product_metadata_query
+            )
 
         # Specific expected results
         number_of_products = 2
@@ -608,13 +626,169 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         # products count non extracted from search results as count endpoint is specified
         self.assertFalse(hasattr(self.onda_search_plugin, "total_items_nb"))
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_count_and_search_onda_per_product_metadata_query(
+        self, mock__request, mock_requests_get
+    ):
+        """A query with a ODataV4Search (here onda) must return tuple with a list of EOProduct and a number of available products for query per product metadata"""  # noqa
+        # per_product_metadata_query parameter is updated to True if it is necessary
+        per_product_metadata_query = (
+            self.onda_search_plugin.config.per_product_metadata_query
+        )
+        if not per_product_metadata_query:
+            self.onda_search_plugin.config.per_product_metadata_query = True
+
+        with open(self.provider_resp_dir / "onda_search.json") as f:
+            onda_resp_search = json.load(f)
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            self.onda_resp_count,
+            onda_resp_search,
+        ]
+        mock_requests_get.return_value = mock.Mock()
+        # Mock requests.get in ODataV4Search.do_search that sends a request per product
+        # obtained by QueryStringSearch.do_search to retrieve its metadata.
+        # Just use dummy metadata here for the test.
+        mock_requests_get.return_value.json.return_value = dict(
+            value=[dict(id="dummy_metadata", value="dummy_metadata_val")]
+        )
+        products, estimate = self.onda_search_plugin.query(
+            page=1,
+            items_per_page=2,
+            auth=self.onda_auth_plugin,
+            # custom query argument that must be mapped using discovery_metata.search_param
+            foo="bar",
+            **self.search_criteria_s2_msi_l1c,
+        )
+        # restore per_product_metadata_query initial value if it is necessary
+        if (
+            self.onda_search_plugin.config.per_product_metadata_query
+            != per_product_metadata_query
+        ):
+            self.onda_search_plugin.config.per_product_metadata_query = (
+                per_product_metadata_query
+            )
+
+        # we check request arguments of the last call
+        metadata_url = "{}({})/Metadata".format(
+            self.onda_search_plugin.config.api_endpoint.rstrip("/"),
+            products[1].properties["uid"],
+        )
+        mock_requests_get.assert_called_with(
+            metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+        )
+        # we check that two requests have been called, one per product
+        self.assertEqual(mock_requests_get.call_count, 2)
+
+        # Specific expected results
+        number_of_products = 2
+        onda_url_search = (
+            'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
+            'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"&$top=2&$skip=0&$expand=Metadata'
+        )
+
+        mock__request.assert_any_call(
+            mock.ANY,
+            self.onda_url_count,
+            info_message=mock.ANY,
+            exception_message=mock.ANY,
+        )
+        mock__request.assert_called_with(
+            mock.ANY,
+            onda_url_search,
+            info_message=mock.ANY,
+            exception_message=mock.ANY,
+        )
+
+        self.assertEqual(estimate, self.onda_products_count)
+        self.assertEqual(len(products), number_of_products)
+        self.assertIsInstance(products[0], EOProduct)
+        # products count non extracted from search results as count endpoint is specified
+        self.assertFalse(hasattr(self.onda_search_plugin, "total_items_nb"))
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_count_and_search_onda__per_product_metadata_query_request_error(
+        self, mock__request, mock_requests_get
+    ):
+        """A query with a ODataV4Search (here onda) must handle requests errors for query per product metadata"""  # noqa
+        # per_product_metadata_query parameter is updated to True if it is necessary
+        per_product_metadata_query = (
+            self.onda_search_plugin.config.per_product_metadata_query
+        )
+        if not per_product_metadata_query:
+            self.onda_search_plugin.config.per_product_metadata_query = True
+        with open(self.provider_resp_dir / "onda_search.json") as f:
+            onda_resp_search = json.load(f)
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            self.onda_resp_count,
+            onda_resp_search,
+        ]
+        mock_requests_get.return_value = mock.Mock()
+        # Mock requests.get in ODataV4Search.do_search that sends a request per product
+        # obtained by QueryStringSearch.do_search to retrieve its metadata.
+        # Just use dummy metadata here for the test.
+        mock_requests_get.return_value.json.return_value = dict(
+            value=[dict(id="dummy_metadata", value="dummy_metadata_val")]
+        )
+        mock_requests_get.side_effect = RequestException()
+
+        with self.assertLogs(level="ERROR") as cm:
+            products, estimate = self.onda_search_plugin.query(
+                page=1,
+                items_per_page=2,
+                auth=self.onda_auth_plugin,
+                # custom query argument that must be mapped using discovery_metata.search_param
+                foo="bar",
+                **self.search_criteria_s2_msi_l1c,
+            )
+            # restore per_product_metadata_query initial value if it is necessary
+            if (
+                self.onda_search_plugin.config.per_product_metadata_query
+                != per_product_metadata_query
+            ):
+                self.onda_search_plugin.config.per_product_metadata_query = (
+                    per_product_metadata_query
+                )
+            search_provider = self.onda_auth_plugin.provider
+            search_type = self.onda_search_plugin.__class__.__name__
+            error_message = f"Skipping error while searching for {search_provider} {search_type} instance:"
+            error_message_indexes_list = [
+                i.start() for i in re.finditer(error_message, str(cm.output))
+            ]
+            # we check that two errors have been logged, one per product
+            self.assertEqual(len(error_message_indexes_list), 2)
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_odatav4search_search_cloudcover_onda(self, mock__request):
         """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar product types"""
+        # per_product_metadata_query parameter is updated to False if it is necessary
+        per_product_metadata_query = (
+            self.onda_search_plugin.config.per_product_metadata_query
+        )
+        if per_product_metadata_query:
+            self.onda_search_plugin.config.per_product_metadata_query = False
 
         self.onda_search_plugin.query(productType="S2_MSI_L1C", cloudCover=50)
+        # restore per_product_metadata_query initial value if it is necessary
+        if (
+            self.onda_search_plugin.config.per_product_metadata_query
+            != per_product_metadata_query
+        ):
+            self.onda_search_plugin.config.per_product_metadata_query = (
+                per_product_metadata_query
+            )
+
         mock__request.assert_called()
         self.assertIn("cloudCoverPercentage", mock__request.call_args_list[-1][0][1])
         mock__request.reset_mock()
@@ -738,6 +912,7 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
         mock_requests_post.assert_called_with(
             self.search_plugin.config.api_endpoint,
             json=mock.ANY,
+            headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             auth=self.search_plugin.auth,
         )

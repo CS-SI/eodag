@@ -40,6 +40,7 @@ from eodag.plugins.download.base import (
 )
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    USER_AGENT,
     ProgressCallback,
     format_dict_items,
     path_to_uri,
@@ -284,6 +285,7 @@ class UsgsApi(Download, Api):
                 with requests.get(
                     req_url,
                     stream=True,
+                    headers=USER_AGENT,
                     timeout=wait * 60,
                 ) as stream:
                     try:

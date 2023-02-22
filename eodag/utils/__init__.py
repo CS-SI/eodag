@@ -70,11 +70,20 @@ from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
 
+try:
+    from importlib.metadata import metadata  # type: ignore
+except ImportError:  # pragma: no cover
+    # for python < 3.8
+    from importlib_metadata import metadata  # type: ignore
+
 DEFAULT_PROJ = "EPSG:4326"
 
 logger = py_logging.getLogger("eodag.utils")
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+
+eodag_version = metadata("eodag")["Version"]
+USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
 
 def _deprecated(reason="", version=None):

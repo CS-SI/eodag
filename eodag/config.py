@@ -28,6 +28,7 @@ import yaml.parser
 from pkg_resources import resource_filename
 
 from eodag.utils import (
+    USER_AGENT,
     dict_items_recursive_apply,
     merge_mappings,
     slugify,
@@ -478,7 +479,9 @@ def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
     if conf_uri.lower().startswith("http"):
         # read from remote
         try:
-            response = requests.get(conf_uri, timeout=HTTP_REQ_TIMEOUT)
+            response = requests.get(
+                conf_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            )
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:

@@ -31,6 +31,7 @@ from tests import EODagTestCase
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     NOT_AVAILABLE,
+    USER_AGENT,
     DatasetDriver,
     Download,
     EOProduct,
@@ -179,6 +180,7 @@ class TestEOProduct(EODagTestCase):
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
+            headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(quicklook_file_path, "")
@@ -202,6 +204,7 @@ class TestEOProduct(EODagTestCase):
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
+            headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(
@@ -219,6 +222,7 @@ class TestEOProduct(EODagTestCase):
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
+            headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(self.requests_http_get.call_count, 2)
@@ -307,6 +311,7 @@ class TestEOProduct(EODagTestCase):
                 stream=True,
                 auth=None,
                 params={},
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
@@ -358,6 +363,7 @@ class TestEOProduct(EODagTestCase):
                 stream=True,
                 auth=None,
                 params={},
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             # Check that the product's directory exists.
@@ -430,6 +436,7 @@ class TestEOProduct(EODagTestCase):
                 stream=True,
                 auth=None,
                 params={"fakeparam": "dummy"},
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             # Check that "outputs_prefix" is respected.
