@@ -31,7 +31,7 @@ from jsonpath_ng.jsonpath import Child, Fields, Index
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
-from shapely.geometry import MultiPolygon
+from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import transform
 
 from eodag.utils import (
@@ -138,6 +138,7 @@ def format_metadata(search_param, *args, **kwargs):
         - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
         - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
         - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
+        - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
         - ``csv_list``: convert to a comma separated list
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
           milliseconds to a utc iso datetime
@@ -324,9 +325,12 @@ def format_metadata(search_param, *args, **kwargs):
                 from_proj = pyproj.Proj(from_proj)
                 to_proj = pyproj.Proj(DEFAULT_PROJ)
 
-                project = partial(pyproj.transform, from_proj, to_proj)
-
-                return transform(project, input_geom)
+                if from_proj != to_proj:
+                    # reproject
+                    project = partial(pyproj.transform, from_proj, to_proj)
+                    return transform(project, input_geom)
+                else:
+                    return input_geom
             else:
                 logger.warning(f"Could not read {ewkt_string} as EWKT")
                 return ewkt_string
@@ -339,6 +343,57 @@ def format_metadata(search_param, *args, **kwargs):
             wkt_geom = MetadataFormatter.convert_to_rounded_wkt(input_geom)
 
             return f"{proj};{wkt_geom}"
+
+        @staticmethod
+        def convert_from_georss(georss):
+            """Convert GeoRSS to shapely geometry"""
+
+            if "polygon" in georss.tag:
+                # Polygon
+                coords_list = georss.text.split()
+                polygon_args = [
+                    (float(coords_list[2 * i]), float(coords_list[2 * i + 1]))
+                    for i in range(int(len(coords_list) / 2))
+                ]
+                return Polygon(polygon_args)
+            elif len(georss) == 1 and "multisurface" in georss[0].tag.lower():
+                # Multipolygon
+                from_proj = getattr(georss[0], "attrib", {}).get("srsName", None)
+                if from_proj:
+                    from_proj = pyproj.Proj(from_proj)
+                    to_proj = pyproj.Proj(DEFAULT_PROJ)
+                    project = partial(pyproj.transform, from_proj, to_proj)
+
+                # function to get deepest elements
+                def flatten_elements(nested):
+
+                    for e in nested:
+                        if len(e) > 0:
+                            yield from flatten_elements(e)
+                        else:
+                            yield e
+
+                polygons_list = []
+                for elem in flatten_elements(georss[0]):
+                    coords_list = elem.text.split()
+                    polygon_args = [
+                        (float(coords_list[2 * i]), float(coords_list[2 * i + 1]))
+                        for i in range(int(len(coords_list) / 2))
+                    ]
+                    polygon = Polygon(polygon_args)
+                    # reproject if needed
+                    if from_proj and from_proj != to_proj:
+                        polygons_list.append(transform(project, polygon))
+                    else:
+                        polygons_list.append(polygon)
+
+                return MultiPolygon(polygons_list)
+
+            else:
+                logger.warning(
+                    f"Incoming GeoRSS format not supported yet: {str(georss)}"
+                )
+                return georss
 
         @staticmethod
         def convert_csv_list(values_list):
@@ -654,6 +709,23 @@ def properties_from_xml(
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value
                 else:
+                    # reformat conversion_or_none as metadata#converter(args) or metadata#converter
+                    if (
+                        len(conversion_or_none) > 1
+                        and isinstance(conversion_or_none, list)
+                        and conversion_or_none[1] is not None
+                    ):
+                        conversion_or_none = "%s(%s)" % (
+                            conversion_or_none[0],
+                            conversion_or_none[1],
+                        )
+                    elif isinstance(conversion_or_none, list):
+                        conversion_or_none = conversion_or_none[0]
+
+                    # check if conversion uses variables to format
+                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                        conversion_or_none = conversion_or_none.format(**properties)
+
                     properties[metadata] = [
                         format_metadata(
                             "{%s%s%s}"
