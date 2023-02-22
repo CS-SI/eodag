@@ -18,6 +18,7 @@
 import unittest
 
 from jsonpath_ng.ext import parse
+from lxml import etree
 from shapely import wkt
 
 from tests.context import (
@@ -139,6 +140,55 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, fieldname=geom),
             "SRID=4326;POINT (0.1100 1.2200)",
+        )
+
+    def test_convert_from_georss(self):
+        to_format = "{fieldname#from_georss}"
+        # polygon
+        georss = etree.Element("polygon")
+        georss.text = "1.23 43.42 1.23 43.76 1.68 43.76 1.68 43.42 1.23 43.42"
+        geom = format_metadata(to_format, fieldname=georss)
+        self.assertEqual(
+            geom,
+            "POLYGON ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42))",
+        )
+        # multipolygon
+        georss = etree.Element("where")
+        sub_multipolygon = etree.SubElement(georss, "Multisurface")
+        sub_polygon1 = etree.SubElement(sub_multipolygon, "foo")
+        sub_polygon1.text = "1.23 43.42 1.23 43.76 1.68 43.76 1.68 43.42 1.23 43.42"
+        sub_polygon2 = etree.SubElement(sub_multipolygon, "bar")
+        sub_polygon2.text = "2.23 43.42 2.23 43.76 3.68 43.76 3.68 43.42 2.23 43.42"
+        geom = format_metadata(to_format, fieldname=georss)
+        self.assertEqual(
+            geom,
+            (
+                "MULTIPOLYGON ("
+                "((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42)), "
+                "((2.23 43.42, 2.23 43.76, 3.68 43.76, 3.68 43.42, 2.23 43.42))"
+                ")"
+            ),
+        )
+        # multipolygon in different projection
+        georss = etree.Element("where")
+        sub_multipolygon = etree.SubElement(georss, "Multisurface")
+        sub_multipolygon.attrib["srsName"] = "EPSG:3857"
+        sub_polygon1 = etree.SubElement(sub_multipolygon, "foo")
+        sub_polygon1.text = (
+            "4833492 136933 4871341 136933 4871341 187044 4833492 187044 4833492 136933"
+        )
+        sub_polygon2 = etree.SubElement(sub_multipolygon, "bar")
+        sub_polygon2.text = (
+            "4833492 248305 4871341 248305 4871341 409938 4833492 409938 4833492 248305"
+        )
+        wkt_str = format_metadata(to_format, fieldname=georss)
+        geom = wkt.loads(wkt_str)
+        self.assertEqual(len(geom), 2)
+        self.assertEqual(
+            [round(x, 2) for x in geom[0].bounds], [1.23, 43.42, 1.68, 43.76]
+        )
+        self.assertEqual(
+            [round(x, 2) for x in geom[1].bounds], [2.23, 43.42, 3.68, 43.76]
         )
 
     def test_convert_csv_list(self):
