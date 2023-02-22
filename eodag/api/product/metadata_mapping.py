@@ -709,6 +709,23 @@ def properties_from_xml(
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value
                 else:
+                    # reformat conversion_or_none as metadata#converter(args) or metadata#converter
+                    if (
+                        len(conversion_or_none) > 1
+                        and isinstance(conversion_or_none, list)
+                        and conversion_or_none[1] is not None
+                    ):
+                        conversion_or_none = "%s(%s)" % (
+                            conversion_or_none[0],
+                            conversion_or_none[1],
+                        )
+                    elif isinstance(conversion_or_none, list):
+                        conversion_or_none = conversion_or_none[0]
+
+                    # check if conversion uses variables to format
+                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                        conversion_or_none = conversion_or_none.format(**properties)
+
                     properties[metadata] = [
                         format_metadata(
                             "{%s%s%s}"

@@ -1267,7 +1267,8 @@
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
-        - 'georss:box/text()'
+        - '{georss:polygon|georss:where#from_georss}'
+      defaultGeometry: '-180 -90 180 90'
       # The url of the quicklook
       quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
