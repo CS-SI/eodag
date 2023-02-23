@@ -103,6 +103,13 @@ CREODIAS_SEARCH_ARGS = [
     "2019-03-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
+COP_DATASPACE_SEARCH_ARGS = [
+    "cop_dataspace",
+    "S2_MSI_L1C",
+    "2019-03-01",
+    "2019-03-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 MUNDI_SEARCH_ARGS = [
     "mundi",
     "S2_MSI_L1C",
@@ -401,6 +408,11 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_cop_dataspace(self):
+        product = self.execute_search(*COP_DATASPACE_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
@@ -959,6 +971,11 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)
+
+    def test_end_to_end_wrong_credentials_cop_dataspace(self):
+        product = self.execute_search(*COP_DATASPACE_SEARCH_ARGS)
         with self.assertRaises(AuthenticationError):
             self.eodag.download(product)
 
