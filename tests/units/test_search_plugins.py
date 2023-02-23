@@ -715,7 +715,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_odatav4search_count_and_search_onda__per_product_metadata_query_request_error(
+    def test_plugins_search_odatav4search_count_and_search_onda_per_product_metadata_query_request_error(
         self, mock__request, mock_requests_get
     ):
         """A query with a ODataV4Search (here onda) must handle requests errors for query per product metadata"""  # noqa
