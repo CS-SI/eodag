@@ -24,7 +24,13 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
-from tests.context import AuthenticationError, MisconfiguredError, PluginManager
+from tests.context import (
+    HTTP_REQ_TIMEOUT,
+    USER_AGENT,
+    AuthenticationError,
+    MisconfiguredError,
+    PluginManager,
+)
 
 
 class BaseAuthPluginTest(unittest.TestCase):
@@ -141,7 +147,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         args, kwargs = mock_requests_post.call_args
         assert args[0] == auth_plugin.config.auth_uri
         assert kwargs["data"] == auth_plugin.config.credentials
-        assert kwargs["headers"] == auth_plugin.config.headers
+        assert kwargs["headers"] == dict(auth_plugin.config.headers, **USER_AGENT)
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
@@ -231,6 +237,14 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
         self.assertIsInstance(auth, AuthBase)
+
+        # check if requests.get has been sent with right parameters
+        mock_requests_get.assert_called_once_with(
+            auth_plugin.config.auth_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+            auth=auth,
+        )
 
         # check auth query string
         self.assertEqual(auth.parse_args, auth_plugin.config.credentials)

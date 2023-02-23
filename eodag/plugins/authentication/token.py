@@ -20,7 +20,7 @@ import requests
 from requests import RequestException
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils import RequestsTokenAuth
+from eodag.utils import USER_AGENT, RequestsTokenAuth
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
@@ -52,7 +52,9 @@ class TokenAuth(Authentication):
 
         # append headers to req if some are specified in config
         req_kwargs = (
-            {"headers": self.config.headers} if hasattr(self.config, "headers") else {}
+            {"headers": dict(self.config.headers, **USER_AGENT)}
+            if hasattr(self.config, "headers")
+            else {"headers": USER_AGENT}
         )
         try:
             # First get the token

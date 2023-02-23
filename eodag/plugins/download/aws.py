@@ -34,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.download.base import Download
 from eodag.utils import (
+    USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
     get_bucket_name_and_prefix,
@@ -254,7 +255,7 @@ class AwsDownload(Download):
                 **product.properties
             )
             logger.info("Fetching extra metadata from %s" % fetch_url)
-            resp = requests.get(fetch_url, timeout=HTTP_REQ_TIMEOUT)
+            resp = requests.get(fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT)
             update_metadata = mtd_cfg_as_jsonpath(update_metadata)
             if fetch_format == "json":
                 json_resp = resp.json()

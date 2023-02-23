@@ -20,7 +20,7 @@ import json
 import logging
 import re
 from urllib.error import HTTPError as urllib_HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import requests
 from lxml import etree
@@ -39,6 +39,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    USER_AGENT,
     cached_parse,
     dict_items_recursive_apply,
     format_dict_items,
@@ -899,13 +900,16 @@ class QueryStringSearch(Search):
                     qry = qry.replace(quote(keep_unquoted), keep_unquoted)
 
                 # prepare req for Response building
-                req = requests.Request(method="GET", url=base_url, **kwargs)
+                req = requests.Request(
+                    method="GET", url=base_url, headers=USER_AGENT, **kwargs
+                )
                 prep = req.prepare()
                 prep.url = base_url + "?" + qry
                 # send urllib req
                 if info_message:
                     logger.info(info_message.replace(url, prep.url))
-                urllib_response = urlopen(prep.url)
+                urllib_req = Request(prep.url, headers=USER_AGENT)
+                urllib_response = urlopen(urllib_req)
                 # py2 compatibility : prevent AttributeError: addinfourl instance has no attribute 'reason'
                 if not hasattr(urllib_response, "reason"):
                     urllib_response.reason = ""
@@ -919,7 +923,9 @@ class QueryStringSearch(Search):
             else:
                 if info_message:
                     logger.info(info_message)
-                response = requests.get(url, timeout=HTTP_REQ_TIMEOUT, **kwargs)
+                response = requests.get(
+                    url, timeout=HTTP_REQ_TIMEOUT, headers=USER_AGENT, **kwargs
+                )
                 response.raise_for_status()
         except (requests.RequestException, urllib_HTTPError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
@@ -977,7 +983,9 @@ class ODataV4Search(QueryStringSearch):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
-                    response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
+                    response = requests.get(
+                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                    )
                     response.raise_for_status()
                 except requests.RequestException:
                     logger.exception(
@@ -1206,7 +1214,11 @@ class PostJsonSearch(QueryStringSearch):
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
             response = requests.post(
-                url, json=self.query_params, timeout=HTTP_REQ_TIMEOUT, **kwargs
+                url,
+                json=self.query_params,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                **kwargs,
             )
             response.raise_for_status()
         except (requests.RequestException, urllib_HTTPError) as err:

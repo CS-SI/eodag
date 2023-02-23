@@ -31,7 +31,7 @@ from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
 )
-from eodag.utils import ProgressCallback, get_geometry_from_various
+from eodag.utils import USER_AGENT, ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 try:
@@ -437,6 +437,7 @@ class EOProduct(object):
                 self.properties["quicklook"],
                 stream=True,
                 auth=auth,
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             ) as stream:
                 try:

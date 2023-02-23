@@ -21,6 +21,7 @@ from unittest import TestCase, mock
 
 from tests.context import (
     HTTP_REQ_TIMEOUT,
+    USER_AGENT,
     AuthenticationError,
     EODataAccessGateway,
     HeaderAuth,
@@ -136,8 +137,15 @@ class TestCoreProductTypesConfig(TestCase):
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.adapters.HTTPAdapter.build_response",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
-    def test_core_discover_product_types_auth(self, mock_requests_get):
+    def test_core_discover_product_types_auth(
+        self, mock_requests_get, mock_urlopen, mock_build_response
+    ):
         # without auth plugin
         self.dag.update_providers_config(
             """
@@ -199,8 +207,34 @@ class TestCoreProductTypesConfig(TestCase):
                 "fetch_url"
             ],
             auth=mock.ANY,
+            headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
         )
+
+        mock_urlopen.return_value.json.return_value = {}
+        mock_build_response.return_value.json.return_value = {}
+
+        # succeeds with dont_quote attribute
+        self.dag.update_providers_config(
+            """
+            foo_provider:
+                search:
+                    dont_quote:
+                        - '['
+                        - ']'
+            """
+        )
+        self.dag.discover_product_types(provider="foo_provider")
+
+        mock_urlopen.assert_called_once()
+        self.assertDictEqual(
+            {
+                k.lower(): v
+                for k, v in mock_urlopen.call_args_list[0][0][0].headers.items()
+            },
+            {k.lower(): v for k, v in USER_AGENT.items()},
+        )
+
         call_args, call_kwargs = mock_requests_get.call_args
         self.assertIsInstance(call_kwargs["auth"], HeaderAuth)
 
