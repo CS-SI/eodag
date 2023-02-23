@@ -172,3 +172,13 @@ meteoblue:
             apikey:
     download:
         outputs_prefix:
+cop_dataspace:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
