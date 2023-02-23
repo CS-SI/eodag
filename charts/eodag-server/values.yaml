@@ -1,0 +1,545 @@
+## @section Global parameters
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
+##
+
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.storageClass Global StorageClass for Persistent Volume(s)
+##
+global:
+  imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+  storageClass: ""
+
+## @section Common parameters
+##
+
+## @param kubeVersion Force target Kubernetes version (using Helm capabilities if not set)
+##
+kubeVersion: ""
+## @param nameOverride String to partially override common.names.fullname
+##
+nameOverride: ""
+## @param fullnameOverride String to fully override common.names.fullname
+##
+fullnameOverride: ""
+## @param namespaceOverride String to fully override common.names.namespaceapi
+##
+namespaceOverride: ""
+## @param commonLabels Labels to add to all deployed objects
+##
+commonLabels: {}
+## @param commonAnnotations Annotations to add to all deployed objects
+##
+commonAnnotations: {}
+## @param clusterDomain Kubernetes cluster domain name
+##
+clusterDomain: cluster.local
+## @param extraDeploy Array of extra objects to deploy with the release
+##
+extraDeploy: []
+
+## @section EODAG parameters
+
+## CS Group EODAG image version
+## ref: https://643vlk6z.gra7.container-registry.ovh.net/harbor/projects/28/repositories/hda-api
+## @param image.registry EODAG image registry
+## @param image.repository EODAG image repository
+## @param image.tag EODAG image tag (immutable tags are recommended)
+## @param image.digest EODAG image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+## @param image.pullPolicy EODAG image pull policy
+## @param image.pullSecrets Specify docker-registry secret names as an array
+## Number of replicas to deploy
+##
+image:
+  registry: docker.io
+  repository: csspace/eodag-server
+  tag: 2.9.0
+  digest: ""
+  ## Specify a imagePullPolicy
+  ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+  ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ## Example:
+  ## pullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  pullSecrets: []
+
+## @param replicaCount Number of EODAG replicas
+##
+replicaCount: 1
+
+## @param customLivenessProbe Custom livenessProbe that overrides the default one
+##
+customLivenessProbe: {}
+
+## @param customReadinessProbe Custom readinessProbe that overrides the default one
+##
+customReadinessProbe: {}
+
+## EODAG resource requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+## @param resources.limits The resources limits for the EODAG containers
+## @param resources.requests The requested resources for the EODAG containers
+##
+resources:
+  limits: {}
+  requests: {}
+  
+## Configure Pods Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param podSecurityContext.enabled Enabled EODAG pods' Security Context
+## @param podSecurityContext.fsGroup Set EODAG pod's Security Context fsGroup
+##
+podSecurityContext:
+  enabled: false
+  fsGroup: 1001
+
+## Configure Container Security Context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+## @param containerSecurityContext.enabled Enabled EODAG containers' Security Context
+## @param containerSecurityContext.runAsUser Set EODAG containers' Security Context runAsUser
+## @param containerSecurityContext.allowPrivilegeEscalation Set EODAG containers' Security Context allowPrivilegeEscalation
+## @param containerSecurityContext.capabilities.drop Set EODAG containers' Security Context capabilities to be dropped
+## @param containerSecurityContext.readOnlyRootFilesystem Set EODAG containers' Security Context readOnlyRootFilesystem
+## @param containerSecurityContext.runAsNonRoot Set EODAG container's Security Context runAsNonRoot
+##
+containerSecurityContext:
+  enabled: false
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - all
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+
+## @param command Override default container command (useful when using custom images)
+##
+command: []
+
+## @param args Override default container args (useful when using custom images). Overrides the defaultArgs.
+##
+args: []
+
+## EODAG application  ports
+## @param containerPorts.http EODAG application HTTP port number
+containerPorts:
+  http: 5000
+
+## @param hostAliases EODAG pods host aliases
+## https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
+##
+hostAliases: []
+
+## @param podLabels Extra labels for EODAG pods
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+##
+podLabels: {}
+
+## @param podAnnotations Annotations for EODAG pods
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+##
+podAnnotations: {}
+
+## @param podAffinityPreset Pod affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+##
+podAffinityPreset: ""
+
+## @param podAntiAffinityPreset Pod anti-affinity preset. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+##
+podAntiAffinityPreset: soft
+
+## Node affinity preset
+## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+##
+nodeAffinityPreset:
+  ## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+  ##
+  type: ""
+  ## @param nodeAffinityPreset.key Node label key to match. Ignored if `affinity` is set
+  ##
+  key: ""
+  ## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set
+  ## E.g.
+  ## values:
+  ##   - e2e-az1
+  ##   - e2e-az2
+  ##
+  values: []
+
+## @param affinity Affinity for EODAG pods assignment
+## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+## NOTE: `podAffinityPreset`, `podAntiAffinityPreset`, and `nodeAffinityPreset` will be ignored when it's set
+##
+affinity: {}
+
+## @param nodeSelector Node labels for EODAG pods assignment
+## ref: https://kubernetes.io/docs/user-guide/node-selection/
+##
+nodeSelector: {}
+
+## @param tolerations Tolerations for EODAG pods assignment
+## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+
+## @param schedulerName Name of the k8s scheduler (other than default)
+## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
+##
+schedulerName: ""
+
+## @param shareProcessNamespace Enable shared process namespace in a pod.
+## If set to false (default), each container will run in separate namespace,  will have PID=1.
+## If set to true, the /pause will run as init process and will reap any zombie PIDs,
+## for example, generated by a custom exec probe running longer than a probe timeoutSeconds.
+## Enable this only if customLivenessProbe or customReadinessProbe is used and zombie PIDs are accumulating.
+## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+##
+shareProcessNamespace: false
+
+## @param topologySpreadConstraints Topology Spread Constraints for pod assignment
+## https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+## The value is evaluated as a template
+##
+topologySpreadConstraints: []
+
+## @param updateStrategy.type EODAG statefulset strategy type
+## ref: https://kubernetes.io/docs/concepts/workloads/s/statefulset/#update-strategies
+##
+updateStrategy:
+  ## StrategyType
+  ## Can be set to RollingUpdate or OnDelete
+  ##
+  type: RollingUpdate
+
+## @param priorityClassName EODAG pods' priorityClassName
+##
+priorityClassName: ""
+
+## @param runtimeClassName Name of the runtime class to be used by pod(s)
+## ref: https://kubernetes.io/docs/concepts/containers/runtime-class/
+##
+runtimeClassName: ""
+
+## @param lifecycleHooks for the EODAG container(s) to automate configuration before or after startup
+##
+lifecycleHooks: {}
+
+## @param extraEnvVars Array with extra environment variables to add to EODAG nodes
+## e.g:
+## extraEnvVars:
+##   - name: FOO
+##     value: "bar"
+##
+extraEnvVars: []
+
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra env vars for EODAG nodes
+##
+extraEnvVarsCM: ""
+
+## @param extraEnvVarsSecret Name of existing Secret containing extra env vars for EODAG nodes
+##
+extraEnvVarsSecret: ""
+
+## @param extraVolumes Optionally specify extra list of additional volumes for the EODAG pod(s)
+##
+extraVolumes: []
+
+## @param extraVolumeMounts Optionally specify extra list of additional volumeMounts for the EODAG container(s)
+##
+extraVolumeMounts: []
+
+## @param sidecars Add additional sidecar containers to the EODAG pod(s)
+## e.g:
+## sidecars:
+##   - name: your-image-name
+##     image: your-image
+##     imagePullPolicy: Always
+##     ports:
+##       - name: portname
+##         containerPort: 1234
+##
+sidecars: []
+
+## @param initContainers Add additional init containers to the EODAG pod(s)
+## ref: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+## e.g:
+## initContainers:
+##  - name: your-image-name
+##    image: your-image
+##    imagePullPolicy: Always
+##    command: ['sh', '-c', 'echo "hello world"']
+##
+initContainers: []
+
+## @param productTypes Optional overwrite of collections default configuration
+## ref: https://github.com/CS-SI/eodag/blob/develop/eodag/resources/product_types.yml
+productTypes: ""
+# productTypes: |-
+#   # CBERS 4 ---------------------------------------------------------------------
+#   CBERS4_MUX_L2:
+#     abstract: |
+#       China-Brazil Earth Resources Satellite, CBERS-4 MUX camera Level-2 product. System corrected images, expect some
+#       translation error.
+#     instrument: MUX
+#     platform: CBERS
+#     platformSerialIdentifier: CBERS-4
+#     processingLevel: L2
+#     keywords: MUX,CBERS,CBERS-4,L2
+#     sensorType: OPTICAL
+#     license: proprietary
+#     missionStartDate: "2014-12-07T00:00:00Z"
+#     title: CBERS-4 MUX Level-2
+
+## @param providers Optional overwrite of providers default configuration
+## ref: https://github.com/CS-SI/eodag/blob/develop/eodag/resources/providers.yml
+providers: ""
+# providers: |-
+#   !provider
+#     name: usgs
+#     priority: 0
+#     description: U.S geological survey catalog for Landsat products
+#     roles:
+#       - host
+#     url: https://earthexplorer.usgs.gov/
+#     api: !plugin
+#       type: UsgsApi
+#       need_auth: true
+#       google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
+#       pagination:
+#         max_items_per_page: 5000
+#         total_items_nb_key_path: '$.totalHits'
+#       common_metadata_mapping_path: '$'
+#       metadata_mapping:
+#         id: '$.displayId'
+#         geometry: '$.spatialBounds'
+#         productType: '$.productType'
+#         title: '$.displayId'
+#         abstract: '$.summary'
+#         cloudCover: '$.cloudCover'
+#         startTimeFromAscendingNode: '$.temporalCoverage.startDate'
+#         completionTimeFromAscendingNode: '$.temporalCoverage.endDate'
+#         publicationDate: '$.publishDate'
+#         thumbnail: '$.browse[0].thumbnailPath'
+#         quicklook: '$.browse[0].browsePath'
+#         storageStatus: '{$.available#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+#         downloadLink: 'https://earthexplorer.usgs.gov/download/external/options/{productType}/{entityId}/M2M/'
+#         # metadata needed for download
+#         entityId: '$.entityId'
+#         productId: '$.id'
+#       extract: True
+#       order_enabled: true
+#     products:
+#       # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt may be outdated
+#       # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
+#       LANDSAT_C2L1:
+#         dataset: landsat_ot_c2_l1
+#         outputs_extension: .tar.gz
+#       LANDSAT_C2L2:
+#         dataset: landsat_ot_c2_l2
+#         outputs_extension: .tar.gz
+#       S2_MSI_L1C:
+#         dataset: SENTINEL_2A
+#         outputs_extension: .zip
+#       GENERIC_PRODUCT_TYPE:
+#         dataset: '{productType}'
+
+## Service configuration
+##
+service:
+  ## @param service.type Kubernetes service type
+  ##
+  type: ClusterIP
+  ## @param service.http.enabled Enable http port on service
+  ##
+  http:
+    enabled: true
+  ## @param service.ports.http EODAG service HTTP port
+  ##
+  ports:
+    http: 8080
+  ## @param service.nodePorts [object] Specify the nodePort values for the LoadBalancer and NodePort service types.
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+  ##
+  nodePorts:
+    http: ""
+  ## @param service.sessionAffinity Control where client requests go, to the same pod or round-robin
+  ## Values: ClientIP or None
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+  ##
+  sessionAffinity: None
+  ## @param service.sessionAffinityConfig Additional settings for the sessionAffinity
+  ## sessionAffinityConfig:
+  ##   clientIP:
+  ##     timeoutSeconds: 300
+  ##
+  sessionAffinityConfig: {}
+  ## @param service.clusterIP EODAG service clusterIP IP
+  ## e.g:
+  ## clusterIP: None
+  ##
+  clusterIP: ""
+  ## @param service.loadBalancerIP loadBalancerIP for the SuiteCRM Service (optional, cloud specific)
+  ## ref: https://kubernetes.io/docs/user-guide/services/#type-loadbalancer
+  ##
+  loadBalancerIP: ""
+  ## @param service.loadBalancerSourceRanges Address that are allowed when service is LoadBalancer
+  ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+  ## Example:
+  ## loadBalancerSourceRanges:
+  ##   - 10.10.10.0/24
+  ##
+  loadBalancerSourceRanges: []
+  ## @param service.externalTrafficPolicy Enable client source IP preservation
+  ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+  ##
+  externalTrafficPolicy: Cluster
+  ## @param service.annotations Additional custom annotations for EODAG service
+  ##
+  annotations: {}
+  ## @param service.extraPorts Extra port to expose on EODAG service
+  ##
+  extraPorts: []
+
+## Configure the ingress for the EODAG
+## Ref: https://kubernetes.io/docs/user-guide/ingress/
+## @param ingress.enabled Enable the creation of an ingress for the EODAG
+## @param ingress.pathType Path type for the EODAG ingress
+## @param ingress.apiVersion Ingress API version for the EODAG ingress
+## @param ingress.hostname Ingress hostname for the EODAG ingress
+## @param ingress.annotations Annotations for the EODAG ingress. To enable certificate autogeneration, place here your cert-manager annotations.
+## @param ingress.tls Enable TLS for the EODAG ingress
+## @param ingress.extraHosts Extra hosts array for the EODAG ingress
+## @param ingress.path Path array for the EODAG ingress
+## @param ingress.extraPaths Extra paths for the EODAG ingress
+## @param ingress.extraTls Extra TLS configuration for the EODAG ingress
+## @param ingress.secrets Secrets array to mount into the Ingress
+## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+##
+ingress:
+  ## Set to true to enable ingress record generation
+  ##
+  enabled: false
+  ## @param ingress.selfSigned Create a TLS secret for this ingress record using self-signed certificates generated by Helm
+  ##
+  selfSigned: false
+  ## Ingress Path type
+  ##
+  pathType: ImplementationSpecific
+  ## Override API Version (automatically detected if not set)
+  ##
+  apiVersion: ""
+  ## When the ingress is enabled, a host pointing to this will be created
+  ##
+  hostname: eodag.local
+  ## The Path to eodag. You may need to set this to '/*' in order to use this
+  ## with ALB ingress s.
+  ##
+  path: /
+  ## @param ingress.servicePort Backend service port to use
+  ## Default is http. Alternative is https.
+  ##
+  servicePort: http
+  ## For a full list of possible ingress annotations, please see
+  ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+  ## Use this parameter to set the required annotations for cert-manager, see
+  ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+  ##
+  ## e.g:
+  ## annotations:
+  ##   kubernetes.io/ingress.class: nginx
+  ##   cert-manager.io/cluster-issuer: cluster-issuer-name
+  ##
+  annotations: {}
+  ## Enable TLS configuration for the hostname defined at ingress.hostname parameter
+  ## TLS certificates will be retrieved from a TLS secret with name: {{- printf "%s-tls" .Values.ingress.hostname }}
+  ## You can use the ingress.secrets parameter to create this TLS secret or rely on cert-manager to create it
+  ##
+  tls: false
+  ## The list of additional hostnames to be covered with this ingress record.
+  ## Most likely the hostname above will be enough, but in the event more hosts are needed, this is an array
+  extraHosts: []
+  ## - name: eodag.local
+  ##   path: /
+  ##
+  ## Any additional arbitrary paths that may need to be added to the ingress under the main host.
+  ## For example: The ALB ingress  requires a special rule for handling SSL redirection.
+  extraPaths: []
+  ## - path: /*
+  ##   backend:
+  ##     serviceName: ssl-redirect
+  ##     servicePort: use-annotation
+  ##
+  ## The tls configuration for additional hostnames to be covered with this ingress record.
+  ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
+  extraTls: []
+  ## - hosts:
+  ##     - eodag.local
+  ##   secretName: eodag.local-tls
+  ##
+
+  ## If you're providing your own certificates, please use this to add the certificates as secrets
+  ## key and certificate should start with -----BEGIN CERTIFICATE----- or
+  ## -----BEGIN RSA PRIVATE KEY-----
+  ##
+  ## name should line up with a tlsSecret set further up
+  ## If you're using cert-manager, this is unneeded, as it will create the secret for you if it is not set
+  ##
+  ## It is also possible to create and manage the certificates outside of this helm chart
+  ## Please see README.md for more information
+  ##
+  secrets: []
+  ## - name: eodag.local-tls
+  ##   key:
+  ##   certificate:
+  ##
+
+  ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
+  ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+  ##
+  ingressClassName: ""
+  ## @param ingress.extraRules Additional rules to be covered with this ingress record
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
+  ## e.g:
+  ## extraRules:
+  ## - host: example.local
+  ##     http:
+  ##       path: /
+  ##       backend:
+  ##         service:
+  ##           name: example-svc
+  ##           port:
+  ##             name: http
+  ##
+  extraRules: []
+
+## ServiceAccount configuration
+##
+serviceAccount:
+  ## @param serviceAccount.create Specifies whether a ServiceAccount should be created
+  ##
+  create: true
+  ## @param serviceAccount.name The name of the ServiceAccount to use.
+  ## If not set and create is true, a name is generated using the common.names.fullname template
+  ##
+  name: ""
+  ## @param serviceAccount.annotations Additional custom annotations for the ServiceAccount
+  ##
+  annotations: {}
+  ## @param serviceAccount.automountServiceAccountToken Automount service account token for the server service account
+  ##
+  automountServiceAccountToken: true
