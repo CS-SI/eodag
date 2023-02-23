@@ -64,6 +64,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------+-----------------------+--------------------------+----------------+
 | meteoblue        | BuildPostSearchResult | HttpQueryStringAuth      | HTTPDownload   |
 +------------------+-----------------------+--------------------------+----------------+
+| cop_dataspace    | ODataV4Search         | KeycloakOIDCPasswordAuth | HTTPDownload   |
++------------------+-----------------------+--------------------------+----------------+
 
 .. _creating_plugins:
 

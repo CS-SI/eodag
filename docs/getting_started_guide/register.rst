@@ -41,6 +41,8 @@ to each provider supported by ``eodag``:
   which requires the access level `Access Gold <https://content.meteoblue.com/en/business-solutions/weather-apis/pricing>`_.
   Contact `support@meteoblue.com <mailto:support@meteoblue.com>`_ to apply for a free API key trial.
 
+* `cop_dataspace`: create an account `here <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2F&response_type=code&scope=openid>`__
+
 * `aws_eos`: you need credentials for both EOS (search) and AWS (download):
 
   * Create an account on `EOS <https://auth.eos.com>`__
