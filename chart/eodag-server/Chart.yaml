@@ -6,6 +6,6 @@ dependencies:
       - bitnami-common
     version: 2.x
 description: EODAG (Earth Observation Data Access Gateway) is a tool for searching, aggregating results and downloading remote sensed images offering a unified API for data access regardless of the data provider.
-name: eodag
+name: eodag-server
 version: 1.0.0
 appVersion: 2.9.0

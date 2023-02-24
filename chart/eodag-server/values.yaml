@@ -58,9 +58,9 @@ extraDeploy: []
 ## Number of replicas to deploy
 ##
 image:
-  registry: 643vlk6z.gra7.container-registry.ovh.net
-  repository: metis/hda-api
-  tag: 1.3.0
+  registry: TODO
+  repository: eodag/eodag-server
+  tag: 2.9.0
   digest: ""
   ## Specify a imagePullPolicy
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
@@ -471,21 +471,3 @@ serviceAccount:
   ## @param serviceAccount.automountServiceAccountToken Automount service account token for the server service account
   ##
   automountServiceAccountToken: true
-
-## Application configuration
-## @param config.metadataCatalog.address The URL of the Metadata Catalog
-## @param config.server.address The endpoint for the application service
-## @param config.server.host The service base URL
-## @param config.otel.exporter The OpenTelemetry exporter (e.g. Jaeger)
-## @param config.otel.collectorUrl The OpenTelemetry URL collecting the traces
-##
-config:
-  metadataCatalog:
-    address: ""
-  server:
-    address: "0.0.0.0:8080"
-    host: ""
-  otel:
-    enabled: false
-    exporter: ""
-    collectorUrl: ""
