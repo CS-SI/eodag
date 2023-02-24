@@ -11,4 +11,11 @@ metadata:
   annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
   {{- end }}
 data:
-{{ (tpl (.Files.Glob "files/*").AsConfig .) | indent 2 }}
+  {{- if .Values.productTypes }}
+  product_types.yml: |-
+    {{- include "common.tplvalues.render" (dict "value" .Values.productTypes "context" $) | nindent 4 }}
+  {{- end }}
+  {{- if .Values.providers }}
+  providers.yml: |-
+    {{- include "common.tplvalues.render" (dict "value" .Values.providers "context" $) | nindent 4 }}
+  {{- end }}

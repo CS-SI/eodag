@@ -286,6 +286,78 @@ sidecars: []
 ##
 initContainers: []
 
+## @param productTypes Optional overwrite of collections default configuration
+## ref: https://github.com/CS-SI/eodag/blob/develop/eodag/resources/product_types.yml
+productTypes: ""
+# productTypes: |-
+#   # CBERS 4 ---------------------------------------------------------------------
+#   CBERS4_MUX_L2:
+#     abstract: |
+#       China-Brazil Earth Resources Satellite, CBERS-4 MUX camera Level-2 product. System corrected images, expect some
+#       translation error.
+#     instrument: MUX
+#     platform: CBERS
+#     platformSerialIdentifier: CBERS-4
+#     processingLevel: L2
+#     keywords: MUX,CBERS,CBERS-4,L2
+#     sensorType: OPTICAL
+#     license: proprietary
+#     missionStartDate: "2014-12-07T00:00:00Z"
+#     title: CBERS-4 MUX Level-2
+
+## @param providers Optional overwrite of providers default configuration
+## ref: https://github.com/CS-SI/eodag/blob/develop/eodag/resources/providers.yml
+providers: ""
+# providers: |-
+#   !provider
+#     name: usgs
+#     priority: 0
+#     description: U.S geological survey catalog for Landsat products
+#     roles:
+#       - host
+#     url: https://earthexplorer.usgs.gov/
+#     api: !plugin
+#       type: UsgsApi
+#       need_auth: true
+#       google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
+#       pagination:
+#         max_items_per_page: 5000
+#         total_items_nb_key_path: '$.totalHits'
+#       common_metadata_mapping_path: '$'
+#       metadata_mapping:
+#         id: '$.displayId'
+#         geometry: '$.spatialBounds'
+#         productType: '$.productType'
+#         title: '$.displayId'
+#         abstract: '$.summary'
+#         cloudCover: '$.cloudCover'
+#         startTimeFromAscendingNode: '$.temporalCoverage.startDate'
+#         completionTimeFromAscendingNode: '$.temporalCoverage.endDate'
+#         publicationDate: '$.publishDate'
+#         thumbnail: '$.browse[0].thumbnailPath'
+#         quicklook: '$.browse[0].browsePath'
+#         storageStatus: '{$.available#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+#         downloadLink: 'https://earthexplorer.usgs.gov/download/external/options/{productType}/{entityId}/M2M/'
+#         # metadata needed for download
+#         entityId: '$.entityId'
+#         productId: '$.id'
+#       extract: True
+#       order_enabled: true
+#     products:
+#       # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt may be outdated
+#       # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
+#       LANDSAT_C2L1:
+#         dataset: landsat_ot_c2_l1
+#         outputs_extension: .tar.gz
+#       LANDSAT_C2L2:
+#         dataset: landsat_ot_c2_l2
+#         outputs_extension: .tar.gz
+#       S2_MSI_L1C:
+#         dataset: SENTINEL_2A
+#         outputs_extension: .zip
+#       GENERIC_PRODUCT_TYPE:
+#         dataset: '{productType}'
+
 ## Service configuration
 ##
 service:

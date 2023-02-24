@@ -114,20 +114,33 @@ spec:
           {{- if .Values.resources }}
           resources: {{- toYaml .Values.resources | nindent 12 }}
           {{- end }}
+          {{- if or .Values.productTypes .Values.providers .Values.extraVolumeMounts }}
           volumeMounts:
+            {{- if .Values.productTypes }}
             - name: config
-              mountPath: /config.json
-              subPath: config.json
+              mountPath: /eodag/eodag/resources/product_types.yml
+              subPath: product_types.yml
+            {{- end }}
+            {{- if .Values.providers }}
+            - name: config
+              mountPath: /eodag/eodag/resources/providers.yml
+              subPath: providers.yml
+            {{- end }}
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
             {{- end }}
+          {{- end }}
         {{- if .Values.sidecars }}
         {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
         {{- end }}
+      {{- if or .Values.productTypes .Values.providers .Values.extraVolumes }}
       volumes:
+        {{- if or .Values.productTypes .Values.providers }}
         - name: config
           configMap:
             name: {{ printf "%s-config" (include "common.names.fullname" .) }}
+        {{- end }}
         {{- if .Values.extraVolumes }}
         {{- toYaml .Values.extraVolumes | nindent 8 }}
         {{- end }}
+      {{- end }}
