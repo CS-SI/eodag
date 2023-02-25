@@ -3621,7 +3621,11 @@
   url:  https://planetarycomputer.microsoft.com
   search: !plugin
     type: StacSearch
+<<<<<<< HEAD
     api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
+=======
+    api_endpoint: https://planetarycomputer-staging.microsoft.com/api/stac/v1/search
+>>>>>>> feat: add Planetary Computer as a new provider
     need_auth: false
     discover_product_types:
       fetch_url: null
