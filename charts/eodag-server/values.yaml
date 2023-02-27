@@ -58,8 +58,8 @@ extraDeploy: []
 ## Number of replicas to deploy
 ##
 image:
-  registry: TODO
-  repository: eodag/eodag-server
+  registry: docker.io
+  repository: csspace/eodag-server
   tag: 2.9.0
   digest: ""
   ## Specify a imagePullPolicy
@@ -103,7 +103,7 @@ resources:
 ## @param podSecurityContext.fsGroup Set EODAG pod's Security Context fsGroup
 ##
 podSecurityContext:
-  enabled: true
+  enabled: false
   fsGroup: 1001
 
 ## Configure Container Security Context
@@ -116,7 +116,7 @@ podSecurityContext:
 ## @param containerSecurityContext.runAsNonRoot Set EODAG container's Security Context runAsNonRoot
 ##
 containerSecurityContext:
-  enabled: true
+  enabled: false
   runAsUser: 1001
   allowPrivilegeEscalation: false
   capabilities:
@@ -136,7 +136,7 @@ args: []
 ## EODAG application  ports
 ## @param containerPorts.http EODAG application HTTP port number
 containerPorts:
-  http: 8080
+  http: 5000
 
 ## @param hostAliases EODAG pods host aliases
 ## https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
