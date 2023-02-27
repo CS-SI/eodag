@@ -739,32 +739,7 @@ S2_MSI_L3A_WASP:
   title: SENTINEL2 Level-3A
 
 # Sentinel 3 ------------------------------------------------------------------
-S3_SRA_BS:
-  abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,BS
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL3 SRAL Level-1
-  missionStartDate: "2016-02-16T00:00:00Z"
-
-S3_SRA_A_BS:
-  abstract: ""
-  instrument: SRAL
-  platform: SENTINEL3
-  platformSerialIdentifier: S3A,S3B
-  processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,BS
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL3 SRAL Level-1
-  missionStartDate: "2016-02-16T00:00:00Z"
-
-# See examples of product type namings for sentinel 3 here:
-# https://www.onda-dias.eu/cms/data/catalogue/sentinel-3/
+# S3 OLCI L1
 S3_EFR:
   abstract: ""
   instrument: OLCI
@@ -802,7 +777,7 @@ S3_RAC:
   title: SENTINEL3 RAC
   missionStartDate: "2016-02-16T00:00:00Z"
 
-  # S3 OLCI L2
+# S3 OLCI L2
 S3_OLCI_L2LRR:
   abstract: |
     The OLCI Level-2 Land Reduced Resolution (OL_2_LRR) products contain land and atmospheric geophysical products
@@ -901,7 +876,7 @@ S3_SLSTR_L1RBT:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-1
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -916,7 +891,7 @@ S3_SLSTR_L2LST:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2LST,LST
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 LST
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -931,7 +906,7 @@ S3_SLSTR_L2WST:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 WST
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -948,7 +923,7 @@ S3_SLSTR_L2AOD:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2AOD,AOD
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 AOD
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -964,7 +939,7 @@ S3_SLSTR_L2FRP:
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
   keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2FRP,FRP
-  sensorType: OPTICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 FRP
   missionStartDate: "2016-02-16T00:00:00Z"
@@ -985,8 +960,8 @@ S3_SRA:
 S3_SRA_A:
   abstract: |
     A Level 1A SRAL product contains one "measurement data file" containing the L1A measurements parameters:
-    ECHO_SAR_Ku: L1A Tracking measurements (sorted and calibrated) in SAR mode – Ku-band (80-Hz)
-    ECHO_PLRM: L1A Tracking measurements (sorted and calibrated) in pseudo-LRM mode – Ku and C bands (80-Hz)
+    ECHO_SAR_Ku: L1A Tracking measurements (sorted and calibrated) in SAR mode - Ku-band (80-Hz)
+    ECHO_PLRM: L1A Tracking measurements (sorted and calibrated) in pseudo-LRM mode - Ku and C bands (80-Hz)
   instrument: SRAL
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -1002,7 +977,7 @@ S3_SRA_BS:
     A Level 1B-S SRAL product contains one "measurement data file" containing the L1b measurements parameters:
     ECHO_SAR_Ku : L1b Tracking measurements in SAR mode - Ku band (20-Hz) as defined in the L1b MEAS product
                   completed with SAR expert information
-    ECHO_PLRM : L1b Tracking measurements in pseudo-LRM mode – Ku and C bands (20-Hz) as defined in the L1b
+    ECHO_PLRM : L1b Tracking measurements in pseudo-LRM mode - Ku and C bands (20-Hz) as defined in the L1b
                 MEAS product
   instrument: SRAL
   platform: SENTINEL3
@@ -1073,7 +1048,6 @@ S3_SY_AOD:
   title: SENTINEL3 SYNERGY Level-2 AOD
   missionStartDate: "2016-02-16T00:00:00Z"
 
-
 S3_SY_V10:
   abstract: |
     The Level-2 VG1 and V10 SYN products (SY_2_VG1 and SY_2_V10 respectively) are produced by the
@@ -1122,6 +1096,496 @@ S3_SY_VGP:
   title: SENTINEL3 SYNERGY Level-2 VGP
   missionStartDate: "2016-02-16T00:00:00Z"
 
+# Sentinel 5P ------------------------------------------------------------------
+S5P_L1B_IR_SIR:
+  abstract: |
+    Solar irradiance spectra for the SWIR bands (band 7 and band 8).
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,SIR,SWIR,Irradiances
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Irradiances for the SWIR bands
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_IR_UVN:
+  abstract: |
+    Solar irradiance spectra for the UVN bands (band 1 through band 6).
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,UVN,Irradiances
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Irradiances for the UVN bands
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD1:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 1.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD1,BAND1,B01
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 1
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD2:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 2.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD2,BAND2,B02
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 2
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD3:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 3.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD3,BAND3,B03
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 3
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD4:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 4.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD4,BAND4,B04
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 4
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD5:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 5.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD5,BAND5,B05
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 5
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD6:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 6.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD6,BAND6,B06
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 6
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD7:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 7.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD7,BAND7,B07
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 7
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L1B_RA_BD8:
+  abstract:  |
+    Sentinel-5 Precursor Level 1B Radiances for spectral band 8.
+    TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
+    entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
+    detector: mediumwave ultraviolet (UV), longwave ultraviolet combined with visible (UVIS), near infrared (NIR), and
+    shortwave infrared (SWIR). The spectrometers for UV, UVIS and NIR are jointly referred to as UVN. Radiation for the
+    SWIR spectrometer is transferred by an optical relay part in the UVN system from the telescope to an interface
+    position (the pupil stop) for the SWIR spectrometer. This is done because of the more stringent thermal requirements
+    on the SWIR part of the instrument.
+    Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD8,BAND8,B08
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Radiances for spectral band 8
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_NO2:
+  abstract: |
+    The TROPOMI instrument, single payload onboard Sentinel-5 Precursor, retrieves operationally tropospheric and
+    stratospheric NO2 column products. The TROPOMI NO2 data products pose an improvement over previous NO2 data sets,
+    particularly in their unprecedented spatial resolution, but also in the separation of the stratospheric and
+    tropospheric contributions of the retrieved slant columns, and in the calculation of the air-mass factors used to
+    convert slant to total columns.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NO2,Nitrogen,Dioxide
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Nitrogen Dioxide
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_CLOUD:
+  abstract: |
+    The TROPOMI instrument, single payload onboard Sentinel-5 Precursor, retrieves operationally the most important
+    quantities for cloud correction of satellite trace gas retrievals: cloud fraction, cloud optical thickness (albedo),
+    and cloud-top pressure (height). Cloud parameters from TROPOMI are not only used for enhancing the accuracy of trace
+    gas retrievals, but also to extend the satellite data record of cloud information derived from oxygen A-band
+    measurements initiated with GOME.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,CLOUD
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Cloud
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_O3:
+  abstract: |
+    Ozone (O3) is of crucial importance for the equilibrium of the Earth's atmosphere. In the stratosphere, the ozone
+    layer shields the biosphere from dangerous solar ultraviolet radiation. In the troposphere, it acts as an efficient
+    cleansing agent, but at high concentration it also becomes harmful to the health of humans, animals, and vegetation.
+    Ozone is also an important greenhouse-gas contributor to ongoing climate change.
+    These products are provided in NetCDF-CF format and contain total ozone, ozone temperature, and error information
+    including averaging kernels.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,O3,Ozone
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Ozone
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_CO:
+  abstract: |
+    The TROPOMI instrument, single payload onboard Sentinel-5 Precursor, retrieves the CO global abundance exploiting
+    clear-sky and cloudy-sky Earth radiance measurements in the 2.3 µm spectral range of the shortwave infrared (SWIR)
+    part of the solar spectrum. TROPOMI clear sky observations provide CO total columns with sensitivity to the
+    tropospheric boundary layer. For cloudy atmospheres, the column sensitivity changes according to the light path.
+    The TROPOMI CO retrieval uses the same method employed by SCIAMACHY.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,CO,Carbon,Monoxide
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Carbon Monoxide
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_AER_AI:
+  abstract: |
+    TROPOMI aerosol index is referred to as the Ultraviolet Aerosol Index (UVAI). The relatively simple calculation of
+    the Aerosol Index is based on wavelength dependent changes in Rayleigh scattering in the UV spectral range where
+    ozone absorption is very small. UVAI can also be calculated in the presence of clouds so that daily, global coverage
+    is possible. This is ideal for tracking the evolution of episodic aerosol plumes from dust outbreaks, volcanic ash,
+    and biomass burning.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,AER,AI,Ultraviolet,Aerosol,Index
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Ultraviolet Aerosol Index
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_O3_PR:
+  abstract: |
+    Retrieved ozone profiles are used to monitor the evolution of stratospheric and tropospheric ozone. Such monitoring
+    is important as the ozone layer protects life on Earth against harmful UV radiation. The ozone layer is recovering
+    from depletion due to manmade Chlorofluorocarbons (CFCs). Tropospheric ozone is toxic and it plays an important role
+    in tropospheric chemistry. Also, ozone is a greenhouse gas and is therefore also relevant for climate change.
+    The main parameters in the file are the retrieved ozone profile at 33 levels and the retrieved sub-columns of ozone
+    in 6 layers. In addition, the total ozone column and tropospheric ozone columns are provided. For the ozone profile,
+    the precision and smoothing errors, the a-priori profile and the averaging kernel are also provided.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,O3,PR,Ozone,Profile
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Ozone Profile
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_O3_TCL:
+  abstract: |
+    Ozone in the tropical troposphere plays various important roles. The intense UV radiation and high humidity in the
+    tropics stimulate the formation of the hydroxyl radical (OH) by the photolysis of ozone. OH is the most important
+    oxidant in the troposphere because it reacts with virtually all trace gases, such as CO, CH4 and other hydrocarbons.
+    The tropics are also characterized by large emissions of nitrogen oxides (NOx), carbon monoxide (CO) and
+    hydrocarbons, both from natural and anthropogenic sources. Ozone that is formed over regions where large amounts of
+    these ozone precursors are emitted, can be transported over great distances and affects areas far from the source.
+    The TROPOMI tropospheric ozone product is a level-2c product that represents three day averaged tropospheric ozone
+    columns on a 0.5° by 1° latitude-longitude grid for the tropical region between 20°N and 20°S. The TROPOMI
+    tropospheric ozone column product uses the TROPOMI Level-2 total OZONE and CLOUD products as input.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,O3,TCL,Tropospheric,Ozone
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Tropospheric Ozone
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_AER_LH:
+  abstract: |
+    The TROPOMI Aerosol Layer Height product focuses on retrieval of vertically localised aerosol layers in the free
+    troposphere, such as desert dust, biomass burning aerosol, or volcanic ash plumes. The height of such layers is
+    retrieved for cloud-free conditions. Height information for aerosols in the free troposphere is particularly
+    important for aviation safety. Scientific applications include radiative forcing studies, long-range transport
+    modelling and studies of cloud formation processes. Aerosol height information also helps to interpret the UV
+    Aerosol Index (UVAI) in terms of aerosol absorption as the index is strongly height-dependent.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,AER,LH,Aerosol,Layer,Height
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Aerosol Layer Height
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_HCHO:
+  abstract: |
+    Formaldehyde is an intermediate gas in almost all oxidation chains of Non-Methane Volatile Organic Compounds
+    (NMVOC), leading eventually to CO2. NMVOCs are, together with NOx, CO and CH4, among the most important precursors
+    of tropospheric O3. The major HCHO source in the remote atmosphere is CH4 oxidation. Over the continents, the
+    oxidation of higher NMVOCs emitted from vegetation, fires, traffic and industrial sources results in important and
+    localised enhancements of the HCHO levels.
+    In addition to the main product results, such as HCHO slant column, vertical column and air mass factor, the level 2
+    data files contain several additional parameters and diagnostic information.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,HCHO,Formaldehyde
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Formaldehyde
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_CH4:
+  abstract: |
+    Methane (CH4) is, after carbon dioxide (CO2), the most important contributor to the anthropogenically enhanced
+    greenhouse effect. Roughly three-quarters of methane emissions are anthropogenic and as such it is important to
+    continue the record of satellite-based measurements. TROPOMI aims at providing CH4 column concentrations with high
+    sensitivity to the Earth's surface, good spatio/temporal coverage, and sufficient accuracy to facilitate inverse
+    modelling of sources and sinks.
+    The output product consists of the retrieved methane column and a row vector referred to as the column averaging
+    kernel A. The column averaging kernel describes how the retrieved column relates to the true profile and should be
+    used in validation exercises (when possible) or use of the product in source/sink inverse modelling. The output
+    product also contains altitude levels of the layer interfaces to which the column averaging kernel corresponds.
+    Additional output for Level-2 data products: viewing geometry, precision of retrieved methane, residuals of the fit,
+    quality flags (cloudiness, terrain roughness etc.) and retrieved albedo and aerosol properties. The latter
+    properties are required for a posteriori filtering and for estimation of total retrieval error.
+    The Sentinel-5 Precursor mission flies in loose formation (about 3.5 - 5 minutes behind) with the S-NPP
+    (SUOMI-National Polar-orbiting Partnership) mission to use VIIRS (Visible Infrared Imaging Radiometer Suite) cloud
+    information to select cloud free TROPOMI pixels for high quality methane retrieval.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,CH4,Methane
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Methane
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_NP_BD3:
+  abstract: |
+    S5P-NPP Cloud for spectral band 3.
+    The S5P level 2 methane product is dependent on having information on cloud occurrence at spatial resolution finer
+    than that achievable from TROPOMI itself. This information is also useful for other purposes, including assessing
+    the influence of cloud on other L2 products and issues related to spatial co-registration. A level 2 auxiliary
+    product was therefore developed to describe cloud in the TROPOMI field of view (FOV), using co-located observations
+    of VIIRS (Visible Infra-red Imaging Radiometer Suite) on the U.S. S-NPP (Suomi - National Polar-orbiting
+    Partnership). S5P flies in a so-called loose formation with the S-NPP with a temporal separation between them of
+    less than 5 minutes.
+    The main information contained in the S5P-NPP product is:
+    1. A statistical summary for each S5P FOV of the NPP-VIIRS L2 Cloud Mask (VCM).
+    2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
+    This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NP,NPP,Cloud,BD3,B03,BAND3
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 NPP Cloud for band 3
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_NP_BD6:
+  abstract: |
+    S5P-NPP Cloud for spectral band 6.
+    The S5P level 2 methane product is dependent on having information on cloud occurrence at spatial resolution finer
+    than that achievable from TROPOMI itself. This information is also useful for other purposes, including assessing
+    the influence of cloud on other L2 products and issues related to spatial co-registration. A level 2 auxiliary
+    product was therefore developed to describe cloud in the TROPOMI field of view (FOV), using co-located observations
+    of VIIRS (Visible Infra-red Imaging Radiometer Suite) on the U.S. S-NPP (Suomi - National Polar-orbiting
+    Partnership). S5P flies in a so-called loose formation with the S-NPP with a temporal separation between them of
+    less than 5 minutes.
+    The main information contained in the S5P-NPP product is:
+    1. A statistical summary for each S5P FOV of the NPP-VIIRS L2 Cloud Mask (VCM).
+    2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
+    This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NP,NPP,Cloud,BD6,B06,BAND6
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 NPP Cloud for band 6
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_NP_BD7:
+  abstract: |
+    S5P-NPP Cloud for spectral band 7.
+    The S5P level 2 methane product is dependent on having information on cloud occurrence at spatial resolution finer
+    than that achievable from TROPOMI itself. This information is also useful for other purposes, including assessing
+    the influence of cloud on other L2 products and issues related to spatial co-registration. A level 2 auxiliary
+    product was therefore developed to describe cloud in the TROPOMI field of view (FOV), using co-located observations
+    of VIIRS (Visible Infra-red Imaging Radiometer Suite) on the U.S. S-NPP (Suomi - National Polar-orbiting
+    Partnership). S5P flies in a so-called loose formation with the S-NPP with a temporal separation between them of
+    less than 5 minutes.
+    The main information contained in the S5P-NPP product is:
+    1. A statistical summary for each S5P FOV of the NPP-VIIRS L2 Cloud Mask (VCM).
+    2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
+    This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NP,NPP,Cloud,BD7,B07,BAND7
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 NPP Cloud for band 7
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_SO2:
+  abstract: |
+    Sulphur dioxide (SO2) enters the Earth's atmosphere through both natural (~30%) and anthropogenic processes (~70%).
+    It plays a role in chemistry on a local and global scale and its impact ranges from short term pollution to effects
+    on climate.
+    Beside the total column of SO2, enhanced levels of SO2 are flagged within the products. The recognition of enhanced
+    SO2 values is essential in order to detect and monitor volcanic eruptions and anthropogenic pollution sources.
+    Volcanic SO2 emissions may also pose a threat to aviation, along with volcanic ash.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,SO2,Sulphur,Dioxide
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Sulphur Dioxide
+  missionStartDate: "2017-10-13T00:00:00Z"
 
 # SPOT ------------------------------------------------------------------------
 SPOT_SWH:

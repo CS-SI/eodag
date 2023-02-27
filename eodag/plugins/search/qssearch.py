@@ -20,7 +20,7 @@ import json
 import logging
 import re
 from urllib.error import HTTPError as urllib_HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import requests
 from lxml import etree
@@ -39,6 +39,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    USER_AGENT,
     cached_parse,
     dict_items_recursive_apply,
     format_dict_items,
@@ -559,7 +560,10 @@ class QueryStringSearch(Search):
                         for k, v in search_param_cfg_parsed.items():
                             if getattr(self.config, k, None):
                                 update_nested_dict(
-                                    getattr(self.config, k), v, extend_list_values=True
+                                    getattr(self.config, k),
+                                    v,
+                                    extend_list_values=True,
+                                    allow_extend_duplicates=False,
                                 )
                             else:
                                 logger.warning(
@@ -632,121 +636,110 @@ class QueryStringSearch(Search):
 
         results = []
         for search_url in self.search_urls:
-            try:
-                response = self._request(
-                    search_url,
-                    info_message="Sending search request: {}".format(search_url),
-                    exception_message="Skipping error while searching for {} {} "
-                    "instance:".format(self.provider, self.__class__.__name__),
-                )
-            except RequestError:
-                if kwargs.get("raise_errors", False):
-                    raise
-                else:
-                    return []
-            else:
-                next_page_url_key_path = self.config.pagination.get(
-                    "next_page_url_key_path", None
-                )
-                next_page_query_obj_key_path = self.config.pagination.get(
-                    "next_page_query_obj_key_path", None
-                )
-                next_page_merge_key_path = self.config.pagination.get(
-                    "next_page_merge_key_path", None
-                )
-                if self.config.result_type == "xml":
-                    root_node = etree.fromstring(response.content)
-                    namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
-                    result = [
-                        etree.tostring(entry)
-                        for entry in root_node.xpath(
-                            self.config.results_entry, namespaces=namespaces
-                        )
-                    ]
-                    if next_page_url_key_path or next_page_query_obj_key_path:
-                        raise NotImplementedError(
-                            "Setting the next page url from an XML response has not "
-                            "been implemented yet"
-                        )
-                    if getattr(self, "need_count", False):
-                        # extract total_items_nb from search results
-                        try:
-                            total_nb_results = root_node.xpath(
-                                self.config.pagination["total_items_nb_key_path"],
-                                namespaces={
-                                    k or "ns": v for k, v in root_node.nsmap.items()
-                                },
-                            )[0]
-                            _total_items_nb = int(total_nb_results)
-
-                            if getattr(self.config, "merge_responses", False):
-                                total_items_nb = _total_items_nb or 0
-                            else:
-                                total_items_nb += _total_items_nb or 0
-                        except IndexError:
-                            logger.debug(
-                                "Could not extract total_items_nb from search results"
-                            )
-                else:
-                    resp_as_json = response.json()
-                    if next_page_url_key_path:
-                        path_parsed = cached_parse(next_page_url_key_path)
-                        try:
-                            self.next_page_url = path_parsed.find(resp_as_json)[0].value
-                            logger.debug(
-                                "Next page URL collected and set for the next search",
-                            )
-                        except IndexError:
-                            logger.debug("Next page URL could not be collected")
-                    if next_page_query_obj_key_path:
-                        path_parsed = cached_parse(next_page_query_obj_key_path)
-                        try:
-                            self.next_page_query_obj = path_parsed.find(resp_as_json)[
-                                0
-                            ].value
-                            logger.debug(
-                                "Next page Query-object collected and set for the next search",
-                            )
-                        except IndexError:
-                            logger.debug(
-                                "Next page Query-object could not be collected"
-                            )
-                    if next_page_merge_key_path:
-                        path_parsed = cached_parse(next_page_merge_key_path)
-                        try:
-                            self.next_page_merge = path_parsed.find(resp_as_json)[
-                                0
-                            ].value
-                            logger.debug(
-                                "Next page merge collected and set for the next search",
-                            )
-                        except IndexError:
-                            logger.debug("Next page merge could not be collected")
-
-                    result = resp_as_json.get(self.config.results_entry, [])
-
-                    if getattr(self, "need_count", False):
-                        # extract total_items_nb from search results
-                        try:
-                            _total_items_nb = total_items_nb_key_path_parsed.find(
-                                resp_as_json
-                            )[0].value
-                            if getattr(self.config, "merge_responses", False):
-                                total_items_nb = _total_items_nb or 0
-                            else:
-                                total_items_nb += _total_items_nb or 0
-                        except IndexError:
-                            logger.debug(
-                                "Could not extract total_items_nb from search results"
-                            )
-                if getattr(self.config, "merge_responses", False):
-                    results = (
-                        [dict(r, **result[i]) for i, r in enumerate(results)]
-                        if results
-                        else result
+            response = self._request(
+                search_url,
+                info_message="Sending search request: {}".format(search_url),
+                exception_message="Skipping error while searching for {} {} "
+                "instance:".format(self.provider, self.__class__.__name__),
+            )
+            next_page_url_key_path = self.config.pagination.get(
+                "next_page_url_key_path", None
+            )
+            next_page_query_obj_key_path = self.config.pagination.get(
+                "next_page_query_obj_key_path", None
+            )
+            next_page_merge_key_path = self.config.pagination.get(
+                "next_page_merge_key_path", None
+            )
+            if self.config.result_type == "xml":
+                root_node = etree.fromstring(response.content)
+                namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
+                result = [
+                    etree.tostring(entry)
+                    for entry in root_node.xpath(
+                        self.config.results_entry, namespaces=namespaces
                     )
-                else:
-                    results.extend(result)
+                ]
+                if next_page_url_key_path or next_page_query_obj_key_path:
+                    raise NotImplementedError(
+                        "Setting the next page url from an XML response has not "
+                        "been implemented yet"
+                    )
+                if getattr(self, "need_count", False):
+                    # extract total_items_nb from search results
+                    try:
+                        total_nb_results = root_node.xpath(
+                            self.config.pagination["total_items_nb_key_path"],
+                            namespaces={
+                                k or "ns": v for k, v in root_node.nsmap.items()
+                            },
+                        )[0]
+                        _total_items_nb = int(total_nb_results)
+
+                        if getattr(self.config, "merge_responses", False):
+                            total_items_nb = _total_items_nb or 0
+                        else:
+                            total_items_nb += _total_items_nb or 0
+                    except IndexError:
+                        logger.debug(
+                            "Could not extract total_items_nb from search results"
+                        )
+            else:
+                resp_as_json = response.json()
+                if next_page_url_key_path:
+                    path_parsed = cached_parse(next_page_url_key_path)
+                    try:
+                        self.next_page_url = path_parsed.find(resp_as_json)[0].value
+                        logger.debug(
+                            "Next page URL collected and set for the next search",
+                        )
+                    except IndexError:
+                        logger.debug("Next page URL could not be collected")
+                if next_page_query_obj_key_path:
+                    path_parsed = cached_parse(next_page_query_obj_key_path)
+                    try:
+                        self.next_page_query_obj = path_parsed.find(resp_as_json)[
+                            0
+                        ].value
+                        logger.debug(
+                            "Next page Query-object collected and set for the next search",
+                        )
+                    except IndexError:
+                        logger.debug("Next page Query-object could not be collected")
+                if next_page_merge_key_path:
+                    path_parsed = cached_parse(next_page_merge_key_path)
+                    try:
+                        self.next_page_merge = path_parsed.find(resp_as_json)[0].value
+                        logger.debug(
+                            "Next page merge collected and set for the next search",
+                        )
+                    except IndexError:
+                        logger.debug("Next page merge could not be collected")
+
+                result = resp_as_json.get(self.config.results_entry, [])
+
+                if getattr(self, "need_count", False):
+                    # extract total_items_nb from search results
+                    try:
+                        _total_items_nb = total_items_nb_key_path_parsed.find(
+                            resp_as_json
+                        )[0].value
+                        if getattr(self.config, "merge_responses", False):
+                            total_items_nb = _total_items_nb or 0
+                        else:
+                            total_items_nb += _total_items_nb or 0
+                    except IndexError:
+                        logger.debug(
+                            "Could not extract total_items_nb from search results"
+                        )
+            if getattr(self.config, "merge_responses", False):
+                results = (
+                    [dict(r, **result[i]) for i, r in enumerate(results)]
+                    if results
+                    else result
+                )
+            else:
+                results.extend(result)
             if getattr(self, "need_count", False):
                 self.total_items_nb = total_items_nb
                 del self.need_count
@@ -896,13 +889,16 @@ class QueryStringSearch(Search):
                     qry = qry.replace(quote(keep_unquoted), keep_unquoted)
 
                 # prepare req for Response building
-                req = requests.Request(method="GET", url=base_url, **kwargs)
+                req = requests.Request(
+                    method="GET", url=base_url, headers=USER_AGENT, **kwargs
+                )
                 prep = req.prepare()
                 prep.url = base_url + "?" + qry
                 # send urllib req
                 if info_message:
                     logger.info(info_message.replace(url, prep.url))
-                urllib_response = urlopen(prep.url)
+                urllib_req = Request(prep.url, headers=USER_AGENT)
+                urllib_response = urlopen(urllib_req)
                 # py2 compatibility : prevent AttributeError: addinfourl instance has no attribute 'reason'
                 if not hasattr(urllib_response, "reason"):
                     urllib_response.reason = ""
@@ -916,7 +912,9 @@ class QueryStringSearch(Search):
             else:
                 if info_message:
                     logger.info(info_message)
-                response = requests.get(url, timeout=HTTP_REQ_TIMEOUT, **kwargs)
+                response = requests.get(
+                    url, timeout=HTTP_REQ_TIMEOUT, headers=USER_AGENT, **kwargs
+                )
                 response.raise_for_status()
         except (requests.RequestException, urllib_HTTPError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
@@ -974,7 +972,9 @@ class ODataV4Search(QueryStringSearch):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
-                    response = requests.get(metadata_url, timeout=HTTP_REQ_TIMEOUT)
+                    response = requests.get(
+                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                    )
                     response.raise_for_status()
                 except requests.RequestException:
                     logger.exception(
@@ -1203,7 +1203,11 @@ class PostJsonSearch(QueryStringSearch):
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
             response = requests.post(
-                url, json=self.query_params, timeout=HTTP_REQ_TIMEOUT, **kwargs
+                url,
+                json=self.query_params,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                **kwargs,
             )
             response.raise_for_status()
         except (requests.RequestException, urllib_HTTPError) as err:

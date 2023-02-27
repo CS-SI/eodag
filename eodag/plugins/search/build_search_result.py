@@ -31,7 +31,6 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.utils import dict_items_recursive_sort
-from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.plugins.search.build_search_result")
 
@@ -76,17 +75,13 @@ class BuildPostSearchResult(PostJsonSearch):
     def do_search(self, *args, **kwargs):
         """Perform the actual search request, and return result in a single element."""
         search_url = self.search_urls[0]
-        try:
-            response = self._request(
-                search_url,
-                info_message=f"Sending search request: {search_url}",
-                exception_message=f"Skipping error while searching for {self.provider} "
-                f"{self.__class__.__name__} instance:",
-            )
-        except RequestError:
-            return []
-        else:
-            return [response.json()]
+        response = self._request(
+            search_url,
+            info_message=f"Sending search request: {search_url}",
+            exception_message=f"Skipping error while searching for {self.provider} "
+            f"{self.__class__.__name__} instance:",
+        )
+        return [response.json()]
 
     def normalize_results(self, results, **kwargs):
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result

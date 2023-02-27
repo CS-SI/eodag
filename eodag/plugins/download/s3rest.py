@@ -35,6 +35,7 @@ from eodag.plugins.download.base import (
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
+    USER_AGENT,
     ProgressCallback,
     get_bucket_name_and_prefix,
     path_to_uri,
@@ -149,7 +150,7 @@ class S3RestDownload(Download):
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
             bucket_contents = requests.get(
-                nodes_list_url, auth=auth, timeout=HTTP_REQ_TIMEOUT
+                nodes_list_url, auth=auth, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
             )
             try:
                 bucket_contents.raise_for_status()
@@ -275,6 +276,7 @@ class S3RestDownload(Download):
                     node_url,
                     stream=True,
                     auth=auth,
+                    headers=USER_AGENT,
                     timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
                 ) as stream:
                     try:

@@ -70,11 +70,20 @@ from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
 
+try:
+    from importlib.metadata import metadata  # type: ignore
+except ImportError:  # pragma: no cover
+    # for python < 3.8
+    from importlib_metadata import metadata  # type: ignore
+
 DEFAULT_PROJ = "EPSG:4326"
 
 logger = py_logging.getLogger("eodag.utils")
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+
+eodag_version = metadata("eodag")["Version"]
+USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
 
 def _deprecated(reason="", version=None):
@@ -598,7 +607,11 @@ def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
 
 
 def update_nested_dict(
-    old_dict, new_dict, extend_list_values=False, allow_empty_values=False
+    old_dict,
+    new_dict,
+    extend_list_values=False,
+    allow_empty_values=False,
+    allow_extend_duplicates=True,
 ):
     """Update recursively old_dict items with new_dict ones
 
@@ -609,8 +622,16 @@ def update_nested_dict(
     True
     >>> update_nested_dict(
     ...     {"a": {"a.a": [1, 2]}},
-    ...     {"a": {"a.a": [10]}},
-    ...     extend_list_values=True
+    ...     {"a": {"a.a": [10, 2]}},
+    ...     extend_list_values=True,
+    ...     allow_extend_duplicates=True
+    ... ) == {'a': {'a.a': [1, 2, 10, 2]}}
+    True
+    >>> update_nested_dict(
+    ...     {"a": {"a.a": [1, 2]}},
+    ...     {"a": {"a.a": [10, 2]}},
+    ...     extend_list_values=True,
+    ...     allow_extend_duplicates=False
     ... ) == {'a': {'a.a': [1, 2, 10]}}
     True
     >>> update_nested_dict(
@@ -644,13 +665,30 @@ def update_nested_dict(
                     v,
                     extend_list_values=extend_list_values,
                     allow_empty_values=allow_empty_values,
+                    allow_extend_duplicates=allow_extend_duplicates,
                 )
             elif (
                 extend_list_values
                 and isinstance(old_dict[k], list)
                 and isinstance(v, list)
+                and (
+                    # no common elements
+                    set(v).isdisjoint(old_dict[k])
+                    # common elements
+                    or not set(v).isdisjoint(old_dict[k])
+                    and allow_extend_duplicates
+                )
             ):
                 old_dict[k].extend(v)
+            elif (
+                extend_list_values
+                and isinstance(old_dict[k], list)
+                and isinstance(v, list)
+                # common elements
+                and not set(v).isdisjoint(old_dict[k])
+                and not allow_extend_duplicates
+            ):
+                old_dict[k].extend([x for x in v if x not in old_dict[k]])
             elif (v and not allow_empty_values) or allow_empty_values:
                 old_dict[k] = v
         else:

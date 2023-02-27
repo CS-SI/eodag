@@ -25,7 +25,14 @@ from lxml import etree
 from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import parse_qs, repeatfunc, urlencode, urlparse, urlunparse
+from eodag.utils import (
+    USER_AGENT,
+    parse_qs,
+    repeatfunc,
+    urlencode,
+    urlparse,
+    urlunparse,
+)
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
@@ -173,7 +180,10 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             "redirect_uri": self.config.redirect_uri,
         }
         authorization_response = self.session.get(
-            self.config.authorization_uri, params=params, timeout=HTTP_REQ_TIMEOUT
+            self.config.authorization_uri,
+            params=params,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
         )
 
         login_document = etree.HTML(authorization_response.text)
@@ -195,7 +205,9 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             auth_uri = login_form.xpath(
                 self.config.login_form_xpath.rstrip("/") + "/@action"
             )[0]
-        return self.session.post(auth_uri, data=login_data, timeout=HTTP_REQ_TIMEOUT)
+        return self.session.post(
+            auth_uri, data=login_data, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+        )
 
     def grant_user_consent(self, authentication_response):
         """Grant user consent"""
@@ -211,6 +223,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         return self.session.post(
             self.config.authorization_uri,
             data=user_consent_data,
+            headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
         )
 
@@ -251,7 +264,10 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             self.config.token_exchange_post_data_method: token_exchange_data
         }
         r = self.session.post(
-            self.config.token_uri, timeout=HTTP_REQ_TIMEOUT, **post_request_kwargs
+            self.config.token_uri,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            **post_request_kwargs
         )
         return r.json()[self.config.token_key]
 

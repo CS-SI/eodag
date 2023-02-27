@@ -24,6 +24,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
 * `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Acces
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
+* `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
 
 Providers available through an external plugin:
 

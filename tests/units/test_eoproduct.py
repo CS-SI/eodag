@@ -30,10 +30,13 @@ from shapely import geometry
 from tests import EODagTestCase
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    NOT_AVAILABLE,
+    USER_AGENT,
     DatasetDriver,
     Download,
     EOProduct,
     HTTPDownload,
+    MisconfiguredError,
     ProgressCallback,
     config,
 )
@@ -53,12 +56,23 @@ class TestEOProduct(EODagTestCase):
             shutil.rmtree(self.output_dir)
 
     def test_eoproduct_search_intersection_geom(self):
-        """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""  # noqa
+        """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""
         product = self._dummy_product()
         self.assertEqual(product.geometry, product.search_intersection)
 
+    def test_eoproduct_default_geom(self):
+        """EOProduct needs a geometry or can use confired defaultGeometry by default"""
+
+        with self.assertRaisesRegex(MisconfiguredError, "No geometry available"):
+            self._dummy_product(properties={"geometry": NOT_AVAILABLE})
+
+        product = self._dummy_product(
+            properties={"geometry": NOT_AVAILABLE, "defaultGeometry": "0 0 1 1"}
+        )
+        self.assertEqual(product.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
+
     def test_eoproduct_search_intersection_none(self):
-        """EOProduct search_intersection attr must be None if shapely.errors.GEOSException when intersecting"""  # noqa
+        """EOProduct search_intersection attr must be None if shapely.errors.GEOSException when intersecting"""
         # Invalid geometry
         self.eoproduct_props["geometry"] = {
             "type": "Polygon",
@@ -166,6 +180,7 @@ class TestEOProduct(EODagTestCase):
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
+            headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(quicklook_file_path, "")
@@ -189,6 +204,7 @@ class TestEOProduct(EODagTestCase):
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
+            headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(
@@ -206,6 +222,7 @@ class TestEOProduct(EODagTestCase):
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
+            headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         self.assertEqual(self.requests_http_get.call_count, 2)
@@ -294,6 +311,7 @@ class TestEOProduct(EODagTestCase):
                 stream=True,
                 auth=None,
                 params={},
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
@@ -345,6 +363,7 @@ class TestEOProduct(EODagTestCase):
                 stream=True,
                 auth=None,
                 params={},
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             # Check that the product's directory exists.
@@ -417,6 +436,7 @@ class TestEOProduct(EODagTestCase):
                 stream=True,
                 auth=None,
                 params={"fakeparam": "dummy"},
+                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             )
             # Check that "outputs_prefix" is respected.
