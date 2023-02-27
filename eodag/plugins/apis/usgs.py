@@ -45,7 +45,7 @@ from eodag.utils import (
     format_dict_items,
     path_to_uri,
 )
-from eodag.utils.exceptions import AuthenticationError, NotAvailableError
+from eodag.utils.exceptions import AuthenticationError, NotAvailableError, RequestError
 
 logger = logging.getLogger("eodag.plugins.apis.usgs")
 
@@ -192,9 +192,11 @@ class UsgsApi(Download, Api):
                 )
         except USGSError as e:
             logger.warning(
-                f"Product type {usgs_dataset} does not exist on USGS EE catalog"
+                f"Product type {usgs_dataset} may not exist on USGS EE catalog"
             )
-            logger.warning(f"Skipping error: {e}")
+            api.logout()
+            raise RequestError(e)
+
         api.logout()
 
         if final:

@@ -1002,3 +1002,17 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     )
                 ),
             )
+
+    def test_end_to_end_wrong_credentials_search_meteoblue(self):
+        # It should already fail while searching for the products.
+        self.eodag.set_preferred_provider(METEOBLUE_SEARCH_ARGS[0])
+        with self.assertRaises(AuthenticationError):
+            results, _ = self.eodag.search(
+                raise_errors=True,
+                **dict(
+                    zip(
+                        ["productType", "start", "end", "geom"],
+                        METEOBLUE_SEARCH_ARGS[1:],
+                    )
+                ),
+            )
