@@ -636,121 +636,110 @@ class QueryStringSearch(Search):
 
         results = []
         for search_url in self.search_urls:
-            try:
-                response = self._request(
-                    search_url,
-                    info_message="Sending search request: {}".format(search_url),
-                    exception_message="Skipping error while searching for {} {} "
-                    "instance:".format(self.provider, self.__class__.__name__),
-                )
-            except RequestError:
-                if kwargs.get("raise_errors", False):
-                    raise
-                else:
-                    return []
-            else:
-                next_page_url_key_path = self.config.pagination.get(
-                    "next_page_url_key_path", None
-                )
-                next_page_query_obj_key_path = self.config.pagination.get(
-                    "next_page_query_obj_key_path", None
-                )
-                next_page_merge_key_path = self.config.pagination.get(
-                    "next_page_merge_key_path", None
-                )
-                if self.config.result_type == "xml":
-                    root_node = etree.fromstring(response.content)
-                    namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
-                    result = [
-                        etree.tostring(entry)
-                        for entry in root_node.xpath(
-                            self.config.results_entry, namespaces=namespaces
-                        )
-                    ]
-                    if next_page_url_key_path or next_page_query_obj_key_path:
-                        raise NotImplementedError(
-                            "Setting the next page url from an XML response has not "
-                            "been implemented yet"
-                        )
-                    if getattr(self, "need_count", False):
-                        # extract total_items_nb from search results
-                        try:
-                            total_nb_results = root_node.xpath(
-                                self.config.pagination["total_items_nb_key_path"],
-                                namespaces={
-                                    k or "ns": v for k, v in root_node.nsmap.items()
-                                },
-                            )[0]
-                            _total_items_nb = int(total_nb_results)
-
-                            if getattr(self.config, "merge_responses", False):
-                                total_items_nb = _total_items_nb or 0
-                            else:
-                                total_items_nb += _total_items_nb or 0
-                        except IndexError:
-                            logger.debug(
-                                "Could not extract total_items_nb from search results"
-                            )
-                else:
-                    resp_as_json = response.json()
-                    if next_page_url_key_path:
-                        path_parsed = cached_parse(next_page_url_key_path)
-                        try:
-                            self.next_page_url = path_parsed.find(resp_as_json)[0].value
-                            logger.debug(
-                                "Next page URL collected and set for the next search",
-                            )
-                        except IndexError:
-                            logger.debug("Next page URL could not be collected")
-                    if next_page_query_obj_key_path:
-                        path_parsed = cached_parse(next_page_query_obj_key_path)
-                        try:
-                            self.next_page_query_obj = path_parsed.find(resp_as_json)[
-                                0
-                            ].value
-                            logger.debug(
-                                "Next page Query-object collected and set for the next search",
-                            )
-                        except IndexError:
-                            logger.debug(
-                                "Next page Query-object could not be collected"
-                            )
-                    if next_page_merge_key_path:
-                        path_parsed = cached_parse(next_page_merge_key_path)
-                        try:
-                            self.next_page_merge = path_parsed.find(resp_as_json)[
-                                0
-                            ].value
-                            logger.debug(
-                                "Next page merge collected and set for the next search",
-                            )
-                        except IndexError:
-                            logger.debug("Next page merge could not be collected")
-
-                    result = resp_as_json.get(self.config.results_entry, [])
-
-                    if getattr(self, "need_count", False):
-                        # extract total_items_nb from search results
-                        try:
-                            _total_items_nb = total_items_nb_key_path_parsed.find(
-                                resp_as_json
-                            )[0].value
-                            if getattr(self.config, "merge_responses", False):
-                                total_items_nb = _total_items_nb or 0
-                            else:
-                                total_items_nb += _total_items_nb or 0
-                        except IndexError:
-                            logger.debug(
-                                "Could not extract total_items_nb from search results"
-                            )
-                if getattr(self.config, "merge_responses", False):
-                    results = (
-                        [dict(r, **result[i]) for i, r in enumerate(results)]
-                        if results
-                        else result
+            response = self._request(
+                search_url,
+                info_message="Sending search request: {}".format(search_url),
+                exception_message="Skipping error while searching for {} {} "
+                "instance:".format(self.provider, self.__class__.__name__),
+            )
+            next_page_url_key_path = self.config.pagination.get(
+                "next_page_url_key_path", None
+            )
+            next_page_query_obj_key_path = self.config.pagination.get(
+                "next_page_query_obj_key_path", None
+            )
+            next_page_merge_key_path = self.config.pagination.get(
+                "next_page_merge_key_path", None
+            )
+            if self.config.result_type == "xml":
+                root_node = etree.fromstring(response.content)
+                namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
+                result = [
+                    etree.tostring(entry)
+                    for entry in root_node.xpath(
+                        self.config.results_entry, namespaces=namespaces
                     )
-                else:
-                    results.extend(result)
+                ]
+                if next_page_url_key_path or next_page_query_obj_key_path:
+                    raise NotImplementedError(
+                        "Setting the next page url from an XML response has not "
+                        "been implemented yet"
+                    )
+                if getattr(self, "need_count", False):
+                    # extract total_items_nb from search results
+                    try:
+                        total_nb_results = root_node.xpath(
+                            self.config.pagination["total_items_nb_key_path"],
+                            namespaces={
+                                k or "ns": v for k, v in root_node.nsmap.items()
+                            },
+                        )[0]
+                        _total_items_nb = int(total_nb_results)
+
+                        if getattr(self.config, "merge_responses", False):
+                            total_items_nb = _total_items_nb or 0
+                        else:
+                            total_items_nb += _total_items_nb or 0
+                    except IndexError:
+                        logger.debug(
+                            "Could not extract total_items_nb from search results"
+                        )
+            else:
+                resp_as_json = response.json()
+                if next_page_url_key_path:
+                    path_parsed = cached_parse(next_page_url_key_path)
+                    try:
+                        self.next_page_url = path_parsed.find(resp_as_json)[0].value
+                        logger.debug(
+                            "Next page URL collected and set for the next search",
+                        )
+                    except IndexError:
+                        logger.debug("Next page URL could not be collected")
+                if next_page_query_obj_key_path:
+                    path_parsed = cached_parse(next_page_query_obj_key_path)
+                    try:
+                        self.next_page_query_obj = path_parsed.find(resp_as_json)[
+                            0
+                        ].value
+                        logger.debug(
+                            "Next page Query-object collected and set for the next search",
+                        )
+                    except IndexError:
+                        logger.debug("Next page Query-object could not be collected")
+                if next_page_merge_key_path:
+                    path_parsed = cached_parse(next_page_merge_key_path)
+                    try:
+                        self.next_page_merge = path_parsed.find(resp_as_json)[0].value
+                        logger.debug(
+                            "Next page merge collected and set for the next search",
+                        )
+                    except IndexError:
+                        logger.debug("Next page merge could not be collected")
+
+                result = resp_as_json.get(self.config.results_entry, [])
+
+                if getattr(self, "need_count", False):
+                    # extract total_items_nb from search results
+                    try:
+                        _total_items_nb = total_items_nb_key_path_parsed.find(
+                            resp_as_json
+                        )[0].value
+                        if getattr(self.config, "merge_responses", False):
+                            total_items_nb = _total_items_nb or 0
+                        else:
+                            total_items_nb += _total_items_nb or 0
+                    except IndexError:
+                        logger.debug(
+                            "Could not extract total_items_nb from search results"
+                        )
+            if getattr(self.config, "merge_responses", False):
+                results = (
+                    [dict(r, **result[i]) for i, r in enumerate(results)]
+                    if results
+                    else result
+                )
+            else:
+                results.extend(result)
             if getattr(self, "need_count", False):
                 self.total_items_nb = total_items_nb
                 del self.need_count

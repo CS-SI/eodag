@@ -928,6 +928,8 @@ class EODataAccessGateway(object):
                 products, _ = self._do_search(
                     search_plugin, count=False, raise_errors=True, **search_kwargs
                 )
+            except Exception:
+                products = SearchResult([])
             finally:
                 # we don't want that next(search_iter_page(...)) modifies the plugin
                 # indefinitely. So we reset after each request, but before the generator
