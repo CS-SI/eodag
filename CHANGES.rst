@@ -1,17 +1,29 @@
 Release history
 ---------------
 
+2.9.1 (2023-02-27)
+++++++++++++++++++
+
+* ``cop_dataspace``, `Copernicus Data Space <https://dataspace.copernicus.eu>`_  as new provider (:pull:`658`)
+* EODAG specific `User-Agent` appended to requests headers (:pull:`656`)
+* ``Sentinel-5P`` and other product types updates for ``creodias``, ``mundi`` and ``onda`` (:pull:`657`)
+* Handle missing geometries through new ``defaultGeometry`` :class:`~eodag.api.product._product.EOProduct` property
+  (:pull:`653`)
+* ``mundi`` `GeoRSS` geometries handling (:pull:`654`)
+* Fixes search errors handling (:pull:`660`)
+* Various minor fixes and improvements (:pull:`649`)(:pull:`652`)
+
 2.9.0 (2023-02-16)
 ++++++++++++++++++
 
 * Optimizes search time mixing count and search requests when possible (:pull:`632`)
-* Optimizes search time with rewritten `JSONPath.parse` usage now based on a
+* Optimizes search time with rewritten ``JSONPath.parse`` usage now based on a
   `common_metadata_mapping_path` (:pull:`626`)
-* `creodias` API update, from resto to OData (:pull:`623`)(:pull:`639`)
-* Optimizes and updates `onda` search (:pull:`616`)(:pull:`636`)
-* Fixes OFFLINE products order mechanism for `mundi` provider (:pull:`645`)
+* ``creodias`` API update, from resto to OData (:pull:`623`)(:pull:`639`)
+* Optimizes and updates ``onda`` search (:pull:`616`)(:pull:`636`)
+* Fixes OFFLINE products order mechanism for ``mundi`` provider (:pull:`645`)
 * Download progress bar adjustable refresh time (:pull:`643`)
-* Simplify `OData` metadata mapping using pre-mapping (:pull:`622`)
+* Simplify ``OData`` metadata mapping using pre-mapping (:pull:`622`)
 * Fixes download error for single-asset products on STAC providers (:pull:`634`)
 * Tests execution optimized (:pull:`631`)
 * Various minor fixes and improvements (:pull:`612`)(:pull:`619`)(:pull:`620`)(:pull:`621`)(:pull:`624`)(:pull:`625`)
@@ -25,7 +37,7 @@ Release history
   in the context of DOMINO-X (:pull:`604`)
 * `SARA <https://copernicus.nci.org.au/sara.client>`_ (Sentinel Australasia Regional Access) as new provider
   (:pull:`578`, thanks `@catchSheep <https://github.com/catchSheep>`_)(:pull:`602`)
-* Removes unavailable `sobloo` provider (:pull:`607`)
+* Removes unavailable ```sobloo``` provider (:pull:`607`)
 * Landsat collection-1 data no more available on `usgs` (:pull:`601`)
 * `Product types catalog\
   <https://eodag.readthedocs.io/en/latest/getting_started_guide/product_types.html#product-types-information-csv>`_
