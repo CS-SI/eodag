@@ -556,4 +556,7 @@ class TestEOProduct(EODagTestCase):
                 f"Could not resolve otherProperty property ({downloadable_product.properties['otherProperty']})",
             ]
             for needed_log in needed_logs:
-                self.assertTrue(any(needed_log in log for log in cm.output))
+                self.assertTrue(
+                    any(needed_log in log for log in cm.output),
+                    f"'{needed_log}' not found in {str(cm.output)}",
+                )
