@@ -21,7 +21,6 @@ Everything that does not fit into one of the specialised categories of utilities
 this package should go here
 """
 import ast
-import copy
 import datetime
 import errno
 import functools
@@ -755,7 +754,7 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
     :returns: Updated dict
     :rtype: dict
     """
-    result_dict = copy.deepcopy(config_dict)
+    result_dict = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_apply(
@@ -791,7 +790,7 @@ def list_items_recursive_apply(config_list, apply_method, **apply_method_paramet
     :returns: Updated list
     :rtype: list
     """
-    result_list = copy.deepcopy(config_list)
+    result_list = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
         if isinstance(list_v, dict):
             result_list[list_idx] = dict_items_recursive_apply(
@@ -848,7 +847,7 @@ def dict_items_recursive_sort(config_dict):
     :returns: Updated dict
     :rtype: dict
     """
-    result_dict = copy.deepcopy(config_dict)
+    result_dict = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_sort(dict_v)
@@ -871,7 +870,7 @@ def list_items_recursive_sort(config_list):
     :returns: Updated list
     :rtype: list
     """
-    result_list = copy.deepcopy(config_list)
+    result_list = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
         if isinstance(list_v, dict):
             result_list[list_idx] = dict_items_recursive_sort(list_v)
@@ -1200,3 +1199,40 @@ def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
         shutil.copytree(common_subdirs_path, tmp_path)
         shutil.rmtree(nested_dir_root)
         shutil.move(tmp_path, nested_dir_root)
+
+
+def deepcopy(sth):
+    """Customized and faster deepcopy inspired by https://stackoverflow.com/a/45858907
+    `_copy_list` and `_copy_dict` available for the moment
+
+    :param sth: Object to copy
+    :type sth: Any
+    :returns: Copied object
+    :rtype: Any
+    """
+    _dispatcher = {}
+
+    def _copy_list(input_list, dispatch):
+        ret = input_list.copy()
+        for idx, item in enumerate(ret):
+            cp = dispatch.get(type(item))
+            if cp is not None:
+                ret[idx] = cp(item, dispatch)
+        return ret
+
+    def _copy_dict(input_dict, dispatch):
+        ret = input_dict.copy()
+        for key, value in ret.items():
+            cp = dispatch.get(type(value))
+            if cp is not None:
+                ret[key] = cp(value, dispatch)
+        return ret
+
+    _dispatcher[list] = _copy_list
+    _dispatcher[dict] = _copy_dict
+
+    cp = _dispatcher.get(type(sth))
+    if cp is None:
+        return sth
+    else:
+        return cp(sth, _dispatcher)

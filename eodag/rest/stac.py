@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import copy
 import datetime
 import logging
 import os
@@ -35,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
     get_metadata_path,
 )
 from eodag.utils import (
+    deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
     jsonpath_parse_dict_items,
@@ -136,12 +136,10 @@ class StacCommon(object):
         :returns: STAC extension as dictionnary
         :rtype: dict
         """
-        extension_model = (
-            copy.deepcopy(stac_config).get("extensions", {}).get(extension, {})
-        )
+        extension_model = deepcopy(stac_config).get("extensions", {}).get(extension, {})
 
         # parse f-strings
-        format_args = copy.deepcopy(stac_config)
+        format_args = deepcopy(stac_config)
         format_args["extension"] = {
             "url": url,
             "properties": kwargs.get("properties", {}),
@@ -243,7 +241,7 @@ class StacItem(StacCommon):
                     )
 
             # parse f-strings
-            format_args = copy.deepcopy(self.stac_config)
+            format_args = deepcopy(self.stac_config)
             format_args["catalog"] = catalog
             format_args["item"] = product_item
             product_item = format_dict_items(product_item, **format_args)
@@ -266,7 +264,7 @@ class StacItem(StacCommon):
         :returns: Items dictionnary
         :rtype: dict
         """
-        items_model = copy.deepcopy(self.stac_config["items"])
+        items_model = deepcopy(self.stac_config["items"])
 
         search_results.numberMatched = search_results.properties["totalResults"]
         search_results.numberReturned = len(search_results)
@@ -306,7 +304,7 @@ class StacItem(StacCommon):
             items_model, {"search_results": search_results.__dict__}
         )
         # parse f-strings
-        format_args = copy.deepcopy(self.stac_config)
+        format_args = deepcopy(self.stac_config)
         format_args["catalog"] = catalog
         items = format_dict_items(items, **format_args)
 
@@ -359,7 +357,7 @@ class StacItem(StacCommon):
                 )
             )
 
-        result_item_model = copy.deepcopy(item_model)
+        result_item_model = deepcopy(item_model)
         result_item_model["stac_extensions"] = list(
             self.stac_config["stac_extensions"].values()
         )
@@ -405,7 +403,7 @@ class StacItem(StacCommon):
         :returns: Filtered item model
         :rtype: dict
         """
-        all_extensions_dict = copy.deepcopy(self.stac_config["stac_extensions"])
+        all_extensions_dict = deepcopy(self.stac_config["stac_extensions"])
         # parse f-strings with root
         all_extensions_dict = format_dict_items(
             all_extensions_dict, **{"catalog": {"root": self.root}}
@@ -456,7 +454,7 @@ class StacItem(StacCommon):
             item_model, {"product": product.__dict__}
         )
         # parse f-strings
-        format_args = copy.deepcopy(self.stac_config)
+        format_args = deepcopy(self.stac_config)
         # format_args["collection"] = dict(catalog.as_dict(), **{"url": catalog.url})
         format_args["catalog"] = dict(
             catalog.as_dict(), **{"url": catalog.url, "root": catalog.root}
@@ -538,7 +536,7 @@ class StacCollection(StacCommon):
         :returns: STAC collection dicts list
         :rtype: list
         """
-        collection_model = copy.deepcopy(self.stac_config["collection"])
+        collection_model = deepcopy(self.stac_config["collection"])
 
         product_types = self.__get_product_types(filters)
 
@@ -569,7 +567,7 @@ class StacCollection(StacCommon):
                 },
             )
             # parse f-strings
-            format_args = copy.deepcopy(self.stac_config)
+            format_args = deepcopy(self.stac_config)
             format_args["collection"] = dict(
                 product_type_collection, **{"url": self.url, "root": self.root}
             )
@@ -589,7 +587,7 @@ class StacCollection(StacCommon):
         :returns: Collections dictionnary
         :rtype: dict
         """
-        collections = copy.deepcopy(self.stac_config["collections"])
+        collections = deepcopy(self.stac_config["collections"])
         collections["collections"] = self.__get_collection_list(filters)
 
         collections["links"] += [
@@ -672,7 +670,7 @@ class StacCatalog(StacCommon):
         self.data = {}
         self.children = []
 
-        self.catalog_config = copy.deepcopy(stac_config["catalog"])
+        self.catalog_config = deepcopy(stac_config["catalog"])
 
         self.__update_data_from_catalog_config({"model": {}})
 
@@ -698,7 +696,7 @@ class StacCatalog(StacCommon):
 
         # parse f-strings
         # defaultdict usage will return "" for missing keys in format_args
-        format_args = copy.deepcopy(self.stac_config)
+        format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(
             str, dict(model, **{"root": self.root, "url": self.url})
         )
@@ -735,9 +733,9 @@ class StacCatalog(StacCommon):
             root=self.root,
         ).get_collection_by_id(product_type)
 
-        cat_model = copy.deepcopy(self.stac_config["catalogs"]["product_type"]["model"])
+        cat_model = deepcopy(self.stac_config["catalogs"]["product_type"]["model"])
         # parse f-strings
-        format_args = copy.deepcopy(self.stac_config)
+        format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
         format_args["collection"] = collection
         try:
@@ -815,7 +813,7 @@ class StacCatalog(StacCommon):
             ]
         )
 
-        catalog_model = copy.deepcopy(self.stac_config["catalogs"]["year"]["model"])
+        catalog_model = deepcopy(self.stac_config["catalogs"]["year"]["model"])
 
         parsed_dict = self.set_stac_date(datetime_min, datetime_max, catalog_model)
 
@@ -846,7 +844,7 @@ class StacCatalog(StacCommon):
             ]
         )
 
-        catalog_model = copy.deepcopy(self.stac_config["catalogs"]["month"]["model"])
+        catalog_model = deepcopy(self.stac_config["catalogs"]["month"]["model"])
 
         parsed_dict = self.set_stac_date(datetime_min, datetime_max, catalog_model)
 
@@ -878,7 +876,7 @@ class StacCatalog(StacCommon):
             ]
         )
 
-        catalog_model = copy.deepcopy(self.stac_config["catalogs"]["day"]["model"])
+        catalog_model = deepcopy(self.stac_config["catalogs"]["day"]["model"])
 
         parsed_dict = self.set_stac_date(datetime_min, datetime_max, catalog_model)
 
@@ -925,7 +923,7 @@ class StacCatalog(StacCommon):
         :rtype: dict
         """
         # parse f-strings
-        format_args = copy.deepcopy(self.stac_config)
+        format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
         format_args["date"] = defaultdict(
             str,
@@ -968,9 +966,9 @@ class StacCatalog(StacCommon):
         :returns: Updated catalog
         :rtype: dict
         """
-        cat_model = copy.deepcopy(self.stac_config["catalogs"]["cloud_cover"]["model"])
+        cat_model = deepcopy(self.stac_config["catalogs"]["cloud_cover"]["model"])
         # parse f-strings
-        format_args = copy.deepcopy(self.stac_config)
+        format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
         format_args["cloud_cover"] = cloud_cover
         parsed_dict = format_dict_items(cat_model, **format_args)
@@ -1064,9 +1062,9 @@ class StacCatalog(StacCommon):
 
         geom = unary_union(geom_hits)
 
-        cat_model = copy.deepcopy(self.stac_config["catalogs"]["country"]["model"])
+        cat_model = deepcopy(self.stac_config["catalogs"]["country"]["model"])
         # parse f-strings
-        format_args = copy.deepcopy(self.stac_config)
+        format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
         format_args["feature"] = defaultdict(str, {"geometry": geom, "id": location})
         parsed_dict = format_dict_items(cat_model, **format_args)
@@ -1086,7 +1084,7 @@ class StacCatalog(StacCommon):
         """
         user_config_locations_list = self.eodag_api.locations_config
 
-        locations_config_model = copy.deepcopy(self.stac_config["locations_catalogs"])
+        locations_config_model = deepcopy(self.stac_config["locations_catalogs"])
 
         locations_config = {}
         for loc in user_config_locations_list:
@@ -1118,7 +1116,7 @@ class StacCatalog(StacCommon):
         locations_config = self.build_locations_config()
 
         self.stac_config["catalogs"] = dict(
-            copy.deepcopy(self.stac_config["catalogs"]), **locations_config
+            deepcopy(self.stac_config["catalogs"]), **locations_config
         )
 
         if len(catalogs) == 0:
@@ -1126,11 +1124,10 @@ class StacCatalog(StacCommon):
             self.__update_data_from_catalog_config(
                 {
                     "model": dict(
-                        copy.deepcopy(self.stac_config["landing_page"]),
+                        deepcopy(self.stac_config["landing_page"]),
                         **{"provider": self.provider},
                     )
                 }
-                # {"model": copy.deepcopy(self.stac_config["landing_page"])}
             )
 
             # build children : product_types
@@ -1153,7 +1150,7 @@ class StacCatalog(StacCommon):
         else:
             # use product_types_list as base for building nested catalogs
             self.__update_data_from_catalog_config(
-                copy.deepcopy(self.stac_config["catalogs"]["product_types_list"])
+                deepcopy(self.stac_config["catalogs"]["product_types_list"])
             )
 
         for idx, cat in enumerate(catalogs):
@@ -1236,7 +1233,7 @@ class StacCatalog(StacCommon):
                     raise ValidationError(
                         "Bad settings for %s in stac_config catalogs" % cat
                     )
-                cat_config = copy.deepcopy(self.stac_config["catalogs"][cat_key])
+                cat_config = deepcopy(self.stac_config["catalogs"][cat_key])
                 # update data
                 self.__update_data_from_catalog_config(cat_config)
 

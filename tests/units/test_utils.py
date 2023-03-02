@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import os
 import sys
 import unittest
@@ -28,6 +29,7 @@ from tempfile import TemporaryDirectory
 from tests.context import (
     DownloadedCallback,
     ProgressCallback,
+    deepcopy,
     flatten_top_directories,
     get_bucket_name_and_prefix,
     get_timestamp,
@@ -276,3 +278,15 @@ class TestUtils(unittest.TestCase):
             self.assertIn(Path(nested_dir_root) / "b" / "c2", dir_content)
             self.assertIn(Path(nested_dir_root) / "b" / "c2" / "bar", dir_content)
             self.assertIn(Path(nested_dir_root) / "b" / "c2" / "baz", dir_content)
+
+    def test_deepcopy(self):
+        """deepcopy must to a recursice copy of the given object"""
+        original = {"a": [{"b": [0, 1, 2]}]}
+        shallow_copied = copy.copy(original)
+        deep_copied = deepcopy(original)
+        # change original
+        original["a"][0]["b"][0] = 5
+        # shallow copy also changed
+        self.assertEqual(shallow_copied["a"][0]["b"][0], 5)
+        # deep copy did not change
+        self.assertEqual(deep_copied["a"][0]["b"][0], 0)
