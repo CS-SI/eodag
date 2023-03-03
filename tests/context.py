@@ -78,6 +78,7 @@ from eodag.utils import (
     urlsplit,
     GENERIC_PRODUCT_TYPE,
     flatten_top_directories,
+    deepcopy,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,

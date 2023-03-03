@@ -19,7 +19,6 @@ import logging
 import os
 import re
 import shutil
-from copy import deepcopy
 from operator import itemgetter
 
 import geojson
@@ -50,6 +49,7 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     MockResponse,
     _deprecated,
+    deepcopy,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,

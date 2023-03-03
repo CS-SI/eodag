@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import copy
 import logging
 import shutil
 import tarfile
@@ -42,6 +41,7 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     USER_AGENT,
     ProgressCallback,
+    deepcopy,
     format_dict_items,
     path_to_uri,
 )
@@ -167,7 +167,7 @@ class UsgsApi(Download, Api):
             # added by the provider mapping that is not in the default metadata.
             # A deepcopy is done to prevent self.config.metadata_mapping from being modified when metas[metadata]
             # is a list and is modified
-            metas.update(copy.deepcopy(self.config.metadata_mapping))
+            metas.update(deepcopy(self.config.metadata_mapping))
             # common_jsonpath usage to optimize jsonpath build process
             mtd_cfg_as_jsonpath_options = {}
             if hasattr(self.config, "common_metadata_mapping_path"):

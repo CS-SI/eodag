@@ -19,7 +19,6 @@ import json
 import logging
 import os
 import tempfile
-from copy import deepcopy
 
 import requests
 import yaml
@@ -29,6 +28,7 @@ from pkg_resources import resource_filename
 
 from eodag.utils import (
     USER_AGENT,
+    deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
     slugify,

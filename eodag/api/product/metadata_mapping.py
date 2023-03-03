@@ -18,7 +18,6 @@
 import ast
 import logging
 import re
-from copy import deepcopy
 from datetime import datetime, timedelta
 from functools import partial
 from string import Formatter
@@ -37,6 +36,7 @@ from shapely.ops import transform
 from eodag.utils import (
     DEFAULT_PROJ,
     cached_parse,
+    deepcopy,
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,

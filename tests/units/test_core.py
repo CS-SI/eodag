@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import glob
 import json
 import os
@@ -23,7 +24,6 @@ import re
 import shutil
 import unittest
 import uuid
-from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -1127,7 +1127,7 @@ class TestCoreSearch(TestCoreBase):
         cls.search_results = SearchResult.from_geojson(search_results_geojson)
         cls.search_results_size = len(cls.search_results)
         # Change the id of these products, to emulate different products
-        search_results_data_2 = deepcopy(cls.search_results.data)
+        search_results_data_2 = copy.deepcopy(cls.search_results.data)
         search_results_data_2[0].properties["id"] = "a"
         search_results_data_2[1].properties["id"] = "b"
         cls.search_results_2 = SearchResult(search_results_data_2)
