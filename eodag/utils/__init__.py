@@ -63,6 +63,7 @@ from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
+from jsonpath_ng.jsonpath import Child, Fields, Index, Root
 from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
@@ -84,6 +85,10 @@ GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 
 eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
+
+JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
+WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?]+)*$")
+ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+\[[0-9]+\]$")
 
 
 def _deprecated(reason="", version=None):
@@ -883,27 +888,62 @@ def list_items_recursive_sort(config_list):
     return result_list
 
 
-def string_to_jsonpath(key, str_value):
+def string_to_jsonpath(*args, force=False):
     """Get jsonpath for "$.foo.bar" like string
 
     >>> string_to_jsonpath(None, "$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
+    >>> string_to_jsonpath("$.foo.bar")
+    Child(Child(Root(), Fields('foo')), Fields('bar'))
+    >>> string_to_jsonpath("foo")
+    'foo'
+    >>> string_to_jsonpath("foo", force=True)
+    Fields('foo')
 
-    :param key: Input item key
-    :type key: str
-    :param str_value: Input item value, to be converted
-    :type str_value: str
+    :param args: Last arg as input string value, to be converted
+    :type args: str
+    :param force: force conversion even if input string is not detected as a jsonpath
+    :type force: bool
     :returns: Parsed value
     :rtype: str
     """
-    if "$." in str(str_value):
+    path_str = args[-1]
+    if JSONPATH_MATCH.match(str(path_str)) or force:
         try:
-            return cached_parse(str_value)
+            common_jsonpath = "$"
+            common_jsonpath_parsed = Root()
+
+            # combine with common jsonpath if possible
+            if WORKABLE_JSONPATH_MATCH.match(path_str):
+                path_suffix = path_str[len(common_jsonpath) + 1 :]
+                path_splits = path_suffix.split(".") if path_suffix else []
+                parsed_path = common_jsonpath_parsed
+                for path_split in path_splits:
+                    path_split = path_split.strip("'").strip('"')
+                    if "[" in path_split and ARRAY_FIELD_MATCH.match(path_split):
+                        # simple array field
+                        indexed_path, index = path_split[:-1].split("[")
+                        index = int(index)
+                        parsed_path = Child(
+                            Child(parsed_path, Fields(indexed_path)),
+                            Index(index=index),
+                        )
+                        continue
+                    elif "[" in path_split:
+                        # nested array field
+                        parsed_path = cached_parse(path_str)
+                        break
+                    else:
+                        parsed_path = Child(parsed_path, Fields(path_split))
+                return parsed_path
+            else:
+                return cached_parse(path_str)
+
         except Exception:  # jsonpath_ng does not provide a proper exception
             # If str_value does not contain a jsonpath, return it as is
-            return str_value
+            return path_str
     else:
-        return str_value
+        return path_str
 
 
 def format_string(key, str_to_format, **format_variables):

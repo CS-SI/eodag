@@ -30,7 +30,7 @@ from requests import HTTPError, RequestException
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
     ONLINE_STATUS,
-    mtd_cfg_as_jsonpath,
+    mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
     properties_from_xml,
 )
@@ -139,7 +139,7 @@ class HTTPDownload(Download):
         if order_metadata_mapping:
             logger.debug("Parsing order response to update product metada-mapping")
             order_metadata_mapping_jsonpath = {}
-            order_metadata_mapping_jsonpath = mtd_cfg_as_jsonpath(
+            order_metadata_mapping_jsonpath = mtd_cfg_as_conversion_and_querypath(
                 order_metadata_mapping, order_metadata_mapping_jsonpath
             )
             properties_update = properties_from_json(
@@ -276,9 +276,11 @@ class HTTPDownload(Download):
                                 self.config.order_status_on_success["metadata_mapping"]
                             )
                             order_metadata_mapping_jsonpath = {}
-                            order_metadata_mapping_jsonpath = mtd_cfg_as_jsonpath(
-                                new_search_metadata_mapping,
-                                order_metadata_mapping_jsonpath,
+                            order_metadata_mapping_jsonpath = (
+                                mtd_cfg_as_conversion_and_querypath(
+                                    new_search_metadata_mapping,
+                                    order_metadata_mapping_jsonpath,
+                                )
                             )
                             properties_update = properties_from_xml(
                                 result,

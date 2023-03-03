@@ -28,7 +28,7 @@ from botocore.handlers import disable_signing
 from lxml import etree
 
 from eodag.api.product.metadata_mapping import (
-    mtd_cfg_as_jsonpath,
+    mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
     properties_from_xml,
 )
@@ -256,7 +256,7 @@ class AwsDownload(Download):
             )
             logger.info("Fetching extra metadata from %s" % fetch_url)
             resp = requests.get(fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT)
-            update_metadata = mtd_cfg_as_jsonpath(update_metadata)
+            update_metadata = mtd_cfg_as_conversion_and_querypath(update_metadata)
             if fetch_format == "json":
                 json_resp = resp.json()
                 update_metadata = properties_from_json(json_resp, update_metadata)
