@@ -131,8 +131,8 @@ class TestMetadataFormatter(unittest.TestCase):
             to_format, fieldname="SRID=3857;POINT (321976 5390999)"
         )
         geom = wkt.loads(wkt_str)
-        self.assertEqual(round(geom.x, 1), 43.5)
-        self.assertEqual(round(geom.y, 1), 2.9)
+        self.assertEqual(round(geom.x, 1), 2.9)
+        self.assertEqual(round(geom.y, 1), 43.5)
 
     def test_convert_to_ewkt(self):
         to_format = "{fieldname#to_ewkt}"
@@ -175,11 +175,11 @@ class TestMetadataFormatter(unittest.TestCase):
         sub_multipolygon.attrib["srsName"] = "EPSG:3857"
         sub_polygon1 = etree.SubElement(sub_multipolygon, "foo")
         sub_polygon1.text = (
-            "4833492 136933 4871341 136933 4871341 187044 4833492 187044 4833492 136933"
+            "136923 5376120 136923 5428376 187017 5428376 187017 5376120 136923 5376120"
         )
         sub_polygon2 = etree.SubElement(sub_multipolygon, "bar")
         sub_polygon2.text = (
-            "4833492 248305 4871341 248305 4871341 409938 4833492 409938 4833492 248305"
+            "248242 5376120 248242 5428376 409655 5428376 409655 5376120 248242 5376120"
         )
         wkt_str = format_metadata(to_format, fieldname=georss)
         geom = wkt.loads(wkt_str)

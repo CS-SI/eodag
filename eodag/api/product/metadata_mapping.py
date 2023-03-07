@@ -19,7 +19,6 @@ import ast
 import logging
 import re
 from datetime import datetime, timedelta
-from functools import partial
 from string import Formatter
 
 import geojson
@@ -322,12 +321,14 @@ def format_metadata(search_param, *args, **kwargs):
                 from_proj = g["proj"].replace("SRID", "EPSG").replace("=", ":")
                 input_geom = wkt.loads(g["wkt"])
 
-                from_proj = pyproj.Proj(from_proj)
-                to_proj = pyproj.Proj(DEFAULT_PROJ)
+                from_proj = pyproj.CRS(from_proj)
+                to_proj = pyproj.CRS(DEFAULT_PROJ)
 
                 if from_proj != to_proj:
                     # reproject
-                    project = partial(pyproj.transform, from_proj, to_proj)
+                    project = pyproj.Transformer.from_crs(
+                        from_proj, to_proj, always_xy=True
+                    ).transform
                     return transform(project, input_geom)
                 else:
                     return input_geom
@@ -360,9 +361,11 @@ def format_metadata(search_param, *args, **kwargs):
                 # Multipolygon
                 from_proj = getattr(georss[0], "attrib", {}).get("srsName", None)
                 if from_proj:
-                    from_proj = pyproj.Proj(from_proj)
-                    to_proj = pyproj.Proj(DEFAULT_PROJ)
-                    project = partial(pyproj.transform, from_proj, to_proj)
+                    from_proj = pyproj.CRS(from_proj)
+                    to_proj = pyproj.CRS(DEFAULT_PROJ)
+                    project = pyproj.Transformer.from_crs(
+                        from_proj, to_proj, always_xy=True
+                    ).transform
 
                 # function to get deepest elements
                 def flatten_elements(nested):
