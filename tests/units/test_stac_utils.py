@@ -23,6 +23,8 @@ import re
 import unittest
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
 from tests.context import SearchResult
@@ -138,10 +140,14 @@ class TestStacUtils(unittest.TestCase):
         product_types = self.rest_utils.eodag_api.list_product_types(
             fetch_providers=False
         )
-        self.assertEqual(
-            self.rest_utils.format_product_types(product_types),
-            "* *__S2_MSI_L1C__*: test",
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method format_product_types",
+        ):
+            self.assertEqual(
+                self.rest_utils.format_product_types(product_types),
+                "* *__S2_MSI_L1C__*: test",
+            )
 
     def test_get_arguments_query_paths(self):
         """get_arguments_query_paths must extract the query paths and their values from a request arguments"""
@@ -232,7 +238,11 @@ class TestStacUtils(unittest.TestCase):
 
     def test_home_page_content(self):
         """get_home_page_content runs without any error"""
-        self.rest_utils.get_home_page_content("http://127.0.0.1/")
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method get_home_page_content",
+        ):
+            self.rest_utils.get_home_page_content("http://127.0.0.1/")
 
     def test_get_int(self):
         """get_int must raise a ValidationError for strings that cannot be interpreted as integers"""
@@ -317,7 +327,11 @@ class TestStacUtils(unittest.TestCase):
 
     def test_get_templates_path(self):
         """get_templates_path returns an existing dir path"""
-        self.assertTrue(os.path.isdir(self.rest_utils.get_templates_path()))
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method get_templates_path",
+        ):
+            self.assertTrue(os.path.isdir(self.rest_utils.get_templates_path()))
 
     def test_search_bbox(self):
         pass  # TODO

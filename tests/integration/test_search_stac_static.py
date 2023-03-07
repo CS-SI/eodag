@@ -19,6 +19,8 @@ import os
 import unittest
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     EODataAccessGateway,
@@ -95,9 +97,13 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_load_child(self, mock_fetch_product_types_list):
         """load_stac_items from child catalog must provide items"""
-        items = self.dag.load_stac_items(
-            self.child_cat, recursive=True, provider=self.stac_provider
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.child_cat, recursive=True, provider=self.stac_provider
+            )
         self.assertIsInstance(items, SearchResult)
         self.assertEqual(len(items), self.child_cat_len)
         self.assertEqual(items[0].provider, self.stac_provider)
@@ -111,19 +117,27 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list
     ):
         """load_stac_items from root must provide an empty list when no recursive"""
-        items = self.dag.load_stac_items(
-            self.root_cat, recursive=False, provider=self.stac_provider
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.root_cat, recursive=False, provider=self.stac_provider
+            )
         self.assertEqual(len(items), 0)
 
     def test_search_stac_static_load_root_recursive(self):
         """load_stac_items from root must provide items when recursive"""
-        items = self.dag.load_stac_items(
-            self.root_cat,
-            recursive=True,
-            provider=self.stac_provider,
-            productType=self.product_type,
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.root_cat,
+                recursive=True,
+                provider=self.stac_provider,
+                productType=self.product_type,
+            )
         self.assertEqual(len(items), self.root_cat_len)
         for item in items:
             self.assertEqual(item.provider, self.stac_provider)
@@ -145,7 +159,11 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_load_item(self, mock_fetch_product_types_list):
         """load_stac_items from a single item must provide it"""
-        item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
         self.assertIsInstance(item, SearchResult)
         self.assertEqual(len(item), 1)
         self.assertEqual(item[0].provider, self.stac_provider)
@@ -159,7 +177,11 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list
     ):
         """load_stac_items from a single item using updated provider"""
-        item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
 
         self.assertEqual(item[0].properties["license"], "proprietary")
         self.assertEqual(item[0].properties["platform"], "S2ST")
@@ -185,9 +207,13 @@ class TestSearchStacStatic(unittest.TestCase):
         """
         )
 
-        item = self.dag.load_stac_items(
-            self.item, provider="fake_provider", raise_errors=True
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            item = self.dag.load_stac_items(
+                self.item, provider="fake_provider", raise_errors=True
+            )
         self.assertEqual(item[0].properties["platform"], "S2ST")
         self.assertEqual(item[0].properties["license"], "S2ST")
         self.assertEqual(item[0].properties["orbitDirection"], "descending")
@@ -199,9 +225,13 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_load_singlefile_catalog(self):
         """load_stac_items from child catalog must provide items"""
-        items = self.dag.load_stac_items(
-            self.singlefile_cat, provider=self.stac_provider
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.singlefile_cat, provider=self.stac_provider
+            )
         self.assertIsInstance(items, SearchResult)
         self.assertEqual(len(items), self.singlefile_cat_len)
         self.assertEqual(items[0].provider, self.stac_provider)
@@ -210,12 +240,16 @@ class TestSearchStacStatic(unittest.TestCase):
 
     def test_search_stac_static_crunch_filter_date(self):
         """load_stac_items from root and filter by date"""
-        items = self.dag.load_stac_items(
-            self.root_cat,
-            recursive=True,
-            provider=self.stac_provider,
-            productType=self.product_type,
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.root_cat,
+                recursive=True,
+                provider=self.stac_provider,
+                productType=self.product_type,
+            )
         filtered_items = items.crunch(
             FilterDate({"start": "2018-01-01", "end": "2019-01-01"})
         )
@@ -237,13 +271,17 @@ class TestSearchStacStatic(unittest.TestCase):
     def test_search_stac_static_crunch_filter_overlap(self):
         """load_stac_items from root and filter by overlap"""
         # tests over extent_big search geometry
-        items = self.dag.load_stac_items(
-            self.root_cat,
-            recursive=True,
-            provider=self.stac_provider,
-            productType=self.product_type,
-            geom=self.extent_big,
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.root_cat,
+                recursive=True,
+                provider=self.stac_provider,
+                productType=self.product_type,
+                geom=self.extent_big,
+            )
         self.assertEqual(len(items), self.root_cat_len)
 
         filtered_items = items.crunch(
@@ -272,13 +310,17 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(len(filtered_items), 3)
 
         # tests over extent_small search geometry
-        items = self.dag.load_stac_items(
-            self.root_cat,
-            recursive=True,
-            provider=self.stac_provider,
-            productType=self.product_type,
-            geom=self.extent_small,
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.root_cat,
+                recursive=True,
+                provider=self.stac_provider,
+                productType=self.product_type,
+                geom=self.extent_small,
+            )
         self.assertEqual(len(items), self.root_cat_len)
 
         filtered_items = items.crunch(
@@ -299,12 +341,16 @@ class TestSearchStacStatic(unittest.TestCase):
 
     def test_search_stac_static_crunch_filter_property(self):
         """load_stac_items from root and filter by property"""
-        items = self.dag.load_stac_items(
-            self.root_cat,
-            recursive=True,
-            provider=self.stac_provider,
-            productType=self.product_type,
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.root_cat,
+                recursive=True,
+                provider=self.stac_provider,
+                productType=self.product_type,
+            )
         self.assertEqual(len(items), self.root_cat_len)
 
         filtered_items = items.crunch(FilterProperty({"orbitNumber": 110}))
@@ -340,12 +386,16 @@ class TestSearchStacStatic(unittest.TestCase):
 
     def test_search_stac_static_crunch_filter_lastest_by_name(self):
         """load_stac_items from root and filter by name"""
-        items = self.dag.load_stac_items(
-            self.root_cat,
-            recursive=True,
-            provider=self.stac_provider,
-            productType=self.product_type,
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method load_stac_items",
+        ):
+            items = self.dag.load_stac_items(
+                self.root_cat,
+                recursive=True,
+                provider=self.stac_provider,
+                productType=self.product_type,
+            )
         self.assertEqual(len(items), self.root_cat_len)
 
         filtered_items = items.crunch(
