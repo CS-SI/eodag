@@ -20,7 +20,6 @@ import copy
 import glob
 import json
 import os
-import re
 import shutil
 import unittest
 import uuid
@@ -259,19 +258,14 @@ class TestCore(TestCoreBase):
         super(TestCore, self).setUp()
         self.dag = EODataAccessGateway()
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
-        # backup os.environ as it will be modified by tests
-        self.eodag_env_pattern = re.compile(r"EODAG_\w+")
-        self.eodag_env_backup = {
-            k: v for k, v in os.environ.items() if self.eodag_env_pattern.match(k)
-        }
+        # mock os.environ to empty env
+        self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        self.mock_os_environ.start()
 
     def tearDown(self):
         super(TestCore, self).tearDown()
-        # restore os.environ
-        for k, v in os.environ.items():
-            if self.eodag_env_pattern.match(k):
-                os.environ.pop(k)
-        os.environ.update(self.eodag_env_backup)
+        # stop os.environ
+        self.mock_os_environ.stop()
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""
@@ -877,20 +871,15 @@ class TestCoreConfWithEnvVar(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreConfWithEnvVar, cls).setUpClass()
         cls.dag = EODataAccessGateway()
-        # backup os.environ as it will be modified by tests
-        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
-        cls.eodag_env_backup = {
-            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
-        }
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        # restore os.environ
-        for k, v in os.environ.items():
-            if cls.eodag_env_pattern.match(k):
-                os.environ.pop(k)
-        os.environ.update(cls.eodag_env_backup)
+        # stop os.environ
+        cls.mock_os_environ.stop()
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""

@@ -19,7 +19,6 @@
 import importlib
 import json
 import os
-import re
 import unittest
 from tempfile import TemporaryDirectory
 
@@ -59,11 +58,9 @@ class RequestTestCase(unittest.TestCase):
             merge=True,
         )
 
-        # backup os.environ as it will be modified by tests
-        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
-        cls.eodag_env_backup = {
-            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
-        }
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
 
         # disable product types fetch
         os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
@@ -71,11 +68,8 @@ class RequestTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(RequestTestCase, cls).tearDownClass()
-        # restore os.environ
-        for k, v in os.environ.items():
-            if cls.eodag_env_pattern.match(k):
-                os.environ.pop(k)
-        os.environ.update(cls.eodag_env_backup)
+        # stop os.environ
+        cls.mock_os_environ.stop()
 
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
