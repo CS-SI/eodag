@@ -36,6 +36,7 @@ import types
 import unicodedata
 import warnings
 from collections import defaultdict
+from email.message import Message
 from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
@@ -1236,3 +1237,21 @@ def deepcopy(sth):
         return sth
     else:
         return cp(sth, _dispatcher)
+
+
+def parse_header(header):
+    """Parse HTTP header
+
+    >>> parse_header(
+    ...     'Content-Disposition: form-data; name="field2"; filename="example.txt"'
+    ... ).get_param("filename")
+    'example.txt'
+
+    :param header: header to parse
+    :type header: str
+    :returns: parsed header
+    :rtype: :class:`~email.message.Message`
+    """
+    m = Message()
+    m["content-type"] = header
+    return m

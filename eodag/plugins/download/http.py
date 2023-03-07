@@ -20,7 +20,6 @@ import logging
 import os
 import shutil
 import zipfile
-from cgi import parse_header
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -45,6 +44,7 @@ from eodag.utils import (
     USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
+    parse_header,
     path_to_uri,
     uri_to_path,
 )
@@ -556,7 +556,6 @@ class HTTPDownload(Download):
                     headers=USER_AGENT,
                     timeout=HTTP_REQ_TIMEOUT,
                 ).headers
-                header_content_disposition_dict = {}
 
                 if not asset.get("size", 0):
                     # size from HEAD header / Content-length
@@ -564,15 +563,15 @@ class HTTPDownload(Download):
 
                 if not asset.get("size", 0) or not asset.get("filename", 0):
                     # header content-disposition
-                    header_content_disposition_dict = parse_header(
+                    header_content_disposition = parse_header(
                         asset_headers.get("content-disposition", "")
-                    )[-1]
+                    )
                 if not asset.get("size", 0):
                     # size from HEAD header / content-disposition / size
-                    asset["size"] = int(header_content_disposition_dict.get("size", 0))
+                    asset["size"] = int(header_content_disposition.get_param("size", 0))
                 if not asset.get("filename", 0):
                     # filename from HEAD header / content-disposition / size
-                    asset["filename"] = header_content_disposition_dict.get(
+                    asset["filename"] = header_content_disposition.get_param(
                         "filename", None
                     )
 
@@ -593,7 +592,7 @@ class HTTPDownload(Download):
                             asset["size"] = int(
                                 parse_header(
                                     stream.headers.get("content-disposition", "")
-                                )[-1].get("size", 0)
+                                ).get_param("size", 0)
                             )
 
                 total_size += asset["size"]
@@ -647,13 +646,13 @@ class HTTPDownload(Download):
 
                     if not asset.get("filename", None):
                         # try getting filename in GET header if was not found in HEAD result
-                        asset_content_disposition_dict = stream.headers.get(
+                        asset_content_disposition = stream.headers.get(
                             "content-disposition", None
                         )
-                        if asset_content_disposition_dict:
+                        if asset_content_disposition:
                             asset["filename"] = parse_header(
-                                asset_content_disposition_dict
-                            )[-1].get("filename", None)
+                                asset_content_disposition
+                            ).get_param("filename", None)
 
                     if not asset.get("filename", None):
                         # default filename extracted from path
