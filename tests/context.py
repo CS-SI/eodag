@@ -79,6 +79,7 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     flatten_top_directories,
     deepcopy,
+    cached_parse,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,
