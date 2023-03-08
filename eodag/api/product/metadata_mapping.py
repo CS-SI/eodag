@@ -25,7 +25,7 @@ import geojson
 import pyproj
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
-from jsonpath_ng.jsonpath import Child, Fields, Index
+from jsonpath_ng.jsonpath import Child
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
@@ -34,11 +34,11 @@ from shapely.ops import transform
 
 from eodag.utils import (
     DEFAULT_PROJ,
-    cached_parse,
     deepcopy,
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
+    string_to_jsonpath,
 )
 
 logger = logging.getLogger("eodag.api.product.metadata_mapping")
@@ -589,18 +589,20 @@ def properties_from_json(json, mapping, discovery_config=None):
     discovery_pattern = discovery_config.get("metadata_pattern", None)
     discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
-        discovered_properties = cached_parse(discovery_path).find(json)
+        discovered_properties = string_to_jsonpath(discovery_path).find(json)
         for found_jsonpath in discovered_properties:
             if "metadata_path_id" in discovery_config.keys():
-                found_key_paths = cached_parse(
-                    discovery_config["metadata_path_id"]
+                found_key_paths = string_to_jsonpath(
+                    discovery_config["metadata_path_id"], force=True
                 ).find(found_jsonpath.value)
                 if not found_key_paths:
                     continue
                 found_key = found_key_paths[0].value
                 used_jsonpath = Child(
                     found_jsonpath.full_path,
-                    cached_parse(discovery_config["metadata_path_value"]),
+                    string_to_jsonpath(
+                        discovery_config["metadata_path_value"], force=True
+                    ),
                 )
             else:
                 # default key got from metadata_path
@@ -612,8 +614,8 @@ def properties_from_json(json, mapping, discovery_config=None):
                 and used_jsonpath not in used_jsonpaths
             ):
                 if "metadata_path_value" in discovery_config.keys():
-                    found_value_path = cached_parse(
-                        discovery_config["metadata_path_value"]
+                    found_value_path = string_to_jsonpath(
+                        discovery_config["metadata_path_value"], force=True
                     ).find(found_jsonpath.value)
                     properties[found_key] = (
                         found_value_path[0].value if found_value_path else NOT_AVAILABLE
@@ -782,31 +784,18 @@ def properties_from_xml(
     return properties
 
 
-def mtd_cfg_as_jsonpath(
-    src_dict, dest_dict={}, common_jsonpath=None, keep_conversion=True
-):
-    """Metadata configuration dictionary to jsonpath objects dictionnay
-    Transform every src_dict value from jsonpath str to jsonpath object
+def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="json"):
+    """Metadata configuration dictionary to querypath with conversion dictionnary
+    Transform every src_dict value from jsonpath_str to tuple `(conversion, jsonpath_object)`
+    or from xpath_str to tuple `(conversion, xpath_str)`
 
     :param src_dict: Input dict containing jsonpath str as values
     :type src_dict: dict
     :param dest_dict: (optional) Output dict containing jsonpath objects as values
     :type dest_dict: dict
-    :param common_jsonpath: (optional) common jsonpath used optimize jsonpath build process
-    :type common_jsonpath: str
-    :param keep_conversion: (optional) whether to keep conversion on parse error or not
-    :type keep_conversion: bool
     :returns: dest_dict
     :rtype: dict
     """
-    if common_jsonpath:
-        common_jsonpath_parsed = cached_parse(common_jsonpath)
-        common_jsonpath_match = re.compile(
-            rf"^{re.escape(common_jsonpath)}\.[a-zA-Z0-9-_:\.\[\]\"]+$"
-        )
-        array_field_match = re.compile(r"^[a-zA-Z0-9-_:]+\[[0-9]+\]$")
-    else:
-        common_jsonpath_match = None
     if not dest_dict:
         dest_dict = deepcopy(src_dict)
     for metadata in src_dict:
@@ -814,44 +803,19 @@ def mtd_cfg_as_jsonpath(
             dest_dict[metadata] = (None, NOT_MAPPED)
         else:
             conversion, path = get_metadata_path(dest_dict[metadata])
-            try:
-                # combine with common jsonpath if possible
-                if common_jsonpath_match and common_jsonpath_match.match(path):
-                    path_suffix = path[len(common_jsonpath) + 1 :]
-                    path_splits = path_suffix.split(".")
-                    parsed_path = common_jsonpath_parsed
-                    for path_split in path_splits:
-                        path_split = path_split.strip("'").strip('"')
-                        if "[" in path_split and array_field_match.match(path_split):
-                            # simple array field
-                            indexed_path, index = path_split[:-1].split("[")
-                            index = int(index)
-                            parsed_path = Child(
-                                Child(parsed_path, Fields(indexed_path)),
-                                Index(index=index),
-                            )
-                            continue
-                        elif "[" in path_split:
-                            # nested array field
-                            parsed_path = cached_parse(path)
-                            break
-                        else:
-                            parsed_path = Child(parsed_path, Fields(path_split))
-                else:
-                    parsed_path = cached_parse(path)
-                # If the metadata is queryable (i.e a list of 2 elements), replace the value of the last item
-                if len(dest_dict[metadata]) == 2:
-                    dest_dict[metadata][1] = (conversion, parsed_path)
-                else:
-                    dest_dict[metadata] = (conversion, parsed_path)
-            except Exception:  # jsonpath_ng does not provide a proper exception
-                # Keep path as this and its associated conversion (or None if not keep_conversion)
-                if not keep_conversion:
+            if result_type == "json":
+                parsed_path = string_to_jsonpath(path)
+                if isinstance(parsed_path, str):
+                    # not a jsonpath: assume the mapping is to be passed as is. Ignore any transformation specified.
+                    # If a value is to be passed as is, we don't want to transform it further
                     conversion = None
-                if len(dest_dict[metadata]) == 2:
-                    dest_dict[metadata][1] = (conversion, path)
-                else:
-                    dest_dict[metadata] = (conversion, path)
+            else:
+                parsed_path = path
+
+            if len(dest_dict[metadata]) == 2:
+                dest_dict[metadata][1] = (conversion, parsed_path)
+            else:
+                dest_dict[metadata] = (conversion, parsed_path)
 
             # Put the updated mapping at the end
             dest_dict[metadata] = dest_dict.pop(metadata)
