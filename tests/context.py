@@ -63,6 +63,7 @@ from eodag.plugins.download.base import (
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
+from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     USER_AGENT,
     get_bucket_name_and_prefix,

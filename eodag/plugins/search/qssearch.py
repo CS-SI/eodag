@@ -1201,7 +1201,7 @@ class PostJsonSearch(QueryStringSearch):
             self.need_count = True
             self.total_items_nb = None
 
-        if hasattr(kwargs["auth"], "config"):
+        if "auth" in kwargs and hasattr(kwargs["auth"], "config"):
             auth_conf_dict = getattr(kwargs["auth"].config, "credentials", {})
         else:
             auth_conf_dict = {}

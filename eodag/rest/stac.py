@@ -50,7 +50,7 @@ from eodag.utils.exceptions import (
 
 logger = logging.getLogger("eodag.rest.stac")
 
-default_min_date = "2015-01-01"
+DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
 
 
 class StacCommon(object):
@@ -888,7 +888,9 @@ class StacCatalog(StacCommon):
         :returns: Start & stop dates
         :rtype: tuple
         """
-        extent_date_min = dateutil.parser.parse(default_min_date).replace(tzinfo=tz.UTC)
+        extent_date_min = dateutil.parser.parse(DEFAULT_MISSION_START_DATE).replace(
+            tzinfo=tz.UTC
+        )
         extent_date_max = datetime.datetime.now(datetime.timezone.utc).replace(
             tzinfo=tz.UTC
         )
