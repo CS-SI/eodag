@@ -821,7 +821,7 @@
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk)|(?P<STAGING>staging)|(?P<OFFLINE>tape))}'
+      storageStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk|tier2)|(?P<STAGING>staging)|(?P<OFFLINE>unknown|tape|tier3))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
