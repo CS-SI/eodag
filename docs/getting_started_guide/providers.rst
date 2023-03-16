@@ -25,6 +25,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Acces
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
+* `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
 
 Providers available through an external plugin:
 
