@@ -15,23 +15,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import hashlib
 import logging
+from datetime import datetime
 
+import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
-from eodag import EOProduct
-from eodag.api.product.metadata_mapping import NOT_AVAILABLE, properties_from_json
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     Download,
 )
-from eodag.plugins.search.qssearch import QueryStringSearch
-from eodag.utils import get_geometry_from_various, parse_qsl, path_to_uri, urlsplit
-from eodag.utils.exceptions import AuthenticationError, DownloadError, ValidationError
+from eodag.plugins.search.base import Search
+from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.utils import get_geometry_from_various, path_to_uri, urlsplit
+from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
 logger = logging.getLogger("eodag.plugins.apis.ecmwf")
@@ -39,7 +40,7 @@ logger = logging.getLogger("eodag.plugins.apis.ecmwf")
 ECMWF_MARS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 
 
-class EcmwfApi(Download, Api, QueryStringSearch):
+class EcmwfApi(Download, Api, BuildPostSearchResult):
     """A plugin that enables to build download-request and download data on ECMWF MARS.
 
     Builds a single ready-to-download :class:`~eodag.api.product._product.EOProduct`
@@ -57,97 +58,58 @@ class EcmwfApi(Download, Api, QueryStringSearch):
 
     def __init__(self, provider, config):
         # init self.config.metadata_mapping using Search Base plugin
-        super(QueryStringSearch, self).__init__(provider, config)
+        Search.__init__(self, provider, config)
 
         # needed by QueryStringSearch.build_query_string / format_free_text_search
         self.config.__dict__.setdefault("free_text_search_operations", {})
         # needed for compatibility
-        self.config.__dict__.setdefault("pagination", {})
+        self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
+
+    def do_search(self, *args, **kwargs):
+        """Should perform the actual search request."""
+        return [{}]
 
     def query(
         self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
     ):
         """Build ready-to-download SearchResult"""
 
-        # check some mandatory parameters
+        # check productType, dates, geometry, use defaults if not specified
+        # productType
+        if not kwargs.get("productType"):
+            kwargs["productType"] = "%s_%s_%s" % (
+                kwargs.get("dataset", "mars"),
+                kwargs.get("type", ""),
+                kwargs.get("levtype", ""),
+            )
         # start date
         if "startTimeFromAscendingNode" not in kwargs:
-            raise ValidationError("Required start date is missing")
+            kwargs["startTimeFromAscendingNode"] = (
+                getattr(self.config, "product_type_config", {}).get(
+                    "missionStartDate", None
+                )
+                or DEFAULT_MISSION_START_DATE
+            )
         # end date
         if "completionTimeFromAscendingNode" not in kwargs:
-            raise ValidationError("Required end date is missing")
-
-        product_type = kwargs.get("productType")
-
-        # Map query args to properties
-        product_properties = kwargs
-        product_properties.pop("auth", None)
+            kwargs["completionTimeFromAscendingNode"] = getattr(
+                self.config, "product_type_config", {}
+            ).get("missionEndDate", None) or datetime.utcnow().isoformat(
+                timespec="seconds"
+            )
         # geometry
-        search_geometry = product_properties.get("geometry", None) or [
-            -180,
-            -90,
-            180,
-            90,
-        ]
-        product_geometry = get_geometry_from_various(geometry=search_geometry)
-        product_properties["geometry"] = product_geometry
+        if not kwargs.get("geometry", None):
+            kwargs["geometry"] = [
+                -180,
+                -90,
+                180,
+                90,
+            ]
+        kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
-        # add product_type specific properties from provider configuration (overriden by query args)
-        product_properties = dict(
-            self.config.products.get(product_type, {}), **product_properties
+        return BuildPostSearchResult.query(
+            self, items_per_page=items_per_page, page=page, count=count, **kwargs
         )
-
-        # properties mapped using provider configuration
-        product_properties = properties_from_json(
-            product_properties, self.config.metadata_mapping
-        )
-
-        # build query string & parameters dict using from available mapped properties
-        product_available_properties = {
-            k: v for (k, v) in product_properties.items() if v != NOT_AVAILABLE
-        }
-        qp, qs = self.build_query_string(product_type, **product_available_properties)
-
-        # query hash, will be used to build a product id
-        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
-
-        # build product id
-        if product_type is not None:
-            id_prefix = product_type
-        else:
-            id_prefix = (
-                "%s_%s_%s"
-                % (
-                    qp.get("dataset", "mars"),
-                    qp.get("type", ""),
-                    qp.get("levtype", ""),
-                )
-            ).upper()
-
-        product_id = "%s_%s_%s" % (
-            id_prefix,
-            qp["date"][0].split("/")[0].replace("-", ""),
-            query_hash,
-        )
-        product_properties["id"] = product_properties["title"] = product_id
-
-        # update downloadLink
-        product_properties["downloadLink"] += f"?{qs}"
-
-        product = EOProduct(
-            provider=self.provider,
-            productType=product_type,
-            properties=product_properties,
-        )
-        # use product_type_config as default properties
-        product.properties = dict(
-            getattr(self.config, "product_type_config", {}), **product.properties
-        )
-
-        results_count = 1
-        return [
-            product,
-        ], results_count
 
     def authenticate(self):
         """Check credentials and returns information needed for auth
@@ -199,7 +161,8 @@ class EcmwfApi(Download, Api, QueryStringSearch):
             return fs_path
 
         # get download request dict from product.location/downloadLink url query string
-        download_request = dict(parse_qsl(urlsplit(product.location).query))
+        # separate url & parameters
+        download_request = geojson.loads(urlsplit(product.location).query)
 
         # Set verbosity
         eodag_verbosity = get_logging_verbose()
@@ -217,7 +180,9 @@ class EcmwfApi(Download, Api, QueryStringSearch):
         # Send download request to ECMWF web API
         logger.info("Request download on ECMWF: %s" % download_request)
         try:
-            if "dataset" in download_request:
+            if "dataset" in download_request and not download_request[
+                "dataset"
+            ].startswith("mars_"):
                 # Public dataset
                 ecmwf_server = ECMWFDataServer(
                     verbose=ecmwf_verbose, log=ecmwf_log, **auth_dict
@@ -228,6 +193,7 @@ class EcmwfApi(Download, Api, QueryStringSearch):
                 ecmwf_server = ECMWFService(
                     service="mars", verbose=ecmwf_verbose, log=ecmwf_log, **auth_dict
                 )
+                download_request.pop("dataset", None)
                 ecmwf_server.execute(download_request, fs_path)
         except APIException as e:
             logger.error(e)
