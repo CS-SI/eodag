@@ -3644,7 +3644,7 @@
       productType: '{productType}'
   download: !plugin
     type: HTTPDownload
-    base_uri: 'https://planetarycomputer-staging.microsoft.com/api/stac/download'
+    base_uri: 'https://planetarycomputer.microsoft.com/api/stac/download'
     flatten_top_dirs: True
   auth: !plugin
     type: SASAuth
