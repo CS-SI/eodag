@@ -674,7 +674,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         """CdsApi must init client with logging level"""
 
         # auth dict needed for client init
-        auth_dict = {"key": "foo", "url": "https://bar"}
+        auth_dict = {"key": "foo:some-key", "url": "https://bar"}
 
         # 0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG
         setup_logging(0)
