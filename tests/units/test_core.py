@@ -238,6 +238,7 @@ class TestCore(TestCoreBase):
             "cop_cds",
             "meteoblue",
             "cop_dataspace",
+            "planetary_computer",
         ],
     }
     SUPPORTED_PROVIDERS = [

@@ -3646,6 +3646,7 @@
     type: HTTPDownload
     base_uri: 'https://planetarycomputer.microsoft.com/api/stac/download'
     flatten_top_dirs: True
+    auth_error_code: 403
   auth: !plugin
     type: SASAuth
     auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
