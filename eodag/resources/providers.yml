@@ -3611,3 +3611,43 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
+---
+!provider
+  name: planetary_computer
+  priority: 0
+  roles:
+    - host
+  description: Planetary Computer
+  url:  https://planetarycomputer.microsoft.com
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
+    need_auth: false
+    pagination:
+      max_items_per_page: 1000
+  products:
+    S1_SAR_GRD:
+      productType: sentinel-1-grd
+    S2_MSI_L2A:
+      productType: sentinel-2-l2a
+    LANDSAT_C2L1:
+      productType: landsat-c2-l1
+    LANDSAT_C2L2:
+      productType: landsat-c2-l2
+    MODIS_MCD43A4:
+      productType: modis-43A4-061
+    NAIP:
+      productType: naip
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://planetarycomputer.microsoft.com/api/stac/download'
+    flatten_top_dirs: True
+    auth_error_code: 403
+  auth: !plugin
+    type: SASAuth
+    auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
+    signed_url_key: href
+    headers:
+      Ocp-Apim-Subscription-Key: "{apikey}"

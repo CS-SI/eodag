@@ -96,8 +96,13 @@ class TestCore(TestCoreBase):
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
-        "LANDSAT_C2L1": ["astraea_eod", "usgs", "usgs_satapi_aws"],
-        "LANDSAT_C2L2": ["usgs"],
+        "LANDSAT_C2L1": [
+            "astraea_eod",
+            "usgs",
+            "usgs_satapi_aws",
+            "planetary_computer",
+        ],
+        "LANDSAT_C2L2": ["usgs", "planetary_computer"],
         "LANDSAT_C2L2ALB_BT": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_SR": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_ST": ["usgs_satapi_aws"],
@@ -110,8 +115,8 @@ class TestCore(TestCoreBase):
         "LANDSAT_TM_C1": ["usgs"],
         "LANDSAT_TM_C2L1": ["usgs"],
         "LANDSAT_TM_C2L2": ["usgs"],
-        "MODIS_MCD43A4": ["astraea_eod", "aws_eos"],
-        "NAIP": ["astraea_eod", "aws_eos"],
+        "MODIS_MCD43A4": ["astraea_eod", "aws_eos", "planetary_computer"],
+        "NAIP": ["astraea_eod", "aws_eos", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
         "OSO": ["theia"],
@@ -128,6 +133,7 @@ class TestCore(TestCoreBase):
             "onda",
             "peps",
             "sara",
+            "planetary_computer",
         ],
         "S1_SAR_OCN": ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
         "S1_SAR_RAW": ["cop_dataspace", "creodias", "mundi", "onda"],
@@ -155,6 +161,7 @@ class TestCore(TestCoreBase):
             "onda",
             "peps",
             "sara",
+            "planetary_computer",
         ],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
         "S2_MSI_L2A_MAJA": ["theia"],
@@ -231,6 +238,7 @@ class TestCore(TestCoreBase):
             "cop_cds",
             "meteoblue",
             "cop_dataspace",
+            "planetary_computer",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -252,6 +260,7 @@ class TestCore(TestCoreBase):
         "sara",
         "meteoblue",
         "cop_dataspace",
+        "planetary_computer",
     ]
 
     def setUp(self):
