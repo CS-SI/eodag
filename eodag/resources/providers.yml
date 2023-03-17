@@ -3623,8 +3623,6 @@
     type: StacSearch
     api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
     need_auth: false
-    discover_product_types:
-      fetch_url: null
     pagination:
       max_items_per_page: 1000
   products:
