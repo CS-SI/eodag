@@ -218,6 +218,9 @@ class StacItem(StacCommon):
             product_item = jsonpath_parse_dict_items(
                 item_model, {"product": product.__dict__}
             )
+            if getattr(product, "assets", False):
+                origin_assets = product_item["assets"].pop("origin_assets")
+                product_item["assets"] = dict(product_item["assets"], **origin_assets)
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
                 conv_func, conv_args = prop_val

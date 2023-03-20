@@ -227,7 +227,7 @@ item:
         type: 'image/jpeg'
         role: thumbnail
         # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
-
+    origin_assets: '$.product.assets'
 # product properties not needed in items
 metadata_ignore:
   - title
