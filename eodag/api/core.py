@@ -682,7 +682,7 @@ class EODataAccessGateway(object):
         :type ext_product_types_conf: dict
         """
         for provider, new_product_types_conf in ext_product_types_conf.items():
-            if new_product_types_conf:
+            if new_product_types_conf and provider in self.providers_config:
                 try:
                     if hasattr(self.providers_config[provider], "search"):
                         search_plugin_config = self.providers_config[provider].search
@@ -700,6 +700,7 @@ class EODataAccessGateway(object):
                         provider,
                     )
                     continue
+                new_product_types = []
                 for (
                     new_product_type,
                     new_product_type_conf,
@@ -743,10 +744,15 @@ class EODataAccessGateway(object):
                                 self.product_types_config.source
                             )
                             ext_product_types_conf[provider] = new_product_types_conf
-                            logger.debug(
-                                f"Added product type {new_product_type} for {provider}"
-                            )
+                            new_product_types.append(new_product_type)
+                if new_product_types:
+                    logger.debug(
+                        f"Added product types {str(new_product_types)} for {provider}"
+                    )
 
+            elif provider not in self.providers_config:
+                # unknown provider
+                continue
             self.providers_config[provider].product_types_fetched = True
 
         # re-create _plugins_manager using up-to-date providers_config
