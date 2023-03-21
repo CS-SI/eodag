@@ -348,6 +348,15 @@ class TestCore(TestCoreBase):
             self.dag.product_types_config["bar"]["title"], "Bar collection"
         )
 
+    def test_update_product_types_list_unknown_provider(self):
+        """Core api.update_product_types_list on unkwnown provider must not crash and not update conf"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
+            ext_product_types_conf = json.load(f)
+        self.dag.providers_config.pop("astraea_eod")
+
+        self.dag.update_product_types_list(ext_product_types_conf)
+        self.assertNotIn("astraea_eod", self.dag.providers_config)
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
         autospec=True,
