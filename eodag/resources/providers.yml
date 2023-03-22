@@ -921,7 +921,7 @@
     discover_product_types:
       fetch_url: 'https://datahub.creodias.eu/stac/collections'
       result_type: json
-      results_entry: 'collections[*]'
+      results_entry: '$.collections[*]'
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
         collection: '$.id'
@@ -2016,7 +2016,7 @@
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
     discover_product_types:
-      results_entry: 'collections[?id!="sentinel-s2-l2a-cogs"]'
+      results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
