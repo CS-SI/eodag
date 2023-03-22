@@ -228,7 +228,7 @@ class EODataAccessGateway(object):
 
             product_types_schema = Schema(
                 ID=fields.STORED,
-                abstract=fields.TEXT,
+                abstract=fields.STORED,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
                 platformSerialIdentifier=fields.IDLIST,
