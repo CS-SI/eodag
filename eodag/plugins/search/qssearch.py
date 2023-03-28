@@ -16,12 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 import re
 from urllib.error import HTTPError as urllib_HTTPError
 from urllib.request import Request, urlopen
 
+import orjson
 import requests
 from lxml import etree
 
@@ -491,7 +491,7 @@ class QueryStringSearch(Search):
                     if "{{" in provider_search_key:
                         # json query string (for POST request)
                         update_nested_dict(
-                            query_params, json.loads(formatted_query_param)
+                            query_params, orjson.loads(formatted_query_param)
                         )
                     else:
                         query_params[eodag_search_key] = formatted_query_param
@@ -1239,7 +1239,7 @@ class PostJsonSearch(QueryStringSearch):
                         skip_base_1=(page - 1) * items_per_page + 1,
                     )
                     update_nested_dict(
-                        self.query_params, json.loads(next_page_query_obj)
+                        self.query_params, orjson.loads(next_page_query_obj)
                     )
 
             urls.append(search_endpoint)

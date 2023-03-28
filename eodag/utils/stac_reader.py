@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import logging
 import re
 import socket
@@ -23,6 +22,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 import concurrent.futures
+import orjson
 import pystac
 
 from eodag.utils.exceptions import STACOpenerError
@@ -45,10 +45,11 @@ class _TextOpener:
     def read_local_json(url, as_json):
         """Read JSON local file"""
         try:
-            with open(url) as f:
-                if as_json:
-                    return json.load(f)
-                else:
+            if as_json:
+                with open(url, "rb") as f:
+                    return orjson.loads(f.read())
+            else:
+                with open(url) as f:
                     return f.read()
         except OSError:
             logger.debug("read_local_json is not the right STAC opener")
@@ -68,7 +69,7 @@ class _TextOpener:
                 else:
                     encoding = m.group(1)
             content = res.read().decode(encoding)
-            return json.loads(content) if as_json else content
+            return orjson.loads(content) if as_json else content
         except URLError as e:
             if isinstance(e.reason, socket.timeout):
                 logger.error("%s: %s", url, e)

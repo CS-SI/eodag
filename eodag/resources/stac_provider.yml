@@ -32,7 +32,7 @@ search:
   discover_product_types:
       fetch_url: '{api_endpoint}/../collections'
       result_type: json
-      results_entry: 'collections[*]'
+      results_entry: '$.collections[*]'
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
         productType: '$.id'
