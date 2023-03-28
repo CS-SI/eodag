@@ -15,11 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import logging
 import os
 import tempfile
 
+import orjson
 import requests
 import yaml
 import yaml.constructor
@@ -495,9 +495,9 @@ def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
 
     # read from local
     try:
-        with open(conf_uri) as f:
-            return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError) as e:
+        with open(conf_uri, "rb") as f:
+            return orjson.loads(f.read())
+    except (orjson.JSONDecodeError, FileNotFoundError) as e:
         logger.debug(e)
         logger.warning(
             "Could not read local external product types conf from %s", conf_uri

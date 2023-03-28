@@ -26,7 +26,6 @@ import errno
 import functools
 import hashlib
 import inspect
-import json
 import logging as py_logging
 import os
 import re
@@ -57,6 +56,7 @@ from urllib.parse import (  # noqa; noqa
 from urllib.request import url2pathname
 
 import click
+import orjson
 import shapefile
 import shapely.wkt
 from dateutil.parser import isoparse
@@ -1180,7 +1180,7 @@ def obj_md5sum(data):
     :returns: MD5 checksum
     :rtype: str
     """
-    return hashlib.md5(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
+    return hashlib.md5(orjson.dumps(data, option=orjson.OPT_SORT_KEYS)).hexdigest()
 
 
 @functools.lru_cache()

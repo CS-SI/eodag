@@ -297,8 +297,6 @@ class TestCore(TestCoreBase):
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
-        # raise Exception({p:pc.api.credentials for p,pc in self.dag.providers_config.items() if hasattr(pc, "api")})
-        # raise Exception(self.dag.conf_dir)
         for provider in self.SUPPORTED_PROVIDERS:
             product_types = self.dag.list_product_types(
                 provider=provider, fetch_providers=False

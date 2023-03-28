@@ -17,10 +17,10 @@
 # limitations under the License.
 
 import hashlib
-import json
 import logging
 
 import geojson
+import orjson
 from jsonpath_ng import Fields
 
 from eodag.api.product import EOProduct
@@ -103,7 +103,7 @@ class BuildPostSearchResult(PostJsonSearch):
         ):
             unpaginated_query_params = self.query_params_unpaginated
         elif isinstance(self.config.pagination["next_page_query_obj"], str):
-            next_page_query_obj = json.loads(
+            next_page_query_obj = orjson.loads(
                 self.config.pagination["next_page_query_obj"].format()
             )
             unpaginated_query_params = {
