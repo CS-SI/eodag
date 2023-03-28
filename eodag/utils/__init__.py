@@ -35,6 +35,7 @@ import types
 import unicodedata
 import warnings
 from collections import defaultdict
+from copy import deepcopy as copy_deepcopy
 from email.message import Message
 from glob import glob
 from itertools import repeat, starmap
@@ -59,6 +60,7 @@ import click
 import orjson
 import shapefile
 import shapely.wkt
+import yaml
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
@@ -1207,6 +1209,42 @@ def cached_parse(str_to_parse):
     :rtype: :class:`jsonpath_ng.JSONPath`
     """
     return parse(str_to_parse)
+
+
+@functools.lru_cache()
+def _mutable_cached_yaml_load(config_path):
+    with open(os.path.abspath(os.path.realpath(config_path)), "r") as fh:
+        return yaml.load(fh, Loader=yaml.SafeLoader)
+
+
+def cached_yaml_load(config_path):
+    """Cached yaml.load
+
+    :param config_path: path to the yaml configuration file
+    :type config_path: str
+    :returns: loaded yaml configuration
+    :rtype: dict
+    """
+    return copy_deepcopy(_mutable_cached_yaml_load(config_path))
+
+
+@functools.lru_cache()
+def _mutable_cached_yaml_load_all(config_path):
+    with open(config_path, "r") as fh:
+        return list(yaml.load_all(fh, Loader=yaml.Loader))
+
+
+def cached_yaml_load_all(config_path):
+    """Cached yaml.load_all
+
+    Load all configurations stored in the configuration file as separated yaml documents
+
+    :param config_path: path to the yaml configuration file
+    :type config_path: str
+    :returns: list of configurations
+    :rtype: list
+    """
+    return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
 
 
 def get_bucket_name_and_prefix(url=None, bucket_path_level=None):

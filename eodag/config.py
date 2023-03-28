@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# import copy
 import logging
 import os
 import tempfile
@@ -28,6 +29,8 @@ from pkg_resources import resource_filename
 
 from eodag.utils import (
     USER_AGENT,
+    cached_yaml_load,
+    cached_yaml_load_all,
     deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
@@ -51,12 +54,12 @@ class SimpleYamlProxyConfig(object):
     as returned by yaml.load"""
 
     def __init__(self, conf_file_path):
-        with open(os.path.abspath(os.path.realpath(conf_file_path)), "r") as fh:
-            try:
-                self.source = yaml.load(fh, Loader=yaml.SafeLoader)
-            except yaml.parser.ParserError as e:
-                print("Unable to load user configuration file")
-                raise e
+        try:
+            self.source = cached_yaml_load(conf_file_path)
+            # self.source = deepcopy(cached_yaml_load(conf_file_path))
+        except yaml.parser.ParserError as e:
+            print("Unable to load user configuration file")
+            raise e
 
     def __getitem__(self, item):
         return self.source[item]
@@ -242,19 +245,19 @@ def load_config(config_path):
     :rtype: dict
     """
     config = {}
-    with open(config_path, "r") as fh:
-        try:
-            # Providers configs are stored in this file as separated yaml documents
-            # Load all of it
-            providers_configs = yaml.load_all(fh, Loader=yaml.Loader)
-        except yaml.parser.ParserError as e:
-            logger.error("Unable to load configuration")
-            raise e
-        stac_provider_config = load_stac_provider_config()
-        for provider_config in providers_configs:
-            provider_config_init(provider_config, stac_provider_config)
-            config[provider_config.name] = provider_config
-        return config
+    try:
+        # Providers configs are stored in this file as separated yaml documents
+        # Load all of it
+        providers_configs = cached_yaml_load_all(config_path)
+    except yaml.parser.ParserError as e:
+        logger.error("Unable to load configuration")
+        raise e
+    stac_provider_config = load_stac_provider_config()
+    for provider_config in providers_configs:
+        # for provider_config in copy.deepcopy(providers_configs):
+        provider_config_init(provider_config, stac_provider_config)
+        config[provider_config.name] = provider_config
+    return config
 
 
 def provider_config_init(provider_config, stac_search_default_conf=None):
