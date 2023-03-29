@@ -18,7 +18,7 @@
 
 import logging
 import re
-from urllib.error import HTTPError as urllib_HTTPError
+from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 import orjson
@@ -962,7 +962,7 @@ class QueryStringSearch(Search):
                     url, timeout=HTTP_REQ_TIMEOUT, headers=USER_AGENT, **kwargs
                 )
                 response.raise_for_status()
-        except (requests.RequestException, urllib_HTTPError) as err:
+        except (requests.RequestException, URLError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -1270,7 +1270,7 @@ class PostJsonSearch(QueryStringSearch):
                 **kwargs,
             )
             response.raise_for_status()
-        except (requests.RequestException, urllib_HTTPError) as err:
+        except (requests.RequestException, URLError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
