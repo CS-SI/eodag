@@ -1,6 +1,19 @@
 Release history
 ---------------
 
+2.9.2 (2023-03-31)
+++++++++++++++++++
+
+* `planetary_computer`, `Microsoft Planetary Computer <https://planetarycomputer.microsoft.com/>`_  as new provider
+  (:pull:`659`)
+* Fetch product types optimization (:pull:`683`)
+* Fixes external product types update for unknown provider (:pull:`682`)
+* Default dates and refactor for `CdsApi` and `EcmwfApi` (:pull:`672`)(:pull:`678`)(:pull:`679`)
+* `peps` `storageStatus` update (:pull:`677`)
+* Customized and faster `deepcopy` (:pull:`664`)
+* Various minor fixes and improvements (:pull:`665`)(:pull:`666`)(:pull:`667`)(:pull:`668`)(:pull:`669`)(:pull:`670`)
+  (:pull:`675`)(:pull:`688`)(:pull:`690`)(:pull:`691`)
+
 2.9.1 (2023-02-27)
 ++++++++++++++++++
 
@@ -42,6 +55,8 @@ Release history
 * `Product types catalog\
   <https://eodag.readthedocs.io/en/latest/getting_started_guide/product_types.html#product-types-information-csv>`_
   more visible in documentation (:pull:`603`)
+* Metadata mapping `to_geo_interface()` renammed to `to_geojson()`
+  (`d7565a4 <https://github.com/CS-SI/eodag/pull/604/commits/d7565a4984d356aca20310a87c02692cb879427e>`_)
 * Added support for `python3.11` (:pull:`552`)
 * Improved http asset size discovery in :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`566`)
 * Various minor fixes and improvements (:pull:`572`)(:pull:`574`)(:pull:`576`)(:pull:`579`)(:pull:`580`)(:pull:`582`)
