@@ -33,6 +33,7 @@ from tests.context import (
     EOProduct,
     PluginManager,
     RequestError,
+    cached_parse,
     get_geometry_from_various,
     load_default_config,
 )
@@ -278,9 +279,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change onfiguration for this test to filter out some collections
         results_entry = search_plugin.config.discover_product_types["results_entry"]
-        search_plugin.config.discover_product_types[
-            "results_entry"
-        ] = 'collections[?billing=="free"]'
+        search_plugin.config.discover_product_types["results_entry"] = cached_parse(
+            'collections[?billing=="free"]'
+        )
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = {
@@ -379,7 +380,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 responses.POST, self.awseos_url, status=500, body=b"test error message"
             )
 
-            with self.assertLogs(level="DEBUG") as cm:
+            with self.assertLogs("eodag.plugins.search.qssearch", level="DEBUG") as cm:
                 with self.assertRaises(RequestError):
                     products, estimate = self.awseos_search_plugin.query(
                         page=1,
@@ -535,7 +536,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.assertDictEqual(
             self.onda_search_plugin.config.metadata_pre_mapping,
             {
-                "metadata_path": "$.Metadata",
+                "metadata_path": cached_parse("$.Metadata"),
                 "metadata_path_id": "id",
                 "metadata_path_value": "value",
             },

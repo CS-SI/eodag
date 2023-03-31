@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import copy
 import logging
 import shutil
 import tarfile
@@ -29,7 +28,7 @@ from usgs import USGSAuthExpiredError, USGSError, api
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
-    mtd_cfg_as_jsonpath,
+    mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
@@ -52,6 +51,22 @@ logger = logging.getLogger("eodag.plugins.apis.usgs")
 
 class UsgsApi(Download, Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
+
+    def __init__(self, provider, config):
+        super(UsgsApi, self).__init__(provider, config)
+
+        # Same method as in base.py, Search.__init__()
+        # Prepare the metadata mapping
+        # Do a shallow copy, the structure is flat enough for this to be sufficient
+        metas = DEFAULT_METADATA_MAPPING.copy()
+        # Update the defaults with the mapping value. This will add any new key
+        # added by the provider mapping that is not in the default metadata.
+        metas.update(self.config.metadata_mapping)
+        self.config.metadata_mapping = mtd_cfg_as_conversion_and_querypath(
+            metas,
+            self.config.metadata_mapping,
+            result_type=getattr(self.config, "result_type", "json"),
+        )
 
     def authenticate(self):
         """Login to usgs api
@@ -159,28 +174,13 @@ class UsgsApi(Download, Api):
                         )
             results["data"]["results"] = list(results_by_entity_id.values())
 
-            # Same method as in base.py, Search.__init__()
-            # Prepare the metadata mapping
-            # Do a shallow copy, the structure is flat enough for this to be sufficient
-            metas = DEFAULT_METADATA_MAPPING.copy()
-            # Update the defaults with the mapping value. This will add any new key
-            # added by the provider mapping that is not in the default metadata.
-            # A deepcopy is done to prevent self.config.metadata_mapping from being modified when metas[metadata]
-            # is a list and is modified
-            metas.update(copy.deepcopy(self.config.metadata_mapping))
-            # common_jsonpath usage to optimize jsonpath build process
-            mtd_cfg_as_jsonpath_options = {}
-            if hasattr(self.config, "common_metadata_mapping_path"):
-                mtd_cfg_as_jsonpath_options[
-                    "common_jsonpath"
-                ] = self.config.common_metadata_mapping_path
-            metas = mtd_cfg_as_jsonpath(metas, **mtd_cfg_as_jsonpath_options)
-
             for result in results["data"]["results"]:
 
                 result["productType"] = usgs_dataset
 
-                product_properties = properties_from_json(result, metas)
+                product_properties = properties_from_json(
+                    result, self.config.metadata_mapping
+                )
 
                 final.append(
                     EOProduct(

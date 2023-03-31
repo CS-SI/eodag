@@ -19,15 +19,18 @@ import ast
 import logging
 import os
 import unittest
+from datetime import datetime
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+import geojson
 import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_MISSION_START_DATE,
     ONLINE_STATUS,
     USER_AGENT,
     AuthenticationError,
@@ -38,10 +41,8 @@ from tests.context import (
     SearchResult,
     USGSAuthExpiredError,
     USGSError,
-    ValidationError,
     get_geometry_from_various,
     load_default_config,
-    parse_qsl,
     path_to_uri,
     setup_logging,
     urlsplit,
@@ -117,22 +118,51 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "class": "ti",
         }
 
-    def test_plugins_apis_ecmwf_query_mandatory_params_missing(self):
-        """EcmwfApi.query must fails if mandatory parameters are missing"""
+    def test_plugins_apis_ecmwf_query_dates_missing(self):
+        """Ecmwf.query must use default dates if missing"""
+        # given start & stop
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-01-02",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-02"
+        )
 
-        self.assertRaises(
-            ValidationError,
-            self.api_plugin.query,
+        # missing start & stop
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
         )
-        self.assertRaises(
-            ValidationError,
-            self.api_plugin.query,
-            startTimeFromAscendingNode="foo",
+        eoproduct = results[0]
+        self.assertIn(
+            eoproduct.properties["startTimeFromAscendingNode"],
+            DEFAULT_MISSION_START_DATE,
         )
-        self.assertRaises(
-            ValidationError,
-            self.api_plugin.query,
-            completionTimeFromAscendingNode="foo",
+        self.assertIn(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            datetime.utcnow().isoformat(),
+        )
+
+        # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
+        self.api_plugin.config.product_type_config = {
+            "productType": self.product_type,
+            "missionStartDate": "1985-10-26",
+            "missionEndDate": "2015-10-21",
+        }
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
         )
 
     def test_plugins_apis_ecmwf_query_without_producttype(self):
@@ -257,7 +287,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             mock.ANY,  # ECMWFDataServer instance
             dict(
                 target=expected_path,
-                **dict(parse_qsl(urlsplit(eoproduct.remote_location).query)),
+                **geojson.loads(urlsplit(eoproduct.remote_location).query),
             ),
         )
         assert path_to_uri(expected_path) == eoproduct.location
@@ -283,9 +313,13 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             output_data_path, "%s.nc" % eoproduct.properties["title"]
         )
         path = eoproduct.download(outputs_prefix=output_data_path)
+        download_request = geojson.loads(urlsplit(eoproduct.remote_location).query)
+        download_request.pop("dataset", None)
         mock_ecmwfservice_execute.assert_called_once_with(
             mock.ANY,  # ECMWFService instance
-            dict(parse_qsl(urlsplit(eoproduct.remote_location).query)),
+            dict(
+                **download_request,
+            ),
             expected_path,
         )
         mock_ecmwfdataserver_retrieve.assert_not_called()
@@ -640,7 +674,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         """CdsApi must init client with logging level"""
 
         # auth dict needed for client init
-        auth_dict = {"key": "foo", "url": "https://bar"}
+        auth_dict = {"key": "foo:some-key", "url": "https://bar"}
 
         # 0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG
         setup_logging(0)
@@ -659,22 +693,51 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         client = self.api_plugin._get_cds_client(**auth_dict)
         self.assertEqual(client.logger.level, logging.DEBUG)
 
-    def test_plugins_apis_cds_query_mandatory_params_missing(self):
-        """CdsApi.query must fails if mandatory parameters are missing"""
+    def test_plugins_apis_cds_query_dates_missing(self):
+        """CdsApi.query must use default dates if missing"""
+        # given start & stop
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-01-02",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-02"
+        )
 
-        self.assertRaises(
-            ValidationError,
-            self.api_plugin.query,
+        # missing start & stop
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
         )
-        self.assertRaises(
-            ValidationError,
-            self.api_plugin.query,
-            startTimeFromAscendingNode="foo",
+        eoproduct = results[0]
+        self.assertIn(
+            eoproduct.properties["startTimeFromAscendingNode"],
+            DEFAULT_MISSION_START_DATE,
         )
-        self.assertRaises(
-            ValidationError,
-            self.api_plugin.query,
-            completionTimeFromAscendingNode="foo",
+        self.assertIn(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            datetime.utcnow().isoformat(),
+        )
+
+        # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
+        self.api_plugin.config.product_type_config = {
+            "productType": self.product_type,
+            "missionStartDate": "1985-10-26",
+            "missionEndDate": "2015-10-21",
+        }
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
         )
 
     def test_plugins_apis_cds_query_without_producttype(self):
@@ -683,7 +746,8 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         For test only, result cannot be downloaded.
         """
         results, count = self.api_plugin.query(
-            dataset=self.product_dataset, **self.query_dates
+            dataset=self.product_dataset,
+            **self.query_dates,
         )
         assert count == 1
         eoproduct = results[0]
@@ -715,7 +779,9 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
 
         # product type default settings can be overwritten using search kwargs
         results, _ = self.api_plugin.query(
-            **self.query_dates, productType=self.product_type, variable="temperature"
+            **self.query_dates,
+            productType=self.product_type,
+            variable="temperature",
         )
         eoproduct = results[0]
         assert eoproduct.properties["variable"] == "temperature"
@@ -781,9 +847,8 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
 
-        expected_download_request = dict(
-            parse_qsl("".join(urlsplit(eoproduct.location).fragment.split("?", 1)[1:]))
-        )
+        query_str = "".join(urlsplit(eoproduct.location).fragment.split("?", 1)[1:])
+        expected_download_request = geojson.loads(query_str)
         expected_dataset_name = expected_download_request.pop("dataset")
         expected_path = os.path.join(
             output_data_path, "%s.grib" % eoproduct.properties["title"]

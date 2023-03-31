@@ -13,30 +13,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Get history and tags for SCM versioning to work
       run: |
         git fetch --prune --unshallow
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set up Python 3.7
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.7"
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Get pip cache dir
       id: pip-cache
-      run: |
-        echo "::set-output name=dir::$(pip cache dir)"
+      shell: bash
+      run: echo "DIR=$(pip cache dir)" >> $GITHUB_OUTPUT
     - name: Get current week number
       id: get-week
       shell: bash
-      run: echo "::set-output name=week::$(date +'%V')"
+      run: echo "WEEK=$(date +'%V')" >> $GITHUB_OUTPUT
     - name: Pip cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ${{ steps.pip-cache.outputs.dir }}
-        key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.week }}-${{ hashFiles('setup.py') }}
+        path: ${{ steps.pip-cache.outputs.DIR }}
+        key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
     - name: Install eodag
       run: |
         python -m pip install .

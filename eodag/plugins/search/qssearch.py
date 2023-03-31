@@ -16,12 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 import re
-from urllib.error import HTTPError as urllib_HTTPError
+from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+import orjson
 import requests
 from lxml import etree
 
@@ -30,9 +30,8 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
     format_metadata,
-    get_metadata_path_value,
     get_search_param,
-    mtd_cfg_as_jsonpath,
+    mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
     properties_from_xml,
 )
@@ -40,10 +39,11 @@ from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     USER_AGENT,
-    cached_parse,
+    _deprecated,
     dict_items_recursive_apply,
     format_dict_items,
     quote,
+    string_to_jsonpath,
     update_nested_dict,
     urlencode,
 )
@@ -166,6 +166,79 @@ class QueryStringSearch(Search):
         self.next_page_url = None
         self.next_page_query_obj = None
         self.next_page_merge = None
+        # parse jsonpath on init: pagination
+        if (
+            self.config.result_type == "json"
+            and "total_items_nb_key_path" in self.config.pagination
+        ):
+            self.config.pagination["total_items_nb_key_path"] = string_to_jsonpath(
+                self.config.pagination["total_items_nb_key_path"]
+            )
+        if (
+            self.config.result_type == "json"
+            and "next_page_url_key_path" in self.config.pagination
+        ):
+            self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
+                self.config.pagination.get("next_page_url_key_path", None)
+            )
+        if (
+            self.config.result_type == "json"
+            and "next_page_query_obj_key_path" in self.config.pagination
+        ):
+            self.config.pagination["next_page_query_obj_key_path"] = string_to_jsonpath(
+                self.config.pagination.get("next_page_query_obj_key_path", None)
+            )
+        if (
+            self.config.result_type == "json"
+            and "next_page_merge_key_path" in self.config.pagination
+        ):
+            self.config.pagination["next_page_merge_key_path"] = string_to_jsonpath(
+                self.config.pagination.get("next_page_merge_key_path", None)
+            )
+
+        # parse jsonpath on init: product types discovery
+        if (
+            getattr(self.config, "discover_product_types", {}).get(
+                "results_entry", None
+            )
+            and getattr(self.config, "discover_product_types", {}).get(
+                "result_type", None
+            )
+            == "json"
+        ):
+            self.config.discover_product_types["results_entry"] = string_to_jsonpath(
+                self.config.discover_product_types["results_entry"], force=True
+            )
+            self.config.discover_product_types[
+                "generic_product_type_id"
+            ] = mtd_cfg_as_conversion_and_querypath(
+                {"foo": self.config.discover_product_types["generic_product_type_id"]}
+            )[
+                "foo"
+            ]
+            self.config.discover_product_types[
+                "generic_product_type_parsable_properties"
+            ] = mtd_cfg_as_conversion_and_querypath(
+                self.config.discover_product_types[
+                    "generic_product_type_parsable_properties"
+                ]
+            )
+            self.config.discover_product_types[
+                "generic_product_type_parsable_metadata"
+            ] = mtd_cfg_as_conversion_and_querypath(
+                self.config.discover_product_types[
+                    "generic_product_type_parsable_metadata"
+                ]
+            )
+
+        # parse jsonpath on init: product type specific metadata-mapping
+        for product_type in self.config.products.keys():
+            if "metadata_mapping" in self.config.products[product_type].keys():
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
 
     def clear(self):
         """Clear search context"""
@@ -203,9 +276,9 @@ class QueryStringSearch(Search):
                     # extract results from response json
                     result = [
                         match.value
-                        for match in cached_parse(
-                            self.config.discover_product_types["results_entry"]
-                        ).find(resp_as_json)
+                        for match in self.config.discover_product_types[
+                            "results_entry"
+                        ].find(resp_as_json)
                     ]
 
                     conf_update_dict = {
@@ -215,8 +288,8 @@ class QueryStringSearch(Search):
 
                     for product_type_result in result:
                         # providers_config extraction
-                        mapping_config = {}
-                        mapping_config = mtd_cfg_as_jsonpath(
+                        extracted_mapping = properties_from_json(
+                            product_type_result,
                             dict(
                                 self.config.discover_product_types[
                                     "generic_product_type_parsable_properties"
@@ -227,11 +300,6 @@ class QueryStringSearch(Search):
                                     ]
                                 },
                             ),
-                            mapping_config,
-                        )
-
-                        extracted_mapping = properties_from_json(
-                            product_type_result, mapping_config
                         )
                         generic_product_type_id = extracted_mapping.pop(
                             "generic_product_type_id"
@@ -245,16 +313,14 @@ class QueryStringSearch(Search):
                             ),
                         )
                         # product_types_config extraction
-                        mapping_config = {}
-                        mapping_config = mtd_cfg_as_jsonpath(
+                        conf_update_dict["product_types_config"][
+                            generic_product_type_id
+                        ] = properties_from_json(
+                            product_type_result,
                             self.config.discover_product_types[
                                 "generic_product_type_parsable_metadata"
                             ],
-                            mapping_config,
                         )
-                        conf_update_dict["product_types_config"][
-                            generic_product_type_id
-                        ] = properties_from_json(product_type_result, mapping_config)
 
                         # update keywords
                         keywords_fields = [
@@ -351,18 +417,14 @@ class QueryStringSearch(Search):
             other_product_type_def_params = self.get_product_type_def_params(
                 other_product_for_mapping, **kwargs
             )
-            self.update_metadata_mapping(
+            self.config.metadata_mapping.update(
                 other_product_type_def_params.get("metadata_mapping", {})
             )
         # from current product
-        self.update_metadata_mapping(
+        self.config.metadata_mapping.update(
             self.product_type_def_params.get("metadata_mapping", {})
         )
 
-        # Add to the query, the queryable parameters set in the provider product type definition
-        self.product_type_def_params = self.get_product_type_def_params(
-            product_type, **kwargs
-        )
         # if product_type_def_params is set, remove product_type as it may conflict with this conf
         if self.product_type_def_params:
             keywords.pop("productType", None)
@@ -395,27 +457,13 @@ class QueryStringSearch(Search):
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
+    @_deprecated(
+        reason="Simply run `self.config.metadata_mapping.update(metadata_mapping)` instead",
+        version="2.10.0",
+    )
     def update_metadata_mapping(self, metadata_mapping):
         """Update plugin metadata_mapping with input metadata_mapping configuration"""
         self.config.metadata_mapping.update(metadata_mapping)
-        unparsed_metadata = {
-            k: v
-            for k, v in metadata_mapping.items()
-            if isinstance(get_metadata_path_value(self.config.metadata_mapping[k]), str)
-        }
-        # common_jsonpath usage to optimize jsonpath build process
-        # On error, assume the mapping is to be passed as is. Ignore any transformation specified.
-        #   If a value is to be passed as is, we don't want to transform it further
-        mtd_cfg_as_jsonpath_options = {"keep_conversion": False}
-        if hasattr(self.config, "common_metadata_mapping_path"):
-            mtd_cfg_as_jsonpath_options[
-                "common_jsonpath"
-            ] = self.config.common_metadata_mapping_path
-        self.config.metadata_mapping = mtd_cfg_as_jsonpath(
-            unparsed_metadata,
-            self.config.metadata_mapping,
-            **mtd_cfg_as_jsonpath_options,
-        )
 
     def build_query_string(self, product_type, **kwargs):
         """Build The query string using the search parameters"""
@@ -443,7 +491,7 @@ class QueryStringSearch(Search):
                     if "{{" in provider_search_key:
                         # json query string (for POST request)
                         update_nested_dict(
-                            query_params, json.loads(formatted_query_param)
+                            query_params, orjson.loads(formatted_query_param)
                         )
                     else:
                         query_params[eodag_search_key] = formatted_query_param
@@ -630,9 +678,9 @@ class QueryStringSearch(Search):
             # extract total_items_nb from search results
             total_items_nb = 0
             if self.config.result_type == "json":
-                total_items_nb_key_path_parsed = cached_parse(
-                    self.config.pagination["total_items_nb_key_path"]
-                )
+                total_items_nb_key_path_parsed = self.config.pagination[
+                    "total_items_nb_key_path"
+                ]
 
         results = []
         for search_url in self.search_urls:
@@ -687,7 +735,7 @@ class QueryStringSearch(Search):
             else:
                 resp_as_json = response.json()
                 if next_page_url_key_path:
-                    path_parsed = cached_parse(next_page_url_key_path)
+                    path_parsed = next_page_url_key_path
                     try:
                         self.next_page_url = path_parsed.find(resp_as_json)[0].value
                         logger.debug(
@@ -696,7 +744,7 @@ class QueryStringSearch(Search):
                     except IndexError:
                         logger.debug("Next page URL could not be collected")
                 if next_page_query_obj_key_path:
-                    path_parsed = cached_parse(next_page_query_obj_key_path)
+                    path_parsed = next_page_query_obj_key_path
                     try:
                         self.next_page_query_obj = path_parsed.find(resp_as_json)[
                             0
@@ -707,7 +755,7 @@ class QueryStringSearch(Search):
                     except IndexError:
                         logger.debug("Next page Query-object could not be collected")
                 if next_page_merge_key_path:
-                    path_parsed = cached_parse(next_page_merge_key_path)
+                    path_parsed = next_page_merge_key_path
                     try:
                         self.next_page_merge = path_parsed.find(resp_as_json)[0].value
                         logger.debug(
@@ -792,9 +840,7 @@ class QueryStringSearch(Search):
         else:
             count_results = response.json()
             if isinstance(count_results, dict):
-                path_parsed = cached_parse(
-                    self.config.pagination["total_items_nb_key_path"]
-                )
+                path_parsed = self.config.pagination["total_items_nb_key_path"]
                 total_results = path_parsed.find(count_results)[0].value
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
@@ -855,7 +901,7 @@ class QueryStringSearch(Search):
             return self.config.products[product_type]
         elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
             logger.debug(
-                "Getting genric provider product type definition parameters for %s",
+                "Getting generic provider product type definition parameters for %s",
                 product_type,
             )
             return {
@@ -916,7 +962,7 @@ class QueryStringSearch(Search):
                     url, timeout=HTTP_REQ_TIMEOUT, headers=USER_AGENT, **kwargs
                 )
                 response.raise_for_status()
-        except (requests.RequestException, urllib_HTTPError) as err:
+        except (requests.RequestException, URLError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -961,6 +1007,19 @@ class AwsSearch(QueryStringSearch):
 class ODataV4Search(QueryStringSearch):
     """A specialisation of a QueryStringSearch that does a two step search to retrieve
     all products metadata"""
+
+    def __init__(self, provider, config):
+        super(ODataV4Search, self).__init__(provider, config)
+
+        # parse jsonpath on init
+        metadata_pre_mapping = getattr(self.config, "metadata_pre_mapping", {})
+        metadata_path = metadata_pre_mapping.get("metadata_path", None)
+        metadata_path_id = metadata_pre_mapping.get("metadata_path_id", None)
+        metadata_path_value = metadata_pre_mapping.get("metadata_path_value", None)
+        if metadata_path and metadata_path_id and metadata_path_value:
+            self.config.metadata_pre_mapping["metadata_path"] = string_to_jsonpath(
+                metadata_path
+            )
 
     def do_search(self, *args, **kwargs):
         """A two step search can be performed if the metadata are not given into the search result"""
@@ -1009,7 +1068,8 @@ class ODataV4Search(QueryStringSearch):
         metadata_path_value = metadata_pre_mapping.get("metadata_path_value", None)
 
         if metadata_path and metadata_path_id and metadata_path_value:
-            parsed_metadata_path = cached_parse(metadata_path)
+            # metadata_path already parsed on init
+            parsed_metadata_path = metadata_path
             for result in results:
                 found_metadata = parsed_metadata_path.find(result)
                 if found_metadata:
@@ -1056,11 +1116,11 @@ class PostJsonSearch(QueryStringSearch):
             other_product_type_def_params = self.get_product_type_def_params(
                 other_product_for_mapping, **kwargs
             )
-            self.update_metadata_mapping(
+            self.config.metadata_mapping.update(
                 other_product_type_def_params.get("metadata_mapping", {})
             )
         # from current product
-        self.update_metadata_mapping(
+        self.config.metadata_mapping.update(
             self.product_type_def_params.get("metadata_mapping", {})
         )
 
@@ -1141,7 +1201,7 @@ class PostJsonSearch(QueryStringSearch):
             self.need_count = True
             self.total_items_nb = None
 
-        if hasattr(kwargs["auth"], "config"):
+        if "auth" in kwargs and hasattr(kwargs["auth"], "config"):
             auth_conf_dict = getattr(kwargs["auth"].config, "credentials", {})
         else:
             auth_conf_dict = {}
@@ -1179,7 +1239,7 @@ class PostJsonSearch(QueryStringSearch):
                         skip_base_1=(page - 1) * items_per_page + 1,
                     )
                     update_nested_dict(
-                        self.query_params, json.loads(next_page_query_obj)
+                        self.query_params, orjson.loads(next_page_query_obj)
                     )
 
             urls.append(search_endpoint)
@@ -1210,7 +1270,7 @@ class PostJsonSearch(QueryStringSearch):
                 **kwargs,
             )
             response.raise_for_status()
-        except (requests.RequestException, urllib_HTTPError) as err:
+        except (requests.RequestException, URLError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):

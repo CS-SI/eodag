@@ -43,6 +43,9 @@ to each provider supported by ``eodag``:
 
 * `cop_dataspace`: create an account `here <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2F&response_type=code&scope=openid>`__
 
+* `planetary_computer`: most datasets are anonymously accessible, but a subscription key may be needed to increase `rate limits and access private datasets <https://planetarycomputer.microsoft.com/docs/concepts/sas/#rate-limits-and-access-restrictions>`_.
+  Create an account `here <https://planetarycomputer.microsoft.com/account/request>`__, then view your keys by signing in with your Microsoft account `here <https://planetarycomputer.developer.azure-api.net/>`__.
+
 * `aws_eos`: you need credentials for both EOS (search) and AWS (download):
 
   * Create an account on `EOS <https://auth.eos.com>`__

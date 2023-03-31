@@ -182,3 +182,11 @@ cop_dataspace:
         credentials:
             username:
             password:
+planetary_computer:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            apikey:
+    download:
+        outputs_prefix:

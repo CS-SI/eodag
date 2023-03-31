@@ -21,13 +21,11 @@ Everything that does not fit into one of the specialised categories of utilities
 this package should go here
 """
 import ast
-import copy
 import datetime
 import errno
 import functools
 import hashlib
 import inspect
-import json
 import logging as py_logging
 import os
 import re
@@ -37,6 +35,8 @@ import types
 import unicodedata
 import warnings
 from collections import defaultdict
+from copy import deepcopy as copy_deepcopy
+from email.message import Message
 from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
@@ -57,12 +57,15 @@ from urllib.parse import (  # noqa; noqa
 from urllib.request import url2pathname
 
 import click
+import orjson
 import shapefile
 import shapely.wkt
+import yaml
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
+from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
@@ -84,6 +87,10 @@ GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 
 eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
+
+JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
+WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
+ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
 
 
 def _deprecated(reason="", version=None):
@@ -755,7 +762,7 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
     :returns: Updated dict
     :rtype: dict
     """
-    result_dict = copy.deepcopy(config_dict)
+    result_dict = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_apply(
@@ -791,7 +798,7 @@ def list_items_recursive_apply(config_list, apply_method, **apply_method_paramet
     :returns: Updated list
     :rtype: list
     """
-    result_list = copy.deepcopy(config_list)
+    result_list = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
         if isinstance(list_v, dict):
             result_list[list_idx] = dict_items_recursive_apply(
@@ -848,7 +855,7 @@ def dict_items_recursive_sort(config_dict):
     :returns: Updated dict
     :rtype: dict
     """
-    result_dict = copy.deepcopy(config_dict)
+    result_dict = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_sort(dict_v)
@@ -871,7 +878,7 @@ def list_items_recursive_sort(config_list):
     :returns: Updated list
     :rtype: list
     """
-    result_list = copy.deepcopy(config_list)
+    result_list = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
         if isinstance(list_v, dict):
             result_list[list_idx] = dict_items_recursive_sort(list_v)
@@ -883,27 +890,84 @@ def list_items_recursive_sort(config_list):
     return result_list
 
 
-def string_to_jsonpath(key, str_value):
+def string_to_jsonpath(*args, force=False):
     """Get jsonpath for "$.foo.bar" like string
 
     >>> string_to_jsonpath(None, "$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
+    >>> string_to_jsonpath("$.foo.bar")
+    Child(Child(Root(), Fields('foo')), Fields('bar'))
+    >>> string_to_jsonpath('$.foo[0][*]')
+    Child(Child(Child(Root(), Fields('foo')), Index(index=0)), Slice(start=None,end=None,step=None))
+    >>> string_to_jsonpath("foo")
+    'foo'
+    >>> string_to_jsonpath("foo", force=True)
+    Fields('foo')
 
-    :param key: Input item key
-    :type key: str
-    :param str_value: Input item value, to be converted
-    :type str_value: str
+    :param args: Last arg as input string value, to be converted
+    :type args: str
+    :param force: force conversion even if input string is not detected as a jsonpath
+    :type force: bool
     :returns: Parsed value
     :rtype: str
     """
-    if "$." in str(str_value):
+    path_str = args[-1]
+    if JSONPATH_MATCH.match(str(path_str)) or force:
         try:
-            return cached_parse(str_value)
+            common_jsonpath = "$"
+            common_jsonpath_parsed = Root()
+
+            # combine with common jsonpath if possible
+            if WORKABLE_JSONPATH_MATCH.match(path_str):
+                path_suffix = path_str[len(common_jsonpath) + 1 :]
+                path_splits = path_suffix.split(".") if path_suffix else []
+                parsed_path = common_jsonpath_parsed
+                for path_split in path_splits:
+                    path_split = path_split.strip("'").strip('"')
+                    if "[" in path_split and ARRAY_FIELD_MATCH.match(path_split):
+                        # handle nested array
+                        indexed_path_and_indexes = path_split[:-1].split("[")
+                        indexed_path = indexed_path_and_indexes[0]
+                        parsed_path = Child(parsed_path, Fields(indexed_path))
+                        for idx in range(len(indexed_path_and_indexes) - 1):
+                            index = (
+                                indexed_path_and_indexes[idx + 1][:-1]
+                                if idx < len(indexed_path_and_indexes) - 2
+                                else indexed_path_and_indexes[idx + 1]
+                            )
+                            # wildcard index
+                            if index == "*":
+                                parsed_path = Child(
+                                    parsed_path,
+                                    Slice(start=None, end=None, step=None),
+                                )
+                                continue
+                            try:
+                                index = int(index)
+                            except ValueError:
+                                # unsupported index
+                                parsed_path = cached_parse(path_str)
+                                break
+                            # integer index
+                            parsed_path = Child(
+                                parsed_path,
+                                Index(index=index),
+                            )
+                    elif "[" in path_split:
+                        # unsupported array field
+                        parsed_path = cached_parse(path_str)
+                        break
+                    else:
+                        parsed_path = Child(parsed_path, Fields(path_split))
+                return parsed_path
+            else:
+                return cached_parse(path_str)
+
         except Exception:  # jsonpath_ng does not provide a proper exception
             # If str_value does not contain a jsonpath, return it as is
-            return str_value
+            return path_str
     else:
-        return str_value
+        return path_str
 
 
 def format_string(key, str_to_format, **format_variables):
@@ -1118,7 +1182,7 @@ def obj_md5sum(data):
     :returns: MD5 checksum
     :rtype: str
     """
-    return hashlib.md5(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
+    return hashlib.md5(orjson.dumps(data, option=orjson.OPT_SORT_KEYS)).hexdigest()
 
 
 @functools.lru_cache()
@@ -1145,6 +1209,42 @@ def cached_parse(str_to_parse):
     :rtype: :class:`jsonpath_ng.JSONPath`
     """
     return parse(str_to_parse)
+
+
+@functools.lru_cache()
+def _mutable_cached_yaml_load(config_path):
+    with open(os.path.abspath(os.path.realpath(config_path)), "r") as fh:
+        return yaml.load(fh, Loader=yaml.SafeLoader)
+
+
+def cached_yaml_load(config_path):
+    """Cached yaml.load
+
+    :param config_path: path to the yaml configuration file
+    :type config_path: str
+    :returns: loaded yaml configuration
+    :rtype: dict
+    """
+    return copy_deepcopy(_mutable_cached_yaml_load(config_path))
+
+
+@functools.lru_cache()
+def _mutable_cached_yaml_load_all(config_path):
+    with open(config_path, "r") as fh:
+        return list(yaml.load_all(fh, Loader=yaml.Loader))
+
+
+def cached_yaml_load_all(config_path):
+    """Cached yaml.load_all
+
+    Load all configurations stored in the configuration file as separated yaml documents
+
+    :param config_path: path to the yaml configuration file
+    :type config_path: str
+    :returns: list of configurations
+    :rtype: list
+    """
+    return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
 
 
 def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
@@ -1200,3 +1300,58 @@ def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
         shutil.copytree(common_subdirs_path, tmp_path)
         shutil.rmtree(nested_dir_root)
         shutil.move(tmp_path, nested_dir_root)
+
+
+def deepcopy(sth):
+    """Customized and faster deepcopy inspired by https://stackoverflow.com/a/45858907
+    `_copy_list` and `_copy_dict` available for the moment
+
+    :param sth: Object to copy
+    :type sth: Any
+    :returns: Copied object
+    :rtype: Any
+    """
+    _dispatcher = {}
+
+    def _copy_list(input_list, dispatch):
+        ret = input_list.copy()
+        for idx, item in enumerate(ret):
+            cp = dispatch.get(type(item))
+            if cp is not None:
+                ret[idx] = cp(item, dispatch)
+        return ret
+
+    def _copy_dict(input_dict, dispatch):
+        ret = input_dict.copy()
+        for key, value in ret.items():
+            cp = dispatch.get(type(value))
+            if cp is not None:
+                ret[key] = cp(value, dispatch)
+        return ret
+
+    _dispatcher[list] = _copy_list
+    _dispatcher[dict] = _copy_dict
+
+    cp = _dispatcher.get(type(sth))
+    if cp is None:
+        return sth
+    else:
+        return cp(sth, _dispatcher)
+
+
+def parse_header(header):
+    """Parse HTTP header
+
+    >>> parse_header(
+    ...     'Content-Disposition: form-data; name="field2"; filename="example.txt"'
+    ... ).get_param("filename")
+    'example.txt'
+
+    :param header: header to parse
+    :type header: str
+    :returns: parsed header
+    :rtype: :class:`~email.message.Message`
+    """
+    m = Message()
+    m["content-type"] = header
+    return m

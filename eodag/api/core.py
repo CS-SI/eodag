@@ -19,7 +19,6 @@ import logging
 import os
 import re
 import shutil
-from copy import deepcopy
 from operator import itemgetter
 
 import geojson
@@ -31,7 +30,7 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
-from eodag.api.product.metadata_mapping import mtd_cfg_as_jsonpath
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
@@ -50,9 +49,11 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     MockResponse,
     _deprecated,
+    deepcopy,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
+    string_to_jsonpath,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
@@ -227,7 +228,7 @@ class EODataAccessGateway(object):
 
             product_types_schema = Schema(
                 ID=fields.STORED,
-                abstract=fields.TEXT,
+                abstract=fields.STORED,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
                 platformSerialIdentifier=fields.IDLIST,
@@ -322,7 +323,7 @@ class EODataAccessGateway(object):
                 or isinstance(some_configured_value, tuple)
             ):
                 # also build as jsonpath the incoming conf
-                mtd_cfg_as_jsonpath(
+                mtd_cfg_as_conversion_and_querypath(
                     deepcopy(
                         conf_update[provider][search_plugin_key]["metadata_mapping"]
                     ),
@@ -518,9 +519,10 @@ class EODataAccessGateway(object):
 
         if not already_fetched:
             # get ext_product_types conf
-            if "EODAG_EXT_PRODUCT_TYPES_CFG_FILE" in os.environ:
+            ext_product_types_cfg_file = os.getenv("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+            if ext_product_types_cfg_file is not None:
                 ext_product_types_conf = get_ext_product_types_conf(
-                    os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"]
+                    ext_product_types_cfg_file
                 )
             else:
                 ext_product_types_conf = get_ext_product_types_conf()
@@ -557,7 +559,44 @@ class EODataAccessGateway(object):
                     default_provider_search_config, "discover_product_types", {}
                 )
                 # compare confs
-                if default_discovery_conf == user_discovery_conf and (
+                if default_discovery_conf["result_type"] == "json" and isinstance(
+                    default_discovery_conf["results_entry"], str
+                ):
+                    default_discovery_conf_parsed = dict(
+                        default_discovery_conf,
+                        **{
+                            "results_entry": string_to_jsonpath(
+                                default_discovery_conf["results_entry"], force=True
+                            )
+                        },
+                        **mtd_cfg_as_conversion_and_querypath(
+                            dict(
+                                generic_product_type_id=default_discovery_conf[
+                                    "generic_product_type_id"
+                                ]
+                            )
+                        ),
+                        **dict(
+                            generic_product_type_parsable_properties=mtd_cfg_as_conversion_and_querypath(
+                                default_discovery_conf[
+                                    "generic_product_type_parsable_properties"
+                                ]
+                            )
+                        ),
+                        **dict(
+                            generic_product_type_parsable_metadata=mtd_cfg_as_conversion_and_querypath(
+                                default_discovery_conf[
+                                    "generic_product_type_parsable_metadata"
+                                ]
+                            )
+                        ),
+                    )
+                else:
+                    default_discovery_conf_parsed = default_discovery_conf
+                if (
+                    user_discovery_conf == default_discovery_conf
+                    or user_discovery_conf == default_discovery_conf_parsed
+                ) and (
                     not default_discovery_conf.get("fetch_url", None)
                     or "ext_product_types_conf" not in locals()
                     or "ext_product_types_conf" in locals()
@@ -643,7 +682,7 @@ class EODataAccessGateway(object):
         :type ext_product_types_conf: dict
         """
         for provider, new_product_types_conf in ext_product_types_conf.items():
-            if new_product_types_conf:
+            if new_product_types_conf and provider in self.providers_config:
                 try:
                     if hasattr(self.providers_config[provider], "search"):
                         search_plugin_config = self.providers_config[provider].search
@@ -661,6 +700,7 @@ class EODataAccessGateway(object):
                         provider,
                     )
                     continue
+                new_product_types = []
                 for (
                     new_product_type,
                     new_product_type_conf,
@@ -704,10 +744,15 @@ class EODataAccessGateway(object):
                                 self.product_types_config.source
                             )
                             ext_product_types_conf[provider] = new_product_types_conf
-                            logger.debug(
-                                f"Added product type {new_product_type} for {provider}"
-                            )
+                            new_product_types.append(new_product_type)
+                if new_product_types:
+                    logger.debug(
+                        f"Added product types {str(new_product_types)} for {provider}"
+                    )
 
+            elif provider not in self.providers_config:
+                # unknown provider
+                continue
             self.providers_config[provider].product_types_fetched = True
 
         # re-create _plugins_manager using up-to-date providers_config

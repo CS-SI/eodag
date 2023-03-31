@@ -16,14 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import glob
 import json
 import os
-import re
 import shutil
 import unittest
 import uuid
-from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -97,8 +96,13 @@ class TestCore(TestCoreBase):
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
-        "LANDSAT_C2L1": ["astraea_eod", "usgs", "usgs_satapi_aws"],
-        "LANDSAT_C2L2": ["usgs"],
+        "LANDSAT_C2L1": [
+            "astraea_eod",
+            "usgs",
+            "usgs_satapi_aws",
+            "planetary_computer",
+        ],
+        "LANDSAT_C2L2": ["usgs", "planetary_computer"],
         "LANDSAT_C2L2ALB_BT": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_SR": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_ST": ["usgs_satapi_aws"],
@@ -111,8 +115,8 @@ class TestCore(TestCoreBase):
         "LANDSAT_TM_C1": ["usgs"],
         "LANDSAT_TM_C2L1": ["usgs"],
         "LANDSAT_TM_C2L2": ["usgs"],
-        "MODIS_MCD43A4": ["astraea_eod", "aws_eos"],
-        "NAIP": ["astraea_eod", "aws_eos"],
+        "MODIS_MCD43A4": ["astraea_eod", "aws_eos", "planetary_computer"],
+        "NAIP": ["astraea_eod", "aws_eos", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
         "OSO": ["theia"],
@@ -129,6 +133,7 @@ class TestCore(TestCoreBase):
             "onda",
             "peps",
             "sara",
+            "planetary_computer",
         ],
         "S1_SAR_OCN": ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
         "S1_SAR_RAW": ["cop_dataspace", "creodias", "mundi", "onda"],
@@ -156,6 +161,7 @@ class TestCore(TestCoreBase):
             "onda",
             "peps",
             "sara",
+            "planetary_computer",
         ],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
         "S2_MSI_L2A_MAJA": ["theia"],
@@ -232,6 +238,7 @@ class TestCore(TestCoreBase):
             "cop_cds",
             "meteoblue",
             "cop_dataspace",
+            "planetary_computer",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -253,25 +260,21 @@ class TestCore(TestCoreBase):
         "sara",
         "meteoblue",
         "cop_dataspace",
+        "planetary_computer",
     ]
 
     def setUp(self):
         super(TestCore, self).setUp()
         self.dag = EODataAccessGateway()
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
-        # backup os.environ as it will be modified by tests
-        self.eodag_env_pattern = re.compile(r"EODAG_\w+")
-        self.eodag_env_backup = {
-            k: v for k, v in os.environ.items() if self.eodag_env_pattern.match(k)
-        }
+        # mock os.environ to empty env
+        self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        self.mock_os_environ.start()
 
     def tearDown(self):
         super(TestCore, self).tearDown()
-        # restore os.environ
-        for k, v in os.environ.items():
-            if self.eodag_env_pattern.match(k):
-                os.environ.pop(k)
-        os.environ.update(self.eodag_env_backup)
+        # stop os.environ
+        self.mock_os_environ.stop()
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""
@@ -294,8 +297,6 @@ class TestCore(TestCoreBase):
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
-        # raise Exception({p:pc.api.credentials for p,pc in self.dag.providers_config.items() if hasattr(pc, "api")})
-        # raise Exception(self.dag.conf_dir)
         for provider in self.SUPPORTED_PROVIDERS:
             product_types = self.dag.list_product_types(
                 provider=provider, fetch_providers=False
@@ -344,6 +345,15 @@ class TestCore(TestCoreBase):
         self.assertEqual(
             self.dag.product_types_config["bar"]["title"], "Bar collection"
         )
+
+    def test_update_product_types_list_unknown_provider(self):
+        """Core api.update_product_types_list on unkwnown provider must not crash and not update conf"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
+            ext_product_types_conf = json.load(f)
+        self.dag.providers_config.pop("astraea_eod")
+
+        self.dag.update_product_types_list(ext_product_types_conf)
+        self.assertNotIn("astraea_eod", self.dag.providers_config)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
@@ -877,20 +887,15 @@ class TestCoreConfWithEnvVar(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreConfWithEnvVar, cls).setUpClass()
         cls.dag = EODataAccessGateway()
-        # backup os.environ as it will be modified by tests
-        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
-        cls.eodag_env_backup = {
-            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
-        }
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        # restore os.environ
-        for k, v in os.environ.items():
-            if cls.eodag_env_pattern.match(k):
-                os.environ.pop(k)
-        os.environ.update(cls.eodag_env_backup)
+        # stop os.environ
+        cls.mock_os_environ.stop()
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""
@@ -1127,7 +1132,7 @@ class TestCoreSearch(TestCoreBase):
         cls.search_results = SearchResult.from_geojson(search_results_geojson)
         cls.search_results_size = len(cls.search_results)
         # Change the id of these products, to emulate different products
-        search_results_data_2 = deepcopy(cls.search_results.data)
+        search_results_data_2 = copy.deepcopy(cls.search_results.data)
         search_results_data_2[0].properties["id"] = "a"
         search_results_data_2[1].properties["id"] = "b"
         cls.search_results_2 = SearchResult(search_results_data_2)

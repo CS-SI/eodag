@@ -19,9 +19,10 @@
 import importlib
 import json
 import os
-import re
 import unittest
 from tempfile import TemporaryDirectory
+
+import pytest
 
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
@@ -68,11 +69,9 @@ class TestStacUtils(unittest.TestCase):
         cls.empty_arguments = {}
         cls.empty_criterias = {}
 
-        # backup os.environ as it will be modified by tests
-        cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
-        cls.eodag_env_backup = {
-            k: v for k, v in os.environ.items() if cls.eodag_env_pattern.match(k)
-        }
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
 
         # disable product types fetch
         os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
@@ -80,15 +79,11 @@ class TestStacUtils(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestStacUtils, cls).tearDownClass()
-        # restore os.environ
-        for k, v in os.environ.items():
-            if cls.eodag_env_pattern.match(k):
-                os.environ.pop(k)
-        os.environ.update(cls.eodag_env_backup)
-
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
+        # stop os.environ
+        cls.mock_os_environ.stop()
 
     def test_download_stac_item_by_id(self):
         pass  # TODO
@@ -138,10 +133,14 @@ class TestStacUtils(unittest.TestCase):
         product_types = self.rest_utils.eodag_api.list_product_types(
             fetch_providers=False
         )
-        self.assertEqual(
-            self.rest_utils.format_product_types(product_types),
-            "* *__S2_MSI_L1C__*: test",
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method format_product_types",
+        ):
+            self.assertEqual(
+                self.rest_utils.format_product_types(product_types),
+                "* *__S2_MSI_L1C__*: test",
+            )
 
     def test_get_arguments_query_paths(self):
         """get_arguments_query_paths must extract the query paths and their values from a request arguments"""
@@ -232,7 +231,11 @@ class TestStacUtils(unittest.TestCase):
 
     def test_home_page_content(self):
         """get_home_page_content runs without any error"""
-        self.rest_utils.get_home_page_content("http://127.0.0.1/")
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method get_home_page_content",
+        ):
+            self.rest_utils.get_home_page_content("http://127.0.0.1/")
 
     def test_get_int(self):
         """get_int must raise a ValidationError for strings that cannot be interpreted as integers"""
@@ -317,7 +320,11 @@ class TestStacUtils(unittest.TestCase):
 
     def test_get_templates_path(self):
         """get_templates_path returns an existing dir path"""
-        self.assertTrue(os.path.isdir(self.rest_utils.get_templates_path()))
+        with pytest.warns(
+            DeprecationWarning,
+            match="Call to deprecated function/method get_templates_path",
+        ):
+            self.assertTrue(os.path.isdir(self.rest_utils.get_templates_path()))
 
     def test_search_bbox(self):
         pass  # TODO

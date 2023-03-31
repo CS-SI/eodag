@@ -62,7 +62,10 @@ class KeycloakOIDCPasswordAuth(Authentication):
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
-            if e.response.status_code in auth_errors:
+            if (
+                hasattr(e.response, "status_code")
+                and e.response.status_code in auth_errors
+            ):
                 raise AuthenticationError(
                     "HTTP Error %s returned, %s\nPlease check your credentials for %s"
                     % (e.response.status_code, e.response.text.strip(), self.provider)

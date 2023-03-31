@@ -30,7 +30,6 @@
     pagination:
       max_items_per_page: 5000
       total_items_nb_key_path: '$.totalHits'
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       id: '$.displayId'
       geometry: '$.spatialBounds'
@@ -110,7 +109,6 @@
       metadata_pattern: '^[a-zA-Z0-9_]+$'
       search_param: '{{{{"search":{{{{"{metadata}":"{{{metadata}}}" }}}} }}}}'
       metadata_path: '$.*'
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
       geometry:
@@ -560,7 +558,6 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -736,7 +733,6 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -825,7 +821,7 @@
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk)|(?P<STAGING>staging)|(?P<OFFLINE>tape))}'
+      storageStatus: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk|tier2)|(?P<STAGING>staging)|(?P<OFFLINE>unknown|tape|tier3))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
@@ -922,11 +918,10 @@
               and:
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
-    common_metadata_mapping_path: '$'
     discover_product_types:
       fetch_url: 'https://datahub.creodias.eu/stac/collections'
       result_type: json
-      results_entry: 'collections[*]'
+      results_entry: '$.collections[*]'
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
         collection: '$.id'
@@ -1625,7 +1620,6 @@
       metadata_path: '$.Metadata'
       metadata_path_id: 'id'
       metadata_path_value: 'value'
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -2022,7 +2016,7 @@
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
     discover_product_types:
-      results_entry: 'collections[?id!="sentinel-s2-l2a-cogs"]'
+      results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -2177,7 +2171,6 @@
     type: EcmwfApi
     api_endpoint: https://api.ecmwf.int/v1
     extract: false
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2400,7 +2393,6 @@
     type: CdsApi
     api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
     extract: false
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2718,7 +2710,6 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2970,7 +2961,6 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -3234,7 +3224,6 @@
       metadata_pattern: '^[a-zA-Z0-9_]+$'
       search_param: '{{{{"{metadata}":{{{metadata}#to_geojson}} }}}}'
       metadata_path: '$.*'
-    common_metadata_mapping_path: '$'
     metadata_mapping:
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
@@ -3355,7 +3344,6 @@
               and:
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
-    common_metadata_mapping_path: '$'
     per_product_metadata_query: false
     metadata_pre_mapping:
       metadata_path: '$.Attributes'
@@ -3623,3 +3611,43 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
+---
+!provider
+  name: planetary_computer
+  priority: 0
+  roles:
+    - host
+  description: Planetary Computer
+  url:  https://planetarycomputer.microsoft.com
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
+    need_auth: false
+    pagination:
+      max_items_per_page: 1000
+  products:
+    S1_SAR_GRD:
+      productType: sentinel-1-grd
+    S2_MSI_L2A:
+      productType: sentinel-2-l2a
+    LANDSAT_C2L1:
+      productType: landsat-c2-l1
+    LANDSAT_C2L2:
+      productType: landsat-c2-l2
+    MODIS_MCD43A4:
+      productType: modis-43A4-061
+    NAIP:
+      productType: naip
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://planetarycomputer.microsoft.com/api/stac/download'
+    flatten_top_dirs: True
+    auth_error_code: 403
+  auth: !plugin
+    type: SASAuth
+    auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
+    signed_url_key: href
+    headers:
+      Ocp-Apim-Subscription-Key: "{apikey}"

@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import io
+import logging
 import os
 import pathlib
 import shutil
@@ -524,7 +525,10 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_register_downloader_resolve_ignored(self):
         """eoproduct.register_donwloader must ignore unresolvable locations and properties"""
-        with self.assertLogs(level="DEBUG") as cm:
+
+        logger = logging.getLogger("eodag.api.product")
+        with mock.patch.object(logger, "debug") as mock_debug:
+
             downloadable_product = self._dummy_downloadable_product(
                 product=self._dummy_product(
                     properties=dict(
@@ -556,4 +560,4 @@ class TestEOProduct(EODagTestCase):
                 f"Could not resolve otherProperty property ({downloadable_product.properties['otherProperty']})",
             ]
             for needed_log in needed_logs:
-                self.assertTrue(any(needed_log in log for log in cm.output))
+                self.assertIn(needed_log, str(mock_debug.call_args_list))
