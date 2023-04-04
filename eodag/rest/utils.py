@@ -8,6 +8,7 @@ import logging
 import os
 import re
 from collections import namedtuple
+from shutil import make_archive
 
 import dateutil.parser
 from dateutil import tz
@@ -465,7 +466,6 @@ def search_product_by_id(uid, product_type=None):
     """
     try:
         products, total = eodag_api.search(id=uid, productType=product_type)
-        # products, total = eodag_api.search(id=uid, productType=product_type, provider=provider, raise_errors=True)
         return products
     except ValidationError:
         raise
@@ -483,6 +483,15 @@ def get_stac_conformance():
     :rtype: dict
     """
     return stac_config["conformance"]
+
+
+def get_stac_api_version():
+    """Get STAC API version
+
+    :returns: STAC API version
+    :rtype: str
+    """
+    return stac_config["stac_api_version"]
 
 
 def get_stac_collections(url, root, arguments, provider=None):
@@ -580,9 +589,17 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
 
     eodag_api.providers_config[product.provider].download.extract = False
 
-    product_path = eodag_api.download(product)
+    product_path = eodag_api.download(product, extract=False)
 
-    return product_path
+    if os.path.isdir(product_path):
+        zipped_product_path = f"{product_path}.zip"
+        logger.debug(
+            f"Building archive for downloaded product path {zipped_product_path}"
+        )
+        make_archive(product_path, "zip", product_path)
+        return zipped_product_path
+    else:
+        return product_path
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):
@@ -788,3 +805,12 @@ def get_stac_extension_oseo(url):
     return StacCommon.get_stac_extension(
         url=url, stac_config=stac_config, extension="oseo", properties=oseo_properties
     )
+
+
+def eodag_api_init():
+    """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
+    eodag_api.fetch_product_types_list()
+
+    # pre-build search plugins
+    for provider in eodag_api.available_providers():
+        next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
