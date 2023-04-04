@@ -889,6 +889,11 @@ class EODataAccessGateway(object):
         )
         search_plugin = search_kwargs.pop("search_plugin", None)
         if search_kwargs.get("id"):
+            # adds minimal pagination to be able to check only 1 product is returned
+            search_kwargs.update(
+                page=1,
+                items_per_page=2,
+            )
             # remove auth from search_kwargs as a loop over providers will be performed
             search_kwargs.pop("auth", None)
             return self._search_by_id(search_kwargs.pop("id"), **search_kwargs)
