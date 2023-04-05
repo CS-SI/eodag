@@ -1180,6 +1180,7 @@ class EODataAccessGateway(object):
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
             auth = self._plugins_manager.get_auth_plugin(plugin.provider)
+            plugin.clear()
             results, _ = self._do_search(plugin, auth=auth, id=uid, **kwargs)
             if len(results) == 1:
                 if not results[0].product_type:
