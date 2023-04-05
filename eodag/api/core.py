@@ -787,6 +787,8 @@ class EODataAccessGateway(object):
         :rtype: list[str]
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
         """
+        if kwargs.get("productType", None):
+            return [kwargs["productType"]]
         supported_params = {
             param
             for param in (

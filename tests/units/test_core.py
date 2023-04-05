@@ -1157,6 +1157,10 @@ class TestCoreSearch(TestCoreBase):
         ]
         self.assertEqual(actual, expected)
 
+        # with product type specified
+        actual = self.dag.guess_product_type(productType="foo")
+        self.assertEqual(actual, ["foo"])
+
     def test_guess_product_type_without_kwargs(self):
         """guess_product_type must raise an exception when no kwargs are provided"""
         with self.assertRaises(NoMatchingProductType):
