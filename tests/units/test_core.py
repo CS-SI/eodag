@@ -1380,13 +1380,49 @@ class TestCoreSearch(TestCoreBase):
         self.dag._prepare_search(product_type="foo")
         mock_fetch_product_types_list.assert_called_once_with(self.dag)
 
-    @mock.patch("eodag.plugins.manager.PluginManager.get_search_plugins", autospec=True)
-    def test__search_by_id(self, mock_get_search_plugins):
-        """_search_by_id must filter search plugins using given kwargs"""
-        self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
+        return_value=([mock.Mock()], 1),
+    )
+    @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_search_plugins",
+        autospec=True,
+        return_value=[mock.Mock()],
+    )
+    def test__search_by_id(
+        self, mock_get_search_plugins, mock_get_auth_plugin, mock__do_search
+    ):
+        """_search_by_id must filter search plugins using given kwargs, clear plugin and perform search"""
+
+        found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+
+        # get_search_plugins
         mock_get_search_plugins.assert_called_once_with(
             self.dag._plugins_manager, product_type="bar", provider="baz"
         )
+
+        # search plugin clear
+        mock_get_search_plugins.return_value[0].clear.assert_called_once()
+
+        # _do_search returns 1 product
+        mock__do_search.assert_called_once_with(
+            self.dag,
+            mock_get_search_plugins.return_value[0],
+            auth=mock_get_auth_plugin.return_value,
+            id="foo",
+            productType="bar",
+        )
+        self.assertEqual(found, mock__do_search.return_value)
+
+        mock__do_search.reset_mock()
+        # return None if more than 1 product is found
+        mock__do_search.return_value = ([mock.Mock(), mock.Mock()], 2)
+        with self.assertLogs(level="INFO") as cm:
+            found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+            self.assertEqual(found, (SearchResult([]), 0))
+            self.assertIn("Several products found for this id", str(cm.output))
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
