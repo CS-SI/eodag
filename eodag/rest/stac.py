@@ -377,7 +377,7 @@ class StacItem(StacCommon):
                 result_item_model["properties"]["oseo:" + k] = string_to_jsonpath(k, v)
 
         # Filter out unneeded extensions
-        if product_type_dict["sensorType"] != "RADAR":
+        if product_type_dict.get("sensorType", "RADAR") != "RADAR":
             result_item_model["stac_extensions"].remove(
                 self.stac_config["stac_extensions"]["sar"]
             )
