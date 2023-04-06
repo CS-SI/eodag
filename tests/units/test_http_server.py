@@ -23,6 +23,7 @@ import unittest
 from tempfile import TemporaryDirectory
 
 import geojson
+from fastapi.testclient import TestClient
 from shapely import box
 
 from tests import mock
@@ -52,13 +53,6 @@ class RequestTestCase(unittest.TestCase):
 
         cls.eodag_http_server = eodag_http_server
 
-        # run swagger / service-doc
-        eodag_http_server.run_swagger(
-            app=eodag_http_server.app,
-            config=eodag_http_server.stac_api_config,
-            merge=True,
-        )
-
         # mock os.environ to empty env
         cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
         cls.mock_os_environ.start()
@@ -77,13 +71,10 @@ class RequestTestCase(unittest.TestCase):
         cls.tmp_home_dir.cleanup()
 
     def setUp(self):
-        self.app = self.eodag_http_server.app.test_client()
+        self.app = TestClient(self.eodag_http_server.app)
 
     def test_route(self):
-        response = self.app.get("/", follow_redirects=True)
-        self.assertEqual(200, response.status_code)
-
-        self._request_valid(self.tested_product_type)
+        self._request_valid("/")
 
     @mock.patch(
         "eodag.rest.utils.eodag_api.search",
@@ -236,7 +227,6 @@ class RequestTestCase(unittest.TestCase):
                 url,
                 data=json.dumps(post_data),
                 follow_redirects=True,
-                mimetype="application/json",
             )
 
         if expected_search_kwargs is not None:
@@ -245,11 +235,11 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(200, response.status_code)
 
         # Assert response format is GeoJSON
-        return geojson.loads(response.data.decode("utf-8"))
+        return geojson.loads(response.content.decode("utf-8"))
 
     def _request_not_valid(self, url):
         response = self.app.get(url, follow_redirects=True)
-        response_content = json.loads(response.data.decode("utf-8"))
+        response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
         self.assertIn("description", response_content)
@@ -257,11 +247,11 @@ class RequestTestCase(unittest.TestCase):
 
     def _request_not_found(self, url):
         response = self.app.get(url, follow_redirects=True)
-        response_content = json.loads(response.data.decode("utf-8"))
+        response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(404, response.status_code)
-        self.assertIn("error", response_content)
-        self.assertIn("not found", response_content["error"])
+        self.assertIn("description", response_content)
+        self.assertIn("not found", response_content["description"])
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -365,7 +355,7 @@ class RequestTestCase(unittest.TestCase):
 
     def test_date_search_from_catalog_items(self):
         results = self._request_valid(
-            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
@@ -379,7 +369,8 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(len(results.features), 2)
 
         results = self._request_valid(
-            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
+            "?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
@@ -393,7 +384,8 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(len(results.features), 2)
 
         results = self._request_valid(
-            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2018-01-20/2019-01-01",
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
+            "?bbox=0,43,1,44&datetime=2018-01-20/2019-01-01",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
@@ -407,13 +399,14 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(len(results.features), 2)
 
         results = self._request_valid(
-            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2019-01-01/2019-01-31",
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
+            "?bbox=0,43,1,44&datetime=2019-01-01/2019-01-31",
         )
         self.assertEqual(len(results.features), 0)
 
     def test_catalog_browse(self):
         result = self._request_valid(
-            f"{self.tested_product_type}/year/2018/month/01/day",
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/day"
         )
         self.assertListEqual(
             [str(i) for i in range(1, 32)],
@@ -469,7 +462,7 @@ class RequestTestCase(unittest.TestCase):
                 ["S2_MSI_L1C", "S2_MSI_L2A"],
                 [
                     it["title"]
-                    for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                    for it in json.loads(r.content.decode("utf-8")).get("links", [])
                     if it["rel"] == "child"
                 ],
             )
@@ -484,7 +477,7 @@ class RequestTestCase(unittest.TestCase):
             ["S2_MSI_L1C"],
             [
                 it["title"]
-                for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                for it in json.loads(r.content.decode("utf-8")).get("links", [])
                 if it["rel"] == "child"
             ],
         )
@@ -504,7 +497,7 @@ class RequestTestCase(unittest.TestCase):
             ["S2_MSI_L1C", "S2_MSI_L2A"],
             [
                 it["title"]
-                for it in json.loads(r.data.decode("utf-8")).get("links", [])
+                for it in json.loads(r.content.decode("utf-8")).get("links", [])
                 if it["rel"] == "child"
             ],
         )
@@ -516,5 +509,5 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid("api")
 
     def test_service_doc(self):
-        response = self.app.get("service-doc", follow_redirects=True)
+        response = self.app.get("api.html", follow_redirects=True)
         self.assertEqual(200, response.status_code)
