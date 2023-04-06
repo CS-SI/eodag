@@ -17,7 +17,7 @@
 # limitations under the License.
 
 stac_version: 1.0.0
-stac_api_version: 1.0.0-beta.3
+stac_api_version: 1.0.0-rc.3
 
 # Capabilities ----------------------------------------------------------------
 
@@ -53,10 +53,10 @@ landing_page:
 # http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_declaration_of_conformance_classes
 conformance:
   conformsTo:
-    - https://api.stacspec.org/v1.0.0-beta.3/core
-    - https://api.stacspec.org/v1.0.0-beta.3/item-search
-    - https://api.stacspec.org/v1.0.0-beta.3/ogcapi-features
-    - https://api.stacspec.org/v1.0.0-beta.3/collections
+    - https://api.stacspec.org/v1.0.0-rc.3/core
+    - https://api.stacspec.org/v1.0.0-rc.3/item-search
+    - https://api.stacspec.org/v1.0.0-rc.3/ogcapi-features
+    - https://api.stacspec.org/v1.0.0-rc.3/collections
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson
