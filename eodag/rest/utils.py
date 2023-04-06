@@ -648,13 +648,13 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
             raise ValidationError("Collections argument type should be Array")
 
         result_catalog = StacCatalog(
-            url=catalog_url,
             stac_config=stac_config,
             root=root,
             provider=provider,
             eodag_api=eodag_api,
             # handle only one collection per request (STAC allows multiple)
             catalogs=collections[0:1],
+            url=catalog_url.replace("/search", f"/collections/{collections[0]}"),
         )
         arguments.pop("collections")
     else:
