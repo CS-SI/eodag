@@ -157,10 +157,11 @@ def eodag_openapi():
 app.openapi = eodag_openapi
 
 # Cross-Origin Resource Sharing
-origins = ["*"]
+allowed_origins = os.getenv("EODAG_CORS_ALLOWED_ORIGINS")
+allowed_origins_list = allowed_origins.split(",") if allowed_origins else []
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=allowed_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -622,7 +622,11 @@ def serve_rpc(ctx, host, port, conf):
     server.serve()
 
 
-@eodag.command(help="Start eodag HTTP server")
+@eodag.command(
+    help="Start eodag HTTP server\n\n"
+    "Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-Origin Resource Sharing allowed origins as "
+    "comma-separated URLs (e.g. 'http://somewhere,htttp://somewhere.else')."
+)
 @click.option(
     "-f",
     "--config",
