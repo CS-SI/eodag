@@ -76,6 +76,28 @@ class RequestTestCase(unittest.TestCase):
     def test_route(self):
         self._request_valid("/")
 
+    def test_forward(self):
+        response = self.app.get("/", follow_redirects=True)
+        self.assertEqual(200, response.status_code)
+        resp_json = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(resp_json["links"][0]["href"], "http://testserver")
+
+        response = self.app.get(
+            "/", follow_redirects=True, headers={"Forwarded": "host=foo;proto=https"}
+        )
+        self.assertEqual(200, response.status_code)
+        resp_json = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(resp_json["links"][0]["href"], "https://foo")
+
+        response = self.app.get(
+            "/",
+            follow_redirects=True,
+            headers={"X-Forwarded-Host": "bar", "X-Forwarded-Proto": "httpz"},
+        )
+        self.assertEqual(200, response.status_code)
+        resp_json = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(resp_json["links"][0]["href"], "httpz://bar")
+
     @mock.patch(
         "eodag.rest.utils.eodag_api.search",
         autospec=True,
