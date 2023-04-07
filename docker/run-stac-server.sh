@@ -8,4 +8,4 @@ else
     echo "Logging level can be changed using EODAG_LOGGING environment variable [1-3]"
 fi
 # start
-eodag $LOGGING_OPTIONS serve-rest -w
+exec eodag $LOGGING_OPTIONS serve-rest -w
