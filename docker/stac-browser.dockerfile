@@ -15,7 +15,7 @@ WORKDIR /stac-browser
 RUN npm install
 
 # start application
-RUN npm run build -- --CATALOG_URL=http://localhost:5000
+RUN npm run build -- --catalogUrl=http://localhost:5000
 
 # production stage, self describing
 FROM nginx:stable-alpine as production-stage
