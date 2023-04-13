@@ -978,7 +978,7 @@ class StacCatalog(StacCommon):
         self.update_data(parsed_dict)
 
         # update search args
-        self.search_args.update({"cloudCover": cloud_cover})
+        self.search_args.update({"query": {"eo:cloud_cover": {"lte": cloud_cover}}})
 
         return parsed_dict
 
