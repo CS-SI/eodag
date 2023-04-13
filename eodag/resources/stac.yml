@@ -316,15 +316,15 @@ catalogs:
     child_key: year
     model:
       id: year
-      title: year
-      # description: "Filter by year"
+      title: "{parent_catalog[title]} / year"
+      description: "{parent_catalog[description]}\n\n- Filter by year"
 
   year:
     parent_key: years_list
     model:
       id: "{date[year]}"
-      title: "{date[year]}"
-      description: "Filter by year"
+      title: "{catalog[title]}: {date[year]}"
+      description: "{catalog[description]}: {date[year]};"
       extent:
         spatial:
           bbox:
@@ -342,15 +342,15 @@ catalogs:
     parent_key: year
     model:
       id: month
-      title: month
-      description: "Filter by month"
+      title: "{parent_catalog[title]} / month"
+      description: "{parent_catalog[description]}\n\n- Filter by month"
 
   month:
     parent_key: months_list
     model:
       id: "{date[month]}"
-      title: "{date[month]}"
-      description: "Filter by month"
+      title: "{catalog[title]}: {date[month]}"
+      description: "{catalog[description]}: {date[month]};"
       extent:
         spatial:
           bbox:
@@ -368,15 +368,15 @@ catalogs:
     parent_key: month
     model:
       id: day
-      title: day
-      description: "Filter by day"
+      title: "{parent_catalog[title]} / day"
+      description: "{parent_catalog[description]}\n\n- Filter by day"
 
   day:
     parent_key: days_list
     model:
       id: "{date[day]}"
-      title: "{date[day]}"
-      description: "Filter by day"
+      title: "{catalog[title]}: {date[day]}"
+      description: "{catalog[description]}: {date[day]};"
       extent:
         spatial:
           bbox:
@@ -393,15 +393,15 @@ catalogs:
     child_key: cloud_cover
     model:
       id: cloud_cover
-      title: Max cloud cover
-      description: "Filter by maximum cloud cover %"
+      title: "{parent_catalog[title]} / Max cloud cover"
+      description: "{parent_catalog[description]}\n\n- Filter by maximum cloud cover %"
 
   cloud_cover:
     parent_key: cloud_covers_list
     model:
       id: "{cloud_cover}"
-      title: "{cloud_cover}%"
-      description: "Filter by maximum cloud cover %"
+      title: "{catalog[title]}: {cloud_cover}%"
+      description: "{catalog[description]}: {cloud_cover}%;"
 
 
 locations_catalogs:
@@ -417,16 +417,17 @@ locations_catalogs:
       attr: "$.shp_location.parent.attr"
     model:
       id: "$.shp_location.name"
-      title: "$.shp_location.name"
-      description: "$.shp_location.description"
+      self_title: "$.shp_location.name"
+      title: "{parent_catalog[title]} / {catalog[self_title]}"
+      description: "{parent_catalog[description]}\n\n- Filter by {catalog[self_title]}"
 
   location:
     catalog_type: location
     parent_key: "{locations_list}"
     model:
       id: "{feature[id]}"
-      title: "{feature[id]}"
-      description: "Filter by country"
+      title: "{catalog[title]}: {feature[id]}"
+      description: "{catalog[description]}: {feature[id]};"
       extent:
         spatial:
           bbox: '{feature[geometry]#to_bounds_lists}'
