@@ -4,6 +4,7 @@
 
 import ast
 import datetime
+import logging
 import os
 import re
 from collections import namedtuple
@@ -28,6 +29,8 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
     ValidationError,
 )
+
+logger = logging.getLogger("eodag.rest.utils")
 
 eodag_api = eodag.EODataAccessGateway()
 Cruncher = namedtuple("Cruncher", ["clazz", "config_params"])
@@ -689,11 +692,59 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
             arguments["dtstart"], arguments["dtend"] = dtime_split[0:1] * 2
         arguments.pop("datetime")
 
+    search_products_arguments = dict(
+        arguments, **result_catalog.search_args, **{"unserialized": "true"}
+    )
+
+    # check if time filtering appears twice
+    if set(["dtstart", "dtend"]) <= set(arguments.keys()) and set(
+        ["dtstart", "dtend"]
+    ) <= set(result_catalog.search_args.keys()):
+        search_date_min = dateutil.parser.parse(arguments["dtstart"])
+        search_date_max = dateutil.parser.parse(arguments["dtend"])
+        catalog_date_min = dateutil.parser.parse(result_catalog.search_args["dtstart"])
+        catalog_date_max = dateutil.parser.parse(result_catalog.search_args["dtend"])
+        # check if date intervals overlap
+        if (search_date_min <= catalog_date_max) and (
+            search_date_max >= catalog_date_min
+        ):
+            # use intersection
+            search_products_arguments["dtstart"] = (
+                max(search_date_min, catalog_date_min).isoformat().replace("+00:00", "")
+                + "Z"
+            )
+            search_products_arguments["dtend"] = (
+                min(search_date_max, catalog_date_max).isoformat().replace("+00:00", "")
+                + "Z"
+            )
+        else:
+            logger.warning("Time intervals do not overlap")
+            # return empty results
+            search_results = SearchResult([])
+            search_results.properties = {
+                "page": search_products_arguments.get("page", 1),
+                "itemsPerPage": search_products_arguments.get(
+                    "itemsPerPage", DEFAULT_ITEMS_PER_PAGE
+                ),
+                "totalResults": 0,
+            }
+            return StacItem(
+                url=url,
+                stac_config=stac_config,
+                provider=provider,
+                eodag_api=eodag_api,
+                root=root,
+            ).get_stac_items(
+                search_results=search_results,
+                catalog=dict(
+                    result_catalog.get_stac_catalog(),
+                    **{"url": result_catalog.url, "root": result_catalog.root},
+                ),
+            )
+
     search_results = search_products(
         product_type=result_catalog.search_args["product_type"],
-        arguments=dict(
-            arguments, **result_catalog.search_args, **{"unserialized": "true"}
-        ),
+        arguments=search_products_arguments,
     )
 
     return StacItem(
