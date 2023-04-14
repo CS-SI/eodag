@@ -26,6 +26,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
 * `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
+* `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: Hydroweb.next hydrology data acces
 
 Providers available through an external plugin:
 

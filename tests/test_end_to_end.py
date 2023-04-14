@@ -37,6 +37,7 @@ from tests.context import (
     AuthenticationError,
     EODataAccessGateway,
     SearchResult,
+    sanitize,
     uri_to_path,
 )
 
@@ -115,6 +116,13 @@ PLANETARY_COMPUTER_SEARCH_ARGS = [
     "S2_MSI_L2A",
     "2019-03-01",
     "2019-03-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
+HYDROWBEB_NEXT_SEARCH_ARGS = [
+    "hydroweb_next",
+    "SWOT_L2_HR_LAKESP_PRIOR_SAMPLE_V1_2",
+    "2022-04-01",
+    "2022-04-10",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 MUNDI_SEARCH_ARGS = [
@@ -427,6 +435,15 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*PLANETARY_COMPUTER_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, wait_sec=20)
+
+    def test_end_to_end_search_download_hydroweb_next(self):
+        product = self.execute_search(*HYDROWBEB_NEXT_SEARCH_ARGS)
+        expected_filename = "{}".format(
+            sanitize(product.properties["title"])
+            + "-"
+            + sanitize(product.properties["id"])
+        )
+        self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_creodias_noresult(self):
         """Requesting a page on creodias with no results must return an empty SearchResult"""
@@ -1025,6 +1042,20 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["productType", "start", "end", "geom"],
                         METEOBLUE_SEARCH_ARGS[1:],
+                    )
+                ),
+            )
+
+    def test_end_to_end_wrong_credentials_search_hydroweb_next(self):
+        # It should already fail while searching for the products.
+        self.eodag.set_preferred_provider(HYDROWBEB_NEXT_SEARCH_ARGS[0])
+        with self.assertRaises(AuthenticationError):
+            results, _ = self.eodag.search(
+                raise_errors=True,
+                **dict(
+                    zip(
+                        ["productType", "start", "end", "geom"],
+                        HYDROWBEB_NEXT_SEARCH_ARGS[1:],
                     )
                 ),
             )
