@@ -239,6 +239,7 @@ class TestCore(TestCoreBase):
             "meteoblue",
             "cop_dataspace",
             "planetary_computer",
+            "hydroweb_next",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -261,6 +262,7 @@ class TestCore(TestCoreBase):
         "meteoblue",
         "cop_dataspace",
         "planetary_computer",
+        "hydroweb_next",
     ]
 
     def setUp(self):

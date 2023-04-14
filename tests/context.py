@@ -81,6 +81,7 @@ from eodag.utils import (
     flatten_top_directories,
     deepcopy,
     cached_parse,
+    sanitize,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,

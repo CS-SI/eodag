@@ -3618,7 +3618,7 @@
   roles:
     - host
   description: Planetary Computer
-  url:  https://planetarycomputer.microsoft.com
+  url: https://planetarycomputer.microsoft.com
   search: !plugin
     type: StacSearch
     api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
@@ -3651,3 +3651,37 @@
     signed_url_key: href
     headers:
       Ocp-Apim-Subscription-Key: "{apikey}"
+---
+!provider
+  name: hydroweb_next
+  priority: 0
+  roles:
+    - host
+  description: Hydroweb.next
+  url: https://hydroweb.next.theia-land.fr
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://hydroweb.next.theia-land.fr/api/v1/rs-catalog/stac/search
+    need_auth: true
+    auth_error_code: 401
+    pagination:
+      max_items_per_page: 10_000
+    metadata_mapping:
+      startTimeFromAscendingNode:
+        - '{{"query":{{"end_datetime":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.start_datetime'
+      completionTimeFromAscendingNode:
+        - '{{"query":{{"start_datetime":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.end_datetime'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: https://hydroweb.next.theia-land.fr
+    flatten_top_dirs: true
+    auth_error_code: 401
+  auth: !plugin
+    type: HTTPHeaderAuth
+    headers:
+      X-API-Key: "{apikey}"
