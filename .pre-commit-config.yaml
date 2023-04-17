@@ -11,6 +11,7 @@ repos:
     -   id: check-json
     -   id: check-yaml
         args: [--allow-multiple-documents, --unsafe]
+        exclude: ^charts/eodag-server/templates/
     -   id: check-xml
     -   id: check-added-large-files
         args: ['--maxkb=1600']
