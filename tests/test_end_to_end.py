@@ -556,6 +556,37 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(product.properties["id"], uid)
         self.assertIsNotNone(product.product_type)
 
+    def test_search_by_tile(self):
+        """Search by tileIdentifier should find results and correctly map found metadata"""
+        # providers supporting search-by-tile
+        supported_providers = [
+            "peps",
+            "theia",
+            "mundi",
+            "onda",
+            "creodias",
+            "cop_dataspace",
+            "planetary_computer",
+            "earth_search",
+        ]
+
+        tile_id = "53WPU"
+
+        for provider in supported_providers:
+            self.eodag.set_preferred_provider(provider)
+            products, _ = self.eodag.search(
+                productType="S2_MSI_L1C",
+                start="2021-06-01",
+                end="2021-06-30",
+                tileIdentifier=tile_id,
+            )
+            self.assertGreater(len(products), 0, msg=f"no result found for {provider}")
+            self.assertEqual(
+                products[0].properties["tileIdentifier"],
+                tile_id,
+                msg=f"tileIdentifier not mapped for {provider}",
+            )
+
     def test_end_to_end_search_all_mundi_default(self):
         # 23/03/2021: Got 16 products for this search
         results = self.execute_search_all(*MUNDI_SEARCH_ARGS)
