@@ -9,8 +9,8 @@ Description
 Products from the following providers are made avaiable through ``eodag``:
 
 * `usgs <https://earthexplorer.usgs.gov/>`_: U.S geological survey catalog for Landsat products
-* `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
-* `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Copernicus (Sentinel 1, 2, 3) products
+* `theia <https://theia.cnes.fr/atdistrib/rocket/>`_: French National Space Agency (CNES) value-adding products for Land surfaces
+* `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Sentinel products
 * `aws_eos <https://eos.com/>`_: EOS search for Amazon public datasets
 * `creodias <https://creodias.eu/>`_: CloudFerro DIAS
 * `mundi <https://mundiwebservices.com/>`_: Atos DIAS
@@ -22,11 +22,11 @@ Products from the following providers are made avaiable through ``eodag``:
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
-* `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Acces
+* `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Access
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
 * `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
-* `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: Hydroweb.next hydrology data acces
+* `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
 
 Providers available through an external plugin:
 
