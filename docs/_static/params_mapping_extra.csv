@@ -5,7 +5,9 @@ collection,,,,:green:`queryable metadata`,:green:`queryable metadata`,,,,,,,,,,,
 defaultGeometry,,,,,,,,,,metadata only,,,,,,
 downloadLink,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 geometry,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+gridSquare,,,,,,:green:`queryable metadata`,,,,,,,,,,
 id,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
+latitudeBand,,,,,,:green:`queryable metadata`,,,,,,,,,,
 orderLink,,,,,,,,,,metadata only,metadata only,,,,,
 polarizationChannels,metadata only,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,metadata only,metadata only,,:green:`queryable metadata`,,metadata only,:green:`queryable metadata`
 polarizationMode,,,,,,,metadata only,,,metadata only,,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,
@@ -15,4 +17,6 @@ searchLink,,,,,,,,,,metadata only,,,,,,
 specification,,,,,,,,,,metadata only,,,,,,
 storageStatus,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 thumbnail,metadata only,,,,,metadata only,metadata only,metadata only,,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only
+tileIdentifier,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
 uid,,,,metadata only,metadata only,,,,,metadata only,metadata only,metadata only,,metadata only,metadata only,
+utmZone,,,,,,:green:`queryable metadata`,,,,,,,,,,
