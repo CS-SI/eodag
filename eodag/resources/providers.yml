@@ -2120,7 +2120,7 @@
   priority: 0
   roles:
     - host
-  description: Earth Search
+  description: Earth Search with Cloud Optimized GeoTIFF (COG) formatted assets
   url: https://www.element84.com/earth-search/
   search: !plugin
     type: StacSearch
@@ -2987,6 +2987,7 @@
 !provider
   name: sara
   priority: 0
+  description: Sentinel Australasia Regional Access
   search: !plugin
     type: QueryStringSearch
     # The endpoint is based off of the collection. There is a generic endpoint,
@@ -3335,7 +3336,7 @@
 !provider
   name: cop_dataspace
   priority: 0
-  description: Copernicus Data Space
+  description: Copernicus Data Space Ecosystem
   roles:
     - host
   url: https://dataspace.copernicus.eu/
@@ -3663,7 +3664,7 @@
   priority: 0
   roles:
     - host
-  description: Planetary Computer
+  description: Microsoft Planetary Computer
   url: https://planetarycomputer.microsoft.com
   search: !plugin
     type: StacSearch
@@ -3707,7 +3708,7 @@
   priority: 0
   roles:
     - host
-  description: Hydroweb.next
+  description: hydroweb.next thematic hub for hydrology data access
   url: https://hydroweb.next.theia-land.fr
   search: !plugin
     type: StacSearch
