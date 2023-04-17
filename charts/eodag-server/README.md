@@ -41,7 +41,7 @@ The command removes all the Kubernetes components associated with the chart and 
 
 All components are removed except the PrivateVolumeClaim if you use a persistent storage solution.
 
-## Parameters                         
+## Parameters
 
 ### Global parameters
 
