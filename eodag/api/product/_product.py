@@ -90,7 +90,9 @@ class EOProduct(object):
         self.properties = {
             key: value
             for key, value in properties.items()
-            if key != "geometry" and value not in [NOT_MAPPED, NOT_AVAILABLE]
+            if key != "geometry"
+            and value != NOT_MAPPED
+            and NOT_AVAILABLE not in str(value)
         }
         if "geometry" not in properties or (
             properties["geometry"] == NOT_AVAILABLE

@@ -625,6 +625,9 @@
 
       # Custom parameters (not defined in the base document referenced above)
       id: '$.properties.productIdentifier'
+      tileIdentifier:
+        - 'location=T{tileIdentifier#replace_str(r"^T(.*)$",r"\1")}'
+        - '{$.properties.location#replace_str(r"^T(.*)$",r"\1")}'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -811,6 +814,9 @@
       id:
         - 'productIdentifier={id#remove_extension}'
         - '$.properties.productIdentifier'
+      tileIdentifier:
+        - 'tileid'
+        - '$.properties.mgrs'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -905,6 +911,7 @@
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
             - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
             - contains(Name,'{id}')
@@ -999,6 +1006,9 @@
       id:
         - null
         - '{$.Name#remove_extension}'
+      tileIdentifier:
+        - null
+        - '$.Attributes.tileId'
       # The geographic extent of the product
       geometry:
         - null
@@ -1331,6 +1341,9 @@
       id:
         - 'uid={id#remove_extension}'
         - 'dc:identifier/text()'
+      tileIdentifier:
+        - 'tileIdentifier'
+        - 'DIAS:tileIdentifier/text()'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -1605,6 +1618,7 @@
             - 'processingBaseline:{productVersion}'
             - 'generalQualityFlag:{productQualityStatus}'
             - 'sensorOperationalMode:{sensorMode}'
+            - 'tileIdentifier:{tileIdentifier}'
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^[a-zA-Z0-9]+$'
@@ -1690,6 +1704,9 @@
       id:
         - null
         - '{$.Metadata.filename#remove_extension}'
+      tileIdentifier:
+        - null
+        - '$.Metadata.tileIdentifier'
       # The geographic extent of the product
       geometry:
         - null
@@ -2027,6 +2044,19 @@
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
       max_items_per_page: 500
+    metadata_mapping:
+      utmZone:
+        - '{{"query":{{"sentinel:utm_zone":{{"eq":"{utmZone}"}}}}}}'
+        - '$.properties."sentinel:utm_zone"'
+      latitudeBand:
+        - '{{"query":{{"sentinel:latitude_band":{{"eq":"{latitudeBand}"}}}}}}'
+        - '$.properties."sentinel:latitude_band"'
+      gridSquare:
+        - '{{"query":{{"sentinel:grid_square":{{"eq":"{gridSquare}"}}}}}}'
+        - '$.properties."sentinel:grid_square"'
+      tileIdentifier:
+        - '{{"query":{{"sentinel:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"sentinel:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"sentinel:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
+        - '{utmZone}{latitudeBand}{gridSquare}'
   products:
     S2_MSI_L1C:
       productType: sentinel-s2-l1c
@@ -2038,6 +2068,18 @@
           $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*)/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
         tilePath: |
           $.assets.info.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
+        utmZone:
+          - '{{"query":{{"mgrs:utm_zone":{{"eq":"{utmZone}"}}}}}}'
+          - '$.properties."mgrs:utm_zone"'
+        latitudeBand:
+          - '{{"query":{{"mgrs:latitude_band":{{"eq":"{latitudeBand}"}}}}}}'
+          - '$.properties."mgrs:latitude_band"'
+        gridSquare:
+          - '{{"query":{{"mgrs:grid_square":{{"eq":"{gridSquare}"}}}}}}'
+          - '$.properties."mgrs:grid_square"'
+        tileIdentifier:
+          - '{{"query":{{"mgrs:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
+          - '{utmZone}{latitudeBand}{gridSquare}'
     S2_MSI_L2A:
       productType: sentinel-s2-l2a
       metadata_mapping:
@@ -3331,6 +3373,7 @@
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
             - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
             - contains(Name,'{id}')
@@ -3408,6 +3451,9 @@
       id:
         - null
         - '{$.Name#remove_extension}'
+      tileIdentifier:
+        - null
+        - '$.Attributes.tileId'
       # The geographic extent of the product
       geometry:
         - null
@@ -3625,6 +3671,10 @@
     need_auth: false
     pagination:
       max_items_per_page: 1000
+    metadata_mapping:
+      tileIdentifier:
+        - '{{"query":{{"s2:mgrs_tile":{{"eq":"{tileIdentifier}"}}}}}}'
+        - '$.properties."s2:mgrs_tile"'
   products:
     S1_SAR_GRD:
       productType: sentinel-1-grd
