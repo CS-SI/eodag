@@ -74,7 +74,7 @@ Example URL:
 * http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25&cloudCover=20
 
 Browsing
----------
+--------
 
 EODAG provides additional catalogs that extend browsing/filtering capabilities:
 
@@ -109,6 +109,16 @@ And browse http://127.0.0.1:5001:
 .. image:: _static/stac_browser_example.png
    :width: 800
    :alt: STAC browser example
+
+docker
+------
+
+In addition of the *docker-compose* configuration included in sources and described just above, ``eodag-server`` is
+available on `https://hub.docker.com/r/csspace/eodag-server <https://hub.docker.com/r/csspace/eodag-server>`_:
+
+.. code-block:: bash
+
+    $ docker run -p 5000:5000 --rm csspace/eodag-server:2.9.2
 
 Example
 -------
