@@ -15,4 +15,3 @@ Return the proper Docker Image Registry Secret Names
 {{- define "eodag-server.imagePullSecrets" -}}
 {{- include "common.images.pullSecrets" (dict "images" (list .Values.image) "global" .Values.global) -}}
 {{- end -}}
-    
