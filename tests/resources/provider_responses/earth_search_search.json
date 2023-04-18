@@ -1,0 +1,486 @@
+{
+    "type": "FeatureCollection",
+    "stac_version": "1.0.0-beta.2",
+    "stac_extensions": [],
+    "context": {
+        "page": 1,
+        "limit": 1,
+        "matched": 21830128,
+        "returned": 1
+    },
+    "numberMatched": 21830128,
+    "numberReturned": 1,
+    "features": [
+        {
+            "type": "Feature",
+            "stac_version": "1.0.0-beta.2",
+            "stac_extensions": [
+                "eo",
+                "view",
+                "proj"
+            ],
+            "id": "S2B_42XVR_20230417_0_L2A",
+            "bbox": [
+                68.75104745483206,
+                81.62978584338511,
+                69.62472365760772,
+                81.95683550604923
+            ],
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            69.60050945760646,
+                            81.62978584338511
+                        ],
+                        [
+                            68.75104745483206,
+                            81.95683550604923
+                        ],
+                        [
+                            69.62472365760772,
+                            81.95643851325639
+                        ],
+                        [
+                            69.60050945760646,
+                            81.62978584338511
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "datetime": "2023-04-17T10:36:53Z",
+                "platform": "sentinel-2b",
+                "constellation": "sentinel-2",
+                "instruments": [
+                    "msi"
+                ],
+                "gsd": 10,
+                "view:off_nadir": 0,
+                "proj:epsg": 32642,
+                "sentinel:utm_zone": 42,
+                "sentinel:latitude_band": "X",
+                "sentinel:grid_square": "VR",
+                "sentinel:sequence": "0",
+                "sentinel:product_id": "S2B_MSIL2A_20230417T103629_N0509_R008_T42XVR_20230417T110713",
+                "sentinel:data_coverage": 1.95,
+                "eo:cloud_cover": 100,
+                "sentinel:valid_cloud_cover": true,
+                "sentinel:processing_baseline": "05.09",
+                "created": "2023-04-17T14:49:46.064Z",
+                "updated": "2023-04-17T14:49:46.064Z"
+            },
+            "collection": "sentinel-s2-l2a",
+            "assets": {
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/png",
+                    "roles": [
+                        "thumbnail"
+                    ],
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l1c/tiles/42/X/VR/2023/4/17/0/preview.jpg"
+                },
+                "overview": {
+                    "title": "True color image",
+                    "type": "image/jp2",
+                    "roles": [
+                        "overview"
+                    ],
+                    "gsd": 10,
+                    "eo:bands": [
+                        {
+                            "name": "B04",
+                            "common_name": "red",
+                            "center_wavelength": 0.6645,
+                            "full_width_half_max": 0.038
+                        },
+                        {
+                            "name": "B03",
+                            "common_name": "green",
+                            "center_wavelength": 0.56,
+                            "full_width_half_max": 0.045
+                        },
+                        {
+                            "name": "B02",
+                            "common_name": "blue",
+                            "center_wavelength": 0.4966,
+                            "full_width_half_max": 0.098
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/qi/L2A_PVI.jp2"
+                },
+                "info": {
+                    "title": "Original JSON metadata",
+                    "type": "application/json",
+                    "roles": [
+                        "metadata"
+                    ],
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/tileInfo.json"
+                },
+                "metadata": {
+                    "title": "Original XML metadata",
+                    "type": "application/xml",
+                    "roles": [
+                        "metadata"
+                    ],
+                    "href": "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/metadata.xml"
+                },
+                "visual": {
+                    "title": "True color image",
+                    "type": "image/jp2",
+                    "roles": [
+                        "overview"
+                    ],
+                    "gsd": 10,
+                    "eo:bands": [
+                        {
+                            "name": "B04",
+                            "common_name": "red",
+                            "center_wavelength": 0.6645,
+                            "full_width_half_max": 0.038
+                        },
+                        {
+                            "name": "B03",
+                            "common_name": "green",
+                            "center_wavelength": 0.56,
+                            "full_width_half_max": 0.045
+                        },
+                        {
+                            "name": "B02",
+                            "common_name": "blue",
+                            "center_wavelength": 0.4966,
+                            "full_width_half_max": 0.098
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R10m/TCI.jp2"
+                },
+                "visual_20m": {
+                    "title": "True color image",
+                    "type": "image/jp2",
+                    "roles": [
+                        "overview"
+                    ],
+                    "gsd": 20,
+                    "eo:bands": [
+                        {
+                            "name": "B04",
+                            "common_name": "red",
+                            "center_wavelength": 0.6645,
+                            "full_width_half_max": 0.038
+                        },
+                        {
+                            "name": "B03",
+                            "common_name": "green",
+                            "center_wavelength": 0.56,
+                            "full_width_half_max": 0.045
+                        },
+                        {
+                            "name": "B02",
+                            "common_name": "blue",
+                            "center_wavelength": 0.4966,
+                            "full_width_half_max": 0.098
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/TCI.jp2"
+                },
+                "visual_60m": {
+                    "title": "True color image",
+                    "type": "image/jp2",
+                    "roles": [
+                        "overview"
+                    ],
+                    "gsd": 60,
+                    "eo:bands": [
+                        {
+                            "name": "B04",
+                            "common_name": "red",
+                            "center_wavelength": 0.6645,
+                            "full_width_half_max": 0.038
+                        },
+                        {
+                            "name": "B03",
+                            "common_name": "green",
+                            "center_wavelength": 0.56,
+                            "full_width_half_max": 0.045
+                        },
+                        {
+                            "name": "B02",
+                            "common_name": "blue",
+                            "center_wavelength": 0.4966,
+                            "full_width_half_max": 0.098
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R60m/TCI.jp2"
+                },
+                "B01": {
+                    "title": "Band 1 (coastal)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 60,
+                    "eo:bands": [
+                        {
+                            "name": "B01",
+                            "common_name": "coastal",
+                            "center_wavelength": 0.4439,
+                            "full_width_half_max": 0.027
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R60m/B01.jp2"
+                },
+                "B02": {
+                    "title": "Band 2 (blue)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 10,
+                    "eo:bands": [
+                        {
+                            "name": "B02",
+                            "common_name": "blue",
+                            "center_wavelength": 0.4966,
+                            "full_width_half_max": 0.098
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R10m/B02.jp2"
+                },
+                "B03": {
+                    "title": "Band 3 (green)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 10,
+                    "eo:bands": [
+                        {
+                            "name": "B03",
+                            "common_name": "green",
+                            "center_wavelength": 0.56,
+                            "full_width_half_max": 0.045
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R10m/B03.jp2"
+                },
+                "B04": {
+                    "title": "Band 4 (red)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 10,
+                    "eo:bands": [
+                        {
+                            "name": "B04",
+                            "common_name": "red",
+                            "center_wavelength": 0.6645,
+                            "full_width_half_max": 0.038
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R10m/B04.jp2"
+                },
+                "B05": {
+                    "title": "Band 5",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 20,
+                    "eo:bands": [
+                        {
+                            "name": "B05",
+                            "center_wavelength": 0.7039,
+                            "full_width_half_max": 0.019
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/B05.jp2"
+                },
+                "B06": {
+                    "title": "Band 6",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 20,
+                    "eo:bands": [
+                        {
+                            "name": "B06",
+                            "center_wavelength": 0.7402,
+                            "full_width_half_max": 0.018
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/B06.jp2"
+                },
+                "B07": {
+                    "title": "Band 7",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 20,
+                    "eo:bands": [
+                        {
+                            "name": "B07",
+                            "center_wavelength": 0.7825,
+                            "full_width_half_max": 0.028
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/B07.jp2"
+                },
+                "B08": {
+                    "title": "Band 8 (nir)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 10,
+                    "eo:bands": [
+                        {
+                            "name": "B08",
+                            "common_name": "nir",
+                            "center_wavelength": 0.8351,
+                            "full_width_half_max": 0.145
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R10m/B08.jp2"
+                },
+                "B8A": {
+                    "title": "Band 8A",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 20,
+                    "eo:bands": [
+                        {
+                            "name": "B8A",
+                            "center_wavelength": 0.8648,
+                            "full_width_half_max": 0.033
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/B8A.jp2"
+                },
+                "B09": {
+                    "title": "Band 9",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 60,
+                    "eo:bands": [
+                        {
+                            "name": "B09",
+                            "center_wavelength": 0.945,
+                            "full_width_half_max": 0.026
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R60m/B09.jp2"
+                },
+                "B11": {
+                    "title": "Band 11 (swir16)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 20,
+                    "eo:bands": [
+                        {
+                            "name": "B11",
+                            "common_name": "swir16",
+                            "center_wavelength": 1.6137,
+                            "full_width_half_max": 0.143
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/B11.jp2"
+                },
+                "B12": {
+                    "title": "Band 12 (swir22)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "gsd": 20,
+                    "eo:bands": [
+                        {
+                            "name": "B12",
+                            "common_name": "swir22",
+                            "center_wavelength": 2.22024,
+                            "full_width_half_max": 0.242
+                        }
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/B12.jp2"
+                },
+                "AOT": {
+                    "title": "Aerosol Optical Thickness (AOT)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R60m/AOT.jp2"
+                },
+                "WVP": {
+                    "title": "Water Vapour (WVP)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R10m/WVP.jp2"
+                },
+                "SCL": {
+                    "title": "Scene Classification Map (SCL)",
+                    "type": "image/jp2",
+                    "roles": [
+                        "data"
+                    ],
+                    "href": "s3://sentinel-s2-l2a/tiles/42/X/VR/2023/4/17/0/R20m/SCL.jp2"
+                }
+            },
+            "links": [
+                {
+                    "rel": "self",
+                    "href": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a/items/S2B_42XVR_20230417_0_L2A"
+                },
+                {
+                    "rel": "canonical",
+                    "href": "https://cirrus-v0-data-1qm7gekzjucbq.s3.us-west-2.amazonaws.com/sentinel-s2-l2a/42/X/VR/2023/4/S2B_42XVR_20230417_0_L2A/S2B_42XVR_20230417_0_L2A.json",
+                    "type": "application/json"
+                },
+                {
+                    "title": "sentinel-s2-l2a-aws/workflow-publish-sentinel/tiles-42-X-VR-2023-4-17-0",
+                    "rel": "via-cirrus",
+                    "href": "https://cirrus-earth-search.aws.element84.com/v0/catid/sentinel-s2-l2a-aws/workflow-publish-sentinel/tiles-42-X-VR-2023-4-17-0"
+                },
+                {
+                    "rel": "parent",
+                    "href": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a"
+                },
+                {
+                    "rel": "collection",
+                    "href": "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a"
+                },
+                {
+                    "rel": "root",
+                    "href": "https://earth-search.aws.element84.com/v0/"
+                }
+            ]
+        }
+    ],
+    "links": [
+        {
+            "rel": "next",
+            "title": "Next page of results",
+            "method": "POST",
+            "href": "https://earth-search.aws.element84.com/v0/search",
+            "merge": false,
+            "body": {
+                "collections": [
+                    "sentinel-s2-l2a"
+                ],
+                "page": 2,
+                "limit": 1
+            }
+        }
+    ]
+}
