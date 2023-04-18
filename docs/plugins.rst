@@ -68,6 +68,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+--------------------------+----------------+
 | planetary_computer | StacSearch            | SASAuth                  | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
+| hydroweb_next      | StacSearch            | HTTPHeaderAuth           | HTTPDownload   |
++--------------------+-----------------------+--------------------------+----------------+
 
 .. _creating_plugins:
 

@@ -51,6 +51,7 @@ class FilterLatestIntersect(Crunch):
         :param products: A list of products resulting from a search
         :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :param search_params: Search criteria that must contain `geometry` (dict)
+                              or search `geom` (:class:`shapely.geometry.base.BaseGeometry`) argument will be used
         :type search_params: dict
         :returns: The filtered products
         :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
@@ -62,18 +63,26 @@ class FilterLatestIntersect(Crunch):
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered = []
         add_to_filtered = filtered.append
-        footprint = search_params.get("geometry")
+        footprint = search_params.get("geometry") or search_params.get("geom")
         if not footprint:
             logger.warning(
                 "geometry not found in cruncher arguments, filtering disabled."
             )
             return products
-        search_extent = geometry.box(
-            footprint["lonmin"],
-            footprint["latmin"],
-            footprint["lonmax"],
-            footprint["latmax"],
-        )
+        elif isinstance(footprint, dict):
+            search_extent = geometry.box(
+                footprint["lonmin"],
+                footprint["latmin"],
+                footprint["lonmax"],
+                footprint["latmax"],
+            )
+        elif not isinstance(footprint, geometry.base.BaseGeometry):
+            logger.warning(
+                "geometry found in cruncher arguments did not match the expected format."
+            )
+            return products
+        else:
+            search_extent = footprint
         logger.debug("Initial requested extent area: %s", search_extent.area)
         for product in products:
             logger.debug("Uncovered extent area: %s", search_extent.area)

@@ -190,3 +190,11 @@ planetary_computer:
             apikey:
     download:
         outputs_prefix:
+hydroweb_next:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    auth:
+        credentials:
+            apikey:
+    download:
+        outputs_prefix:

@@ -23,6 +23,7 @@ import unittest
 from tempfile import TemporaryDirectory
 
 import geojson
+from shapely import box
 
 from tests import mock
 from tests.context import DEFAULT_ITEMS_PER_PAGE, SearchResult
@@ -151,17 +152,98 @@ class RequestTestCase(unittest.TestCase):
                                 ],
                                 "type": "Polygon",
                             },
-                        }
+                        },
+                        {
+                            "properties": {
+                                "snowCover": None,
+                                "resolution": None,
+                                "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
+                                ".035Z",
+                                "keyword": {},
+                                "productType": "OCN",
+                                "downloadLink": (
+                                    "https://peps.cnes.fr/resto/collections/S1/"
+                                    "578f1768-e66e-5b86-9363-b19f8931cc7c/download"
+                                ),
+                                "eodag_provider": "peps",
+                                "eodag_product_type": "S1_SAR_OCN",
+                                "platformSerialIdentifier": "S1A",
+                                "cloudCover": 0,
+                                "title": "S1A_WV_OCN__2SSV_20180216T235323_"
+                                "20180217T001213_020624_023501_0FD3",
+                                "orbitNumber": 20624,
+                                "instrument": "SAR-C SAR",
+                                "abstract": None,
+                                "eodag_search_intersection": {
+                                    "coordinates": [
+                                        [
+                                            [89.590721, 2.614019],
+                                            [89.771805, 2.575546],
+                                            [89.809341, 2.756323],
+                                            [89.628258, 2.794767],
+                                            [89.590721, 2.614019],
+                                        ]
+                                    ],
+                                    "type": "Polygon",
+                                },
+                                "organisationName": None,
+                                "startTimeFromAscendingNode": "2018-02-16T23:53:22"
+                                ".871Z",
+                                "platform": None,
+                                "sensorType": None,
+                                "processingLevel": None,
+                                "orbitType": None,
+                                "topicCategory": None,
+                                "orbitDirection": None,
+                                "parentIdentifier": None,
+                                "sensorMode": None,
+                                "quicklook": None,
+                            },
+                            "id": "578f1768-e66e-5b86-9363-b19f8931cc7c",
+                            "type": "Feature",
+                            "geometry": {
+                                "coordinates": [
+                                    [
+                                        [89.590721, 2.614019],
+                                        [89.771805, 2.575546],
+                                        [89.809341, 2.756323],
+                                        [89.628258, 2.794767],
+                                        [89.590721, 2.614019],
+                                    ]
+                                ],
+                                "type": "Polygon",
+                            },
+                        },
                     ],
                     "type": "FeatureCollection",
                 }
             ),
-            1,
+            2,
         ),
     )
-    def _request_valid(self, url, _):
-        response = self.app.get(url, follow_redirects=True)
+    def _request_valid(
+        self,
+        url,
+        mock_search,
+        expected_search_kwargs=None,
+        protocol="GET",
+        post_data=None,
+    ):
+        if protocol == "GET":
+            response = self.app.get(url, follow_redirects=True)
+        else:
+            response = self.app.post(
+                url,
+                data=json.dumps(post_data),
+                follow_redirects=True,
+                mimetype="application/json",
+            )
+
+        if expected_search_kwargs is not None:
+            mock_search.assert_called_once_with(**expected_search_kwargs)
+
         self.assertEqual(200, response.status_code)
+
         # Assert response format is GeoJSON
         return geojson.loads(response.data.decode("utf-8"))
 
@@ -182,22 +264,35 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("not found", response_content["error"])
 
     def test_request_params(self):
+        self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
         self._request_not_valid(
-            "search?collections={}&bbox=1".format(self.tested_product_type)
+            f"search?collections={self.tested_product_type}&bbox=0,43,1"
         )
         self._request_not_valid(
-            "search?collections={}&bbox=0,43,1".format(self.tested_product_type)
+            f"search?collections={self.tested_product_type}&bbox=0,,1"
         )
         self._request_not_valid(
-            "search?collections={}&bbox=0,,1".format(self.tested_product_type)
-        )
-        self._request_not_valid(
-            "search?collections={}&bbox=a,43,1,44".format(self.tested_product_type)
+            f"search?collections={self.tested_product_type}&bbox=a,43,1,44"
         )
 
-        self._request_valid("search?collections={}".format(self.tested_product_type))
         self._request_valid(
-            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
+            f"search?collections={self.tested_product_type}",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+            ),
+        )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
         )
 
     def test_not_found(self):
@@ -205,76 +300,148 @@ class RequestTestCase(unittest.TestCase):
         self._request_not_found("search?collections=ZZZ&bbox=0,43,1,44")
 
     def test_filter(self):
+        """latestIntersect filter should only keep the latest products once search area is fully covered"""
         result1 = self._request_valid(
-            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
+            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
+            ),
         )
+        self.assertEqual(len(result1.features), 2)
         result2 = self._request_valid(
-            "search?collections={}&bbox=0,43,1,44&filter=latestIntersect".format(
-                self.tested_product_type
-            )
+            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&filter=latestIntersect",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
+            ),
         )
-        self.assertGreaterEqual(len(result1.features), len(result2.features))
+        # only one product is returned with filter=latestIntersect
+        self.assertEqual(len(result2.features), 1)
 
     def test_date_search(self):
-        result1 = self._request_valid(
-            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                start="2018-01-20T00:00:00",
+                end="2018-01-25T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
         )
-        result2 = self._request_valid(
-            "search?collections={}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
-                self.tested_product_type
-            )
-        )
-        self.assertGreaterEqual(len(result1.features), len(result2.features))
 
     def test_date_search_from_items(self):
-        result1 = self._request_valid(
-            "collections/{}/items?bbox=0,43,1,44".format(self.tested_product_type)
+        self._request_valid(
+            f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
         )
-        result2 = self._request_valid(
-            "collections/{}/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
-                self.tested_product_type
-            )
+        self._request_valid(
+            f"collections/{self.tested_product_type}/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                start="2018-01-20T00:00:00",
+                end="2018-01-25T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
         )
-        self.assertGreaterEqual(len(result1.features), len(result2.features))
 
     def test_date_search_from_catalog_items(self):
-        result1 = self._request_valid(
-            "{}/year/2018/month/01/items?bbox=0,43,1,44".format(
-                self.tested_product_type
-            )
+        results = self._request_valid(
+            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                start="2018-01-01T00:00:00",
+                end="2018-02-01T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
         )
-        result2 = self._request_valid(
-            "{}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25".format(
-                self.tested_product_type
-            )
+        self.assertEqual(len(results.features), 2)
+
+        results = self._request_valid(
+            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                start="2018-01-20T00:00:00",
+                end="2018-01-25T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
         )
-        self.assertGreaterEqual(len(result1.features), len(result2.features))
+        self.assertEqual(len(results.features), 2)
+
+        results = self._request_valid(
+            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2018-01-20/2019-01-01",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                start="2018-01-20T00:00:00",
+                end="2018-02-01T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+        self.assertEqual(len(results.features), 2)
+
+        results = self._request_valid(
+            f"{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&datetime=2019-01-01/2019-01-31",
+        )
+        self.assertEqual(len(results.features), 0)
 
     def test_catalog_browse(self):
         result = self._request_valid(
-            "{}/year/2018/month/01/day".format(self.tested_product_type)
+            f"{self.tested_product_type}/year/2018/month/01/day",
         )
         self.assertListEqual(
             [str(i) for i in range(1, 32)],
             [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
         )
 
-    def test_cloud_cover_search(self):
-        result1 = self._request_valid(
-            "search?collections={}&bbox=0,43,1,44".format(self.tested_product_type)
+    def test_cloud_cover_post_search(self):
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "bbox": [0, 43, 1, 44],
+                "query": {"eo:cloud_cover": {"lte": 10}},
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                cloudCover=10,
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
         )
-        result2 = self._request_valid(
-            "search?collections={}&bbox=0,43,1,44&cloudCover=10".format(
-                self.tested_product_type
-            )
-        )
-        self.assertGreaterEqual(len(result1.features), len(result2.features))
 
     def test_search_response_contains_pagination_info(self):
         """Responses to valid search requests must return a geojson with pagination info in properties"""  # noqa
-        response = self._request_valid(
-            "search?collections={}".format(self.tested_product_type)
-        )
+        response = self._request_valid(f"search?collections={self.tested_product_type}")
         self.assertIn("numberMatched", response)
         self.assertIn("numberReturned", response)
         self.assertIn("context", response)

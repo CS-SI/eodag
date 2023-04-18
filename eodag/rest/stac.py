@@ -108,15 +108,6 @@ class StacCommon(object):
             self.data, lambda k, v: str(v) if k in ["title", "id"] else v
         )
 
-        # remove \n in descriptions
-        try:
-            self.data = dict_items_recursive_apply(
-                self.data,
-                lambda k, v: v.replace("\n", " ") if k == "description" else v,
-            )
-        except AttributeError as e:
-            logger.warning("Could not format description = %s" % e)
-
         # empty stac_extensions: "" to []
         if not self.data.get("stac_extensions", True):
             self.data["stac_extensions"] = []
@@ -377,7 +368,7 @@ class StacItem(StacCommon):
                 result_item_model["properties"]["oseo:" + k] = string_to_jsonpath(k, v)
 
         # Filter out unneeded extensions
-        if product_type_dict["sensorType"] != "RADAR":
+        if product_type_dict.get("sensorType", "RADAR") != "RADAR":
             result_item_model["stac_extensions"].remove(
                 self.stac_config["stac_extensions"]["sar"]
             )
@@ -700,6 +691,8 @@ class StacCatalog(StacCommon):
         format_args["catalog"] = defaultdict(
             str, dict(model, **{"root": self.root, "url": self.url})
         )
+        # use existing data as parent_catalog
+        format_args["parent_catalog"] = defaultdict(str, **self.data)
         parsed_model = format_dict_items(self.catalog_config["model"], **format_args)
 
         self.update_data(parsed_model)
@@ -978,7 +971,7 @@ class StacCatalog(StacCommon):
         self.update_data(parsed_dict)
 
         # update search args
-        self.search_args.update({"cloudCover": cloud_cover})
+        self.search_args.update({"query": {"eo:cloud_cover": {"lte": cloud_cover}}})
 
         return parsed_dict
 

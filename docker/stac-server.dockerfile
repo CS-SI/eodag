@@ -46,14 +46,13 @@ ENV LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8
 
 # copy necessary files
-COPY setup.py setup.py
 COPY setup.cfg setup.cfg
 COPY pyproject.toml pyproject.toml
 COPY README.rst README.rst
 COPY ./eodag /eodag/eodag
 
 # install eodag
-RUN python setup.py install
+RUN python -m pip install .
 
 # add python path
 ENV PYTHONPATH="${PYTHONPATH}:/eodag/eodag"
