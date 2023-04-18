@@ -26,7 +26,7 @@ from tempfile import TemporaryDirectory
 
 import geojson
 from fastapi.testclient import TestClient
-from shapely import box
+from shapely.geometry import box
 
 from tests import mock
 from tests.context import (
