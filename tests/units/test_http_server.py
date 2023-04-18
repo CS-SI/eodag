@@ -19,6 +19,7 @@
 import importlib
 import json
 import os
+import socket
 import unittest
 from tempfile import TemporaryDirectory
 
@@ -30,6 +31,10 @@ from tests import mock
 from tests.context import DEFAULT_ITEMS_PER_PAGE, SearchResult
 
 
+# AF_UNIX socket not supported on windows yet, see https://github.com/python/cpython/issues/77589
+@unittest.skipIf(
+    not hasattr(socket, "AF_UNIX"), "AF_UNIX socket not supported on this OS (windows)"
+)
 class RequestTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
