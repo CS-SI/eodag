@@ -118,7 +118,7 @@ available on `https://hub.docker.com/r/csspace/eodag-server <https://hub.docker.
 
 .. code-block:: bash
 
-    $ docker run -p 5000:5000 --rm csspace/eodag-server:2.9.2
+    $ docker run -p 5000:5000 --rm csspace/eodag-server:2.10.0
 
 Example
 -------

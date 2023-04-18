@@ -1,6 +1,23 @@
 Release history
 ---------------
 
+2.10.0 (2023-04-18)
++++++++++++++++++++
+
+* `hydroweb_next` (`hydroweb.next <https://hydroweb.next.theia-land.fr>`_), thematic hub for hydrology data access,
+  as new provider (:pull:`711`)
+* Search by tile standardized using ``tileIdentifier`` new query parameter and metadata (:pull:`713`)
+* Server mode STAC API version updated to `1.0.0-rc.3` (:pull:`697`)
+* Better catalogs title and description in server mode (:pull:`710`)
+* Server mode advanced tests (:pull:`708`), and fixes for catalogs dates filtering (:pull:`706`), catalogs cloud-cover
+  filtering (:pull:`705`), missing `sensorType` error for discovered product types (:pull:`699`), broken links through
+  STAC search endpoint (:pull:`698`)
+* Added links to `eodag-server <https://hub.docker.com/r/csspace/eodag-server>`_ image on Dockerhub (:pull:`715`)
+* EODAG server installation update in docker image (:pull:`700`) and sigterm fix (:pull:`702`)
+* STAC browser docker image update (:pull:`704`)
+* Various minor fixes and improvements (:pull:`693`)(:pull:`694`)(:pull:`695`)(:pull:`696`)(:pull:`703`)(:pull:`707`)
+  (:pull:`712`)(:pull:`714`)
+
 2.9.2 (2023-03-31)
 ++++++++++++++++++
 
