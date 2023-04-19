@@ -68,7 +68,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: unit-test-results-python${{ matrix.python-version }}
+        name: unit-test-results-python${{ matrix.python-version }}-${{ matrix.os }}
         path: |
           test-reports/junit-report.xml
           test-reports/coverage.xml
@@ -94,11 +94,12 @@ jobs:
       uses: 5monkeys/cobertura-action@master
       if: ${{ github.event_name == 'pull_request' }}
       with:
-        path: artifacts/**/*coverage.xml
+        path: artifacts/**/*python3.11*coverage.xml
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         minimum_coverage: 70
         fail_below_threshold: false
         only_changed_files: true
+        report_name: Tests Coverage Report for Ubuntu and Windows (python3.11)
 
   build-docs:
     name: Build the docs
