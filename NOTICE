@@ -18,12 +18,12 @@ See project link for details.
 https://github.com/requests/requests
 https://github.com/dateutil/dateutil
 https://github.com/boto/boto3
-https://grpc.io/
 https://github.com/h2non/jsonpath-ng
-https://github.com/pydata/xarray
 https://github.com/CS-SI/eodag-cube
 https://github.com/ecmwf/ecmwf-api-client
 https://github.com/ecmwf/cdsapi
+https://github.com/ijl/orjson
+https://github.com/stac-utils/pystac
 
 
 ================================================================
@@ -41,6 +41,7 @@ https://github.com/jupyter-widgets/ipyleaflet
 https://github.com/GeospatialPython/pyshp
 https://github.com/flasgger/flasgger
 https://github.com/python-visualization/folium
+https://github.com/Unidata/netcdf4-python
 
 
 ================================================================
@@ -64,20 +65,17 @@ See project link for details.
 https://github.com/pallets/click
 https://github.com/dateutil/dateutil
 https://github.com/Toblerity/Shapely
-geopython.github.io/OWSLib/
+https://github.com/geopython/OWSLib
 https://github.com/frewsxcv/python-geojson
-http://www.numpy.org/
 https://github.com/mapbox/rasterio
-https://github.com/google/protobuf
 https://github.com/lxml/lxml
 https://github.com/jupyter-widgets/ipywidgets
 https://github.com/jupyter/jupyter
 https://github.com/pallets/flask
-https://github.com/Python-Markdown/markdown
 
 The function slugify, located at eodag/utils/__init__.py is a modified version of the function with the same name from
 the Django Project, licensed under the BSD-3-Clause Licence. Follow project link below for more information:
-https://github.com/django/django/
+https://github.com/django/django
 
 
 ================================================================
@@ -87,4 +85,4 @@ The Python-2.0 License
 The following components are provided under the  Python-2.0 License  (https://opensource.org/licenses/Python-2.0).
 See project link for details.
 
-https://github.com/matplotlib/
+https://github.com/matplotlib
