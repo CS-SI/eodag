@@ -89,17 +89,29 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       continue-on-error: true
       with:
-        files: artifacts/**/*junit-report.xml
-    - name: Publish Coverage Report
+        files: artifacts/*/junit-report.xml
+
+    - name: Publish Coverage Report for Ubuntu
       uses: 5monkeys/cobertura-action@master
       if: ${{ github.event_name == 'pull_request' }}
       with:
-        path: artifacts/**/*python3.11*coverage.xml
+        path: artifacts/unit-test-results-python3.11-ubuntu-latest/coverage.xml
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         minimum_coverage: 70
         fail_below_threshold: false
         only_changed_files: true
-        report_name: Tests Coverage Report for Ubuntu and Windows (python3.11)
+        report_name: Code Coverage (Ubuntu)
+
+    - name: Publish Coverage Report for Windows
+      uses: 5monkeys/cobertura-action@master
+      if: ${{ github.event_name == 'pull_request' }}
+      with:
+        path: artifacts/unit-test-results-python3.11-windows-latest/coverage.xml
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        minimum_coverage: 70
+        fail_below_threshold: false
+        only_changed_files: true
+        report_name: Code Coverage (Windows)
 
   build-docs:
     name: Build the docs
