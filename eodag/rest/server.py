@@ -393,7 +393,7 @@ async def stac_collections_item_download(collection_id, item_id, request: Reques
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
 
-    response = await download_stac_item_by_id(
+    response = download_stac_item_by_id(
         catalogs=[collection_id],
         item_id=item_id,
         provider=provider,
