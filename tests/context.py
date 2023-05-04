@@ -82,6 +82,7 @@ from eodag.utils import (
     deepcopy,
     cached_parse,
     sanitize,
+    parse_header,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,

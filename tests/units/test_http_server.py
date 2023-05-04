@@ -21,6 +21,7 @@ import json
 import os
 import socket
 import unittest
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import geojson
@@ -28,7 +29,12 @@ from fastapi.testclient import TestClient
 from shapely import box
 
 from tests import mock
-from tests.context import DEFAULT_ITEMS_PER_PAGE, SearchResult
+from tests.context import (
+    DEFAULT_ITEMS_PER_PAGE,
+    AuthenticationError,
+    SearchResult,
+    parse_header,
+)
 
 
 # AF_UNIX socket not supported on windows yet, see https://github.com/python/cpython/issues/77589
@@ -239,7 +245,7 @@ class RequestTestCase(unittest.TestCase):
             2,
         ),
     )
-    def _request_valid(
+    def _request_valid_raw(
         self,
         url,
         mock_search,
@@ -260,6 +266,22 @@ class RequestTestCase(unittest.TestCase):
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
         self.assertEqual(200, response.status_code)
+
+        return response
+
+    def _request_valid(
+        self,
+        url,
+        expected_search_kwargs=None,
+        protocol="GET",
+        post_data=None,
+    ):
+        response = self._request_valid_raw(
+            url,
+            expected_search_kwargs=expected_search_kwargs,
+            protocol=protocol,
+            post_data=post_data,
+        )
 
         # Assert response format is GeoJSON
         return geojson.loads(response.content.decode("utf-8"))
@@ -313,8 +335,25 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_not_found(self):
-        """A request to eodag server with a not supported product type must return a 404 HTTP error code"""  # noqa
+        """A request to eodag server with a not supported product type must return a 404 HTTP error code"""
         self._request_not_found("search?collections=ZZZ&bbox=0,43,1,44")
+
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.search",
+        autospec=True,
+        side_effect=AuthenticationError("you are no authorized"),
+    )
+    def test_auth_error(self, mock_search):
+        """A request to eodag server raising a Authentication error must return a 401 HTTP error code"""
+        response = self.app.get(
+            f"search?collections={self.tested_product_type}", follow_redirects=True
+        )
+        response_content = json.loads(response.content.decode("utf-8"))
+
+        self.assertEqual(401, response.status_code)
+        self.assertIn("description", response_content)
+        self.assertIn("AuthenticationError", response_content["description"])
+        self.assertIn("you are no authorized", response_content["description"])
 
     def test_filter(self):
         """latestIntersect filter should only keep the latest products once search area is fully covered"""
@@ -343,6 +382,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(len(result2.features), 1)
 
     def test_date_search(self):
+        """Search through eodag server /search endpoint using dates filering should return a valid response"""
         self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
@@ -357,6 +397,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_date_search_from_items(self):
+        """Search through eodag server collection/items endpoint using dates filering should return a valid response"""
         self._request_valid(
             f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
             expected_search_kwargs=dict(
@@ -381,6 +422,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_date_search_from_catalog_items(self):
+        """Search through eodag server catalog/items endpoint using dates filering should return a valid response"""
         results = self._request_valid(
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
             expected_search_kwargs=dict(
@@ -432,6 +474,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(len(results.features), 0)
 
     def test_catalog_browse(self):
+        """Browsing catalogs through eodag server should return a valid response"""
         result = self._request_valid(
             f"catalogs/{self.tested_product_type}/year/2018/month/01/day"
         )
@@ -440,7 +483,35 @@ class RequestTestCase(unittest.TestCase):
             [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
         )
 
+    def test_search_item_id_from_catalog(self):
+        """Search by id through eodag server /catalog endpoint should return a valid response"""
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/items/foo",
+            expected_search_kwargs={
+                "id": "foo",
+                "productType": self.tested_product_type,
+            },
+        )
+
+    def test_search_item_id_from_collection(self):
+        """Search by id through eodag server /collection endpoint should return a valid response"""
+        self._request_valid(
+            f"collections/{self.tested_product_type}/items/foo",
+            expected_search_kwargs={
+                "id": "foo",
+                "productType": self.tested_product_type,
+            },
+        )
+
+    def test_collection(self):
+        """Requesting a collection through eodag server should return a valid response"""
+        result = self._request_valid(f"collections/{self.tested_product_type}")
+        self.assertEqual(result["id"], self.tested_product_type)
+        for link in result["links"]:
+            self.assertIn(link["rel"], ["self", "root", "items"])
+
     def test_cloud_cover_post_search(self):
+        """POST search with cloudCover filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
             protocol="POST",
@@ -460,7 +531,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_search_response_contains_pagination_info(self):
-        """Responses to valid search requests must return a geojson with pagination info in properties"""  # noqa
+        """Responses to valid search requests must return a geojson with pagination info in properties"""
         response = self._request_valid(f"search?collections={self.tested_product_type}")
         self.assertIn("numberMatched", response)
         self.assertIn("numberReturned", response)
@@ -515,7 +586,7 @@ class RequestTestCase(unittest.TestCase):
         return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
     )
     def test_list_product_types_nok(self, list_pt):
-        """A request for product types with a not supported filter must return all product types"""  # noqa
+        """A request for product types with a not supported filter must return all product types"""
         url = "/collections?platform=gibberish"
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
@@ -529,12 +600,73 @@ class RequestTestCase(unittest.TestCase):
             ],
         )
 
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.download",
+        autospec=True,
+    )
+    def test_download_item_from_catalog(self, mock_download):
+        """Download through eodag server catalog should return a valid response"""
+        # download returns a folder that must be zipped
+        tmp_dl_dir = TemporaryDirectory()
+        mock_download.return_value = tmp_dl_dir.name
+        expected_file = f"{tmp_dl_dir.name}.zip"
+
+        response = self._request_valid_raw(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        mock_download.assert_called_once()
+
+        header_content_disposition = parse_header(
+            response.headers["content-disposition"]
+        )
+        response_filename = header_content_disposition.get_param("filename", None)
+        self.assertEqual(response_filename, os.path.basename(expected_file))
+        self.assertTrue(os.path.isfile(expected_file))
+
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.download",
+        autospec=True,
+    )
+    def test_download_item_from_collection(self, mock_download):
+        """Download through eodag server catalog should return a valid response"""
+        # download returns a file that must be returned as is
+        tmp_dl_dir = TemporaryDirectory()
+        expected_file = f"{tmp_dl_dir.name}.tar"
+        Path(expected_file).touch()
+        mock_download.return_value = expected_file
+
+        response = self._request_valid_raw(
+            f"collections/{self.tested_product_type}/items/foo/download"
+        )
+        mock_download.assert_called_once()
+
+        header_content_disposition = parse_header(
+            response.headers["content-disposition"]
+        )
+        response_filename = header_content_disposition.get_param("filename", None)
+        self.assertEqual(response_filename, os.path.basename(expected_file))
+        self.assertTrue(os.path.isfile(expected_file))
+
     def test_conformance(self):
+        """Request to /conformance should return a valid response"""
         self._request_valid("conformance")
 
     def test_service_desc(self):
-        self._request_valid("api")
+        """Request to service_desc should return a valid response"""
+        service_desc = self._request_valid("api")
+        self.assertIn("openapi", service_desc.keys())
+        self.assertIn("eodag", service_desc["info"]["title"].lower())
+        self.assertGreater(len(service_desc["paths"].keys()), 0)
+        # test a 2nd call (ending slash must be ignored)
+        self._request_valid("api/")
 
     def test_service_doc(self):
+        """Request to service_doc should return a valid response"""
         response = self.app.get("api.html", follow_redirects=True)
         self.assertEqual(200, response.status_code)
+
+    def test_stac_extension_oseo(self):
+        """Request to oseo extension should return a valid response"""
+        response = self._request_valid("/extensions/oseo/json-schema/schema.json")
+        self.assertEqual(response["title"], "OpenSearch for Earth Observation")
+        self.assertEqual(response["allOf"][0]["$ref"], "#/definitions/oseo")
