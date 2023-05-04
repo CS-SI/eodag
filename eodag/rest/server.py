@@ -18,7 +18,6 @@
 import io
 import logging
 import os
-import sys
 import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
@@ -591,49 +590,3 @@ async def stac_catalogs(catalogs, request: Request):
 
 
 app.include_router(router)
-
-
-def main():
-    """Launch the server"""
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="""Script for starting EODAG server""", epilog=""""""
-    )
-    parser.add_argument(
-        "-d", "--daemon", action="store_true", help="run in daemon mode"
-    )
-    parser.add_argument(
-        "-a",
-        "--all-addresses",
-        action="store_true",
-        help="run flask using IPv4 0.0.0.0 (all network interfaces), "
-        "otherwise bind to 127.0.0.1 (localhost). "
-        "This maybe necessary in systems that only run Flask",
-    )
-    args = parser.parse_args()
-
-    if args.all_addresses:
-        bind_host = "0.0.0.0"
-    else:
-        bind_host = "127.0.0.1"
-
-    if args.daemon:
-        pid = None
-        try:
-            pid = os.fork()
-        except OSError as e:
-            raise Exception("%s [%d]" % (e.strerror, e.errno))
-
-        if pid == 0:
-            os.setsid()
-            app.run(threaded=True, host=bind_host)
-        else:
-            sys.exit(0)
-    else:
-        # For development
-        app.run(debug=True, use_reloader=True)
-
-
-if __name__ == "__main__":
-    main()
