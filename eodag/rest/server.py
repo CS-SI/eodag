@@ -49,6 +49,7 @@ from eodag.rest.utils import (
 )
 from eodag.utils import parse_header, update_nested_dict
 from eodag.utils.exceptions import (
+    AuthenticationError,
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
@@ -223,6 +224,18 @@ async def handle_resource_not_found(request: Request, error):
         request,
         HTTPException(
             status_code=404,
+            detail=f"{type(error).__name__}: {str(error)}",
+        ),
+    )
+
+
+@app.exception_handler(AuthenticationError)
+async def handle_auth_error(request: Request, error):
+    """Unauthorized [401] errors handle"""
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=401,
             detail=f"{type(error).__name__}: {str(error)}",
         ),
     )
