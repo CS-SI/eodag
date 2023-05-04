@@ -18,21 +18,27 @@
 import io
 import logging
 import os
-import sys
 import traceback
+from contextlib import asynccontextmanager
 from distutils import dist
-from functools import wraps
+from json.decoder import JSONDecodeError
 
-import flask
-import geojson
 import pkg_resources
-from flasgger import Swagger
-from flask import abort, jsonify, make_response, request, send_file
+from fastapi import APIRouter as FastAPIRouter
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import FileResponse, ORJSONResponse
+from fastapi.types import Any, Callable, DecoratedCallable
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
     download_stac_item_by_id,
+    eodag_api_init,
     get_detailled_collections_list,
+    get_stac_api_version,
     get_stac_catalogs,
     get_stac_collection_by_id,
     get_stac_collections,
@@ -41,7 +47,9 @@ from eodag.rest.utils import (
     get_stac_item_by_id,
     search_stac_items,
 )
+from eodag.utils import parse_header, update_nested_dict
 from eodag.utils.exceptions import (
+    AuthenticationError,
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
@@ -52,182 +60,364 @@ from eodag.utils.exceptions import (
 
 logger = logging.getLogger("eodag.rest.server")
 
-app = flask.Flask(__name__)
 
-# eodag metadata
-distribution = pkg_resources.get_distribution("eodag")
-metadata_str = distribution.get_metadata(distribution.PKG_INFO)
-metadata_obj = dist.DistributionMetadata()
-metadata_obj.read_pkg_file(io.StringIO(metadata_str))
+class APIRouter(FastAPIRouter):
+    """API router"""
+
+    def api_route(
+        self, path: str, *, include_in_schema: bool = True, **kwargs: Any
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        """Creates API route decorator"""
+        if path == "/":
+            return super().api_route(
+                path, include_in_schema=include_in_schema, **kwargs
+            )
+
+        if path.endswith("/"):
+            path = path[:-1]
+        add_path = super().api_route(
+            path, include_in_schema=include_in_schema, **kwargs
+        )
+
+        alternate_path = path + "/"
+        add_alternate_path = super().api_route(
+            alternate_path, include_in_schema=False, **kwargs
+        )
+
+        def decorator(func: DecoratedCallable) -> DecoratedCallable:
+            add_alternate_path(func)
+            return add_path(func)
+
+        return decorator
+
+
+router = APIRouter()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """API init and tear-down"""
+    eodag_api_init()
+    yield
+
+
+app = FastAPI(lifespan=lifespan, title="EODAG", docs_url="/api.html")
 
 # conf from resources/stac_api.yml
 stac_api_config = load_stac_api_config()
-root_catalog = get_stac_catalogs(url="", fetch_providers=False)
-stac_api_version = stac_api_config["info"]["version"]
-stac_api_config["info"]["title"] = root_catalog["title"] + " / eodag"
-stac_api_config["info"]["description"] = (
-    root_catalog["description"]
-    + " (stac-api-spec {})".format(stac_api_version)
-    + "".join(
-        [
-            "\n - [{0}](/collections/{0}): {1}".format(pt["ID"], pt["abstract"])
-            for pt in get_detailled_collections_list(fetch_providers=False)
-        ]
+
+
+@router.get("/api", tags=["Capabilities"])
+def eodag_openapi():
+    """Customized openapi"""
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    # eodag metadata
+    distribution = pkg_resources.get_distribution("eodag")
+    metadata_str = distribution.get_metadata(distribution.PKG_INFO)
+    metadata_obj = dist.DistributionMetadata()
+    metadata_obj.read_pkg_file(io.StringIO(metadata_str))
+
+    root_catalog = get_stac_catalogs(url="", fetch_providers=False)
+    stac_api_version = get_stac_api_version()
+
+    openapi_schema = get_openapi(
+        title=f"{root_catalog['title']} / eodag",
+        version=getattr(metadata_obj, "version", None),
+        # description="This is a very custom OpenAPI schema",
+        routes=app.routes,
     )
+
+    # stac_api_config
+    update_nested_dict(openapi_schema["paths"], stac_api_config["paths"])
+    update_nested_dict(openapi_schema["components"], stac_api_config["components"])
+    openapi_schema["tags"] = stac_api_config["tags"]
+
+    detailled_collections_list = get_detailled_collections_list(fetch_providers=False)
+
+    openapi_schema["info"]["description"] = (
+        root_catalog["description"]
+        + " (stac-api-spec {})".format(stac_api_version)
+        + "<details><summary>Available collections / product types</summary>"
+        + "".join(
+            [
+                f"[{pt['ID']}](/collections/{pt['ID']} '{pt['title']}') - "
+                for pt in detailled_collections_list
+            ]
+        )[:-2]
+        + "</details>"
+    )
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = eodag_openapi
+
+# Cross-Origin Resource Sharing
+allowed_origins = os.getenv("EODAG_CORS_ALLOWED_ORIGINS")
+allowed_origins_list = allowed_origins.split(",") if allowed_origins else []
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-stac_api_config["info"]["version"] = getattr(
-    metadata_obj, "version", stac_api_config["info"]["version"]
-)
-stac_api_config["info"]["contact"]["name"] = "EODAG"
-stac_api_config["info"]["contact"]["url"] = getattr(
-    metadata_obj, "url", stac_api_config["info"]["contact"]["url"]
-)
-stac_api_config["title"] = root_catalog["title"] + " - service-doc"
-stac_api_config["specs"] = [
-    {
-        "endpoint": "service-desc",
-        "route": "/api",
-        "rule_filter": lambda rule: True,  # all in
-        "model_filter": lambda tag: True,  # all in
-    }
-]
-stac_api_config["static_url_path"] = "/service-static"
-stac_api_config["specs_route"] = "/service-doc/"
-stac_api_config.pop("servers", None)
 
 
-def run_swagger(app=None, config=None, merge=True, **kwargs):
-    """Run `flasgger.Swagger`.
-    Needs to be run once after `eodag.rest.server` module import.
+@app.middleware("http")
+async def forward_middleware(request: Request, call_next):
+    """Middleware that handles forward headers and sets request.state.url*"""
 
-    :param app: flask application that will run flasgger
-    :type app: :class:`~flask.Flask`
-    :param config: flasgger configuration
-    :type config: dict
-    :param merge: merge config with flasgger defaults
-    :type merge: bool
-    :param kwargs: keyword arguments passed to `flasgger.Swagger` constructor
-    :type kwargs: Any
-    :returns: running Swagger object
-    :rtype: :class:`~flasgger.Swagger`
-    """
-    return Swagger(app=app, config=config, merge=True, **kwargs)
+    forwarded_host = request.headers.get("x-forwarded-host", None)
+    forwarded_proto = request.headers.get("x-forwarded-proto", None)
 
+    if "forwarded" in request.headers:
+        header_forwarded = parse_header(request.headers["forwarded"])
+        forwarded_host = header_forwarded.get_param("host", None) or forwarded_host
+        forwarded_proto = header_forwarded.get_param("proto", None) or forwarded_proto
 
-def cross_origin(request_handler):
-    """Wraps a view to relax the need for csrf token"""
+    request.state.url_root = f"{forwarded_proto or request.url.scheme}://{forwarded_host or request.url.netloc}"
+    request.state.url = f"{request.state.url_root}{request.url.path}"
 
-    @wraps(request_handler)
-    def wrapper(*args, **kwargs):
-        resp = make_response(request_handler(*args, **kwargs))
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
-
-    return wrapper
+    response = await call_next(request)
+    return response
 
 
-@app.errorhandler(MisconfiguredError)
-@app.errorhandler(NoMatchingProductType)
-@app.errorhandler(UnsupportedProductType)
-@app.errorhandler(UnsupportedProvider)
-@app.errorhandler(ValidationError)
-def handle_invalid_usage(error):
+@app.exception_handler(StarletteHTTPException)
+async def default_exception_handler(request: Request, error):
+    """Default errors handle"""
+    description = (
+        getattr(error, "description", None)
+        or getattr(error, "detail", None)
+        or str(error)
+    )
+    return ORJSONResponse(
+        status_code=error.status_code,
+        content={"description": description},
+    )
+
+
+@app.exception_handler(MisconfiguredError)
+@app.exception_handler(NoMatchingProductType)
+@app.exception_handler(UnsupportedProductType)
+@app.exception_handler(UnsupportedProvider)
+@app.exception_handler(ValidationError)
+async def handle_invalid_usage(request: Request, error):
     """Invalid usage [400] errors handle"""
-    status_code = 400
-    response = jsonify(
-        {"code": status_code, "name": type(error).__name__, "description": str(error)}
-    )
-    response.status_code = status_code
     logger.warning(traceback.format_exc())
-    return response
-
-
-@app.errorhandler(RuntimeError)
-@app.errorhandler(Exception)
-def handle_internal_error(error):
-    """Internal [500] errors handle"""
-    status_code = 500
-    response = jsonify(
-        {"code": status_code, "name": type(error).__name__, "description": str(error)}
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=400,
+            detail=f"{type(error).__name__}: {str(error)}",
+        ),
     )
-    response.status_code = status_code
-    logger.error(traceback.format_exc())
-    return response
 
 
-@app.errorhandler(NotAvailableError)
-@app.errorhandler(404)
-def handle_resource_not_found(e):
+@app.exception_handler(NotAvailableError)
+async def handle_resource_not_found(request: Request, error):
     """Not found [404] errors handle"""
-    return jsonify(error=str(e)), 404
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=404,
+            detail=f"{type(error).__name__}: {str(error)}",
+        ),
+    )
 
 
-@app.route("/conformance", methods=["GET"])
-@cross_origin
-def conformance():
-    """STAC conformance"""
+@app.exception_handler(AuthenticationError)
+async def handle_auth_error(request: Request, error):
+    """Unauthorized [401] errors handle"""
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=401,
+            detail=f"{type(error).__name__}: {str(error)}",
+        ),
+    )
 
-    response = get_stac_conformance()
 
-    return jsonify(response), 200
-
-
-@app.route("/", methods=["GET"])
-@cross_origin
-def catalogs_root():
+@router.get("/", tags=["Capabilities"])
+def catalogs_root(request: Request):
     """STAC catalogs root"""
 
     response = get_stac_catalogs(
-        url=request.url.split("?")[0],
-        root=request.url_root,
+        url=request.state.url,
+        root=request.state.url_root,
         catalogs=[],
-        provider=request.args.to_dict().get("provider", None),
+        provider=request.query_params.get("provider", None),
     )
 
-    return jsonify(response), 200
+    return jsonable_encoder(response)
 
 
-@app.route("/<path:catalogs>", methods=["GET"])
-@cross_origin
-def stac_catalogs(catalogs):
-    """Describe the given catalog and list available sub-catalogs
-    ---
-    tags:
-      - Capabilities
-    parameters:
-      - name: catalogs
-        in: path
-        required: true
-        description: |-
-            The catalog's path.
+@router.get("/conformance", tags=["Capabilities"])
+def conformance():
+    """STAC conformance"""
+    response = get_stac_conformance()
 
-            For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
-        schema:
-            type: string
-    responses:
-        200:
-            description: The catalog's description
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/collection'
-        '500':
-            $ref: '#/components/responses/ServerError'
+    return jsonable_encoder(response)
+
+
+@router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
+def stac_extension_oseo(request: Request):
+    """STAC OGC / OpenSearch extension for EO"""
+    response = get_stac_extension_oseo(url=request.state.url)
+
+    return jsonable_encoder(response)
+
+
+@router.get("/search", tags=["STAC"])
+@router.post("/search", tags=["STAC"])
+async def stac_search(request: Request):
+    """STAC collections items"""
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
+
+    response = search_stac_items(
+        url=url, arguments=arguments, root=url_root, provider=provider
+    )
+
+    resp = ORJSONResponse(
+        content=response, status_code=200, media_type="application/json"
+    )
+    return resp
+
+
+@router.get("/collections", tags=["Capabilities"])
+async def collections(request: Request):
+    """STAC collections
+
+    Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
     """
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
-    response = get_stac_catalogs(
-        url=request.url.split("?")[0],
-        root=request.url_root,
-        catalogs=catalogs,
-        provider=request.args.to_dict().get("provider", None),
+    response = get_stac_collections(
+        url=url,
+        root=url_root,
+        arguments=arguments,
+        provider=provider,
     )
-    return jsonify(response), 200
+
+    return jsonable_encoder(response)
 
 
-@app.route("/<path:catalogs>/items", methods=["GET"])
-@cross_origin
-def stac_catalogs_items(catalogs):
+@router.get("/collections/{collection_id}/items", tags=["Data"])
+async def stac_collections_items(collection_id, request: Request):
+    """STAC collections items"""
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
+
+    response = search_stac_items(
+        url=url,
+        arguments=arguments,
+        root=url_root,
+        provider=provider,
+        catalogs=[collection_id],
+    )
+
+    return jsonable_encoder(response)
+
+
+@router.get("/collections/{collection_id}", tags=["Capabilities"])
+async def collection_by_id(collection_id, request: Request):
+    """STAC collection by id"""
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
+
+    response = get_stac_collection_by_id(
+        url=url,
+        root=url_root,
+        collection_id=collection_id,
+        provider=provider,
+    )
+
+    return jsonable_encoder(response)
+
+
+@router.get("/collections/{collection_id}/items/{item_id}", tags=["Data"])
+async def stac_collections_item(collection_id, item_id, request: Request):
+    """STAC collection item by id"""
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
+
+    response = get_stac_item_by_id(
+        url=url,
+        item_id=item_id,
+        root=url_root,
+        catalogs=[collection_id],
+        provider=provider,
+    )
+
+    if response:
+        return jsonable_encoder(response)
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail="No item found matching `{}` id in collection `{}`".format(
+                item_id, collection_id
+            ),
+        )
+
+
+@router.get("/collections/{collection_id}/items/{item_id}/download", tags=["Data"])
+async def stac_collections_item_download(collection_id, item_id, request: Request):
+    """STAC collection item local download"""
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
+
+    response = download_stac_item_by_id(
+        catalogs=[collection_id],
+        item_id=item_id,
+        provider=provider,
+    )
+    filename = os.path.basename(response)
+
+    return FileResponse(response, filename=filename)
+
+
+@router.get("/catalogs/{catalogs:path}/items", tags=["Data"])
+async def stac_catalogs_items(catalogs, request: Request):
     """Fetch catalog's features
     ---
     tags:
@@ -258,25 +448,29 @@ def stac_catalogs_items(catalogs):
         '500':
             $ref: '#/components/responses/ServerError
     '"""
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
-    arguments = request.args.to_dict()
-    provider = arguments.pop("provider", None)
+
     response = search_stac_items(
-        url=request.url,
+        url=url,
         arguments=arguments,
-        root=request.url_root,
+        root=url_root,
         catalogs=catalogs,
         provider=provider,
     )
-    return app.response_class(
-        response=geojson.dumps(response), status=200, mimetype="application/json"
-    )
+    return jsonable_encoder(response)
 
 
-@app.route("/<path:catalogs>/items/<item_id>", methods=["GET"])
-@cross_origin
-def stac_catalogs_item(catalogs, item_id):
+@router.get("/catalogs/{catalogs:path}/items/{item_id}", tags=["Data"])
+async def stac_catalogs_item(catalogs, item_id, request: Request):
     """Fetch catalog's single features
     ---
     tags:
@@ -310,202 +504,99 @@ def stac_catalogs_item(catalogs, item_id):
         '500':
           $ref: '#/components/responses/ServerError'
     """
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
     response = get_stac_item_by_id(
-        url=request.url.split("?")[0],
+        url=url,
         item_id=item_id,
-        root=request.url_root,
+        root=url_root,
         catalogs=catalogs,
-        provider=request.args.to_dict().get("provider", None),
+        provider=provider,
     )
 
     if response:
-        return app.response_class(
-            response=geojson.dumps(response), status=200, mimetype="application/json"
-        )
+        return jsonable_encoder(response)
     else:
-        abort(
-            404,
-            "No item found matching `{}` id in catalog `{}`".format(item_id, catalogs),
+        raise HTTPException(
+            status_code=404,
+            detail="No item found matching `{}` id in catalog `{}`".format(
+                item_id, catalogs
+            ),
         )
 
 
-@app.route("/<path:catalogs>/items/<item_id>/download", methods=["GET"])
-@cross_origin
-def stac_catalogs_item_download(catalogs, item_id):
+@router.get("/catalogs/{catalogs:path}/items/{item_id}/download", tags=["Data"])
+async def stac_catalogs_item_download(catalogs, item_id, request: Request):
     """STAC item local download"""
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
     response = download_stac_item_by_id(
         catalogs=catalogs,
         item_id=item_id,
-        provider=request.args.to_dict().get("provider", None),
+        provider=provider,
     )
     filename = os.path.basename(response)
 
-    return send_file(response, as_attachment=True, attachment_filename=filename)
+    return FileResponse(response, filename=filename)
 
 
-@app.route("/collections/", methods=["GET"])
-@app.route("/collections", methods=["GET"])
-@cross_origin
-def collections():
-    """STAC collections
+@router.get("/catalogs/{catalogs:path}", tags=["Capabilities"])
+async def stac_catalogs(catalogs, request: Request):
+    """Describe the given catalog and list available sub-catalogs
+    ---
+    tags:
+      - Capabilities
+    parameters:
+      - name: catalogs
+        in: path
+        required: true
+        description: |-
+            The catalog's path.
 
-    Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
+            For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
+        schema:
+            type: string
+    responses:
+        200:
+            description: The catalog's description
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/collection'
+        '500':
+            $ref: '#/components/responses/ServerError'
     """
-    arguments = request.args.to_dict()
+    url = request.state.url
+    url_root = request.state.url_root
+    try:
+        body = await request.json()
+    except JSONDecodeError:
+        body = {}
+    arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
-    response = get_stac_collections(
-        url=request.url.split("?")[0],
-        root=request.url_root,
-        arguments=arguments,
+
+    catalogs = catalogs.strip("/").split("/")
+    response = get_stac_catalogs(
+        url=url,
+        root=url_root,
+        catalogs=catalogs,
         provider=provider,
     )
-
-    return jsonify(response), 200
-
-
-@app.route("/collections/<collection_id>", methods=["GET"])
-@cross_origin
-def collection_by_id(collection_id):
-    """STAC collection by id"""
-
-    response = get_stac_collection_by_id(
-        url=request.url.split("?")[0],
-        root=request.url_root,
-        collection_id=collection_id,
-        provider=request.args.to_dict().get("provider", None),
-    )
-
-    return jsonify(response), 200
+    return jsonable_encoder(response)
 
 
-@app.route("/collections/<collection_id>/items", methods=["GET"])
-@cross_origin
-def stac_collections_items(collection_id):
-    """STAC collections items"""
-
-    arguments = request.args.to_dict()
-    provider = arguments.pop("provider", None)
-    response = search_stac_items(
-        url=request.url,
-        arguments=arguments,
-        root=request.url_root,
-        provider=provider,
-        catalogs=[collection_id],
-    )
-    return app.response_class(
-        response=geojson.dumps(response), status=200, mimetype="application/json"
-    )
-
-
-@app.route("/search", methods=["GET", "POST"])
-@cross_origin
-def stac_search():
-    """STAC collections items"""
-
-    if request.get_json(silent=True, force=True):
-        arguments = dict(request.args.to_dict(), **request.get_json(force=True))
-    else:
-        arguments = request.args.to_dict()
-
-    provider = arguments.pop("provider", None)
-    response = search_stac_items(
-        url=request.url, arguments=arguments, root=request.url_root, provider=provider
-    )
-    return app.response_class(
-        response=geojson.dumps(response), status=200, mimetype="application/json"
-    )
-
-
-@app.route("/extensions/oseo/json-schema/schema.json", methods=["GET"])
-@cross_origin
-def stac_extension_oseo():
-    """STAC OGC / OpenSearch extension for EO"""
-
-    response = get_stac_extension_oseo(url=request.url.split("?")[0])
-
-    return app.response_class(
-        response=geojson.dumps(response), status=200, mimetype="application/json"
-    )
-
-
-@app.route("/collections/<collection_id>/items/<item_id>", methods=["GET"])
-@cross_origin
-def stac_collections_item(collection_id, item_id):
-    """STAC collection item by id"""
-
-    response = get_stac_item_by_id(
-        url=request.url.split("?")[0],
-        item_id=item_id,
-        root=request.url_root,
-        catalogs=[collection_id],
-        provider=request.args.to_dict().get("provider", None),
-    )
-
-    return app.response_class(
-        response=geojson.dumps(response), status=200, mimetype="application/json"
-    )
-
-
-@app.route("/collections/<collection_id>/items/<item_id>/download", methods=["GET"])
-@cross_origin
-def stac_collections_item_download(collection_id, item_id):
-    """STAC collection item local download"""
-
-    response = download_stac_item_by_id(
-        catalogs=[collection_id],
-        item_id=item_id,
-        provider=request.args.to_dict().get("provider", None),
-    )
-    filename = os.path.basename(response)
-
-    return send_file(response, as_attachment=True, attachment_filename=filename)
-
-
-def main():
-    """Launch the server"""
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="""Script for starting EODAG server""", epilog=""""""
-    )
-    parser.add_argument(
-        "-d", "--daemon", action="store_true", help="run in daemon mode"
-    )
-    parser.add_argument(
-        "-a",
-        "--all-addresses",
-        action="store_true",
-        help="run flask using IPv4 0.0.0.0 (all network interfaces), "
-        "otherwise bind to 127.0.0.1 (localhost). "
-        "This maybe necessary in systems that only run Flask",
-    )
-    args = parser.parse_args()
-
-    if args.all_addresses:
-        bind_host = "0.0.0.0"
-    else:
-        bind_host = "127.0.0.1"
-
-    if args.daemon:
-        pid = None
-        try:
-            pid = os.fork()
-        except OSError as e:
-            raise Exception("%s [%d]" % (e.strerror, e.errno))
-
-        if pid == 0:
-            os.setsid()
-            app.run(threaded=True, host=bind_host)
-        else:
-            sys.exit(0)
-    else:
-        # For development
-        app.run(debug=True, use_reloader=True)
-
-
-if __name__ == "__main__":
-    main()
+app.include_router(router)

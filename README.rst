@@ -74,7 +74,7 @@ EODAG is available on `PyPI <https://pypi.org/project/eodag/>`_:
 
    python -m pip install eodag
 
-And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-forge/eodag>`_:
+And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-forge/eodag>`_:
 
 .. code-block:: bash
 
@@ -124,17 +124,19 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
 
       Start eodag HTTP server
 
+      Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-
+      Origin Resource Sharing allowed origins as comma-separated URLs (e.g.
+      'http://somewhere,htttp://somewhere.else').
+
     Options:
       -f, --config PATH   File path to the user configuration file with its
-                          credentials
-      -d, --daemon TEXT   run in daemon mode
-      -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
-                          otherwise bind to 127.0.0.1 (localhost). This maybe
-                          necessary in systems that only run Flask  [default:
-                          False]
+                          credentials, default is ~/.config/eodag/eodag.yml
+      -l, --locs PATH     File path to the location shapefiles configuration file
+      -d, --daemon        run in daemon mode
+      -w, --world         run uvicorn using IPv4 0.0.0.0 (all network interfaces),
+                          otherwise bind to 127.0.0.1 (localhost).
       -p, --port INTEGER  The port on which to listen  [default: 5000]
-      --debug             Run in debug mode (for development purpose)  [default:
-                          False]
+      --debug             Run in debug mode (for development purpose)
       --help              Show this message and exit.
 
     # run server
@@ -147,13 +149,6 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
     "S1_SAR_SLC"
     "S2_MSI_L1C"
     "S2_MSI_L2A"
-    "S3_EFR"
-    "S3_ERR"
-    "S3_LAN"
-    "S3_OLCI_L2LFR"
-    "S3_OLCI_L2LRR"
-    "S3_SLSTR_L1RBT"
-    "S3_SLSTR_L2LST"
 
     # search for items
     $ curl "http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25" \
@@ -161,17 +156,17 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
     6
 
     # browse for items
-    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
     | jq ".context.matched"
     9
 
     # get download link
-    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
     | jq ".features[0].assets.downloadLink.href"
-    "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
 
     # download
-    $ wget "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    $ wget "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
 
 
 ``eodag-server`` is available on `https://hub.docker.com/r/csspace/eodag-server <https://hub.docker.com/r/csspace/eodag-server>`_:

@@ -84,7 +84,7 @@
     "assets": {
         "downloadLink": {
             "title": "Download link",
-            "href": "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2018/items/S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050/download",
+            "href": "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2018/items/S2A_MSIL1C_20181231T141041_N0207_R110_T21NYF_20181231T155050/download",
             "type": "application/zip"
         },
         "thumbnail": {

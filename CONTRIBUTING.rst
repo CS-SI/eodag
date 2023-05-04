@@ -90,7 +90,7 @@ The documentation of EODAG consists of:
   `Markdown markup language <https://jupyter-notebook.readthedocs.io/en/latest/examples/Notebook/Working%20With%20Markdown%20Cells.html>`_
   and Python code
 
-`Sphinx <https://www.sphinx-doc.org/en/master/>`_ is used to create the website from these files.
+`Sphinx <https://www.sphinx-doc.org/en/master/>`_ is used to create the website from these files.
 
 `nbsphinx <https://nbsphinx.readthedocs.io/en/0.8.3/>`_ is a Sphinx extension that can parse Jupyter Notebooks. It can also execute notebooks.
 The notebooks used to document EODAG are not executed by default (see the `conf.py` file), to avoid
@@ -119,7 +119,7 @@ If not, the outputs and the widgets (e.g. progress bar) won't be displayed in th
    `sphinx-autobuild <https://pypi.org/project/sphinx-autobuild/>`_ can be installed to rebuild Sphinx documentation on changes, with live-reload in the browser.
    Run it from the repository root with ``sphinx-autobuild docs docs/_build/html/``
 
-`Read the Docs <https://readthedocs.org/>`_ is a service that uses Sphinx to build a documentation website,
+`Read the Docs <https://readthedocs.org/>`_ is a service that uses Sphinx to build a documentation website,
 which it then hosts for free for open source projects, such as EODAG.
 
 Release EODAG

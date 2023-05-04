@@ -35,7 +35,7 @@ landing_page:
       href: "{catalog[root]}/api"
     - rel: service-doc
       type: "text/html"
-      href: "{catalog[root]}/service-doc"
+      href: "{catalog[root]}/api.html"
     - rel: conformance
       type: "application/json"
       href: "{catalog[root]}/conformance"

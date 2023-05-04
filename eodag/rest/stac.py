@@ -22,6 +22,7 @@ import re
 from collections import defaultdict
 
 import dateutil.parser
+import geojson
 import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
@@ -40,6 +41,7 @@ from eodag.utils import (
     jsonpath_parse_dict_items,
     string_to_jsonpath,
     update_nested_dict,
+    urljoin,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -51,6 +53,7 @@ from eodag.utils.exceptions import (
 logger = logging.getLogger("eodag.rest.stac")
 
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
+STAC_CATALOGS_PREFIX = "catalogs"
 
 
 class StacCommon(object):
@@ -145,7 +148,7 @@ class StacCommon(object):
         :returns: STAC data dictionnary
         :rtype: dict
         """
-        return self.data
+        return geojson.loads(geojson.dumps(self.data))
 
     __geo_interface__ = property(as_dict)
 
@@ -319,7 +322,7 @@ class StacItem(StacCommon):
         items["features"] = self.__get_item_list(search_results, catalog)
 
         self.update_data(items)
-        return self.as_dict()
+        return geojson.loads(geojson.dumps(self.data))
 
     def __filter_item_model_properties(self, item_model, product_type):
         """Filter item model depending on product type metadata and its extensions.
@@ -644,7 +647,7 @@ class StacCatalog(StacCommon):
         catalogs=[],
         fetch_providers=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(StacCatalog, self).__init__(
             url=url,
@@ -1136,7 +1139,9 @@ class StacCatalog(StacCommon):
                 [
                     {
                         "rel": "child",
-                        "href": self.url + "/" + product_type["ID"],
+                        "href": urljoin(
+                            self.url, f"{STAC_CATALOGS_PREFIX}/{product_type['ID']}"
+                        ),
                         "title": product_type["ID"],
                     }
                     for product_type in product_types_list
