@@ -23,7 +23,6 @@ from contextlib import asynccontextmanager
 from distutils import dist
 from json.decoder import JSONDecodeError
 
-import geojson
 import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
@@ -254,11 +253,9 @@ def conformance():
 @router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
 def stac_extension_oseo(request: Request):
     """STAC OGC / OpenSearch extension for EO"""
-    response = get_stac_extension_oseo(url=request.url.split("?")[0])
+    response = get_stac_extension_oseo(url=request.state.url)
 
-    return app.response_class(
-        response=geojson.dumps(response), status=200, mimetype="application/json"
-    )
+    return jsonable_encoder(response)
 
 
 @router.get("/search", tags=["STAC"])
