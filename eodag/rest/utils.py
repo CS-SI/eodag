@@ -589,8 +589,6 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
 
-    eodag_api.providers_config[product.provider].download.extract = False
-
     product_path = eodag_api.download(product, extract=False)
 
     if os.path.isdir(product_path):
