@@ -397,12 +397,10 @@ async def stac_collections_item(collection_id, item_id, request: Request):
 
 
 @router.get("/collections/{collection_id}/items/{item_id}/download", tags=["Data"])
-async def stac_collections_item_download(collection_id, item_id, request: Request):
+def stac_collections_item_download(collection_id, item_id, request: Request):
     """STAC collection item local download"""
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
+
+    body = {}
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
 
