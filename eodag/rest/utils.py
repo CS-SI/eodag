@@ -232,7 +232,7 @@ def get_geometry(arguments):
 
     geom = None
 
-    if "bbox" in arguments or "box" in arguments:
+    if ("bbox" in arguments and arguments["bbox"] is not None) or ("box" in arguments and arguments["box"] is not None):
         # get bbox
         request_bbox = arguments.pop("bbox", None) or arguments.pop("box", None)
         if request_bbox and isinstance(request_bbox, str):
@@ -688,7 +688,7 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
         arguments.pop("ids")
 
     # get datetime
-    if "datetime" in arguments.keys():
+    if "datetime" in arguments.keys() and arguments["datetime"] is not None:
         dtime_split = arguments.get("datetime", "").split("/")
         if len(dtime_split) > 1:
             arguments["dtstart"] = (

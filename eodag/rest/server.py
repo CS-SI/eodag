@@ -22,6 +22,7 @@ import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
 from json.decoder import JSONDecodeError
+from typing import Union
 
 import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
@@ -32,6 +33,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, ORJSONResponse
 from fastapi.types import Any, Callable, DecoratedCallable
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from pydantic import BaseModel
 
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
@@ -271,16 +273,25 @@ def stac_extension_oseo(request: Request):
     return jsonable_encoder(response)
 
 
+class SearchBody(BaseModel):
+    provider: str
+    collections: str
+    datetime: Union[str, None] = None
+    bbox: Union[str, None] = None
+    limit: Union[int, None] = 10
+    page: Union[int, None] = 1
+
 @router.get("/search", tags=["STAC"])
 @router.post("/search", tags=["STAC"])
-async def stac_search(request: Request):
+def stac_search(request: Request, search_body: SearchBody = None):
     """STAC collections items"""
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
+
+    if search_body is None:
         body = {}
+    else:
+        body = vars(search_body)
 
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
@@ -288,7 +299,6 @@ async def stac_search(request: Request):
     response = search_stac_items(
         url=url, arguments=arguments, root=url_root, provider=provider
     )
-
     resp = ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
     )
@@ -296,17 +306,15 @@ async def stac_search(request: Request):
 
 
 @router.get("/collections", tags=["Capabilities"])
-async def collections(request: Request):
+def collections(request: Request):
     """STAC collections
 
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
     """
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
+
+    body = {}
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
 
@@ -316,19 +324,16 @@ async def collections(request: Request):
         arguments=arguments,
         provider=provider,
     )
-
     return jsonable_encoder(response)
 
 
 @router.get("/collections/{collection_id}/items", tags=["Data"])
-async def stac_collections_items(collection_id, request: Request):
+def stac_collections_items(collection_id, request: Request):
     """STAC collections items"""
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
+
+    body = {}
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
 
@@ -339,19 +344,16 @@ async def stac_collections_items(collection_id, request: Request):
         provider=provider,
         catalogs=[collection_id],
     )
-
     return jsonable_encoder(response)
 
 
 @router.get("/collections/{collection_id}", tags=["Capabilities"])
-async def collection_by_id(collection_id, request: Request):
+def collection_by_id(collection_id, request: Request):
     """STAC collection by id"""
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
+
+    body = {}
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
 
@@ -370,10 +372,8 @@ async def stac_collections_item(collection_id, item_id, request: Request):
     """STAC collection item by id"""
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
+
+    body = {}
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
 
