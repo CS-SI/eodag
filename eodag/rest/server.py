@@ -275,7 +275,7 @@ def stac_extension_oseo(request: Request):
 
 class SearchBody(BaseModel):
     provider: str
-    collections: str
+    collections: list[str]
     datetime: Union[str, None] = None
     bbox: Union[str, None] = None
     limit: Union[int, None] = 10
