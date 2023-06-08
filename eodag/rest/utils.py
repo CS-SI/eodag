@@ -589,17 +589,19 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
 
-    product_path = eodag_api.download(product, extract=False)
+    return eodag_api.download_zip(product)
 
-    if os.path.isdir(product_path):
-        zipped_product_path = f"{product_path}.zip"
-        logger.debug(
-            f"Building archive for downloaded product path {zipped_product_path}"
-        )
-        make_archive(product_path, "zip", product_path)
-        return zipped_product_path
-    else:
-        return product_path
+    # product_path = eodag_api.download(product, extract=False)
+    #
+    # if os.path.isdir(product_path):
+    #     zipped_product_path = f"{product_path}.zip"
+    #     logger.debug(
+    #         f"Building archive for downloaded product path {zipped_product_path}"
+    #     )
+    #     make_archive(product_path, "zip", product_path)
+    #     return zipped_product_path
+    # else:
+    #     return product_path
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):

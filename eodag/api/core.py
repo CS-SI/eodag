@@ -1801,6 +1801,15 @@ class EODataAccessGateway(object):
         if product.location.startswith("file:/"):
             logger.info("Local product detected. Download skipped")
             return uri_to_path(product.location)
+        self._setup_downloader(product)
+        path = product.download(
+            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
+        )
+
+        return path
+
+
+    def _setup_downloader(self, product):
         if product.downloader is None:
             auth = product.downloader_auth
             if auth is None:
@@ -1808,11 +1817,19 @@ class EODataAccessGateway(object):
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )
-        path = product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
-        )
 
-        return path
+    def download_zip(
+        self,
+        product,
+        progress_callback=None,
+        **kwargs
+    ):
+        self._setup_downloader(product)
+        return product.download_zip(progress_callback, **kwargs)
+
+
+
+
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration
