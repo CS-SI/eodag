@@ -738,22 +738,7 @@ class HTTPDownload(Download):
                 try:
                     stream.raise_for_status()
                 except RequestException as e:
-                    # check if error is identified as auth_error in provider conf
-                    auth_errors = getattr(self.config, "auth_error_code", [None])
-                    if not isinstance(auth_errors, list):
-                        auth_errors = [auth_errors]
-                    if e.response.status_code in auth_errors:
-                        raise AuthenticationError(
-                            "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                            % (
-                                e.response.status_code,
-                                e.response.text.strip(),
-                                self.provider,
-                            )
-                        )
-                    else:
-                        logger.warning("Unexpected error: %s" % e)
-                        logger.warning("Skipping %s" % asset["href"])
+                    self._handle_asset_exception(e, asset)
                     error_messages.add(str(e))
                 else:
                     asset_rel_path_parts = (
@@ -820,6 +805,82 @@ class HTTPDownload(Download):
         logger.debug("Download recorded in %s", record_filename)
 
         return fs_dir_path
+
+
+    def _handle_asset_exception(self, e, asset):
+        # check if error is identified as auth_error in provider conf
+        auth_errors = getattr(self.config, "auth_error_code", [None])
+        if not isinstance(auth_errors, list):
+            auth_errors = [auth_errors]
+        if e.response.status_code in auth_errors:
+            raise AuthenticationError(
+                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                % (
+                    e.response.status_code,
+                    e.response.text.strip(),
+                    self.provider,
+                )
+            )
+        else:
+            logger.warning("Unexpected error: %s" % e)
+            logger.warning("Skipping %s" % asset["href"])
+
+
+    def direct_download_assets(
+            self,
+            product,
+            auth=None,
+            progress_callback=None,
+            **kwargs
+    ):
+        if progress_callback is None:
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+        return StreamingResponse(self._stream_assets(product, auth, progress_callback, **kwargs))
+
+
+    def _stream_assets(
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        **kwargs
+    ):
+        assets_values = [
+            a for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
+
+        # get extra parameters to pass to the query
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
+        )
+        progress_callback.reset(total=len(assets_values))
+        error_messages = set()
+        for asset in assets_values:
+            with requests.get(
+                asset["href"],
+                stream=True,
+                auth=auth,
+                params=params,
+                headers=USER_AGENT,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            ) as stream:
+                try:
+                    stream.raise_for_status()
+                except RequestException as e:
+                    self._handle_asset_exception(e, asset)
+                    error_messages.add(str(e))
+                else:
+                    for chunk in stream.iter_content(chunk_size=64 * 1024):
+                        if chunk:
+                            progress_callback(1)
+                            yield chunk
+            separator = ("EOF" + "\n").encode("UTF-8")
+            filename = asset["href"].split("/")[-1] + "\n"
+            yield separator
+            yield filename.encode("UTF-8")
 
     def download_all(
         self,

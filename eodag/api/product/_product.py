@@ -309,7 +309,7 @@ class EOProduct(object):
         # resolve remote location if needed with downloader configuration
         self.remote_location = self.remote_location % vars(self.downloader.config)
 
-        close_progress_callback = self._init_progress_bar(progress_callback)
+        progress_callback, close_progress_callback = self._init_progress_bar(progress_callback)
 
         fs_path = self.downloader.download(
             self,
@@ -353,7 +353,7 @@ class EOProduct(object):
             progress_callback.unit_scale = True
         progress_callback.desc = str(self.properties.get("id", ""))
         progress_callback.refresh()
-        return close_progress_callback
+        return [progress_callback, close_progress_callback]
 
     def download_zip(
         self,
@@ -371,13 +371,34 @@ class EOProduct(object):
             if self.downloader_auth is not None
             else self.downloader_auth
         )
-        self._init_progress_bar(progress_callback)
+        progress_callback = self._init_progress_bar(progress_callback)[0]
         return self.downloader.download_zip(
             self,
             auth,
             progress_callback,
             **kwargs
         )
+
+
+    def download_assets(
+        self,
+        progress_callback=None,
+        **kwargs
+    ):
+
+        if self.downloader is None:
+            raise RuntimeError(
+                "EO product is unable to download itself due to lacking of a "
+                "download plugin"
+            )
+
+        auth = (
+            self.downloader_auth.authenticate()
+            if self.downloader_auth is not None
+            else self.downloader_auth
+        )
+        progress_callback = self._init_progress_bar(progress_callback)[0]
+        return self.downloader.direct_download_assets(self, auth, progress_callback, **kwargs)
 
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):

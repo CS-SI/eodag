@@ -1818,17 +1818,29 @@ class EODataAccessGateway(object):
                 self._plugins_manager.get_download_plugin(product), auth
             )
 
-    def download_zip(
+
+    def download_stream(
         self,
         product,
         progress_callback=None,
         **kwargs
     ):
         self._setup_downloader(product)
-        return product.download_zip(progress_callback, **kwargs)
+        assets_urls = [
+            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
 
-
-
+        if not assets_urls:
+            self.providers_config[product.provider].download.extract = False
+            return product.download_zip(progress_callback, **kwargs)
+        elif assets_urls and kwargs["zip"] and kwargs["zip"].lower() == "true":
+            return product.download(
+                progress_callback=progress_callback,
+                wait=DEFAULT_DOWNLOAD_WAIT,
+                timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+                **kwargs)
+        else:
+            return product.download_assets(progress_callback, **kwargs)
 
 
     def get_cruncher(self, name, **options):

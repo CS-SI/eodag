@@ -413,11 +413,10 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
     return download_stac_item_by_id(
         catalogs=[collection_id],
         item_id=item_id,
-        provider=provider
+        provider=provider,
+        zip=arguments["zip"]
     )
-    # filename = os.path.basename(response)
-    #
-    # return FileResponse(response, filename=filename)
+
 
 
 @router.get("/catalogs/{catalogs:path}/items", tags=["Data"])

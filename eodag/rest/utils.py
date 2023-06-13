@@ -8,11 +8,13 @@ import logging
 import os
 import re
 from collections import namedtuple
-from shutil import make_archive
 
 import dateutil.parser
 from dateutil import tz
 from shapely.geometry import Polygon, shape
+import zipstream
+import pathlib
+from fastapi.responses import StreamingResponse
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
@@ -572,7 +574,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id(catalogs, item_id, provider=None):
+def download_stac_item_by_id(catalogs, item_id, provider=None, zip='False'):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -588,20 +590,27 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
         eodag_api.set_preferred_provider(provider)
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
+    if zip.lower() == "true":
+        path = eodag_api.download_stream(product, zip=zip)
+        directory = pathlib.Path(path)
 
-    return eodag_api.download_zip(product)
+        def generator():
+            with zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED) as archive:
+                for file_path in directory.rglob("*"):
+                    archive.write(
+                        file_path,
+                        arcname=file_path.relative_to(directory)
+                    )
 
-    # product_path = eodag_api.download(product, extract=False)
-    #
-    # if os.path.isdir(product_path):
-    #     zipped_product_path = f"{product_path}.zip"
-    #     logger.debug(
-    #         f"Building archive for downloaded product path {zipped_product_path}"
-    #     )
-    #     make_archive(product_path, "zip", product_path)
-    #     return zipped_product_path
-    # else:
-    #     return product_path
+                for chunk in archive:
+                    yield chunk
+
+        response = StreamingResponse(generator())
+        response.headers['Content-Disposition'] = 'attachment; filename={}'.format(
+            'files.zip')
+        return response
+    else:
+        return eodag_api.download_stream(product, zip=zip)
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):
