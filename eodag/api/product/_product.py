@@ -359,6 +359,16 @@ class EOProduct(object):
         progress_callback=None,
         **kwargs
     ):
+        """
+        downloads the assets of the product provided as a zip file
+        and returns a stream of the file
+        Args:
+            progress_callback: callback to update the download progress
+            **kwargs:
+
+        Returns: a stream of the downloaded zip file
+
+        """
         if self.downloader is None:
             raise RuntimeError(
                 "EO product is unable to download itself due to lacking of a "
@@ -383,7 +393,15 @@ class EOProduct(object):
         progress_callback=None,
         **kwargs
     ):
+        """
+        downloads the asset files of the product and returns a stream containing all the files
+        Args:
+            progress_callback: callback to update the download progress
+            **kwargs:
 
+        Returns: a stream of the downloaded files
+
+        """
         if self.downloader is None:
             raise RuntimeError(
                 "EO product is unable to download itself due to lacking of a "

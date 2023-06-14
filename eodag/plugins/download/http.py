@@ -261,8 +261,8 @@ class HTTPDownload(Download):
                     order_status_success_dict
                     and order_status_success_dict.items() <= status_dict.items()
                     and getattr(self.config, "order_status_on_success", {}).get(
-                        "need_search"
-                    )
+                    "need_search"
+                )
                 ):
                     logger.debug(
                         f"Search for new location: {product.properties['searchLink']}"
@@ -484,7 +484,6 @@ class HTTPDownload(Download):
             **kwargs,
         )
 
-
     def _check_stream_size(self, product):
         stream_size = int(self.stream.headers.get("content-length", 0))
         if (
@@ -550,6 +549,17 @@ class HTTPDownload(Download):
         progress_callback,
         **kwargs
     ):
+        """
+        downloads a zip file containing the assets of a given product and returns it as a stream
+        Args:
+            product: product for which the assets should be downloaded
+            auth: authentication parameters used in the request
+            progress_callback: callback to update the download progress
+            **kwargs:
+
+        Returns: a StreamingResponse which will directly transfer the data received from the provider to the user
+
+        """
         ordered_message = ""
         if (
             "orderLink" in product.properties
@@ -562,7 +572,9 @@ class HTTPDownload(Download):
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
             )
             progress_callback = ProgressCallback(disable=True)
-        return StreamingResponse(self.stream_zip(product, auth, progress_callback, ordered_message, **kwargs))
+        return StreamingResponse(
+            self.stream_zip(product, auth, progress_callback, ordered_message,
+                            **kwargs))
 
     def stream_zip(
         self,
@@ -572,6 +584,16 @@ class HTTPDownload(Download):
         ordered_message,
         **kwargs
     ):
+        """
+        fetches a zip file containing the assets of a given product as a stream
+        and returns a generator yielding the chunks of the file
+        Args:
+            product: product for which the assets should be downloaded
+            auth: authentication parameters used in the request
+            progress_callback: callback to update the download progress
+            ordered_message: message to be used in case of error because the product is unavailable
+            **kwargs:
+        """
         if product.properties.get("orderStatusLink", None):
             self.orderDownloadStatus(product=product, auth=auth)
 
@@ -617,8 +639,6 @@ class HTTPDownload(Download):
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
                         yield chunk
-
-
 
     def _download_assets(
         self,
@@ -806,7 +826,6 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-
     def _handle_asset_exception(self, e, asset):
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
@@ -825,21 +844,33 @@ class HTTPDownload(Download):
             logger.warning("Unexpected error: %s" % e)
             logger.warning("Skipping %s" % asset["href"])
 
-
     def direct_download_assets(
-            self,
-            product,
-            auth=None,
-            progress_callback=None,
-            **kwargs
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        **kwargs
     ):
+        """
+        directly streams the asset files of a product to the user
+        All asset files are returned in a continuous stream and have to be separated by the client
+        The end of a file is marked with EOF in one line and then the name of the file in the next line
+        Args:
+            product: product for which the assets should be downloaded
+            auth: authentication parameters used in the request
+            progress_callback: callback to update the download progress
+            **kwargs:
+
+        Returns: a stream containing all asset files of the product
+
+        """
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
             )
             progress_callback = ProgressCallback(disable=True)
-        return StreamingResponse(self._stream_assets(product, auth, progress_callback, **kwargs))
-
+        return StreamingResponse(
+            self._stream_assets(product, auth, progress_callback, **kwargs))
 
     def _stream_assets(
         self,
@@ -877,7 +908,7 @@ class HTTPDownload(Download):
                         if chunk:
                             progress_callback(1)
                             yield chunk
-            separator = ("EOF" + "\n").encode("UTF-8")
+            separator = ("\n" + "EOF" + "\n").encode("UTF-8")
             filename = asset["href"].split("/")[-1] + "\n"
             yield separator
             yield filename.encode("UTF-8")

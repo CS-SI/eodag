@@ -473,8 +473,8 @@ class EODataAccessGateway(object):
                 [
                     pt
                     for pt in self.list_product_types(
-                        provider=provider, fetch_providers=False
-                    )
+                    provider=provider, fetch_providers=False
+                )
                     if pt["ID"] not in current_product_type_ids
                 ]
             )
@@ -721,8 +721,8 @@ class EODataAccessGateway(object):
                             if (
                                 new_parsed_product_types_conf.items()
                                 <= provider_products_config[
-                                    existing_product_type
-                                ].items()
+                                existing_product_type
+                            ].items()
                             ):
                                 # new_product_types_conf is a subset on an existing conf
                                 break
@@ -1329,8 +1329,8 @@ class EODataAccessGateway(object):
                 [
                     p
                     for p in self.list_product_types(
-                        search_plugin.provider, fetch_providers=False
-                    )
+                    search_plugin.provider, fetch_providers=False
+                )
                     if p["ID"] == product_type
                 ][0],
                 **{"productType": product_type},
@@ -1458,15 +1458,15 @@ class EODataAccessGateway(object):
                                 k: pattern.sub("", str(v).upper())
                                 for k, v in eo_product.properties.items()
                                 if k
-                                in [
-                                    "instrument",
-                                    "platform",
-                                    "platformSerialIdentifier",
-                                    "processingLevel",
-                                    "sensorType",
-                                    "keywords",
-                                ]
-                                and v is not None
+                                   in [
+                                       "instrument",
+                                       "platform",
+                                       "platformSerialIdentifier",
+                                       "processingLevel",
+                                       "sensorType",
+                                       "keywords",
+                                   ]
+                                   and v is not None
                             }
                         )
                     except NoMatchingProductType:
@@ -1808,7 +1808,6 @@ class EODataAccessGateway(object):
 
         return path
 
-
     def _setup_downloader(self, product):
         if product.downloader is None:
             auth = product.downloader_auth
@@ -1818,13 +1817,26 @@ class EODataAccessGateway(object):
                 self._plugins_manager.get_download_plugin(product), auth
             )
 
-
     def download_stream(
         self,
         product,
         progress_callback=None,
         **kwargs
     ):
+        """
+        downloads the assets of the given product and returns them as a stream;
+        (unless a zip file still has to be created, in that case a path will be returned)
+        The stream can either contain a zip file or individual files received from the provider
+        Args:
+            product: product for which the assets should be downloaded
+            progress_callback: callback to update the download progress
+            **kwargs: with the key word argument zip it can be defined if assets that
+            are not received as a zip file should be streamed directly (zip="false") or
+            if they should be stored to be later converted to a zip file (zip="true")
+
+        Returns: either a stream or a path where the assets are stored
+
+        """
         self._setup_downloader(product)
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
@@ -1841,7 +1853,6 @@ class EODataAccessGateway(object):
                 **kwargs)
         else:
             return product.download_assets(progress_callback, **kwargs)
-
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration
