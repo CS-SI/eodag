@@ -440,6 +440,8 @@ class AwsDownload(Download):
         product.location = path_to_uri(product_local_path)
         return product_local_path
 
+
+
     def get_rio_env(self, bucket_name, prefix, auth_dict):
         """Get rasterio environment variables needed for data access authentication.
 
