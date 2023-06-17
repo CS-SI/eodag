@@ -39,5 +39,3 @@ APP VERSION: {{ .Chart.AppVersion  }}
   echo "EODAG Server URL: http://127.0.0.1:8080/"
 {{- end }}
 {{- end }}
-
-{{- include "common.warnings.rollingTag" .Values.image }}

@@ -75,7 +75,7 @@ spec:
       {{- end }}
       containers:
         - name: eodag-server
-          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          image: {{ include "eodag-server.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.lifecycleHooks }}
           lifecycle: {{- include "common.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
