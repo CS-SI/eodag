@@ -36,7 +36,7 @@ helm uninstall my-release
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Parameters                         
+## Parameters
 
 ### Global parameters
 

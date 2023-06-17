@@ -141,7 +141,7 @@ customReadinessProbe: {}
 resources:
   limits: {}
   requests: {}
-  
+
 ## Configure Pods Security Context
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
 ## @param podSecurityContext.enabled Enabled EODAG Server pods' Security Context
