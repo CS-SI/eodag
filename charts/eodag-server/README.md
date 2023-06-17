@@ -46,6 +46,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `global.imagePullSecrets` | Global Docker registry secret names as an array | `[]`  |
 | `global.storageClass`     | Global StorageClass for Persistent Volume(s)    | `""`  |
 
+
 ### Common parameters
 
 | Name                | Description                                                          | Value           |
@@ -59,13 +60,14 @@ The command removes all the Kubernetes components associated with the chart and 
 | `clusterDomain`     | Kubernetes cluster domain name                                       | `cluster.local` |
 | `extraDeploy`       | Array of extra objects to deploy with the release                    | `[]`            |
 
+
 ### EODAG Server parameters
 
 | Name                                                | Description                                                                                                               | Value                    |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | `image.registry`                                    | EODAG Server image registry                                                                                               | `docker.io`              |
 | `image.repository`                                  | EODAG Server image repository                                                                                             | `csspace/eodag-server`   |
-| `image.tag`                                         | EODAG Server image tag (immutable tags are recommended)                                                                   | `2.10.0`                 |
+| `image.tag`                                         | Overrides the EODAG Server image tag whose default is the chart appVersion (immutable tags are recommended)               | `""`                     |
 | `image.digest`                                      | EODAG Server image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag              | `""`                     |
 | `image.pullPolicy`                                  | EODAG Server image pull policy                                                                                            | `IfNotPresent`           |
 | `image.pullSecrets`                                 | Specify docker-registry secret names as an array                                                                          | `[]`                     |
