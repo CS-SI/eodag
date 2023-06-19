@@ -468,6 +468,19 @@ class AwsDownload(Download):
         return unique_product_chunks
 
     def direct_download_assets(self, product, auth=None, progress_callback=None, **kwargs):
+        """
+        directly streams the asset files of a product to the user
+        All asset files are returned in a continuous stream and have to be separated by the client
+        The end of a file is marked with EOF in one line and then the name of the file in the next line
+        Args:
+            product: product for which the assets should be downloaded
+            auth: authentication parameters used in the request
+            progress_callback: callback to update the download progress
+            **kwargs:
+
+        Returns: a stream containing all asset files of the product
+
+        """
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
