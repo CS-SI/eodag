@@ -116,3 +116,6 @@ ext_product_types.json
 .project
 .pydevproject
 .settings/
+
+# Helm chart dependencies
+charts/**/*.tgz

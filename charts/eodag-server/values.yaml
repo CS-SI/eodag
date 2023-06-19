@@ -45,22 +45,22 @@ clusterDomain: cluster.local
 ##
 extraDeploy: []
 
-## @section EODAG parameters
+## @section EODAG Server parameters
 
-## CS Group EODAG image version
-## ref: https://643vlk6z.gra7.container-registry.ovh.net/harbor/projects/28/repositories/hda-api
-## @param image.registry EODAG image registry
-## @param image.repository EODAG image repository
-## @param image.tag EODAG image tag (immutable tags are recommended)
-## @param image.digest EODAG image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
-## @param image.pullPolicy EODAG image pull policy
+## CS Group EODAG Server image version
+## ref: https://hub.docker.com/r/csspace/eodag-server
+## @param image.registry EODAG Server image registry
+## @param image.repository EODAG Server image repository
+## @param image.tag EODAG Server image tag (immutable tags are recommended)
+## @param image.digest EODAG Server image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+## @param image.pullPolicy EODAG Server image pull policy
 ## @param image.pullSecrets Specify docker-registry secret names as an array
 ## Number of replicas to deploy
 ##
 image:
   registry: docker.io
   repository: csspace/eodag-server
-  tag: 2.9.0
+  tag: 2.10.0
   digest: ""
   ## Specify a imagePullPolicy
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
@@ -76,9 +76,54 @@ image:
   ##
   pullSecrets: []
 
-## @param replicaCount Number of EODAG replicas
+## @param replicaCount Number of EODAG Server replicas
 ##
 replicaCount: 1
+
+## Configure extra options for EODAG Server containers' liveness and readiness probes
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
+## @param startupProbe.enabled Enable startupProbe on EODAG Server containers
+## @param startupProbe.initialDelaySeconds Initial delay seconds for startupProbe
+## @param startupProbe.periodSeconds Period seconds for startupProbe
+## @param startupProbe.timeoutSeconds Timeout seconds for startupProbe
+## @param startupProbe.failureThreshold Failure threshold for startupProbe
+## @param startupProbe.successThreshold Success threshold for startupProbe
+##
+startupProbe:
+  enabled: false
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+## @param livenessProbe.enabled Enable livenessProbe on EODAG Server containers
+## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
+## @param livenessProbe.periodSeconds Period seconds for livenessProbe
+## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
+## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
+## @param livenessProbe.successThreshold Success threshold for livenessProbe
+##
+livenessProbe:
+  enabled: false
+  initialDelaySeconds: 3
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+## @param readinessProbe.enabled Enable readinessProbe on EODAG Server containers
+## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
+## @param readinessProbe.periodSeconds Period seconds for readinessProbe
+## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
+## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
+## @param readinessProbe.successThreshold Success threshold for readinessProbe
+##
+readinessProbe:
+  enabled: false
+  initialDelaySeconds: 3
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
 
 ## @param customLivenessProbe Custom livenessProbe that overrides the default one
 ##
@@ -88,19 +133,19 @@ customLivenessProbe: {}
 ##
 customReadinessProbe: {}
 
-## EODAG resource requests and limits
+## EODAG Server resource requests and limits
 ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
-## @param resources.limits The resources limits for the EODAG containers
-## @param resources.requests The requested resources for the EODAG containers
+## @param resources.limits The resources limits for the EODAG Server containers
+## @param resources.requests The requested resources for the EODAG Server containers
 ##
 resources:
   limits: {}
   requests: {}
-
+  
 ## Configure Pods Security Context
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
-## @param podSecurityContext.enabled Enabled EODAG pods' Security Context
-## @param podSecurityContext.fsGroup Set EODAG pod's Security Context fsGroup
+## @param podSecurityContext.enabled Enabled EODAG Server pods' Security Context
+## @param podSecurityContext.fsGroup Set EODAG Server pod's Security Context fsGroup
 ##
 podSecurityContext:
   enabled: false
@@ -108,12 +153,12 @@ podSecurityContext:
 
 ## Configure Container Security Context
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
-## @param containerSecurityContext.enabled Enabled EODAG containers' Security Context
-## @param containerSecurityContext.runAsUser Set EODAG containers' Security Context runAsUser
-## @param containerSecurityContext.allowPrivilegeEscalation Set EODAG containers' Security Context allowPrivilegeEscalation
-## @param containerSecurityContext.capabilities.drop Set EODAG containers' Security Context capabilities to be dropped
-## @param containerSecurityContext.readOnlyRootFilesystem Set EODAG containers' Security Context readOnlyRootFilesystem
-## @param containerSecurityContext.runAsNonRoot Set EODAG container's Security Context runAsNonRoot
+## @param containerSecurityContext.enabled Enabled EODAG Server containers' Security Context
+## @param containerSecurityContext.runAsUser Set EODAG Server containers' Security Context runAsUser
+## @param containerSecurityContext.allowPrivilegeEscalation Set EODAG Server containers' Security Context allowPrivilegeEscalation
+## @param containerSecurityContext.capabilities.drop Set EODAG Server containers' Security Context capabilities to be dropped
+## @param containerSecurityContext.readOnlyRootFilesystem Set EODAG Server containers' Security Context readOnlyRootFilesystem
+## @param containerSecurityContext.runAsNonRoot Set EODAG Server container's Security Context runAsNonRoot
 ##
 containerSecurityContext:
   enabled: false
@@ -133,22 +178,81 @@ command: []
 ##
 args: []
 
-## EODAG application  ports
-## @param containerPorts.http EODAG application HTTP port number
+## EODAG Server application ports
+## @param containerPorts.http EODAG Server application HTTP port number
 containerPorts:
   http: 5000
 
-## @param hostAliases EODAG pods host aliases
+## Enable persistence using Persistent Volume Claims
+## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+##
+persistence:
+  ## @param persistence.enabled Enable persistence using PVC
+  ##
+  enabled: false
+  ## @param persistence.medium Provide a medium for `emptyDir` volumes.
+  ##
+  medium: ""
+  ## @param persistence.sizeLimit Set this to enable a size limit for `emptyDir` volumes.
+  ##
+  sizeLimit: 8Gi
+  ## @param persistence.storageClass PVC Storage Class for Matomo volume
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  storageClass: ""
+  ## @param persistence.accessModes PVC Access Mode for Matomo volume
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  ##
+  accessModes:
+    - ReadWriteOnce
+  ## @param persistence.size PVC Storage Request for Matomo volume
+  ##
+  size: 8Gi
+  ## @param persistence.dataSource Custom PVC data source
+  ##
+  dataSource: {}
+  ## @param persistence.existingClaim A manually managed Persistent Volume Claim
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  ##
+  existingClaim: ""
+  ## @param persistence.hostPath If defined, the matomo-data volume will mount to the specified hostPath.
+  ## Requires persistence.enabled: true
+  ## Requires persistence.existingClaim: nil|false
+  ## Default: nil.
+  ##
+  hostPath: ""
+  ## @param persistence.annotations Persistent Volume Claim annotations
+  ##
+  annotations: {}
+  ## @param persistence.labels Additional custom labels for the PVC
+  ##
+  labels: {}
+  ## @param persistence.selector Selector to match an existing Persistent Volume for Matomo data PVC
+  ## If set, the PVC can't have a PV dynamically provisioned for it
+  ## E.g.
+  ## selector:
+  ##   matchLabels:
+  ##     app: my-app
+  ##
+  selector: {}
+
+## @param hostAliases EODAG Server pods host aliases
 ## https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
 ##
 hostAliases: []
 
-## @param podLabels Extra labels for EODAG pods
+## @param podLabels Extra labels for EODAG Server pods
 ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 ##
 podLabels: {}
 
-## @param podAnnotations Annotations for EODAG pods
+## @param podAnnotations Annotations for EODAG Server pods
 ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
 ##
 podAnnotations: {}
@@ -181,18 +285,18 @@ nodeAffinityPreset:
   ##
   values: []
 
-## @param affinity Affinity for EODAG pods assignment
+## @param affinity Affinity for EODAG Server pods assignment
 ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
 ## NOTE: `podAffinityPreset`, `podAntiAffinityPreset`, and `nodeAffinityPreset` will be ignored when it's set
 ##
 affinity: {}
 
-## @param nodeSelector Node labels for EODAG pods assignment
+## @param nodeSelector Node labels for EODAG Server pods assignment
 ## ref: https://kubernetes.io/docs/user-guide/node-selection/
 ##
 nodeSelector: {}
 
-## @param tolerations Tolerations for EODAG pods assignment
+## @param tolerations Tolerations for EODAG Server pods assignment
 ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 ##
 tolerations: []
@@ -217,7 +321,7 @@ shareProcessNamespace: false
 ##
 topologySpreadConstraints: []
 
-## @param updateStrategy.type EODAG statefulset strategy type
+## @param updateStrategy.type EODAG Server statefulset strategy type
 ## ref: https://kubernetes.io/docs/concepts/workloads/s/statefulset/#update-strategies
 ##
 updateStrategy:
@@ -226,7 +330,7 @@ updateStrategy:
   ##
   type: RollingUpdate
 
-## @param priorityClassName EODAG pods' priorityClassName
+## @param priorityClassName EODAG Server pods' priorityClassName
 ##
 priorityClassName: ""
 
@@ -235,11 +339,11 @@ priorityClassName: ""
 ##
 runtimeClassName: ""
 
-## @param lifecycleHooks for the EODAG container(s) to automate configuration before or after startup
+## @param lifecycleHooks for the EODAG Server container(s) to automate configuration before or after startup
 ##
 lifecycleHooks: {}
 
-## @param extraEnvVars Array with extra environment variables to add to EODAG nodes
+## @param extraEnvVars Array with extra environment variables to add to EODAG Server nodes
 ## e.g:
 ## extraEnvVars:
 ##   - name: FOO
@@ -247,23 +351,23 @@ lifecycleHooks: {}
 ##
 extraEnvVars: []
 
-## @param extraEnvVarsCM Name of existing ConfigMap containing extra env vars for EODAG nodes
+## @param extraEnvVarsCM Name of existing ConfigMap containing extra env vars for EODAG Server nodes
 ##
 extraEnvVarsCM: ""
 
-## @param extraEnvVarsSecret Name of existing Secret containing extra env vars for EODAG nodes
+## @param extraEnvVarsSecret Name of existing Secret containing extra env vars for EODAG Server nodes
 ##
 extraEnvVarsSecret: ""
 
-## @param extraVolumes Optionally specify extra list of additional volumes for the EODAG pod(s)
+## @param extraVolumes Optionally specify extra list of additional volumes for the EODAG Server pod(s)
 ##
 extraVolumes: []
 
-## @param extraVolumeMounts Optionally specify extra list of additional volumeMounts for the EODAG container(s)
+## @param extraVolumeMounts Optionally specify extra list of additional volumeMounts for the EODAG Server container(s)
 ##
 extraVolumeMounts: []
 
-## @param sidecars Add additional sidecar containers to the EODAG pod(s)
+## @param sidecars Add additional sidecar containers to the EODAG Server pod(s)
 ## e.g:
 ## sidecars:
 ##   - name: your-image-name
@@ -275,7 +379,7 @@ extraVolumeMounts: []
 ##
 sidecars: []
 
-## @param initContainers Add additional init containers to the EODAG pod(s)
+## @param initContainers Add additional init containers to the EODAG Server pod(s)
 ## ref: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 ## e.g:
 ## initContainers:
@@ -286,8 +390,11 @@ sidecars: []
 ##
 initContainers: []
 
-## @param productTypes Optional overwrite of collections default configuration
-## ref: https://github.com/CS-SI/eodag/blob/develop/eodag/resources/product_types.yml
+## @param logLevel Supported values are 0 (no log), 1 (no logging but progress bar), 2 (INFO) or 3 (DEBUG).
+logLevel: 2
+
+## @param productTypes Optional overwrite of product types default configuration
+## ref: https://github.com/CS-SI/eodag/blob/masster/eodag/resources/product_types.yml
 productTypes: ""
 # productTypes: |-
 #   # CBERS 4 ---------------------------------------------------------------------
@@ -306,7 +413,7 @@ productTypes: ""
 #     title: CBERS-4 MUX Level-2
 
 ## @param providers Optional overwrite of providers default configuration
-## ref: https://github.com/CS-SI/eodag/blob/develop/eodag/resources/providers.yml
+## ref: https://github.com/CS-SI/eodag/blob/master/eodag/resources/providers.yml
 providers: ""
 # providers: |-
 #   !provider
@@ -358,6 +465,46 @@ providers: ""
 #       GENERIC_PRODUCT_TYPE:
 #         dataset: '{productType}'
 
+## @param config [object] EODAG configuration
+## doc: https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html
+## ref: https://github.com/CS-SI/eodag/blob/master/eodag/resources/user_conf_template.yml
+config:
+  # peps:
+  #   priority: # Lower value means lower priority (Default: 1)
+  #   search:  # Search parameters configuration
+  #   download:
+  #       extract:  # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
+  #       outputs_prefix: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
+  #       dl_url_params:  # additional parameters to pass over to the download url as an url parameter
+  #       delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
+  #   auth:
+  #       credentials:
+  #           username:
+  #           password:
+  # cop_cds:
+  #     priority: # Lower value means lower priority (Default: 0)
+  #     api:
+  #         outputs_prefix:
+  #         credentials:
+  #             username:
+  #             password:
+  # cop_dataspace:
+  #     priority: # Lower value means lower priority (Default: 0)
+  #     search:   # Search parameters configuration
+  #     download:
+  #         extract:
+  #         outputs_prefix:
+  #     auth:
+  #         credentials:
+  #             username:
+  #             password:
+
+## @param configExistingSecret.name Existing secret name for EODAG config. If this is set, value config will be ignored
+## @param configExistingSecret.key Existing secret key for EODAG config. If this is set, value config will be ignored
+configExistingSecret:
+  name:
+  key:
+
 ## Service configuration
 ##
 service:
@@ -368,7 +515,7 @@ service:
   ##
   http:
     enabled: true
-  ## @param service.ports.http EODAG service HTTP port
+  ## @param service.ports.http EODAG Server service HTTP port
   ##
   ports:
     http: 8080
@@ -388,7 +535,7 @@ service:
   ##     timeoutSeconds: 300
   ##
   sessionAffinityConfig: {}
-  ## @param service.clusterIP EODAG service clusterIP IP
+  ## @param service.clusterIP EODAG Server service clusterIP IP
   ## e.g:
   ## clusterIP: None
   ##
@@ -408,25 +555,25 @@ service:
   ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
   ##
   externalTrafficPolicy: Cluster
-  ## @param service.annotations Additional custom annotations for EODAG service
+  ## @param service.annotations Additional custom annotations for EODAG Server service
   ##
   annotations: {}
-  ## @param service.extraPorts Extra port to expose on EODAG service
+  ## @param service.extraPorts Extra port to expose on EODAG Server service
   ##
   extraPorts: []
 
-## Configure the ingress for the EODAG
+## Configure the ingress for the EODAG Server
 ## Ref: https://kubernetes.io/docs/user-guide/ingress/
-## @param ingress.enabled Enable the creation of an ingress for the EODAG
-## @param ingress.pathType Path type for the EODAG ingress
-## @param ingress.apiVersion Ingress API version for the EODAG ingress
-## @param ingress.hostname Ingress hostname for the EODAG ingress
-## @param ingress.annotations Annotations for the EODAG ingress. To enable certificate autogeneration, place here your cert-manager annotations.
-## @param ingress.tls Enable TLS for the EODAG ingress
-## @param ingress.extraHosts Extra hosts array for the EODAG ingress
-## @param ingress.path Path array for the EODAG ingress
-## @param ingress.extraPaths Extra paths for the EODAG ingress
-## @param ingress.extraTls Extra TLS configuration for the EODAG ingress
+## @param ingress.enabled Enable the creation of an ingress for the EODAG Server
+## @param ingress.pathType Path type for the EODAG Server ingress
+## @param ingress.apiVersion Ingress API version for the EODAG Server ingress
+## @param ingress.hostname Ingress hostname for the EODAG Server ingress
+## @param ingress.annotations Annotations for the EODAG Server ingress. To enable certificate autogeneration, place here your cert-manager annotations.
+## @param ingress.tls Enable TLS for the EODAG Server ingress
+## @param ingress.extraHosts Extra hosts array for the EODAG Server ingress
+## @param ingress.path Path array for the EODAG Server ingress
+## @param ingress.extraPaths Extra paths for the EODAG Server ingress
+## @param ingress.extraTls Extra TLS configuration for the EODAG Server ingress
 ## @param ingress.secrets Secrets array to mount into the Ingress
 ## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
 ##
