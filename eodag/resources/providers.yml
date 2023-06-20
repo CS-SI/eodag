@@ -1355,7 +1355,7 @@
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'ns:link[@rel="enclosure"]/@href'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: 'DIAS:onlineStatus/text()'
+      storageStatus: '{DIAS:onlineStatus/text()#replace_str("Not Available","OFFLINE")}'
       # order link formated for POST request usage
       orderLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request?{{"productId":"{id}","collectionId":"{platform}"}}'
       searchLink: 'https://{platform}.browse.catalog.mundiwebservices.com/opensearch?uid={id}'

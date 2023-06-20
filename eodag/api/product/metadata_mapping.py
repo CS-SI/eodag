@@ -675,7 +675,26 @@ def properties_from_xml(
                 path_or_text,
                 namespaces={k or empty_ns_prefix: v for k, v in root.nsmap.items()},
             )
-            if len(extracted_value) == 1:
+            if len(extracted_value) <= 1:
+                if len(extracted_value) < 1:
+                    # If there is no matched value (empty list), mark the metadata as not
+                    # available
+                    extracted_value = [NOT_AVAILABLE]
+                else:
+                    # store element tag in used_xpaths
+                    used_xpaths.append(
+                        getattr(
+                            root.xpath(
+                                path_or_text.replace("/text()", ""),
+                                namespaces={
+                                    k or empty_ns_prefix: v
+                                    for k, v in root.nsmap.items()
+                                },
+                            )[0],
+                            "tag",
+                            None,
+                        )
+                    )
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value[0]
                 else:
@@ -695,22 +714,10 @@ def properties_from_xml(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value[0]},
                     )
-                # store element tag in used_xpaths
-                used_xpaths.append(
-                    getattr(
-                        root.xpath(
-                            path_or_text.replace("/text()", ""),
-                            namespaces={
-                                k or empty_ns_prefix: v for k, v in root.nsmap.items()
-                            },
-                        )[0],
-                        "tag",
-                        None,
-                    )
-                )
+
             # If there are multiple matches, consider the result as a list, doing a
             # formatting if any
-            elif len(extracted_value) > 1:
+            else:
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value
                 else:
@@ -743,10 +750,7 @@ def properties_from_xml(
                         )
                         for extracted_value_item in extracted_value
                     ]
-            # If there is no matched value (empty list), mark the metadata as not
-            # available
-            else:
-                properties[metadata] = NOT_AVAILABLE
+
         except XPathEvalError:
             # Assume the mapping is to be passed as is, in which case we readily
             # register it, or is a template, in which case we register it for later
