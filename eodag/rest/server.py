@@ -281,8 +281,9 @@ class SearchBody(BaseModel):
     collections: List[str]
     datetime: Union[str, None] = None
     bbox: Union[str, None] = None
-    limit: Union[int, None] = 10
+    limit: Union[int, None] = 20
     page: Union[int, None] = 1
+    query: Union[dict, None] = None
 
 
 @router.get("/search", tags=["STAC"])
