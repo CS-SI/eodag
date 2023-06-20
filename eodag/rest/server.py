@@ -22,7 +22,7 @@ import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
 from json.decoder import JSONDecodeError
-from typing import Union, List
+from typing import List, Union
 
 import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
@@ -32,8 +32,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, ORJSONResponse
 from fastapi.types import Any, Callable, DecoratedCallable
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
@@ -277,6 +277,7 @@ class SearchBody(BaseModel):
     """
     class which describes the body of a search request
     """
+
     provider: Union[str, None] = None
     collections: List[str]
     datetime: Union[str, None] = None
