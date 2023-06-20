@@ -517,7 +517,7 @@ class RequestTestCase(unittest.TestCase):
             protocol="POST",
             post_data={
                 "collections": [self.tested_product_type],
-                "bbox": "0, 43, 1, 44",
+                "bbox": [0, 43, 1, 44],
                 "query": {"eo:cloud_cover": {"lte": 10}},
             },
             expected_search_kwargs=dict(
