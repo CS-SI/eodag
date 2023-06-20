@@ -281,7 +281,7 @@ class SearchBody(BaseModel):
     provider: Union[str, None] = None
     collections: Union[List[str], str]
     datetime: Union[str, None] = None
-    bbox: Union[str, None] = None
+    bbox: Union[list, str, None] = None
     limit: Union[int, None] = 20
     page: Union[int, None] = 1
     query: Union[dict, None] = None
