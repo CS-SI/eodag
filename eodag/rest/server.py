@@ -22,7 +22,7 @@ import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
 from json.decoder import JSONDecodeError
-from typing import Union
+from typing import Union, List
 
 import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
@@ -274,12 +274,16 @@ def stac_extension_oseo(request: Request):
 
 
 class SearchBody(BaseModel):
+    """
+    class which describes the body of a search request
+    """
     provider: Union[str, None] = None
-    collections: list[str]
+    collections: List[str]
     datetime: Union[str, None] = None
     bbox: Union[str, None] = None
     limit: Union[int, None] = 10
     page: Union[int, None] = 1
+
 
 @router.get("/search", tags=["STAC"])
 @router.post("/search", tags=["STAC"])
