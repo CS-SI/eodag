@@ -279,7 +279,7 @@ class SearchBody(BaseModel):
     """
 
     provider: Union[str, None] = None
-    collections: List[str]
+    collections: Union[List[str], str]
     datetime: Union[str, None] = None
     bbox: Union[str, None] = None
     limit: Union[int, None] = 20
