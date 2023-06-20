@@ -474,8 +474,8 @@ class EODataAccessGateway(object):
                 [
                     pt
                     for pt in self.list_product_types(
-                    provider=provider, fetch_providers=False
-                )
+                        provider=provider, fetch_providers=False
+                    )
                     if pt["ID"] not in current_product_type_ids
                 ]
             )
@@ -722,8 +722,8 @@ class EODataAccessGateway(object):
                             if (
                                 new_parsed_product_types_conf.items()
                                 <= provider_products_config[
-                                existing_product_type
-                            ].items()
+                                    existing_product_type
+                                ].items()
                             ):
                                 # new_product_types_conf is a subset on an existing conf
                                 break
@@ -1330,8 +1330,8 @@ class EODataAccessGateway(object):
                 [
                     p
                     for p in self.list_product_types(
-                    search_plugin.provider, fetch_providers=False
-                )
+                        search_plugin.provider, fetch_providers=False
+                    )
                     if p["ID"] == product_type
                 ][0],
                 **{"productType": product_type},
@@ -1459,15 +1459,15 @@ class EODataAccessGateway(object):
                                 k: pattern.sub("", str(v).upper())
                                 for k, v in eo_product.properties.items()
                                 if k
-                                   in [
-                                       "instrument",
-                                       "platform",
-                                       "platformSerialIdentifier",
-                                       "processingLevel",
-                                       "sensorType",
-                                       "keywords",
-                                   ]
-                                   and v is not None
+                                in [
+                                    "instrument",
+                                    "platform",
+                                    "platformSerialIdentifier",
+                                    "processingLevel",
+                                    "sensorType",
+                                    "keywords",
+                                ]
+                                and v is not None
                             }
                         )
                     except NoMatchingProductType:
@@ -1818,12 +1818,7 @@ class EODataAccessGateway(object):
                 self._plugins_manager.get_download_plugin(product), auth
             )
 
-    def download_stream(
-        self,
-        product,
-        progress_callback=None,
-        **kwargs
-    ):
+    def download_stream(self, product, progress_callback=None, **kwargs):
         """
         downloads the assets of the given product and returns them as a stream;
         (unless a zip file still has to be created, in that case a path will be returned)
@@ -1846,12 +1841,17 @@ class EODataAccessGateway(object):
         if not assets_urls and not isinstance(product.downloader, S3RestDownload):
             self.providers_config[product.provider].download.extract = False
             return product.download_zip(progress_callback, **kwargs)
-        elif (assets_urls or isinstance(product.downloader, S3RestDownload)) and kwargs["zip"] and kwargs["zip"].lower() == "true":
+        elif (
+            (assets_urls or isinstance(product.downloader, S3RestDownload))
+            and kwargs["zip"]
+            and kwargs["zip"].lower() == "true"
+        ):
             return product.download(
                 progress_callback=progress_callback,
                 wait=DEFAULT_DOWNLOAD_WAIT,
                 timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-                **kwargs)
+                **kwargs,
+            )
         else:
             return product.download_assets(progress_callback, **kwargs)
 

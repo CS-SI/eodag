@@ -24,9 +24,9 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
+from fastapi.responses import StreamingResponse
 from lxml import etree
 from requests import HTTPError, RequestException
-from fastapi.responses import StreamingResponse
 
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
@@ -261,8 +261,8 @@ class HTTPDownload(Download):
                     order_status_success_dict
                     and order_status_success_dict.items() <= status_dict.items()
                     and getattr(self.config, "order_status_on_success", {}).get(
-                    "need_search"
-                )
+                        "need_search"
+                    )
                 ):
                     logger.debug(
                         f"Search for new location: {product.properties['searchLink']}"
@@ -516,10 +516,7 @@ class HTTPDownload(Download):
                 )
             )
         # product not available
-        elif (
-            product.properties.get("storageStatus", ONLINE_STATUS)
-            != ONLINE_STATUS
-        ):
+        elif product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
             msg = (
                 ordered_message
                 if ordered_message and not e.response.text.strip()
@@ -542,13 +539,7 @@ class HTTPDownload(Download):
                 e.response.text.strip(),
             )
 
-    def download_zip(
-        self,
-        product,
-        auth,
-        progress_callback,
-        **kwargs
-    ):
+    def download_zip(self, product, auth, progress_callback, **kwargs):
         """
         downloads a zip file containing the assets of a given product and returns it as a stream
         Args:
@@ -573,17 +564,10 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
         return StreamingResponse(
-            self.stream_zip(product, auth, progress_callback, ordered_message,
-                            **kwargs))
+            self.stream_zip(product, auth, progress_callback, ordered_message, **kwargs)
+        )
 
-    def stream_zip(
-        self,
-        product,
-        auth,
-        progress_callback,
-        ordered_message,
-        **kwargs
-    ):
+    def stream_zip(self, product, auth, progress_callback, ordered_message, **kwargs):
         """
         fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
@@ -849,11 +833,7 @@ class HTTPDownload(Download):
         return total_size
 
     def direct_download_assets(
-        self,
-        product,
-        auth=None,
-        progress_callback=None,
-        **kwargs
+        self, product, auth=None, progress_callback=None, **kwargs
     ):
         """
         directly streams the asset files of a product to the user
@@ -874,15 +854,10 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
         return StreamingResponse(
-            self._stream_assets(product, auth, progress_callback, **kwargs))
+            self._stream_assets(product, auth, progress_callback, **kwargs)
+        )
 
-    def _stream_assets(
-        self,
-        product,
-        auth=None,
-        progress_callback=None,
-        **kwargs
-    ):
+    def _stream_assets(self, product, auth=None, progress_callback=None, **kwargs):
         assets_values = [
             a for a in getattr(product, "assets", {}).values() if "href" in a
         ]

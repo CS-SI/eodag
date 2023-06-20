@@ -25,8 +25,8 @@ import boto3
 import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
-from lxml import etree
 from fastapi.responses import StreamingResponse
+from lxml import etree
 
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
@@ -220,7 +220,9 @@ class AwsDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        product_local_path, record_filename = self._download_preparation(product, progress_callback, **kwargs)
+        product_local_path, record_filename = self._download_preparation(
+            product, progress_callback, **kwargs
+        )
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
@@ -236,10 +238,14 @@ class AwsDownload(Download):
         self._add_complementary_urls(product, product_conf, bucket_names_and_prefixes)
 
         # authenticate
-        authenticated_objects, s3_objects = self._do_authentication(bucket_names_and_prefixes, auth)
+        authenticated_objects, s3_objects = self._do_authentication(
+            bucket_names_and_prefixes, auth
+        )
 
         # downloadable files
-        unique_product_chunks = self._get_unique_product_chunks(bucket_names_and_prefixes, authenticated_objects)
+        unique_product_chunks = self._get_unique_product_chunks(
+            bucket_names_and_prefixes, authenticated_objects
+        )
 
         total_size = sum([p.size for p in unique_product_chunks])
 
@@ -290,7 +296,6 @@ class AwsDownload(Download):
                     )
                 )
             logger.warning("Unexpected error: %s" % e)
-
 
         # finalize safe product
         if build_safe and "S2_MSI" in product.product_type:
@@ -415,7 +420,7 @@ class AwsDownload(Download):
                             )
                             < prefixes_in_bucket
                         ):
-                            common_prefix = "/".join(prefix_split[0: i - 1])
+                            common_prefix = "/".join(prefix_split[0 : i - 1])
                             break
                     # connect to aws s3 and get bucket auhenticated objects
                     s3_objects = self.get_authenticated_objects(
@@ -455,7 +460,9 @@ class AwsDownload(Download):
 
         return authenticated_objects, s3_objects
 
-    def _get_unique_product_chunks(self, bucket_names_and_prefixes, authenticated_objects):
+    def _get_unique_product_chunks(
+        self, bucket_names_and_prefixes, authenticated_objects
+    ):
         product_chunks = []
         for bucket_name, prefix in bucket_names_and_prefixes:
             # unauthenticated items filtered out
@@ -467,7 +474,9 @@ class AwsDownload(Download):
         unique_product_chunks = set(product_chunks)
         return unique_product_chunks
 
-    def direct_download_assets(self, product, auth=None, progress_callback=None, **kwargs):
+    def direct_download_assets(
+        self, product, auth=None, progress_callback=None, **kwargs
+    ):
         """
         directly streams the asset files of a product to the user
         All asset files are returned in a continuous stream and have to be separated by the client
@@ -499,19 +508,27 @@ class AwsDownload(Download):
         self._add_complementary_urls(product, product_conf, bucket_names_and_prefixes)
 
         # authenticate
-        authenticated_objects, s3_objects = self._do_authentication(bucket_names_and_prefixes, auth)
+        authenticated_objects, s3_objects = self._do_authentication(
+            bucket_names_and_prefixes, auth
+        )
 
         # downloadable files
-        unique_product_chunks = self._get_unique_product_chunks(bucket_names_and_prefixes, authenticated_objects)
+        unique_product_chunks = self._get_unique_product_chunks(
+            bucket_names_and_prefixes, authenticated_objects
+        )
         total_size = sum([p.size for p in unique_product_chunks])
 
         progress_callback.reset(total=total_size)
 
         return StreamingResponse(
-            self._stream_assets(product, unique_product_chunks, progress_callback, build_safe)
+            self._stream_assets(
+                product, unique_product_chunks, progress_callback, build_safe
+            )
         )
 
-    def _stream_assets(self, product, unique_product_chunks, progress_callback, build_safe):
+    def _stream_assets(
+        self, product, unique_product_chunks, progress_callback, build_safe
+    ):
         total_size = sum([p.size for p in unique_product_chunks])
         progress_callback.reset(total=total_size)
         try:
@@ -527,11 +544,11 @@ class AwsDownload(Download):
                     logger.warning(e)
                     continue
 
-                body = product_chunk.get()['Body']
+                body = product_chunk.get()["Body"]
                 for b in body:
                     progress_callback(len(b))
                     yield b
-                separator = ("\n" + "EOF" + "\n")
+                separator = "\n" + "EOF" + "\n"
                 filename = product_chunk.key.split("/")[-1] + "\n"
                 yield separator.encode("UTF-8")
                 yield filename.encode("UTF-8")

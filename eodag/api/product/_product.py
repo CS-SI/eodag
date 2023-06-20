@@ -90,8 +90,8 @@ class EOProduct(object):
             key: value
             for key, value in properties.items()
             if key != "geometry"
-               and value != NOT_MAPPED
-               and NOT_AVAILABLE not in str(value)
+            and value != NOT_MAPPED
+            and NOT_AVAILABLE not in str(value)
         }
         if "geometry" not in properties or (
             properties["geometry"] == NOT_AVAILABLE
@@ -309,7 +309,8 @@ class EOProduct(object):
         self.remote_location = self.remote_location % vars(self.downloader.config)
 
         progress_callback, close_progress_callback = self._init_progress_bar(
-            progress_callback)
+            progress_callback
+        )
 
         fs_path = self.downloader.download(
             self,
@@ -354,11 +355,7 @@ class EOProduct(object):
         progress_callback.refresh()
         return [progress_callback, close_progress_callback]
 
-    def download_zip(
-        self,
-        progress_callback=None,
-        **kwargs
-    ):
+    def download_zip(self, progress_callback=None, **kwargs):
         """
         downloads the assets of the product provided as a zip file
         and returns a stream of the file
@@ -381,18 +378,9 @@ class EOProduct(object):
             else self.downloader_auth
         )
         progress_callback = self._init_progress_bar(progress_callback)[0]
-        return self.downloader.download_zip(
-            self,
-            auth,
-            progress_callback,
-            **kwargs
-        )
+        return self.downloader.download_zip(self, auth, progress_callback, **kwargs)
 
-    def download_assets(
-        self,
-        progress_callback=None,
-        **kwargs
-    ):
+    def download_assets(self, progress_callback=None, **kwargs):
         """
         downloads the asset files of the product and returns a stream containing all the files
         Args:
@@ -414,8 +402,9 @@ class EOProduct(object):
             else self.downloader_auth
         )
         progress_callback = self._init_progress_bar(progress_callback)[0]
-        return self.downloader.direct_download_assets(self, auth, progress_callback,
-                                                      **kwargs)
+        return self.downloader.direct_download_assets(
+            self, auth, progress_callback, **kwargs
+        )
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
         """Download the quicklook image of a given EOProduct from its provider if it

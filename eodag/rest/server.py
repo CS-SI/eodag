@@ -414,12 +414,8 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
         zipped = arguments["zip"]
 
     return download_stac_item_by_id(
-        catalogs=[collection_id],
-        item_id=item_id,
-        provider=provider,
-        zip=zipped
+        catalogs=[collection_id], item_id=item_id, provider=provider, zip=zipped
     )
-
 
 
 @router.get("/catalogs/{catalogs:path}/items", tags=["Data"])
