@@ -680,57 +680,7 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = 0
-        # loop for assets size & filename
-        for asset in assets_values:
-            if not asset["href"].startswith("file:"):
-                # HEAD request for size & filename
-                asset_headers = requests.head(
-                    asset["href"],
-                    auth=auth,
-                    headers=USER_AGENT,
-                    timeout=HTTP_REQ_TIMEOUT,
-                ).headers
-
-                if not asset.get("size", 0):
-                    # size from HEAD header / Content-length
-                    asset["size"] = int(asset_headers.get("Content-length", 0))
-
-                if not asset.get("size", 0) or not asset.get("filename", 0):
-                    # header content-disposition
-                    header_content_disposition = parse_header(
-                        asset_headers.get("content-disposition", "")
-                    )
-                if not asset.get("size", 0):
-                    # size from HEAD header / content-disposition / size
-                    asset["size"] = int(header_content_disposition.get_param("size", 0))
-                if not asset.get("filename", 0):
-                    # filename from HEAD header / content-disposition / size
-                    asset["filename"] = header_content_disposition.get_param(
-                        "filename", None
-                    )
-
-                if not asset.get("size", 0):
-                    # GET request for size
-                    with requests.get(
-                        asset["href"],
-                        stream=True,
-                        auth=auth,
-                        params=params,
-                        headers=USER_AGENT,
-                        timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                    ) as stream:
-                        # size from GET header / Content-length
-                        asset["size"] = int(stream.headers.get("Content-length", 0))
-                        if not asset.get("size", 0):
-                            # size from GET header / content-disposition / size
-                            asset["size"] = int(
-                                parse_header(
-                                    stream.headers.get("content-disposition", "")
-                                ).get_param("size", 0)
-                            )
-
-                total_size += asset["size"]
+        total_size = self._get_asset_sizes(assets_values, auth, params)
 
         progress_callback.reset(total=total_size)
         error_messages = set()
@@ -844,6 +794,60 @@ class HTTPDownload(Download):
             logger.warning("Unexpected error: %s" % e)
             logger.warning("Skipping %s" % asset["href"])
 
+    def _get_asset_sizes(self, assets_values, auth, params):
+        total_size = 0
+        # loop for assets size & filename
+        for asset in assets_values:
+            if not asset["href"].startswith("file:"):
+                # HEAD request for size & filename
+                asset_headers = requests.head(
+                    asset["href"],
+                    auth=auth,
+                    headers=USER_AGENT,
+                    timeout=HTTP_REQ_TIMEOUT,
+                ).headers
+
+                if not asset.get("size", 0):
+                    # size from HEAD header / Content-length
+                    asset["size"] = int(asset_headers.get("Content-length", 0))
+
+                if not asset.get("size", 0) or not asset.get("filename", 0):
+                    # header content-disposition
+                    header_content_disposition = parse_header(
+                        asset_headers.get("content-disposition", "")
+                    )
+                if not asset.get("size", 0):
+                    # size from HEAD header / content-disposition / size
+                    asset["size"] = int(header_content_disposition.get_param("size", 0))
+                if not asset.get("filename", 0):
+                    # filename from HEAD header / content-disposition / size
+                    asset["filename"] = header_content_disposition.get_param(
+                        "filename", None
+                    )
+
+                if not asset.get("size", 0):
+                    # GET request for size
+                    with requests.get(
+                        asset["href"],
+                        stream=True,
+                        auth=auth,
+                        params=params,
+                        headers=USER_AGENT,
+                        timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    ) as stream:
+                        # size from GET header / Content-length
+                        asset["size"] = int(stream.headers.get("Content-length", 0))
+                        if not asset.get("size", 0):
+                            # size from GET header / content-disposition / size
+                            asset["size"] = int(
+                                parse_header(
+                                    stream.headers.get("content-disposition", "")
+                                ).get_param("size", 0)
+                            )
+
+                total_size += asset["size"]
+        return total_size
+
     def direct_download_assets(
         self,
         product,
@@ -887,8 +891,10 @@ class HTTPDownload(Download):
         params = kwargs.pop("dl_url_params", None) or getattr(
             self.config, "dl_url_params", {}
         )
-        progress_callback.reset(total=len(assets_values))
+
         error_messages = set()
+        total_size = self._get_asset_sizes(assets_values, auth, params)
+        progress_callback.reset(total_size)
         for asset in assets_values:
             with requests.get(
                 asset["href"],
@@ -906,7 +912,7 @@ class HTTPDownload(Download):
                 else:
                     for chunk in stream.iter_content(chunk_size=64 * 1024):
                         if chunk:
-                            progress_callback(1)
+                            progress_callback(len(chunk))
                             yield chunk
             separator = ("\n" + "EOF" + "\n").encode("UTF-8")
             filename = asset["href"].split("/")[-1] + "\n"

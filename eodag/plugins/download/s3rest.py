@@ -388,6 +388,13 @@ class S3RestDownload(Download):
                                                     ordered_message)
         xmldoc, nodes_xml_list = self._get_nodes_xml_list(bucket_contents,
                                                           nodes_list_url)
+        total_size = sum(
+            [
+                int(node.firstChild.nodeValue)
+                for node in xmldoc.getElementsByTagName("Size")
+            ]
+        )
+        progress_callback.reset(total=total_size)
         return StreamingResponse(self._stream_assets(nodes_xml_list, bucket_url, auth, progress_callback))
 
     def _stream_assets(self, nodes_xml_list, bucket_url, auth, progress_callback):

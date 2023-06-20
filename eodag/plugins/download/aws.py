@@ -503,6 +503,9 @@ class AwsDownload(Download):
 
         # downloadable files
         unique_product_chunks = self._get_unique_product_chunks(bucket_names_and_prefixes, authenticated_objects)
+        total_size = sum([p.size for p in unique_product_chunks])
+
+        progress_callback.reset(total=total_size)
 
         return StreamingResponse(
             self._stream_assets(product, unique_product_chunks, progress_callback, build_safe)
@@ -526,6 +529,7 @@ class AwsDownload(Download):
 
                 body = product_chunk.get()['Body']
                 for b in body:
+                    progress_callback(len(b))
                     yield b
                 separator = ("\n" + "EOF" + "\n")
                 filename = product_chunk.key.split("/")[-1] + "\n"
