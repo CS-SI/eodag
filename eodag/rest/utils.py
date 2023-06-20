@@ -232,7 +232,9 @@ def get_geometry(arguments):
 
     geom = None
 
-    if ("bbox" in arguments and arguments["bbox"] is not None) or ("box" in arguments and arguments["box"] is not None):
+    if ("bbox" in arguments and arguments["bbox"] is not None) or (
+        "box" in arguments and arguments["box"] is not None
+    ):
         # get bbox
         request_bbox = arguments.pop("bbox", None) or arguments.pop("box", None)
         if request_bbox and isinstance(request_bbox, str):
