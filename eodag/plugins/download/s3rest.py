@@ -24,8 +24,8 @@ from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 import requests
-from requests import RequestException
 from fastapi.responses import StreamingResponse
+from requests import RequestException
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import (
@@ -149,8 +149,12 @@ class S3RestDownload(Download):
 
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
-            bucket_contents = self._get_bucket_contents(nodes_list_url, auth, product, ordered_message)
-            xmldoc, nodes_xml_list = self._get_nodes_xml_list(bucket_contents, nodes_list_url)
+            bucket_contents = self._get_bucket_contents(
+                nodes_list_url, auth, product, ordered_message
+            )
+            xmldoc, nodes_xml_list = self._get_nodes_xml_list(
+                bucket_contents, nodes_list_url
+            )
 
             # destination product path
             outputs_prefix = (
@@ -300,8 +304,7 @@ class S3RestDownload(Download):
                 )
             # product not available
             elif (
-                product.properties.get("storageStatus", ONLINE_STATUS)
-                != ONLINE_STATUS
+                product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS
             ):
                 msg = (
                     ordered_message
@@ -341,11 +344,7 @@ class S3RestDownload(Download):
         return xmldoc, nodes_xml_list
 
     def direct_download_assets(
-        self,
-        product,
-        auth=None,
-        progress_callback=None,
-        **kwargs
+        self, product, auth=None, progress_callback=None, **kwargs
     ):
         """
         directly streams the asset files of a product to the user
@@ -374,9 +373,7 @@ class S3RestDownload(Download):
         ):
             self.http_download_plugin.orderDownload(product=product, auth=auth)
         if product.properties.get("orderStatusLink", None):
-            self.http_download_plugin.orderDownloadStatus(
-                product=product, auth=auth
-            )
+            self.http_download_plugin.orderDownloadStatus(product=product, auth=auth)
 
         # get bucket urls
         bucket_url, prefix = self._get_bucket_url(product)
@@ -384,10 +381,12 @@ class S3RestDownload(Download):
 
         # get nodes/files list contained in the bucket
         logger.debug("Retrieving product content from %s", nodes_list_url)
-        bucket_contents = self._get_bucket_contents(nodes_list_url, auth, product,
-                                                    ordered_message)
-        xmldoc, nodes_xml_list = self._get_nodes_xml_list(bucket_contents,
-                                                          nodes_list_url)
+        bucket_contents = self._get_bucket_contents(
+            nodes_list_url, auth, product, ordered_message
+        )
+        xmldoc, nodes_xml_list = self._get_nodes_xml_list(
+            bucket_contents, nodes_list_url
+        )
         total_size = sum(
             [
                 int(node.firstChild.nodeValue)
@@ -395,7 +394,9 @@ class S3RestDownload(Download):
             ]
         )
         progress_callback.reset(total=total_size)
-        return StreamingResponse(self._stream_assets(nodes_xml_list, bucket_url, auth, progress_callback))
+        return StreamingResponse(
+            self._stream_assets(nodes_xml_list, bucket_url, auth, progress_callback)
+        )
 
     def _stream_assets(self, nodes_xml_list, bucket_url, auth, progress_callback):
         for node_xml in nodes_xml_list:
@@ -418,9 +419,7 @@ class S3RestDownload(Download):
                 except RequestException:
                     import traceback as tb
 
-                    logger.error(
-                        "Error while getting resource :\n%s", tb.format_exc()
-                    )
+                    logger.error("Error while getting resource :\n%s", tb.format_exc())
                 else:
                     for chunk in stream.iter_content(chunk_size=64 * 1024):
                         if chunk:
@@ -430,4 +429,3 @@ class S3RestDownload(Download):
             filename = node_url.split("/")[-1] + "\n"
             yield separator
             yield filename.encode("UTF-8")
-

@@ -6,15 +6,15 @@ import ast
 import datetime
 import logging
 import os
+import pathlib
 import re
 from collections import namedtuple
 
 import dateutil.parser
-from dateutil import tz
-from shapely.geometry import Polygon, shape
 import zipstream
-import pathlib
+from dateutil import tz
 from fastapi.responses import StreamingResponse
+from shapely.geometry import Polygon, shape
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
@@ -574,7 +574,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id(catalogs, item_id, provider=None, zip='False'):
+def download_stac_item_by_id(catalogs, item_id, provider=None, zip="False"):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -595,19 +595,19 @@ def download_stac_item_by_id(catalogs, item_id, provider=None, zip='False'):
         directory = pathlib.Path(path)
 
         def generator():
-            with zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED) as archive:
+            with zipstream.ZipFile(
+                mode="w", compression=zipstream.ZIP_DEFLATED
+            ) as archive:
                 for file_path in directory.rglob("*"):
-                    archive.write(
-                        file_path,
-                        arcname=file_path.relative_to(directory)
-                    )
+                    archive.write(file_path, arcname=file_path.relative_to(directory))
 
                 for chunk in archive:
                     yield chunk
 
         response = StreamingResponse(generator())
-        response.headers['Content-Disposition'] = 'attachment; filename={}'.format(
-            'files.zip')
+        response.headers["Content-Disposition"] = "attachment; filename={}".format(
+            "files.zip"
+        )
         return response
     else:
         return eodag_api.download_stream(product, zip=zip)
