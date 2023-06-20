@@ -550,8 +550,8 @@ class AwsDownload(Download):
                     yield b
                 separator = "\n" + "EOF" + "\n"
                 filename = product_chunk.key.split("/")[-1] + "\n"
-                yield separator.encode("UTF-8")
                 yield filename.encode("UTF-8")
+                yield separator.encode("UTF-8")
 
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)

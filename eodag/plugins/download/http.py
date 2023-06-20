@@ -891,8 +891,8 @@ class HTTPDownload(Download):
                             yield chunk
             separator = ("\n" + "EOF" + "\n").encode("UTF-8")
             filename = asset["href"].split("/")[-1] + "\n"
-            yield separator
             yield filename.encode("UTF-8")
+            yield separator
 
     def download_all(
         self,

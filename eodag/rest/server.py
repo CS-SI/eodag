@@ -38,6 +38,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
     download_stac_item_by_id,
+    download_stac_item_by_id_stream,
     eodag_api_init,
     get_detailled_collections_list,
     get_stac_api_version,
@@ -413,7 +414,7 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
     if "zip" in arguments:
         zipped = arguments["zip"]
 
-    return download_stac_item_by_id(
+    return download_stac_item_by_id_stream(
         catalogs=[collection_id], item_id=item_id, provider=provider, zip=zipped
     )
 

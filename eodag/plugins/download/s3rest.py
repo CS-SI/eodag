@@ -427,5 +427,5 @@ class S3RestDownload(Download):
                             yield chunk
             separator = ("\n" + "EOF" + "\n").encode("UTF-8")
             filename = node_url.split("/")[-1] + "\n"
-            yield separator
             yield filename.encode("UTF-8")
+            yield separator
