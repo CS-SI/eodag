@@ -681,7 +681,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(expected_file))
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.download",
+        "eodag.rest.utils.eodag_api.download_stream",
         autospec=True,
     )
     def test_download_item_from_collection_api_plugin(self, mock_download):
@@ -697,17 +697,10 @@ class RequestTestCase(unittest.TestCase):
             0
         ].provider = "cop_cds"
 
-        response = self._request_valid_raw(
+        self._request_valid_raw(
             f"collections/{self.tested_product_type}/items/foo/download"
         )
         mock_download.assert_called_once()
-
-        header_content_disposition = parse_header(
-            response.headers["content-disposition"]
-        )
-        response_filename = header_content_disposition.get_param("filename", None)
-        self.assertEqual(response_filename, os.path.basename(expected_file))
-        self.assertTrue(os.path.isfile(expected_file))
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""
