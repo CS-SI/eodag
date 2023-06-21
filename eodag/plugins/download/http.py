@@ -541,15 +541,23 @@ class HTTPDownload(Download):
 
     def download_zip(self, product, auth, progress_callback, **kwargs):
         """
-        downloads a zip file containing the assets of a given product and returns it as a stream
-        Args:
-            product: product for which the assets should be downloaded
-            auth: authentication parameters used in the request
-            progress_callback: callback to update the download progress
-            **kwargs:
-
-        Returns: a StreamingResponse which will directly transfer the data received from the provider to the user
-
+        downloads a zip file containing the assets of a given product
+        and returns it as a stream
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        :returns: a StreamingResponse which will directly transfer the data received
+                  from the provider to the user
+        :rtype: fastapi.responses.StreamingResponse
         """
         ordered_message = ""
         if (
@@ -571,12 +579,21 @@ class HTTPDownload(Download):
         """
         fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
-        Args:
-            product: product for which the assets should be downloaded
-            auth: authentication parameters used in the request
-            progress_callback: callback to update the download progress
-            ordered_message: message to be used in case of error because the product is unavailable
-            **kwargs:
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param ordered_message: message to be used in case of error because
+                                the product is unavailable
+        :type ordered_message: str
+        :param kwargs: additional arguments
+        :type kwargs: dict
         """
         if product.properties.get("orderStatusLink", None):
             self.orderDownloadStatus(product=product, auth=auth)
@@ -839,11 +856,20 @@ class HTTPDownload(Download):
         directly streams the asset files of a product to the user
         All asset files are returned in a continuous stream and have to be separated by the client
         The end of a file is marked with EOF in one line and then the name of the file in the next line
-        Args:
-            product: product for which the assets should be downloaded
-            auth: authentication parameters used in the request
-            progress_callback: callback to update the download progress
-            **kwargs:
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        :returns: a stream containing all asset files of the product
+        :rtype: fastapi.responses.StreamingResponse
 
         Returns: a stream containing all asset files of the product
 

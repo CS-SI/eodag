@@ -350,13 +350,20 @@ class S3RestDownload(Download):
         directly streams the asset files of a product to the user
         All asset files are returned in a continuous stream and have to be separated by the client
         The end of a file is marked with EOF in one line and then the name of the file in the next line
-        Args:
-            product: product for which the assets should be downloaded
-            auth: authentication parameters used in the request
-            progress_callback: callback to update the download progress
-            **kwargs:
-
-        Returns: a stream containing all asset files of the product
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        :returns: a stream containing all asset files of the product
+        :rtype: fastapi.responses.StreamingResponse
         """
         if progress_callback is None:
             logger.info(
