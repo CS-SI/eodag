@@ -182,7 +182,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets = {
-            "foo": {"href": "http://somewhere/something?foo=bar#baz"}
+            "foo": {"href": "http://somewhere/mal:for;matted/something?foo=bar#baz"}
         }
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": ""
@@ -194,7 +194,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
         self.assertTrue(
-            os.path.isfile(os.path.join(self.output_dir, "dummy_product", "something"))
+            os.path.isfile(
+                os.path.join(
+                    self.output_dir, "dummy_product", "mal_for_matted", "something"
+                )
+            )
         )
 
         # Check if the GET request has been called for both size request and download request

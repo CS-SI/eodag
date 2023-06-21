@@ -46,6 +46,7 @@ from eodag.utils import (
     flatten_top_directories,
     parse_header,
     path_to_uri,
+    sanitize,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
@@ -643,7 +644,13 @@ class HTTPDownload(Download):
                         logger.warning("Skipping %s" % asset["href"])
                     error_messages.add(str(e))
                 else:
-                    asset_rel_path = urlparse(asset["href"]).path.strip("/")
+                    asset_rel_path_parts = (
+                        urlparse(asset["href"]).path.strip("/").split("/")
+                    )
+                    asset_rel_path_parts_sanitized = [
+                        sanitize(part) for part in asset_rel_path_parts
+                    ]
+                    asset_rel_path = os.path.join(*asset_rel_path_parts_sanitized)
                     asset_rel_dir = os.path.dirname(asset_rel_path)
 
                     if not asset.get("filename", None):
