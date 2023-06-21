@@ -146,8 +146,8 @@ jobs:
         key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
     - name: Install pandoc
       run: |
-        sudo apt update
-        sudo apt install -y make pandoc
+        curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep -o "https.*amd64.deb" | wget -O pandoc.deb -qi -
+        sudo dpkg -i pandoc.deb && rm pandoc.deb
     - name: Install tox
       run: |
         python -m pip install tox
