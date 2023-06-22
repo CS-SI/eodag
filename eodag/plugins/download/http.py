@@ -855,7 +855,7 @@ class HTTPDownload(Download):
         """
         directly streams the asset files of a product to the user
         All asset files are returned in a continuous stream and have to be separated by the client
-        The end of a file is marked with EOF in one line and then the name of the file in the next line
+        The end of a file is marked with ENDOFFILE in one line and then the name of the file in the next line
         :param product: product for which the assets should be downloaded
         :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) The configuration of a plugin of type Authentication
@@ -915,7 +915,7 @@ class HTTPDownload(Download):
                         if chunk:
                             progress_callback(len(chunk))
                             yield chunk
-            separator = ("\n" + "EOF" + "\n").encode("UTF-8")
+            separator = ("\n" + "ENDOFFILE" + "\n").encode("UTF-8")
             filename = asset["href"].split("/")[-1] + "\n"
             yield filename.encode("UTF-8")
             yield separator

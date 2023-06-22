@@ -6,13 +6,12 @@ import ast
 import datetime
 import logging
 import os
-import pathlib
 import re
 from collections import namedtuple
 from shutil import make_archive
 
 import dateutil.parser
-import zipstream
+import zipfly
 from dateutil import tz
 from fastapi.responses import StreamingResponse
 from shapely.geometry import Polygon, shape
@@ -627,19 +626,16 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="False
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
     if zip.lower() == "true":
         path = eodag_api.download_stream(product, zip=zip)
-        directory = pathlib.Path(path)
 
-        def generator():
-            with zipstream.ZipFile(
-                mode="w", compression=zipstream.ZIP_DEFLATED
-            ) as archive:
-                for file_path in directory.rglob("*"):
-                    archive.write(file_path, arcname=file_path.relative_to(directory))
+        paths = []
+        for dirpath, _, filenames in os.walk(path):
+            for f in filenames:
+                paths.append({"fs": os.path.join(dirpath, f)})
 
-                for chunk in archive:
-                    yield chunk
+        zfly = zipfly.ZipFly(paths=paths)
+        generator = zfly.generator()
 
-        response = StreamingResponse(generator())
+        response = StreamingResponse(generator)
         response.headers["Content-Disposition"] = "attachment; filename={}".format(
             "files.zip"
         )

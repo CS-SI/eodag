@@ -480,7 +480,7 @@ class AwsDownload(Download):
         """
         directly streams the asset files of a product to the user
         All asset files are returned in a continuous stream and have to be separated
-        by the client. The end of a file is marked with EOF in one line and then the
+        by the client. The end of a file is marked with ENDOFFILE in one line and then the
         name of the file in the previous line
         :param product: product for which the assets should be downloaded
         :type product: :class:`~eodag.api.product._product.EOProduct`
@@ -556,7 +556,7 @@ class AwsDownload(Download):
                 for b in body:
                     progress_callback(len(b))
                     yield b
-                separator = "\n" + "EOF" + "\n"
+                separator = "\n" + "ENDOFFILE" + "\n"
                 filename = product_chunk.key.split("/")[-1] + "\n"
                 yield filename.encode("UTF-8")
                 yield separator.encode("UTF-8")
