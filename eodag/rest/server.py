@@ -410,7 +410,7 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
     body = {}
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
-    zipped = "False"
+    zipped = "True"
     if "zip" in arguments:
         zipped = arguments["zip"]
 
