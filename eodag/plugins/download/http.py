@@ -571,8 +571,13 @@ class HTTPDownload(Download):
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
             )
             progress_callback = ProgressCallback(disable=True)
+
+        headers = "attachment; filename={}".format(product.properties["id"] + ".zip")
         return StreamingResponse(
-            self.stream_zip(product, auth, progress_callback, ordered_message, **kwargs)
+            self.stream_zip(
+                product, auth, progress_callback, ordered_message, **kwargs
+            ),
+            headers={"Content-Disposition": headers},
         )
 
     def stream_zip(self, product, auth, progress_callback, ordered_message, **kwargs):
@@ -915,8 +920,8 @@ class HTTPDownload(Download):
                         if chunk:
                             progress_callback(len(chunk))
                             yield chunk
-            separator = ("\n" + "ENDOFFILE" + "\n").encode("UTF-8")
-            filename = asset["href"].split("/")[-1] + "\n"
+            separator = ("\n" + "ENDOFFILE").encode("UTF-8")
+            filename = "\n" + asset["href"].split("/")[-1]
             yield filename.encode("UTF-8")
             yield separator
 

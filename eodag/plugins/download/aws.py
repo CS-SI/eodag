@@ -556,8 +556,8 @@ class AwsDownload(Download):
                 for b in body:
                     progress_callback(len(b))
                     yield b
-                separator = "\n" + "ENDOFFILE" + "\n"
-                filename = product_chunk.key.split("/")[-1] + "\n"
+                separator = "\n" + "ENDOFFILE"
+                filename = "\n" + product_chunk.key.split("/")[-1]
                 yield filename.encode("UTF-8")
                 yield separator.encode("UTF-8")
 

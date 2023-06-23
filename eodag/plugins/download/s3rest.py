@@ -432,7 +432,7 @@ class S3RestDownload(Download):
                         if chunk:
                             progress_callback(len(chunk))
                             yield chunk
-            separator = ("\n" + "ENDOFFILE" + "\n").encode("UTF-8")
-            filename = node_url.split("/")[-1] + "\n"
+            separator = ("\n" + "ENDOFFILE").encode("UTF-8")
+            filename = "\n" + node_url.split("/")[-1]
             yield filename.encode("UTF-8")
             yield separator

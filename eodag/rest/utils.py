@@ -637,7 +637,7 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="False
 
         response = StreamingResponse(generator)
         response.headers["Content-Disposition"] = "attachment; filename={}".format(
-            "files.zip"
+            item_id + ".zip"
         )
         return response
     else:
