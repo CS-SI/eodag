@@ -1823,15 +1823,22 @@ class EODataAccessGateway(object):
         downloads the assets of the given product and returns them as a stream;
         (unless a zip file still has to be created, in that case a path will be returned)
         The stream can either contain a zip file or individual files received from the provider
-        Args:
-            product: product for which the assets should be downloaded
-            progress_callback: callback to update the download progress
-            **kwargs: with the key word argument zip it can be defined if assets that
-            are not received as a zip file should be streamed directly (zip="false") or
-            if they should be stored to be later converted to a zip file (zip="true")
-
-        Returns: either a stream or a path where the assets are stored
-
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param kwargs: additional arguments; with the key word argument zip it can be
+                       defined if assets that are not received as a zip file should be
+                       streamed directly (zip="false") or if they should be stored to be
+                       later converted to a zip file (zip="true")
+        :type kwargs: dict
+        :returns: a StreamingResponse which will directly transfer the data received
+                  from the provider to the user or a path to a folder where the assets are stored
+        :rtype: fastapi.responses.StreamingResponse or str
         """
         self._setup_downloader(product)
         assets_urls = [

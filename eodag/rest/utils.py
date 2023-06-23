@@ -615,9 +615,9 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="False
     :type item_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :param zip: if the dowloaded filed should be zipped
+    :param zip: if the downloaded filed should be zipped
     :type zip: str
-    :returns: Downloaded item local path
+    :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
     if provider:

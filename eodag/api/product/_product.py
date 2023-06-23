@@ -359,12 +359,16 @@ class EOProduct(object):
         """
         downloads the assets of the product provided as a zip file
         and returns a stream of the file
-        Args:
-            progress_callback: callback to update the download progress
-            **kwargs:
-
-        Returns: a stream of the downloaded zip file
-
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        :returns: a stream of the downloaded zip file
+        :rtype: fastapi.responses.StreamingResponse
         """
         if self.downloader is None:
             raise RuntimeError(
@@ -383,12 +387,17 @@ class EOProduct(object):
     def download_assets(self, progress_callback=None, **kwargs):
         """
         downloads the asset files of the product and returns a stream containing all the files
-        Args:
-            progress_callback: callback to update the download progress
-            **kwargs:
-
-        Returns: a stream of the downloaded files
-
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        :returns: a StreamingResponse which will directly transfer the downloaded assets
+                  from the provider to the user
+        :rtype: fastapi.responses.StreamingResponse
         """
         if self.downloader is None:
             raise RuntimeError(
