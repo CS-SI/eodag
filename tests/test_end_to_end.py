@@ -493,7 +493,7 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(
             *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_cop_ads(self):
@@ -507,7 +507,7 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(
             *COP_CDS_SEARCH_ARGS, search_kwargs_dict=COP_CDS_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_sara(self):
@@ -517,7 +517,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_meteoblue(self):
         product = self.execute_search(*METEOBLUE_SEARCH_ARGS)
-        expected_filename = "{}.nc".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_wekeo(self):

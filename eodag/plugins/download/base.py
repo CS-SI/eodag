@@ -332,6 +332,11 @@ class Download(PluginTopic):
         extract = (
             extract if extract is not None else getattr(self.config, "extract", True)
         )
+        if not extract:
+            logger.info("Extraction not activated. The product is available as is.")
+            progress_callback(1, total=1)
+            return fs_path
+
         delete_archive = kwargs.pop("delete_archive", None)
         delete_archive = (
             delete_archive
@@ -339,11 +344,6 @@ class Download(PluginTopic):
             else getattr(self.config, "delete_archive", True)
         )
         outputs_extension = kwargs.pop("outputs_extension", ".zip")
-
-        if not extract:
-            logger.info("Extraction not activated. The product is available as is.")
-            progress_callback(1, total=1)
-            return fs_path
 
         product_path = (
             fs_path[: fs_path.index(outputs_extension)]
@@ -402,18 +402,26 @@ class Download(PluginTopic):
                             path=extraction_dir,
                         )
                         progress_callback(1)
-                shutil.move(extraction_dir, outputs_dir)
+                shutil.move(self._resolve_archive_depth(extraction_dir), outputs_dir)
 
             elif fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
                     progress_callback(1)
-                shutil.move(extraction_dir, outputs_dir)
+                shutil.move(self._resolve_archive_depth(extraction_dir), outputs_dir)
             else:
                 progress_callback(1, total=1)
 
             tmp_dir.cleanup()
+
+            # in some cases, only a file is extracted without being in a directory
+            # we create a directory in which we place this file
+            if os.path.isfile(outputs_dir):
+                product_path = os.path.splitext(product_path)[0]
+                if not os.path.isdir(product_path):
+                    os.makedirs(product_path)
+                shutil.move(outputs_dir, product_path)
 
             if delete_archive:
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
@@ -428,8 +436,6 @@ class Download(PluginTopic):
         # close progress bar if needed
         if close_progress_callback:
             progress_callback.close()
-
-        product_path = self._resolve_archive_depth(product_path)
 
         return product_path
 

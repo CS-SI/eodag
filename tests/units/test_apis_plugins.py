@@ -277,12 +277,20 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         output_data_path = os.path.join(os.path.expanduser("~"), "data")
 
         # public dataset request
+        def create_empty_file_for_public_dataset(*args, **kwargs):
+            with open(args[1]["target"], "x"):
+                pass
+
+        mock_ecmwfdataserver_retrieve.side_effect = create_empty_file_for_public_dataset
         results, _ = dag.search(
             **self.query_dates,
             **self.custom_query_params,
         )
         eoproduct = results[0]
         expected_path = os.path.join(
+            output_data_path, "%s" % eoproduct.properties["title"]
+        )
+        arg_path = os.path.join(
             output_data_path, "%s.grib" % eoproduct.properties["title"]
         )
         path = eoproduct.download(outputs_prefix=output_data_path)
@@ -290,21 +298,22 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve.assert_called_once_with(
             mock.ANY,  # ECMWFDataServer instance
             dict(
-                target=expected_path,
+                target=arg_path,
                 **geojson.loads(urlsplit(eoproduct.remote_location).query),
             ),
         )
+        assert path == expected_path
         assert path_to_uri(expected_path) == eoproduct.location
 
         mock_ecmwfservice_execute.reset_mock()
         mock_ecmwfdataserver_retrieve.reset_mock()
 
         # operation archive request
-        def create_empty_file(*args, **kwargs):
+        def create_empty_file_for_operation_archive(*args, **kwargs):
             with open(args[2], "x"):
                 pass
 
-        mock_ecmwfservice_execute.side_effect = create_empty_file
+        mock_ecmwfservice_execute.side_effect = create_empty_file_for_operation_archive
         operation_archive_custom_query_params = self.custom_query_params.copy()
         operation_archive_custom_query_params.pop("dataset")
         operation_archive_custom_query_params["format"] = "netcdf"
@@ -314,6 +323,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
         expected_path = os.path.join(
+            output_data_path, "%s" % eoproduct.properties["title"]
+        )
+        arg_path = os.path.join(
             output_data_path, "%s.nc" % eoproduct.properties["title"]
         )
         path = eoproduct.download(outputs_prefix=output_data_path)
@@ -324,7 +336,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             dict(
                 **download_request,
             ),
-            expected_path,
+            arg_path,
         )
         mock_ecmwfdataserver_retrieve.assert_not_called()
         assert path == expected_path
@@ -349,7 +361,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve,
         mock_fetch_product_types_list,
     ):
-        """EcmwfApi.download_all must call the appriate ecmwf api service"""
+        """EcmwfApi.download_all must call the appropriate ecmwf api service"""
 
         dag = EODataAccessGateway()
         dag.set_preferred_provider("ecmwf")
@@ -360,13 +372,13 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         results, _ = dag.search(
             **self.query_dates,
             **self.custom_query_params,
-            foo="bar",
+            accuracy="bar",
         )
         eoproducts.extend(results)
         results, _ = dag.search(
             **self.query_dates,
             **self.custom_query_params,
-            foo="baz",
+            accuracy="baz",
         )
         eoproducts.extend(results)
         assert len(eoproducts) == 2
@@ -897,13 +909,13 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         results, _ = dag.search(
             **self.query_dates,
             **self.custom_query_params,
-            foo="bar",
+            accuracy="bar",
         )
         eoproducts.extend(results)
         results, _ = dag.search(
             **self.query_dates,
             **self.custom_query_params,
-            foo="baz",
+            accuracy="baz",
         )
         eoproducts.extend(results)
         assert len(eoproducts) == 2

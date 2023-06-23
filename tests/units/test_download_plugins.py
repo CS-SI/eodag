@@ -157,6 +157,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_ok(self, mock_requests_session_request):
         """HTTPDownload.download() must create an outputfile"""
 
+        # download a lone file with a ".zip" extension
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -228,6 +229,34 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         mock_requests_session.assert_not_called()
+
+        # download a lone file with different extension and results output configuration
+        mock_requests_get.reset_mock()
+        self.product = EOProduct(
+            "meteoblue",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product_2",
+                id="dummy_2",
+            ),
+        )
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhereelse"
+        self.product.properties["id"] = "someotherproduct"
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product_2"))
+        self.assertTrue(os.path.isfile(os.path.join(path, os.listdir(path)[0])))
+        mock_requests_get.assert_called_once_with(
+            "post",
+            self.product.remote_location,
+            stream=True,
+            auth=None,
+            params={},
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)

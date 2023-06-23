@@ -704,6 +704,7 @@
     type: HTTPDownload
     base_uri: 'https://theia.cnes.fr/atdistrib/resto2'
     extract: true
+    archive_depth: 2
     order_enabled: true
     auth_error_code: 403
     dl_url_params:
@@ -1309,7 +1310,7 @@
         - '$.Metadata.sensorType'
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.Metadata.filename'
+      title: '{$.Metadata.filename#remove_extension}'
       topicCategory:
         - null
         - '$.Metadata.topicCategory'
@@ -1499,6 +1500,7 @@
     type: HTTPDownload
     base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
     extract: true
+    archive_depth: 2
     auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
@@ -1869,6 +1871,7 @@
     type: EcmwfApi
     api_endpoint: https://api.ecmwf.int/v1
     extract: false
+    outputs_in_folder: true
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -3415,6 +3418,7 @@
     order_status_error:
       status: error
     outputs_extension: .nc
+    outputs_in_folder: true
   auth: !plugin
     type: HttpQueryStringAuth
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'

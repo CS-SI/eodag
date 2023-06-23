@@ -18,6 +18,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import shutil
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
@@ -37,6 +39,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     get_geometry_from_various,
     path_to_uri,
+    sanitize,
     urlsplit,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError
@@ -222,7 +225,17 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             fh.write(product.properties["downloadLink"])
         logger.debug("Download recorded in %s", record_filename)
 
-        # do not try to extract or delete grib/netcdf
+        # Check the output configuration
+        if getattr(self.config, "outputs_in_folder", False):
+            new_fs_path = os.path.join(
+                os.path.dirname(fs_path), sanitize(product.properties["title"])
+            )
+            if not os.path.isdir(new_fs_path):
+                os.makedirs(new_fs_path)
+            shutil.move(fs_path, new_fs_path)
+            fs_path = new_fs_path
+
+        # do not try to extract or delete grib/netcdf or a directory
         kwargs["extract"] = False
 
         product_path = self._finalize(
