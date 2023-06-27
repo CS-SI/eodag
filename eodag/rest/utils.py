@@ -9,12 +9,13 @@ import os
 import re
 from collections import namedtuple
 from shutil import make_archive
+from types import GeneratorType
 
 import dateutil.parser
-import zipfly
 from dateutil import tz
 from fastapi.responses import StreamingResponse
 from shapely.geometry import Polygon, shape
+from stream_zip import stream_zip
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
@@ -25,7 +26,12 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
-from eodag.utils import _deprecated, dict_items_recursive_apply, string_to_jsonpath
+from eodag.utils import (
+    _deprecated,
+    dict_items_recursive_apply,
+    sanitize,
+    string_to_jsonpath,
+)
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -606,7 +612,7 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
         return product_path
 
 
-def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="False"):
+def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -624,24 +630,22 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="False
         eodag_api.set_preferred_provider(provider)
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
-    if zip.lower() == "true":
-        path = eodag_api.download_stream(product, zip=zip)
 
-        paths = []
-        for dirpath, _, filenames in os.walk(path):
-            for f in filenames:
-                paths.append({"fs": os.path.join(dirpath, f)})
+    download_stream = eodag_api.download_stream(product)
 
-        zfly = zipfly.ZipFly(paths=paths)
-        generator = zfly.generator()
-
-        response = StreamingResponse(generator)
-        response.headers["Content-Disposition"] = "attachment; filename={}".format(
-            item_id + ".zip"
+    if isinstance(download_stream, GeneratorType):
+        # assets streaming
+        zipped_chunks = stream_zip(download_stream)
+        return StreamingResponse(
+            zipped_chunks,
+            media_type="application/zip",
+            headers={
+                "content-disposition": f"attachment; filename={sanitize(item_id)}.zip"
+            },
         )
-        return response
     else:
-        return eodag_api.download_stream(product, zip=zip)
+        # single archive streaming
+        return download_stream
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):

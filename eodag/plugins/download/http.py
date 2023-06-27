@@ -20,6 +20,7 @@ import logging
 import os
 import shutil
 import zipfile
+from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -27,6 +28,7 @@ import requests
 from fastapi.responses import StreamingResponse
 from lxml import etree
 from requests import HTTPError, RequestException
+from stream_zip import ZIP_32
 
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
@@ -873,8 +875,8 @@ class HTTPDownload(Download):
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :param kwargs: additional arguments
         :type kwargs: dict
-        :returns: a stream containing all asset files of the product
-        :rtype: fastapi.responses.StreamingResponse
+        :returns: generator for tuple containing file infos and chunks of all assets of the product
+        :rtype: Generator[tuple]
 
         Returns: a stream containing all asset files of the product
 
@@ -884,9 +886,7 @@ class HTTPDownload(Download):
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
             )
             progress_callback = ProgressCallback(disable=True)
-        return StreamingResponse(
-            self._stream_assets(product, auth, progress_callback, **kwargs)
-        )
+        return self._stream_assets(product, auth, progress_callback, **kwargs)
 
     def _stream_assets(self, product, auth=None, progress_callback=None, **kwargs):
         assets_values = [
@@ -901,6 +901,17 @@ class HTTPDownload(Download):
         error_messages = set()
         total_size = self._get_asset_sizes(assets_values, auth, params)
         progress_callback.reset(total_size)
+
+        # zipped files properties
+        modified_at = datetime.now()
+        perms = 0o600
+
+        def get_chunks(stream):
+            for chunk in stream.iter_content(chunk_size=64 * 1024):
+                if chunk:
+                    progress_callback(len(chunk))
+                    yield chunk
+
         for asset in assets_values:
             with requests.get(
                 asset["href"],
@@ -916,14 +927,30 @@ class HTTPDownload(Download):
                     self._handle_asset_exception(e, asset)
                     error_messages.add(str(e))
                 else:
-                    for chunk in stream.iter_content(chunk_size=64 * 1024):
-                        if chunk:
-                            progress_callback(len(chunk))
-                            yield chunk
-            separator = ("\n" + "ENDOFFILE").encode("UTF-8")
-            filename = "\n" + asset["href"].split("/")[-1]
-            yield filename.encode("UTF-8")
-            yield separator
+                    asset_rel_path = urlparse(asset["href"]).path.strip("/")
+                    # asset_rel_dir = os.path.dirname(asset_rel_path)
+
+                    if not asset.get("filename", None):
+                        # try getting filename in GET header if was not found in HEAD result
+                        asset_content_disposition = stream.headers.get(
+                            "content-disposition", None
+                        )
+                        if asset_content_disposition:
+                            asset["filename"] = parse_header(
+                                asset_content_disposition
+                            ).get_param("filename", None)
+
+                    if not asset.get("filename", None):
+                        # default filename extracted from path
+                        asset["filename"] = os.path.basename(asset_rel_path)
+
+                    yield (
+                        asset["filename"],
+                        modified_at,
+                        perms,
+                        ZIP_32,
+                        get_chunks(stream),
+                    )
 
     def download_all(
         self,

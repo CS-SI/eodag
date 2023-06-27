@@ -1848,19 +1848,15 @@ class EODataAccessGateway(object):
         if not assets_urls and not isinstance(product.downloader, S3RestDownload):
             self.providers_config[product.provider].download.extract = False
             return product.download_zip(progress_callback, **kwargs)
-        elif (
-            (assets_urls or isinstance(product.downloader, S3RestDownload))
-            and kwargs["zip"]
-            and kwargs["zip"].lower() == "true"
-        ):
+        elif assets_urls:
+            return product.download_assets(progress_callback, **kwargs)
+        else:
             return product.download(
                 progress_callback=progress_callback,
                 wait=DEFAULT_DOWNLOAD_WAIT,
                 timeout=DEFAULT_DOWNLOAD_TIMEOUT,
                 **kwargs,
             )
-        else:
-            return product.download_assets(progress_callback, **kwargs)
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration
