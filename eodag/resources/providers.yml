@@ -5520,3 +5520,45 @@
     order_status_success:
       status: completed
       message: "Done!"
+
+---
+!provider
+  name: dedl
+  priority: 0
+  roles:
+    - host
+  description: DEDL STAC
+  url: https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/search
+    need_auth: false
+    metadata_mapping:
+      defaultGeometry: '-180 -90 180 90'
+      geometry:
+        - 'geometry={geometry#to_rounded_wkt}'
+        - '$.geometry'
+    discover_product_types:
+      fetch_url: 'https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/collections'
+      result_type: json
+      results_entry: '$.collections[*]'
+      generic_product_type_id: '$.id'
+      generic_product_type_parsable_properties:
+        collection: '$.id'
+      generic_product_type_parsable_metadata:
+        abstract: '$.description'
+        keywords: '{$.keywords#csv_list}'
+        license: '$.license'
+        title: '$.title'
+        missionStartDate: '$.extent.temporal.interval[0][0]'
+    pagination:
+      next_page_url_key_path: null
+      max_items_per_page: 100
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/collections'
+    flatten_top_dirs: True
+    auth_error_code: 403
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'

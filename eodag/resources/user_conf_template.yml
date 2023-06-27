@@ -199,3 +199,8 @@ wekeo:
         credentials:
             username:
             password:
+dedl:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        outputs_prefix:
