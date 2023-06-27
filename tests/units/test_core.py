@@ -407,6 +407,7 @@ class TestCore(TestCoreBase):
         "wekeo_cmems",
         "creodias_s3",
         "dedt_lumi",
+        "dedl",
     ]
 
     def setUp(self):
