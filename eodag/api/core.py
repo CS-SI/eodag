@@ -44,7 +44,7 @@ from eodag.config import (
     provider_config_init,
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
-from eodag.plugins.download.s3rest import S3RestDownload
+from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
@@ -1845,7 +1845,7 @@ class EODataAccessGateway(object):
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
 
-        if not assets_urls and not isinstance(product.downloader, S3RestDownload):
+        if not assets_urls and isinstance(product.downloader, HTTPDownload):
             self.providers_config[product.provider].download.extract = False
             return product.download_zip(progress_callback, **kwargs)
         elif assets_urls:
