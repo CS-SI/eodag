@@ -627,13 +627,18 @@ class RequestTestCase(unittest.TestCase):
         "eodag.rest.utils.eodag_api.download",
         autospec=True,
     )
-    def test_download_item_from_collection(self, mock_download):
+    def test_download_item_from_collection_api_plugin(self, mock_download):
         """Download through eodag server catalog should return a valid response"""
         # download returns a file that must be returned as is
         tmp_dl_dir = TemporaryDirectory()
         expected_file = f"{tmp_dl_dir.name}.tar"
         Path(expected_file).touch()
         mock_download.return_value = expected_file
+
+        # use an external python API provider for this test
+        self._request_valid_raw.patchings[0].kwargs["return_value"][0][
+            0
+        ].provider = "cop_cds"
 
         response = self._request_valid_raw(
             f"collections/{self.tested_product_type}/items/foo/download"
