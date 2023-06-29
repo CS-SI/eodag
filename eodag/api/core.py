@@ -987,7 +987,7 @@ class EODataAccessGateway(object):
                        using parameters compatibles with the provider
         :type kwargs: Union[int, str, bool, dict]
         :param search_plugin: search plugin to be used
-        :type search_plugin: eodag.plugins.base.Search
+        :type search_plugin: eodag.plugins.search.base.Search
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
@@ -1385,7 +1385,7 @@ class EODataAccessGateway(object):
             )
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
-        auth_plugins = []
+        auth_plugins = {}
         for search_plugin in search_plugins:
             try:
                 search_plugin.config.product_type_config = dict(
@@ -1413,13 +1413,20 @@ class EODataAccessGateway(object):
                 "Using plugin class for search: %s", search_plugin.__class__.__name__
             )
             auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
-            auth_plugins.append(auth_plugin)
+            auth_plugins[search_plugin.provider] = auth_plugin
 
             # append auth to search plugin if needed
             if getattr(search_plugin.config, "need_auth", False) and callable(
                 getattr(auth_plugin, "authenticate", None)
             ):
-                search_plugin.auth = auth_plugin.authenticate()
+                try:
+                    search_plugin.auth = auth_plugin.authenticate()
+                except RuntimeError:
+                    logger.error(
+                        "could not authenticatate at provider %s",
+                        search_plugin.provider,
+                    )
+                    search_plugin.auth = None
 
         return dict(search_plugins=search_plugins, auth=auth_plugins, **kwargs)
 
@@ -1541,9 +1548,11 @@ class EODataAccessGateway(object):
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    eo_product.register_downloader(
-                        download_plugin, kwargs.get("auth", None)
-                    )
+                    auth_plugins = kwargs.get("auth", None)
+                    auth = None
+                    if auth_plugins is not None:
+                        auth = auth_plugins.get(search_plugin.provider, None)
+                    eo_product.register_downloader(download_plugin, auth)
 
             results.extend(res)
             total_results = None if nb_res is None else total_results + nb_res
