@@ -1193,7 +1193,7 @@ class TestCoreSearch(TestCoreBase):
             "geometry": None,
             "productType": None,
         }
-        expected = set(["geometry", "productType", "auth", "search_plugin"])
+        expected = set(["geometry", "productType", "auth", "search_plugins"])
         self.assertSetEqual(expected, set(prepared_search))
 
     @mock.patch(
@@ -1316,7 +1316,9 @@ class TestCoreSearch(TestCoreBase):
             # abstract, platform, etc.) but this is sufficient to check that the
             # product_type_config dict has been created and populated.
             self.assertEqual(
-                prepared_search["search_plugin"].config.product_type_config["title"],
+                prepared_search["search_plugins"][0].config.product_type_config[
+                    "title"
+                ],
                 "SENTINEL2 Level-1C",
             )
         finally:
@@ -1337,7 +1339,9 @@ class TestCoreSearch(TestCoreBase):
             # product_type_config is still created if the product is not known to eodag
             # however it contains no data.
             self.assertIsNone(
-                prepared_search["search_plugin"].config.product_type_config["title"],
+                prepared_search["search_plugins"][0].config.product_type_config[
+                    "title"
+                ],
             )
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
@@ -1349,8 +1353,8 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider("peps")
             base = {"productType": "S2_MSI_L1C"}
             prepared_search = self.dag._prepare_search(**base)
-            self.assertEqual(prepared_search["search_plugin"].provider, "peps")
-            self.assertEqual(prepared_search["auth"].provider, "peps")
+            self.assertEqual(prepared_search["search_plugins"][0].provider, "peps")
+            self.assertEqual(prepared_search["auth"]["peps"].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
@@ -1358,7 +1362,7 @@ class TestCoreSearch(TestCoreBase):
         """_prepare_search must not return the search and auth plugins for a search by id"""
         base = {"id": "some_id", "provider": "some_provider"}
         prepared_search = self.dag._prepare_search(**base)
-        self.assertNotIn("search_plugin", prepared_search)
+        self.assertNotIn("search_plugins", prepared_search)
         self.assertNotIn("auth", prepared_search)
 
     def test__prepare_search_peps_plugins_product_not_available(self):
@@ -1373,8 +1377,8 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider("theia")
             base = {"productType": "S2_MSI_L1C"}
             prepared_search = self.dag._prepare_search(**base)
-            self.assertEqual(prepared_search["search_plugin"].provider, "peps")
-            self.assertEqual(prepared_search["auth"].provider, "peps")
+            self.assertEqual(prepared_search["search_plugins"][0].provider, "peps")
+            self.assertEqual(prepared_search["auth"]["peps"].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
@@ -1665,7 +1669,9 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
         prepare_seach.return_value = dict(search_plugin=search_plugin)
-        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        page_iterator = self.dag.search_iter_page_plugin(
+            items_per_page=2, search_plugin=search_plugin
+        )
         first_result_page = next(page_iterator)
         self.assertIsInstance(first_result_page, SearchResult)
         self.assertEqual(len(first_result_page), self.search_results_size)
@@ -1690,7 +1696,9 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
         prepare_seach.return_value = dict(search_plugin=search_plugin)
-        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        page_iterator = self.dag.search_iter_page_plugin(
+            items_per_page=2, search_plugin=search_plugin
+        )
         all_page_results = list(page_iterator)
         self.assertEqual(len(all_page_results), 2)
         self.assertIsInstance(all_page_results[0], SearchResult)
@@ -1713,7 +1721,9 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
         prepare_seach.return_value = dict(search_plugin=search_plugin)
-        page_iterator = self.dag.search_iter_page(items_per_page=2)
+        page_iterator = self.dag.search_iter_page_plugin(
+            items_per_page=2, search_plugin=search_plugin
+        )
         all_page_results = list(page_iterator)
         self.assertEqual(len(all_page_results), 2)
         self.assertIsInstance(all_page_results[0], SearchResult)
@@ -1727,7 +1737,7 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = AttributeError()
         prepare_seach.return_value = dict(search_plugin=search_plugin)
-        page_iterator = self.dag.search_iter_page()
+        page_iterator = self.dag.search_iter_page_plugin()
         with self.assertRaises(AttributeError):
             next(page_iterator)
 
@@ -1772,8 +1782,6 @@ class TestCoreSearch(TestCoreBase):
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
 
-        page_iterator = dag.search_iter_page(productType="S2_MSI_L1C")
-        next(page_iterator)
         search_plugin = next(
             dag._plugins_manager.get_search_plugins(product_type="S2_MSI_L1C")
         )
@@ -1804,14 +1812,16 @@ class TestCoreSearch(TestCoreBase):
         # mocked return value. Later calls would then break
         def yield_search_plugin():
             while True:
-                yield {"search_plugin": search_plugin}
+                yield {"search_plugins": [search_plugin]}
 
         prepare_seach.side_effect = yield_search_plugin()
         all_results = self.dag.search_all(items_per_page=2)
         self.assertIsInstance(all_results, SearchResult)
         self.assertEqual(len(all_results), 3)
 
-    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+    )
     def test_search_all_use_max_items_per_page(self, mocked_search_iter_page):
         """search_all must use the configured parameter max_items_per_page if available"""
         dag = EODataAccessGateway()
@@ -1834,7 +1844,9 @@ class TestCoreSearch(TestCoreBase):
         dag.search_all(productType="S2_MSI_L1C")
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 2)
 
-    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+    )
     def test_search_all_use_default_value(self, mocked_search_iter_page):
         """search_all must use the DEFAULT_MAX_ITEMS_PER_PAGE if the provider's one wasn't configured"""
         dag = EODataAccessGateway()
@@ -1858,7 +1870,9 @@ class TestCoreSearch(TestCoreBase):
             DEFAULT_MAX_ITEMS_PER_PAGE,
         )
 
-    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+    )
     def test_search_all_user_items_per_page(self, mocked_search_iter_page):
         """search_all must use the value of items_per_page provided by the user"""
         dag = EODataAccessGateway()
@@ -1882,8 +1896,9 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_search_all_request_error(self, mocked_request):
-        """search_all must stop iteration if a request exception is raised"""
+    @mock.patch("eodag.plugins.apis.usgs.UsgsApi.authenticate", autospec=True)
+    def test_search_all_request_error(self, mocked_request, mocked_authenticate):
+        """search_all must stop iteration and move to next provider when error occurs"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
         dummy_provider:
@@ -1902,20 +1917,22 @@ class TestCoreSearch(TestCoreBase):
         mocked_request.side_effect = RequestError()
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        results = dag.search_all(productType="S2_MSI_L1C")
-        self.assertEqual(len(results), 0)
+        dag.search_all(productType="S2_MSI_L1C")
+        mocked_authenticate.assert_called_once()
 
-    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+    )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_search_all_unknown_product_type(
-        self, mock_fetch_product_types_list, mock_search_iter_page
+        self, mock_fetch_product_types_list, mock_search_iter_page_plugin
     ):
         """search_all must fetch product types if product_type is unknown"""
         self.dag.search_all(productType="foo")
-        mock_fetch_product_types_list.assert_called_once_with(self.dag)
-        mock_search_iter_page.assert_called_once()
+        mock_fetch_product_types_list.assert_called_with(self.dag)
+        mock_search_iter_page_plugin.assert_called_once()
 
 
 class TestCoreDownload(TestCoreBase):
