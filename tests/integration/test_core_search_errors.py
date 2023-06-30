@@ -54,16 +54,21 @@ class TestCoreSearchErrors(unittest.TestCase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_core_search_errors_qssearch(self, mock_fetch_product_types_list, mock_get):
+    @mock.patch(
+        "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
+        autospec=True,
+    )
+    def test_core_search_errors_qssearch(
+        self, mock_fetch_product_types_list, mock_get, mock_authenticate
+    ):
 
         # QueryStringSearch (peps)
         self.dag.set_preferred_provider("peps")
         products, count = self.dag.search()
         self.assertEqual(count, 0)
         self.assertEqual(len(products), 0)
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
-        self.assertRaises(StopIteration, next, self.dag.search_iter_page())
+        self.assertRaises(RequestError, next, self.dag.search_iter_page())
         # search_all
         self.assertEqual(len(self.dag.search_all()), 0)
 
