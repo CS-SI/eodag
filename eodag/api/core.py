@@ -839,7 +839,9 @@ class EODataAccessGateway(object):
         The default behaviour is to look for products on the provider with the
         highest priority supporting the requested product type. These priorities
         are configurable through user configuration file or individual
-        environment variable.
+        environment variable. If the request to the provider with the highest priority
+        fails, the data will be request from the provider with the next highest priority.
+        Only if the request fails for all available providers, an error will be thrown.
 
         :param page: (optional) The page number to return
         :type page: int
@@ -979,7 +981,7 @@ class EODataAccessGateway(object):
     def search_iter_page_plugin(
         self, items_per_page=DEFAULT_ITEMS_PER_PAGE, search_plugin=None, **kwargs
     ):
-        """Iterate over the pages of a products search.
+        """Iterate over the pages of a products search using a given search plugin.
 
         :param items_per_page: (optional) The number of results requested per page
         :type items_per_page: int
@@ -1106,6 +1108,8 @@ class EODataAccessGateway(object):
         It iterates over the pages of a search query and collects all the returned
         products into a single :class:`~eodag.api.search_result.SearchResult` instance.
 
+        Requests are attempted to all providers of the product ordered by descending piority.
+
         :param items_per_page: (optional) The number of results requested internally per
                                page. The maximum number of items than can be requested
                                at once to a provider has been configured in EODAG for
@@ -1142,7 +1146,7 @@ class EODataAccessGateway(object):
                           name=country and attr=ISO3
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
-                       using paramaters compatibles with the provider
+                       using parameters compatible with the provider
         :type kwargs: Union[int, str, bool, dict]
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
