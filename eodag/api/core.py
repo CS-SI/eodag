@@ -1494,7 +1494,18 @@ class EODataAccessGateway(object):
         results = SearchResult([])
         total_results = 0
         try:
-            res, nb_res = search_plugin.query(count=count, **kwargs)
+            if "auth" in kwargs:
+                if isinstance(kwargs["auth"], dict):
+                    auth = kwargs["auth"][search_plugin.provider]
+                else:
+                    auth = kwargs["auth"]
+                kwargs.pop("auth")
+            else:
+                auth = None
+
+            if "search_plugins" in kwargs:
+                kwargs.pop("search_plugins")
+            res, nb_res = search_plugin.query(count=count, auth=auth, **kwargs)
 
             # Only do the pagination computations when it makes sense. For example,
             # for a search by id, we can reasonably guess that the provider will return
