@@ -1934,6 +1934,31 @@ class TestCoreSearch(TestCoreBase):
         mock_fetch_product_types_list.assert_called_with(self.dag)
         mock_search_iter_page_plugin.assert_called_once()
 
+    @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
+    def test_search_request_error(self, mocked_do_search):
+        """search must retry with the next provider when error occurs"""
+        """when it fails for all providers an exception is raiased"""
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: 'dummy_next_page_url_tpl'
+                    next_page_url_key_path: '$.links[?(@.rel="next")].href'
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        mocked_do_search.side_effect = RequestError()
+        dag.update_providers_config(dummy_provider_config)
+        dag.set_preferred_provider("dummy_provider")
+        self.assertRaises(RequestError, dag.search, productType="S2_MSI_L1C")
+        assert mocked_do_search.call_count >= 2
+
 
 class TestCoreDownload(TestCoreBase):
     @classmethod
