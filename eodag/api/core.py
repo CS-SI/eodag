@@ -973,10 +973,26 @@ class EODataAccessGateway(object):
         search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        search_plugin = search_kwargs.pop("search_plugin")
-        self.search_iter_page_plugin(
-            items_per_page=items_per_page, search_plugin=search_plugin, **search_kwargs
-        )
+        search_plugins = search_kwargs.pop("search_plugins")
+        for i, search_plugin in enumerate(search_plugins):
+            try:
+                return self.search_iter_page_plugin(
+                    items_per_page=items_per_page,
+                    search_plugin=search_plugin,
+                    **search_kwargs,
+                )
+            except RequestError:
+                if i < len(search_plugins) - 1:
+                    logger.warning(
+                        "No result could be obtained from provider %s, "
+                        "we will try to get the data from another provider",
+                        search_plugin.provider,
+                    )
+                else:
+                    logger.error(
+                        "No result could be obtained from any available " "provider"
+                    )
+                    raise
 
     def search_iter_page_plugin(
         self, items_per_page=DEFAULT_ITEMS_PER_PAGE, search_plugin=None, **kwargs
