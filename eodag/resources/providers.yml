@@ -1713,6 +1713,8 @@
         - '{{"query":{{"sentinel:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"sentinel:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"sentinel:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
         - '{utmZone}{latitudeBand}{gridSquare}'
   products:
+    S1_SAR_GRD:
+      productType: sentinel-1-grd
     S2_MSI_L1C:
       productType: sentinel-2-l1c
       metadata_mapping:
@@ -1747,6 +1749,8 @@
           $.assets.info.href.`sub(/.*/sentinel-2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
     LANDSAT_C2L2:
       productType: landsat-c2-l2
+    NAIP:
+      productType: naip
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
@@ -1755,17 +1759,25 @@
     flatten_top_dirs: True
     products:
       S2_MSI_L1C:
-        default_bucket: 'sentinel-2-l1c'
+        default_bucket: 'sentinel-s2-l1c'
         build_safe: true
         complementary_url_key:
           - productPath
           - tilePath
       S2_MSI_L2A:
-        default_bucket: 'sentinel-2-l2a'
+        default_bucket: 'sentinel-s2-l2a'
         build_safe: true
         complementary_url_key:
           - productPath
           - tilePath
+      S1_SAR_GRD:
+        default_bucket: 'sentinel-s1-l1c'
+        build_safe: true
+        complementary_url_key:
+          - productPath
+      NAIP:
+        default_bucket: 'naip-analytic'
+        build_safe: true
   auth: !plugin
     type: AwsAuth
 
