@@ -83,6 +83,26 @@ The request above searches for `S2_MSI_L1C` product types in a given bounding bo
 internally all the products that match these criteria. Without ``--all``, it would only fetch the products found on the
 first result page. It finally saves the results in a GeoJSON file.
 
+If the product type is not known, it can also be guessed by EODAG during the search based on parameters in the search request.
+The possible parameters are:
+
+* `instrument` (e.g. MSI)
+* `platform` (e.g. SENTINEL2)
+* `platformSerialIdentifier` (e.g. S2A)
+* `processingLevel` (e.g. L1)
+* `sensorType` (e.g. OPTICAL)
+* `keywords` (e.g. SENTINEL2 L1C SAFE), which is case insensitive and ignores `-` or `_` characters
+
+For example, the following search request will first search for a product type for platform SENTINEL2 and processingLevel L1
+(there are several product types matching these criteria, e.g., `S2_MSI_L1C`) and then use this product type to execute the actual search.
+
+.. code-block:: console
+        eodag search \
+        --platform SENTINEL2 \
+        --processingLevel L1 \
+        --box 1 43 2 44 \
+        --start 2021-03-01 --end 2021-03-31
+
 You can pass arguments to a cruncher on the command line by doing this (example with using ``FilterOverlap`` cruncher
 which takes ``minimum_overlap`` as argument):
 
