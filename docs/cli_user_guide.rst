@@ -106,8 +106,7 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
                      --cruncher-args FilterOverlap minimum_overlap 10 \
                      --query "foo=1&bar=2"
 
-* If the product type is not known, it can also be guessed by EODAG during the search based on parameters in the search request.
-The possible parameters are:
+* If the product type is not known, it can also be guessed by EODAG during the search based on parameters in the search request. The possible parameters are:
 
         * `instrument` (e.g. MSI)
         * `platform` (e.g. SENTINEL2)
