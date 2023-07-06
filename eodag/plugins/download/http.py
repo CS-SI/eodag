@@ -341,19 +341,22 @@ class HTTPDownload(Download):
             return fs_path
 
         # download assets if exist instead of remote_location
-        try:
-            fs_path = self._download_assets(
-                product,
-                fs_path.replace(".zip", ""),
-                record_filename,
-                auth,
-                progress_callback,
-                **kwargs,
-            )
-            product.location = path_to_uri(fs_path)
-            return fs_path
-        except NotAvailableError:
-            pass
+        if hasattr(product, "assets") and not getattr(
+            self.config, "ignore_assets", False
+        ):
+            try:
+                fs_path = self._download_assets(
+                    product,
+                    fs_path.replace(".zip", ""),
+                    record_filename,
+                    auth,
+                    progress_callback,
+                    **kwargs,
+                )
+                product.location = path_to_uri(fs_path)
+                return fs_path
+            except NotAvailableError:
+                pass
 
         # order product if it is offline
         ordered_message = ""
