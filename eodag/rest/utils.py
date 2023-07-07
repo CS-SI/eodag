@@ -382,6 +382,7 @@ def search_products(product_type, arguments, stac_formatted=True):
             provider = eodag_api.get_preferred_provider()[0]
 
         unserialized = arguments.pop("unserialized", None)
+        id = arguments.pop("id", None)
 
         page, items_per_page = get_pagination_info(arguments)
         dtstart, dtend = get_datetime(arguments)
