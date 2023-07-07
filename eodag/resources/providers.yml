@@ -3735,3 +3735,58 @@
     type: HTTPHeaderAuth
     headers:
       X-API-Key: "{apikey}"
+---
+!provider
+  name: wekeo
+  priority: 0
+  roles:
+    - host
+  description: WEkEO - Copernicus and Sentinel data
+  url: https://www.wekeo.eu/
+  search: !plugin
+    type: DataRequestSearch
+    api_endpoint: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/
+    data_request_url: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest
+    metadata_url: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/
+    status_url: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/status/
+    need_auth: true
+    auth_error_code: 401
+    pagination:
+      max_items_per_page: 20
+    metadata_mapping:
+      productType: '$.productType'
+  discover_product_types:
+    fetch_url: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datasets'
+    result_type: json
+    results_entry: '$.content[*]'
+    generic_product_type_id: '$.datasetId'
+    generic_product_type_parsable_properties:
+      collection: '$.datasetId'
+    generic_product_type_parsable_metadata:
+      abstract: '$.abstract'
+      title: '$.title'
+  auth: !plugin
+    type: TokenAuth
+    auth_uri: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/gettoken'
+    token_type: json
+    token_key: access_token
+    request_method: GET
+  products:
+    CAMS_GACF_AOT:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
+    S2_MSI_L2A:
+      productType: EO:ESA:DAT:SENTINEL-2:MSI
+    S1_SAR_GRD:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      metadata_mapping:
+        bbox:
+          - '{"boundingBoxValues": [{"name": "bbox", "bbox": {bbox}}]}'
+          - 'bbox'
+        datetime:
+          - '{"dateRangeSelectValues": [{"name": "position", "start": {datetime#get_date_time[0]}, "end": {datetime#get_date_time[0]}}]}'
+          - 'datetime'
+        productType:
+          - '{"datasetId": {productType}}'
+          - '{productType}'
+  download: !plugin
+    type: HTTPDownload

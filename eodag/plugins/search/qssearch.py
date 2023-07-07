@@ -465,10 +465,8 @@ class QueryStringSearch(Search):
         """Update plugin metadata_mapping with input metadata_mapping configuration"""
         self.config.metadata_mapping.update(metadata_mapping)
 
-    def build_query_string(self, product_type, **kwargs):
-        """Build The query string using the search parameters"""
-        logger.debug("Building the query string that will be used for search")
-
+    def format_query_params(self, product_type, **kwargs):
+        """format the search parameters to query parameters"""
         if "raise_errors" in kwargs.keys():
             del kwargs["raise_errors"]
         # . not allowed in eodag_search_key, replaced with %2E
@@ -519,6 +517,12 @@ class QueryStringSearch(Search):
                 query_params.setdefault(provider_search_key, []).extend(provider_value)
             else:
                 query_params.setdefault(provider_search_key, []).append(provider_value)
+        return query_params
+
+    def build_query_string(self, product_type, **kwargs):
+        """Build The query string using the search parameters"""
+        logger.debug("Building the query string that will be used for search")
+        query_params = self.format_query_params(product_type, **kwargs)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
