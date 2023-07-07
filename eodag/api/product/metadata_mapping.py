@@ -94,7 +94,10 @@ def get_metadata_path(map_value):
              and its args, and the path to the metadata value.
     :rtype: tuple(list(str) or None, str)
     """
+    print("m")
+    print(map_value)
     path = get_metadata_path_value(map_value)
+    print(path)
     try:
         match = INGEST_CONVERSION_REGEX.match(path)
     except TypeError as e:

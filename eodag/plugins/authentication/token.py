@@ -58,12 +58,21 @@ class TokenAuth(Authentication):
         )
         try:
             # First get the token
-            response = requests.post(
-                self.config.auth_uri,
-                data=self.config.credentials,
-                timeout=HTTP_REQ_TIMEOUT,
-                **req_kwargs,
-            )
+            if getattr(self.config, "request_method", "POST") == "POST":
+                response = requests.post(
+                    self.config.auth_uri,
+                    data=self.config.credentials,
+                    timeout=HTTP_REQ_TIMEOUT,
+                    **req_kwargs,
+                )
+            else:
+                cred = self.config.credentials
+                response = requests.get(
+                    self.config.auth_uri,
+                    auth=(cred["username"], cred["password"]),
+                    timeout=HTTP_REQ_TIMEOUT,
+                    **req_kwargs,
+                )
             response.raise_for_status()
         except RequestException as e:
             raise AuthenticationError(f"Could no get authentication token: {str(e)}")

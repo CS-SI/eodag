@@ -198,3 +198,10 @@ hydroweb_next:
             apikey:
     download:
         outputs_prefix:
+wekeo:
+  priority: # Lower value means lower priority (Default: 0)
+  api:
+    outputs_prefix:
+    credentials:
+      username:
+      password:
