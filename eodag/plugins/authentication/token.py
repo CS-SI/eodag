@@ -82,4 +82,10 @@ class TokenAuth(Authentication):
             else:
                 token = response.text
             # Return auth class set with obtained token
-            return RequestsTokenAuth(token, "header", headers=self.config.headers)
+            return RequestsTokenAuth(token, "header", headers=self._get_headers(token))
+
+    def _get_headers(self, token):
+        headers = self.config.headers
+        if "Authorization" in headers and "$" in headers["Authorization"]:
+            headers["Authorization"] = headers["Authorization"].replace("$token", token)
+        return headers
