@@ -451,6 +451,34 @@ class HTTPDownload(Download):
                 "Downloaded product is not a Zip File. Please check its file type before using it"
             )
             new_fs_path = fs_path[: fs_path.index(".zip")]
+            # Check that the downloaded file is not a lone file and must not be placed in a directory
+            if os.path.isfile(fs_path) and getattr(
+                self.config, "outputs_in_folder", False
+            ):
+                if not os.path.isdir(new_fs_path):
+                    os.makedirs(new_fs_path)
+                shutil.move(fs_path, new_fs_path)
+                # WARNING: A strong assumption is made here: there is only one file in the directory
+                file_path = os.path.join(
+                    new_fs_path, os.listdir(new_fs_path)[0]
+                )
+                new_file_path = file_path[: file_path.index(".zip")]
+                shutil.move(file_path, new_file_path)
+            else:
+                shutil.move(fs_path, new_fs_path)
+            product.location = path_to_uri(new_fs_path)
+            return new_fs_path
+
+        # Check that the downloaded file is not a lone file and must not be placed in a directory
+        if os.path.isfile(fs_path) and getattr(
+            self.config, "outputs_in_folder", False
+        ):
+            new_fs_path = os.path.join(
+                os.path.dirname(fs_path),
+                sanitize(product.properties["title"]),
+            )
+            if not os.path.isdir(new_fs_path):
+                os.makedirs(new_fs_path)
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
