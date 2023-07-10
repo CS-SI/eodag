@@ -154,8 +154,6 @@ class PluginManager(object):
         if provider is not None:
             try:
                 config = self.providers_config[provider]
-                print("b")
-                print(config)
             except KeyError:
                 raise UnsupportedProvider
             yield get_plugin()

@@ -3754,7 +3754,15 @@
     pagination:
       max_items_per_page: 20
     metadata_mapping:
-      productType: '$.productType'
+      productType:
+        - '{{"datasetId" : "{productType}"}}'
+        - '$.productType'
+      startTimeFromAscendingNode:
+        - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+        - 'datetime'
+      completionTimeFromAscendingNode:
+        - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+        - 'datetime'
   discover_product_types:
     fetch_url: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datasets'
     result_type: json
@@ -3771,6 +3779,8 @@
     token_type: json
     token_key: access_token
     request_method: GET
+    headers:
+      Authorization: Bearer $token
   products:
     CAMS_GACF_AOT:
       productType: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
@@ -3782,8 +3792,11 @@
         bbox:
           - '{"boundingBoxValues": [{"name": "bbox", "bbox": {bbox}}]}'
           - 'bbox'
-        datetime:
-          - '{"dateRangeSelectValues": [{"name": "position", "start": {datetime#get_date_time[0]}, "end": {datetime#get_date_time[0]}}]}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - 'datetime'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - 'datetime'
         productType:
           - '{"datasetId": {productType}}'
