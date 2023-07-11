@@ -590,6 +590,7 @@ def properties_from_json(json, mapping, discovery_config=None):
     # adds missing discovered properties
     if not discovery_config:
         discovery_config = {}
+
     discovery_pattern = discovery_config.get("metadata_pattern", None)
     discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
@@ -882,8 +883,6 @@ def format_query_params(product_type, config, **kwargs):
             query_params.setdefault(provider_search_key, []).extend(provider_value)
         else:
             query_params.setdefault(provider_search_key, []).append(provider_value)
-    print("p")
-    print(query_params)
     return query_params
 
 
