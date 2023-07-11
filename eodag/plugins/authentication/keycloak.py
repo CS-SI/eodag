@@ -40,19 +40,19 @@ class KeycloakOIDCPasswordAuth(Authentication):
         Makes authentication request
         """
         self.validate_config_credentials()
+        req_data = {
+            "client_id": self.config.client_id,
+            "client_secret": self.config.client_secret,
+            "grant_type": self.GRANT_TYPE,
+        }
+        credentials = {k: v for k, v in self.config.credentials.items()}
         try:
             response = self.session.post(
                 self.TOKEN_URL_TEMPLATE.format(
                     auth_base_uri=self.config.auth_base_uri.rstrip("/"),
                     realm=self.config.realm,
                 ),
-                data={
-                    "client_id": self.config.client_id,
-                    "client_secret": self.config.client_secret,
-                    "username": self.config.credentials["username"],
-                    "password": self.config.credentials["password"],
-                    "grant_type": self.GRANT_TYPE,
-                },
+                data=dict(req_data, **credentials),
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
             )
