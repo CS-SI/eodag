@@ -3745,24 +3745,33 @@
   url: https://www.wekeo.eu/
   search: !plugin
     type: DataRequestSearch
-    api_endpoint: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/
-    data_request_url: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest
-    metadata_url: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/
-    status_url: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/status/
+    api_endpoint: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/"
+    data_request_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest"
+    metadata_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/"
+    status_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/status/"
+    result_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/jobs/{jobId}/result"
     need_auth: true
     auth_error_code: 401
+    results_entry: content
     pagination:
       max_items_per_page: 20
+      total_items_nb_key_path: '$.totItems'
     metadata_mapping:
       productType:
         - '{{"datasetId" : "{productType}"}}'
-        - '$.productType'
+        - '$.productInfo.datasetId'
       startTimeFromAscendingNode:
         - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-        - 'datetime'
+        - '$.productInfo.productStartDate'
       completionTimeFromAscendingNode:
         - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-        - 'datetime'
+        - '$.productInfo.productEndDate'
+      geometry:
+        - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_nwse_bounds}}}]}}'
+        - '$.extraInformation.footprint'
+      id: '$.productInfo.product'
+      cloudCover: '$.extraInformation.cloudCover'
+      downloadLink: '$.downloadUri'
   discover_product_types:
     fetch_url: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datasets'
     result_type: json
@@ -3788,18 +3797,5 @@
       productType: EO:ESA:DAT:SENTINEL-2:MSI
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1:SAR
-      metadata_mapping:
-        bbox:
-          - '{"boundingBoxValues": [{"name": "bbox", "bbox": {bbox}}]}'
-          - 'bbox'
-        startTimeFromAscendingNode:
-          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - 'datetime'
-        completionTimeFromAscendingNode:
-          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - 'datetime'
-        productType:
-          - '{"datasetId": {productType}}'
-          - '{productType}'
   download: !plugin
     type: HTTPDownload
