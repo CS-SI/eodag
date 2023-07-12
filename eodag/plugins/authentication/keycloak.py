@@ -21,7 +21,7 @@ import requests
 from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
@@ -30,10 +30,24 @@ class KeycloakOIDCPasswordAuth(Authentication):
 
     GRANT_TYPE = "password"
     TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
+    REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
+    # already retrieved token store, to be used if authenticate() fails (OTP use-case)
+    retrieved_token = None
 
     def __init__(self, provider, config):
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
         self.session = requests.Session()
+
+    def validate_config_credentials(self):
+        """Validate configured credentials"""
+        super(KeycloakOIDCPasswordAuth, self).validate_config_credentials()
+
+        for param in self.REQUIRED_PARAMS:
+            if not hasattr(self.config, param):
+                raise MisconfiguredError(
+                    "The following authentication configuration is missing for provider ",
+                    f"{self.provider}: {param}",
+                )
 
     def authenticate(self):
         """
@@ -58,6 +72,13 @@ class KeycloakOIDCPasswordAuth(Authentication):
             )
             response.raise_for_status()
         except requests.RequestException as e:
+            if self.retrieved_token:
+                # try using already retrieved token if authenticate() fails (OTP use-case)
+                return CodeAuthorizedAuth(
+                    self.retrieved_token,
+                    self.config.token_provision,
+                    key=getattr(self.config, "token_qs_key", None),
+                )
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
@@ -79,8 +100,10 @@ class KeycloakOIDCPasswordAuth(Authentication):
                         tb.format_exc()
                     )
                 )
+
+        self.retrieved_token = response.json()["access_token"]
         return CodeAuthorizedAuth(
-            response.json()["access_token"],
+            self.retrieved_token,
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
         )
