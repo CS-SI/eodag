@@ -3756,9 +3756,10 @@
     pagination:
       max_items_per_page: 20
       total_items_nb_key_path: '$.totItems'
+      next_page_url_key_path: '$.nextPage'
     metadata_mapping:
       productType:
-        - '{{"datasetId" : "{productType}"}}'
+        - '{{"datasetId": "{productType}"}}'
         - '$.productInfo.datasetId'
       startTimeFromAscendingNode:
         - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
@@ -3769,9 +3770,10 @@
       geometry:
         - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_nwse_bounds}}}]}}'
         - '$.extraInformation.footprint'
-      id: '$.productInfo.product'
+      id: '{$.productInfo.product#remove_extension}'
       cloudCover: '$.extraInformation.cloudCover'
-      downloadLink: '$.downloadUri'
+      downloadLink: '$.url'
+      title: '$.productInfo.product'
   discover_product_types:
     fetch_url: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datasets'
     result_type: json
@@ -3799,3 +3801,16 @@
       productType: EO:ESA:DAT:SENTINEL-1:SAR
   download: !plugin
     type: HTTPDownload
+    base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker
+    flatten_top_dirs: true
+    auth_error_code: 401
+    order_enabled: true
+    order_method: 'POST'
+    order_on_response:
+      metadata_mapping:
+        order_id: '$.orderId'
+        orderStatusLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/status/{order_id}'
+        downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
+    order_status_method: 'GET'
+    order_status_success:
+      status: completed
