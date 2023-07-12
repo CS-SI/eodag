@@ -1,9 +1,14 @@
 import logging
+import time
 
 import requests
 
 from eodag import EOProduct
-from eodag.api.product.metadata_mapping import format_query_params, properties_from_json
+from eodag.api.product.metadata_mapping import (
+    format_query_params,
+    mtd_cfg_as_conversion_and_querypath,
+    properties_from_json,
+)
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
 
@@ -24,14 +29,34 @@ class DataRequestSearch(Search):
         self.config.__dict__.setdefault("results_entry", "content")
         self.config.__dict__.setdefault("pagination", {})
         self.config.__dict__.setdefault("free_text_search_operations", {})
+        self.next_page_url = None
+        for product_type in self.config.products.keys():
+            if "metadata_mapping" in self.config.products[product_type].keys():
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
+        if (
+            self.config.result_type == "json"
+            and "next_page_url_key_path" in self.config.pagination
+        ):
+            self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
+                self.config.pagination.get("next_page_url_key_path", None)
+            )
 
     def discover_product_types(self):
-        """Fetch product types is disabled for `StaticStacSearch`
+        """Fetch product types is disabled for `DataRequestSearch`
 
         :returns: empty dict
         :rtype: dict
         """
         return {}
+
+    def clear(self):
+        """Clear search context"""
+        super().clear()
+        self.next_page_url = None
 
     def query(self, *args, count=True, **kwargs):
         """
@@ -45,10 +70,12 @@ class DataRequestSearch(Search):
         request_finished = False
         while not request_finished:
             request_finished = self._check_request_status(data_request_id)
+            time.sleep(1)
         logger.info("search job for product_type %s finished", provider_product_type)
         result = self._get_result_data(data_request_id)
         logger.info("result retrieved from search job")
-        return self._convert_result_data(result)
+        kwargs["productType"] = product_type
+        return self._convert_result_data(result, **kwargs)
 
     def _create_data_request(self, product_type, **kwargs):
         headers = getattr(self.auth, "headers", "")
@@ -81,10 +108,13 @@ class DataRequestSearch(Search):
                 return request_job.json()["jobId"]
 
     def _check_request_status(self, data_request_id):
-        print(self.config.status_url)
-        print(data_request_id)
+        logger.info("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
         status_data = requests.get(status_url, headers=self.auth.headers).json()
+        if "status_code" in status_data and status_data["status_code"] == 403:
+            # re-authenticate in case token expired
+            self.auth.authenticate()
+            return False
         if status_data["status"] == "failed":
             logger.error(
                 "data request job has failed, message: %s", status_data["message"]
@@ -96,7 +126,17 @@ class DataRequestSearch(Search):
         url = self.config.result_url.format(jobId=data_request_id)
         try:
             result = requests.get(url, headers=self.auth.headers).json()
-            print(result)
+            next_page_url_key_path = self.config.pagination.get(
+                "next_page_url_key_path", None
+            )
+            if next_page_url_key_path:
+                try:
+                    self.next_page_url = next_page_url_key_path.find(result)[0].value
+                    logger.debug(
+                        "Next page URL collected and set for the next search",
+                    )
+                except IndexError:
+                    logger.debug("Next page URL could not be collected")
             return result
         except requests.RequestException:
             logger.error("data from job %s could not be retrieved", data_request_id)
@@ -121,13 +161,16 @@ class DataRequestSearch(Search):
                 ),
                 **kwargs,
             )
+            # use product_type_config as default properties
+            product.properties = dict(
+                getattr(self.config, "product_type_config", {}), **product.properties
+            )
             products.append(product)
         total_items_nb_key_path = string_to_jsonpath(
             self.config.pagination["total_items_nb_key_path"]
         )
-        print(total_items_nb_key_path.find(result_data))
         total_items_nb = total_items_nb_key_path.find(result_data)[0].value
-        print(products)
+        print(products[0].properties)
         return products, total_items_nb
 
     def _map_product_type(self, product_type):
