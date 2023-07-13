@@ -393,6 +393,7 @@ def search_products(product_type, arguments, stac_formatted=True):
     try:
         arg_product_type = arguments.pop("product_type", None)
         unserialized = arguments.pop("unserialized", None)
+        id = arguments.pop("id", None)
 
         page, items_per_page = get_pagination_info(arguments)
         dtstart, dtend = get_datetime(arguments)
@@ -406,6 +407,7 @@ def search_products(product_type, arguments, stac_formatted=True):
             "start": dtstart,
             "end": dtend,
             "geom": geom,
+            "id": id,
         }
 
         if stac_formatted:

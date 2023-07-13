@@ -44,6 +44,7 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
+        print(self.config.products)
 
     def discover_product_types(self):
         """Fetch product types is disabled for `DataRequestSearch`
@@ -63,10 +64,13 @@ class DataRequestSearch(Search):
         performs the search for a provider where several steps are required to fetch the data
         """
         product_type = kwargs.get("productType", None)
+        self._add_product_type_metadata(product_type)
         provider_product_type = self._map_product_type(product_type)
         kwargs["productType"] = provider_product_type
         print(provider_product_type)
-        data_request_id = self._create_data_request(provider_product_type, **kwargs)
+        data_request_id = self._create_data_request(
+            provider_product_type, product_type, **kwargs
+        )
         request_finished = False
         while not request_finished:
             request_finished = self._check_request_status(data_request_id)
@@ -75,9 +79,9 @@ class DataRequestSearch(Search):
         result = self._get_result_data(data_request_id)
         logger.info("result retrieved from search job")
         kwargs["productType"] = product_type
-        return self._convert_result_data(result, **kwargs)
+        return self._convert_result_data(result, data_request_id, **kwargs)
 
-    def _create_data_request(self, product_type, **kwargs):
+    def _create_data_request(self, product_type, eodag_product_type, **kwargs):
         headers = getattr(self.auth, "headers", "")
         try:
             metadata_url = self.config.metadata_url + product_type
@@ -94,7 +98,10 @@ class DataRequestSearch(Search):
             try:
                 url = self.config.data_request_url
                 print(url)
-                request_body = format_query_params(product_type, self.config, **kwargs)
+                print(self.config)
+                request_body = format_query_params(
+                    eodag_product_type, self.config, **kwargs
+                )
                 print(request_body)
                 request_job = requests.post(url, json=request_body, headers=headers)
                 print(request_job)
@@ -141,7 +148,7 @@ class DataRequestSearch(Search):
         except requests.RequestException:
             logger.error("data from job %s could not be retrieved", data_request_id)
 
-    def _convert_result_data(self, result_data, **kwargs):
+    def _convert_result_data(self, result_data, data_request_id, **kwargs):
         """Build EOProducts from provider results"""
         results_entry = self.config.results_entry
         results = result_data[results_entry]
@@ -170,6 +177,11 @@ class DataRequestSearch(Search):
             self.config.pagination["total_items_nb_key_path"]
         )
         total_items_nb = total_items_nb_key_path.find(result_data)[0].value
+        for p in products:
+            # add the request id to the order link property (required to create data order)
+            p.properties["orderLink"] = p.properties["orderLink"].replace(
+                "requestJobId", str(data_request_id)
+            )
         print(products[0].properties)
         return products, total_items_nb
 
@@ -181,3 +193,13 @@ class DataRequestSearch(Search):
         return self.config.products.get(product_type, {}).get(
             "productType", GENERIC_PRODUCT_TYPE
         )
+
+    def _add_product_type_metadata(self, product_type):
+        if (
+            product_type in self.config.products
+            and "metadata_mapping" in self.config.products[product_type]
+        ):
+            for key, mapping in self.config.products[product_type][
+                "metadata_mapping"
+            ].items():
+                self.config.metadata_mapping[key] = mapping
