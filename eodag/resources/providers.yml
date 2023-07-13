@@ -3770,10 +3770,11 @@
       geometry:
         - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_nwse_bounds}}}]}}'
         - '$.extraInformation.footprint'
-      id: '{$.productInfo.product#remove_extension}'
       cloudCover: '$.extraInformation.cloudCover'
       downloadLink: '$.url'
       title: '$.productInfo.product'
+      orderLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
+      storageStatus: 'OFFLINE'
   discover_product_types:
     fetch_url: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datasets'
     result_type: json
@@ -3797,6 +3798,10 @@
       productType: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
     S2_MSI_L2A:
       productType: EO:ESA:DAT:SENTINEL-2:MSI
+      metadata_mapping:
+        id:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
+          - '{$.productInfo.product#remove_extension}'
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1:SAR
   download: !plugin
