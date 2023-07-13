@@ -19,6 +19,7 @@
 import unittest
 from unittest import mock
 
+import responses
 from requests import Request
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
@@ -391,3 +392,183 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         req = mock.Mock(headers={}, url="url")
         with self.assertRaises(AuthenticationError):
             auth(req)
+
+
+class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
+    @classmethod
+    def setUpClass(cls):
+        super(TestAuthPluginKeycloakOIDCPasswordAuth, cls).setUpClass()
+        override_config_from_mapping(
+            cls.providers_config,
+            {
+                "foo_provider": {
+                    "products": {},
+                    "auth": {
+                        "type": "KeycloakOIDCPasswordAuth",
+                        "auth_base_uri": "http://foo.bar",
+                        "client_id": "baz",
+                        "realm": "qux",
+                        "client_secret": "1234",
+                        "token_provision": "qs",
+                        "token_qs_key": "totoken",
+                    },
+                },
+            },
+        )
+        cls.plugins_manager = PluginManager(cls.providers_config)
+
+    def test_plugins_auth_keycloak_validate_credentials(self):
+        """KeycloakOIDCPasswordAuth.validate_credentials must raise exception if not well configured"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+
+        # credentials missing
+        self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
+
+        auth_plugin.config.credentials = {"username": "john"}
+
+        # no error
+        auth_plugin.validate_config_credentials()
+
+        # auth_base_uri missing
+        auth_base_uri = auth_plugin.config.__dict__.pop("auth_base_uri")
+        self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
+        auth_plugin.config.auth_base_uri = auth_base_uri
+        # client_id missing
+        client_id = auth_plugin.config.__dict__.pop("client_id")
+        self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
+        auth_plugin.config.client_id = client_id
+        # client_secret missing
+        client_secret = auth_plugin.config.__dict__.pop("client_secret")
+        self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
+        auth_plugin.config.client_secret = client_secret
+        # token_provision missing
+        token_provision = auth_plugin.config.__dict__.pop("token_provision")
+        self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
+        auth_plugin.config.token_provision = token_provision
+
+        # no error
+        auth_plugin.validate_config_credentials()
+
+    def test_plugins_auth_keycloak_authenticate(self):
+        """KeycloakOIDCPasswordAuth.authenticate must query and store the token as expected"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {"username": "john"}
+
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            req_kwargs = {
+                "client_id": "baz",
+                "client_secret": "1234",
+                "grant_type": "password",
+                "username": "john",
+            }
+            rsps.add(
+                responses.POST,
+                url,
+                status=200,
+                json={"access_token": "obtained-token"},
+                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
+            )
+
+            # check if returned auth object is an instance of requests.AuthBase
+            auth = auth_plugin.authenticate()
+            assert isinstance(auth, AuthBase)
+            self.assertEqual(auth.key, "totoken")
+            self.assertEqual(auth.token, "obtained-token")
+            self.assertEqual(auth.where, "qs")
+
+        # check that token has been stored
+        self.assertEqual(auth_plugin.retrieved_token, "obtained-token")
+
+        # check that stored token is used if new auth request fails
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            req_kwargs = {
+                "client_id": "baz",
+                "client_secret": "1234",
+                "grant_type": "password",
+                "username": "john",
+            }
+            rsps.add(
+                responses.POST,
+                url,
+                status=401,
+                json={"error": "not allowed"},
+                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
+            )
+
+            # check if returned auth object is an instance of requests.AuthBase
+            auth = auth_plugin.authenticate()
+            assert isinstance(auth, AuthBase)
+            self.assertEqual(auth.key, "totoken")
+            self.assertEqual(auth.token, "obtained-token")
+            self.assertEqual(auth.where, "qs")
+
+    def test_plugins_auth_keycloak_authenticate_qs(self):
+        """KeycloakOIDCPasswordAuth.authenticate must return a AuthBase object that will inject the token in a query-string"""  # noqa
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {"username": "john"}
+
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            rsps.add(
+                responses.POST,
+                url,
+                status=200,
+                json={"access_token": "obtained-token"},
+            )
+
+            # check if returned auth object is an instance of requests.AuthBase
+            auth = auth_plugin.authenticate()
+            assert isinstance(auth, AuthBase)
+
+            # check if query string is integrated to the request
+            req = Request("GET", "https://httpbin.org/get").prepare()
+            auth(req)
+            self.assertEqual(req.url, "https://httpbin.org/get?totoken=obtained-token")
+
+            another_req = Request("GET", "https://httpbin.org/get?baz=qux").prepare()
+            auth(another_req)
+            self.assertEqual(
+                another_req.url,
+                "https://httpbin.org/get?baz=qux&totoken=obtained-token",
+            )
+
+    def test_plugins_auth_keycloak_authenticate_header(self):
+        """KeycloakOIDCPasswordAuth.authenticate must return a AuthBase object that will inject the token in the header"""  # noqa
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {"username": "john"}
+
+        # backup token_provision and change it to header mode
+        token_provision_qs = auth_plugin.config.token_provision
+        auth_plugin.config.token_provision = "header"
+
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            rsps.add(
+                responses.POST,
+                url,
+                status=200,
+                json={"access_token": "obtained-token"},
+            )
+
+            # check if returned auth object is an instance of requests.AuthBase
+            auth = auth_plugin.authenticate()
+            assert isinstance(auth, AuthBase)
+
+            # check if token header is integrated to the request
+            req = Request("GET", "https://httpbin.org/get").prepare()
+            auth(req)
+            self.assertEqual(req.url, "https://httpbin.org/get")
+            self.assertEqual(req.headers, {"Authorization": "Bearer obtained-token"})
+
+            another_req = Request(
+                "GET", "https://httpbin.org/get", headers={"existing-header": "value"}
+            ).prepare()
+            auth(another_req)
+            self.assertEqual(
+                another_req.headers,
+                {"Authorization": "Bearer obtained-token", "existing-header": "value"},
+            )
+
+        auth_plugin.config.token_provision = token_provision_qs
