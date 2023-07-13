@@ -26,13 +26,54 @@ from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
 class KeycloakOIDCPasswordAuth(Authentication):
-    """Authentication plugin using Keycloak and OpenId Connect"""
+    """Authentication plugin using Keycloak and OpenId Connect.
+
+    This plugin request a token and use it through a query-string or a header.
+
+    Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
+    `http://example.com?foo=bar` will become
+    `http://example.com?foo=bar&my-token=obtained-token` if associated to the following
+    configuration::
+
+        provider:
+            ...
+            auth:
+                plugin: KeycloakOIDCPasswordAuth
+                auth_base_uri: 'https://somewhere/auth'
+                realm: 'the-realm'
+                client_id: 'SOME_ID'
+                client_secret: '01234-56789'
+                token_provision: qs
+                token_qs_key: 'my-token'
+                ...
+            ...
+
+    If configured to send the token through the header, the download request header will
+    be updated with `Authorization: "Bearer obtained-token"` if associated to the
+    following configuration::
+
+        provider:
+            ...
+            auth:
+                plugin: KeycloakOIDCPasswordAuth
+                auth_base_uri: 'https://somewhere/auth'
+                realm: 'the-realm'
+                client_id: 'SOME_ID'
+                client_secret: '01234-56789'
+                token_provision: header
+                ...
+            ...
+    """
 
     GRANT_TYPE = "password"
     TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
     # already retrieved token store, to be used if authenticate() fails (OTP use-case)
+<<<<<<< HEAD
     retrieved_token = None
+=======
+    retrived_token = None
+>>>>>>> 903e058... docs: KeycloakOIDCPasswordAuth docstring update
 
     def __init__(self, provider, config):
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
