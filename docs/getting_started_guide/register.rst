@@ -15,7 +15,12 @@ to each provider supported by ``eodag``:
 
 * ``peps``: create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as `username` in eodag credentials.
 
-* ``creodias``: create an account `here <https://portal.creodias.eu/register.php>`__
+* ``creodias``: create an account `here <https://portal.creodias.eu/register.php>`__, then use your `username`, `password` in eodag credentials. You will also
+  need `totp` in credentials, a temporary 6-digits OTP (One Time Password, see
+  `Creodias documentation <https://creodias.docs.cloudferro.com/en/latest/gettingstarted/Two-Factor-Authentication-for-Creodias-Site.html>`__)
+  to be able to authenticate and download. Check
+  `Authenticate using an OTP <https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html#authenticate-using-an-otp-one-time-password-two-factor-authentication>`__
+  to see how to proceed.
 
 * ``onda``: create an account `here: <https://www.onda-dias.eu/cms/>`__
 
