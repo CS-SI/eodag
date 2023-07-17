@@ -69,11 +69,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
     TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
     # already retrieved token store, to be used if authenticate() fails (OTP use-case)
-<<<<<<< HEAD
     retrieved_token = None
-=======
-    retrived_token = None
->>>>>>> 903e058... docs: KeycloakOIDCPasswordAuth docstring update
 
     def __init__(self, provider, config):
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
