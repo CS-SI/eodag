@@ -3,6 +3,7 @@ import time
 
 import requests
 
+import eodag
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import (
     format_query_params,
@@ -13,6 +14,7 @@ from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
 
 logger = logging.getLogger("eodag.plugins.search.data_request_search")
+eodag_api = eodag.EODataAccessGateway()
 
 
 class DataRequestSearch(Search):
@@ -120,7 +122,7 @@ class DataRequestSearch(Search):
         status_data = requests.get(status_url, headers=self.auth.headers).json()
         if "status_code" in status_data and status_data["status_code"] == 403:
             # re-authenticate in case token expired
-            self.auth.authenticate()
+            eodag_api.do_authentication(self.provider)
             return False
         if status_data["status"] == "failed":
             logger.error(

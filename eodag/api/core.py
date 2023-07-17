@@ -1359,6 +1359,11 @@ class EODataAccessGateway(object):
 
         return dict(search_plugin=search_plugin, auth=auth_plugin, **kwargs)
 
+    def do_authentication(self, provider):
+        """performs the authentication at a given provider"""
+        auth_plugin = self._plugins_manager.get_auth_plugin(provider)
+        auth_plugin.authenticate()
+
     def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
         """Internal method that performs a search on a given provider.
 

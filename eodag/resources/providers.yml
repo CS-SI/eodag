@@ -3804,6 +3804,10 @@
           - '{$.productInfo.product#remove_extension}'
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1:SAR
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": {id#split_id_into_s1_params}["productType"]}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker

@@ -497,6 +497,28 @@ def format_metadata(search_param, *args, **kwargs):
                 logger.error("Could not extract title infos from %s" % string)
                 return NOT_AVAILABLE
 
+        @staticmethod
+        def convert_split_id_into_s1_params(product_id):
+            parts = product_id.replace("__", "_").split("_")
+            params = {"sensorMode": parts[1]}
+            level = "LEVEL" + parts[3][0]
+            params["processingLevel"] = level
+            start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
+                seconds=1
+            )
+            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_date = datetime.strptime(parts[5], "%Y%m%dT%H%M%S") + timedelta(
+                seconds=1
+            )
+            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            product_type = parts[2][:3]
+            if product_type == "GRD" and parts[-1] == "COG":
+                product_type = "GRD-COG"
+            elif product_type == "GRD" and parts[-2] == "CARD" and parts[-1] == "BS":
+                product_type = "CARD-BS"
+            params["productType"] = product_type
+            return params
+
     # if stac extension colon separator `:` is in search search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(
@@ -854,6 +876,11 @@ def format_query_params(product_type, config, **kwargs):
                     provider_search_key, product_type, **kwargs
                 )
                 if "{{" in provider_search_key:
+                    # retrieve values from hashes where keys are given in the param
+                    if "}[" in formatted_query_param:
+                        formatted_query_param = _resolve_hashes(
+                            formatted_query_param.replace("'", '"')
+                        )
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params, orjson.loads(formatted_query_param)
@@ -884,6 +911,20 @@ def format_query_params(product_type, config, **kwargs):
         else:
             query_params.setdefault(provider_search_key, []).append(provider_value)
     return query_params
+
+
+def _resolve_hashes(formatted_query_param):
+    while '["' in formatted_query_param:
+        ind_open = formatted_query_param.find('["')
+        ind_close = formatted_query_param.find('"]')
+        hash_start = formatted_query_param[:ind_open].rfind("{")
+        h = orjson.loads(formatted_query_param[hash_start:ind_open])
+        key = formatted_query_param[ind_open + 2 : ind_close]
+        value = h[key]
+        formatted_query_param = formatted_query_param.replace(
+            formatted_query_param[hash_start : ind_close + 2], '"' + value + '"'
+        )
+    return formatted_query_param
 
 
 def _format_free_text_search(config, **kwargs):
