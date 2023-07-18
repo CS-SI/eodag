@@ -54,7 +54,7 @@ to each provider supported by ``eodag``:
 
   * Create an account on `EOS <https://auth.eos.com>`__
 
-  * Get your EOS api key from `here <https://console.eos.com>`__
+  * Get your EOS api key from `here <https://api-connect.eos.com/user-dashboard/statistics>`__
 
   * Create an account on `AWS <https://aws.amazon.com/>`__
 
@@ -97,3 +97,5 @@ to each provider supported by ``eodag``:
     none exists).
 
   * Add these credentials to the user configuration file.
+
+* ``earth_search_cog``: no authentication needed.
