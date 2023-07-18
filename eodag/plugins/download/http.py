@@ -61,7 +61,30 @@ logger = logging.getLogger("eodag.plugins.download.http")
 
 
 class HTTPDownload(Download):
-    """HTTPDownload plugin. Handles product download over HTTP protocol"""
+    """HTTPDownload plugin. Handles product download over HTTP protocol
+
+    :param provider: provider name
+    :type provider: str
+    :param config: Download plugin configuration:
+
+        * ``config.base_uri`` (str) - default endpoint url
+        * ``config.extract`` (bool) - (optional) extract downloaded archive or not
+        * ``config.auth_error_code`` (int) - (optional) authentication error code
+        * ``config.dl_url_params`` (dict) - (optional) attitional parameters to send in the request
+        * ``config.archive_depth`` (int) - (optional) level in extracted path tree where to find data
+        * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
+        * ``config.ignore_assets`` (bool) - (optional) ignore assets and download using downloadLink
+        * ``config.order_enabled`` (bool) - (optional) wether order is enabled or not if product is `OFFLINE`
+        * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
+        * ``config.order_headers`` (dict) - (optional) order request headers
+        * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
+        * ``config.order_status_method`` (str) - (optional) status HTTP request method, GET (default) or POST
+        * ``config.order_status_percent`` (str) - (optional) progress percentage key in obtained status response
+        * ``config.order_status_error`` (dict) - (optional) key/value identifying an error status
+
+    :type config: :class:`~eodag.config.PluginConfig`
+
+    """
 
     def __init__(self, provider, config):
         super(HTTPDownload, self).__init__(provider, config)

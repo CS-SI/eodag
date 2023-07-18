@@ -59,6 +59,25 @@ class S3RestDownload(Download):
     https://mundiwebservices.com/keystoneapi/uploads/documents/CWS-DATA-MUT-087-EN-Mundi_Download_v1.1.pdf#page=13
 
     Re-use AwsDownload bucket some handling methods
+
+    :param provider: provider name
+    :type provider: str
+    :param config: Download plugin configuration:
+
+        * ``config.base_uri`` (str) - default endpoint url
+        * ``config.extract`` (bool) - (optional) extract downloaded archive or not
+        * ``config.auth_error_code`` (int) - (optional) authentication error code
+        * ``config.bucket_path_level`` (int) - (optional) bucket location index in path.split('/')
+        * ``config.order_enabled`` (bool) - (optional) wether order is enabled or not if product is `OFFLINE`
+        * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
+        * ``config.order_headers`` (dict) - (optional) order request headers
+        * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
+        * ``config.order_status_method`` (str) - (optional) status HTTP request method, GET (default) or POST
+        * ``config.order_status_percent`` (str) - (optional) progress percentage key in obtained status response
+        * ``config.order_status_success`` (dict) - (optional) key/value identifying an error success
+        * ``config.order_status_on_success`` (dict) - (optional) edit or add new product properties
+
+    :type config: :class:`~eodag.config.PluginConfig`
     """
 
     def __init__(self, provider, config):
