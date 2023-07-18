@@ -136,7 +136,7 @@ API: Dynamic configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``eodag`` 's configuration can be altered directly from using Python. See this
-`dedicated page <../notebooks/api_uder_guide/3_configuration.ipynb>`_ in the Python API user guide.
+`dedicated page <../notebooks/api_user_guide/3_configuration.ipynb>`_ in the Python API user guide.
 
 Priority setting
 ^^^^^^^^^^^^^^^^
