@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import shutil
 import stat
 import unittest
 from pathlib import Path
@@ -170,6 +171,71 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_ignore_assets(
+        self, mock_requests_get, mock_requests_head, mock_requests_request
+    ):
+        """HTTPDownload.download() must ignore assets if configured to"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = (
+            self.product.remote_location
+        ) = "http://somewhere/dowload_from_location"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets = {"foo": {"href": "http://somewhere/download_asset"}}
+
+        # download asset if ignore_assets = False
+        plugin.config.ignore_assets = False
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        mock_requests_get.assert_called_once_with(
+            self.product.assets["foo"]["href"],
+            stream=True,
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
+        mock_requests_request.assert_not_called()
+        # re-enable product download
+        self.product.location = self.product.remote_location
+        shutil.rmtree(path)
+        mock_requests_get.reset_mock()
+        mock_requests_request.reset_mock()
+
+        # download using remote_location if ignore_assets = True
+        plugin.config.ignore_assets = True
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        mock_requests_get.assert_not_called()
+        mock_requests_request.assert_called_once_with(
+            "get",
+            self.product.remote_location,
+            stream=True,
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
+        # re-enable product download
+        self.product.location = self.product.remote_location
+        os.remove(path)
+        mock_requests_get.reset_mock()
+        mock_requests_request.reset_mock()
+
+        # download asset if ignore_assets unset
+        del plugin.config.ignore_assets
+        plugin.download(self.product, outputs_prefix=self.output_dir)
+        mock_requests_get.assert_called_once_with(
+            self.product.assets["foo"]["href"],
+            stream=True,
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
+        mock_requests_request.assert_not_called()
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)

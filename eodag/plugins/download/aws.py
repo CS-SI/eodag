@@ -169,16 +169,15 @@ class AwsDownload(Download):
 
     :param provider: provider name
     :type provider: str
-    :param config: Download plugin configuration
-                   config.requester_pays:
-
     :param config: Download plugin configuration:
 
-                     * ``config.base_uri`` (str) - s3 endpoint url
-                     * ``config.requester_pays`` (bool) - whether download is done from
-                       a requester-pays bucket or not
-                     * ``config.flatten_top_dirs`` (bool) - flatten directory structure
-                     * ``config.products`` (dict) - product_type specific configuration
+        * ``config.base_uri`` (str) - s3 endpoint url
+        * ``config.requester_pays`` (bool) - (optional) whether download is done from a
+          requester-pays bucket or not
+        * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
+        * ``config.products`` (dict) - (optional) product_type specific configuration
+        * ``config.ignore_assets`` (bool) - (optional) ignore assets and download using downloadLink
+
     :type config: :class:`~eodag.config.PluginConfig`
     """
 
