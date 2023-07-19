@@ -1718,13 +1718,13 @@
     S2_MSI_L1C:
       productType: sentinel-2-l1c
       metadata_mapping:
-        title: '$.properties."sentinel:product_id"'
+        title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
         productPath: |
-          $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*)/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
+          $.properties."s2:product_uri".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*)/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
         tilePath: |
-          $.assets.info.href.`sub(/.*/sentinel-2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
+          $.assets.tileinfo_metadata.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
         utmZone:
           - '{{"query":{{"mgrs:utm_zone":{{"eq":"{utmZone}"}}}}}}'
           - '$.properties."mgrs:utm_zone"'
