@@ -79,6 +79,7 @@ Misc
 .. autosummary::
 
    EODataAccessGateway.group_by_extent
+   EODataAccessGateway.guess_product_type
 
 .. autoclass:: eodag.api.core.EODataAccessGateway
    :members: set_preferred_provider, get_preferred_provider, update_providers_config, list_product_types,

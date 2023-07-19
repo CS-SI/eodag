@@ -65,7 +65,7 @@ RUN chmod +x /eodag/run-stac-server.sh
 
 # add user
 RUN addgroup --system user \
-    && adduser --system --group user
+    && adduser --system --home /home/user --group user
 
 # switch to non-root user
 USER user

@@ -136,7 +136,7 @@ API: Dynamic configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``eodag`` 's configuration can be altered directly from using Python. See this
-`dedicated page <../notebooks/api_uder_guide/3_configuration.ipynb>`_ in the Python API user guide.
+`dedicated page <../notebooks/api_user_guide/3_configuration.ipynb>`_ in the Python API user guide.
 
 Priority setting
 ^^^^^^^^^^^^^^^^
@@ -246,3 +246,62 @@ Or with the CLI:
                 -p S2_MSI_L1C \
                 --storage my_search.geojson
    eodag download -f my_config.yml --search-results my_search.geojson
+
+Authenticate using an OTP / One Time Password (Two-Factor authentication)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use OTP through Python code
+"""""""""""""""""""""""""""
+
+``creodias`` needs a temporary 6-digits code to authenticate in addition of the ``username`` and ``password``. Check
+`Creodias documentation <https://creodias.docs.cloudferro.com/en/latest/gettingstarted/Two-Factor-Authentication-for-Creodias-Site.html>`_
+to see how to get this code once you are registered. This OTP code will only be valid for a few seconds, so you will
+better set it dynamically in your python code instead of storing it statically in your user configuration file.
+
+Set the OTP by updating ``creodias`` credentials for ``totp`` entry, using one of the two following configuration update
+commands:
+
+.. code-block:: python
+
+   dag.providers_config["creodias"].auth.credentials["totp"] = "PLEASE_CHANGE_ME"
+
+   # OR
+
+   dag.update_providers_config(
+      """
+      creodias:
+         auth:
+            credentials:
+               totp: PLEASE_CHANGE_ME
+      """
+   )
+
+Then quickly authenticate as this OTP has a few seconds only lifetime. First authentication will retrieve a token that
+will be stored and used if further authentication tries fail:
+
+.. code-block:: python
+
+   dag._plugins_manager.get_auth_plugin("creodias").authenticate()
+
+Please note that authentication mechanism is already included in
+`download methods <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_download.html>`_ , so you could also directly execute a
+download to retrieve the token while the OTP is still valid.
+
+Use OTP through CLI
+"""""""""""""""""""
+
+To download through CLI a product on a provider that needs a One Time Password,  e.g. ``creodias``, first search on this
+provider (increase the provider priotity to make eodag search on it):
+
+.. code-block:: console
+
+        EODAG__CREODIAS__PRIORITY=2 eodag search -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C --items 1
+
+Then download using the OTP (``creodias`` needs it as ``totp`` parameter):
+
+.. code-block:: console
+
+        EODAG__CREODIAS__AUTH__CREDENTIALS__TOTP=PLEASE_CHANGE_ME eodag download --search-results search_results.geojson
+
+If needed, check in the documentation how to
+`use environment variables to configure EODAG <#environment-variable-configuration>`_.

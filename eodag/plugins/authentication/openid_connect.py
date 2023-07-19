@@ -25,14 +25,7 @@ from lxml import etree
 from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import (
-    USER_AGENT,
-    parse_qs,
-    repeatfunc,
-    urlencode,
-    urlparse,
-    urlunparse,
-)
+from eodag.utils import USER_AGENT, parse_qs, repeatfunc, urlparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
@@ -306,18 +299,12 @@ class CodeAuthorizedAuth(AuthBase):
         """Perform the actual authentication"""
         if self.where == "qs":
             parts = urlparse(request.url)
-            qs = parse_qs(parts.query)
-            qs[self.key] = self.token
-            request.url = urlunparse(
-                (
-                    parts.scheme,
-                    parts.netloc,
-                    parts.path,
-                    parts.params,
-                    urlencode(qs),
-                    parts.fragment,
-                )
-            )
+            query_dict = parse_qs(parts.query)
+            query_dict.update({self.key: self.token})
+            url_without_args = parts._replace(query=None).geturl()
+
+            request.prepare_url(url_without_args, query_dict)
+
         elif self.where == "header":
             request.headers["Authorization"] = "Bearer {}".format(self.token)
         return request
