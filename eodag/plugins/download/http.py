@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
+import requests_ftp
 from lxml import etree
 from requests import HTTPError, RequestException
 
@@ -400,8 +401,10 @@ class HTTPDownload(Download):
             else:
                 req_url = url
                 req_kwargs = {}
-
-            with requests.request(
+            # url where data is downloaded from can be ftp -> add ftp adapter
+            requests_ftp.monkeypatch_session()
+            s = requests.Session()
+            with s.request(
                 req_method,
                 req_url,
                 stream=True,

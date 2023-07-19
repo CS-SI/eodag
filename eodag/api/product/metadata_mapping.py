@@ -499,7 +499,12 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_split_id_into_s1_params(product_id):
-            parts = product_id.replace("__", "_").split("_")
+            parts = re.split(r"_(?!_)", product_id)
+            if len(parts) < 9:
+                logger.error(
+                    "id %s does not match expected Sentinel-1 id format", product_id
+                )
+                raise ValueError
             params = {"sensorMode": parts[1]}
             level = "LEVEL" + parts[3][0]
             params["processingLevel"] = level
@@ -517,6 +522,43 @@ def format_metadata(search_param, *args, **kwargs):
             elif product_type == "GRD" and parts[-2] == "CARD" and parts[-1] == "BS":
                 product_type = "CARD-BS"
             params["productType"] = product_type
+            polarisation_mapping = {
+                "SV": "VV",
+                "SH": "HH",
+                "DH": "HH+HV",
+                "DV": "VV+VH",
+            }
+            polarisation = polarisation_mapping[parts[3][2:]]
+            params["polarisation"] = polarisation
+            return params
+
+        # @staticmethod
+        # def convert_split_id_into_s2_params(product_id):
+        #     parts = re.split(r"_(?!_)", product_id)
+        #     params = {}
+        #     start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
+        #         seconds=1
+        #     )
+        #     params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        #     end_date = datetime.strptime(parts[5], "%Y%m%dT%H%M%S") + timedelta(
+        #         seconds=1
+        #     )
+        #     params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        #     return params
+
+        @staticmethod
+        def convert_split_id_into_s3_params(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            params = {}
+            start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
+                seconds=1
+            )
+            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_date = datetime.strptime(parts[5], "%Y%m%dT%H%M%S") + timedelta(
+                seconds=1
+            )
+            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            params["timeliness"] = parts[-2]
             return params
 
     # if stac extension colon separator `:` is in search search params, parse it to prevent issues with vformat
