@@ -1198,6 +1198,12 @@ class EODataAccessGateway(object):
                     results[0].driver = results[0].get_driver()
                 return results, 1
             elif len(results) > 1:
+                # check if id of one product exactly matches id that was searched for
+                # required if provider does not offer search by id and therefore other
+                # parameters which might not given an exact result are used
+                for result in results:
+                    if result.properties["id"] == uid:
+                        return [results[0]], 1
                 logger.info(
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,
