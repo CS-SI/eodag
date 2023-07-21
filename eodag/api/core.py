@@ -1202,7 +1202,7 @@ class EODataAccessGateway(object):
                 # required if provider does not offer search by id and therefore other
                 # parameters which might not given an exact result are used
                 for result in results:
-                    if result.properties["id"] == uid:
+                    if result.properties["id"] == uid.split(".")[0]:
                         return [results[0]], 1
                 logger.info(
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
@@ -1368,7 +1368,7 @@ class EODataAccessGateway(object):
     def do_authentication(self, provider):
         """performs the authentication at a given provider"""
         auth_plugin = self._plugins_manager.get_auth_plugin(provider)
-        auth_plugin.authenticate()
+        return auth_plugin.authenticate()
 
     def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
         """Internal method that performs a search on a given provider.

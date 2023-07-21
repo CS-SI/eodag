@@ -741,7 +741,18 @@ S2_MSI_L3A_WASP:
 # Sentinel 3 ------------------------------------------------------------------
 # S3 OLCI L1
 S3_EFR:
-  abstract: ""
+  abstract: |
+    OLCI (Ocean and Land Colour Instrument) Full resolution: 300m at nadir. Level 1 products are calibrated
+    Top Of Atmosphere radiance values at OLCI 21 spectral bands. Radiances are computed from the instrument digital
+    counts by applying geo-referencing, radiometric processing (non-linearity correction, smear correction, dark offset
+    correction, absolute gain calibration adjusted for gain evolution with time), and stray-light correction for
+    straylight effects in OLCI camera's spectrometer and ground imager. Additionally, spatial resampling of OLCI pixels
+    to the 'ideal' instrument grid, initial pixel classification, and annotation at tie points with auxiliary
+    meteorological data and acquisition geometry are provided. The radiance products are accompanied by error estimate
+    products, however the error values are currently not available. - All Sentinel-3 NRT products are available at
+    pick-up point in less than 3h. - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in
+    less than 30 days. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme.
   instrument: OLCI
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -898,7 +909,7 @@ S3_SLSTR_L2LST:
 
 S3_SLSTR_L2WST:
   abstract: |
-    The SLSTR Level-2 WST product provides land surface parameters generated on the wide 1 km measurement grid.
+    The SLSTR Level-2 WST product provides water surface parameters generated on the wide 1 km measurement grid.
     It contains measurement file with Water Surface Temperature (WST) values with associated parameters (WST
     parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
   instrument: SLSTR
@@ -943,6 +954,31 @@ S3_SLSTR_L2FRP:
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 FRP
   missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L2:
+  abstract: |
+    The SLSTR Level-2 products are generated in five different types: 1. SL_2_WCT, including the Sea Surface Temperature
+    for single and dual view, for 2 or 3 channels (internal product only), 2. SL_2_WST, including the Level-2P Sea
+    surface temperature (provided to the users), 3. SL_2_LST, including the Land Surface Temperature parameters
+    (provided to the users), 4. SL_2_FRP, including the Fire Radiative Power parameters (provided to the users),
+    5.SL_2_AOD, including the Aerosol Optical Depth parameters (provided to the users). The Level-2 product are
+    organized in packages composed of one manifest file and several measurement and annotation data files (between 2
+    and 21 files depending on the package). The manifest file is in XML format and gathers general information
+    concerning product and processing. The measurement and annotation data files are in netCDF 4 format, and include
+    dimensions, variables and associated attributes. Regarding the measurement files: one measurement file, providing
+    the land surface temperature, associated uncertainties and other supporting fields, is included in the SL_2_LST
+    packet. The annotation data files are generated from the annotation files included in the SL_1RBT package and their
+    format is identical to the files in the Level-1 packet.The SL_2_LST packet contains 10 annotation files, providing
+    the same parameters as in SL_2_WCT and, in addition, some vegetation parameters.
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2FRP,FRP,L2WCT,WCT,L2WST,WST,L2AOD,AOD
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2
+  missionStartDate: "2017-07-05T00:00:00Z"
 
 # S3 SRAL
 S3_SRA:
@@ -1097,6 +1133,25 @@ S3_SY_VGP:
   missionStartDate: "2016-02-16T00:00:00Z"
 
 # Sentinel 5P ------------------------------------------------------------------
+S5P_L1B2_IR_ALL:
+  abstract: |
+    Solar irradiance spectra for all bands (UV1-6 and SWIR)
+    The TROPOMI instrument is a space-borne, nadir-viewing, imaging spectrometer covering wavelength bands between the
+    ultraviolet and the shortwave infrared. The instrument, the single payload of the Sentinel-5P spacecraft, uses
+    passive remote sensing techniques to attain its objective by measuring, at the Top Of Atmosphere (TOA), the solar
+    radiation reflected by and radiated from the earth. The instrument operates in a push-broom configuration
+    (non-scanning), with a swath width of ~2600 km on the Earth's surface. The typical pixel size (near nadir) will
+    be 7x3.5 km2 for all spectral bands, with the exception of the UV1 band (7x28 km2) and SWIR bands (7x7 km2).
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B, L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,SIR,SWIR,Irradiances,UVN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B and Level 2 Irradiances for the SWIR and UNV bands
+  missionStartDate: "2017-10-13T00:00:00Z"
+
 S5P_L1B_IR_SIR:
   abstract: |
     Solar irradiance spectra for the SWIR bands (band 7 and band 8).

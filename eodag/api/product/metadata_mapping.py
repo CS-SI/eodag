@@ -18,6 +18,7 @@
 import ast
 import logging
 import re
+import urllib.parse
 from datetime import datetime, timedelta
 from string import Formatter
 
@@ -532,24 +533,10 @@ def format_metadata(search_param, *args, **kwargs):
             params["polarisation"] = polarisation
             return params
 
-        # @staticmethod
-        # def convert_split_id_into_s2_params(product_id):
-        #     parts = re.split(r"_(?!_)", product_id)
-        #     params = {}
-        #     start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
-        #         seconds=1
-        #     )
-        #     params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        #     end_date = datetime.strptime(parts[5], "%Y%m%dT%H%M%S") + timedelta(
-        #         seconds=1
-        #     )
-        #     params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        #     return params
-
         @staticmethod
         def convert_split_id_into_s3_params(product_id):
             parts = re.split(r"_(?!_)", product_id)
-            params = {}
+            params = {"productType": product_id[4:15]}
             start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
                 seconds=1
             )
@@ -559,7 +546,30 @@ def format_metadata(search_param, *args, **kwargs):
             )
             params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
             params["timeliness"] = parts[-2]
+            params["sat"] = "Sentinel-" + parts[0][1:]
             return params
+
+        @staticmethod
+        def convert_split_id_into_s5p_params(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            params = {
+                "productType": product_id[9:19],
+                "processingMode": parts[1],
+                "processingLevel": parts[2].replace("_", ""),
+            }
+            start_date = datetime.strptime(parts[-6], "%Y%m%dT%H%M%S") - timedelta(
+                seconds=10
+            )
+            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_date = datetime.strptime(parts[-5], "%Y%m%dT%H%M%S") + timedelta(
+                seconds=10
+            )
+            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            return params
+
+        @staticmethod
+        def convert_decode_url(url):
+            return urllib.parse.unquote(url)
 
     # if stac extension colon separator `:` is in search search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):

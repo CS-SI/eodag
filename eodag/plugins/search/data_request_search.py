@@ -3,8 +3,7 @@ import time
 
 import requests
 
-import eodag
-from eodag import EOProduct
+from eodag import EODataAccessGateway, EOProduct
 from eodag.api.product.metadata_mapping import (
     format_query_params,
     mtd_cfg_as_conversion_and_querypath,
@@ -14,7 +13,7 @@ from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
 
 logger = logging.getLogger("eodag.plugins.search.data_request_search")
-eodag_api = eodag.EODataAccessGateway()
+eodag_api = EODataAccessGateway()
 
 
 class DataRequestSearch(Search):
@@ -80,6 +79,10 @@ class DataRequestSearch(Search):
         logger.info("search job for product_type %s finished", provider_product_type)
         result = self._get_result_data(data_request_id)
         logger.info("result retrieved from search job")
+        if self._check_uses_custom_filters(product_type):
+            result = self._apply_additional_filters(
+                result, self.config.products[product_type]["custom_filters"]
+            )
         kwargs["productType"] = product_type
         return self._convert_result_data(result, data_request_id, **kwargs)
 
@@ -90,6 +93,10 @@ class DataRequestSearch(Search):
             print("h" + str(headers))
             metadata = requests.get(metadata_url, headers=headers)
             print(metadata)
+            if "status_code" in metadata and metadata["status_code"] == 403:
+                # re-authenticate in case token expired
+                self.auth = eodag_api.do_authentication(self.provider)
+                metadata = requests.get(metadata_url, headers=headers)
             metadata.raise_for_status()
         except requests.RequestException:
             logger.error(
@@ -122,7 +129,7 @@ class DataRequestSearch(Search):
         status_data = requests.get(status_url, headers=self.auth.headers).json()
         if "status_code" in status_data and status_data["status_code"] == 403:
             # re-authenticate in case token expired
-            eodag_api.do_authentication(self.provider)
+            self.auth = eodag_api.do_authentication(self.provider)
             return False
         if status_data["status"] == "failed":
             logger.error(
@@ -178,7 +185,10 @@ class DataRequestSearch(Search):
         total_items_nb_key_path = string_to_jsonpath(
             self.config.pagination["total_items_nb_key_path"]
         )
-        total_items_nb = total_items_nb_key_path.find(result_data)[0].value
+        if len(total_items_nb_key_path.find(result_data)) > 0:
+            total_items_nb = total_items_nb_key_path.find(result_data)[0].value
+        else:
+            total_items_nb = 0
         for p in products:
             # add the request id to the order link property (required to create data order)
             p.properties["orderLink"] = p.properties["orderLink"].replace(
@@ -186,6 +196,29 @@ class DataRequestSearch(Search):
             )
         print(products[0].properties)
         return products, total_items_nb
+
+    def _check_uses_custom_filters(self, product_type):
+        if (
+            product_type in self.config.products
+            and "custom_filters" in self.config.products[product_type]
+        ):
+            return True
+        return False
+
+    def _apply_additional_filters(self, result, custom_filters):
+        filtered_result = []
+        results_entry = self.config.results_entry
+        results = result[results_entry]
+        path = string_to_jsonpath(custom_filters["filter_attribute"])
+        indexes = custom_filters["indexes"].split("-")
+        for record in results:
+            filter_param = path.find(record)[0].value
+            filter_value = filter_param[int(indexes[0]) : int(indexes[1])]
+            filter_clause = "'" + filter_value + "' " + custom_filters["filter_clause"]
+            if eval(filter_clause):
+                filtered_result.append(record)
+        result[results_entry] = filtered_result
+        return result
 
     def _map_product_type(self, product_type):
         """Map the eodag product type to the provider product type"""
