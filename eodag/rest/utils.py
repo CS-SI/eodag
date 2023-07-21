@@ -9,13 +9,11 @@ import os
 import re
 from collections import namedtuple
 from shutil import make_archive
-from types import GeneratorType
 
 import dateutil.parser
 from dateutil import tz
 from fastapi.responses import StreamingResponse
 from shapely.geometry import Polygon, shape
-from stream_zip import stream_zip
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
@@ -26,12 +24,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
-from eodag.utils import (
-    _deprecated,
-    dict_items_recursive_apply,
-    sanitize,
-    string_to_jsonpath,
-)
+from eodag.utils import _deprecated, dict_items_recursive_apply, string_to_jsonpath
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -631,21 +624,14 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
 
-    download_stream = eodag_api.download_stream(product)
+    auth = (
+        product.downloader_auth.authenticate()
+        if product.downloader_auth is not None
+        else product.downloader_auth
+    )
+    download_stream_dict = product.downloader._stream_download_dict(product, auth=auth)
 
-    if isinstance(download_stream, GeneratorType):
-        # assets streaming
-        zipped_chunks = stream_zip(download_stream)
-        return StreamingResponse(
-            zipped_chunks,
-            media_type="application/zip",
-            headers={
-                "content-disposition": f"attachment; filename={sanitize(item_id)}.zip"
-            },
-        )
-    else:
-        # single archive streaming
-        return download_stream
+    return StreamingResponse(**download_stream_dict)
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):
