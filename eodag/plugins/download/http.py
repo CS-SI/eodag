@@ -693,8 +693,6 @@ class HTTPDownload(Download):
 
         progress_callback.reset(total=total_size)
 
-        local_assets_count = 0
-
         def get_chunks(stream):
             for chunk in stream.iter_content(chunk_size=64 * 1024):
                 if chunk:
@@ -731,7 +729,6 @@ class HTTPDownload(Download):
                 logger.info(
                     f"Local asset detected. Download skipped for {asset['href']}"
                 )
-                local_assets_count += 1
                 continue
 
             with requests.get(
@@ -789,6 +786,9 @@ class HTTPDownload(Download):
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
+        assets_values = [
+            a for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
 
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
@@ -812,7 +812,12 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
         )
 
+        # count local assets
         local_assets_count = 0
+        for asset in assets_values:
+            if asset["href"].startswith("file:"):
+                local_assets_count += 1
+                continue
 
         for chunk_tuple in chunks_tuples:
             asset_path = chunk_tuple[0]
