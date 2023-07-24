@@ -3890,7 +3890,6 @@
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_AOD___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-        downloadLink: '{$.url#decode_url}'
     S3_SLSTR_L2FRP:
       productType: EO:EUM:DAT:SENTINEL-3:0417
       metadata_mapping:
@@ -3904,7 +3903,6 @@
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_FRP___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-        downloadLink: '{$.url#decode_url}'
     S3_EFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
       metadata_mapping:
@@ -3921,7 +3919,76 @@
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_EFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-        downloadLink: '{$.url#decode_url}'
+    S3_ERR:
+      productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
+      metadata_mapping:
+        productType:
+          - '{{"datasetId": "EO:EUM:DAT:SENTINEL-3:0578"}}'
+          - 'EO:EUM:DAT:SENTINEL-3:OL_1_ERR___'
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S3_OLCI_L2WFR:
+      productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S3_OLCI_L2WRR:
+      productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S3_SRA:
+      productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S3_SRA_A:
+      productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S3_WAT:
+      productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
     S5P_L1B2_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P:TROPOMI
       metadata_mapping:
@@ -3943,3 +4010,4 @@
     order_status_method: 'GET'
     order_status_success:
       status: completed
+      message: "Done!"

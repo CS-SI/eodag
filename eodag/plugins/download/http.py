@@ -261,6 +261,11 @@ class HTTPDownload(Download):
                     self.config, "order_status_success", {}
                 )
                 if (
+                    status_dict["status"] == order_status_success_dict["status"]
+                    and status_dict["message"] == order_status_success_dict["message"]
+                ):
+                    product.properties["storageStatus"] = ONLINE_STATUS
+                if (
                     order_status_success_dict
                     and order_status_success_dict.items() <= status_dict.items()
                     and getattr(self.config, "order_status_on_success", {}).get(
