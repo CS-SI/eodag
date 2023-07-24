@@ -93,9 +93,14 @@ class DataRequestSearch(Search):
             print("h" + str(headers))
             metadata = requests.get(metadata_url, headers=headers)
             print(metadata)
-            if "status_code" in metadata and metadata["status_code"] == 403:
+            if (
+                "status_code" in metadata.json()
+                and metadata.json()["status_code"] == 403
+            ):
                 # re-authenticate in case token expired
+                logger.info("re-authenticate to get new token")
                 self.auth = eodag_api.do_authentication(self.provider)
+                headers = getattr(self.auth, "headers", "")
                 metadata = requests.get(metadata_url, headers=headers)
             metadata.raise_for_status()
         except requests.RequestException:
@@ -194,7 +199,6 @@ class DataRequestSearch(Search):
             p.properties["orderLink"] = p.properties["orderLink"].replace(
                 "requestJobId", str(data_request_id)
             )
-        print(products[0].properties)
         return products, total_items_nb
 
     def _check_uses_custom_filters(self, product_type):

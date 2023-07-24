@@ -764,7 +764,18 @@ S3_EFR:
   missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_ERR:
-  abstract: ""
+  abstract: |
+    OLCI (Ocean and Land Colour Instrument) Reduced resolution: 1200m at nadir. All Sentinel-3 NRT products are
+    available at pick-up point in less than 3h. Level 1 products are calibrated Top Of Atmosphere radiance values
+    at OLCI 21 spectral bands. Radiances are computed from the instrument digital counts by applying geo-referencing,
+    radiometric processing (non-linearity correction, smear correction, dark offset correction, absolute gain
+    calibration adjusted for gain evolution with time), and stray-light correction for straylight effects in OLCI
+    camera's spectrometer and ground imager. Additionally, spatial resampling of OLCI pixels to the 'ideal' instrument
+    grid, initial pixel classification, and annotation at tie points with auxiliary meteorological data and acquisition
+    geometry are provided. The radiance products are accompanied by error estimate products, however the error values
+    are currently not available. - All Sentinel-3 NRT products are available at pick-up point in less than 3h
+    - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in less than 30 days Sentinel-3 is
+    part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instrument: OLCI
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -859,7 +870,7 @@ S3_OLCI_L2LFR:
 
 S3_OLCI_L2WFR:
   abstract: |
-    The OLCI Level-2 Water Full Resolution (OL_2_WRR) products contain water and atmospheric geophysical products
+    The OLCI Level-2 Water Full Resolution (OL_2_WFR) products contain water and atmospheric geophysical products
     at Full resolution with a spatial sampling of approximately 1.2 km. The products are assumed to be computed
     in Near Real Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical
     (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
@@ -868,7 +879,7 @@ S3_OLCI_L2WFR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR
   sensorType: OPTICAL
   license: proprietary
   title: SENTINEL3 OLCI Level-2 Water Full Resolution
@@ -982,7 +993,13 @@ S3_SLSTR_L2:
 
 # S3 SRAL
 S3_SRA:
-  abstract: ""
+  abstract: |
+    SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or
+    Synthetic Aperture Radar (SAR) mode both for C Band and Ku band. When the altimeter is in SAR mode, this product
+    also contains the so-called Pseudo LRM (PLRM) echoes. - All Sentinel-3 Near Real Time (NRT) products are available
+    at pick-up point in less than 3h. - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point
+    in less than 30 days. - All Sentinel-3 Short Time Critical (STC) products are available at pick-up point in less
+    than 48 hours. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instrument: SRAL
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -1026,7 +1043,19 @@ S3_SRA_BS:
   missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_WAT:
-  abstract: ""
+  abstract: |
+    The products contain the typical altimetry measurements, like the altimeter range, the sea surface height, the wind
+    speed, significant wave height and all required geophysical corrections and related flags. Also the sea Ice
+    freeboard measurement is included. The measurements in the standard data file provide the measurements in low
+    (1 Hz = approx. 7km) and high resolution (20 Hz = approx. 300 m), in LRM mode or in SAR mode, for both C-band and
+    Ku band. The SAR mode is the default mode. The reduced measurement data file contains 1 Hz measurements only. The
+    enhanced measurement data file contains also the waveforms and associated parameters and the pseudo LRM measurements
+    when in SAR mode. This product contains the following datasets: Sea Level Global(NRT) (PDS_MG3_CORE_14_GLONRT),
+    Sea Level Global Reduced(NRT)(PDS_MG3_CORE_14_GLONRT_RD), Sea Level Global Standard(NRT) (PDS_MG3_CORE_14_GLONRT_SD),
+    Sea Level Global Enhanced(NRT) (PDS_MG3_CORE_14_GLONRT_EN) - All Sentinel-3 NRT products are available at pick-up
+    point in less than 3h. - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in less
+    than 30 days - All Sentinel-3 Short Time Critical (STC) products are available at pick-up point in less than 48
+    hours Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instrument: SRAL
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
