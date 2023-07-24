@@ -30,14 +30,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse, ORJSONResponse
+from fastapi.responses import ORJSONResponse
 from fastapi.types import Any, Callable, DecoratedCallable
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
-    download_stac_item_by_id,
     download_stac_item_by_id_stream,
     eodag_api_init,
     get_detailled_collections_list,
@@ -547,14 +546,10 @@ async def stac_catalogs_item_download(catalogs, item_id, request: Request):
     provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
-    response = download_stac_item_by_id(
-        catalogs=catalogs,
-        item_id=item_id,
-        provider=provider,
-    )
-    filename = os.path.basename(response)
 
-    return FileResponse(response, filename=filename)
+    return download_stac_item_by_id_stream(
+        catalogs=catalogs, item_id=item_id, provider=provider
+    )
 
 
 @router.get("/catalogs/{catalogs:path}", tags=["Capabilities"])
