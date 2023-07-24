@@ -705,6 +705,25 @@ class HTTPDownload(Download):
         modified_at = datetime.now()
         perms = 0o600
 
+        # loop for assets paths and get common_subdir
+        asset_rel_paths_list = []
+        for asset in assets_values:
+            asset_rel_path_parts = urlparse(asset["href"]).path.strip("/").split("/")
+            asset_rel_path_parts_sanitized = [
+                sanitize(part) for part in asset_rel_path_parts
+            ]
+            asset["rel_path"] = os.path.join(*asset_rel_path_parts_sanitized)
+            asset_rel_paths_list.append(asset["rel_path"])
+        assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
+
+        # product conf overrides provider conf for "flatten_top_dirs"
+        product_conf = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        )
+        flatten_top_dirs = product_conf.get(
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+        )
+
         # loop for assets download
         for asset in assets_values:
 
@@ -728,13 +747,12 @@ class HTTPDownload(Download):
                 except RequestException as e:
                     self._handle_asset_exception(e, asset)
                 else:
-                    asset_rel_path_parts = (
-                        urlparse(asset["href"]).path.strip("/").split("/")
+                    asset_rel_path = (
+                        asset["rel_path"].replace(assets_common_subdir, "")
+                        if flatten_top_dirs
+                        else asset["rel_path"]
                     )
-                    asset_rel_path_parts_sanitized = [
-                        sanitize(part) for part in asset_rel_path_parts
-                    ]
-                    asset_rel_path = os.path.join(*asset_rel_path_parts_sanitized)
+                    asset_rel_dir = os.path.dirname(asset_rel_path)
 
                     if not asset.get("filename", None):
                         # try getting filename in GET header if was not found in HEAD result
@@ -748,10 +766,10 @@ class HTTPDownload(Download):
 
                     if not asset.get("filename", None):
                         # default filename extracted from path
-                        asset["filename"] = os.path.basename(asset_rel_path)
+                        asset["filename"] = os.path.basename(asset["rel_path"])
 
                     yield (
-                        asset["filename"],
+                        os.path.join(asset_rel_dir, asset["filename"]),
                         modified_at,
                         perms,
                         NO_COMPRESSION_64,
@@ -771,21 +789,9 @@ class HTTPDownload(Download):
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
-        assets_values = [
-            a for a in getattr(product, "assets", {}).values() if "href" in a
-        ]
 
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
-
-        # get extra parameters to pass to the query
-        params = kwargs.get("dl_url_params", None) or getattr(
-            self.config, "dl_url_params", {}
-        )
-
-        total_size = self._get_asset_sizes(assets_values, auth, params, zipped=True)
-
-        progress_callback.reset(total=total_size)
 
         chunks_tuples = self._stream_download_assets(
             product, auth, progress_callback, **kwargs
@@ -812,6 +818,10 @@ class HTTPDownload(Download):
             asset_path = chunk_tuple[0]
             asset_chunks = chunk_tuple[4]
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
+            # create asset subdir if not exist
+            asset_abs_path_dir = os.path.dirname(asset_abs_path)
+            if not os.path.isdir(asset_abs_path_dir):
+                os.makedirs(asset_abs_path_dir)
             if not os.path.isfile(asset_abs_path):
                 with open(asset_abs_path, "wb") as fhandle:
                     for chunk in asset_chunks:
