@@ -386,13 +386,17 @@ class HTTPDownload(Download):
 
         url = product.remote_location
 
-        chunks = self._stream_download(
-            product, auth, progress_callback, wait, timeout, **kwargs
-        )
+        @self._download_retry(product, wait, timeout)
+        def download_request(product, auth, progress_callback, wait, timeout, **kwargs):
+            chunks = self._stream_download(
+                product, auth, progress_callback, wait, timeout, **kwargs
+            )
 
-        with open(fs_path, "wb") as fhandle:
-            for chunk in chunks:
-                fhandle.write(chunk)
+            with open(fs_path, "wb") as fhandle:
+                for chunk in chunks:
+                    fhandle.write(chunk)
+
+        download_request(product, auth, progress_callback, wait, timeout, **kwargs)
 
         with open(record_filename, "w") as fh:
             fh.write(url)
@@ -556,70 +560,54 @@ class HTTPDownload(Download):
         ):
             self.orderDownload(product=product, auth=auth)
 
-        @self._download_retry(product, wait, timeout)
-        def download_request(
-            product,
-            auth,
-            progress_callback,
-            ordered_message,
-            **kwargs,
-        ):
-            if product.properties.get("orderStatusLink", None):
-                self.orderDownloadStatus(product=product, auth=auth)
+        if product.properties.get("orderStatusLink", None):
+            self.orderDownloadStatus(product=product, auth=auth)
 
-            params = kwargs.pop("dl_url_params", None) or getattr(
-                self.config, "dl_url_params", {}
-            )
-
-            req_method = (
-                product.properties.get("downloadMethod", "").lower()
-                or getattr(self.config, "method", "GET").lower()
-            )
-            url = product.remote_location
-            if req_method == "post":
-                # separate url & parameters
-                parts = urlparse(url)
-                query_dict = parse_qs(parts.query)
-                if not query_dict and parts.query:
-                    query_dict = geojson.loads(parts.query)
-                req_url = parts._replace(query=None).geturl()
-                req_kwargs = {"json": query_dict} if query_dict else {}
-            else:
-                req_url = url
-                req_kwargs = {}
-
-            with requests.request(
-                req_method,
-                req_url,
-                stream=True,
-                auth=auth,
-                params=params,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                **req_kwargs,
-            ) as self.stream:
-                try:
-                    self.stream.raise_for_status()
-
-                except RequestException as e:
-                    self._process_exception(e, product, ordered_message)
-                else:
-                    stream_size = self._check_stream_size(product)
-                    product.headers = self.stream.headers
-                    progress_callback.reset(total=stream_size)
-                    logger.debug(f"stream_zip: {stream_size}")
-                    for chunk in self.stream.iter_content(chunk_size=64 * 1024):
-                        if chunk:
-                            progress_callback(len(chunk))
-                            yield chunk
-
-        return download_request(
-            product,
-            auth,
-            progress_callback,
-            ordered_message,
-            **kwargs,
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
         )
+
+        req_method = (
+            product.properties.get("downloadMethod", "").lower()
+            or getattr(self.config, "method", "GET").lower()
+        )
+        url = product.remote_location
+        if req_method == "post":
+            # separate url & parameters
+            parts = urlparse(url)
+            query_dict = parse_qs(parts.query)
+            if not query_dict and parts.query:
+                query_dict = geojson.loads(parts.query)
+            req_url = parts._replace(query=None).geturl()
+            req_kwargs = {"json": query_dict} if query_dict else {}
+        else:
+            req_url = url
+            req_kwargs = {}
+
+        with requests.request(
+            req_method,
+            req_url,
+            stream=True,
+            auth=auth,
+            params=params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            **req_kwargs,
+        ) as self.stream:
+            try:
+                self.stream.raise_for_status()
+
+            except RequestException as e:
+                self._process_exception(e, product, ordered_message)
+            else:
+                stream_size = self._check_stream_size(product)
+                product.headers = self.stream.headers
+                progress_callback.reset(total=stream_size)
+                logger.debug(f"stream_zip: {stream_size}")
+                for chunk in self.stream.iter_content(chunk_size=64 * 1024):
+                    if chunk:
+                        progress_callback(len(chunk))
+                        yield chunk
 
     def _stream_download_assets(
         self,
