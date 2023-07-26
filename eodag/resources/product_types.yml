@@ -1878,6 +1878,43 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   missionStartDate: "1984-01-01T00:00:00Z"
 
+# COPERNICUS Digital Elevation Model
+COP_DEM_GLO30:
+  abstract: |
+    The Copernicus DEM is a Digital Surface Model (DSM) which represents the surface of the Earth including buildings,
+    infrastructure and vegetation. We provide two instances of Copernicus DEM named GLO-30 Public and GLO-90. GLO-30
+    provides worldwide coverage at 30 meters. Note that ocean areas do not have tiles, there one can assume height
+    values equal to zero. Data is provided as Cloud Optimized GeoTIFFs. Several releases are currently available for
+    all Copernicus DEM instances, only the last one is provided as 2022 release. A full collection of tiles can be
+    found via FTP and PANDA Catalogue under dataset names marked with “2022_1”.
+    instrument:
+  platform: TerraSAR
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: TerraSAR, TanDEM-X, DEM, surface, GLO-30, DSM
+  sensorType: SAR-X, TOR
+  license: proprietary
+  title: COPERNICUS Digital Elevation Model (GLO-30)
+  missionStartDate: "2010-06-21T00:00:00Z"
+
+CLMS_CORINE:
+  abstract: |
+    The CORINE Land Cover (CLC) inventory was initiated in 1985 (reference year 1990). Updates have been produced in
+    2000, 2006, 2012, and 2018. It consists of an inventory of land cover in 44 classes. CLC uses a Minimum Mapping
+    Unit (MMU) of 25 hectares (ha) for areal phenomena and a minimum width of 100 m for linear phenomena. The time
+    series are complemented by change layers, which highlight changes in land cover with an MMU of 5 ha. Different
+    MMUs mean that the change layer has higher resolution than the status layer. Due to differences in MMUs the
+    difference between two status layers will not equal to the corresponding CLC-Changes layer. If you are interested
+    in CLC-Changes between two neighbour surveys always use the CLC-Change layer.
+  platform: Sentinel-2, LANDSAT, SPOT-4/5, IRS P6 LISS III
+  platformSerialIdentifier: S2, L5, L7, L8, SPOT4, SPOT5
+  processingLevel:
+  keywords: Land cover, LCL, CORINE, CLMS
+  sensorType:
+  license: proprietary
+  title: CORINE Land Cover
+  missionStartDate: "1986-01-01T00:00:00Z"
+
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

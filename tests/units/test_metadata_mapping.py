@@ -386,3 +386,64 @@ class TestMetadataFormatter(unittest.TestCase):
             ),
             str(expected),
         )
+
+    def test_convert_split_cop_dem_id(self):
+        to_format = "{id#split_cop_dem_id}"
+        self.assertEqual(
+            str(
+                format_metadata(
+                    to_format,
+                    id="Copernicus_DSM_10_N59_00_E119_00",
+                )
+            ),
+            str([118, 58, 120, 60]),
+        )
+        self.assertEqual(
+            str(
+                format_metadata(
+                    to_format,
+                    id="Copernicus_DSM_10_S59_00_W119_00",
+                )
+            ),
+            str([-120, -60, -118, -58]),
+        )
+
+    # def test_convert_get_corine_product_type(self):
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2000-06-01T00:00:00Z)}",
+    #             start_date="2000-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Cover 2000"
+    #     )
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2001-06-01T00:00:00Z)}",
+    #             start_date="1995-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 1990 2000"
+    #     )
+    #
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(1991-06-01T00:00:00Z)}",
+    #             start_date="1985-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 1990 2000"
+    #     )
+    #
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2005-06-01T00:00:00Z)}",
+    #             start_date="1999-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 2000 2006"
+    #     )
+    #
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2011-06-01T00:00:00Z)}",
+    #             start_date="1999-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 2000 2006"
+    #     )
