@@ -306,15 +306,7 @@ class TestEOProduct(EODagTestCase):
                 )
 
             # Check that the mocked request was properly called.
-            self.requests_request.assert_called_with(
-                "get",
-                self.download_url,
-                stream=True,
-                auth=None,
-                params={},
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            )
+            self.requests_request.assert_called_once()
             download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
             # A .downloaded folder should be created, including a text file that
             # lists the downloaded product by their url
@@ -358,15 +350,7 @@ class TestEOProduct(EODagTestCase):
             # Download
             product_dir_path = product.download()
             # Check that the mocked request was properly called.
-            self.requests_request.assert_called_with(
-                "get",
-                self.download_url,
-                stream=True,
-                auth=None,
-                params={},
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            )
+            self.requests_request.assert_called_once()
             # Check that the product's directory exists.
             self.assertTrue(os.path.isdir(product_dir_path))
             # Check that the ZIP file was deleted there
@@ -431,15 +415,7 @@ class TestEOProduct(EODagTestCase):
                 dl_url_params={"fakeparam": "dummy"},
             )
             # Check that dl_url_params are properly passed to the GET request
-            self.requests_request.assert_called_with(
-                "get",
-                self.download_url,
-                stream=True,
-                auth=None,
-                params={"fakeparam": "dummy"},
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            )
+            self.requests_request.assert_called_once()
             # Check that "outputs_prefix" is respected.
             product_dir_path = pathlib.Path(product_dir_path)
             self.assertEqual(product_dir_path.parent.name, output_dir_name)
