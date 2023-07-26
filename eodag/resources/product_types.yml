@@ -1887,7 +1887,7 @@ COP_DEM_GLO30:
     values equal to zero. Data is provided as Cloud Optimized GeoTIFFs. Several releases are currently available for
     all Copernicus DEM instances, only the last one is provided as 2022 release. A full collection of tiles can be
     found via FTP and PANDA Catalogue under dataset names marked with “2022_1”.
-    instrument:
+  instrument:
   platform: TerraSAR
   platformSerialIdentifier:
   processingLevel:
@@ -1906,6 +1906,7 @@ CLMS_CORINE:
     MMUs mean that the change layer has higher resolution than the status layer. Due to differences in MMUs the
     difference between two status layers will not equal to the corresponding CLC-Changes layer. If you are interested
     in CLC-Changes between two neighbour surveys always use the CLC-Change layer.
+  instrument:
   platform: Sentinel-2, LANDSAT, SPOT-4/5, IRS P6 LISS III
   platformSerialIdentifier: S2, L5, L7, L8, SPOT4, SPOT5
   processingLevel:

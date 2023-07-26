@@ -3,7 +3,7 @@ import time
 
 import requests
 
-from eodag import EODataAccessGateway, EOProduct
+from eodag import EOProduct
 from eodag.api.product.metadata_mapping import (
     format_query_params,
     mtd_cfg_as_conversion_and_querypath,
@@ -13,7 +13,6 @@ from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
 
 logger = logging.getLogger("eodag.plugins.search.data_request_search")
-eodag_api = EODataAccessGateway()
 
 
 class DataRequestSearch(Search):
@@ -89,15 +88,6 @@ class DataRequestSearch(Search):
         try:
             metadata_url = self.config.metadata_url + product_type
             metadata = requests.get(metadata_url, headers=headers)
-            if (
-                "status_code" in metadata.json()
-                and metadata.json()["status_code"] == 403
-            ):
-                # re-authenticate in case token expired
-                logger.info("re-authenticate to get new token")
-                self.auth = eodag_api.do_authentication(self.provider)
-                headers = getattr(self.auth, "headers", "")
-                metadata = requests.get(metadata_url, headers=headers)
             metadata.raise_for_status()
         except requests.RequestException:
             logger.error(
@@ -125,9 +115,8 @@ class DataRequestSearch(Search):
         status_url = self.config.status_url + data_request_id
         status_data = requests.get(status_url, headers=self.auth.headers).json()
         if "status_code" in status_data and status_data["status_code"] == 403:
-            # re-authenticate in case token expired
-            self.auth = eodag_api.do_authentication(self.provider)
-            return False
+            logger.error("authentication token expired during request")
+            raise requests.RequestException
         if status_data["status"] == "failed":
             logger.error(
                 "data request job has failed, message: %s", status_data["message"]
