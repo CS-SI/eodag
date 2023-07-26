@@ -99,9 +99,6 @@ class TestStacUtils(unittest.TestCase):
         # stop os.environ
         cls.mock_os_environ.stop()
 
-    def test_download_stac_item_by_id(self):
-        pass  # TODO
-
     def test_filter_products_unknown_cruncher_raise_error(self):
         """filter_products must raise a ValidationError if an unknown cruncher is given"""
         with self.assertRaises(ValidationError) as context:

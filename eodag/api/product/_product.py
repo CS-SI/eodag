@@ -40,6 +40,7 @@ except ImportError:
     # shapely < 2.0 compatibility
     from shapely.errors import TopologicalError as GEOSException
 
+
 logger = logging.getLogger("eodag.api.product")
 
 
@@ -354,66 +355,6 @@ class EOProduct(object):
         progress_callback.desc = str(self.properties.get("id", ""))
         progress_callback.refresh()
         return [progress_callback, close_progress_callback]
-
-    def download_zip(self, progress_callback=None, **kwargs):
-        """
-        downloads the assets of the product provided as a zip file
-        and returns a stream of the file
-        :param progress_callback: A method or a callable object
-                                  which takes a current size and a maximum
-                                  size as inputs and handle progress bar
-                                  creation and update to give the user a
-                                  feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
-        :param kwargs: additional arguments
-        :type kwargs: dict
-        :returns: a stream of the downloaded zip file
-        :rtype: fastapi.responses.StreamingResponse
-        """
-        if self.downloader is None:
-            raise RuntimeError(
-                "EO product is unable to download itself due to lacking of a "
-                "download plugin"
-            )
-
-        auth = (
-            self.downloader_auth.authenticate()
-            if self.downloader_auth is not None
-            else self.downloader_auth
-        )
-        progress_callback = self._init_progress_bar(progress_callback)[0]
-        return self.downloader.download_zip(self, auth, progress_callback, **kwargs)
-
-    def download_assets(self, progress_callback=None, **kwargs):
-        """
-        downloads the asset files of the product and returns a stream containing all the files
-        :param progress_callback: A method or a callable object
-                                  which takes a current size and a maximum
-                                  size as inputs and handle progress bar
-                                  creation and update to give the user a
-                                  feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
-        :param kwargs: additional arguments
-        :type kwargs: dict
-        :returns: a StreamingResponse which will directly transfer the downloaded assets
-                  from the provider to the user
-        :rtype: fastapi.responses.StreamingResponse
-        """
-        if self.downloader is None:
-            raise RuntimeError(
-                "EO product is unable to download itself due to lacking of a "
-                "download plugin"
-            )
-
-        auth = (
-            self.downloader_auth.authenticate()
-            if self.downloader_auth is not None
-            else self.downloader_auth
-        )
-        progress_callback = self._init_progress_bar(progress_callback)[0]
-        return self.downloader.direct_download_assets(
-            self, auth, progress_callback, **kwargs
-        )
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
         """Download the quicklook image of a given EOProduct from its provider if it

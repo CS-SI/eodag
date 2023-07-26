@@ -26,7 +26,6 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
-from fastapi.responses import StreamingResponse
 from lxml import etree
 from requests import RequestException
 from stream_zip import NO_COMPRESSION_64, stream_zip
@@ -517,47 +516,6 @@ class HTTPDownload(Download):
                 e.response.text.strip(),
             )
 
-    def download_zip(self, product, auth, progress_callback, **kwargs):
-        """
-        downloads a zip file containing the assets of a given product
-        and returns it as a stream
-        :param product: product for which the assets should be downloaded
-        :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
-        :param progress_callback: A method or a callable object
-                                  which takes a current size and a maximum
-                                  size as inputs and handle progress bar
-                                  creation and update to give the user a
-                                  feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
-        :param kwargs: additional arguments
-        :type kwargs: dict
-        :returns: a StreamingResponse which will directly transfer the data received
-                  from the provider to the user
-        :rtype: fastapi.responses.StreamingResponse
-        """
-        ordered_message = ""
-        if (
-            "orderLink" in product.properties
-            and "storageStatus" in product.properties
-            and product.properties["storageStatus"] == OFFLINE_STATUS
-        ):
-            self.orderDownload(product=product, auth=auth)
-        if progress_callback is None:
-            logger.info(
-                "Progress bar unavailable, please call product.download() instead of plugin.download()"
-            )
-            progress_callback = ProgressCallback(disable=True)
-
-        headers = "attachment; filename={}".format(product.properties["id"] + ".zip")
-        return StreamingResponse(
-            self._stream_download(
-                product, auth, progress_callback, ordered_message, **kwargs
-            ),
-            headers={"Content-Disposition": headers},
-        )
-
     def _stream_download(
         self,
         product,
@@ -936,38 +894,6 @@ class HTTPDownload(Download):
 
                 total_size += asset["size"]
         return total_size
-
-    def direct_download_assets(
-        self, product, auth=None, progress_callback=None, **kwargs
-    ):
-        """
-        directly streams the asset files of a product to the user
-        All asset files are returned in a continuous stream and have to be separated by the client
-        The end of a file is marked with ENDOFFILE in one line and then the name of the file in the next line
-        :param product: product for which the assets should be downloaded
-        :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
-        :param progress_callback: (optional) A method or a callable object
-                                  which takes a current size and a maximum
-                                  size as inputs and handle progress bar
-                                  creation and update to give the user a
-                                  feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
-        :param kwargs: additional arguments
-        :type kwargs: dict
-        :returns: generator for tuple containing file infos and chunks of all assets of the product
-        :rtype: Generator[tuple]
-
-        Returns: a stream containing all asset files of the product
-
-        """
-        if progress_callback is None:
-            logger.info(
-                "Progress bar unavailable, please call product.download() instead of plugin.download()"
-            )
-            progress_callback = ProgressCallback(disable=True)
-        return self._stream_assets(product, auth, progress_callback, **kwargs)
 
     def _stream_assets(self, product, auth=None, progress_callback=None, **kwargs):
         assets_values = [

@@ -573,38 +573,6 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id(catalogs, item_id, provider=None):
-    """Download item
-
-    :param catalogs: Catalogs list (only first is used as product_type)
-    :type catalogs: list
-    :param item_id: Product ID
-    :type item_id: str
-    :param provider: (optional) Chosen provider
-    :type provider: str
-    :returns: Downloaded item local path
-    :rtype: str
-    """
-    if provider:
-        eodag_api.set_preferred_provider(provider)
-
-    product = search_product_by_id(item_id, product_type=catalogs[0])[0]
-
-    eodag_api.providers_config[product.provider].download.extract = False
-
-    product_path = eodag_api.download(product, extract=False)
-
-    if os.path.isdir(product_path):
-        zipped_product_path = f"{product_path}.zip"
-        logger.debug(
-            f"Building archive for downloaded product path {zipped_product_path}"
-        )
-        make_archive(product_path, "zip", product_path)
-        return zipped_product_path
-    else:
-        return product_path
-
-
 def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"):
     """Download item
 
