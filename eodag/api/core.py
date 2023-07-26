@@ -1186,9 +1186,13 @@ class EODataAccessGateway(object):
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
-            auth = self._plugins_manager.get_auth_plugin(plugin.provider)
+            auth_plugin = self._plugins_manager.get_auth_plugin(plugin.provider)
+            if getattr(plugin.config, "need_auth", False) and callable(
+                getattr(auth_plugin, "authenticate", None)
+            ):
+                plugin.auth = auth_plugin.authenticate()
             plugin.clear()
-            results, _ = self._do_search(plugin, auth=auth, id=uid, **kwargs)
+            results, _ = self._do_search(plugin, auth=auth_plugin, id=uid, **kwargs)
             if len(results) == 1:
                 if not results[0].product_type:
                     # guess product type from properties
@@ -1364,11 +1368,6 @@ class EODataAccessGateway(object):
             search_plugin.auth = auth_plugin.authenticate()
 
         return dict(search_plugin=search_plugin, auth=auth_plugin, **kwargs)
-
-    def do_authentication(self, provider):
-        """performs the authentication at a given provider"""
-        auth_plugin = self._plugins_manager.get_auth_plugin(provider)
-        return auth_plugin.authenticate()
 
     def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
         """Internal method that performs a search on a given provider.
