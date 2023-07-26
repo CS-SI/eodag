@@ -265,7 +265,7 @@ class RequestTestCase(unittest.TestCase):
         if expected_search_kwargs is not None:
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
-        self.assertEqual(200, response.status_code)
+        self.assertEqual(200, response.status_code, response.text)
 
         return response
 
@@ -658,15 +658,24 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.download",
+        "eodag.plugins.authentication.generic.GenericAuth.authenticate",
         autospec=True,
     )
-    def test_download_item_from_catalog(self, mock_download):
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
+        autospec=True,
+    )
+    def test_download_item_from_catalog(self, mock_download, mock_auth):
         """Download through eodag server catalog should return a valid response"""
-        # download returns a folder that must be zipped
-        tmp_dl_dir = TemporaryDirectory()
-        mock_download.return_value = tmp_dl_dir.name
-        expected_file = f"{tmp_dl_dir.name}.zip"
+
+        expected_file = "somewhere.zip"
+
+        mock_download.return_value = dict(
+            content=(i for i in range(0)),
+            headers={
+                "content-disposition": f"attachment; filename={expected_file}",
+            },
+        )
 
         response = self._request_valid_raw(
             f"catalogs/{self.tested_product_type}/items/foo/download"
@@ -677,30 +686,40 @@ class RequestTestCase(unittest.TestCase):
             response.headers["content-disposition"]
         )
         response_filename = header_content_disposition.get_param("filename", None)
-        self.assertEqual(response_filename, os.path.basename(expected_file))
-        self.assertTrue(os.path.isfile(expected_file))
+        self.assertEqual(response_filename, expected_file)
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.download_stream",
+        "eodag.plugins.apis.cds.CdsApi.authenticate",
         autospec=True,
     )
-    def test_download_item_from_collection_api_plugin(self, mock_download):
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.download",
+        autospec=True,
+    )
+    def test_download_item_from_collection_api_plugin(self, mock_download, mock_auth):
         """Download through eodag server catalog should return a valid response"""
-        # download returns a file that must be returned as is
+        # download should be performed locally then deleted if streaming is not available
         tmp_dl_dir = TemporaryDirectory()
         expected_file = f"{tmp_dl_dir.name}.tar"
         Path(expected_file).touch()
         mock_download.return_value = expected_file
 
-        # use an external python API provider for this test
+        # use an external python API provider for this test and reset downloader
         self._request_valid_raw.patchings[0].kwargs["return_value"][0][
             0
         ].provider = "cop_cds"
+        self._request_valid_raw.patchings[0].kwargs["return_value"][0][
+            0
+        ].downloader = None
 
         self._request_valid_raw(
-            f"collections/{self.tested_product_type}/items/foo/download"
+            "collections/some-collection/items/foo/download?provider=cop_cds"
         )
         mock_download.assert_called_once()
+        # downloaded file should have been immediatly deleted from the server
+        assert not os.path.exists(
+            expected_file
+        ), f"File {expected_file} should have been deleted"
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""

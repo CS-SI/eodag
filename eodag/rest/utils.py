@@ -609,7 +609,7 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"
         )
     except NotImplementedError:
         logger.warning(
-            f"Download streaming not supprted for {product.downloader}: downloading locally then delete"
+            f"Download streaming not supported for {product.downloader}: downloading locally then delete"
         )
         product_path = eodag_api.download(product, extract=False)
         if os.path.isdir(product_path):
