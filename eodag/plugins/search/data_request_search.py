@@ -45,7 +45,6 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
-        print(self.config.products)
 
     def discover_product_types(self):
         """Fetch product types is disabled for `DataRequestSearch`
@@ -68,7 +67,6 @@ class DataRequestSearch(Search):
         self._add_product_type_metadata(product_type)
         provider_product_type = self._map_product_type(product_type)
         kwargs["productType"] = provider_product_type
-        print(provider_product_type)
         data_request_id = self._create_data_request(
             provider_product_type, product_type, **kwargs
         )
@@ -90,9 +88,7 @@ class DataRequestSearch(Search):
         headers = getattr(self.auth, "headers", "")
         try:
             metadata_url = self.config.metadata_url + product_type
-            print("h" + str(headers))
             metadata = requests.get(metadata_url, headers=headers)
-            print(metadata)
             if (
                 "status_code" in metadata.json()
                 and metadata.json()["status_code"] == 403
@@ -111,14 +107,10 @@ class DataRequestSearch(Search):
         else:
             try:
                 url = self.config.data_request_url
-                print(url)
-                print(self.config)
                 request_body = format_query_params(
                     eodag_product_type, self.config, **kwargs
                 )
-                print(request_body)
                 request_job = requests.post(url, json=request_body, headers=headers)
-                print(request_job)
                 request_job.raise_for_status()
             except requests.RequestException:
                 logger.error(

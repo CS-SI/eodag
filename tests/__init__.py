@@ -120,7 +120,9 @@ class EODagTestCase(unittest.TestCase):
         )
 
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
-        self.requests_request_patcher = mock.patch("requests.request", autospec=True)
+        self.requests_request_patcher = mock.patch(
+            "requests.Session.request", autospec=True
+        )
         self.requests_http_get = self.requests_http_get_patcher.start()
         self.requests_request = self.requests_request_patcher.start()
 

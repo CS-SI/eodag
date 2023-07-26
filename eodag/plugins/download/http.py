@@ -258,7 +258,9 @@ class HTTPDownload(Download):
                     self.config, "order_status_success", {}
                 )
                 if (
-                    status_dict["status"] == order_status_success_dict["status"]
+                    "status" in status_dict
+                    and status_dict["status"] == order_status_success_dict["status"]
+                    and "message" in status_dict
                     and status_dict["message"] == order_status_success_dict["message"]
                 ):
                     product.properties["storageStatus"] = ONLINE_STATUS
