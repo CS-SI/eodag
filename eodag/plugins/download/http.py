@@ -745,7 +745,9 @@ class HTTPDownload(Download):
                     self._handle_asset_exception(e, asset)
                 else:
                     asset_rel_path = (
-                        asset["rel_path"].replace(assets_common_subdir, "")
+                        asset["rel_path"]
+                        .replace(assets_common_subdir, "")
+                        .strip(os.sep)
                         if flatten_top_dirs
                         else asset["rel_path"]
                     )
