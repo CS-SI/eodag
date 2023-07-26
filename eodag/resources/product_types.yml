@@ -1886,7 +1886,7 @@ COP_DEM_GLO30:
     provides worldwide coverage at 30 meters. Note that ocean areas do not have tiles, there one can assume height
     values equal to zero. Data is provided as Cloud Optimized GeoTIFFs. Several releases are currently available for
     all Copernicus DEM instances, only the last one is provided as 2022 release. A full collection of tiles can be
-    found via FTP and PANDA Catalogue under dataset names marked with “2022_1”.
+    found via FTP and PANDA Catalogue under dataset names marked with '2022_1'.
   instrument:
   platform: TerraSAR
   platformSerialIdentifier:
