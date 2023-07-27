@@ -22,6 +22,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import requests
 import responses
 from requests import RequestException
 
@@ -919,3 +920,66 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
         )
         self.assertEqual(estimate, 1)
         self.assertIsInstance(products[0], EOProduct)
+
+
+class MockResponse:
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def json(self):
+        return self.json_data
+
+    def raise_for_status(self):
+        if self.status_code != 200:
+            raise RequestError
+
+
+class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
+    @mock.patch("eodag.plugins.authentication.token.requests.get", autospec=True)
+    def setUp(self, mock_requests_get):
+
+        # One of the providers that has a BuildPostSearchResult Search plugin
+        provider = "wekeo"
+        self.search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin.config.credentials = {"username": "tony", "password": "pass"}
+        mock_requests_get.return_value = MockResponse({"access_token": "token"}, 200)
+        self.search_plugin.auth = self.auth_plugin.authenticate()
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_create_data_request(self, mock_requests_get, mock_requests_post):
+        self.search_plugin._create_data_request(
+            "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1",
+            "COP_DEM_GLO30",
+            productType="EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1",
+        )
+        mock_requests_post.assert_called_with(
+            self.search_plugin.config.data_request_url,
+            json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+        )
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status(self, mock_requests_get):
+        mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
+        successful = self.search_plugin._check_request_status("123")
+        mock_requests_get.assert_called_with(
+            self.search_plugin.config.status_url + "123",
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+        )
+        assert successful
+        mock_requests_get.return_value = MockResponse(
+            {"status": "failed", "message": "failed"}, 500
+        )
+        with self.assertRaises(requests.RequestException):
+            self.search_plugin._check_request_status("123")
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_get_result_data(self, mock_requests_get):
+        self.search_plugin._get_result_data("123")
+        mock_requests_get.assert_called_with(
+            self.search_plugin.config.result_url.format(jobId="123"),
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+        )
