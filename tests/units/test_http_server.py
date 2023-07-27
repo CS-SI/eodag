@@ -541,6 +541,52 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("matched", response["context"])
         self.assertIn("returned", response["context"])
 
+    def test_search_provider_in_downloadlink(self):
+        """Search through eodag server and check that specified provider appears in downloadLink"""
+        # with provider (get)
+        response = self._request_valid(
+            f"search?collections={self.tested_product_type}&provider=onda"
+        )
+        response_items = [f for f in response["features"]]
+        self.assertTrue(
+            all(
+                [
+                    i["assets"]["downloadLink"]["href"].endswith(
+                        "download?provider=onda"
+                    )
+                    for i in response_items
+                ]
+            )
+        )
+        # with provider (post)
+        response = self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={"collections": [self.tested_product_type], "provider": "onda"},
+        )
+        response_items = [f for f in response["features"]]
+        self.assertTrue(
+            all(
+                [
+                    i["assets"]["downloadLink"]["href"].endswith(
+                        "download?provider=onda"
+                    )
+                    for i in response_items
+                ]
+            )
+        )
+        # without provider
+        response = self._request_valid(f"search?collections={self.tested_product_type}")
+        response_items = [f for f in response["features"]]
+        self.assertTrue(
+            all(
+                [
+                    i["assets"]["downloadLink"]["href"].endswith("download")
+                    for i in response_items
+                ]
+            )
+        )
+
     @mock.patch(
         "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]
     )
