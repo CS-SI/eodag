@@ -9,12 +9,6 @@ Download plugins must inherit the following class and implement :meth:`download`
 .. autoclass:: eodag.plugins.download.base.Download
    :members:
 
-Here is a graph showing how download methods are called from API to plugin:
-
-.. image:: ../_static/download_methods.png
-   :alt: Download methods call graph
-   :class: no-scaled-link
-
 This table lists all the download plugins currently available:
 
 .. autosummary::
@@ -23,6 +17,16 @@ This table lists all the download plugins currently available:
    eodag.plugins.download.http.HTTPDownload
    eodag.plugins.download.aws.AwsDownload
    eodag.plugins.download.s3rest.S3RestDownload
+
+---------------------------
+Download methods call graph
+---------------------------
+
+Here is a graph showing how download methods are called from API to plugin:
+
+.. image:: ../_static/download_methods.png
+   :alt: Download methods call graph
+   :class: no-scaled-link
 
 -------------
 Progress bars
