@@ -530,6 +530,17 @@ class RequestTestCase(unittest.TestCase):
             ),
         )
 
+    def test_ids_post_search(self):
+        """POST search with ids filtering through eodag server should return a valid response"""
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "ids": ["foo", "bar"],
+            },
+        )
+
     def test_search_response_contains_pagination_info(self):
         """Responses to valid search requests must return a geojson with pagination info in properties"""
         response = self._request_valid(f"search?collections={self.tested_product_type}")
