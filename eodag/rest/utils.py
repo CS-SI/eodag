@@ -8,10 +8,11 @@ import logging
 import os
 import re
 from collections import namedtuple
-from shutil import make_archive
+from shutil import make_archive, rmtree
 
 import dateutil.parser
 from dateutil import tz
+from fastapi.responses import StreamingResponse
 from shapely.geometry import Polygon, shape
 
 import eodag
@@ -555,7 +556,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
     :type root: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: Collection dictionnary
+    :returns: Collection dictionary
     :rtype: dict
     """
     product_type = catalogs[0]
@@ -572,7 +573,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id(catalogs, item_id, provider=None):
+def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -581,25 +582,72 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
     :type item_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: Downloaded item local path
-    :rtype: str
+    :param zip: if the downloaded filed should be zipped
+    :type zip: str
+    :returns: a stream of the downloaded data (either as a zip or the individual assets)
+    :rtype: StreamingResponse
     """
     if provider:
         eodag_api.set_preferred_provider(provider)
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
 
-    product_path = eodag_api.download(product, extract=False)
-
-    if os.path.isdir(product_path):
-        zipped_product_path = f"{product_path}.zip"
-        logger.debug(
-            f"Building archive for downloaded product path {zipped_product_path}"
+    if product.downloader is None:
+        download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
+        auth_plugin = eodag_api._plugins_manager.get_auth_plugin(
+            download_plugin.provider
         )
-        make_archive(product_path, "zip", product_path)
-        return zipped_product_path
-    else:
-        return product_path
+        product.register_downloader(download_plugin, auth_plugin)
+    auth = (
+        product.downloader_auth.authenticate()
+        if product.downloader_auth is not None
+        else product.downloader_auth
+    )
+    try:
+        download_stream_dict = product.downloader._stream_download_dict(
+            product, auth=auth
+        )
+    except NotImplementedError:
+        logger.warning(
+            f"Download streaming not supported for {product.downloader}: downloading locally then delete"
+        )
+        product_path = eodag_api.download(product, extract=False)
+        if os.path.isdir(product_path):
+            # do not zip if dir contains only one file
+            all_filenames = next(os.walk(product_path), (None, None, []))[2]
+            if len(all_filenames) == 1:
+                filepath_to_stream = all_filenames[0]
+            else:
+                filepath_to_stream = f"{product_path}.zip"
+                logger.debug(
+                    f"Building archive for downloaded product path {filepath_to_stream}"
+                )
+                make_archive(product_path, "zip", product_path)
+                rmtree(product_path)
+        else:
+            filepath_to_stream = product_path
+
+        download_stream_dict = dict(
+            content=read_file_chunks_and_delete(open(filepath_to_stream, "rb")),
+            headers={
+                "content-disposition": f"attachment; filename={os.path.basename(filepath_to_stream)}",
+            },
+        )
+
+    return StreamingResponse(**download_stream_dict)
+
+
+def read_file_chunks_and_delete(opened_file, chunk_size=64 * 1024):
+    """Yield file chunks and delete file when finished."""
+    while True:
+        data = opened_file.read(chunk_size)
+        if not data:
+            opened_file.close()
+            os.remove(opened_file.name)
+            logger.debug(f"{opened_file.name} deleted after streaming complete")
+            break
+        yield data
+    yield data
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):

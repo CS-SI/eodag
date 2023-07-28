@@ -1375,7 +1375,7 @@ class EODataAccessGateway(object):
                   number of results found if count is True else None
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
         """
-        max_items_per_page = search_plugin.config.pagination.get(
+        max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
         )
         if kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE) > max_items_per_page:
@@ -1801,6 +1801,14 @@ class EODataAccessGateway(object):
         if product.location.startswith("file:/"):
             logger.info("Local product detected. Download skipped")
             return uri_to_path(product.location)
+        self._setup_downloader(product)
+        path = product.download(
+            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
+        )
+
+        return path
+
+    def _setup_downloader(self, product):
         if product.downloader is None:
             auth = product.downloader_auth
             if auth is None:
@@ -1808,11 +1816,6 @@ class EODataAccessGateway(object):
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )
-        path = product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
-        )
-
-        return path
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration
