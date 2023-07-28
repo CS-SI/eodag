@@ -4,6 +4,17 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.10"
+  jobs:
+    post_checkout:
+      - git fetch --unshallow
+      - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+      - git fetch origin
+
+    # Uncomment to debug
+    # pre_install:
+    #   - pip install -U pip
+    #   - pip install setuptools>=45 setuptools_scm[toml]>=6.2
+    #   - SETUPTOOLS_SCM_DEBUG=1 python -m setuptools_scm
 
 # Build from the docs/ directory with Sphinx
 sphinx:
