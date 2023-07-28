@@ -113,7 +113,7 @@
     "assets": {
         "downloadLink": {
             "title": "Download link",
-            "href": "http://127.0.0.1:5000/S2_MSI_L1C/country/GBR/year/2019/items/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143/download",
+            "href": "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/GBR/year/2019/items/S2A_MSIL1C_20191231T112451_N0208_R037_T30UUD_20191231T115143/download",
             "type": "application/zip"
         },
         "thumbnail": {

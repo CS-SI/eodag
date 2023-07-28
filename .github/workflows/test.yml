@@ -68,7 +68,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: unit-test-results-python${{ matrix.python-version }}
+        name: unit-test-results-python${{ matrix.python-version }}-${{ matrix.os }}
         path: |
           test-reports/junit-report.xml
           test-reports/coverage.xml
@@ -89,16 +89,31 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       continue-on-error: true
       with:
-        files: artifacts/**/*junit-report.xml
-    - name: Publish Coverage Report
+        files: artifacts/*/junit-report.xml
+
+    - name: Publish Coverage Report for Ubuntu
       uses: 5monkeys/cobertura-action@master
       if: ${{ github.event_name == 'pull_request' }}
       with:
-        path: artifacts/**/*coverage.xml
+        path: artifacts/unit-test-results-python3.11-ubuntu-latest/coverage.xml
         repo_token: ${{ secrets.GITHUB_TOKEN }}
+        pull_request_number: ${{ github.pull_request.number }}
         minimum_coverage: 70
         fail_below_threshold: false
         only_changed_files: true
+        report_name: Code Coverage (Ubuntu)
+
+    - name: Publish Coverage Report for Windows
+      uses: 5monkeys/cobertura-action@master
+      if: ${{ github.event_name == 'pull_request' }}
+      with:
+        path: artifacts/unit-test-results-python3.11-windows-latest/coverage.xml
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        pull_request_number: ${{ github.pull_request.number }}
+        minimum_coverage: 70
+        fail_below_threshold: false
+        only_changed_files: true
+        report_name: Code Coverage (Windows)
 
   build-docs:
     name: Build the docs
@@ -131,8 +146,8 @@ jobs:
         key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
     - name: Install pandoc
       run: |
-        sudo apt update
-        sudo apt install -y make pandoc
+        curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep -o "https.*amd64.deb" | wget -O pandoc.deb -qi -
+        sudo dpkg -i pandoc.deb && rm pandoc.deb
     - name: Install tox
       run: |
         python -m pip install tox

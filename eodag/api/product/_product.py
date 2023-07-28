@@ -19,6 +19,7 @@ import base64
 import logging
 import os
 import re
+import urllib.parse
 
 import requests
 from requests import RequestException
@@ -241,7 +242,8 @@ class EOProduct(object):
                 setattr(
                     self,
                     location_attr,
-                    getattr(self, location_attr) % vars(self.downloader.config),
+                    urllib.parse.unquote(getattr(self, location_attr))
+                    % vars(self.downloader.config),
                 )
             except ValueError as e:
                 logger.debug(
@@ -252,7 +254,15 @@ class EOProduct(object):
         for k, v in self.properties.items():
             if isinstance(v, str):
                 try:
-                    self.properties[k] = v % vars(self.downloader.config)
+                    if "%" in v:
+                        parsed = urllib.parse.urlparse(v)
+                        prop = urllib.parse.unquote(parsed.path) % vars(
+                            self.downloader.config
+                        )
+                        parsed = parsed._replace(path=urllib.parse.quote(prop))
+                        self.properties[k] = urllib.parse.urlunparse(parsed)
+                    else:
+                        self.properties[k] = v % vars(self.downloader.config)
                 except (TypeError, ValueError) as e:
                     logger.debug(
                         f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
@@ -307,20 +317,15 @@ class EOProduct(object):
         )
 
         # resolve remote location if needed with downloader configuration
-        self.remote_location = self.remote_location % vars(self.downloader.config)
+        self.remote_location = urllib.parse.unquote(self.remote_location) % vars(
+            self.downloader.config
+        )
+        if not self.location.startswith("file"):
+            self.location = urllib.parse.unquote(self.location)
 
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = ProgressCallback(position=1)
-            # one shot progress callback to close after download
-            close_progress_callback = True
-        else:
-            close_progress_callback = False
-            # update units as bar may have been previously used for extraction
-            progress_callback.unit = "B"
-            progress_callback.unit_scale = True
-        progress_callback.desc = str(self.properties.get("id", ""))
-        progress_callback.refresh()
+        progress_callback, close_progress_callback = self._init_progress_bar(
+            progress_callback
+        )
 
         fs_path = self.downloader.download(
             self,
@@ -349,6 +354,21 @@ class EOProduct(object):
         )
 
         return fs_path
+
+    def _init_progress_bar(self, progress_callback):
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = ProgressCallback(position=1)
+            # one shot progress callback to close after download
+            close_progress_callback = True
+        else:
+            close_progress_callback = False
+            # update units as bar may have been previously used for extraction
+            progress_callback.unit = "B"
+            progress_callback.unit_scale = True
+        progress_callback.desc = str(self.properties.get("id", ""))
+        progress_callback.refresh()
+        return [progress_callback, close_progress_callback]
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
         """Download the quicklook image of a given EOProduct from its provider if it

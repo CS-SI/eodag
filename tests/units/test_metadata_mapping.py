@@ -334,3 +334,116 @@ class TestMetadataFormatter(unittest.TestCase):
                 "c": NOT_AVAILABLE,
             },
         )
+
+    def test_convert_split_id_into_s1_params(self):
+        to_format = "{id#split_id_into_s1_params}"
+        expected = {
+            "sensorMode": "IW",
+            "processingLevel": "LEVEL1",
+            "startDate": "2014-11-26T23:08:43Z",
+            "endDate": "2014-11-26T23:09:05Z",
+            "productType": "GRD-COG",
+            "polarisation": "VV+VH",
+        }
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
+            ),
+            str(expected),
+        )
+
+    def test_convert_split_id_into_s3_params(self):
+        to_format = "{id#split_id_into_s3_params}"
+        expected = {
+            "productType": "OL_2_LRR___",
+            "startDate": "2021-06-01T22:38:21Z",
+            "endDate": "2021-06-01T23:22:48Z",
+            "timeliness": "NT",
+            "sat": "Sentinel-3B",
+        }
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S3B_OL_2_LRR____20210601T223822_20210601T232247_20210603T035324_2665_053_101______LN1_O_NT_002",
+            ),
+            str(expected),
+        )
+
+    def test_convert_split_id_into_s5p_params(self):
+        to_format = "{id#split_id_into_s5p_params}"
+        expected = {
+            "productType": "L2__NP_BD7",
+            "processingMode": "RPRO",
+            "processingLevel": "L2",
+            "startDate": "2018-05-31T22:38:42Z",
+            "endDate": "2018-06-01T00:22:30Z",
+        }
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S5P_RPRO_L2__NP_BD7_20180531T223852_20180601T002220_03271_01_010002_20190528T184222",
+            ),
+            str(expected),
+        )
+
+    def test_convert_split_cop_dem_id(self):
+        to_format = "{id#split_cop_dem_id}"
+        self.assertEqual(
+            str(
+                format_metadata(
+                    to_format,
+                    id="Copernicus_DSM_10_N59_00_E119_00",
+                )
+            ),
+            str([118, 58, 120, 60]),
+        )
+        self.assertEqual(
+            str(
+                format_metadata(
+                    to_format,
+                    id="Copernicus_DSM_10_S59_00_W119_00",
+                )
+            ),
+            str([-120, -60, -118, -58]),
+        )
+
+    # def test_convert_get_corine_product_type(self):
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2000-06-01T00:00:00Z)}",
+    #             start_date="2000-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Cover 2000"
+    #     )
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2001-06-01T00:00:00Z)}",
+    #             start_date="1995-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 1990 2000"
+    #     )
+    #
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(1991-06-01T00:00:00Z)}",
+    #             start_date="1985-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 1990 2000"
+    #     )
+    #
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2005-06-01T00:00:00Z)}",
+    #             start_date="1999-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 2000 2006"
+    #     )
+    #
+    #     self.assertEqual(
+    #         format_metadata(
+    #             "{start_date#get_corine_product_type(2011-06-01T00:00:00Z)}",
+    #             start_date="1999-01-01T00:00:00Z"
+    #         ),
+    #         "Corine Land Change 2000 2006"
+    #     )

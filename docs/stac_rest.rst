@@ -23,24 +23,26 @@ Below is the content of the help message of this command (`eodag serve-rest --he
 
       Start eodag HTTP server
 
+      Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-
+      Origin Resource Sharing allowed origins as comma-separated URLs (e.g.
+      'http://somewhere,htttp://somewhere.else').
+
     Options:
       -f, --config PATH   File path to the user configuration file with its
                           credentials, default is ~/.config/eodag/eodag.yml
-      -d, --daemon        run in daemon mode  [default: False]
-      -w, --world         run flask using IPv4 0.0.0.0 (all network interfaces),
-                          otherwise bind to 127.0.0.1 (localhost). This maybe
-                          necessary in systems that only run Flask  [default:
-                          False]
+      -l, --locs PATH     File path to the location shapefiles configuration file
+      -d, --daemon        run in daemon mode
+      -w, --world         run uvicorn using IPv4 0.0.0.0 (all network interfaces),
+                          otherwise bind to 127.0.0.1 (localhost).
       -p, --port INTEGER  The port on which to listen  [default: 5000]
-      --debug             Run in debug mode (for development purpose)  [default:
-                          False]
+      --debug             Run in debug mode (for development purpose)
       --help              Show this message and exit.
 
 Searching
 ---------
 
 After you have launched the server, navigate to its home page. For example, for a local
-development server launched with ``eodag serve-rest -f <config> --debug``, go to
+development server launched with ``eodag serve-rest -f <config> --debug``, go to
 http://127.0.0.1:5000/service-doc. You will see a documentation of the interface.
 
 Available operations are:
@@ -86,8 +88,8 @@ EODAG provides additional catalogs that extend browsing/filtering capabilities:
 
 Example URLs:
 
-* http://127.0.0.1:5000/S2_MSI_L1C/country : lists available countries
-* http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2019/month/10/cloud_cover/10 : catalog referencing S2_MSI_L1C
+* http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country : lists available countries
+* http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2019/month/10/cloud_cover/10 : catalog referencing S2_MSI_L1C
   products over France, aquired during October 2019, and having 10% maximum cloud cover
 
 Browsing over catalogs can be experienced connecting EODAG STAC API to
@@ -146,14 +148,14 @@ Example
     6
 
     # browse for items
-    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
     | jq ".context.matched"
     9
 
     # get download link
-    $ curl "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
     | jq ".features[0].assets.downloadLink.href"
-    "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
 
     # download
-    $ wget "http://127.0.0.1:5000/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    $ wget "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"

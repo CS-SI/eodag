@@ -8,9 +8,11 @@ import logging
 import os
 import re
 from collections import namedtuple
+from shutil import make_archive, rmtree
 
 import dateutil.parser
 from dateutil import tz
+from fastapi.responses import StreamingResponse
 from shapely.geometry import Polygon, shape
 
 import eodag
@@ -231,7 +233,9 @@ def get_geometry(arguments):
 
     geom = None
 
-    if "bbox" in arguments or "box" in arguments:
+    if ("bbox" in arguments and arguments["bbox"] is not None) or (
+        "box" in arguments and arguments["box"] is not None
+    ):
         # get bbox
         request_bbox = arguments.pop("bbox", None) or arguments.pop("box", None)
         if request_bbox and isinstance(request_bbox, str):
@@ -465,7 +469,6 @@ def search_product_by_id(uid, product_type=None):
     """
     try:
         products, total = eodag_api.search(id=uid, productType=product_type)
-        # products, total = eodag_api.search(id=uid, productType=product_type, provider=provider, raise_errors=True)
         return products
     except ValidationError:
         raise
@@ -483,6 +486,15 @@ def get_stac_conformance():
     :rtype: dict
     """
     return stac_config["conformance"]
+
+
+def get_stac_api_version():
+    """Get STAC API version
+
+    :returns: STAC API version
+    :rtype: str
+    """
+    return stac_config["stac_api_version"]
 
 
 def get_stac_collections(url, root, arguments, provider=None):
@@ -544,7 +556,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
     :type root: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: Collection dictionnary
+    :returns: Collection dictionary
     :rtype: dict
     """
     product_type = catalogs[0]
@@ -561,7 +573,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id(catalogs, item_id, provider=None):
+def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -570,19 +582,72 @@ def download_stac_item_by_id(catalogs, item_id, provider=None):
     :type item_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: Downloaded item local path
-    :rtype: str
+    :param zip: if the downloaded filed should be zipped
+    :type zip: str
+    :returns: a stream of the downloaded data (either as a zip or the individual assets)
+    :rtype: StreamingResponse
     """
     if provider:
         eodag_api.set_preferred_provider(provider)
 
     product = search_product_by_id(item_id, product_type=catalogs[0])[0]
 
-    eodag_api.providers_config[product.provider].download.extract = False
+    if product.downloader is None:
+        download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
+        auth_plugin = eodag_api._plugins_manager.get_auth_plugin(
+            download_plugin.provider
+        )
+        product.register_downloader(download_plugin, auth_plugin)
+    auth = (
+        product.downloader_auth.authenticate()
+        if product.downloader_auth is not None
+        else product.downloader_auth
+    )
+    try:
+        download_stream_dict = product.downloader._stream_download_dict(
+            product, auth=auth
+        )
+    except NotImplementedError:
+        logger.warning(
+            f"Download streaming not supported for {product.downloader}: downloading locally then delete"
+        )
+        product_path = eodag_api.download(product, extract=False)
+        if os.path.isdir(product_path):
+            # do not zip if dir contains only one file
+            all_filenames = next(os.walk(product_path), (None, None, []))[2]
+            if len(all_filenames) == 1:
+                filepath_to_stream = all_filenames[0]
+            else:
+                filepath_to_stream = f"{product_path}.zip"
+                logger.debug(
+                    f"Building archive for downloaded product path {filepath_to_stream}"
+                )
+                make_archive(product_path, "zip", product_path)
+                rmtree(product_path)
+        else:
+            filepath_to_stream = product_path
 
-    product_path = eodag_api.download(product)
+        download_stream_dict = dict(
+            content=read_file_chunks_and_delete(open(filepath_to_stream, "rb")),
+            headers={
+                "content-disposition": f"attachment; filename={os.path.basename(filepath_to_stream)}",
+            },
+        )
 
-    return product_path
+    return StreamingResponse(**download_stream_dict)
+
+
+def read_file_chunks_and_delete(opened_file, chunk_size=64 * 1024):
+    """Yield file chunks and delete file when finished."""
+    while True:
+        data = opened_file.read(chunk_size)
+        if not data:
+            opened_file.close()
+            os.remove(opened_file.name)
+            logger.debug(f"{opened_file.name} deleted after streaming complete")
+            break
+        yield data
+    yield data
 
 
 def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):
@@ -663,89 +728,108 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
     else:
         raise NoMatchingProductType("No product_type found in collections argument")
 
-    # get id
+    # get products by ids
     ids = arguments.get("ids", None)
+    if isinstance(ids, str):
+        ids = [ids]
     if ids:
-        # handle only one id per request (STAC allows multiple)
-        arguments["id"] = ids.split(",")[0]
-        arguments.pop("ids")
+        search_results = SearchResult([])
+        if provider:
+            eodag_api.set_preferred_provider(provider)
+        for item_id in ids:
+            found_products = search_product_by_id(item_id, product_type=collections[0])
+            if len(found_products) == 1:
+                search_results.extend(found_products)
+        search_results.properties = {
+            "page": 1,
+            "itemsPerPage": len(search_results),
+            "totalResults": len(search_results),
+        }
+    else:
+        # get datetime
+        if "datetime" in arguments.keys() and arguments["datetime"] is not None:
+            dtime_split = arguments.get("datetime", "").split("/")
+            if len(dtime_split) > 1:
+                arguments["dtstart"] = (
+                    dtime_split[0]
+                    if dtime_split[0] != ".."
+                    else datetime.datetime.min.isoformat() + "Z"
+                )
+                arguments["dtend"] = (
+                    dtime_split[1]
+                    if dtime_split[1] != ".."
+                    else datetime.datetime.now(datetime.timezone.utc)
+                    .isoformat()
+                    .replace("+00:00", "")
+                    + "Z"
+                )
+            elif len(dtime_split) == 1:
+                # same time for start & end if only one is given
+                arguments["dtstart"], arguments["dtend"] = dtime_split[0:1] * 2
+            arguments.pop("datetime")
 
-    # get datetime
-    if "datetime" in arguments.keys():
-        dtime_split = arguments.get("datetime", "").split("/")
-        if len(dtime_split) > 1:
-            arguments["dtstart"] = (
-                dtime_split[0]
-                if dtime_split[0] != ".."
-                else datetime.datetime.min.isoformat() + "Z"
-            )
-            arguments["dtend"] = (
-                dtime_split[1]
-                if dtime_split[1] != ".."
-                else datetime.datetime.now(datetime.timezone.utc)
-                .isoformat()
-                .replace("+00:00", "")
-                + "Z"
-            )
-        elif len(dtime_split) == 1:
-            # same time for start & end if only one is given
-            arguments["dtstart"], arguments["dtend"] = dtime_split[0:1] * 2
-        arguments.pop("datetime")
+        search_products_arguments = dict(
+            arguments, **result_catalog.search_args, **{"unserialized": "true"}
+        )
 
-    search_products_arguments = dict(
-        arguments, **result_catalog.search_args, **{"unserialized": "true"}
-    )
+        # check if time filtering appears twice
+        if set(["dtstart", "dtend"]) <= set(arguments.keys()) and set(
+            ["dtstart", "dtend"]
+        ) <= set(result_catalog.search_args.keys()):
+            search_date_min = dateutil.parser.parse(arguments["dtstart"])
+            search_date_max = dateutil.parser.parse(arguments["dtend"])
+            catalog_date_min = dateutil.parser.parse(
+                result_catalog.search_args["dtstart"]
+            )
+            catalog_date_max = dateutil.parser.parse(
+                result_catalog.search_args["dtend"]
+            )
+            # check if date intervals overlap
+            if (search_date_min <= catalog_date_max) and (
+                search_date_max >= catalog_date_min
+            ):
+                # use intersection
+                search_products_arguments["dtstart"] = (
+                    max(search_date_min, catalog_date_min)
+                    .isoformat()
+                    .replace("+00:00", "")
+                    + "Z"
+                )
+                search_products_arguments["dtend"] = (
+                    min(search_date_max, catalog_date_max)
+                    .isoformat()
+                    .replace("+00:00", "")
+                    + "Z"
+                )
+            else:
+                logger.warning("Time intervals do not overlap")
+                # return empty results
+                search_results = SearchResult([])
+                search_results.properties = {
+                    "page": search_products_arguments.get("page", 1),
+                    "itemsPerPage": search_products_arguments.get(
+                        "itemsPerPage", DEFAULT_ITEMS_PER_PAGE
+                    ),
+                    "totalResults": 0,
+                }
+                return StacItem(
+                    url=url,
+                    stac_config=stac_config,
+                    provider=provider,
+                    eodag_api=eodag_api,
+                    root=root,
+                ).get_stac_items(
+                    search_results=search_results,
+                    catalog=dict(
+                        result_catalog.get_stac_catalog(),
+                        **{"url": result_catalog.url, "root": result_catalog.root},
+                    ),
+                )
 
-    # check if time filtering appears twice
-    if set(["dtstart", "dtend"]) <= set(arguments.keys()) and set(
-        ["dtstart", "dtend"]
-    ) <= set(result_catalog.search_args.keys()):
-        search_date_min = dateutil.parser.parse(arguments["dtstart"])
-        search_date_max = dateutil.parser.parse(arguments["dtend"])
-        catalog_date_min = dateutil.parser.parse(result_catalog.search_args["dtstart"])
-        catalog_date_max = dateutil.parser.parse(result_catalog.search_args["dtend"])
-        # check if date intervals overlap
-        if (search_date_min <= catalog_date_max) and (
-            search_date_max >= catalog_date_min
-        ):
-            # use intersection
-            search_products_arguments["dtstart"] = (
-                max(search_date_min, catalog_date_min).isoformat().replace("+00:00", "")
-                + "Z"
-            )
-            search_products_arguments["dtend"] = (
-                min(search_date_max, catalog_date_max).isoformat().replace("+00:00", "")
-                + "Z"
-            )
-        else:
-            logger.warning("Time intervals do not overlap")
-            # return empty results
-            search_results = SearchResult([])
-            search_results.properties = {
-                "page": search_products_arguments.get("page", 1),
-                "itemsPerPage": search_products_arguments.get(
-                    "itemsPerPage", DEFAULT_ITEMS_PER_PAGE
-                ),
-                "totalResults": 0,
-            }
-            return StacItem(
-                url=url,
-                stac_config=stac_config,
-                provider=provider,
-                eodag_api=eodag_api,
-                root=root,
-            ).get_stac_items(
-                search_results=search_results,
-                catalog=dict(
-                    result_catalog.get_stac_catalog(),
-                    **{"url": result_catalog.url, "root": result_catalog.root},
-                ),
-            )
-
-    search_results = search_products(
-        product_type=result_catalog.search_args["product_type"],
-        arguments=search_products_arguments,
-    )
+        search_results = search_products(
+            product_type=result_catalog.search_args["product_type"],
+            arguments=search_products_arguments,
+        )
 
     return StacItem(
         url=url,
@@ -788,3 +872,12 @@ def get_stac_extension_oseo(url):
     return StacCommon.get_stac_extension(
         url=url, stac_config=stac_config, extension="oseo", properties=oseo_properties
     )
+
+
+def eodag_api_init():
+    """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
+    eodag_api.fetch_product_types_list()
+
+    # pre-build search plugins
+    for provider in eodag_api.available_providers():
+        next(eodag_api._plugins_manager.get_search_plugins(provider=provider))

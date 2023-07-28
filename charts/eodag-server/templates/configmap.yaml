@@ -1,0 +1,23 @@
+{{- if or .Values.productTypes .Values.providers }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" (include "common.names.fullname" .) }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+data:
+  {{- if .Values.productTypes }}
+  product_types.yml: |-
+    {{- .Values.productTypes | nindent 4 }}
+  {{- end }}
+  {{- if .Values.providers }}
+  providers.yml: |-
+    {{- .Values.providers | nindent 4 }}
+  {{- end }}
+{{- end }}

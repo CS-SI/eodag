@@ -58,19 +58,37 @@ class TokenAuth(Authentication):
         )
         try:
             # First get the token
-            response = requests.post(
-                self.config.auth_uri,
-                data=self.config.credentials,
-                timeout=HTTP_REQ_TIMEOUT,
-                **req_kwargs,
-            )
+            if getattr(self.config, "request_method", "POST") == "POST":
+                response = requests.post(
+                    self.config.auth_uri,
+                    data=self.config.credentials,
+                    timeout=HTTP_REQ_TIMEOUT,
+                    **req_kwargs,
+                )
+            else:
+                cred = self.config.credentials
+                response = requests.get(
+                    self.config.auth_uri,
+                    auth=(cred["username"], cred["password"]),
+                    timeout=HTTP_REQ_TIMEOUT,
+                    **req_kwargs,
+                )
             response.raise_for_status()
         except RequestException as e:
-            raise AuthenticationError(f"Could no get authentication token: {str(e)}")
+            response_text = getattr(e.response, "text", "").strip()
+            raise AuthenticationError(
+                f"Could no get authentication token: {str(e)}, {response_text}"
+            )
         else:
             if getattr(self.config, "token_type", "text") == "json":
                 token = response.json()[self.config.token_key]
             else:
                 token = response.text
             # Return auth class set with obtained token
-            return RequestsTokenAuth(token, "header", headers=self.config.headers)
+            return RequestsTokenAuth(token, "header", headers=self._get_headers(token))
+
+    def _get_headers(self, token):
+        headers = self.config.headers
+        if "Authorization" in headers and "$" in headers["Authorization"]:
+            headers["Authorization"] = headers["Authorization"].replace("$token", token)
+        return headers

@@ -28,9 +28,7 @@ from lxml import etree
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
-    NOT_MAPPED,
-    format_metadata,
-    get_search_param,
+    format_query_params,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
     properties_from_xml,
@@ -150,7 +148,6 @@ class QueryStringSearch(Search):
     :type config: str
     """
 
-    COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
     DEFAULT_ITEMS_PER_PAGE = 10
     extract_properties = {"xml": properties_from_xml, "json": properties_from_json}
 
@@ -468,57 +465,7 @@ class QueryStringSearch(Search):
     def build_query_string(self, product_type, **kwargs):
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-
-        if "raise_errors" in kwargs.keys():
-            del kwargs["raise_errors"]
-        # . not allowed in eodag_search_key, replaced with %2E
-        kwargs = {k.replace(".", "%2E"): v for k, v in kwargs.items()}
-
-        queryables = self.get_queryables(kwargs)
-        query_params = {}
-        # Get all the search parameters that are recognised as queryables by the
-        # provider (they appear in the queryables dictionary)
-
-        for eodag_search_key, provider_search_key in queryables.items():
-            user_input = kwargs[eodag_search_key]
-
-            if self.COMPLEX_QS_REGEX.match(provider_search_key):
-                parts = provider_search_key.split("=")
-                if len(parts) == 1:
-                    formatted_query_param = format_metadata(
-                        provider_search_key, product_type, **kwargs
-                    )
-                    if "{{" in provider_search_key:
-                        # json query string (for POST request)
-                        update_nested_dict(
-                            query_params, orjson.loads(formatted_query_param)
-                        )
-                    else:
-                        query_params[eodag_search_key] = formatted_query_param
-                else:
-                    provider_search_key, provider_value = parts
-                    query_params.setdefault(provider_search_key, []).append(
-                        format_metadata(provider_value, product_type, **kwargs)
-                    )
-            else:
-                query_params[provider_search_key] = user_input
-
-        # Now get all the literal search params (i.e params to be passed "as is"
-        # in the search request)
-        # ignore additional_params if it isn't a dictionary
-        literal_search_params = getattr(self.config, "literal_search_params", {})
-        if not isinstance(literal_search_params, dict):
-            literal_search_params = {}
-
-        # Now add formatted free text search parameters (this is for cases where a
-        # complex query through a free text search parameter is available for the
-        # provider and needed for the consumer)
-        literal_search_params.update(self.format_free_text_search(**kwargs))
-        for provider_search_key, provider_value in literal_search_params.items():
-            if isinstance(provider_value, list):
-                query_params.setdefault(provider_search_key, []).extend(provider_value)
-            else:
-                query_params.setdefault(provider_search_key, []).append(provider_value)
+        query_params = format_query_params(product_type, self.config, **kwargs)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
@@ -528,97 +475,6 @@ class QueryStringSearch(Search):
                 query_params, doseq=True, quote_via=lambda x, *_args, **_kwargs: x
             ),
         )
-
-    def format_free_text_search(self, **kwargs):
-        """Build the free text search parameter using the search parameters"""
-        query_params = {}
-        for param, operations_config in self.config.free_text_search_operations.items():
-            union = operations_config["union"]
-            wrapper = operations_config.get("wrapper", "{}")
-            formatted_query = []
-            for operator, operands in operations_config["operations"].items():
-                # The Operator string is the operator wrapped with spaces
-                operator = " {} ".format(operator)
-                # Build the operation string by joining the formatted operands together
-                # using the operation string
-                operation_string = operator.join(
-                    format_metadata(operand, **kwargs)
-                    for operand in operands
-                    if any(
-                        re.search(rf"{{{kw}[}}#]", operand)
-                        and val is not None
-                        and isinstance(self.config.metadata_mapping.get(kw, []), list)
-                        for kw, val in kwargs.items()
-                    )
-                )
-                # Finally wrap the operation string as specified by the wrapper and add
-                # it to the list of queries (only if the operation string is not empty)
-                if operation_string:
-                    query = wrapper.format(operation_string)
-                    formatted_query.append(query)
-            # Join the formatted query using the "union" config parameter, and then
-            # wrap it with the Python format string specified in the "wrapper" config
-            # parameter
-            final_query = union.join(formatted_query)
-            if len(operations_config["operations"]) > 1 and len(formatted_query) > 1:
-                final_query = wrapper.format(query_params[param])
-            if final_query:
-                query_params[param] = final_query
-        return query_params
-
-    def get_queryables(self, search_params):
-        """Retrieve the metadata mappings that are query-able"""
-        logger.debug("Retrieving queryable metadata from metadata_mapping")
-        queryables = {}
-        for eodag_search_key, user_input in search_params.items():
-            if user_input is not None:
-                md_mapping = self.config.metadata_mapping.get(
-                    eodag_search_key, (None, NOT_MAPPED)
-                )
-                _, md_value = md_mapping
-                # query param from defined metadata_mapping
-                if md_mapping is not None and isinstance(md_mapping, list):
-                    search_param = get_search_param(md_mapping)
-                    if search_param is not None:
-                        queryables[eodag_search_key] = search_param
-                # query param from metadata auto discovery
-                elif md_value == NOT_MAPPED and getattr(
-                    self.config, "discover_metadata", {}
-                ).get("auto_discovery", False):
-                    pattern = re.compile(
-                        self.config.discover_metadata.get("metadata_pattern", "")
-                    )
-                    search_param_cfg = self.config.discover_metadata.get(
-                        "search_param", ""
-                    )
-                    if pattern.match(eodag_search_key) and isinstance(
-                        search_param_cfg, str
-                    ):
-                        search_param = search_param_cfg.format(
-                            metadata=eodag_search_key
-                        )
-                        queryables[eodag_search_key] = search_param
-                    elif pattern.match(eodag_search_key) and isinstance(
-                        search_param_cfg, dict
-                    ):
-                        search_param_cfg_parsed = dict_items_recursive_apply(
-                            search_param_cfg,
-                            lambda k, v: v.format(metadata=eodag_search_key),
-                        )
-                        for k, v in search_param_cfg_parsed.items():
-                            if getattr(self.config, k, None):
-                                update_nested_dict(
-                                    getattr(self.config, k),
-                                    v,
-                                    extend_list_values=True,
-                                    allow_extend_duplicates=False,
-                                )
-                            else:
-                                logger.warning(
-                                    "Could not use discover_metadata[search_param]: no entry for %s in plugin config",
-                                    k,
-                                )
-        return queryables
 
     def collect_search_urls(self, page=None, items_per_page=None, count=True, **kwargs):
         """Build paginated urls"""

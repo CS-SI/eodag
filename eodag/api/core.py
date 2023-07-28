@@ -1186,9 +1186,13 @@ class EODataAccessGateway(object):
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
-            auth = self._plugins_manager.get_auth_plugin(plugin.provider)
+            auth_plugin = self._plugins_manager.get_auth_plugin(plugin.provider)
+            if getattr(plugin.config, "need_auth", False) and callable(
+                getattr(auth_plugin, "authenticate", None)
+            ):
+                plugin.auth = auth_plugin.authenticate()
             plugin.clear()
-            results, _ = self._do_search(plugin, auth=auth, id=uid, **kwargs)
+            results, _ = self._do_search(plugin, auth=auth_plugin, id=uid, **kwargs)
             if len(results) == 1:
                 if not results[0].product_type:
                     # guess product type from properties
@@ -1198,6 +1202,13 @@ class EODataAccessGateway(object):
                     results[0].driver = results[0].get_driver()
                 return results, 1
             elif len(results) > 1:
+                if getattr(plugin.config, "two_passes_id_search", False):
+                    # check if id of one product exactly matches id that was searched for
+                    # required if provider does not offer search by id and therefore other
+                    # parameters which might not given an exact result are used
+                    for result in results:
+                        if result.properties["id"] == uid.split(".")[0]:
+                            return [results[0]], 1
                 logger.info(
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,
@@ -1375,7 +1386,7 @@ class EODataAccessGateway(object):
                   number of results found if count is True else None
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
         """
-        max_items_per_page = search_plugin.config.pagination.get(
+        max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
         )
         if kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE) > max_items_per_page:
@@ -1801,6 +1812,14 @@ class EODataAccessGateway(object):
         if product.location.startswith("file:/"):
             logger.info("Local product detected. Download skipped")
             return uri_to_path(product.location)
+        self._setup_downloader(product)
+        path = product.download(
+            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
+        )
+
+        return path
+
+    def _setup_downloader(self, product):
         if product.downloader is None:
             auth = product.downloader_auth
             if auth is None:
@@ -1808,11 +1827,6 @@ class EODataAccessGateway(object):
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
             )
-        path = product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
-        )
-
-        return path
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration

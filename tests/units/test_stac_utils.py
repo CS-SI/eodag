@@ -76,6 +76,20 @@ class TestStacUtils(unittest.TestCase):
         # disable product types fetch
         os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
 
+        # create a dictionary obj of a S2_MSI_L1C peps response search
+        peps_resp_search_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "peps_search.json"
+        )
+        with open(peps_resp_search_file, encoding="utf-8") as f:
+            cls.peps_resp_search_json = json.load(f)
+
+        # create a dictionary obj of a S2_MSI_L2A earth_search response search
+        earth_search_resp_search_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "earth_search_search.json"
+        )
+        with open(earth_search_resp_search_file, encoding="utf-8") as f:
+            cls.earth_search_resp_search_json = json.load(f)
+
     @classmethod
     def tearDownClass(cls):
         super(TestStacUtils, cls).tearDownClass()
@@ -84,9 +98,6 @@ class TestStacUtils(unittest.TestCase):
         cls.tmp_home_dir.cleanup()
         # stop os.environ
         cls.mock_os_environ.stop()
-
-    def test_download_stac_item_by_id(self):
-        pass  # TODO
 
     def test_filter_products_unknown_cruncher_raise_error(self):
         """filter_products must raise a ValidationError if an unknown cruncher is given"""
@@ -425,5 +436,61 @@ class TestStacUtils(unittest.TestCase):
         )
         self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
 
-    def test_search_stac_items(self):
-        pass  # TODO
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch._request",
+        autospec=True,
+    )
+    def test_search_stac_items_with_stac_providers(self, mock__request):
+        """search_stac_items runs without any error with stac providers"""
+        # mock the PostJsonSearch request with the S2_MSI_L2A earth_search response search dictionary
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = (
+            self.earth_search_resp_search_json
+        )
+
+        response = self.rest_utils.search_stac_items(
+            url="http://foo/search",
+            arguments={},
+            root="http://foo",
+            catalogs=["S2_MSI_L2A"],
+            provider="earth_search",
+        )
+
+        mock__request.assert_called()
+
+        # check that default assets have been added to the response
+        self.assertTrue(
+            "downloadLink", "thumbnail" in response["features"][0]["assets"].keys()
+        )
+        # check that assets from the provider response search are also in the response
+        for (k, v) in self.earth_search_resp_search_json["features"][0][
+            "assets"
+        ].items():
+            self.assertIn((k, v), response["features"][0]["assets"].items())
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request",
+        autospec=True,
+    )
+    def test_search_stac_items_with_non_stac_providers(self, mock__request):
+        """search_stac_items runs without any error with non-stac providers"""
+        # mock the QueryStringSearch request with the S2_MSI_L1C peps response search dictionary
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = self.peps_resp_search_json
+
+        response = self.rest_utils.search_stac_items(
+            url="http://foo/search",
+            arguments={},
+            root="http://foo/",
+            catalogs=["S2_MSI_L1C"],
+            provider="peps",
+        )
+
+        mock__request.assert_called()
+
+        # check that default assets have been added to the response
+        self.assertTrue(
+            "downloadLink", "thumbnail" in response["features"][0]["assets"].keys()
+        )
+        # check that no other asset have also been added to the response
+        self.assertEqual(len(response["features"][0]["assets"]), 2)

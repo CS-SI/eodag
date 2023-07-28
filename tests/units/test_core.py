@@ -1424,7 +1424,13 @@ class TestCoreSearch(TestCoreBase):
 
         mock__do_search.reset_mock()
         # return None if more than 1 product is found
-        mock__do_search.return_value = ([mock.Mock(), mock.Mock()], 2)
+        m = mock.MagicMock()
+        p = EOProduct(
+            "peps", {"id": "a", "geometry": {"type": "Point", "coordinates": [1, 1]}}
+        )
+        m.__len__.return_value = 2
+        m.__iter__.return_value = [p, p]
+        mock__do_search.return_value = (m, 2)
         with self.assertLogs(level="INFO") as cm:
             found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
             self.assertEqual(found, (SearchResult([]), 0))

@@ -640,7 +640,6 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             "stream": "oper",
             "class": "mc",
             "expver": "0001",
-            "step": 0,
             "variable": [
                 "dust_aerosol_0.03-0.55um_mixing_ratio",
                 "dust_aerosol_0.55-0.9um_mixing_ratio",

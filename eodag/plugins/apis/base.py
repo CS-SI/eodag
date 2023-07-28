@@ -48,7 +48,7 @@ class Api(PluginTopic):
       is built on the MD5 hash of the product's ``remote_location`` attribute
       (``hashlib.md5(remote_location.encode("utf-8")).hexdigest()``) and whose content is
       the product's ``remote_location`` attribute itself.
-    - not try to download a product whose ``location`` attribute already points to an
+    - not try to download a product whose ``location`` attribute already points to an
       existing file/directory
     - not try to download a product if its *record* file exists as long as the expected
       product's file/directory. If the *record* file only is found, it must be deleted

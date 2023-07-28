@@ -1,6 +1,26 @@
 Release history
 ---------------
 
+2.11.0b1 (2023-07-28)
++++++++++++++++++++++
+
+* `wekeo <https://www.wekeo.eu>`_ as new provider (:pull:`772`)
+* Server-mode Flask to FastAPI (:pull:`701`)
+* Server-mode download streaming (:pull:`742`)
+* Updated creodias authentication mechanism to Creodias-new (:pull:`763`)
+* Helm Chart (:pull:`739`)
+* Server-mode search by (multiples) id(s) (:pull:`776`)
+* Fixed server-mode parallel requests (:pull:`741`)
+* Keep origin assets in the stac server response (:pull:`681`)
+* Enable single-link download for STAC providers (:pull:`757`)
+* Fixes missing provider in STAC download link (:pull:`774`)
+* Better documentation for `guess_product_type()\
+  <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#Guess-a-product-type>`_ (:pull:`756`)
+* Fixed issue with docker image user directory (:pull:`764`)
+* Various minor fixes and improvements (:pull:`720`)(:pull:`717`)(:pull:`722`)(:pull:`723`)(:pull:`724`)(:pull:`727`)
+  (:pull:`729`)(:pull:`731`)(:pull:`737`)(:pull:`738`)(:pull:`743`)(:pull:`744`)(:pull:`745`)(:pull:`749`)(:pull:`751`)
+  (:pull:`762`)(:pull:`771`)(:pull:`775`)(:pull:`777`)
+
 2.10.0 (2023-04-18)
 +++++++++++++++++++
 

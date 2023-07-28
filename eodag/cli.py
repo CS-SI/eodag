@@ -53,6 +53,7 @@ except ImportError:  # pragma: no cover
     from importlib_metadata import metadata  # type: ignore
 
 import click
+import uvicorn
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
 from eodag.utils import parse_qs
@@ -621,7 +622,11 @@ def serve_rpc(ctx, host, port, conf):
     server.serve()
 
 
-@eodag.command(help="Start eodag HTTP server")
+@eodag.command(
+    help="Start eodag HTTP server\n\n"
+    "Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-Origin Resource Sharing allowed origins as "
+    "comma-separated URLs (e.g. 'http://somewhere,htttp://somewhere.else')."
+)
 @click.option(
     "-f",
     "--config",
@@ -644,9 +649,8 @@ def serve_rpc(ctx, host, port, conf):
     is_flag=True,
     show_default=True,
     help=(
-        "run flask using IPv4 0.0.0.0 (all network interfaces), "
+        "run uvicorn using IPv4 0.0.0.0 (all network interfaces), "
         "otherwise bind to 127.0.0.1 (localhost). "
-        "This maybe necessary in systems that only run Flask"
     ),
 )
 @click.option(
@@ -677,11 +681,6 @@ def serve_rest(ctx, daemon, world, port, config, locs, debug):
     if locs:
         os.environ["EODAG_LOCS_CFG_FILE"] = locs
 
-    from eodag.rest.server import app, run_swagger, stac_api_config
-
-    # run swagger / service-doc
-    run_swagger(app=app, config=stac_api_config)
-
     bind_host = "127.0.0.1"
     if world:
         bind_host = "0.0.0.0"
@@ -693,11 +692,30 @@ def serve_rest(ctx, daemon, world, port, config, locs, debug):
 
         if pid == 0:
             os.setsid()
-            app.run(threaded=True, host=bind_host, port=port)
+            uvicorn.run("eodag.rest.server:app", host=bind_host, port=port)
         else:
             sys.exit(0)
     else:
-        app.run(debug=debug, host=bind_host, port=port)
+        logging_config = uvicorn.config.LOGGING_CONFIG
+        if debug:
+            logging_config["loggers"]["uvicorn"]["level"] = "DEBUG"
+            logging_config["loggers"]["uvicorn.error"]["level"] = "DEBUG"
+            logging_config["loggers"]["uvicorn.access"]["level"] = "DEBUG"
+            logging_config["formatters"]["default"][
+                "fmt"
+            ] = "%(asctime)-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s"
+            logging_config["loggers"]["eodag"] = {
+                "handlers": ["default"],
+                "level": "DEBUG" if debug else "INFO",
+                "propagate": False,
+            }
+        uvicorn.run(
+            "eodag.rest.server:app",
+            host=bind_host,
+            port=port,
+            reload=debug,
+            log_config=logging_config,
+        )
 
 
 @eodag.command(

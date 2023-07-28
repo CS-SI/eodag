@@ -51,7 +51,9 @@ jobs:
         git config user.email "'github-actions[bot]@users.noreply.github.com"
         git add "${JSON_OUTPUT_FILE}"
         git commit -m "fix: update external product types reference" || exit 0
+        echo "Update external product types reference from daily fetch. See [Python API User Guide / Product types discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery)" >> $GITHUB_STEP_SUMMARY
         echo '### Changed files' >> $GITHUB_STEP_SUMMARY
+        echo 'May be truncated.' >> $GITHUB_STEP_SUMMARY
         COMMIT_SHA=$(git rev-parse HEAD)
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA}"
         echo "commit [${COMMIT_SHA}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
@@ -59,8 +61,10 @@ jobs:
         git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
         (diff <(curl ${JSON_REF_FILE} | jq ) <(cat ${JSON_OUTPUT_FILE} | jq) || true) >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
+        # truncated PR body (too long causes error)
+        full_update_summary=$(cat $GITHUB_STEP_SUMMARY)
         echo 'UPDATE_SUMMARY<<EOF' >> $GITHUB_ENV
-        cat $GITHUB_STEP_SUMMARY >> $GITHUB_ENV
+        echo "${full_update_summary:0:65536}" >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v4
@@ -68,9 +72,6 @@ jobs:
         branch: external-product-types-ref-update
         delete-branch: true
         title: 'fix: update external product types reference'
-        body: |
-          Update external product types reference from daily fetch. See
-          [Python API User Guide / Product types discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery)
-          ${{ env.UPDATE_SUMMARY }}
+        body: ${{ env.UPDATE_SUMMARY }}
         labels: |
           automated pr

@@ -20,8 +20,10 @@ import logging
 import os
 import re
 from collections import defaultdict
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import dateutil.parser
+import geojson
 import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
@@ -40,6 +42,7 @@ from eodag.utils import (
     jsonpath_parse_dict_items,
     string_to_jsonpath,
     update_nested_dict,
+    urljoin,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -51,6 +54,7 @@ from eodag.utils.exceptions import (
 logger = logging.getLogger("eodag.rest.stac")
 
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
+STAC_CATALOGS_PREFIX = "catalogs"
 
 
 class StacCommon(object):
@@ -145,7 +149,7 @@ class StacCommon(object):
         :returns: STAC data dictionnary
         :rtype: dict
         """
-        return self.data
+        return geojson.loads(geojson.dumps(self.data))
 
     __geo_interface__ = property(as_dict)
 
@@ -215,6 +219,24 @@ class StacItem(StacCommon):
             product_item = jsonpath_parse_dict_items(
                 item_model, {"product": product.__dict__}
             )
+            # add origin assets to product assets
+            origin_assets = product_item["assets"].pop("origin_assets")
+            if getattr(product, "assets", False):
+                product_item["assets"] = dict(product_item["assets"], **origin_assets)
+            # append provider query-arg to download link if specified
+            if self.provider:
+                parts = urlparse(product_item["assets"]["downloadLink"]["href"])
+                query_dict = parse_qs(parts.query)
+                query_dict.update(provider=self.provider)
+                without_arg_url = (
+                    f"{parts.scheme}://{parts.netloc}{parts.path}"
+                    if parts.scheme
+                    else f"{parts.netloc}{parts.path}"
+                )
+                product_item["assets"]["downloadLink"][
+                    "href"
+                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
                 conv_func, conv_args = prop_val
@@ -319,7 +341,7 @@ class StacItem(StacCommon):
         items["features"] = self.__get_item_list(search_results, catalog)
 
         self.update_data(items)
-        return self.as_dict()
+        return geojson.loads(geojson.dumps(self.data))
 
     def __filter_item_model_properties(self, item_model, product_type):
         """Filter item model depending on product type metadata and its extensions.
@@ -644,7 +666,7 @@ class StacCatalog(StacCommon):
         catalogs=[],
         fetch_providers=True,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(StacCatalog, self).__init__(
             url=url,
@@ -1136,7 +1158,9 @@ class StacCatalog(StacCommon):
                 [
                     {
                         "rel": "child",
-                        "href": self.url + "/" + product_type["ID"],
+                        "href": urljoin(
+                            self.url, f"{STAC_CATALOGS_PREFIX}/{product_type['ID']}"
+                        ),
                         "title": product_type["ID"],
                     }
                     for product_type in product_types_list

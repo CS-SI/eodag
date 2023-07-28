@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from string import Formatter
 
 import geojson
+import orjson
 import pyproj
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
@@ -35,10 +36,12 @@ from shapely.ops import transform
 from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
+    dict_items_recursive_apply,
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
     string_to_jsonpath,
+    update_nested_dict,
 )
 
 logger = logging.getLogger("eodag.api.product.metadata_mapping")
@@ -54,6 +57,7 @@ STAGING_STATUS = "STAGING"
 OFFLINE_STATUS = "OFFLINE"
 COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
+COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
 
 
 def get_metadata_path(map_value):
@@ -185,6 +189,7 @@ def format_metadata(search_param, *args, **kwargs):
                 converter = conversion_func_spec.groupdict()["converter"]
                 self.custom_args = conversion_func_spec.groupdict()["args"]
                 self.custom_converter = getattr(self, "convert_{}".format(converter))
+
             return super(MetadataFormatter, self).get_field(field_name, args, kwargs)
 
         def convert_field(self, value, conversion):
@@ -492,13 +497,125 @@ def format_metadata(search_param, *args, **kwargs):
                 logger.error("Could not extract title infos from %s" % string)
                 return NOT_AVAILABLE
 
-    # if stac extension colon separator `:` is in search search params, parse it to prevent issues with vformat
+        @staticmethod
+        def convert_split_id_into_s1_params(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            if len(parts) < 9:
+                logger.error(
+                    "id %s does not match expected Sentinel-1 id format", product_id
+                )
+                raise ValueError
+            params = {"sensorMode": parts[1]}
+            level = "LEVEL" + parts[3][0]
+            params["processingLevel"] = level
+            start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
+                seconds=1
+            )
+            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_date = datetime.strptime(parts[5], "%Y%m%dT%H%M%S") + timedelta(
+                seconds=1
+            )
+            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            product_type = parts[2][:3]
+            if product_type == "GRD" and parts[-1] == "COG":
+                product_type = "GRD-COG"
+            elif product_type == "GRD" and parts[-2] == "CARD" and parts[-1] == "BS":
+                product_type = "CARD-BS"
+            params["productType"] = product_type
+            polarisation_mapping = {
+                "SV": "VV",
+                "SH": "HH",
+                "DH": "HH+HV",
+                "DV": "VV+VH",
+            }
+            polarisation = polarisation_mapping[parts[3][2:]]
+            params["polarisation"] = polarisation
+            return params
+
+        @staticmethod
+        def convert_split_id_into_s3_params(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            params = {"productType": product_id[4:15]}
+            start_date = datetime.strptime(
+                product_id[16:31], "%Y%m%dT%H%M%S"
+            ) - timedelta(seconds=1)
+            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_date = datetime.strptime(
+                product_id[32:47], "%Y%m%dT%H%M%S"
+            ) + timedelta(seconds=1)
+            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            params["timeliness"] = parts[-2]
+            params["sat"] = "Sentinel-" + parts[0][1:]
+            return params
+
+        @staticmethod
+        def convert_split_id_into_s5p_params(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            params = {
+                "productType": product_id[9:19],
+                "processingMode": parts[1],
+                "processingLevel": parts[2].replace("_", ""),
+            }
+            start_date = datetime.strptime(parts[-6], "%Y%m%dT%H%M%S") - timedelta(
+                seconds=10
+            )
+            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_date = datetime.strptime(parts[-5], "%Y%m%dT%H%M%S") + timedelta(
+                seconds=10
+            )
+            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            return params
+
+        @staticmethod
+        def convert_split_cop_dem_id(product_id):
+            parts = product_id.split("_")
+            lattitude = parts[3]
+            longitude = parts[5]
+            if lattitude[0] == "N":
+                lat_num = int(lattitude[1:])
+            else:
+                lat_num = -1 * int(lattitude[1:])
+            if longitude[0] == "E":
+                long_num = int(longitude[1:])
+            else:
+                long_num = -1 * int(longitude[1:])
+            bbox = [long_num - 1, lat_num - 1, long_num + 1, lat_num + 1]
+            return bbox
+
+        # @staticmethod
+        # def convert_get_corine_product_type(start_date, end_date):
+        #     start_year = start_date[:4]
+        #     end_year = end_date[:4]
+        #     print(start_year, end_year)
+        #     years = [1990, 2000, 2006, 2012, 2018]
+        #     if start_year == end_year and int(start_year) in years:
+        #         product_type = "Corine Land Cover " + start_year
+        #     else:
+        #         max_interception = 0
+        #         sel_years = [1990, 2000]
+        #         for i, year in enumerate(years[:-1]):
+        #             if int(end_year) < years[i+1] and i == 0:
+        #                 sel_years = [year, years[i+1]]
+        #                 break
+        #             elif int(start_year) > years[i+1]:
+        #                 continue
+        #             else:
+        #                 interception = min(years[i+1], int(end_year)) - max(year, int(start_year))
+        #                 if interception > max_interception:
+        #                     max_interception = interception
+        #                     sel_years = [year, years[i+1]]
+        #         product_type = "Corine Land Change " + str(sel_years[0]) + " " + str(sel_years[1])
+        #
+        #     return product_type
+
+    # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(
             r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
-
+    # if re.search(r"\([a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*", search_param):
+    #     search_param = search_param.replace(":", "_COLON_")
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
@@ -586,6 +703,7 @@ def properties_from_json(json, mapping, discovery_config=None):
     # adds missing discovered properties
     if not discovery_config:
         discovery_config = {}
+
     discovery_pattern = discovery_config.get("metadata_pattern", None)
     discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
@@ -675,7 +793,26 @@ def properties_from_xml(
                 path_or_text,
                 namespaces={k or empty_ns_prefix: v for k, v in root.nsmap.items()},
             )
-            if len(extracted_value) == 1:
+            if len(extracted_value) <= 1:
+                if len(extracted_value) < 1:
+                    # If there is no matched value (empty list), mark the metadata as not
+                    # available
+                    extracted_value = [NOT_AVAILABLE]
+                else:
+                    # store element tag in used_xpaths
+                    used_xpaths.append(
+                        getattr(
+                            root.xpath(
+                                path_or_text.replace("/text()", ""),
+                                namespaces={
+                                    k or empty_ns_prefix: v
+                                    for k, v in root.nsmap.items()
+                                },
+                            )[0],
+                            "tag",
+                            None,
+                        )
+                    )
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value[0]
                 else:
@@ -695,22 +832,10 @@ def properties_from_xml(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value[0]},
                     )
-                # store element tag in used_xpaths
-                used_xpaths.append(
-                    getattr(
-                        root.xpath(
-                            path_or_text.replace("/text()", ""),
-                            namespaces={
-                                k or empty_ns_prefix: v for k, v in root.nsmap.items()
-                            },
-                        )[0],
-                        "tag",
-                        None,
-                    )
-                )
+
             # If there are multiple matches, consider the result as a list, doing a
             # formatting if any
-            elif len(extracted_value) > 1:
+            else:
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value
                 else:
@@ -743,10 +868,7 @@ def properties_from_xml(
                         )
                         for extracted_value_item in extracted_value
                     ]
-            # If there is no matched value (empty list), mark the metadata as not
-            # available
-            else:
-                properties[metadata] = NOT_AVAILABLE
+
         except XPathEvalError:
             # Assume the mapping is to be passed as is, in which case we readily
             # register it, or is a template, in which case we register it for later
@@ -821,6 +943,170 @@ def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="jso
             dest_dict[metadata] = dest_dict.pop(metadata)
 
     return dest_dict
+
+
+def format_query_params(product_type, config, **kwargs):
+    """format the search parameters to query parameters"""
+    if "raise_errors" in kwargs.keys():
+        del kwargs["raise_errors"]
+    # . not allowed in eodag_search_key, replaced with %2E
+    kwargs = {k.replace(".", "%2E"): v for k, v in kwargs.items()}
+
+    query_params = {}
+    # Get all the search parameters that are recognised as queryables by the
+    # provider (they appear in the queryables dictionary)
+    queryables = _get_queryables(kwargs, config)
+
+    for eodag_search_key, provider_search_key in queryables.items():
+        user_input = kwargs[eodag_search_key]
+
+        if COMPLEX_QS_REGEX.match(provider_search_key):
+            parts = provider_search_key.split("=")
+            if len(parts) == 1:
+                formatted_query_param = format_metadata(
+                    provider_search_key, product_type, **kwargs
+                )
+                if "{{" in provider_search_key:
+                    # retrieve values from hashes where keys are given in the param
+                    if "}[" in formatted_query_param:
+                        formatted_query_param = _resolve_hashes(
+                            formatted_query_param.replace("'", '"')
+                        )
+                    # json query string (for POST request)
+                    update_nested_dict(
+                        query_params, orjson.loads(formatted_query_param)
+                    )
+                else:
+                    query_params[eodag_search_key] = formatted_query_param
+            else:
+                provider_search_key, provider_value = parts
+                query_params.setdefault(provider_search_key, []).append(
+                    format_metadata(provider_value, product_type, **kwargs)
+                )
+        else:
+            query_params[provider_search_key] = user_input
+    # Now get all the literal search params (i.e params to be passed "as is"
+    # in the search request)
+    # ignore additional_params if it isn't a dictionary
+    literal_search_params = getattr(config, "literal_search_params", {})
+    if not isinstance(literal_search_params, dict):
+        literal_search_params = {}
+
+    # Now add formatted free text search parameters (this is for cases where a
+    # complex query through a free text search parameter is available for the
+    # provider and needed for the consumer)
+    literal_search_params.update(_format_free_text_search(config, **kwargs))
+    for provider_search_key, provider_value in literal_search_params.items():
+        if isinstance(provider_value, list):
+            query_params.setdefault(provider_search_key, []).extend(provider_value)
+        else:
+            query_params.setdefault(provider_search_key, []).append(provider_value)
+    return query_params
+
+
+def _resolve_hashes(formatted_query_param):
+    while '["' in formatted_query_param:
+        ind_open = formatted_query_param.find('["')
+        ind_close = formatted_query_param.find('"]')
+        hash_start = formatted_query_param[:ind_open].rfind("{")
+        h = orjson.loads(formatted_query_param[hash_start:ind_open])
+        key = formatted_query_param[ind_open + 2 : ind_close]
+        value = h[key]
+        formatted_query_param = formatted_query_param.replace(
+            formatted_query_param[hash_start : ind_close + 2], '"' + value + '"'
+        )
+    return formatted_query_param
+
+
+def _format_free_text_search(config, **kwargs):
+    """Build the free text search parameter using the search parameters"""
+    query_params = {}
+    if not getattr(config, "free_text_search_operations", None):
+        return query_params
+    for param, operations_config in config.free_text_search_operations.items():
+        union = operations_config["union"]
+        wrapper = operations_config.get("wrapper", "{}")
+        formatted_query = []
+        for operator, operands in operations_config["operations"].items():
+            # The Operator string is the operator wrapped with spaces
+            operator = " {} ".format(operator)
+            # Build the operation string by joining the formatted operands together
+            # using the operation string
+            operation_string = operator.join(
+                format_metadata(operand, **kwargs)
+                for operand in operands
+                if any(
+                    re.search(rf"{{{kw}[}}#]", operand)
+                    and val is not None
+                    and isinstance(config.metadata_mapping.get(kw, []), list)
+                    for kw, val in kwargs.items()
+                )
+            )
+            # Finally wrap the operation string as specified by the wrapper and add
+            # it to the list of queries (only if the operation string is not empty)
+            if operation_string:
+                query = wrapper.format(operation_string)
+                formatted_query.append(query)
+        # Join the formatted query using the "union" config parameter, and then
+        # wrap it with the Python format string specified in the "wrapper" config
+        # parameter
+        final_query = union.join(formatted_query)
+        if len(operations_config["operations"]) > 1 and len(formatted_query) > 1:
+            final_query = wrapper.format(query_params[param])
+        if final_query:
+            query_params[param] = final_query
+    return query_params
+
+
+def _get_queryables(search_params, config):
+    """Retrieve the metadata mappings that are query-able"""
+    logger.debug("Retrieving queryable metadata from metadata_mapping")
+    queryables = {}
+    for eodag_search_key, user_input in search_params.items():
+        if user_input is not None:
+            md_mapping = config.metadata_mapping.get(
+                eodag_search_key, (None, NOT_MAPPED)
+            )
+            _, md_value = md_mapping
+            # query param from defined metadata_mapping
+            if md_mapping is not None and isinstance(md_mapping, list):
+                search_param = get_search_param(md_mapping)
+                if search_param is not None:
+                    queryables[eodag_search_key] = search_param
+            # query param from metadata auto discovery
+            elif md_value == NOT_MAPPED and getattr(
+                config, "discover_metadata", {}
+            ).get("auto_discovery", False):
+                pattern = re.compile(
+                    config.discover_metadata.get("metadata_pattern", "")
+                )
+                search_param_cfg = config.discover_metadata.get("search_param", "")
+                if pattern.match(eodag_search_key) and isinstance(
+                    search_param_cfg, str
+                ):
+                    search_param = search_param_cfg.format(metadata=eodag_search_key)
+                    queryables[eodag_search_key] = search_param
+                elif pattern.match(eodag_search_key) and isinstance(
+                    search_param_cfg, dict
+                ):
+                    search_param_cfg_parsed = dict_items_recursive_apply(
+                        search_param_cfg,
+                        lambda k, v: v.format(metadata=eodag_search_key),
+                    )
+                    for k, v in search_param_cfg_parsed.items():
+                        if getattr(config, k, None):
+                            update_nested_dict(
+                                getattr(config, k),
+                                v,
+                                extend_list_values=True,
+                                allow_extend_duplicates=False,
+                            )
+                        else:
+                            logger.warning(
+                                "Could not use discover_metadata[search_param]: no entry for %s in plugin config",
+                                k,
+                            )
+    return queryables
 
 
 # Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html
