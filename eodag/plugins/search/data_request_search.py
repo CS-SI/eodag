@@ -102,9 +102,12 @@ class DataRequestSearch(Search):
                 )
                 request_job = requests.post(url, json=request_body, headers=headers)
                 request_job.raise_for_status()
-            except requests.RequestException:
+            except requests.RequestException as e:
                 logger.error(
-                    "search job for product_type %s could not be created", product_type
+                    "search job for product_type %s could not be created: %s, %s",
+                    product_type,
+                    str(e),
+                    request_job.text,
                 )
             else:
                 logger.info("search job for product_type %s created", product_type)

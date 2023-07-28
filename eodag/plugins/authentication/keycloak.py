@@ -119,7 +119,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                     self.config.token_provision,
                     key=getattr(self.config, "token_qs_key", None),
                 )
-            response_text = e.response.text.strip()
+            response_text = getattr(e.response, "text", "").strip()
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
