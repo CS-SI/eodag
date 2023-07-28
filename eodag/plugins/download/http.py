@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
+import requests_ftp
 from lxml import etree
 from requests import RequestException
 from stream_zip import NO_COMPRESSION_64, stream_zip
@@ -259,6 +260,13 @@ class HTTPDownload(Download):
                 order_status_success_dict = getattr(
                     self.config, "order_status_success", {}
                 )
+                if (
+                    "status" in status_dict
+                    and status_dict["status"] == order_status_success_dict["status"]
+                    and "message" in status_dict
+                    and status_dict["message"] == order_status_success_dict["message"]
+                ):
+                    product.properties["storageStatus"] = ONLINE_STATUS
                 if (
                     order_status_success_dict
                     and order_status_success_dict.items() <= status_dict.items()
@@ -606,7 +614,10 @@ class HTTPDownload(Download):
             req_url = url
             req_kwargs = {}
 
-        with requests.request(
+        # url where data is downloaded from can be ftp -> add ftp adapter
+        requests_ftp.monkeypatch_session()
+        s = requests.Session()
+        with s.request(
             req_method,
             req_url,
             stream=True,

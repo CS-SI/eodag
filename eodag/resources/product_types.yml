@@ -741,7 +741,18 @@ S2_MSI_L3A_WASP:
 # Sentinel 3 ------------------------------------------------------------------
 # S3 OLCI L1
 S3_EFR:
-  abstract: ""
+  abstract: |
+    OLCI (Ocean and Land Colour Instrument) Full resolution: 300m at nadir. Level 1 products are calibrated
+    Top Of Atmosphere radiance values at OLCI 21 spectral bands. Radiances are computed from the instrument digital
+    counts by applying geo-referencing, radiometric processing (non-linearity correction, smear correction, dark offset
+    correction, absolute gain calibration adjusted for gain evolution with time), and stray-light correction for
+    straylight effects in OLCI camera's spectrometer and ground imager. Additionally, spatial resampling of OLCI pixels
+    to the 'ideal' instrument grid, initial pixel classification, and annotation at tie points with auxiliary
+    meteorological data and acquisition geometry are provided. The radiance products are accompanied by error estimate
+    products, however the error values are currently not available. - All Sentinel-3 NRT products are available at
+    pick-up point in less than 3h. - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in
+    less than 30 days. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme.
   instrument: OLCI
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -753,7 +764,18 @@ S3_EFR:
   missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_ERR:
-  abstract: ""
+  abstract: |
+    OLCI (Ocean and Land Colour Instrument) Reduced resolution: 1200m at nadir. All Sentinel-3 NRT products are
+    available at pick-up point in less than 3h. Level 1 products are calibrated Top Of Atmosphere radiance values
+    at OLCI 21 spectral bands. Radiances are computed from the instrument digital counts by applying geo-referencing,
+    radiometric processing (non-linearity correction, smear correction, dark offset correction, absolute gain
+    calibration adjusted for gain evolution with time), and stray-light correction for straylight effects in OLCI
+    camera's spectrometer and ground imager. Additionally, spatial resampling of OLCI pixels to the 'ideal' instrument
+    grid, initial pixel classification, and annotation at tie points with auxiliary meteorological data and acquisition
+    geometry are provided. The radiance products are accompanied by error estimate products, however the error values
+    are currently not available. - All Sentinel-3 NRT products are available at pick-up point in less than 3h
+    - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in less than 30 days Sentinel-3 is
+    part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instrument: OLCI
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -848,7 +870,7 @@ S3_OLCI_L2LFR:
 
 S3_OLCI_L2WFR:
   abstract: |
-    The OLCI Level-2 Water Full Resolution (OL_2_WRR) products contain water and atmospheric geophysical products
+    The OLCI Level-2 Water Full Resolution (OL_2_WFR) products contain water and atmospheric geophysical products
     at Full resolution with a spatial sampling of approximately 1.2 km. The products are assumed to be computed
     in Near Real Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical
     (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
@@ -857,7 +879,7 @@ S3_OLCI_L2WFR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR
   sensorType: OPTICAL
   license: proprietary
   title: SENTINEL3 OLCI Level-2 Water Full Resolution
@@ -898,7 +920,7 @@ S3_SLSTR_L2LST:
 
 S3_SLSTR_L2WST:
   abstract: |
-    The SLSTR Level-2 WST product provides land surface parameters generated on the wide 1 km measurement grid.
+    The SLSTR Level-2 WST product provides water surface parameters generated on the wide 1 km measurement grid.
     It contains measurement file with Water Surface Temperature (WST) values with associated parameters (WST
     parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
   instrument: SLSTR
@@ -944,9 +966,40 @@ S3_SLSTR_L2FRP:
   title: SENTINEL3 SLSTR Level-2 FRP
   missionStartDate: "2016-02-16T00:00:00Z"
 
+S3_SLSTR_L2:
+  abstract: |
+    The SLSTR Level-2 products are generated in five different types: 1. SL_2_WCT, including the Sea Surface Temperature
+    for single and dual view, for 2 or 3 channels (internal product only), 2. SL_2_WST, including the Level-2P Sea
+    surface temperature (provided to the users), 3. SL_2_LST, including the Land Surface Temperature parameters
+    (provided to the users), 4. SL_2_FRP, including the Fire Radiative Power parameters (provided to the users),
+    5.SL_2_AOD, including the Aerosol Optical Depth parameters (provided to the users). The Level-2 product are
+    organized in packages composed of one manifest file and several measurement and annotation data files (between 2
+    and 21 files depending on the package). The manifest file is in XML format and gathers general information
+    concerning product and processing. The measurement and annotation data files are in netCDF 4 format, and include
+    dimensions, variables and associated attributes. Regarding the measurement files: one measurement file, providing
+    the land surface temperature, associated uncertainties and other supporting fields, is included in the SL_2_LST
+    packet. The annotation data files are generated from the annotation files included in the SL_1RBT package and their
+    format is identical to the files in the Level-1 packet.The SL_2_LST packet contains 10 annotation files, providing
+    the same parameters as in SL_2_WCT and, in addition, some vegetation parameters.
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2FRP,FRP,L2WCT,WCT,L2WST,WST,L2AOD,AOD
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2
+  missionStartDate: "2017-07-05T00:00:00Z"
+
 # S3 SRAL
 S3_SRA:
-  abstract: ""
+  abstract: |
+    SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or
+    Synthetic Aperture Radar (SAR) mode both for C Band and Ku band. When the altimeter is in SAR mode, this product
+    also contains the so-called Pseudo LRM (PLRM) echoes. - All Sentinel-3 Near Real Time (NRT) products are available
+    at pick-up point in less than 3h. - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point
+    in less than 30 days. - All Sentinel-3 Short Time Critical (STC) products are available at pick-up point in less
+    than 48 hours. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instrument: SRAL
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -990,7 +1043,19 @@ S3_SRA_BS:
   missionStartDate: "2016-02-16T00:00:00Z"
 
 S3_WAT:
-  abstract: ""
+  abstract: |
+    The products contain the typical altimetry measurements, like the altimeter range, the sea surface height, the wind
+    speed, significant wave height and all required geophysical corrections and related flags. Also the sea Ice
+    freeboard measurement is included. The measurements in the standard data file provide the measurements in low
+    (1 Hz = approx. 7km) and high resolution (20 Hz = approx. 300 m), in LRM mode or in SAR mode, for both C-band and
+    Ku band. The SAR mode is the default mode. The reduced measurement data file contains 1 Hz measurements only. The
+    enhanced measurement data file contains also the waveforms and associated parameters and the pseudo LRM measurements
+    when in SAR mode. This product contains the following datasets: Sea Level Global(NRT) (PDS_MG3_CORE_14_GLONRT),
+    Sea Level Global Reduced(NRT)(PDS_MG3_CORE_14_GLONRT_RD), Sea Level Global Standard(NRT) (PDS_MG3_CORE_14_GLONRT_SD),
+    Sea Level Global Enhanced(NRT) (PDS_MG3_CORE_14_GLONRT_EN) - All Sentinel-3 NRT products are available at pick-up
+    point in less than 3h. - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in less
+    than 30 days - All Sentinel-3 Short Time Critical (STC) products are available at pick-up point in less than 48
+    hours Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instrument: SRAL
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
@@ -1097,6 +1162,25 @@ S3_SY_VGP:
   missionStartDate: "2016-02-16T00:00:00Z"
 
 # Sentinel 5P ------------------------------------------------------------------
+S5P_L1B2_IR_ALL:
+  abstract: |
+    Solar irradiance spectra for all bands (UV1-6 and SWIR)
+    The TROPOMI instrument is a space-borne, nadir-viewing, imaging spectrometer covering wavelength bands between the
+    ultraviolet and the shortwave infrared. The instrument, the single payload of the Sentinel-5P spacecraft, uses
+    passive remote sensing techniques to attain its objective by measuring, at the Top Of Atmosphere (TOA), the solar
+    radiation reflected by and radiated from the earth. The instrument operates in a push-broom configuration
+    (non-scanning), with a swath width of ~2600 km on the Earth's surface. The typical pixel size (near nadir) will
+    be 7x3.5 km2 for all spectral bands, with the exception of the UV1 band (7x28 km2) and SWIR bands (7x7 km2).
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B, L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,SIR,SWIR,Irradiances,UVN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B and Level 2 Irradiances for the SWIR and UNV bands
+  missionStartDate: "2017-10-13T00:00:00Z"
+
 S5P_L1B_IR_SIR:
   abstract: |
     Solar irradiance spectra for the SWIR bands (band 7 and band 8).
@@ -1793,6 +1877,44 @@ NEMSAUTO_TCDC:
   license: proprietary
   title: NEMSAUTO Total Cloud Cover daily mean
   missionStartDate: "1984-01-01T00:00:00Z"
+
+# COPERNICUS Digital Elevation Model
+COP_DEM_GLO30:
+  abstract: |
+    The Copernicus DEM is a Digital Surface Model (DSM) which represents the surface of the Earth including buildings,
+    infrastructure and vegetation. We provide two instances of Copernicus DEM named GLO-30 Public and GLO-90. GLO-30
+    provides worldwide coverage at 30 meters. Note that ocean areas do not have tiles, there one can assume height
+    values equal to zero. Data is provided as Cloud Optimized GeoTIFFs. Several releases are currently available for
+    all Copernicus DEM instances, only the last one is provided as 2022 release. A full collection of tiles can be
+    found via FTP and PANDA Catalogue under dataset names marked with '2022_1'.
+  instrument:
+  platform: TerraSAR
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: TerraSAR, TanDEM-X, DEM, surface, GLO-30, DSM
+  sensorType: SAR-X, TOR
+  license: proprietary
+  title: COPERNICUS Digital Elevation Model (GLO-30)
+  missionStartDate: "2010-06-21T00:00:00Z"
+
+CLMS_CORINE:
+  abstract: |
+    The CORINE Land Cover (CLC) inventory was initiated in 1985 (reference year 1990). Updates have been produced in
+    2000, 2006, 2012, and 2018. It consists of an inventory of land cover in 44 classes. CLC uses a Minimum Mapping
+    Unit (MMU) of 25 hectares (ha) for areal phenomena and a minimum width of 100 m for linear phenomena. The time
+    series are complemented by change layers, which highlight changes in land cover with an MMU of 5 ha. Different
+    MMUs mean that the change layer has higher resolution than the status layer. Due to differences in MMUs the
+    difference between two status layers will not equal to the corresponding CLC-Changes layer. If you are interested
+    in CLC-Changes between two neighbour surveys always use the CLC-Change layer.
+  instrument:
+  platform: Sentinel-2, LANDSAT, SPOT-4/5, IRS P6 LISS III
+  platformSerialIdentifier: S2, L5, L7, L8, SPOT4, SPOT5
+  processingLevel:
+  keywords: Land cover, LCL, CORINE, CLMS
+  sensorType:
+  license: proprietary
+  title: CORINE Land Cover
+  missionStartDate: "1986-01-01T00:00:00Z"
 
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
