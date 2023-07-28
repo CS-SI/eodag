@@ -24,6 +24,7 @@ from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 import requests
+from fastapi.responses import StreamingResponse
 from requests import RequestException
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
@@ -143,87 +144,17 @@ class S3RestDownload(Download):
                 )
 
             # get bucket urls
-            bucket_name, prefix = get_bucket_name_and_prefix(
-                url=product.location, bucket_path_level=self.config.bucket_path_level
-            )
-
-            if (
-                bucket_name is None
-                and "storageStatus" in product.properties
-                and product.properties["storageStatus"] == OFFLINE_STATUS
-            ):
-                raise NotAvailableError(
-                    "%s is not available for download on %s (status = %s)"
-                    % (
-                        product.properties["title"],
-                        self.provider,
-                        product.properties["storageStatus"],
-                    )
-                )
-
-            bucket_url = urljoin(
-                product.downloader.config.base_uri.strip("/") + "/", bucket_name
-            )
+            bucket_url, prefix = self._get_bucket_url(product)
             nodes_list_url = bucket_url + "?prefix=" + prefix.strip("/")
 
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
-            bucket_contents = requests.get(
-                nodes_list_url, auth=auth, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            bucket_contents = self._get_bucket_contents(
+                nodes_list_url, auth, product, ordered_message
             )
-            try:
-                bucket_contents.raise_for_status()
-            except requests.RequestException as err:
-                # check if error is identified as auth_error in provider conf
-                auth_errors = getattr(self.config, "auth_error_code", [None])
-                if not isinstance(auth_errors, list):
-                    auth_errors = [auth_errors]
-                if err.response.status_code in auth_errors:
-                    raise AuthenticationError(
-                        "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                        % (
-                            err.response.status_code,
-                            err.response.text.strip(),
-                            self.provider,
-                        )
-                    )
-                # product not available
-                elif (
-                    product.properties.get("storageStatus", ONLINE_STATUS)
-                    != ONLINE_STATUS
-                ):
-                    msg = (
-                        ordered_message
-                        if ordered_message and not err.response.text.strip()
-                        else err.response.text.strip()
-                    )
-                    raise NotAvailableError(
-                        "%s(initially %s) requested, returned: %s"
-                        % (
-                            product.properties["title"],
-                            product.properties["storageStatus"],
-                            msg,
-                        )
-                    )
-                # other error
-                else:
-                    logger.exception(
-                        "Could not get content from %s (provider:%s, plugin:%s)\n%s",
-                        nodes_list_url,
-                        self.provider,
-                        self.__class__.__name__,
-                        bucket_contents.text,
-                    )
-                    raise RequestError(str(err))
-            try:
-                xmldoc = minidom.parseString(bucket_contents.text)
-            except ExpatError as err:
-                logger.exception("Could not parse xml data from %s", bucket_contents)
-                raise DownloadError(str(err))
-            nodes_xml_list = xmldoc.getElementsByTagName("Contents")
-
-            if len(nodes_xml_list) == 0:
-                logger.warning("Could not load any content from %s", nodes_list_url)
+            xmldoc, nodes_xml_list = self._get_nodes_xml_list(
+                bucket_contents, nodes_list_url
+            )
 
             # destination product path
             outputs_prefix = (
@@ -267,7 +198,6 @@ class S3RestDownload(Download):
                 ]
             )
             progress_callback.reset(total=total_size)
-
             # download each node key
             for node_xml in nodes_xml_list:
                 node_key = unquote(
@@ -327,3 +257,182 @@ class S3RestDownload(Download):
             ordered_message,
             **kwargs,
         )
+
+    def _get_bucket_url(self, product):
+        bucket_name, prefix = get_bucket_name_and_prefix(
+            url=product.location, bucket_path_level=self.config.bucket_path_level
+        )
+
+        if (
+            bucket_name is None
+            and "storageStatus" in product.properties
+            and product.properties["storageStatus"] == OFFLINE_STATUS
+        ):
+            raise NotAvailableError(
+                "%s is not available for download on %s (status = %s)"
+                % (
+                    product.properties["title"],
+                    self.provider,
+                    product.properties["storageStatus"],
+                )
+            )
+        bucket_url = urljoin(
+            product.downloader.config.base_uri.strip("/") + "/", bucket_name
+        )
+        return [bucket_url, prefix]
+
+    def _get_bucket_contents(self, nodes_list_url, auth, product, ordered_message):
+        logger.debug("Retrieving product content from %s", nodes_list_url)
+        bucket_contents = requests.get(
+            nodes_list_url, auth=auth, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+        )
+        try:
+            bucket_contents.raise_for_status()
+        except requests.RequestException as err:
+            # check if error is identified as auth_error in provider conf
+            auth_errors = getattr(self.config, "auth_error_code", [None])
+            if not isinstance(auth_errors, list):
+                auth_errors = [auth_errors]
+            if err.response.status_code in auth_errors:
+                raise AuthenticationError(
+                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                    % (
+                        err.response.status_code,
+                        err.response.text.strip(),
+                        self.provider,
+                    )
+                )
+            # product not available
+            elif (
+                product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS
+            ):
+                msg = (
+                    ordered_message
+                    if ordered_message and not err.response.text.strip()
+                    else err.response.text.strip()
+                )
+                raise NotAvailableError(
+                    "%s(initially %s) requested, returned: %s"
+                    % (
+                        product.properties["title"],
+                        product.properties["storageStatus"],
+                        msg,
+                    )
+                )
+            # other error
+            else:
+                logger.exception(
+                    "Could not get content from %s (provider:%s, plugin:%s)\n%s",
+                    nodes_list_url,
+                    self.provider,
+                    self.__class__.__name__,
+                    bucket_contents.text,
+                )
+                raise RequestError(str(err))
+        return bucket_contents
+
+    def _get_nodes_xml_list(self, bucket_contents, nodes_list_url):
+        try:
+            xmldoc = minidom.parseString(bucket_contents.text)
+        except ExpatError as err:
+            logger.exception("Could not parse xml data from %s", bucket_contents)
+            raise DownloadError(str(err))
+        nodes_xml_list = xmldoc.getElementsByTagName("Contents")
+
+        if len(nodes_xml_list) == 0:
+            logger.warning("Could not load any content from %s", nodes_list_url)
+        return xmldoc, nodes_xml_list
+
+    def direct_download_assets(
+        self, product, auth=None, progress_callback=None, **kwargs
+    ):
+        """
+        directly streams the asset files of a product to the user
+        All asset files are returned in a continuous stream and have to be separated by the client
+        The end of a file is marked with ENDOFFILE in one line and then the name of the file in the next line
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        :returns: a stream containing all asset files of the product
+        :rtype: fastapi.responses.StreamingResponse
+        """
+        if progress_callback is None:
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+
+        # order product if it is offline
+        ordered_message = ""
+        if (
+            "orderLink" in product.properties
+            and "storageStatus" in product.properties
+            and product.properties["storageStatus"] != ONLINE_STATUS
+        ):
+            self.http_download_plugin.orderDownload(product=product, auth=auth)
+        if product.properties.get("orderStatusLink", None):
+            self.http_download_plugin.orderDownloadStatus(product=product, auth=auth)
+
+        # get bucket urls
+        bucket_url, prefix = self._get_bucket_url(product)
+        nodes_list_url = bucket_url + "?prefix=" + prefix.strip("/")
+
+        # get nodes/files list contained in the bucket
+        logger.debug("Retrieving product content from %s", nodes_list_url)
+        bucket_contents = self._get_bucket_contents(
+            nodes_list_url, auth, product, ordered_message
+        )
+        xmldoc, nodes_xml_list = self._get_nodes_xml_list(
+            bucket_contents, nodes_list_url
+        )
+        total_size = sum(
+            [
+                int(node.firstChild.nodeValue)
+                for node in xmldoc.getElementsByTagName("Size")
+            ]
+        )
+        progress_callback.reset(total=total_size)
+        return StreamingResponse(
+            self._stream_assets(nodes_xml_list, bucket_url, auth, progress_callback)
+        )
+
+    def _stream_assets(self, nodes_xml_list, bucket_url, auth, progress_callback):
+        for node_xml in nodes_xml_list:
+            node_key = unquote(
+                node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue
+            )
+            # As "Key", "Size" and "ETag" (md5 hash) can also be retrieved from node_xml
+            node_url = urljoin(bucket_url.strip("/") + "/", node_key.strip("/"))
+            # output file location
+
+            with requests.get(
+                node_url,
+                stream=True,
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            ) as stream:
+                try:
+                    stream.raise_for_status()
+                except RequestException:
+                    import traceback as tb
+
+                    logger.error("Error while getting resource :\n%s", tb.format_exc())
+                else:
+                    for chunk in stream.iter_content(chunk_size=64 * 1024):
+                        if chunk:
+                            progress_callback(len(chunk))
+                            yield chunk
+            separator = ("\n" + "ENDOFFILE").encode("UTF-8")
+            filename = "\n" + node_url.split("/")[-1]
+            yield filename.encode("UTF-8")
+            yield separator

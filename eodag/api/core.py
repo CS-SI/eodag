@@ -44,6 +44,7 @@ from eodag.config import (
     provider_config_init,
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
+from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
@@ -1815,6 +1816,46 @@ class EODataAccessGateway(object):
                 auth = self._plugins_manager.get_auth_plugin(product.provider)
             product.register_downloader(
                 self._plugins_manager.get_download_plugin(product), auth
+            )
+
+    def download_stream(self, product, progress_callback=None, **kwargs):
+        """
+        downloads the assets of the given product and returns them as a stream;
+        (unless a zip file still has to be created, in that case a path will be returned)
+        The stream can either contain a zip file or individual files received from the provider
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param kwargs: additional arguments; with the key word argument zip it can be
+                       defined if assets that are not received as a zip file should be
+                       streamed directly (zip="false") or if they should be stored to be
+                       later converted to a zip file (zip="true")
+        :type kwargs: dict
+        :returns: a StreamingResponse which will directly transfer the data received
+                  from the provider to the user or a path to a folder where the assets are stored
+        :rtype: fastapi.responses.StreamingResponse or str
+        """
+        self._setup_downloader(product)
+        assets_urls = [
+            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
+
+        if not assets_urls and isinstance(product.downloader, HTTPDownload):
+            self.providers_config[product.provider].download.extract = False
+            return product.download_zip(progress_callback, **kwargs)
+        elif assets_urls:
+            return product.download_assets(progress_callback, **kwargs)
+        else:
+            return product.download(
+                progress_callback=progress_callback,
+                wait=DEFAULT_DOWNLOAD_WAIT,
+                timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+                **kwargs,
             )
 
     def get_cruncher(self, name, **options):

@@ -25,6 +25,7 @@ import boto3
 import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
+from fastapi.responses import StreamingResponse
 from lxml import etree
 
 from eodag.api.product.metadata_mapping import (
@@ -219,6 +220,102 @@ class AwsDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
+        product_local_path, record_filename = self._download_preparation(
+            product, progress_callback, **kwargs
+        )
+        product_conf = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        )
+        # product conf overrides provider conf for "flatten_top_dirs"
+        flatten_top_dirs = product_conf.get(
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+        )
+        build_safe = self._configure_safe_build(product)
+
+        # if assets are defined, use them instead of scanning product.location
+        bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(product)
+        # add complementary urls
+        self._add_complementary_urls(product, product_conf, bucket_names_and_prefixes)
+
+        # authenticate
+        authenticated_objects, s3_objects = self._do_authentication(
+            bucket_names_and_prefixes, auth
+        )
+
+        # downloadable files
+        unique_product_chunks = self._get_unique_product_chunks(
+            bucket_names_and_prefixes, authenticated_objects
+        )
+
+        total_size = sum([p.size for p in unique_product_chunks])
+
+        # download
+        progress_callback.reset(total=total_size)
+        try:
+            for product_chunk in unique_product_chunks:
+                try:
+                    chunk_rel_path = self.get_chunk_dest_path(
+                        product,
+                        product_chunk,
+                        build_safe=build_safe,
+                    )
+                except NotAvailableError as e:
+                    # out of SAFE format chunk
+                    logger.warning(e)
+                    continue
+                chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
+                chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
+                if not os.path.isdir(chunk_abs_path_dir):
+                    os.makedirs(chunk_abs_path_dir)
+
+                if not os.path.isfile(chunk_abs_path):
+                    product_chunk.Bucket().download_file(
+                        product_chunk.key,
+                        chunk_abs_path,
+                        ExtraArgs=getattr(s3_objects, "_params", {}),
+                        Callback=progress_callback,
+                    )
+
+        except AuthenticationError as e:
+            logger.warning("Unexpected error: %s" % e)
+
+        except ClientError as e:
+            err = e.response["Error"]
+            auth_messages = [
+                "AccessDenied",
+                "InvalidAccessKeyId",
+                "SignatureDoesNotMatch",
+            ]
+            if err["Code"] in auth_messages and "key" in err["Message"].lower():
+                raise AuthenticationError(
+                    "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                        e.response["ResponseMetadata"]["HTTPStatusCode"],
+                        err["Code"],
+                        err["Message"],
+                        self.provider,
+                    )
+                )
+            logger.warning("Unexpected error: %s" % e)
+
+        # finalize safe product
+        if build_safe and "S2_MSI" in product.product_type:
+            self.finalize_s2_safe_product(product_local_path)
+        # flatten directory structure
+        elif flatten_top_dirs:
+            flatten_top_directories(product_local_path)
+
+        if build_safe:
+            self.check_manifest_file_list(product_local_path)
+
+        # save hash/record file
+        with open(record_filename, "w") as fh:
+            fh.write(product.remote_location)
+        logger.debug("Download recorded in %s", record_filename)
+
+        product.location = path_to_uri(product_local_path)
+        return product_local_path
+
+    def _download_preparation(self, product, progress_callback, **kwargs):
         # prepare download & create dirs (before updating metadata)
         product_local_path, record_filename = self._prepare_download(
             product, progress_callback=progress_callback, **kwargs
@@ -234,17 +331,13 @@ class AwsDownload(Download):
         # create product dest dir
         if not os.path.isdir(product_local_path):
             os.makedirs(product_local_path)
+        return product_local_path, record_filename
 
+    def _configure_safe_build(self, product):
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
-
         build_safe = product_conf.get("build_safe", False)
-
-        # product conf overrides provider conf for "flatten_top_dirs"
-        flatten_top_dirs = product_conf.get(
-            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
-        )
 
         # xtra metadata needed for SAFE product
         if build_safe and "fetch_metadata" in product_conf.keys():
@@ -267,7 +360,9 @@ class AwsDownload(Download):
                 logger.warning(
                     "SAFE metadata fetch format %s not implemented" % fetch_format
                 )
-        # if assets are defined, use them instead of scanning product.location
+        return build_safe
+
+    def _get_bucket_names_and_prefixes(self, product):
         if hasattr(product, "assets") and not getattr(
             self.config, "ignore_assets", False
         ):
@@ -283,7 +378,9 @@ class AwsDownload(Download):
                 self.get_product_bucket_name_and_prefix(product)
             ]
 
-        # add complementary urls
+        return bucket_names_and_prefixes
+
+    def _add_complementary_urls(self, product, product_conf, bucket_names_and_prefixes):
         try:
             for complementary_url_key in product_conf.get("complementary_url_key", []):
                 bucket_names_and_prefixes.append(
@@ -297,12 +394,13 @@ class AwsDownload(Download):
                 % (complementary_url_key, product.properties["id"])
             )
 
-        # authenticate
+    def _do_authentication(self, bucket_names_and_prefixes, auth):
         authenticated_objects = {}
         auth_error_messages = set()
+        s3_objects = []
         for idx, pack in enumerate(bucket_names_and_prefixes):
+            bucket_name, prefix = pack
             try:
-                bucket_name, prefix = pack
                 if bucket_name not in authenticated_objects:
                     # get Prefixes longest common base path
                     common_prefix = ""
@@ -360,7 +458,11 @@ class AwsDownload(Download):
         if not authenticated_objects:
             raise AuthenticationError(", ".join(auth_error_messages))
 
-        # downloadable files
+        return authenticated_objects, s3_objects
+
+    def _get_unique_product_chunks(
+        self, bucket_names_and_prefixes, authenticated_objects
+    ):
         product_chunks = []
         for bucket_name, prefix in bucket_names_and_prefixes:
             # unauthenticated items filtered out
@@ -370,15 +472,77 @@ class AwsDownload(Download):
                 )
 
         unique_product_chunks = set(product_chunks)
+        return unique_product_chunks
 
+    def direct_download_assets(
+        self, product, auth=None, progress_callback=None, **kwargs
+    ):
+        """
+        directly streams the asset files of a product to the user
+        All asset files are returned in a continuous stream and have to be separated
+        by the client. The end of a file is marked with ENDOFFILE in one line and then the
+        name of the file in the previous line
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        :returns: a stream containing all asset files of the product
+        :rtype: fastapi.responses.StreamingResponse
+
+        """
+        if progress_callback is None:
+            logger.info(
+                "Progress bar unavailable, please call product.download() instead of plugin.download()"
+            )
+            progress_callback = ProgressCallback(disable=True)
+
+        product_conf = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        )
+
+        build_safe = self._configure_safe_build(product)
+
+        # if assets are defined, use them instead of scanning product.location
+        bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(product)
+        # add complementary urls
+        self._add_complementary_urls(product, product_conf, bucket_names_and_prefixes)
+
+        # authenticate
+        authenticated_objects, s3_objects = self._do_authentication(
+            bucket_names_and_prefixes, auth
+        )
+
+        # downloadable files
+        unique_product_chunks = self._get_unique_product_chunks(
+            bucket_names_and_prefixes, authenticated_objects
+        )
         total_size = sum([p.size for p in unique_product_chunks])
 
-        # download
+        progress_callback.reset(total=total_size)
+
+        return StreamingResponse(
+            self._stream_assets(
+                product, unique_product_chunks, progress_callback, build_safe
+            )
+        )
+
+    def _stream_assets(
+        self, product, unique_product_chunks, progress_callback, build_safe
+    ):
+        total_size = sum([p.size for p in unique_product_chunks])
         progress_callback.reset(total=total_size)
         try:
             for product_chunk in unique_product_chunks:
                 try:
-                    chunk_rel_path = self.get_chunk_dest_path(
+                    self.get_chunk_dest_path(
                         product,
                         product_chunk,
                         build_safe=build_safe,
@@ -387,22 +551,19 @@ class AwsDownload(Download):
                     # out of SAFE format chunk
                     logger.warning(e)
                     continue
-                chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
-                chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
-                if not os.path.isdir(chunk_abs_path_dir):
-                    os.makedirs(chunk_abs_path_dir)
 
-                if not os.path.isfile(chunk_abs_path):
-                    product_chunk.Bucket().download_file(
-                        product_chunk.key,
-                        chunk_abs_path,
-                        ExtraArgs=getattr(s3_objects, "_params", {}),
-                        Callback=progress_callback,
-                    )
+                body = product_chunk.get()["Body"]
+                for b in body:
+                    progress_callback(len(b))
+                    yield b
+                separator = "\n" + "ENDOFFILE"
+                filename = "\n" + product_chunk.key.split("/")[-1]
+                yield filename.encode("UTF-8")
+                yield separator.encode("UTF-8")
 
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
-            logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+            # logger.warning("Skipping %s/%s" % (bucket_name, prefix))
         except ClientError as e:
             err = e.response["Error"]
             auth_messages = [
@@ -420,25 +581,6 @@ class AwsDownload(Download):
                     )
                 )
             logger.warning("Unexpected error: %s" % e)
-            logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-
-        # finalize safe product
-        if build_safe and "S2_MSI" in product.product_type:
-            self.finalize_s2_safe_product(product_local_path)
-        # flatten directory structure
-        elif flatten_top_dirs:
-            flatten_top_directories(product_local_path)
-
-        if build_safe:
-            self.check_manifest_file_list(product_local_path)
-
-        # save hash/record file
-        with open(record_filename, "w") as fh:
-            fh.write(product.remote_location)
-        logger.debug("Download recorded in %s", record_filename)
-
-        product.location = path_to_uri(product_local_path)
-        return product_local_path
 
     def get_rio_env(self, bucket_name, prefix, auth_dict):
         """Get rasterio environment variables needed for data access authentication.
