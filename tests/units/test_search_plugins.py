@@ -1230,6 +1230,24 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
+        self.search_plugin._add_product_type_metadata("CLMS_CORINE")
+        self.search_plugin._create_data_request(
+            "EO:CLMS:DAT:CORINE",
+            "CLMS_CORINE",
+            productType="EO:CLMS:DAT:CORINE",
+            startTimeFromAscendingNode="2000-01-01T00:00:00Z",
+            completionTimeFromAscendingNode="2000-01-01T00:00:00Z",
+        )
+        mock_requests_post.assert_called_with(
+            self.search_plugin.config.data_request_url,
+            json={
+                "datasetId": "EO:CLMS:DAT:CORINE",
+                "stringChoiceValues": [
+                    {"name": "productType", "value": "Corine Land Cover 2000"}
+                ],
+            },
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+        )
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_check_request_status(self, mock_requests_get):

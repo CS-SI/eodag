@@ -4048,15 +4048,16 @@
           - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {id#split_cop_dem_id}}}]}}'
           - '{$.productInfo.product#remove_extension}'
         defaultGeometry: '-180 -90 180 90'
-#    CLMS_CORINE:
-#      productType: EO:CLMS:DAT:CORINE
-#      metadata_mapping:
-#        startTimeFromAscendingNode:
-#          - '{{"stringChoiceValues": [{{"name": "productType", "value": {startTimeFromAscendingNode#get_corine_product_type({completionTimeFromAscendingNode})}}}]}}'
-#          - '$.productInfo.productStartDate'
-#        completionTimeFromAscendingNode:
-#          - '{{"stringChoiceValues": [{{"name": "productType", "value": {startTimeFromAscendingNode#get_corine_product_type({completionTimeFromAscendingNode})}}}]}}'
-#          - '$.productInfo.productEndDate'
+    CLMS_CORINE:
+      productType: EO:CLMS:DAT:CORINE
+      metadata_mapping:
+        # the given datetimes are used to determine the product type, i.e. from which year the data will be taken
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{startTimeFromAscendingNode#get_corine_product_type(completionTimeFromAscendingNode)}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{startTimeFromAscendingNode#get_corine_product_type(completionTimeFromAscendingNode)}"}}]}}'
+          - '$.productInfo.productEndDate'
 
   download: !plugin
     type: HTTPDownload
