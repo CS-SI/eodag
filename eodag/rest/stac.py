@@ -20,6 +20,7 @@ import logging
 import os
 import re
 from collections import defaultdict
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import dateutil.parser
 import geojson
@@ -218,9 +219,24 @@ class StacItem(StacCommon):
             product_item = jsonpath_parse_dict_items(
                 item_model, {"product": product.__dict__}
             )
+            # add origin assets to product assets
             origin_assets = product_item["assets"].pop("origin_assets")
             if getattr(product, "assets", False):
                 product_item["assets"] = dict(product_item["assets"], **origin_assets)
+            # append provider query-arg to download link if specified
+            if self.provider:
+                parts = urlparse(product_item["assets"]["downloadLink"]["href"])
+                query_dict = parse_qs(parts.query)
+                query_dict.update(provider=self.provider)
+                without_arg_url = (
+                    f"{parts.scheme}://{parts.netloc}{parts.path}"
+                    if parts.scheme
+                    else f"{parts.netloc}{parts.path}"
+                )
+                product_item["assets"]["downloadLink"][
+                    "href"
+                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
                 conv_func, conv_args = prop_val

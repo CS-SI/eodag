@@ -20,13 +20,16 @@ import logging
 import os
 import shutil
 import zipfile
+from datetime import datetime
+from itertools import chain
 from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
 import requests_ftp
 from lxml import etree
-from requests import HTTPError, RequestException
+from requests import RequestException
+from stream_zip import NO_COMPRESSION_64, stream_zip
 
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
@@ -384,12 +387,201 @@ class HTTPDownload(Download):
                     progress_callback,
                     **kwargs,
                 )
-                product.location = path_to_uri(fs_path)
+                # product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError:
                 pass
 
-        # order product if it is offline
+        url = product.remote_location
+
+        @self._download_retry(product, wait, timeout)
+        def download_request(product, auth, progress_callback, wait, timeout, **kwargs):
+            chunks = self._stream_download(
+                product, auth, progress_callback, wait, timeout, **kwargs
+            )
+
+            with open(fs_path, "wb") as fhandle:
+                for chunk in chunks:
+                    fhandle.write(chunk)
+
+        download_request(product, auth, progress_callback, wait, timeout, **kwargs)
+
+        with open(record_filename, "w") as fh:
+            fh.write(url)
+        logger.debug("Download recorded in %s", record_filename)
+
+        # Check that the downloaded file is really a zip file
+        outputs_extension = kwargs.get("outputs_extension", None) or getattr(
+            self.config, "outputs_extension", ".zip"
+        )
+        if not zipfile.is_zipfile(fs_path) and outputs_extension == ".zip":
+            logger.warning(
+                "Downloaded product is not a Zip File. Please check its file type before using it"
+            )
+            new_fs_path = fs_path[: fs_path.index(".zip")]
+            shutil.move(fs_path, new_fs_path)
+            product.location = path_to_uri(new_fs_path)
+            return new_fs_path
+        product_path = self._finalize(
+            fs_path, progress_callback=progress_callback, **kwargs
+        )
+        product.location = path_to_uri(product_path)
+        return product_path
+
+    def _check_stream_size(self, product):
+        stream_size = int(self.stream.headers.get("content-length", 0))
+        if (
+            stream_size == 0
+            and "storageStatus" in product.properties
+            and product.properties["storageStatus"] != ONLINE_STATUS
+        ):
+            raise NotAvailableError(
+                "%s(initially %s) ordered, got: %s"
+                % (
+                    product.properties["title"],
+                    product.properties["storageStatus"],
+                    self.stream.reason,
+                )
+            )
+        return stream_size
+
+    def _stream_download_dict(
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs,
+    ):
+        r"""
+        Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
+        It contains a generator to streamed download chunks and the response headers.
+
+        :param product: The EO product to download
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
+        :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
+        :rtype: dict
+        """
+        # download assets if exist instead of remote_location
+        if hasattr(product, "assets") and not getattr(
+            self.config, "ignore_assets", False
+        ):
+            try:
+                chunks_tuples = self._stream_download_assets(
+                    product, auth, progress_callback, **kwargs
+                )
+
+                outputs_filename = (
+                    sanitize(product.properties["title"])
+                    if "title" in product.properties
+                    else sanitize(product.properties.get("id", "download"))
+                )
+                return dict(
+                    content=stream_zip(chunks_tuples),
+                    media_type="application/zip",
+                    headers={
+                        "content-disposition": f"attachment; filename={outputs_filename}.zip",
+                    },
+                )
+            except NotAvailableError:
+                pass
+
+        chunks = self._stream_download(
+            product, auth, progress_callback, wait, timeout, **kwargs
+        )
+        # start reading chunks to set product.headers
+        first_chunk = next(chunks)
+
+        return dict(
+            content=chain(iter([first_chunk]), chunks),
+            headers=product.headers,
+        )
+
+    def _process_exception(self, e, product, ordered_message):
+        # check if error is identified as auth_error in provider conf
+        auth_errors = getattr(self.config, "auth_error_code", [None])
+        if not isinstance(auth_errors, list):
+            auth_errors = [auth_errors]
+        if e.response.status_code in auth_errors:
+            raise AuthenticationError(
+                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                % (
+                    e.response.status_code,
+                    e.response.text.strip(),
+                    self.provider,
+                )
+            )
+        # product not available
+        elif product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
+            msg = (
+                ordered_message
+                if ordered_message and not e.response.text.strip()
+                else e.response.text.strip()
+            )
+            raise NotAvailableError(
+                "%s(initially %s) requested, returned: %s"
+                % (
+                    product.properties["title"],
+                    product.properties["storageStatus"],
+                    msg,
+                )
+            )
+        else:
+            import traceback as tb
+
+            logger.error(
+                "Error while getting resource :\n%s\n%s",
+                tb.format_exc(),
+                e.response.text.strip(),
+            )
+
+    def _stream_download(
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs,
+    ):
+        """
+        fetches a zip file containing the assets of a given product as a stream
+        and returns a generator yielding the chunks of the file
+        :param product: product for which the assets should be downloaded
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param ordered_message: message to be used in case of error because
+                                the product is unavailable
+        :type ordered_message: str
+        :param kwargs: additional arguments
+        :type kwargs: dict
+        """
+        if progress_callback is None:
+            logger.info("Progress bar unavailable, please call product.download()")
+            progress_callback = ProgressCallback(disable=True)
+
         ordered_message = ""
         if (
             "orderLink" in product.properties
@@ -398,151 +590,169 @@ class HTTPDownload(Download):
         ):
             self.orderDownload(product=product, auth=auth)
 
+        if product.properties.get("orderStatusLink", None):
+            self.orderDownloadStatus(product=product, auth=auth)
+
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
+        )
+
+        req_method = (
+            product.properties.get("downloadMethod", "").lower()
+            or getattr(self.config, "method", "GET").lower()
+        )
         url = product.remote_location
+        if req_method == "post":
+            # separate url & parameters
+            parts = urlparse(url)
+            query_dict = parse_qs(parts.query)
+            if not query_dict and parts.query:
+                query_dict = geojson.loads(parts.query)
+            req_url = parts._replace(query=None).geturl()
+            req_kwargs = {"json": query_dict} if query_dict else {}
+        else:
+            req_url = url
+            req_kwargs = {}
 
-        @self._download_retry(product, wait, timeout)
-        def download_request(
-            product,
-            fs_path,
-            record_filename,
-            auth,
-            progress_callback,
-            ordered_message,
-            **kwargs,
-        ):
-            # check order status
-            if product.properties.get("orderStatusLink", None):
-                self.orderDownloadStatus(product=product, auth=auth)
+        # url where data is downloaded from can be ftp -> add ftp adapter
+        requests_ftp.monkeypatch_session()
+        s = requests.Session()
+        with s.request(
+            req_method,
+            req_url,
+            stream=True,
+            auth=auth,
+            params=params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            **req_kwargs,
+        ) as self.stream:
+            try:
+                self.stream.raise_for_status()
 
-            params = kwargs.pop("dl_url_params", None) or getattr(
-                self.config, "dl_url_params", {}
-            )
-
-            req_method = (
-                product.properties.get("downloadMethod", "").lower()
-                or getattr(self.config, "method", "GET").lower()
-            )
-
-            if req_method == "post":
-                # separate url & parameters
-                parts = urlparse(url)
-                query_dict = parse_qs(parts.query)
-                if not query_dict and parts.query:
-                    query_dict = geojson.loads(parts.query)
-                req_url = parts._replace(query=None).geturl()
-                req_kwargs = {"json": query_dict} if query_dict else {}
+            except RequestException as e:
+                self._process_exception(e, product, ordered_message)
             else:
-                req_url = url
-                req_kwargs = {}
-            # url where data is downloaded from can be ftp -> add ftp adapter
-            requests_ftp.monkeypatch_session()
-            s = requests.Session()
-            with s.request(
-                req_method,
-                req_url,
+                stream_size = self._check_stream_size(product)
+                product.headers = self.stream.headers
+                progress_callback.reset(total=stream_size)
+                logger.debug(f"stream_zip: {stream_size}")
+                for chunk in self.stream.iter_content(chunk_size=64 * 1024):
+                    if chunk:
+                        progress_callback(len(chunk))
+                        yield chunk
+
+    def _stream_download_assets(
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        **kwargs,
+    ):
+        if progress_callback is None:
+            logger.info("Progress bar unavailable, please call product.download()")
+            progress_callback = ProgressCallback(disable=True)
+
+        assets_urls = [
+            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
+        assets_values = [
+            a for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
+
+        if not assets_urls:
+            raise NotAvailableError("No assets available for %s" % product)
+
+        # get extra parameters to pass to the query
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
+        )
+
+        total_size = self._get_asset_sizes(assets_values, auth, params)
+
+        progress_callback.reset(total=total_size)
+
+        def get_chunks(stream):
+            for chunk in stream.iter_content(chunk_size=64 * 1024):
+                if chunk:
+                    progress_callback(len(chunk))
+                    yield chunk
+
+        # zipped files properties
+        modified_at = datetime.now()
+        perms = 0o600
+
+        # loop for assets paths and get common_subdir
+        asset_rel_paths_list = []
+        for asset in assets_values:
+            asset_rel_path_parts = urlparse(asset["href"]).path.strip("/").split("/")
+            asset_rel_path_parts_sanitized = [
+                sanitize(part) for part in asset_rel_path_parts
+            ]
+            asset["rel_path"] = os.path.join(*asset_rel_path_parts_sanitized)
+            asset_rel_paths_list.append(asset["rel_path"])
+        assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
+
+        # product conf overrides provider conf for "flatten_top_dirs"
+        product_conf = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        )
+        flatten_top_dirs = product_conf.get(
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+        )
+
+        # loop for assets download
+        for asset in assets_values:
+
+            if asset["href"].startswith("file:"):
+                logger.info(
+                    f"Local asset detected. Download skipped for {asset['href']}"
+                )
+                continue
+
+            with requests.get(
+                asset["href"],
                 stream=True,
                 auth=auth,
                 params=params,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                **req_kwargs,
-            ) as self.stream:
+            ) as stream:
                 try:
-                    self.stream.raise_for_status()
-
+                    stream.raise_for_status()
                 except RequestException as e:
-                    # check if error is identified as auth_error in provider conf
-                    auth_errors = getattr(self.config, "auth_error_code", [None])
-                    if not isinstance(auth_errors, list):
-                        auth_errors = [auth_errors]
-                    if e.response.status_code in auth_errors:
-                        raise AuthenticationError(
-                            "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                            % (
-                                e.response.status_code,
-                                e.response.text.strip(),
-                                self.provider,
-                            )
-                        )
-                    # product not available
-                    elif (
-                        product.properties.get("storageStatus", ONLINE_STATUS)
-                        != ONLINE_STATUS
-                    ):
-                        msg = (
-                            ordered_message
-                            if ordered_message and not e.response.text.strip()
-                            else e.response.text.strip()
-                        )
-                        raise NotAvailableError(
-                            "%s(initially %s) requested, returned: %s"
-                            % (
-                                product.properties["title"],
-                                product.properties["storageStatus"],
-                                msg,
-                            )
-                        )
-                    else:
-                        import traceback as tb
-
-                        logger.error(
-                            "Error while getting resource :\n%s\n%s",
-                            tb.format_exc(),
-                            e.response.text.strip(),
-                        )
+                    self._handle_asset_exception(e, asset)
                 else:
-                    stream_size = int(self.stream.headers.get("content-length", 0))
-                    if (
-                        stream_size == 0
-                        and "storageStatus" in product.properties
-                        and product.properties["storageStatus"] != ONLINE_STATUS
-                    ):
-                        raise NotAvailableError(
-                            "%s(initially %s) ordered, got: %s"
-                            % (
-                                product.properties["title"],
-                                product.properties["storageStatus"],
-                                self.stream.reason,
-                            )
-                        )
-                    progress_callback.reset(total=stream_size)
-                    with open(fs_path, "wb") as fhandle:
-                        for chunk in self.stream.iter_content(chunk_size=64 * 1024):
-                            if chunk:
-                                fhandle.write(chunk)
-                                progress_callback(len(chunk))
-
-                    with open(record_filename, "w") as fh:
-                        fh.write(url)
-                    logger.debug("Download recorded in %s", record_filename)
-
-                    # Check that the downloaded file is really a zip file
-                    outputs_extension = kwargs.get(
-                        "outputs_extension", None
-                    ) or getattr(self.config, "outputs_extension", ".zip")
-                    if not zipfile.is_zipfile(fs_path) and outputs_extension == ".zip":
-                        logger.warning(
-                            "Downloaded product is not a Zip File. Please check its file type before using it"
-                        )
-                        new_fs_path = fs_path[: fs_path.index(".zip")]
-                        shutil.move(fs_path, new_fs_path)
-                        product.location = path_to_uri(new_fs_path)
-                        return new_fs_path
-                    product_path = self._finalize(
-                        fs_path, progress_callback=progress_callback, **kwargs
+                    asset_rel_path = (
+                        asset["rel_path"]
+                        .replace(assets_common_subdir, "")
+                        .strip(os.sep)
+                        if flatten_top_dirs
+                        else asset["rel_path"]
                     )
-                    product.location = path_to_uri(product_path)
-                    return product_path
+                    asset_rel_dir = os.path.dirname(asset_rel_path)
 
-        return download_request(
-            product,
-            fs_path,
-            record_filename,
-            auth,
-            progress_callback,
-            ordered_message,
-            **kwargs,
-        )
+                    if not asset.get("filename", None):
+                        # try getting filename in GET header if was not found in HEAD result
+                        asset_content_disposition = stream.headers.get(
+                            "content-disposition", None
+                        )
+                        if asset_content_disposition:
+                            asset["filename"] = parse_header(
+                                asset_content_disposition
+                            ).get_param("filename", None)
+
+                    if not asset.get("filename", None):
+                        # default filename extracted from path
+                        asset["filename"] = os.path.basename(asset["rel_path"])
+
+                    yield (
+                        os.path.join(asset_rel_dir, asset["filename"]),
+                        modified_at,
+                        perms,
+                        NO_COMPRESSION_64,
+                        get_chunks(stream),
+                    )
 
     def _download_assets(
         self,
@@ -553,7 +763,7 @@ class HTTPDownload(Download):
         progress_callback=None,
         **kwargs,
     ):
-        """Download product assets if they exist"""
+        # """Download product assets if they exist"""
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
@@ -563,6 +773,10 @@ class HTTPDownload(Download):
 
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
+
+        chunks_tuples = self._stream_download_assets(
+            product, auth, progress_callback, **kwargs
+        )
 
         # remove existing incomplete file
         if os.path.isfile(fs_dir_path):
@@ -579,12 +793,77 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
         )
 
-        # get extra parameters to pass to the query
-        params = kwargs.pop("dl_url_params", None) or getattr(
-            self.config, "dl_url_params", {}
-        )
+        # count local assets
+        local_assets_count = 0
+        for asset in assets_values:
+            if asset["href"].startswith("file:"):
+                local_assets_count += 1
+                continue
 
+        for chunk_tuple in chunks_tuples:
+            asset_path = chunk_tuple[0]
+            asset_chunks = chunk_tuple[4]
+            asset_abs_path = os.path.join(fs_dir_path, asset_path)
+            # create asset subdir if not exist
+            asset_abs_path_dir = os.path.dirname(asset_abs_path)
+            if not os.path.isdir(asset_abs_path_dir):
+                os.makedirs(asset_abs_path_dir)
+            if not os.path.isfile(asset_abs_path):
+                with open(asset_abs_path, "wb") as fhandle:
+                    for chunk in asset_chunks:
+                        if chunk:
+                            fhandle.write(chunk)
+                            progress_callback(len(chunk))
+
+        # only one local asset
+        if local_assets_count == len(assets_urls) and local_assets_count == 1:
+            # remove empty {fs_dir_path}
+            shutil.rmtree(fs_dir_path)
+            # and return assets_urls[0] path
+            fs_dir_path = uri_to_path(assets_urls[0])
+        # several local assets
+        elif local_assets_count == len(assets_urls) and local_assets_count > 0:
+            common_path = os.path.commonpath([uri_to_path(uri) for uri in assets_urls])
+            # remove empty {fs_dir_path}
+            shutil.rmtree(fs_dir_path)
+            # and return assets_urls common path
+            fs_dir_path = common_path
+        # no assets downloaded but some should have been
+        elif len(os.listdir(fs_dir_path)) == 0:
+            raise NotAvailableError("No assets could be downloaded")
+
+        # flatten directory structure
+        if flatten_top_dirs:
+            flatten_top_directories(fs_dir_path)
+
+        # save hash/record file
+        with open(record_filename, "w") as fh:
+            fh.write(product.remote_location)
+        logger.debug("Download recorded in %s", record_filename)
+
+        return fs_dir_path
+
+    def _handle_asset_exception(self, e, asset):
+        # check if error is identified as auth_error in provider conf
+        auth_errors = getattr(self.config, "auth_error_code", [None])
+        if not isinstance(auth_errors, list):
+            auth_errors = [auth_errors]
+        if e.response.status_code in auth_errors:
+            raise AuthenticationError(
+                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                % (
+                    e.response.status_code,
+                    e.response.text.strip(),
+                    self.provider,
+                )
+            )
+        else:
+            logger.warning("Unexpected error: %s" % e)
+            logger.warning("Skipping %s" % asset["href"])
+
+    def _get_asset_sizes(self, assets_values, auth, params, zipped=False):
         total_size = 0
+
         # loop for assets size & filename
         for asset in assets_values:
             if not asset["href"].startswith("file:"):
@@ -635,22 +914,32 @@ class HTTPDownload(Download):
                             )
 
                 total_size += asset["size"]
+        return total_size
 
-        progress_callback.reset(total=total_size)
-        error_messages = set()
+    def _stream_assets(self, product, auth=None, progress_callback=None, **kwargs):
+        assets_values = [
+            a for a in getattr(product, "assets", {}).values() if "href" in a
+        ]
 
-        local_assets_count = 0
+        # get extra parameters to pass to the query
+        params = kwargs.pop("dl_url_params", None) or getattr(
+            self.config, "dl_url_params", {}
+        )
 
-        # loop for assets download
+        total_size = self._get_asset_sizes(assets_values, auth, params)
+        progress_callback.reset(total_size)
+
+        # zipped files properties
+        modified_at = datetime.now()
+        perms = 0o600
+
+        def get_chunks(stream):
+            for chunk in stream.iter_content(chunk_size=64 * 1024):
+                if chunk:
+                    progress_callback(len(chunk))
+                    yield chunk
+
         for asset in assets_values:
-
-            if asset["href"].startswith("file:"):
-                logger.info(
-                    f"Local asset detected. Download skipped for {asset['href']}"
-                )
-                local_assets_count += 1
-                continue
-
             with requests.get(
                 asset["href"],
                 stream=True,
@@ -662,32 +951,10 @@ class HTTPDownload(Download):
                 try:
                     stream.raise_for_status()
                 except RequestException as e:
-                    # check if error is identified as auth_error in provider conf
-                    auth_errors = getattr(self.config, "auth_error_code", [None])
-                    if not isinstance(auth_errors, list):
-                        auth_errors = [auth_errors]
-                    if e.response.status_code in auth_errors:
-                        raise AuthenticationError(
-                            "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                            % (
-                                e.response.status_code,
-                                e.response.text.strip(),
-                                self.provider,
-                            )
-                        )
-                    else:
-                        logger.warning("Unexpected error: %s" % e)
-                        logger.warning("Skipping %s" % asset["href"])
-                    error_messages.add(str(e))
+                    self._handle_asset_exception(e, asset)
                 else:
-                    asset_rel_path_parts = (
-                        urlparse(asset["href"]).path.strip("/").split("/")
-                    )
-                    asset_rel_path_parts_sanitized = [
-                        sanitize(part) for part in asset_rel_path_parts
-                    ]
-                    asset_rel_path = os.path.join(*asset_rel_path_parts_sanitized)
-                    asset_rel_dir = os.path.dirname(asset_rel_path)
+                    asset_rel_path = urlparse(asset["href"]).path.strip("/")
+                    # asset_rel_dir = os.path.dirname(asset_rel_path)
 
                     if not asset.get("filename", None):
                         # try getting filename in GET header if was not found in HEAD result
@@ -703,47 +970,13 @@ class HTTPDownload(Download):
                         # default filename extracted from path
                         asset["filename"] = os.path.basename(asset_rel_path)
 
-                    asset_abs_path = os.path.join(
-                        fs_dir_path, asset_rel_dir, asset["filename"]
+                    yield (
+                        asset["filename"],
+                        modified_at,
+                        perms,
+                        NO_COMPRESSION_64,
+                        get_chunks(stream),
                     )
-                    asset_abs_path_dir = os.path.dirname(asset_abs_path)
-                    if not os.path.isdir(asset_abs_path_dir):
-                        os.makedirs(asset_abs_path_dir)
-
-                    if not os.path.isfile(asset_abs_path):
-                        with open(asset_abs_path, "wb") as fhandle:
-                            for chunk in stream.iter_content(chunk_size=64 * 1024):
-                                if chunk:
-                                    fhandle.write(chunk)
-                                    progress_callback(len(chunk))
-
-        # only one local asset
-        if local_assets_count == len(assets_urls) and local_assets_count == 1:
-            # remove empty {fs_dir_path}
-            shutil.rmtree(fs_dir_path)
-            # and return assets_urls[0] path
-            fs_dir_path = uri_to_path(assets_urls[0])
-        # several local assets
-        elif local_assets_count == len(assets_urls) and local_assets_count > 0:
-            common_path = os.path.commonpath([uri_to_path(uri) for uri in assets_urls])
-            # remove empty {fs_dir_path}
-            shutil.rmtree(fs_dir_path)
-            # and return assets_urls common path
-            fs_dir_path = common_path
-        # no assets downloaded but some should have been
-        elif len(os.listdir(fs_dir_path)) == 0:
-            raise HTTPError(", ".join(error_messages))
-
-        # flatten directory structure
-        if flatten_top_dirs:
-            flatten_top_directories(fs_dir_path)
-
-        # save hash/record file
-        with open(record_filename, "w") as fh:
-            fh.write(product.remote_location)
-        logger.debug("Download recorded in %s", record_filename)
-
-        return fs_dir_path
 
     def download_all(
         self,

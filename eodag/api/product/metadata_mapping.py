@@ -625,10 +625,12 @@ def format_metadata(search_param, *args, **kwargs):
             r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
+
     while re.search(r"\([a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*", search_param):
         search_param = re.sub(
             r"(\([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)", r"\1_COLON_\2", search_param
         )
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 

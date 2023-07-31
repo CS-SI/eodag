@@ -3753,6 +3753,7 @@
     need_auth: true
     auth_error_code: 401
     results_entry: content
+    two_passes_id_search: true
     pagination:
       max_items_per_page: 20
       total_items_nb_key_path: '$.totItems'

@@ -120,6 +120,41 @@ class Download(PluginTopic):
             "A Download plugin must implement a method named download"
         )
 
+    def _stream_download_dict(
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs,
+    ):
+        r"""
+        Base _stream_download_dict method. Not available, it must be defined for each plugin.
+
+        :param product: The EO product to download
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param progress_callback: (optional) A progress callback
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param wait: (optional) If download fails, wait time in minutes between two download tries
+        :type wait: int
+        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
+                        to download
+        :type timeout: int
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :type kwargs: Union[str, bool, dict]
+        :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
+        :rtype: dict
+        """
+        raise NotImplementedError(
+            "Download streaming must be implemented using a method named _stream_download_dict"
+        )
+
     def _prepare_download(self, product, progress_callback=None, **kwargs):
         """Check if file has already been downloaded, and prepare product download
 

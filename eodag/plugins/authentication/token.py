@@ -75,7 +75,10 @@ class TokenAuth(Authentication):
                 )
             response.raise_for_status()
         except RequestException as e:
-            raise AuthenticationError(f"Could no get authentication token: {str(e)}")
+            response_text = getattr(e.response, "text", "").strip()
+            raise AuthenticationError(
+                f"Could no get authentication token: {str(e)}, {response_text}"
+            )
         else:
             if getattr(self.config, "token_type", "text") == "json":
                 token = response.json()[self.config.token_key]

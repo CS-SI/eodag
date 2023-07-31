@@ -12,7 +12,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
 
-logger = logging.getLogger("eodag.plugins.search.data_request_search")
+logger = logging.getLogger("eodag.search.data_request_search")
 
 
 class DataRequestSearch(Search):
@@ -87,6 +87,7 @@ class DataRequestSearch(Search):
         headers = getattr(self.auth, "headers", "")
         try:
             metadata_url = self.config.metadata_url + product_type
+            logger.debug(f"Sending metadata request: {metadata_url}")
             metadata = requests.get(metadata_url, headers=headers)
             metadata.raise_for_status()
         except requests.RequestException:
@@ -100,11 +101,17 @@ class DataRequestSearch(Search):
                 request_body = format_query_params(
                     eodag_product_type, self.config, **kwargs
                 )
+                logger.debug(
+                    f"Sending search job request to {url} with {str(request_body)}"
+                )
                 request_job = requests.post(url, json=request_body, headers=headers)
                 request_job.raise_for_status()
-            except requests.RequestException:
+            except requests.RequestException as e:
                 logger.error(
-                    "search job for product_type %s could not be created", product_type
+                    "search job for product_type %s could not be created: %s, %s",
+                    product_type,
+                    str(e),
+                    request_job.text,
                 )
             else:
                 logger.info("search job for product_type %s created", product_type)

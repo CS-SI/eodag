@@ -323,18 +323,9 @@ class EOProduct(object):
         if not self.location.startswith("file"):
             self.location = urllib.parse.unquote(self.location)
 
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = ProgressCallback(position=1)
-            # one shot progress callback to close after download
-            close_progress_callback = True
-        else:
-            close_progress_callback = False
-            # update units as bar may have been previously used for extraction
-            progress_callback.unit = "B"
-            progress_callback.unit_scale = True
-        progress_callback.desc = str(self.properties.get("id", ""))
-        progress_callback.refresh()
+        progress_callback, close_progress_callback = self._init_progress_bar(
+            progress_callback
+        )
 
         fs_path = self.downloader.download(
             self,
@@ -363,6 +354,21 @@ class EOProduct(object):
         )
 
         return fs_path
+
+    def _init_progress_bar(self, progress_callback):
+        # progress bar init
+        if progress_callback is None:
+            progress_callback = ProgressCallback(position=1)
+            # one shot progress callback to close after download
+            close_progress_callback = True
+        else:
+            close_progress_callback = False
+            # update units as bar may have been previously used for extraction
+            progress_callback.unit = "B"
+            progress_callback.unit_scale = True
+        progress_callback.desc = str(self.properties.get("id", ""))
+        progress_callback.refresh()
+        return [progress_callback, close_progress_callback]
 
     def get_quicklook(self, filename=None, base_dir=None, progress_callback=None):
         """Download the quicklook image of a given EOProduct from its provider if it

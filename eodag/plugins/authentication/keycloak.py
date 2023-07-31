@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 
 import requests
 
@@ -23,6 +24,8 @@ from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+
+logger = logging.getLogger("eodag.plugins.auth.keycloak")
 
 
 class KeycloakOIDCPasswordAuth(Authentication):
@@ -116,6 +119,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                     self.config.token_provision,
                     key=getattr(self.config, "token_qs_key", None),
                 )
+            response_text = getattr(e.response, "text", "").strip()
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
@@ -126,12 +130,15 @@ class KeycloakOIDCPasswordAuth(Authentication):
             ):
                 raise AuthenticationError(
                     "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                    % (e.response.status_code, e.response.text.strip(), self.provider)
+                    % (e.response.status_code, response_text, self.provider)
                 )
             # other error
             else:
                 import traceback as tb
 
+                logger.error(
+                    f"Provider {self.provider} returned {e.response.status_code}: {response_text}"
+                )
                 raise AuthenticationError(
                     "Something went wrong while trying to get access token:\n{}".format(
                         tb.format_exc()
