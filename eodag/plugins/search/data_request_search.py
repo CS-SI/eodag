@@ -113,6 +113,7 @@ class DataRequestSearch(Search):
                     str(e),
                     request_job.text,
                 )
+                raise
             else:
                 logger.info("search job for product_type %s created", product_type)
                 return request_job.json()["jobId"]
