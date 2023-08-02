@@ -1243,7 +1243,8 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             json={
                 "datasetId": "EO:CLMS:DAT:CORINE",
                 "stringChoiceValues": [
-                    {"name": "productType", "value": "Corine Land Cover 2000"}
+                    {"name": "format", "value": "GeoTiff100mt"},
+                    {"name": "product_type", "value": "Corine Land Cover 2000"},
                 ],
             },
             headers=getattr(self.search_plugin.auth, "headers", ""),
