@@ -387,6 +387,16 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
+    def test_convert_get_processing_level_from_s5p_id(self):
+        to_format = "{id#get_processing_level_from_s5p_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S5P_RPRO_L2__NP_BD7_20180531T223852_20180601T002220_03271_01_010002_20190528T184222",
+            ),
+            "L2",
+        )
+
     def test_convert_split_cop_dem_id(self):
         to_format = "{id#split_cop_dem_id}"
         self.assertEqual(

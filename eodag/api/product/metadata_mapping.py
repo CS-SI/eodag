@@ -568,6 +568,12 @@ def format_metadata(search_param, *args, **kwargs):
             return params
 
         @staticmethod
+        def convert_get_processing_level_from_s5p_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            processing_level = parts[2].replace("_", "")
+            return processing_level
+
+        @staticmethod
         def convert_split_cop_dem_id(product_id):
             parts = product_id.split("_")
             lattitude = parts[3]
