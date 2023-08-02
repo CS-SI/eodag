@@ -3795,12 +3795,15 @@
     headers:
       Authorization: Bearer $token
   products:
-    S2_MSI_L2A:
+    S2_MSI_L1C2A:
       productType: EO:ESA:DAT:SENTINEL-2:MSI
       metadata_mapping:
         id:
           - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s2_id}'
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1:SAR
       metadata_mapping:
