@@ -4046,6 +4046,9 @@
         id:
           - '{{"stringChoiceValues": [{{"name": "productType", "value": {id#split_id_into_s5p_params}["productType"]}}, {{"name": "processingMode", "value": {id#split_id_into_s5p_params}["processingMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s5p_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s5p_params}["startDate"], "end": {id#split_id_into_s5p_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}]}}'
+          - '{$.productInfo.product#split_id_into_s5p_params}["processingLevel"]'
     COP_DEM_GLO30:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
       metadata_mapping:
@@ -4058,12 +4061,27 @@
       metadata_mapping:
         # the given datetimes are used to determine the product type, i.e. from which year the data will be taken
         startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{startTimeFromAscendingNode#get_corine_product_type(completionTimeFromAscendingNode)}"}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "GeoTiff100mt"}}, {{"name": "product_type", "value": "{startTimeFromAscendingNode#get_corine_product_type(completionTimeFromAscendingNode)}"}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{startTimeFromAscendingNode#get_corine_product_type(completionTimeFromAscendingNode)}"}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "GeoTiff100mt"}}, {{"name": "product_type", "value": "{startTimeFromAscendingNode#get_corine_product_type(completionTimeFromAscendingNode)}"}}]}}'
           - '$.productInfo.productEndDate'
-
+        id:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "GeoTiff100mt"}}, {{"name": "product_type", "value": "{id#split_corine_id}"}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        defaultGeometry: '-180 -90 180 90'
+    SIS_HYDRO_METEO:
+      productType: EO:ECMWF:DAT:SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
+      metadata_mapping:
+        # the given datetimes are used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '{$.productInfo.product#remove_extension}'
+        defaultGeometry: '-180 -90 180 90'
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker

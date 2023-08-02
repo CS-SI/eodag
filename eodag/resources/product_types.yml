@@ -1769,6 +1769,39 @@ TIGGE_CF_SFC:
   title: TIGGE ECMWF Surface Control forecast
   missionStartDate: "2003-01-01T00:00:00Z"
 
+SIS_HYDRO_METEO:
+  abstract: |
+    This dataset provides precipitation and near surface air temperature for Europe as Essential Climate Variables (ECVs)
+    and as a set of Climate Impact Indicators (CIIs) based on the ECVs. ECV datasets provide the empirical evidence
+    needed to understand the current climate and predict future changes. CIIs contain condensed climate information
+    which facilitate relatively quick and efficient subsequent analysis. Therefore, CIIs make climate information
+    accessible to application focussed users within a sector. The ECVs and CIIs provided here were derived within the
+    water management sectoral information service to address questions specific to the water sector. However, the
+    products are provided in a generic form and are relevant for a range of sectors, for example agriculture and energy.
+    The data represent the current state-of-the-art in Europe for regional climate modelling and indicator production.
+    Data from eight model simulations included in the Coordinated Regional Climate Downscaling Experiment (CORDEX) were
+    used to calculate a total of two ECVs and five CIIs at a spatial resolution of 0.11° x 0.11° and 5km x 5km. The ECV
+    data meet the technical specification set by the Global Climate Observing System (GCOS), as such they are provided
+    on a daily time step. They are bias adjusted using the EFAS gridded observations as a reference dataset. Note these
+    are model output data, not observation data as is the general case for ECVs. The CIIs are provided as mean values
+    over a 30-year time period. For the reference period (1971-2000) data is provided as absolute values, for the future
+    periods the data is provided as absolute values and as the relative or absolute change from the reference period.
+    The future periods cover 3 fixed time periods (2011-2040, 2041-2070 and 2071-2100) and 3 "degree scenario" periods
+    defined by when global warming exceeds a given threshold (1.5 °C, 2.0 °C or 3.0 °C). The global warming is
+    calculated from the global climate model (GCM) used, therefore the actual time period of the degree scenarios will
+    be different for each GCM. This dataset is produced and quality assured by the Swedish Meteorological and
+    Hydrological Institute on behalf of the Copernicus Climate Change Service. Variables in the dataset/application
+    are: 2m air temperature, Highest 5-day precipitation amount, Longest dry spells, Number of dry spells, Precipitation
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,C3S,hydrology,meteorology,ECV,GCM,climate
+  sensorType:
+  license: proprietary
+  title: Temperature and precipitation climate impact indicators
+  missionStartDate: "1970-01-01T00:00:00Z"
+
 # COPERNICUS ADS ----------------------------------------------------------------------
 CAMS_GACF_AOT:
   abstract: |
