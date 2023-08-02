@@ -534,6 +534,12 @@ def format_metadata(search_param, *args, **kwargs):
             return params
 
         @staticmethod
+        def convert_get_processing_level_from_s2_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            processing_level = "S2" + parts[1]
+            return processing_level
+
+        @staticmethod
         def convert_split_id_into_s3_params(product_id):
             parts = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}

@@ -353,6 +353,16 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
+    def test_convert_get_processing_level_from_s2_id(self):
+        to_format = "{id#get_processing_level_from_s2_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S2A_MSIL1C_20160602T065342_N0202_R077_T39KVU_20160602T065342",
+            ),
+            "S2MSIL1C",
+        )
+
     def test_convert_split_id_into_s3_params(self):
         to_format = "{id#split_id_into_s3_params}"
         expected = {
