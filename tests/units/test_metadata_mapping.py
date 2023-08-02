@@ -454,3 +454,85 @@ class TestMetadataFormatter(unittest.TestCase):
             ),
             "Corine Land Cover 2018",
         )
+
+    def test_convert_split_corine_id(self):
+        self.assertEqual(
+            format_metadata(
+                "{id#split_corine_id}",
+                id="u2006_clc2000_v2020_20u1_raster100m",
+            ),
+            "Corine Land Cover 2000",
+        )
+        self.assertEqual(
+            format_metadata(
+                "{id#split_corine_id}",
+                id="u2006_cha0006_v2020_20u1_raster100m",
+            ),
+            "Corine Land Change 2000 2006",
+        )
+
+    def test_convert_get_ecmwf_sis_params(self):
+        result = format_metadata(
+            "{start_date#get_ecmwf_sis_params(2008-06-01T00:00:00Z)}",
+            start_date="2006-06-02T00:00:00Z",
+        )
+
+        expected_params = {
+            "stringChoiceValues": [
+                {"name": "product_type", "value": "essential_climate_variables"},
+                {"name": "processing_type", "value": "bias_corrected"},
+                {"name": "variable_type", "value": "absolute_values"},
+                {"name": "horizontal_resolution", "value": "5_km"},
+                {"name": "rcm", "value": "cclm4_8_17"},
+                {"name": "gcm", "value": "ec_earth"},
+                {"name": "format", "value": "zip"},
+            ],
+            "multiStringSelectValues": [
+                {"name": "variable", "value": ["2m_air_temperature", "precipitation"]},
+                {"name": "experiment", "value": ["rcp_2_6", "rcp_8_5", "rcp_4_5"]},
+                {"name": "period", "value": ["2006", "2007", "2008"]},
+                {"name": "time_aggregation", "value": ["daily"]},
+                {"name": "ensemble_member", "value": ["r12i1p1"]},
+            ],
+        }
+        expected_result = {
+            "multiStringSelectValues": expected_params["multiStringSelectValues"],
+            "stringChoiceValues": expected_params["stringChoiceValues"],
+        }
+        self.assertEqual(str(expected_result), result)
+        result = format_metadata(
+            "{start_date#get_ecmwf_sis_params(2040-06-01T00:00:00Z)}",
+            start_date="2011-06-02T00:00:00Z",
+        )
+        expected_params = {
+            "stringChoiceValues": [
+                {"name": "product_type", "value": "climate_impact_indicators"},
+                {"name": "processing_type", "value": "bias_corrected"},
+                {"name": "variable_type", "value": "absolute_values"},
+                {"name": "horizontal_resolution", "value": "5_km"},
+                {"name": "rcm", "value": "cclm4_8_17"},
+                {"name": "gcm", "value": "ec_earth"},
+                {"name": "format", "value": "zip"},
+            ],
+            "multiStringSelectValues": [
+                {
+                    "name": "variable",
+                    "value": [
+                        "2m_air_temperature",
+                        "highest_5_day_precipitation_amount",
+                        "longest_dry_spells",
+                        "number_of_dry_spells",
+                        "precipitation",
+                    ],
+                },
+                {"name": "experiment", "value": ["rcp_2_6", "rcp_8_5", "rcp_4_5"]},
+                {"name": "period", "value": ["2011_2040"]},
+                {"name": "time_aggregation", "value": ["annual_mean", "monthly_mean"]},
+                {"name": "ensemble_member", "value": ["r12i1p1", "r1i1p1", "r2i1p1"]},
+            ],
+        }
+        expected_result = {
+            "multiStringSelectValues": expected_params["multiStringSelectValues"],
+            "stringChoiceValues": expected_params["stringChoiceValues"],
+        }
+        self.assertEqual(str(expected_result), result)
