@@ -353,6 +353,26 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
+    def test_convert_get_processing_level_from_s1_id(self):
+        to_format = "{id#get_processing_level_from_s1_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
+            ),
+            "LEVEL1",
+        )
+
+    def test_convert_get_sensor_mode_from_s1_id(self):
+        to_format = "{id#get_sensor_mode_from_s1_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
+            ),
+            "IW",
+        )
+
     def test_convert_get_processing_level_from_s2_id(self):
         to_format = "{id#get_processing_level_from_s2_id}"
         self.assertEqual(
