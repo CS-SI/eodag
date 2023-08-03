@@ -3799,12 +3799,21 @@
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
+          - '$.extraInformation.cloudCover'
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1:SAR
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "productType", "value": {id#split_id_into_s1_params}["productType"]}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}, {{"name": "sensorMode", "value": {sensorMode}}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}, {{"name": "sensorMode", "value": {sensorMode}}}]}}'
+          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
     S1_SAR_SLC:
       productType: EO:ESA:DAT:EODC-SENTINEL-1:L1_SLC
       metadata_mapping:
@@ -3817,6 +3826,9 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "time", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": {sensorMode}}}]}}'
+          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
     S3_OLCI_L2LRR:
       productType: EO:ESA:DAT:SENTINEL-3:OL_2_LRR___
       metadata_mapping:
