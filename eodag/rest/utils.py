@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
 
 import eodag
+from eodag import EOProduct
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
@@ -595,15 +596,29 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
-    search_results = search_product_by_id(
-        item_id, product_type=catalogs[0], provider=provider
+    product_type = catalogs[0]
+    search_plugin = next(
+        eodag_api._plugins_manager.get_search_plugins(product_type, provider)
     )
-    if len(search_results) > 0:
-        product = search_results[0]
+    if search_plugin.config.products[product_type].get("storeDownloadUrl", False):
+        product_data = search_plugin.download_info[item_id]
+        properties = {
+            "orderLink": product_data["orderLink"],
+            "downloadLink": product_data["downloadLink"],
+            "geometry": "-180 -90 180 90",
+        }
+        product = EOProduct(provider, properties)
     else:
-        raise NotAvailableError(
-            f"Could not find {item_id} item in {catalogs[0]} collection for provider {provider}"
+        search_results = search_product_by_id(
+            item_id, product_type=product_type, provider=provider
         )
+        if len(search_results) > 0:
+            product = search_results[0]
+        else:
+            raise NotAvailableError(
+                f"Could not find {item_id} item in {product_type} collection for provider {provider}"
+            )
+
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
         auth_plugin = eodag_api._plugins_manager.get_auth_plugin(

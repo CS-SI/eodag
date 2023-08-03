@@ -22,6 +22,7 @@ import re
 import urllib.parse
 
 import requests
+import shapely.errors
 from requests import RequestException
 from shapely import geometry, wkb, wkt
 from shapely.errors import ShapelyError
