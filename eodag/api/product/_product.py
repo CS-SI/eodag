@@ -22,8 +22,9 @@ import re
 import urllib.parse
 
 import requests
+import shapely.errors
 from requests import RequestException
-from shapely import geometry, geos, wkb, wkt
+from shapely import geometry, wkb, wkt
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
@@ -127,12 +128,12 @@ class EOProduct(object):
         if isinstance(product_geometry, str):
             try:
                 product_geometry = wkt.loads(product_geometry)
-            except geos.WKTReadingError:
+            except shapely.errors.ShapelyError:
                 try:
                     product_geometry = wkb.loads(product_geometry)
                 # Also catching TypeError because product_geometry can be a
                 # string and not a bytes string
-                except (geos.WKBReadingError, TypeError):
+                except (shapely.errors.ShapelyError, TypeError):
                     # Giv up!
                     raise
         self.geometry = self.search_intersection = geometry.shape(product_geometry)
