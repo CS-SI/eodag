@@ -4097,6 +4097,7 @@
           - '$.productInfo.productEndDate'
         id: '{$.productInfo.product#remove_extension}'
         defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker

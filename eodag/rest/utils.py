@@ -16,6 +16,7 @@ from fastapi.responses import StreamingResponse
 from shapely.geometry import Polygon, shape
 
 import eodag
+from eodag import EOProduct
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
@@ -592,7 +593,20 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"
     if provider:
         eodag_api.set_preferred_provider(provider)
 
-    product = search_product_by_id(item_id, product_type=catalogs[0])[0]
+    product_type = catalogs[0]
+    search_plugin = next(
+        eodag_api._plugins_manager.get_search_plugins(product_type, provider)
+    )
+    if search_plugin.config.products[product_type].get("storeDownloadUrl", False):
+        product_data = search_plugin.download_info[item_id]
+        properties = {
+            "orderLink": product_data["orderLink"],
+            "downloadLink": product_data["downloadLink"],
+            "geometry": "-180 -90 180 90",
+        }
+        product = EOProduct(provider, properties)
+    else:
+        product = search_product_by_id(item_id, product_type=catalogs[0])[0]
 
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)

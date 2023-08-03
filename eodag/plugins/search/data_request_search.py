@@ -44,6 +44,7 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
+        self.download_info = {}
 
     def discover_product_types(self):
         """Fetch product types is disabled for `DataRequestSearch`
@@ -81,7 +82,9 @@ class DataRequestSearch(Search):
                 result, self.config.products[product_type]["custom_filters"]
             )
         kwargs["productType"] = product_type
-        return self._convert_result_data(result, data_request_id, **kwargs)
+        return self._convert_result_data(
+            result, data_request_id, product_type, **kwargs
+        )
 
     def _create_data_request(self, product_type, eodag_product_type, **kwargs):
         headers = getattr(self.auth, "headers", "")
@@ -151,7 +154,9 @@ class DataRequestSearch(Search):
         except requests.RequestException:
             logger.error("data from job %s could not be retrieved", data_request_id)
 
-    def _convert_result_data(self, result_data, data_request_id, **kwargs):
+    def _convert_result_data(
+        self, result_data, data_request_id, product_type, **kwargs
+    ):
         """Build EOProducts from provider results"""
         results_entry = self.config.results_entry
         results = result_data[results_entry]
@@ -188,6 +193,12 @@ class DataRequestSearch(Search):
             p.properties["orderLink"] = p.properties["orderLink"].replace(
                 "requestJobId", str(data_request_id)
             )
+            if self.config.products[product_type].get("storeDownloadUrl", False):
+                self.download_info[p.properties["id"]] = {
+                    "requestJobId": data_request_id,
+                    "orderLink": p.properties["orderLink"],
+                    "downloadLink": p.properties["downloadLink"],
+                }
         return products, total_items_nb
 
     def _check_uses_custom_filters(self, product_type):

@@ -200,9 +200,11 @@ hydroweb_next:
     download:
         outputs_prefix:
 wekeo:
-  priority: # Lower value means lower priority (Default: 0)
-  api:
-    outputs_prefix:
-    credentials:
-      username:
-      password:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+        outputs_prefix:
+        credentials:
+          username:
+          password:
+    download:
+        outputs_prefix:
