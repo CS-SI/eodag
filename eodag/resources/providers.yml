@@ -4138,6 +4138,21 @@
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '-180 -90 180 90'
       storeDownloadUrl: True
+    ERA5_LAND_MONTHLY:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker
