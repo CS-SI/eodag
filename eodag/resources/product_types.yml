@@ -1974,7 +1974,7 @@ ERA5_LAND:
     thermal radiation, Surface pressure, Surface runoff, Surface sensible heat flux, Surface solar radiation downwards,
     Surface thermal radiation downwards, Temperature of snow layer, Total evaporation, Total precipitation, Volumetric
     soil water layer 1, Volumetric soil water layer 2, Volumetric soil water layer 3, Volumetric soil water layer 4
-    platform: ERA5
+  platform: ERA5
   instrument:
   platformSerialIdentifier: ERA5
   processingLevel:
@@ -1982,6 +1982,41 @@ ERA5_LAND:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: ERA5-Land Hourly data
+  missionStartDate: "1950-01-01T00:00:00Z"
+
+ERA5_LAND_MONTHLY:
+  abstract: |
+    ERA5-Land is a reanalysis dataset providing a consistent view of the evolution of land variables over several
+    decades at an enhanced resolution compared to ERA5. ERA5-Land has been produced by replaying the land component of
+    the ECMWF ERA5 climate reanalysis. Reanalysis combines model data with observations from across the world into a
+    globally complete and consistent dataset using the laws of physics. Reanalysis produces data that goes several
+    decades back in time, providing an accurate description of the climate of the past. ERA5-Land provides a consistent
+    view of the water and energy cycles at surface level during several decades. It contains a detailed record from 1950
+    onwards, with a temporal resolution of 1 hour. The native spatial resolution of the ERA5-Land reanalysis dataset is
+    9km on a reduced Gaussian grid (TCo1279). The data in the CDS has been regridded to a regular lat-lon grid of
+    0.1x0.1 degrees. The data presented here is a post-processed subset of the full ERA5-Land dataset. Monthly-mean
+    averages have been pre-calculated to facilitate many applications requiring easy and fast access to the data, when
+    sub-monthly fields are not required. Hourly fields can be found in the ERA5-Land hourly fields CDS page.
+    Documentation can be found in the online ERA5-Land documentation. Variables in the dataset/application are:
+    10m u-component of wind, 10m v-component of wind, 2m dewpoint temperature, 2m temperature, Evaporation from bare
+    soil, Evaporation from open water surfaces excluding oceans, Evaporation from the top of canopy, Evaporation from
+    vegetation transpiration, Forecast albedo, Lake bottom temperature, Lake ice depth, Lake ice temperature, Lake
+    mix-layer depth, Lake mix-layer temperature, Lake shape factor, Lake total layer temperature, Leaf area index, high
+    vegetation, Leaf area index, low vegetation, Potential evaporation, Runoff, Skin reservoir content, Skin temperature,
+    Snow albedo, Snow cover, Snow density, Snow depth, Snow depth water equivalent, Snow evaporation, Snowfall, Snowmelt,
+    Soil temperature level 1, Soil temperature level 2, Soil temperature level 3, Soil temperature level 4, Sub-surface
+    runoff, Surface latent heat flux, Surface net solar radiation, Surface net thermal radiation, Surface pressure,
+    Surface runoff, Surface sensible heat flux, Surface solar radiation downwards, Surface thermal radiation downwards,
+    Temperature of snow layer, Total evaporation, Total precipitation, Volumetric soil water layer 1, Volumetric soil
+    water layer 2, Volumetric soil water layer 3, Volumetric soil water layer 4
+  platform: ERA5
+  instrument:
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,monthly,evolution
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: ERA5-Land Monthly data
   missionStartDate: "1950-01-01T00:00:00Z"
 
 # METEOBLUE --------------------------------------------------------------------------

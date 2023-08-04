@@ -731,3 +731,65 @@ class TestMetadataFormatter(unittest.TestCase):
             "stringChoiceValues": string_choices,
         }
         self.assertEqual(str(expected_result), result)
+
+    def test_convert_get_ecmwf_era5land_monthly_params(self):
+        result = format_metadata(
+            "{start_date#get_ecmwf_era5land_monthly_params}",
+            start_date="2006-06-02T01:10:00Z",
+        )
+        multi_strings = [
+            {"name": "time", "value": ["01:00"]},
+            {
+                "name": "product_type",
+                "value": ["monthly_averaged_reanalysis_by_hour_of_day"],
+            },
+            {
+                "name": "variable",
+                "value": [
+                    "snow_albedo",
+                    "snow_cover",
+                    "snow_density",
+                    "snow_depth",
+                    "snow_depth_water_equivalent",
+                    "snowfall",
+                    "snowmelt",
+                    "temperature_of_snow_layer",
+                    "skin_reservoir_content",
+                    "volumetric_soil_water_layer_1",
+                    "volumetric_soil_water_layer_2",
+                    "volumetric_soil_water_layer_3",
+                    "volumetric_soil_water_layer_4",
+                    "forecast_albedo",
+                    "surface_latent_heat_flux",
+                    "surface_net_solar_radiation",
+                    "surface_net_thermal_radiation",
+                    "surface_sensible_heat_flux",
+                    "surface_solar_radiation_downwards",
+                    "surface_thermal_radiation_downwards",
+                    "evaporation_from_bare_soil",
+                    "evaporation_from_open_water_surfaces_excluding_oceans",
+                    "evaporation_from_the_top_of_canopy",
+                    "evaporation_from_vegetation_transpiration",
+                    "potential_evaporation",
+                    "runoff",
+                    "snow_evaporation",
+                    "sub_surface_runoff",
+                    "surface_runoff",
+                    "total_evaporation",
+                    "10m_u_component_of_wind",
+                    "10m_v_component_of_wind",
+                    "surface_pressure",
+                    "total_precipitation",
+                    "leaf_area_index_high_vegetation",
+                    "leaf_area_index_low_vegetation",
+                ],
+            },
+            {"name": "year", "value": ["2006"]},
+            {"name": "month", "value": ["06"]},
+        ]
+        string_choices = [{"name": "format", "value": "grib"}]
+        expected_result = {
+            "multiStringSelectValues": multi_strings,
+            "stringChoiceValues": string_choices,
+        }
+        self.assertEqual(str(expected_result), result)

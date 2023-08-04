@@ -909,6 +909,72 @@ def format_metadata(search_param, *args, **kwargs):
                 "stringChoiceValues": string_choices,
             }
 
+        @staticmethod
+        def convert_get_ecmwf_era5land_monthly_params(start_date):
+            year = start_date[:4]
+            month = start_date[5:7]
+            hour = start_date[11:14] + "00"
+            hour_num = int(start_date[11:13])
+            if hour_num % 3 == 0:
+                product_type = [
+                    "monthly_averaged_reanalysis",
+                    "monthly_averaged_reanalysis_by_hour_of_day",
+                ]
+            else:
+                product_type = ["monthly_averaged_reanalysis_by_hour_of_day"]
+            multi_strings = [
+                {"name": "time", "value": [hour]},
+                {"name": "product_type", "value": product_type},
+                {
+                    "name": "variable",
+                    "value": [
+                        "snow_albedo",
+                        "snow_cover",
+                        "snow_density",
+                        "snow_depth",
+                        "snow_depth_water_equivalent",
+                        "snowfall",
+                        "snowmelt",
+                        "temperature_of_snow_layer",
+                        "skin_reservoir_content",
+                        "volumetric_soil_water_layer_1",
+                        "volumetric_soil_water_layer_2",
+                        "volumetric_soil_water_layer_3",
+                        "volumetric_soil_water_layer_4",
+                        "forecast_albedo",
+                        "surface_latent_heat_flux",
+                        "surface_net_solar_radiation",
+                        "surface_net_thermal_radiation",
+                        "surface_sensible_heat_flux",
+                        "surface_solar_radiation_downwards",
+                        "surface_thermal_radiation_downwards",
+                        "evaporation_from_bare_soil",
+                        "evaporation_from_open_water_surfaces_excluding_oceans",
+                        "evaporation_from_the_top_of_canopy",
+                        "evaporation_from_vegetation_transpiration",
+                        "potential_evaporation",
+                        "runoff",
+                        "snow_evaporation",
+                        "sub_surface_runoff",
+                        "surface_runoff",
+                        "total_evaporation",
+                        "10m_u_component_of_wind",
+                        "10m_v_component_of_wind",
+                        "surface_pressure",
+                        "total_precipitation",
+                        "leaf_area_index_high_vegetation",
+                        "leaf_area_index_low_vegetation",
+                    ],
+                },
+                {"name": "year", "value": [year]},
+                {"name": "month", "value": [month]},
+            ]
+            string_choices = [{"name": "format", "value": "grib"}]
+            return {
+                "multiStringSelectValues": multi_strings,
+                "stringChoiceValues": string_choices,
+            }
+
     for match in re.findall(r"\([A-Za-z]+\)", search_param):
         param = match.replace("(", "").replace(")", "")
         if param in kwargs:
