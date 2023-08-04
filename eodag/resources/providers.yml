@@ -3769,7 +3769,7 @@
         - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
         - '$.productInfo.productEndDate'
       geometry:
-        - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_nwse_bounds}}}]}}'
+        - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_bounds}}}]}}'
         - '$.extraInformation.footprint'
       cloudCover: '$.extraInformation.cloudCover'
       downloadLink: '$.url'
@@ -4095,8 +4095,53 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["multiStringSelectValues"]}}'
           - '$.productInfo.productEndDate'
-        id: '{$.productInfo.product#remove_extension}'
+        id: '$.productInfo.product'
         defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True # if this parameter is set to true the download information for a product id will be cached and retrieved at the download request instead of executing a search
+    ERA5_PL:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
+    ERA5_LAND:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
+    ERA5_SL:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
       storeDownloadUrl: True
   download: !plugin
     type: HTTPDownload

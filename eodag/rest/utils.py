@@ -27,6 +27,7 @@ from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.utils import _deprecated, dict_items_recursive_apply, string_to_jsonpath
 from eodag.utils.exceptions import (
+    IdNotFoundError,
     MisconfiguredError,
     NoMatchingProductType,
     UnsupportedProductType,
@@ -598,6 +599,12 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"
         eodag_api._plugins_manager.get_search_plugins(product_type, provider)
     )
     if search_plugin.config.products[product_type].get("storeDownloadUrl", False):
+        if item_id not in search_plugin.download_info:
+            logger.error(f"data for item {item_id} not found")
+            raise IdNotFoundError(
+                f"download url for product {item_id} could not be found, please redo "
+                f"the search request to fetch the required data"
+            )
         product_data = search_plugin.download_info[item_id]
         properties = {
             "orderLink": product_data["orderLink"],

@@ -194,6 +194,8 @@ class DataRequestSearch(Search):
                 "requestJobId", str(data_request_id)
             )
             if self.config.products[product_type].get("storeDownloadUrl", False):
+                # store download information to retrieve it later in case search by id
+                # is not possible
                 self.download_info[p.properties["id"]] = {
                     "requestJobId": data_request_id,
                     "orderLink": p.properties["orderLink"],
