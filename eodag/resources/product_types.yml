@@ -1898,6 +1898,92 @@ ERA5_SL:
   title: ERA5 Hourly data on Single Levels
   missionStartDate: "1959-01-01T00:00:00Z"
 
+ERA5_PL:
+  abstract: |
+    ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 4 to 7 decades.
+    Currently data is available from 1950, split into Climate Data Store entries for 1950-1978 (preliminary back
+    extension) and from 1979 onwards (final release plus timely updates, this page). ERA5 replaces the ERA-Interim
+    reanalysis. Reanalysis combines model data with observations from across the world into a globally complete and
+    consistent dataset using the laws of physics. This principle, called data assimilation, is based on the method used
+    by numerical weather prediction centres, where every so many hours (12 hours at ECMWF) a previous forecast is
+    combined with newly available observations in an optimal way to produce a new best estimate of the state of the
+    atmosphere, called analysis, from which an updated, improved forecast is issued. Reanalysis works in the same way,
+    but at reduced resolution to allow for the provision of a dataset spanning back several decades. Reanalysis does
+    not have the constraint of issuing timely forecasts, so there is more time to collect observations, and when going
+    further back in time, to allow for the ingestion of improved versions of the original observations, which all
+    benefit the quality of the reanalysis product. ERA5 provides hourly estimates for a large number of atmospheric,
+    ocean-wave and land-surface quantities. An uncertainty estimate is sampled by an underlying 10-member ensemble at
+    three-hourly intervals. Ensemble mean and spread have been pre-computed for convenience. Such uncertainty estimates
+    are closely related to the information content of the available observing system which has evolved considerably over
+    time. They also indicate flow-dependent sensitive areas. To facilitate many climate applications, monthly-mean
+    averages have been pre-calculated too, though monthly means are not available for the ensemble mean and spread.
+    ERA5 is updated daily with a latency of about 5 days. In case that serious flaws are detected in this early release
+    (called ERA5T), this data could be different from the final release 2 to 3 months later. So far this has not been
+    the case and when this does occur users will be notified. The data set presented here is a regridded subset of the
+    full ERA5 data set on native resolution. It is online on spinning disk, which should ensure fast and easy access.
+    It should satisfy the requirements for most common applications. An overview of all ERA5 datasets can be found in
+    this article. Information on access to ERA5 data on native resolution is provided in these guidelines. Data has been
+    regridded to a regular lat-lon grid of 0.25 degrees for the reanalysis and 0.5 degrees for the uncertainty estimate
+    (0.5 and 1 degree respectively for ocean waves). There are four main sub sets: hourly and monthly products, both on
+    pressure levels (upper air fields) and single levels (atmospheric, ocean-wave and land surface quantities). The
+    present entry is "ERA5 hourly data on pressure levels from 1979 to present". Variables in the dataset/application
+    are: Divergence, Fraction of cloud cover, Geopotential, Ozone mass mixing ratio, Potential vorticity, Relative
+    humidity, Specific cloud ice water content, Specific cloud liquid water content, Specific humidity, Specific rain
+    water content, Specific snow water content, Temperature, U-component of wind, V-component of wind, Vertical
+    velocity, Vorticity (relative)
+  instrument:
+  platform: ERA5
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,pressure,levels
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: ERA5 Hourly data on Pressure Levels
+  missionStartDate: "1959-01-01T00:00:00Z"
+
+ERA5_LAND:
+  abstract: |
+    ERA5-Land is a reanalysis dataset providing a consistent view of the evolution of land variables over several
+    decades at an enhanced resolution compared to ERA5. ERA5-Land has been produced by replaying the land component of
+    the ECMWF ERA5 climate reanalysis. Reanalysis combines model data with observations from across the world into a
+    globally complete and consistent dataset using the laws of physics. Reanalysis produces data that goes several
+    decades back in time, providing an accurate description of the climate of the past. ERA5-Land uses as input to
+    control the simulated land fields ERA5 atmospheric variables, such as air temperature and air humidity. This is
+    called the atmospheric forcing. Without the constraint of the atmospheric forcing, the model-based estimates can
+    rapidly deviate from reality. Therefore, while observations are not directly used in the production of ERA5-Land,
+    they have an indirect influence through the atmospheric forcing used to run the simulation. In addition, the input
+    air temperature, air humidity and pressure used to run ERA5-Land are corrected to account for the altitude difference
+    between the grid of the forcing and the higher resolution grid of ERA5-Land. This correction is called 'lapse rate
+    correction'. The ERA5-Land dataset, as any other simulation, provides estimates which have some degree of
+    uncertainty. Numerical models can only provide a more or less accurate representation of the real physical processes
+    governing different components of the Earth System. In general, the uncertainty of model estimates grows as we go
+    back in time, because the number of observations available to create a good quality atmospheric forcing is lower.
+    ERA5-land parameter fields can currently be used in combination with the uncertainty of the equivalent ERA5 fields.
+    The temporal and spatial resolutions of ERA5-Land makes this dataset very useful for all kind of land surface
+    applications such as flood or drought forecasting. The temporal and spatial resolution of this dataset, the period
+    covered in time, as well as the fixed grid used for the data distribution at any period enables decisions makers,
+    businesses and individuals to access and use more accurate information on land states. Variables in the
+    dataset/application are: 10m u-component of wind, 10m v-component of wind, 2m dewpoint temperature, 2m temperature,
+    Evaporation from bare soil, Evaporation from open water surfaces excluding oceans, Evaporation from the top of
+    canopy, Evaporation from vegetation transpiration, Forecast albedo, Lake bottom temperature, Lake ice depth, Lake
+    ice temperature, Lake mix-layer depth, Lake mix-layer temperature, Lake shape factor, Lake total layer temperature,
+    Leaf area index, high vegetation, Leaf area index, low vegetation, Potential evaporation, Runoff, Skin reservoir
+    content, Skin temperature, Snow albedo, Snow cover, Snow density, Snow depth, Snow depth water equivalent, Snow
+    evaporation, Snowfall, Snowmelt, Soil temperature level 1, Soil temperature level 2, Soil temperature level 3,
+    Soil temperature level 4, Sub-surface runoff, Surface latent heat flux, Surface net solar radiation, Surface net
+    thermal radiation, Surface pressure, Surface runoff, Surface sensible heat flux, Surface solar radiation downwards,
+    Surface thermal radiation downwards, Temperature of snow layer, Total evaporation, Total precipitation, Volumetric
+    soil water layer 1, Volumetric soil water layer 2, Volumetric soil water layer 3, Volumetric soil water layer 4
+    platform: ERA5
+  instrument:
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,hourly,evolution
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: ERA5-Land Hourly data
+  missionStartDate: "1950-01-01T00:00:00Z"
+
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
   abstract: |
