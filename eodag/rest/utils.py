@@ -31,6 +31,7 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
     ValidationError,
 )
+from urllib.error import HTTPError
 
 logger = logging.getLogger("eodag.rest.utils")
 
@@ -236,6 +237,9 @@ def get_geometry(arguments):
     if ("bbox" in arguments and arguments["bbox"] is not None) or (
         "box" in arguments and arguments["box"] is not None
     ):
+        if "intersects" in arguments and arguments["intersects"] is not None:
+            # bbox and intersects should not be present simultaneously
+            raise HTTPError("eodag", 400, "Bad Request", {}, None)
         # get bbox
         request_bbox = arguments.pop("bbox", None) or arguments.pop("box", None)
         if request_bbox and isinstance(request_bbox, str):
