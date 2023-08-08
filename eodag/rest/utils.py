@@ -229,57 +229,39 @@ def get_pagination_info(arguments):
     return page, items_per_page
 
 
-def get_geometry(arguments):
+def get_geometry(arguments: dict):
     """Get geometry from arguments"""
+    if arguments.get("intersects") and arguments.get("bbox"):
+        raise ValidationError("Only one of bbox and intersects can be used at a time.")
 
-    geom = None
-
-    if ("bbox" in arguments and arguments["bbox"] is not None) or (
-        "box" in arguments and arguments["box"] is not None
-    ):
-        # get bbox
-        request_bbox = arguments.pop("bbox", None) or arguments.pop("box", None)
-        if request_bbox and isinstance(request_bbox, str):
+    if arguments.get("bbox"):
+        request_bbox = arguments.pop("bbox")
+        if isinstance(request_bbox, str):
             request_bbox = request_bbox.split(",")
-        elif request_bbox and not isinstance(request_bbox, list):
+        elif not isinstance(request_bbox, list):
             raise ValidationError("bbox argument type should be Array")
 
         try:
-            request_bbox_list = [float(coord) for coord in request_bbox]
+            request_bbox = [float(coord) for coord in request_bbox]
         except ValueError as e:
-            raise ValidationError("invalid bbox coordinate type: %s" % e)
-        # lonmin, latmin, lonmax, latmax
-        if len(request_bbox_list) < 4:
-            raise ValidationError(
-                "invalid bbox length (%s) for bbox %s"
-                % (len(request_bbox_list), request_bbox)
-            )
-        geom = Polygon(
-            (
-                (request_bbox_list[0], request_bbox_list[1]),
-                (request_bbox_list[0], request_bbox_list[3]),
-                (request_bbox_list[2], request_bbox_list[3]),
-                (request_bbox_list[2], request_bbox_list[1]),
-            )
-        )
+            raise ValidationError(f"invalid bbox coordinate type: {e}")
 
-    if "intersects" in arguments and arguments["intersects"] is not None and geom:
-        new_geom = shape(arguments.pop("intersects"))
-        if new_geom.intersects(geom):
-            geom = new_geom.intersection(geom)
+        if len(request_bbox) == 4:
+            min_x, min_y, max_x, max_y = request_bbox
+        elif len(request_bbox) == 6:
+            min_x, min_y, _, max_x, max_y, _ = request_bbox
         else:
-            geom = new_geom
-    elif "intersects" in arguments and arguments["intersects"] is not None:
+            raise ValidationError(
+                f"invalid bbox length ({len(request_bbox)}) for bbox {request_bbox}"
+            )
+
+        geom = Polygon([(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)])
+
+    elif arguments.get("intersects"):
         geom = shape(arguments.pop("intersects"))
 
-    if "geom" in arguments and geom:
-        new_geom = shape(arguments.pop("geom"))
-        if new_geom.intersects(geom):
-            geom = new_geom.intersection(geom)
-        else:
-            geom = new_geom
-    elif "geom" in arguments:
-        geom = shape(arguments.pop("geom"))
+    else:
+        geom = None
 
     return geom
 
