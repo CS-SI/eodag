@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 from collections import UserList
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
@@ -34,15 +35,21 @@ if TYPE_CHECKING:
 
     from eodag.plugins.crunch.base import Crunch
 
+logger = logging.getLogger("eodag.search_result")
+
 
 class SearchResult(UserList):
     """An object representing a collection of :class:`~eodag.api.product._product.EOProduct` resulting from a search.
 
     :param products: A list of products resulting from a search
     :param number_matched: (optional) the estimated total number of matching results
-
     :cvar data: List of products
     :ivar number_matched: Estimated total number of matching results
+    :vartype number_matched: Optional[int]
+    :ivar search_kwargs: The search kwargs used by eodag to search for the product
+    :vartype search_kwargs: Any
+    :ivar crunchers: The list of crunchers used to filter these products
+    :vartype crunchers: list(tuple(subclass of :class:`~eodag.plugins.crunch.base.Crunch`, dict))
     """
 
     data: List[EOProduct]
@@ -52,6 +59,8 @@ class SearchResult(UserList):
     ) -> None:
         super(SearchResult, self).__init__(products)
         self.number_matched = number_matched
+        self.search_kwargs = None
+        self.crunchers = []
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -60,8 +69,25 @@ class SearchResult(UserList):
         :param search_params: The criteria that have been used to produce this result
         :returns: The result of the application of the crunching method to the EO products
         """
-        crunched_results = cruncher.proceed(self.data, **search_params)
-        return SearchResult(crunched_results)
+        for results_cruncher in self.crunchers:
+            if (
+                cruncher.__class__.__name__ == results_cruncher.__class__.__name__
+                and cruncher.config == results_cruncher.config
+            ):
+                logger.info(
+                    (
+                        f"The cruncher '{cruncher.__class__.__name__}' has already been used "
+                        "for these search results with the following parameter(s): "
+                        f"{cruncher.config}. Please change parameters or use an other cruncher"
+                    )
+                )
+                return self
+        crunched_results_list = cruncher.proceed(self.data, **search_params)
+        crunched_results = SearchResult(crunched_results_list)
+        crunched_results.search_kwargs = self.search_kwargs
+        self.crunchers.append(cruncher)
+        crunched_results.crunchers = self.crunchers
+        return crunched_results
 
     def filter_date(
         self, start: Optional[str] = None, end: Optional[str] = None
