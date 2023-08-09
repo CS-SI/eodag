@@ -108,6 +108,7 @@ class Api(PluginTopic):
     def download_all(
         self,
         products,
+        dag,
         auth=None,
         downloaded_callback=None,
         progress_callback=None,
@@ -120,6 +121,8 @@ class Api(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
+        :param dag: The gateway to download products
+        :type dag: :class:`~eodag.api.core.EODataAccessGateway`
         :param auth: (optional) The configuration of a plugin of type Authentication
         :type auth: :class:`~eodag.config.PluginConfig`
         :param downloaded_callback: (optional) A method or a callable object which takes
@@ -136,10 +139,10 @@ class Api(PluginTopic):
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
         :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
-                        and `dl_url_params` (dict) can be provided as additional kwargs
-                        and will override any other values defined in a configuration
-                        file or with environment variables.
+        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool),
+                        `dl_url_params` (dict) and `exhaust` (bool) can be provided as
+                        additional kwargs and will override any other values defined in a
+                        configuration file or with environment variables.
         :type kwargs: Union[str, bool, dict]
         :returns: List of absolute paths to the downloaded products in the local
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or

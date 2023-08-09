@@ -981,6 +981,7 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products,
+        dag,
         auth=None,
         downloaded_callback=None,
         progress_callback=None,
@@ -993,6 +994,7 @@ class HTTPDownload(Download):
         """
         return super(HTTPDownload, self).download_all(
             products,
+            dag,
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,

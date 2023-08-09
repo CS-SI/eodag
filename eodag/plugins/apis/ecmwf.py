@@ -218,6 +218,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     def download_all(
         self,
         products,
+        dag,
         auth=None,
         downloaded_callback=None,
         progress_callback=None,
@@ -230,6 +231,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         """
         return super(EcmwfApi, self).download_all(
             products,
+            dag,
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
