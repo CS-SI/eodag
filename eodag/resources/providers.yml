@@ -4080,6 +4080,106 @@
           - '{{"stringChoiceValues": [{{"name": "format", "value": "GeoTiff100mt"}}, {{"name": "product_type", "value": "{id#split_corine_id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
         defaultGeometry: '-180 -90 180 90'
+    CLMS_GLO_FCover_333M:
+      productType: EO:CLMS:DAT:CGLS_GLOBAL_FCOVER300_V1_333M
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    CLMS_GLO_NDVI_333M:
+      productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI300_V1_333M
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    CLMS_GLO_NDVI_1KM_LTS:
+      productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI_V2_1KM_LTS
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    CLMS_GLO_DMP_333M:
+      productType: EO:CLMS:DAT:CGLS_GLOBAL_DMP300_V1_333M
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    CLMS_GLO_GDMP_333M:
+      productType: EO:CLMS:DAT:CGLS_GLOBAL_GDMP300_V1_333M
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    CLMS_GLO_LAI_333M:
+      productType: EO:CLMS:DAT:CGLS_GLOBAL_LAI300_V1_333M
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    CLMS_GLO_FAPAR_333M:
+      productType: EO:CLMS:DAT:CGLS_GLOBAL_FAPAR300_V1_333M
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    EEA_DAILY_SWI_1KM:
+      productType: EO:EEA:DAT:VEGETATION:DAILY_SWI_1KM_EUROPE_V1
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    EEA_DAILY_SSM_1KM:
+      productType: EO:EEA:DAT:VEGETATION:DAILY_SSM_1KM_EUROPE_V1
+      metadata_mapping:
+        id: '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+
     SIS_HYDRO_METEO:
       productType: EO:ECMWF:DAT:SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
       metadata_mapping:

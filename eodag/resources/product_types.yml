@@ -2093,6 +2093,172 @@ CLMS_CORINE:
   title: CORINE Land Cover
   missionStartDate: "1986-01-01T00:00:00Z"
 
+CLMS_GLO_FCover_333M:
+  abstract:
+    The Fraction of Vegetation Cover (FCover) corresponds to the fraction of ground covered by green vegetation.
+    Practically, it quantifies the spatial extent of the vegetation. Because it is independent from the illumination
+    direction and it is sensitive to the vegetation amount, FCover is a very good candidate for the replacement of
+    classical vegetation indices for the monitoring of ecosystems. The product at 333m resolution is provided in
+    Near Real Time and consolidated in the next six periods.
+  instrument: OLCI,PROBA-V
+  platform: Sentinel-3
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Land,Fraction of vegetation cover,OLCI,PROBA-V,Sentinel-3
+  sensorType: OPTICAL
+  license: proprietary
+  title: Global 10-daily Fraction of Vegetation Cover 333m
+  missionStartDate: "2014-01-10T00:00:00Z"
+
+CLMS_GLO_NDVI_333M:
+  abstract:
+    The Normalized Difference Vegetation Index (NDVI) is a proxy to quantify the vegetation amount. It is defined
+    as NDVI=(NIR-Red)/(NIR+Red) where NIR corresponds to the reflectance in the near infrared band, and Red to the
+    reflectance in the red band. It is closely related to FAPAR and is little scale dependant.
+  instrument: PROBA-V
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Land,NDVI,PROBA-V
+  sensorType: OPTICAL
+  license: proprietary
+  title: Global 10-daily Normalized Difference Vegetation Index 333M
+  missionStartDate: "2014-01-01T00:00:00Z"
+
+CLMS_GLO_NDVI_1KM_LTS:
+  abstract:
+    The Normalized Difference Vegetation Index (NDVI) is a proxy to quantify the vegetation amount. It is defined
+    as NDVI=(NIR-Red)/(NIR+Red) where NIR corresponds to the reflectance in the near infrared band, and Red to the
+    reflectance in the red band. The time series of dekadal (10-daily) NDVI 1km version 2 observations over the
+    period 1999-2017 is used to calculate Long Term Statistics (LTS) for each of the 36 10-daily periods (dekads)
+    of the year. The calculated LTS include the minimum, median, maximum, average, standard deviation and the number
+    of observations in the covered time series period. These LTS can be used as a reference for actual NDVI observations,
+    which allows evaluating whether vegetation conditions deviate from a `normal’ situation.
+  instrument: VEGETATION,PROBA-V
+  platform: SPOT
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Land,NDVI,LTS,SPOT,VEGETATION,PROBA-V
+  sensorType: OPTICAL
+  license: proprietary
+  title: "Normalized Difference Vegetation Index: global Long Term Statistics (raster 1km) - version 2, Apr 2019"
+  missionStartDate: "1999-01-01T00:00:00Z"
+
+CLMS_GLO_DMP_333M:
+  abstract:
+    Dry matter Productivity (DMP) is an indication of the overall growth rate or dry biomass increase of the vegetation
+    and is directly related to ecosystem Net Primary Productivity (NPP), however its units (kilograms of gross dry
+    matter per hectare per day) are customized for agro-statistical purposes. Compared to the Gross DMP (GDMP), or its
+    equivalent Gross Primary Productivity, the main difference lies in the inclusion of the autotrophic respiration.
+    Like the FAPAR products that are used as input for the GDMP estimation, these GDMP products are provided in Near
+    Real Time, with consolidations in the next periods, or as offline product.
+  instrument: OLCI,PROBA-V
+  platform: Sentinel-3
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Land,Dry matter productivity,DMP,OLCI,PROBA-V,Sentinel-3
+  sensorType: OPTICAL
+  license: proprietary
+  title: 10-daily Dry Matter Productivity 333M
+  missionStartDate: "2014-01-10T00:00:00Z"
+
+CLMS_GLO_GDMP_333M:
+  abstract:
+    Gross dry matter Productivity (GDMP) is an indication of the overall growth rate or dry biomass increase of the
+    vegetation and is directly related to ecosystem Gross Primary Productivity (GPP), that reflects the ecosystem's
+    overall production of organic compounds from atmospheric carbon dioxide, however its units (kilograms of gross dry
+    matter per hectare per day) are customized for agro-statistical purposes. Like the FAPAR products that are used as
+    input for the GDMP estimation, these GDMP products are provided in Near Real Time, with consolidations in the next
+    periods, or as offline product.
+  instrument: OLCI,PROBA-V
+  platform: Sentinel-3
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Land,Gross dry matter productivity,GDMP,GPP,OLCI,PROBA-V,Sentinel-3
+  sensorType: OPTICAL
+  license: proprietary
+  title: 10-daily Gross Dry Matter Productivity 333M
+  missionStartDate: "2014-01-10T00:00:00Z"
+
+CLMS_GLO_LAI_333M:
+  abstract:
+    LAI was defined by CEOS as half the developed area of the convex hull wrapping the green canopy elements per unit
+    horizontal ground. This definition allows accounting for elements which are not flat such as needles or stems.
+    LAI is strongly non linearly related to reflectance. Therefore, its estimation from remote sensing observations
+    will be scale dependant over heterogeneous landscapes. When observing a canopy made of different layers of vegetation,
+    it is therefore mandatory to consider all the green layers. This is particularly important for forest canopies where
+    the understory may represent a very significant contribution to the total canopy LAI. The derived LAI corresponds
+    therefore to the total green LAI, including the contribution of the green elements of the understory. The product at
+    333m resolution is provided in Near Real Time and consolidated in the next six periods.
+  instrument: OLCI,PROBA-V
+  platform: Sentinel-3
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Land,Leaf area index,LAI,OLCI,PROBA-V,Sentinel-3
+  sensorType: OPTICAL
+  license: proprietary
+  title: Global 10-daily Leaf Area Index 333m
+  missionStartDate: "2014-01-10T00:00:00Z"
+
+CLMS_GLO_FAPAR_333M:
+  abstract:
+    The FAPAR quantifies the fraction of the solar radiation absorbed by plants for photosynthesis. It refers only to
+    the green and living elements of the canopy. The FAPAR depends on the canopy structure, vegetation element optical
+    properties, atmospheric conditions and angular configuration. To overcome this latter dependency, a daily integrated
+    FAPAR value is assessed. FAPAR is very useful as input to a number of primary productivity models and is recognized
+    as an Essential Climate Variable (ECV) by the Global Climate Observing System (GCOS). The product at 333m resolution
+    is provided in Near Real Time and consolidated in the next six periods.
+  instrument: OLCI,PROBA-V
+  platform: Sentinel-3
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Land,Fraction of absorbed PAR,FAPAR,OLCI,PROBA-V,Sentinel-3
+  sensorType: OPTICAL
+  license: proprietary
+  title: Global 10-daily Fraction of Absorbed PAR 333m
+  missionStartDate: "2014-01-10T00:00:00Z"
+
+EEA_DAILY_SWI_1KM:
+  abstract:
+    The Soil Water Index (SWI) quantifies the moisture condition at various depths in the soil. It is mainly driven by
+    the precipitation via the process of infiltration. Soil moisture is a very heterogeneous variable and varies on
+    small scales with soil properties and drainage patterns. Satellite measurements integrate over relative large-scale
+    areas, with the presence of vegetation adding complexity to the interpretation. Soil moisture is a key parameter in
+    numerous environmental studies including hydrology, meteorology and agriculture, and is recognized as an Essential
+    Climate Variable (ECV) by the Global Climate Observing System (GCOS). The SWI product provides daily information about
+    moisture conditions in different soil layers. It includes a quality flag (QFLAG) indicating the availability of SSM
+    measurements for SWI calculations, and a Surface State Flag (SSF) indicating frozen or snow covered soils.
+  instrument: C-SAR,Metop ASCAT
+  platform: Sentinel-1
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: SWI,QFLAG,SSF,C-SAR,Metop ASCAT,Sentinel-1
+  sensorType: RADAR
+  license: proprietary
+  title: "Soil Water Index: continental Europe daily (raster 1km) - version 1, Apr 2019"
+  missionStartDate: "2015-01-01T00:00:00Z"
+
+EEA_DAILY_SSM_1KM:
+  abstract:
+    Surface Soil Moisture (SSM) is the relative water content of the top few centimetres soil, describing how wet or
+    dry the soil is in its topmost layer, expressed in percent saturation. It is measured by satellite radar sensors and
+    allows insights in local precipitation impacts and soil conditions. SSM is a key driver of water and heat fluxes
+    between the ground and the atmosphere, regulating air temperature and humidity. Moreover, in its role as water supply,
+    it is vital to vegetation health. Vice versa, SSM is very sensitive to external forcing in the form of precipitation,
+    temperature, solar irradiation, humidity, and wind. SSM is thus both an integrator of climatic conditions and a driver
+    of local weather and climate, and plays a major role in global water-, energy- and carbon- cycles. Knowledge on the
+    dynamics of soil moisture is important in the understanding of processes in many environmental and socio-economic fields,
+    e.g., its impact on vegetation vitality, crop yield, droughts or exposure to flood threats.
+  instrument: C-SAR,Metop ASCAT
+  platform: Sentinel-1
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: SSM,C-SAR,Metop ASCAT,Sentinel-1
+  sensorType: RADAR
+  license: proprietary
+  title: "Surface Soil Moisture: continental Europe daily (raster 1km) - version 1, Apr 2019"
+  missionStartDate: "2015-01-01T00:00:00Z"
+
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:
