@@ -4085,6 +4085,71 @@
           - '{{"stringChoiceValues": [{{"name": "format", "value": "GeoTiff100mt"}}, {{"name": "product_type", "value": "{id#split_corine_id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
         defaultGeometry: '-180 -90 180 90'
+    EFAS_REFORECAST:
+      productType: EO:ECMWF:DAT:EFAS_REFORECAST
+      metadata_mapping:
+        # the given datetimes are used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_efas_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_efas_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_efas_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_efas_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    EFAS_SEASONAL_REFORECAST:
+      productType: EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST
+      metadata_mapping:
+        # the given datetimes are used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_efas_seasonal_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_efas_seasonal_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_efas_seasonal_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_efas_seasonal_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    FIRE_HISTORICAL:
+      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL
+      metadata_mapping:
+        # the given datetimes are used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_fire_historical_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_fire_historical_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_fire_historical_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_fire_historical_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    GLOFAS_REFORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST
+      metadata_mapping:
+        # the given datetimes are used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_glofas_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_glofas_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_glofas_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_glofas_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    GLOFAS_SEASONAL_REFORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST
+      metadata_mapping:
+        # the given datetimes are used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_glofas_seasonal_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_glofas_seasonal_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_glofas_seasonal_reforecast_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_glofas_seasonal_reforecast_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
     SIS_HYDRO_METEO:
       productType: EO:ECMWF:DAT:SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
       metadata_mapping:
@@ -4107,6 +4172,21 @@
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
+    ERA5_PL_MONTHLY:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_monthly_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_monthly_params}["multiStringSelectValues"]}}'
           - '$.productInfo.productEndDate'
         id: '$.productInfo.product'
         geometry:
@@ -4143,6 +4223,21 @@
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '-180 -90 180 90'
       storeDownloadUrl: True
+    ERA5_SL_MONTHLY:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_monthly_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_monthly_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
     ERA5_LAND_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
       metadata_mapping:
@@ -4152,6 +4247,51 @@
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
+    GLACIERS_ELEVATION_AND_MASS_CHANGE:
+      productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_glaciers_em_change_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_glaciers_em_change_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_glaciers_em_change_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_glaciers_em_change_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
+    SEA_LEVEL_BLACK_SEA:
+      productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_sea_level_black_sea_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_sea_level_black_sea_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_sea_level_black_sea_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_sea_level_black_sea_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productEndDate'
+        id: '$.productInfo.product'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '-180 -90 180 90'
+      storeDownloadUrl: True
+    UERRA_EUROPE_SL:
+      productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+      metadata_mapping:
+        # the given start time is used to determine the other filter params
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_uerra_europe_sl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_uerra_europe_sl_params}["multiStringSelectValues"]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_uerra_europe_sl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_uerra_europe_sl_params}["multiStringSelectValues"]}}'
           - '$.productInfo.productEndDate'
         id: '$.productInfo.product'
         geometry:

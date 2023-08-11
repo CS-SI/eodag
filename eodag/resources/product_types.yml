@@ -1825,6 +1825,152 @@ SIS_HYDRO_METEO:
   title: Temperature and precipitation climate impact indicators
   missionStartDate: "1970-01-01T00:00:00Z"
 
+EFAS_REFORECAST:
+  abstract: |
+    This dataset provides gridded modelled hydrological time series forced with medium- to sub-seasonal range 
+    meteorological reforecasts. The data is a consistent representation of the most important hydrological 
+    variables across the European Flood Awareness System (EFAS) domain. The temporal resolution is 20 years 
+    of sub-daily reforecasts initialised twice weekly (Mondays and Thursdays) of: River discharge Soil moisture 
+    for three soil layers Snow water equivalent It also provides static data on soil depth for the three soil layers. 
+    Soil moisture and river discharge data are accompanied by ancillary files for interpretation (see related 
+    variables and links in the documentation). This dataset was produced by forcing the LISFLOOD hydrological model 
+    at a 5x5km resolution with ensemble meteorological reforecasts from the European Centre of Medium-range Weather 
+    Forecasts (ECMWF). 
+    Reforecasts are forecasts run over past dates and are typically used to assess the skill of a forecast system 
+    or to develop tools for statistical error correction of the forecasts. The reforecasts are initialised twice 
+    weekly with lead times up to 46 days, at 6-hourly time steps for 20 years. For more specific information on the 
+    how the reforecast dataset is produced we refer to the documentation. Companion datasets, also available through 
+    the Climate Data Store (CDS), are the operational forecasts, historical simulations which can be used to derive the 
+    hydrological climatology, and seasonal forecasts and reforecasts for users looking for long term forecasts. 
+    For users looking for global hydrological data, we refer to the Global Flood Awareness System (GloFAS) forecasts 
+    and historical simulations. All these datasets are part of the operational flood forecasting within the Copernicus 
+    Emergency Management Service (CEMS). Variables in the dataset/application are: River discharge, Snow depth water 
+    equivalent, Soil depth, Volumetric soil moisture Variables in the dataset/application are: Orography, Upstream area
+  instrument:
+  platform: EFAS
+  platformSerialIdentifier: EFAS
+  processingLevel:
+  keywords: ECMWF,CDS,EFAS,GloFAS,ECV,GCM,european,flood,awareness,system
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Reforecasts of river discharge and related data by the Global Flood Awareness System
+  missionStartDate: "1999-01-03T00:00:00Z"
+
+EFAS_SEASONAL_REFORECAST:
+  abstract: |
+    This dataset provides modelled daily hydrological time series forced with seasonal meteorological reforecasts. 
+    The dataset is a consistent representation of the most important hydrological variables across the European Flood 
+    Awareness (EFAS) domain. The temporal resolution is daily forecasts initialised once a month over the reforecast 
+    period 1991-2020 of: River discharge Soil moisture for three soil layers Snow water equivalent It also provides 
+    static data on soil depth for the three soil layers. Soil moisture and river discharge data are accompanied by 
+    ancillary files for interpretation (see related variables and links in the documentation). This dataset was produced 
+    by forcing the LISFLOOD hydrological model at a 5x5km gridded resolution with seasonal meteorological ensemble reforecasts. 
+    Reforecasts are forecasts run over past dates and are typically used to assess the skill of a forecast system or to 
+    develop tools for statistical error correction of the forecasts. The reforecasts are initialised on the first of each 
+    month with a lead time of 215 days at 24-hour time steps. The forcing meteorological data are seasonal reforecasts from 
+    the European Centre of Medium-range Weather Forecasts (ECMWF), consisting of 25 ensemble members up until December 2016, 
+    and after that 51 members. Hydrometeorological reforecasts are available from 1991-01-01 up until 2020-10-01. Companion 
+    datasets, also available through the Climate Data Store (CDS), are seasonal forecasts, for which the seasonal reforecasts 
+    can be useful for local skill assessment and post-processing of the seasonal forecasts. For users looking for shorter time
+    ranges there are medium-range forecasts and reforecasts, as well as historical simulations which can be used to derive the 
+    hydrological climatology. For users looking for global hydrological data, we refer to the Global Flood Awareness System 
+    (GloFAS) forecasts and historical simulations. All these datasets are part of the operational flood forecasting within 
+    the Copernicus Emergency Management Service (CEMS). Variables in the dataset/application are: River discharge in the 
+    last 24 hours, Snow depth water equivalent, Soil depth, Volumetric soil moisture Variables in the 
+    dataset/application are: Orography, Upstream area
+  instrument:
+  platform: EFAS
+  platformSerialIdentifier: EFAS
+  processingLevel:
+  keywords: ECMWF,reforecast,seasonal,CDS,EFAS,GloFAS,european,flood,awareness,system
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Seasonal reforecasts of river discharge and related data by the European Flood Awareness System
+  missionStartDate: "1999-01-03T00:00:00Z"
+
+FIRE_HISTORICAL:
+  abstract: |
+    This data set provides complete historical reconstruction of meteorological conditions favourable to the start, 
+    spread and sustainability of fires. The fire danger metrics provided are part of a vast dataset produced by the 
+    Copernicus Emergency Management Service for the European Forest Fire Information System (EFFIS). The European 
+    Forest Fire Information System incorporates the fire danger indices for three different models developed in Canada, 
+    United States and Australia. In this dataset the fire danger indices are calculated using weather forecast from 
+    historical simulations provided by ECMWF ERA5 reanalysis. ERA5 by combining model data and a vast set of quality 
+    controlled observations provides a globally complete and consistent data-set and is regarded as a good proxy for 
+    observed atmospheric conditions. The selected data records in this data set are regularly extended with time as 
+    ERA5 forcing data become available. This dataset is produced by ECMWF in its role of the computational centre for 
+    fire danger forecast of the CEMS, on behalf of the Joint Research Centre which is the managing entity of the service. 
+    Variables in the dataset/application are: Build-up index, Burning index, Danger rating, Drought code, Duff moisture 
+    code, Energy release component, Fine fuel moisture code, Fire daily severity index, Fire danger index, Fire weather 
+    index, Ignition component, Initial spread index, Keetch-Byram drought index, Spread component
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel:
+  keywords: ECMWF,EFFIS,fire,historical,ERA5,european,sustainability,CEMS,system
+  sensorType:
+  license: proprietary
+  title: Fire danger indices historical data from the Copernicus Emergency Management Service
+  missionStartDate: "1979-01-01T00:00:00Z"
+
+GLOFAS_REFORECAST:
+  abstract: |
+    This dataset provides a gridded modelled time series of river discharge, forced with 
+    medium- to sub-seasonal range meteorological reforecasts. The data is a consistent representation 
+    of a key hydrological variable across the global domain, and is a product of the Global Flood Awareness 
+    System (GloFAS). It is accompanied by an ancillary file for interpretation that provides the upstream 
+    area (see the related variables table and associated link in the documentation). This dataset was 
+    produced by forcing a hydrological modelling chain with input from the European Centre for Medium-range 
+    Weather Forecasts (ECMWF) 11-member ensemble ECMWF-ENS reforecasts. Reforecasts are forecasts run over 
+    past dates, and those presented here are used for providing a suitably long time period against which the 
+    skill of the 30-day real-time operational forecast can be assessed. The reforecasts are initialised twice 
+    weekly with lead times up to 46 days, at 24-hour steps for 20 years in the recent history. For more specific 
+    information on the how the reforecast dataset is produced we refer to the documentation. Companion datasets, 
+    also available through the Climate Data Store (CDS), are the operational forecasts, historical simulations that 
+    can be used to derive the hydrological climatology, and seasonal forecasts and reforecasts for users looking for 
+    long term forecasts. For users looking specifically for European hydrological data, we refer to the European Flood 
+    Awareness System (EFAS) forecasts and historical simulations. All these datasets are part of the operational flood 
+    forecasting within the Copernicus Emergency Management Service (CEMS). Variables in the dataset/application are: 
+    River discharge in the last 24 hours Variables in the dataset/application are: Upstream area
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel:
+  keywords: ECMWF,CDS,GloFAS,EFAS,CEMS,river,discharge,meteorological,forecast,global,flood,awareness,system
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Reforecasts of river discharge and related data by the European Flood Awareness System
+  missionStartDate: "1999-01-01T00:00:00Z"
+
+GLOFAS_SEASONAL_REFORECAST:
+  abstract: |
+    This dataset provides a gridded modelled time series of river discharge forced with seasonal range meteorological reforecasts. 
+    The data is a consistent representation of a key hydrological variable across the global domain, and is a product of the 
+    Global Flood Awareness System (GloFAS). It is accompanied by an ancillary file for interpretation that provides the upstream 
+    area (see the related variables table and associated link in the documentation). This dataset was produced by forcing a 
+    hydrological modelling chain with input from the European Centre for Medium-range Weather Forecasts (ECMWF) ensemble seasonal 
+    forecasting system, SEAS5. For the period of 1981 to 2016 the number of ensemble members is 25, whilst reforecasts produced 
+    for 2017 onwards use a 51-member ensemble. Reforecasts are forecasts run over past dates, with those presented here used for 
+    producing the seasonal river discharge thresholds. In addition, they provide a suitably long time period against which the
+    skill of the seasonal forecast can be assessed. The reforecasts are initialised monthly and run for 123 days, with a 
+    24-hourly time step. For more specific information on the how the seasonal reforecast dataset is produced we refer 
+    to the documentation. Companion datasets, also available through the Climate Data Store (CDS), include the seasonal 
+    forecasts, for which the dataset provided here can be useful for local skill assessment and post-processing. For users 
+    looking for shorter term forecasts there are also medium-range forecasts and reforecasts available, as well as historical 
+    simulations that can be used to derive the hydrological climatology. For users looking specifically for European hydrological 
+    data, we refer to the European Flood Awareness System (EFAS) forecasts and historical simulations. All these datasets are part 
+    of the operational flood forecasting within the Copernicus Emergency Management Service (CEMS). 
+    Variables in the dataset/application are: River discharge in the last 24 hours Variables in the dataset/application are: Upstream area
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel:
+  keywords: ECMWF,CDS,GloFAS,EFAS,CEMS,river,discharge,meteorological,forecast,global,flood,awareness
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
+  missionStartDate: "1981-01-01T00:00:00Z"
+
 # COPERNICUS ADS ----------------------------------------------------------------------
 CAMS_GACF_AOT:
   abstract: |
@@ -1898,6 +2044,44 @@ ERA5_SL:
   title: ERA5 Hourly data on Single Levels
   missionStartDate: "1959-01-01T00:00:00Z"
 
+ERA5_SL_MONTHLY:
+  abstract: |
+    ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades. 
+    Data is available from 1940 onwards. ERA5 replaces the ERA-Interim reanalysis. Reanalysis combines model 
+    data with observations from across the world into a globally complete and consistent dataset using the 
+    laws of physics. This principle, called data assimilation, is based on the method used by numerical 
+    weather prediction centres, where every so many hours (12 hours at ECMWF) a previous forecast is combined 
+    with newly available observations in an optimal way to produce a new best estimate of the state of the 
+    atmosphere, called analysis, from which an updated, improved forecast is issued. Reanalysis works in the 
+    same way, but at reduced resolution to allow for the provision of a dataset spanning back several decades. 
+    Reanalysis does not have the constraint of issuing timely forecasts, so there is more time to collect 
+    observations, and when going further back in time, to allow for the ingestion of improved versions of the 
+    original observations, which all benefit the quality of the reanalysis product. ERA5 provides hourly estimates 
+    for a large number of atmospheric, ocean-wave and land-surface quantities. An uncertainty estimate is sampled 
+    by an underlying 10-member ensemble at three-hourly intervals. Ensemble mean and spread have been pre-computed 
+    for convenience. Such uncertainty estimates are closely related to the information content of the available 
+    observing system which has evolved considerably over time. They also indicate flow-dependent sensitive areas. 
+    To facilitate many climate applications, monthly-mean averages have been pre-calculated too, though monthly 
+    means are not available for the ensemble mean and spread. ERA5 is updated daily with a latency of about 5 days 
+    (monthly means are available around the 6th of each month). In case that serious flaws are detected in this 
+    early release (called ERA5T), this data could be different from the final release 2 to 3 months later. 
+    In case that this occurs users are notified. The data set presented here is a regridded subset of the full 
+    ERA5 data set on native resolution. It is online on spinning disk, which should ensure fast and easy access. 
+    It should satisfy the requirements for most common applications. Data has been regridded to a regular lat-lon 
+    grid of 0.25 degrees for the reanalysis and 0.5 degrees for the uncertainty estimate 
+    (0.5 and 1 degree respectively for ocean waves). 
+    There are four main sub sets: hourly and monthly products, both on pressure levels (upper air fields) and 
+    single levels (atmospheric, ocean-wave and land surface quantities).
+  instrument:
+  platform: ERA5
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,monthly,single,levels
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: ERA5 monthly averaged data on single levels from 1940 to present
+  missionStartDate: "1940-01-01T00:00:00Z"
+
 ERA5_PL:
   abstract: |
     ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 4 to 7 decades.
@@ -1940,6 +2124,49 @@ ERA5_PL:
   license: proprietary
   title: ERA5 Hourly data on Pressure Levels
   missionStartDate: "1959-01-01T00:00:00Z"
+
+ERA5_PL_MONTHLY:
+  abstract: |
+    ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades. 
+    Data is available from 1940 onwards. ERA5 replaces the ERA-Interim reanalysis. Reanalysis combines model 
+    data with observations from across the world into a globally complete and consistent dataset using the 
+    laws of physics. 
+    This principle, called data assimilation, is based on the method used by numerical weather prediction 
+    centres, where every so many hours (12 hours at ECMWF) a previous forecast is combined with newly available 
+    observations in an optimal way to produce a new best estimate of the state of the atmosphere, called analysis, 
+    from which an updated, improved forecast is issued. 
+    Reanalysis works in the same way, but at reduced resolution to allow for the provision of a dataset spanning back 
+    several decades. Reanalysis does not have the constraint of issuing timely forecasts, so there is more time to 
+    collect observations, and when going further back in time, to allow for the ingestion of improved versions of 
+    the original observations, which all benefit the quality of the reanalysis product. ERA5 provides hourly estimates 
+    for a large number of atmospheric, ocean-wave and land-surface quantities. An uncertainty estimate is sampled by 
+    an underlying 10-member ensemble at three-hourly intervals. Ensemble mean and spread have been pre-computed for convenience. 
+    Such uncertainty estimates are closely related to the information content of the available observing system which 
+    has evolved considerably over time. They also indicate flow-dependent sensitive areas. To facilitate many climate 
+    applications, monthly-mean averages have been pre-calculated too, though monthly means are not available for the 
+    ensemble mean and spread. 
+    ERA5 is updated daily with a latency of about 5 days (monthly means are available around the 6th of each month). 
+    In case that serious flaws are detected in this early release (called ERA5T), this data could be different from the 
+    final release 2 to 3 months later. So far this has only been the case for the month September 2021, while it will 
+    also be the case for October, November and December 2021. For months prior to September 2021 the final release has 
+    always been equal to ERA5T, and the goal is to align the two again after December 2021. ERA5 is updated daily with a 
+    latency of about 5 days (monthly means are available around the 6th of each month). In case that serious flaws are 
+    detected in this early release (called ERA5T), this data could be different from the final release 2 to 3 months later. 
+    In case that this occurs users are notified. The data set presented here is a regridded subset of the full ERA5 data 
+    set on native resolution. It is online on spinning disk, which should ensure fast and easy access. It should satisfy 
+    the requirements for most common applications. Data has been regridded to a regular lat-lon grid of 0.25 degrees for 
+    the reanalysis and 0.5 degrees for the uncertainty estimate (0.5 and 1 degree respectively for ocean waves). 
+    There are four main sub sets: hourly and monthly products, both on pressure levels (upper air fields) and 
+    single levels (atmospheric, ocean-wave and land surface quantities).
+  instrument:
+  platform: ERA5
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,monthly,pressure,levels
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: ERA5 monthly averaged data on pressure levels from 1940 to present
+  missionStartDate: "1940-01-01T00:00:00Z"
 
 ERA5_LAND:
   abstract: |
@@ -2018,6 +2245,85 @@ ERA5_LAND_MONTHLY:
   license: proprietary
   title: ERA5-Land Monthly data
   missionStartDate: "1950-01-01T00:00:00Z"
+
+GLACIERS_ELEVATION_AND_MASS_CHANGE:
+  abstract: |
+    This dataset provides in situ and remote sensing derived glacier changes from individual glaciers globally. 
+    The dataset represents the latest homogenized state-of-the-art glacier change data collected by scientists 
+    and the national correspondents of each country as provided to the World Glacier Monitoring Service (WGMS). 
+    The product is an extract of the WGMS Fluctuations of Glacier (FoG) database and consists of two data sets 
+    providing time series of glacier changes: glacier elevation change series from the geodetic method and glacier 
+    mass-balance series from the glaciological method
+  platform: INSITU
+  instrument:
+  platformSerialIdentifier: INSITU
+  processingLevel:
+  keywords: ECMWF,WGMS,INSITU,CDS,C3S,glacier,elevation,mass,change
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Glaciers elevation and mass change data from 1850 to present from the Fluctuations of Glaciers Database
+  missionStartDate: "1850-01-01T00:00:00Z"
+
+SEA_LEVEL_BLACK_SEA:
+  abstract: |
+    Sea level anomaly is the height of water over the mean sea surface in a given time and region. 
+    Up-to-date altimeter standards are used to estimate the sea level anomalies with a mapping algorithm dedicated 
+    to the Black sea region. Anomalies are computed with respect to a twenty-year mean reference period (1993-2012). 
+    The steady number of reference satellite used in the production of this dataset contributes to the long-term 
+    stability of the sea level record. Improvements of the accuracy, sampling of meso-scale processes and of the 
+    high-latitude coverage were achieved by using a few additional satellite missions. New data are provided with 
+    a delay of about 4-5 months relatively to near-real time or interim sea level products. This delay is mainly 
+    due to the timeliness of the input data, the centred processing temporal window and the validation process. 
+    However, this processing and validation adds stability and accuracy to the sea level variables and make them 
+    adapted to climate applications. This dataset includes uncertainties for each grid cell. More details about the 
+    sea level retrieval, additional filters, optimisation procedures, and the error estimation are given in the 
+    Documentation section. Variables in the dataset/application are: Absolute dynamic topography, Absolute geostrophic 
+    velocity meridian component, Absolute geostrophic velocity zonal component, Geostrophic velocity anomalies meridian 
+    component, Geostrophic velocity anomalies zonal component, Sea level anomaly
+  platform: SATELLITE
+  instrument:
+  platformSerialIdentifier: SATELLITE
+  processingLevel:
+  keywords: ECMWF,anomaly,water,C3S,sea,surface,SATELLITE,time,region,black,sea,altitude,dynamic,topography
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Sea level daily gridded data from satellite observations for the Black Sea from 1993 to 2020
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+UERRA_EUROPE_SL:
+  abstract: |
+    This UERRA dataset contains analyses of surface and near-surface essential climate variables from UERRA-HARMONIE 
+    and MESCAN-SURFEX systems. Forecasts up to 30 hours initialised from the analyses at 00 and 12 UTC are available 
+    only through the CDS-API (see Documentation). UERRA-HARMONIE is a 3-dimensional variational data assimilation system, 
+    while MESCAN-SURFEX is a complementary surface analysis system. Using the Optimal Interpolation method, MESCAN provides 
+    the best estimate of daily accumulated precipitation and six-hourly air temperature and relative humidity at 
+    2 meters above the model topography. 
+    The land surface platform SURFEX is forced with downscaled forecast fields from UERRA-HARMONIE as well as 
+    MESCAN analyses. It is run offline, i.e. without feedback to the atmospheric analysis performed in MESCAN 
+    or the UERRA-HARMONIE data assimilation cycles. Using SURFEX offline allows to take full benefit of precipitation 
+    analysis and to use the more advanced physics options to better represent surface variables such as surface 
+    temperature and surface fluxes, and soil processes related to water and heat transfer in the soil and snow. 
+    In general, the assimilation systems are able to estimate biases between observations and to sift good-quality 
+    data from poor data. The laws of physics allow for estimates at locations where data coverage is low. 
+    The provision of estimates at each grid point in Europe for each regular output time, over a long period, 
+    always using the same format, makes reanalysis a very convenient and popular dataset to work with. 
+    The observing system has changed drastically over time, and although the assimilation system can resolve data holes, 
+    the much sparser observational networks, e.g. in 1960s, will have an impact on the quality of analyses leading 
+    to less accurate estimates. The improvement over global reanalysis products comes with the higher horizontal resolution 
+    that allows incorporating more regional details (e.g. topography). Moreover, it enables the system even to use more 
+    observations at places with dense observation networks. Variables in the dataset/application are: 10m wind direction, 
+    10m wind speed, 2m relative humidity, 2m temperature, Albedo, High cloud cover, Land sea mask, Low cloud cover, 
+    Mean sea level pressure, Medium cloud cover, Orography, Skin temperature, Snow density, Snow depth water equivalent, 
+    Surface pressure, Surface roughness, Total cloud cover, Total column integrated water vapour, Total precipitation
+  platform: UERRA
+  instrument:
+  platformSerialIdentifier: UERRA
+  processingLevel:
+  keywords: ECMWF,Reanalysis,Spatial,coverage,Europe,Atmospheric,Copernicus,C3S,upper,air
+  sensorType:
+  license: proprietary
+  title: UERRA regional reanalysis for Europe on single levels from 1961 to 2019
+  missionStartDate: "1961-01-01T00:00:00Z"
 
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
