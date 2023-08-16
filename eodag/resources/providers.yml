@@ -3738,7 +3738,7 @@
 ---
 !provider
   name: wekeo
-  priority: 0
+  priority: 2
   roles:
     - host
   description: WEkEO - Copernicus and Sentinel data
@@ -4123,6 +4123,11 @@
           - '$.productInfo.productEndDate'
         id: '$.productInfo.product'
         defaultGeometry: '-180 -90 180 90'
+        # defaultSearchArgs:
+        #   start: '2019-01-01T00:00:00Z'
+        #   end: '2019-01-01T00:00:00Z'
+        defaultStart: '2019-01-01T00:00:00Z'
+        defaultEnd: '2019-01-01T00:00:00Z'
       storeDownloadUrl: True
     GLOFAS_REFORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST

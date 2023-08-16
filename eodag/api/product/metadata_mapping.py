@@ -2821,6 +2821,8 @@ DEFAULT_METADATA_MAPPING = dict(
         "id": "$.id",
         # The geographic extent of the product
         "geometry": "$.geometry",
+        "defaultStart": "$.defaultStart",
+        "defaultEnd": "$.defaultEnd",
         # The url of the quicklook
         "quicklook": "$.properties.quicklook",
         # The url to download the product "as is" (literal or as a template to be completed

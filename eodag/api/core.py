@@ -64,6 +64,7 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
 )
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT, fetch_stac_items
+from datetime import date
 
 logger = logging.getLogger("eodag.core")
 
@@ -1279,11 +1280,49 @@ class EODataAccessGateway(object):
                         "No product type could be guessed with provided arguments"
                     )
                 else:
-                    return kwargs
+                    return kwargs   
 
         kwargs["productType"] = product_type
+        
+        # fetch product types list if product_type is unknown
+        if (
+            product_type
+            not in self._plugins_manager.product_type_to_provider_config_map.keys()
+        ):
+            logger.debug(
+                f"Fetching external product types sources to find {product_type} product type"
+            )
+            self.fetch_product_types_list()
+        search_plugin = next(
+            self._plugins_manager.get_search_plugins(product_type=product_type)
+        )
+        if search_plugin.provider != self.get_preferred_provider()[0]:
+            logger.warning(
+                "Product type '%s' is not available with provider '%s'. "
+                "Searching it on provider '%s' instead.",
+                product_type,
+                self.get_preferred_provider()[0],
+                search_plugin.provider,
+            )
+        else:
+            logger.info(
+                "Searching product type '%s' on provider: %s",
+                product_type,
+                search_plugin.provider,
+            )
+        metadata_map = self.providers_config[search_plugin.provider].products[product_type]['metadata_mapping']
+        if start is None:
+            if "defaultStart" not in metadata_map:
+                logger.error("start date is required!")
+            start = metadata_map['defaultStart'][1]
+            logger.info(f"\n\n{start=}\n")
         if start is not None:
-            kwargs["startTimeFromAscendingNode"] = start
+            kwargs["startTimeFromAscendingNode"] = start 
+            logger.info(f"\n\n{start=}\n")
+        if end is None:
+            if "defaultEnd" not in metadata_map:
+                logger.error("end date is required!")
+            end = metadata_map['defaultEnd'][1]
         if end is not None:
             kwargs["completionTimeFromAscendingNode"] = end
         if "box" in kwargs or "bbox" in kwargs:
@@ -1306,33 +1345,6 @@ class EODataAccessGateway(object):
             kwargs.pop(arg, None)
         del kwargs["locations"]
 
-        # fetch product types list if product_type is unknown
-        if (
-            product_type
-            not in self._plugins_manager.product_type_to_provider_config_map.keys()
-        ):
-            logger.debug(
-                f"Fetching external product types sources to find {product_type} product type"
-            )
-            self.fetch_product_types_list()
-
-        search_plugin = next(
-            self._plugins_manager.get_search_plugins(product_type=product_type)
-        )
-        if search_plugin.provider != self.get_preferred_provider()[0]:
-            logger.warning(
-                "Product type '%s' is not available with provider '%s'. "
-                "Searching it on provider '%s' instead.",
-                product_type,
-                self.get_preferred_provider()[0],
-                search_plugin.provider,
-            )
-        else:
-            logger.info(
-                "Searching product type '%s' on provider: %s",
-                product_type,
-                search_plugin.provider,
-            )
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         try:
