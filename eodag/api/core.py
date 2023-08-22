@@ -832,6 +832,7 @@ class EODataAccessGateway(object):
         end=None,
         geom=None,
         locations=None,
+        provider=None,
         **kwargs,
     ):
         """Look for products matching criteria on known providers.
@@ -877,6 +878,9 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
+        :param provider: (optional) the provider to be used, if not set, the configured
+                         default provider will be used
+        :type provider: str
         :type kwargs: Union[int, str, bool, dict]
         :returns: A collection of EO products matching the criteria and the total
                   number of results found
@@ -888,7 +892,12 @@ class EODataAccessGateway(object):
             enforced here.
         """
         search_kwargs = self._prepare_search(
-            start=start, end=end, geom=geom, locations=locations, **kwargs
+            start=start,
+            end=end,
+            geom=geom,
+            locations=locations,
+            provider=provider,
+            **kwargs,
         )
         search_plugins = search_kwargs.pop("search_plugins", [])
         if search_kwargs.get("id"):
@@ -899,7 +908,9 @@ class EODataAccessGateway(object):
             )
             # remove auth from search_kwargs as a loop over providers will be performed
             search_kwargs.pop("auth", None)
-            return self._search_by_id(search_kwargs.pop("id"), **search_kwargs)
+            return self._search_by_id(
+                search_kwargs.pop("id"), provider=provider, **search_kwargs
+            )
         search_kwargs.update(
             page=page,
             items_per_page=items_per_page,
@@ -1254,12 +1265,16 @@ class EODataAccessGateway(object):
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
         """
+        if not provider:
+            provider = self.get_preferred_provider()[0]
         get_search_plugins_kwargs = dict(
             provider=provider, product_type=kwargs.get("productType", None)
         )
-        for plugin in self._plugins_manager.get_search_plugins(
+        search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
-        ):
+        )
+
+        for plugin in search_plugins:
             logger.info(
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
@@ -1294,7 +1309,7 @@ class EODataAccessGateway(object):
         return SearchResult([]), 0
 
     def _prepare_search(
-        self, start=None, end=None, geom=None, locations=None, **kwargs
+        self, start=None, end=None, geom=None, locations=None, provider=None, **kwargs
     ):
         """Internal method to prepare the search kwargs and get the search
         and auth plugins.
@@ -1400,15 +1415,23 @@ class EODataAccessGateway(object):
         ):
             search_plugins.append(plugin)
 
-        if search_plugins[0].provider != self.get_preferred_provider()[0]:
+        if not provider:
+            provider = self.get_preferred_provider()[0]
+        providers = [plugin.provider for plugin in search_plugins]
+        if provider not in providers:
             logger.warning(
                 "Product type '%s' is not available with provider '%s'. "
                 "Searching it on provider '%s' instead.",
                 product_type,
-                self.get_preferred_provider()[0],
+                provider,
                 search_plugins[0].provider,
             )
         else:
+            provider_plugin = list(
+                filter(lambda p: p.provider == provider, search_plugins)
+            )[0]
+            search_plugins.remove(provider_plugin)
+            search_plugins.insert(0, provider_plugin)
             logger.info(
                 "Searching product type '%s' on provider: %s",
                 product_type,
@@ -1440,9 +1463,6 @@ class EODataAccessGateway(object):
             # Remove the ID since this is equal to productType.
             search_plugin.config.product_type_config.pop("ID", None)
 
-            logger.debug(
-                "Using plugin class for search: %s", search_plugin.__class__.__name__
-            )
             auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
             auth_plugins[search_plugin.provider] = auth_plugin
 
@@ -1493,8 +1513,11 @@ class EODataAccessGateway(object):
 
         results = SearchResult([])
         total_results = 0
+
+        auth_plugins = None
         try:
             if "auth" in kwargs:
+                auth_plugins = kwargs["auth"]
                 if isinstance(kwargs["auth"], dict):
                     auth = kwargs["auth"][search_plugin.provider]
                 else:
@@ -1586,6 +1609,7 @@ class EODataAccessGateway(object):
                         pass
                     else:
                         eo_product.product_type = guesses[0]
+
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
