@@ -1292,7 +1292,7 @@ class TestCoreSearch(TestCoreBase):
         """_prepare_search must handle a search by id"""
         base = {"id": "dummy-id", "provider": "creodias"}
         prepared_search = self.dag._prepare_search(**base)
-        expected = base
+        expected = {"id": "dummy-id"}
         self.assertDictEqual(expected, prepared_search)
 
     def test__prepare_search_preserve_additional_kwargs(self):

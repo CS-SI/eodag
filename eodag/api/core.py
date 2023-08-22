@@ -1338,6 +1338,9 @@ class EODataAccessGateway(object):
         :type geom: Union[str, dict, shapely.geometry.base.BaseGeometry]
         :param locations: (optional) Location filtering by name using locations configuration
         :type locations: dict
+        :param provider: provider to be used, if no provider is given or the product type
+                        is not available for the provider, the preferred provider is used
+        :type provider: str
         :param kwargs: Some other criteria
                        * id and/or a provider for a search by
                        * search criteria to guess the product type
