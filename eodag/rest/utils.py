@@ -393,8 +393,11 @@ def search_products(product_type, arguments, stac_formatted=True):
 
     try:
         arg_product_type = arguments.pop("product_type", None)
+        provider = arguments.pop("provider", None)
+        if not provider:
+            provider = eodag_api.get_preferred_provider()[0]
+
         unserialized = arguments.pop("unserialized", None)
-        id = arguments.pop("id", None)
 
         page, items_per_page = get_pagination_info(arguments)
         dtstart, dtend = get_datetime(arguments)
@@ -408,7 +411,7 @@ def search_products(product_type, arguments, stac_formatted=True):
             "start": dtstart,
             "end": dtend,
             "geom": geom,
-            "id": id,
+            "provider": provider,
         }
 
         if stac_formatted:
@@ -457,20 +460,24 @@ def search_products(product_type, arguments, stac_formatted=True):
     return response
 
 
-def search_product_by_id(uid, product_type=None):
+def search_product_by_id(uid, product_type=None, provider=None):
     """Search a product by its id
 
     :param uid: The uid of the EO product
     :type uid: str
     :param product_type: (optional) The product type
     :type product_type: str
+    :param provider: (optional) The provider to be used
+    :type provider: str
     :returns: A search result
     :rtype: :class:`~eodag.api.search_result.SearchResult`
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     :raises: RuntimeError
     """
     try:
-        products, total = eodag_api.search(id=uid, productType=product_type)
+        products, total = eodag_api.search(
+            id=uid, productType=product_type, provider=provider
+        )
         return products
     except ValidationError:
         raise
@@ -575,7 +582,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"):
+def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -589,17 +596,16 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, zip="True"
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
-    if provider:
-        eodag_api.set_preferred_provider(provider)
-
-    product = search_product_by_id(item_id, product_type=catalogs[0])[0]
-
+    product = search_product_by_id(
+        item_id, product_type=catalogs[0], provider=provider
+    )[0]
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
         auth_plugin = eodag_api._plugins_manager.get_auth_plugin(
             download_plugin.provider
         )
         product.register_downloader(download_plugin, auth_plugin)
+
     auth = (
         product.downloader_auth.authenticate()
         if product.downloader_auth is not None
@@ -666,7 +672,7 @@ def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers
     :param fetch_providers: (optional) Whether to fetch providers for new product
                             types or not
     :type fetch_providers: bool
-    :returns: Catalog dictionnary
+    :returns: Catalog dictionary
     :rtype: dict
     """
     return StacCatalog(
@@ -736,10 +742,10 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
         ids = [ids]
     if ids:
         search_results = SearchResult([])
-        if provider:
-            eodag_api.set_preferred_provider(provider)
         for item_id in ids:
-            found_products = search_product_by_id(item_id, product_type=collections[0])
+            found_products = search_product_by_id(
+                item_id, product_type=collections[0], provider=provider
+            )
             if len(found_products) == 1:
                 search_results.extend(found_products)
         search_results.properties = {
@@ -771,7 +777,9 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
             arguments.pop("datetime")
 
         search_products_arguments = dict(
-            arguments, **result_catalog.search_args, **{"unserialized": "true"}
+            arguments,
+            **result_catalog.search_args,
+            **{"unserialized": "true", "provider": provider},
         )
 
         # check if time filtering appears twice
@@ -827,7 +835,6 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
                         **{"url": result_catalog.url, "root": result_catalog.root},
                     ),
                 )
-
         search_results = search_products(
             product_type=result_catalog.search_args["product_type"],
             arguments=search_products_arguments,
