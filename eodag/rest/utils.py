@@ -407,7 +407,6 @@ def search_products(product_type, arguments, stac_formatted=True):
             "start": dtstart,
             "end": dtend,
             "geom": geom,
-            "id": id,
         }
 
         if stac_formatted:
