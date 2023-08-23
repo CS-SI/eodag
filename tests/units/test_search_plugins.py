@@ -936,7 +936,9 @@ class MockResponse:
 
 
 class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
-    @mock.patch("eodag.plugins.authentication.token.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.get", autospec=True
+    )
     def setUp(self, mock_requests_get):
 
         # One of the providers that has a BuildPostSearchResult Search plugin

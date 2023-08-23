@@ -129,7 +129,9 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"foo": "bar", "username": "john"}
         auth_plugin.validate_config_credentials()
 
-    @mock.patch("eodag.plugins.authentication.token.requests.post", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
     def test_plugins_auth_tokenauth_text_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using text token"""
         auth_plugin = self.get_auth_plugin("provider_text_token_header")
@@ -146,7 +148,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
-        assert args[0] == auth_plugin.config.auth_uri
+        assert args[1] == auth_plugin.config.auth_uri
         assert kwargs["data"] == auth_plugin.config.credentials
         assert kwargs["headers"] == dict(auth_plugin.config.headers, **USER_AGENT)
 
@@ -156,7 +158,9 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
         assert req.headers["foo"] == "bar"
 
-    @mock.patch("eodag.plugins.authentication.token.requests.post", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
     def test_plugins_auth_tokenauth_json_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using json token"""
         auth_plugin = self.get_auth_plugin("provider_json_token_simple_url")
@@ -179,7 +183,9 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         auth(req)
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
 
-    @mock.patch("eodag.plugins.authentication.token.requests.post", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
     def test_plugins_auth_tokenauth_request_error(self, mock_requests_post):
         """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""
         auth_plugin = self.get_auth_plugin("provider_json_token_simple_url")
