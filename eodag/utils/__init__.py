@@ -681,9 +681,9 @@ def update_nested_dict(
                 and isinstance(v, list)
                 and (
                     # no common elements
-                    set(v).isdisjoint(old_dict[k])
+                    not any([x for x in v if x in old_dict[k]])
                     # common elements
-                    or not set(v).isdisjoint(old_dict[k])
+                    or any([x for x in v if x in old_dict[k]])
                     and allow_extend_duplicates
                 )
             ):
@@ -693,7 +693,7 @@ def update_nested_dict(
                 and isinstance(old_dict[k], list)
                 and isinstance(v, list)
                 # common elements
-                and not set(v).isdisjoint(old_dict[k])
+                and any([x for x in v if x in old_dict[k]])
                 and not allow_extend_duplicates
             ):
                 old_dict[k].extend([x for x in v if x not in old_dict[k]])

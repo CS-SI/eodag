@@ -10,7 +10,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, string_to_jsonpath
+from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, format_dict_items, string_to_jsonpath
 from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.search.data_request_search")
@@ -77,6 +77,29 @@ class DataRequestSearch(Search):
             "metadata_mapping", self.config.metadata_mapping
         )
 
+    def get_product_type_def_params(self, product_type, **kwargs):
+        """Get the provider product type definition parameters"""
+        if product_type in self.config.products.keys():
+            logger.debug(
+                "Getting provider product type definition parameters for %s",
+                product_type,
+            )
+            return self.config.products[product_type]
+        elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
+            logger.debug(
+                "Getting generic provider product type definition parameters for %s",
+                product_type,
+            )
+            return {
+                k: v
+                for k, v in format_dict_items(
+                    self.config.products[GENERIC_PRODUCT_TYPE], **kwargs
+                ).items()
+                if v
+            }
+        else:
+            return {}
+
     def discover_product_types(self):
         """Fetch product types is disabled for `DataRequestSearch`
 
@@ -96,9 +119,50 @@ class DataRequestSearch(Search):
         """
         product_type = kwargs.get("productType", None)
         provider_product_type = self._map_product_type(product_type)
-        kwargs["productType"] = provider_product_type
+        keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
+
+        if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
+            keywords["productType"] = provider_product_type
+        elif product_type:
+            keywords["productType"] = product_type
+
+        # provider product type specific conf
+        self.product_type_def_params = self.get_product_type_def_params(
+            product_type, **kwargs
+        )
+
+        # update config using provider product type definition metadata_mapping
+        # from another product
+        other_product_for_mapping = self.product_type_def_params.get(
+            "metadata_mapping_from_product", ""
+        )
+        if other_product_for_mapping:
+            other_product_type_def_params = self.get_product_type_def_params(
+                other_product_for_mapping, **kwargs
+            )
+            self.config.metadata_mapping.update(
+                other_product_type_def_params.get("metadata_mapping", {})
+            )
+        # from current product
+        self.config.metadata_mapping.update(
+            self.product_type_def_params.get("metadata_mapping", {})
+        )
+
+        # if product_type_def_params is set, remove product_type as it may conflict with this conf
+        if self.product_type_def_params:
+            keywords.pop("productType", None)
+        keywords.update(
+            {
+                k: v
+                for k, v in self.product_type_def_params.items()
+                if k not in keywords.keys()
+                and k in self.config.metadata_mapping.keys()
+                and isinstance(self.config.metadata_mapping[k], list)
+            }
+        )
+
         data_request_id = self._create_data_request(
-            provider_product_type, product_type, **kwargs
+            provider_product_type, product_type, **keywords
         )
         request_finished = False
         while not request_finished:
@@ -111,7 +175,6 @@ class DataRequestSearch(Search):
             result = self._apply_additional_filters(
                 result, self.config.products[product_type]["custom_filters"]
             )
-        kwargs["productType"] = product_type
         return self._convert_result_data(
             result, data_request_id, product_type, **kwargs
         )

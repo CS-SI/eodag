@@ -235,7 +235,7 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(date_time, timespec="milliseconds"):
+        def convert_to_iso_utc_datetime(date_time: str, timespec="milliseconds") -> str:
             """Convert a date_time (str) to its ISO 8601 representation in UTC
 
             "2021-04-21" => "2021-04-21T00:00:00.000Z"
@@ -910,6 +910,37 @@ def format_metadata(search_param, *args, **kwargs):
             }
 
         @staticmethod
+        def convert_get_datetime(start_date: str, format: str) -> dict:
+            utc_start_date = MetadataFormatter.convert_to_iso_utc_datetime(start_date)
+            start_datetime = datetime.strptime(utc_start_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            if format == "list":
+                return {
+                    "year": [start_datetime.strftime("%Y")],
+                    "month": [start_datetime.strftime("%m")],
+                    "day": [start_datetime.strftime("%d")],
+                    "hour": [start_datetime.strftime("%H")],
+                    "minute": [start_datetime.strftime("%M")],
+                    "second": [start_datetime.strftime("%S")],
+                }
+            else:
+                return {
+                    "year": start_datetime.strftime("%Y"),
+                    "month": start_datetime.strftime("%m"),
+                    "day": start_datetime.strftime("%d"),
+                    "hour": start_datetime.strftime("%H"),
+                    "minute": start_datetime.strftime("%M"),
+                    "second": start_datetime.strftime("%S"),
+                }
+
+        @staticmethod
+        def convert_get_ecmwf_time(start_date: str) -> dict:
+            return [
+                MetadataFormatter.convert_get_datetime(start_date, "str")["minute"]
+                + ":"
+                + MetadataFormatter.convert_get_datetime(start_date, "str")["second"]
+            ]
+
+        @staticmethod
         def convert_get_ecmwf_era5land_monthly_params(start_date):
             year = start_date[:4]
             month = start_date[5:7]
@@ -1344,6 +1375,7 @@ def format_query_params(product_type, config, **kwargs):
                 formatted_query_param = format_metadata(
                     provider_search_key, product_type, **kwargs
                 )
+                formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_key:
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
@@ -1352,7 +1384,10 @@ def format_query_params(product_type, config, **kwargs):
                         )
                     # json query string (for POST request)
                     update_nested_dict(
-                        query_params, orjson.loads(formatted_query_param)
+                        query_params,
+                        orjson.loads(formatted_query_param),
+                        extend_list_values=True,
+                        allow_extend_duplicates=False,
                     )
                 else:
                     query_params[eodag_search_key] = formatted_query_param
