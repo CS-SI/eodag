@@ -233,12 +233,13 @@ async def handle_resource_not_found(request: Request, error):
 
 @app.exception_handler(AuthenticationError)
 async def handle_auth_error(request: Request, error):
-    """Unauthorized [401] errors handle"""
+    """AuthenticationError should be sent as internal server error to the client"""
+    logger.error(f"{type(error).__name__}: {str(error)}")
     return await default_exception_handler(
         request,
         HTTPException(
-            status_code=401,
-            detail=f"{type(error).__name__}: {str(error)}",
+            status_code=500,
+            detail="Internal server error: please contact the administrator",
         ),
     )
 
