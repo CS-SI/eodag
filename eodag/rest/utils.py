@@ -12,8 +12,10 @@ from collections import namedtuple
 from shutil import make_archive, rmtree
 from typing import Dict, Optional
 
+import requests
 import dateutil.parser
 from dateutil import tz
+from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
@@ -429,7 +431,11 @@ def search_products(product_type, arguments, stac_formatted=True):
         # We remove potential None values to use the default values of the search method
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)
 
-        products, total = eodag_api.search(**criterias)
+        try:
+            products, total = eodag_api.search(**criterias)
+        except requests.RequestException as e:
+            raise HTTPException(status_code=404, detail=str(e) if str(e) else None)
+
         products = filter_products(products, arguments, **criterias)
 
         if not unserialized:
@@ -610,11 +616,12 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
             )
         product_data = search_plugin.download_info[item_id]
         properties = {
+            "id": item_id,
             "orderLink": product_data["orderLink"],
             "downloadLink": product_data["downloadLink"],
             "geometry": "-180 -90 180 90",
         }
-        product = EOProduct(provider, properties)
+        product = EOProduct(provider or product_data["provider"], properties)
     else:
         search_results = search_product_by_id(
             item_id, product_type=product_type, provider=provider
