@@ -4253,6 +4253,405 @@
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '-180 -90 180 90'
       storeDownloadUrl: True
+    # UERRA_EUROPE_SL:
+    #   productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+    GLACIERS_ELEVATION_AND_MASS_CHANGE:
+      productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
+      variable: all
+      format: zip
+      providerProductType: 
+        - elevation_change
+      file_version: 
+        - "20200824"
+      metadata_mapping:
+        variable:
+          - '{{"stringChoiceValues": [ {{"name": "variable", "value": "{variable}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        file_version:
+          - '{{ "multiStringSelectValues": [ {{"name": "file_version", "value": {file_version} }} ] }}'
+          - $.null
+        id: $.productInfo.product
+        geometry: -180 -90 180 90
+        startTimeFromAscendingNode: $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+      storeDownloadUrl: True
+    GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY:
+      productType: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
+      variable: all
+      format: zip
+      version: "6_0"
+      metadata_mapping:
+        variable:
+          - '{{"stringChoiceValues": [ {{"name": "variable", "value": "{variable}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        version:
+          - '{{ "multiStringSelectValues": [ {{"name": "version", "value": [ "{version}" ] }} ] }}'
+          - $.null
+        id: $.productInfo.product
+        geometry: -180 -90 180 90
+        startTimeFromAscendingNode: $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+      storeDownloadUrl: True
+    FIRE_HISTORICAL:
+      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL
+      providerProductType: 
+        - reanalysis
+      dataset: 
+        - Consolidated dataset
+      variable:
+        - fire_danger_index
+        - build_up_index
+        - danger_risk
+        - drought_code
+        - duff_moisture_code
+        - fine_fuel_moisture_code
+        - fire_daily_severity_rating
+        - fire_weather_index
+        - initial_fire_spread_index
+        - keetch_byram_drought_index
+        - burning_index
+        - energy_release_component
+        - ignition_component
+      version: 
+        - "4.0"
+      startTimeFromAscendingNode: "2020-01-01T00:00"
+      metadata_mapping:
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        dataset:
+          - '{{ "multiStringSelectValues": [ {{"name": "dataset", "value": {dataset} }} ] }}'
+          - $.null
+        version:
+          - '{{ "multiStringSelectValues": [ {{"name": "version", "value": {version} }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{"multiStringSelectValues": [
+              {{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}},
+              {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}},
+              {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}
+            ]}}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry: -180 -90 180 90
+        id: $.productInfo.product
+    GLOFAS_FORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST
+      variable:
+        - river_discharge_in_the_last_24_hours
+      system_version:
+        - operational
+      leadtime_hour:
+        - "24"
+        - "48"
+        - "72"
+        - "96"
+        - "120"
+        - "144"
+        - "168"
+        - "192"
+        - "216"
+        - "240"
+        - "264"
+        - "288"
+        - "312"
+        - "336"
+        - "360"
+        - "384"
+        - "408"
+        - "432"
+        - "456"
+        - "480"
+        - "504"
+        - "528"
+        - "552"
+        - "576"
+        - "600"
+        - "624"
+        - "648"
+        - "672"
+        - "696"
+        - "720"
+      hydrological_model:
+        - lisflood
+      providerProductType:
+        - control_forecast
+      format: grib
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      geometry: -180 -90 180 90
+      metadata_mapping:
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        leadtime_hour:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_hour", "value": {leadtime_hour} }} ] }}'
+          - $.null
+        hydrological_model:
+          - '{{ "multiStringSelectValues": [ {{"name": "hydrological_model", "value": {hydrological_model} }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{"multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+            ]}}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - $.extraInformation.footprint
+        defaultGeometry: -180 -90 180 90
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    GLOFAS_HISTORICAL:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL
+      variable:
+        - river_discharge_in_the_last_24_hours
+      system_version:
+        - version_4_0
+      hydrological_model:
+        - lisflood
+      providerProductType:
+        - consolidated
+      format: grib
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      geometry: -180 -90 180 90
+      metadata_mapping:
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        system_version:
+          - '{{ "multiStringSelectValues": [ {{"name": "system_version", "value": {system_version} }} ] }}'
+          - $.null
+        hydrological_model:
+          - '{{ "multiStringSelectValues": [ {{"name": "hydrological_model", "value": {hydrological_model} }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{"multiStringSelectValues": [
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+            ]}}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - $.extraInformation.footprint
+        defaultGeometry: -180 -90 180 90
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    GLOFAS_REFORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST
+      variable:
+        - river_discharge_in_the_last_24_hours
+      providerProductType:
+        - control_reforecast
+      leadtime_hour:
+        - "24"
+        - "48"
+        - "72"
+        - "96"
+        - "120"
+        - "144"
+        - "168"
+        - "192"
+        - "216"
+        - "240"
+        - "264"
+        - "288"
+        - "312"
+        - "336"
+        - "360"
+        - "384"
+        - "408"
+        - "432"
+        - "456"
+        - "480"
+        - "504"
+        - "528"
+        - "552"
+        - "576"
+        - "600"
+        - "624"
+        - "648"
+        - "672"
+        - "696"
+        - "720"
+        - "744"
+        - "768"
+        - "792"
+        - "816"
+        - "840"
+        - "864"
+        - "888"
+        - "912"
+        - "936"
+        - "960"
+        - "984"
+        - "1008"
+        - "1032"
+        - "1056"
+        - "1080"
+        - "1104"
+      system_version:
+        - version_3_1
+      hydrological_model:
+        - lisflood
+      format: grib
+      startTimeFromAscendingNode: "1999-01-03T00:00"
+      geometry: -180 -90 180 90
+      metadata_mapping:
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        leadtime_hour:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_hour", "value": {leadtime_hour} }} ] }}'
+          - $.null
+        system_version:
+          - '{{ "multiStringSelectValues": [ {{"name": "system_version", "value": {system_version} }} ] }}'
+          - $.null
+        hydrological_model:
+          - '{{ "multiStringSelectValues": [ {{"name": "hydrological_model", "value": {hydrological_model} }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{"multiStringSelectValues": [
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+            ]}}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - $.extraInformation.footprint
+        defaultGeometry: -180 -90 180 90
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    GLOFAS_SEASONAL:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL
+      variable:
+        - river_discharge_in_the_last_24_hours
+      system_version:
+        - operational
+      hydrological_model:
+        - htessel_lisflood
+      leadtime_hour:
+        - "24"
+        - "48"
+        - "72"
+        - "96"
+        - "120"
+        - "144"
+      format: grib
+      startTimeFromAscendingNode: "2020-12-01T00:00"
+      geometry: -180 -90 180 90
+      metadata_mapping:
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        system_version:
+          - '{{ "multiStringSelectValues": [ {{"name": "system_version", "value": {system_version} }} ] }}'
+          - $.null
+        hydrological_model:
+          - '{{ "multiStringSelectValues": [ {{"name": "hydrological_model", "value": {hydrological_model} }} ] }}'
+          - $.null
+        leadtime_hour:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_hour", "value": {leadtime_hour} }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{"multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+            ]}}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '$.extraInformation.footprint'
+        defaultGeometry: -180 -90 180 90
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    GLOFAS_SEASONAL_REFORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST
+      variable:
+        - river_discharge_in_the_last_24_hours
+      system_version:
+        - version_4_0
+      hydrological_model:
+        - lisflood
+      leadtime_hour:
+        - "24"
+      format: grib
+      startTimeFromAscendingNode: "2016-01-01T00:00"
+      geometry: -180 -90 180 90
+      metadata_mapping:
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        system_version:
+          - '{{ "multiStringSelectValues": [ {{"name": "system_version", "value": {system_version} }} ] }}'
+          - $.null
+        hydrological_model:
+          - '{{ "multiStringSelectValues": [ {{"name": "hydrological_model", "value": {hydrological_model} }} ] }}'
+          - $.null
+        leadtime_hour:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_hour", "value": {leadtime_hour} }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{"multiStringSelectValues": [
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+            ]}}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '$.extraInformation.footprint'
+        defaultGeometry: -180 -90 180 90
+        id: $.productInfo.product
+      storeDownloadUrl: True
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker
