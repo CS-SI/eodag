@@ -90,11 +90,6 @@ class TokenAuth(Authentication):
             response.raise_for_status()
         except RequestException as e:
             response_text = getattr(e.response, "text", "").strip()
-            logger.error(
-                f"Could no get authentication token: {str(e)}, {response_text}"
-            )
-            if e.response and e.response.status_code == 401:
-                raise Exception  # do not forward unauthorized from provider to user
             raise AuthenticationError(
                 f"Could no get authentication token: {str(e)}, {response_text}"
             )
