@@ -225,7 +225,7 @@ class DataRequestSearch(Search):
         logger.info("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
         status_data = requests.get(status_url, headers=self.auth.headers).json()
-        if "status_code" in status_data and status_data["status_code"] == 403:
+        if "status_code" in status_data and status_data["status_code"] in [403, 404]:
             raise RequestError("authentication token expired during request")
         if status_data["status"] == "failed":
             raise RequestError(
@@ -298,6 +298,7 @@ class DataRequestSearch(Search):
                     "requestJobId": data_request_id,
                     "orderLink": p.properties["orderLink"],
                     "downloadLink": p.properties["downloadLink"],
+                    "provider": self.provider,
                 }
         return products, total_items_nb
 
