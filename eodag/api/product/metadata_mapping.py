@@ -32,6 +32,7 @@ from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from eodag.utils import (
@@ -318,8 +319,13 @@ def format_metadata(search_param, *args, **kwargs):
                     max_lon = max(max_lon, geom.bound[2])
                     max_lat = max(max_lat, geom.bound[3])
                 return [min_lon, min_lat, max_lon, max_lat]
-            else:
+            elif isinstance(input_geom, BaseGeometry):
                 return list(input_geom.bounds[0:4])
+            elif isinstance(input_geom, str):
+                # we assume geom is actually a bbox
+                return [float(x.strip()) for x in input_geom.split(" ")]
+            else:
+                raise ValueError(f"Conversion to bounding box is not supported for: {input_geom}")
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom):
