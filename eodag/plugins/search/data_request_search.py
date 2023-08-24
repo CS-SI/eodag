@@ -170,6 +170,17 @@ class DataRequestSearch(Search):
             time.sleep(1)
         logger.info("search job for product_type %s finished", provider_product_type)
         result = self._get_result_data(data_request_id)
+        # if exists, add the geometry from search args in the content of the response for each product
+        if keywords.get("geometry"):
+            for product_content in result["content"]:
+                if product_content["extraInformation"] is None:
+                    product_content["extraInformation"] = {
+                        "footprint": keywords["geometry"]
+                    }
+                elif not product_content["extraInformation"].get("footprint"):
+                    product_content["extraInformation"]["footprint"] = keywords[
+                        "geometry"
+                    ]
         logger.info("result retrieved from search job")
         if self._check_uses_custom_filters(product_type):
             result = self._apply_additional_filters(
