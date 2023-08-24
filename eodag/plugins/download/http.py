@@ -636,7 +636,6 @@ class HTTPDownload(Download):
                 stream_size = self._check_stream_size(product)
                 product.headers = self.stream.headers
                 progress_callback.reset(total=stream_size)
-                logger.debug(f"stream_zip: {stream_size}")
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
                         progress_callback(len(chunk))

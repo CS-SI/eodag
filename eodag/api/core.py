@@ -1590,13 +1590,6 @@ class EODataAccessGateway(object):
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    auth_plugins = kwargs.get("auth", None)
-                    auth = None
-                    if auth_plugins is not None:
-                        if isinstance(auth_plugins, dict):
-                            auth = auth_plugins.get(search_plugin.provider, None)
-                        else:
-                            auth = auth_plugins
                     eo_product.register_downloader(download_plugin, auth)
 
             results.extend(res)
