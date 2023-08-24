@@ -1517,10 +1517,8 @@ class EODataAccessGateway(object):
         results = SearchResult([])
         total_results = 0
 
-        auth_plugins = None
         try:
             if "auth" in kwargs:
-                auth_plugins = kwargs["auth"]
                 if isinstance(kwargs["auth"], dict):
                     auth = kwargs["auth"][search_plugin.provider]
                 else:
