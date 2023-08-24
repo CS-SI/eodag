@@ -939,7 +939,6 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.token.requests.get", autospec=True)
     def setUp(self, mock_requests_get):
 
-        # One of the providers that has a BuildPostSearchResult Search plugin
         provider = "wekeo"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
         self.auth_plugin = self.get_auth_plugin(provider)
