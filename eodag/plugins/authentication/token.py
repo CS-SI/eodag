@@ -15,18 +15,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 
 import requests
 from requests import RequestException
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import USER_AGENT, RequestsTokenAuth
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
+logger = logging.getLogger("eodag.authentication.token")
+
 
 class TokenAuth(Authentication):
     """TokenAuth authentication plugin"""
+
+    def __init__(self, provider, config):
+        super(TokenAuth, self).__init__(provider, config)
+        self.token = ""
 
     def validate_config_credentials(self):
         """Validate configured credentials"""
@@ -56,10 +65,15 @@ class TokenAuth(Authentication):
             if hasattr(self.config, "headers")
             else {"headers": USER_AGENT}
         )
+        s = requests.Session()
+        retries = Retry(
+            total=3, backoff_factor=2, status_forcelist=[401, 429, 500, 502, 503, 504]
+        )
+        s.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
         try:
             # First get the token
             if getattr(self.config, "request_method", "POST") == "POST":
-                response = requests.post(
+                response = s.post(
                     self.config.auth_uri,
                     data=self.config.credentials,
                     timeout=HTTP_REQ_TIMEOUT,
@@ -67,7 +81,7 @@ class TokenAuth(Authentication):
                 )
             else:
                 cred = self.config.credentials
-                response = requests.get(
+                response = s.get(
                     self.config.auth_uri,
                     auth=(cred["username"], cred["password"]),
                     timeout=HTTP_REQ_TIMEOUT,
@@ -84,11 +98,21 @@ class TokenAuth(Authentication):
                 token = response.json()[self.config.token_key]
             else:
                 token = response.text
+            headers = self._get_headers(token)
+            self.token = token
             # Return auth class set with obtained token
-            return RequestsTokenAuth(token, "header", headers=self._get_headers(token))
+            return RequestsTokenAuth(token, "header", headers=headers)
 
     def _get_headers(self, token):
         headers = self.config.headers
         if "Authorization" in headers and "$" in headers["Authorization"]:
             headers["Authorization"] = headers["Authorization"].replace("$token", token)
+        if (
+            self.token
+            and token != self.token
+            and self.token in headers["Authorization"]
+        ):
+            headers["Authorization"] = headers["Authorization"].replace(
+                self.token, token
+            )
         return headers
