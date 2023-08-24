@@ -344,16 +344,19 @@ class RequestTestCase(unittest.TestCase):
         side_effect=AuthenticationError("you are no authorized"),
     )
     def test_auth_error(self, mock_search):
-        """A request to eodag server raising a Authentication error must return a 401 HTTP error code"""
-        response = self.app.get(
-            f"search?collections={self.tested_product_type}", follow_redirects=True
-        )
-        response_content = json.loads(response.content.decode("utf-8"))
+        """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
 
-        self.assertEqual(401, response.status_code)
-        self.assertIn("description", response_content)
-        self.assertIn("AuthenticationError", response_content["description"])
-        self.assertIn("you are no authorized", response_content["description"])
+        with self.assertLogs(level="ERROR") as cm_logs:
+            response = self.app.get(
+                f"search?collections={self.tested_product_type}", follow_redirects=True
+            )
+            response_content = json.loads(response.content.decode("utf-8"))
+
+            self.assertIn("description", response_content)
+            self.assertIn("AuthenticationError", str(cm_logs.output))
+            self.assertIn("you are no authorized", str(cm_logs.output))
+
+        self.assertEqual(500, response.status_code)
 
     def test_filter(self):
         """latestIntersect filter should only keep the latest products once search area is fully covered"""
