@@ -24,7 +24,7 @@ import tempfile
 from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import EODataAccessGateway, EOProduct, SearchResult
+from tests.context import EODataAccessGateway, EOProduct, PluginTopic, SearchResult
 from tests.utils import mock
 
 
@@ -240,3 +240,27 @@ class TestCoreSearchResults(EODagTestCase):
         finally:
             for product_path in products_paths:
                 self._clean_product(product_path)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+    )
+    def test_core_search_results_registered(self, mock_query):
+        """The core api must register search results downloaders"""
+        # QueryStringSearch provider
+        self.dag.set_preferred_provider("peps")
+
+        search_results_file = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+        )
+        with open(search_results_file, encoding="utf-8") as f:
+            search_results_geojson = json.load(f)
+        products = SearchResult.from_geojson(search_results_geojson)
+
+        mock_query.return_value = (products.data, len(products))
+
+        search_results, count = self.dag.search(productType="S2_MSI_L1C")
+
+        for search_result in search_results:
+            self.assertIsInstance(search_result.downloader, PluginTopic)
+            self.assertIsInstance(search_result.downloader_auth, PluginTopic)
