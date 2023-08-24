@@ -1517,10 +1517,8 @@ class EODataAccessGateway(object):
         results = SearchResult([])
         total_results = 0
 
-        auth_plugins = None
         try:
             if "auth" in kwargs:
-                auth_plugins = kwargs["auth"]
                 if isinstance(kwargs["auth"], dict):
                     auth = kwargs["auth"][search_plugin.provider]
                 else:
@@ -1617,12 +1615,6 @@ class EODataAccessGateway(object):
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    auth = None
-                    if auth_plugins is not None:
-                        if isinstance(auth_plugins, dict):
-                            auth = auth_plugins.get(search_plugin.provider, None)
-                        else:
-                            auth = auth_plugins
                     eo_product.register_downloader(download_plugin, auth)
 
             results.extend(res)
