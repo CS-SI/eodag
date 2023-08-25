@@ -2196,6 +2196,83 @@ GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY:
   missionStartDate: "2000-01-01T00:00:00Z"
   missionEndDate:  "2000-12-31T23:59:00Z"
 
+SATELLITE_CARBON_DIOXIDE:
+  abstract: >
+    This dataset provides observations of atmospheric carbon dioxide (CO2)\namounts obtained from observations
+    collected by several current and historical \nsatellite instruments. Carbon dioxide is a naturally occurring
+    Greenhouse Gas (GHG), but one whose abundance has been increased substantially above its pre-industrial value
+    of some 280 ppm by human activities, primarily because of emissions from combustion of fossil fuels,
+    deforestation and other land-use change. The annual cycle (especially in the northern hemisphere) is primarily
+    due to seasonal uptake and release of atmospheric CO2 by terrestrial vegetation.\nAtmospheric carbon dioxide
+    abundance is indirectly observed by various satellite instruments. These instruments measure spectrally
+    resolved near-infrared and/or infrared radiation reflected or emitted by the Earth and its atmosphere. In the
+    measured signal, molecular absorption signatures from carbon dioxide and other constituent gasses can be
+    identified. It is through analysis of those absorption lines in these radiance observations that the averaged
+    carbon dioxide abundance in the sampled atmospheric column can be determined.\nThe software used to analyse
+    the absorption lines and determine the carbon dioxide concentration in the sampled atmospheric column is
+    referred to as the retrieval algorithm. For this dataset, carbon dioxide abundances have been determined by
+    applying several algorithms to different satellite \ninstruments. Typically, different algorithms have
+    different strengths and weaknesses and therefore, which product to use for a given application typically
+    depends on the application.\nThe data set consists of 2 types of products: (i) column-averaged mixing ratios
+    of CO2, denoted XCO2 and (ii) mid-tropospheric CO2 columns.  The XCO2 products have been retrieved from
+    SCIAMACHY/ENVISAT, TANSO-FTS/GOSAT and OCO-2. The mid-tropospheric CO2 product has been retrieved from the
+    IASI instruments on-board the Metop satellite series and from AIRS. \nThe XCO2 products are available as Level
+    2 (L2) products (satellite orbit tracks) and as Level 3 (L3) product (gridded). The L2 products are available
+    as individual sensor products (SCIAMACHY: BESD and WFMD algorithms; GOSAT: OCFP and SRFP algorithms) and as a
+    multi-sensor merged product (EMMA algorithm). The L3 XCO2 product is provided in OBS4MIPS format. \nThe IASI
+    and AIRS products are available as L2 products generated with the NLIS algorithm.\nThis data set is updated on
+    a yearly basis, with each update cycle adding (if required) a new data version for the entire period, up to
+    one year behind real time.\nThis dataset is produced on behalf of C3S with the exception of the SCIAMACHY and
+    AIRS L2 products that were generated in the framework of the GHG-CCI project of the European Space Agency (ESA)
+    Climate Change Initiative (CCI).\n\nVariables in the dataset/application are:\nColumn-average dry-air mole
+    fraction of atmospheric carbon dioxide (XCO2), Mid-tropospheric columns of atmospheric carbon dioxide (CO2)
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,carbon dioxide
+  sensorType:
+  license: proprietary
+  title: Carbon dioxide data from 2002 to present derived from satellite observations
+  missionStartDate: "2002-10-01T00:00:00Z"
+
+SATELLITE_METHANE:
+  abstract: >
+    This dataset provides observations of atmospheric methane (CH4)\namounts obtained from observations collected
+    by several current and historical \nsatellite instruments.  Methane is a naturally occurring Greenhouse Gas
+    (GHG), but one whose abundance has been increased substantially above its pre-industrial value of some 720 ppb
+    by human activities, primarily because of agricultural emissions (e.g., rice production, ruminants) and fossil
+    fuel production and use. A clear annual cycle is largely due to seasonal wetland emissions.\nAtmospheric
+    methane abundance is indirectly observed by various satellite instruments. These instruments measure spectrally
+    resolved near-infrared and infrared radiation reflected or emitted by the Earth and its atmosphere. In the
+    measured signal, molecular absorption signatures from methane and constituent gasses can be identified. It is
+    through analysis of those absorption lines in these radiance observations that the averaged methane abundance
+    in the sampled atmospheric column can be determined.\nThe software used to analyse the absorption lines and
+    determine the methane concentration in the sampled atmospheric column is referred to as the retrieval algorithm.
+    For this dataset, methane abundances have been determined by applying several algorithms to different satellite
+    instruments.\nThe data set consists of 2 types of products: (i) column-averaged mixing ratios of CH4, denoted
+    XCH4 and (ii) mid-tropospheric CH4 columns. \nThe XCH4 products have been retrieved from SCIAMACHY/ENVISAT and
+    TANSO-FTS/GOSAT. The mid-tropospheric CH4 product has been retrieved from the IASI instruments onboard the
+    Metop satellite series. The XCH4 products are available as Level 2 (L2) products (satellite orbit tracks) and
+    as Level 3 (L3) product (gridded). The L2 products are available as individual sensor products (SCIAMACHY: WFMD
+    and IMAP algorithms; GOSAT: OCFP, OCPR, SRFP and SRPR algorithms) and as a multi-sensor merged product (EMMA
+    algorithm). The L3 XCH4 product is provided in OBS4MIPS format. The IASI products are available as L2 products
+    generated with the NLIS algorithm.\nThis data set is updated on a yearly basis, with each update cycle adding
+    (if required) a new data version for the entire period, up to one year behind real time.\nThis dataset is
+    produced on behalf of C3S with the exception of the SCIAMACHY L2 products that were generated in the framework
+    of the GHG-CCI project of the European Space Agency (ESA) Climate Change Initiative (CCI).\n\nVariables in the
+    dataset/application are:\nColumn-average dry-air mole fraction of atmospheric methane (XCH4), Mid-tropospheric
+    columns of atmospheric methane (CH4)
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,methane
+  sensorType:
+  license: proprietary
+  title: Methane data from 2002 to present derived from satellite observations
+  missionStartDate: "2002-10-01T00:00:00Z"
+
 # CEMS
 
 FIRE_HISTORICAL:
@@ -2356,6 +2433,220 @@ GLOFAS_SEASONAL_REFORECAST:
   license: proprietary
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
   missionStartDate: "2020-01-12T00:00:00Z"
+
+EFAS_FORECAST:
+  abstract: >
+    This dataset provides gridded modelled hydrological time series forced with medium-range
+    meteorological forecasts. The data is a consistent representation of the most important
+    hydrological variables across the European Flood Awareness System (EFAS) domain. The
+    temporal resolution is sub-daily high-resolution and ensemble forecasts of:\n\nRiver
+    discharge\nSoil moisture for three soil layers\nSnow water equivalent\n\nIt also provides
+    static data on soil depth for the three soil layers. Soil moisture and river discharge
+    data are accompanied by ancillary files for interpretation (see related variables and
+    links in the documentation).\nThis data set was produced by forcing the LISFLOOD
+    hydrological model at a 5x5km resolution with meteorological forecasts. The forecasts are
+    initialised twice daily at 00 and 12 UTC with time steps of 6 or 24 hours and lead times
+    between 5 and 15 days depending on the forcing numerical weather prediction model. The
+    forcing meteorological data are high-resolution and ensemble forecasts from the European
+    Centre of Medium-range Weather Forecasts (ECMWF) with 51 ensemble members, high-resolution
+    forecasts from the Deutsches Wetter Dienst (DWD) and the ensemble forecasts from the COSMO
+    Local Ensemble Prediction System (COSMO-LEPS) with 20 ensemble members. The hydrological
+    forecasts are available from 2018-10-10 up until present with a 30-day delay. The real-time
+    data is only available to EFAS partners.\nCompanion datasets, also available through the
+    CDS, are historical simulations which can be used to derive the hydrological climatology
+    and for verification; reforecasts for research, local skill assessment and post-processing;
+    and seasonal forecasts and reforecasts for users looking for longer leadtime forecasts.
+    For users looking for global hydrological data, we refer to the Global Flood Awareness
+    System (GloFAS) forecasts and historical simulations. All these datasets are part of the
+    operational flood forecasting within the Copernicus Emergency Management Service
+    (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24 hours,
+    River discharge in the last 6 hours, Snow depth water equivalent, Soil depth, Volumetric
+    soil moisture\n\nVariables in the dataset/application are:\nOrography, Upstream area
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel: 
+  keywords: ECMWF,CEMS,EFAS,forecast,river,discharge
+  sensorType:
+  license: proprietary
+  title: River discharge and related forecasted data by the European Flood Awareness System
+  missionStartDate: "2018-10-10T00:00:00Z"
+
+EFAS_HISTORICAL:
+  abstract: >
+    This dataset provides gridded modelled daily hydrological time series forced with
+    meteorological observations. The data set is a consistent representation of the most
+    important hydrological variables across the European Flood Awareness System (EFAS) domain.
+    The temporal resolution is up to 30 years modelled time series of:\n\nRiver discharge\nSoil
+    moisture for three soil layers\nSnow water equivalent\n\nIt also provides static data on soil
+    depth for the three soil layers. Soil moisture and river discharge data are accompanied by
+    ancillary files for interpretation (see related variables and links in the
+    documentation).\nThis dataset was produced by forcing the LISFLOOD hydrological model with
+    gridded observational data of precipitation and temperature at a 5x5 km resolution across
+    the EFAS domain. The most recent version\nuses a 6-hourly time step, whereas older versions
+    uses a 24-hour time step. It is available from 1991-01-01 up until near-real time, with a
+    delay of 6 days. The real-time data is only available to EFAS partners.\nCompanion datasets,
+    also available through the CDS, are forecasts for users who are looking medium-range
+    forecasts, reforecasts for research, local skill assessment and post-processing, and
+    seasonal forecasts and reforecasts for users looking for long-term forecasts. For users
+    looking for global hydrological data, we refer to the Global Flood Awareness System (GloFAS)
+    forecasts and historical simulations. All these datasets are part of the operational flood
+    forecasting within the Copernicus Emergency Management Service (CEMS).\n\nVariables in the
+    dataset/application are:\nRiver discharge in the last 24 hours, River discharge in the last
+    6 hours, Snow depth water equivalent, Soil depth, Volumetric soil moisture\n\nVariables in
+    the dataset/application are:\nOrography, Upstream area
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel: 
+  keywords: ECMWF,CEMS,EFAS,historical,river,discharge
+  sensorType:
+  license: proprietary
+  title: River discharge and related historical data from the European Flood Awareness System
+  missionStartDate: "1991-01-01T00:00:00Z"
+
+EFAS_REFORECAST:
+  abstract: >
+    This dataset provides gridded modelled hydrological time series forced with medium- to
+    sub-seasonal range meteorological reforecasts. The data is a consistent representation of
+    the most important hydrological variables across the European Flood Awareness System (EFAS)
+    domain. The temporal resolution is 20 years of sub-daily reforecasts initialised twice
+    weekly (Mondays and Thursdays) of:\n\nRiver discharge\nSoil moisture for three soil
+    layers\nSnow water equivalent\n\nIt also provides static data on soil depth for the three
+    soil layers. Soil moisture and river discharge data are accompanied by ancillary files for
+    interpretation (see related variables and links in the documentation).\nThis dataset was
+    produced by forcing the LISFLOOD hydrological model at a 5x5km resolution with ensemble
+    meteorological reforecasts from the European Centre of Medium-range Weather Forecasts
+    (ECMWF). Reforecasts are forecasts run over past dates and are typically used to assess
+    the skill of a forecast system or to develop tools for statistical error correction of the
+    forecasts. The reforecasts are initialised twice weekly with lead times up to 46 days, at
+    6-hourly time steps for 20 years. For more specific information on the how the reforecast
+    dataset is produced we refer to the documentation.\nCompanion datasets, also available
+    through the Climate Data Store (CDS), are the operational forecasts, historical simulations
+    which can be used to derive the hydrological climatology, and seasonal forecasts and
+    reforecasts for users looking for long term forecasts. For users looking for global
+    hydrological data, we refer to the Global Flood Awareness System (GloFAS) forecasts an
+    historical simulations. All these datasets are part of the operational flood forecasting
+    within the Copernicus Emergency Management Service (CEMS).\n\nVariables in the
+    dataset/application are:\nRiver discharge, Snow depth water equivalent, Soil depth,
+    Volumetric soil moisture\n\nVariables in the dataset/application are:\nOrography, Upstream
+    area
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel: 
+  keywords: ECMWF,CEMS,EFAS,reforecast,river,discharge
+  sensorType:
+  license: proprietary
+  title: Reforecasts of river discharge and related data by the European Flood Awareness System
+  missionStartDate: "1999-01-03T00:00:00Z"
+  missionEndDate: "2018-12-30T00:00:00Z"
+
+EFAS_SEASONAL:
+  abstract: >
+    This dataset provides gridded modelled daily hydrological time series forced with seasonal
+    meteorological forecasts. The dataset is a consistent representation of the most important
+    hydrological variables across the European Flood Awareness (EFAS) domain. The temporal
+    resolution is daily forecasts initialised once a month consisting of:\n\nRiver discharge\nSoil
+    moisture for three soil layers\nSnow water equivalent\n\nIt also provides static data on
+    soil depth for the three soil layers. Soil moisture and river discharge data are accompanied
+    by ancillary files for interpretation (see related variables and links in the
+    documentation).\nThis dataset was produced by forcing the LISFLOOD hydrological model at a
+    5x5km resolution with seasonal meteorological ensemble forecasts. The forecasts are
+    initialised on the first of each month with a lead time of 215 days at 24-hour time steps.
+    The meteorological data are seasonal forecasts (SEAS5) from the European Centre of
+    Medium-range Weather Forecasts (ECMWF) with 51 ensemble members. The forecasts are available
+    from November 2020.\nCompanion datasets, also available through the Climate Data Store (CDS),
+    are seasonal reforecasts for research, local skill assessment and post-processing of the
+    seasonal forecasts. There are also medium-range forecasts for users who want to look at
+    shorter time ranges. These are accompanied by historical simulations which can be used to
+    derive the hydrological climatology, and medium-range reforecasts. For users looking for
+    global hydrological data, we refer to the Global Flood Awareness System (GloFAS) forecasts
+    and historical simulations. All these datasets are part of the operational flood forecasting
+    within the Copernicus Emergency Management Service (CEMS).\n\nVariables in the
+    dataset/application are:\nRiver discharge in the last 24 hours, Snow depth water equivalent,
+    Soil depth, Volumetric soil moisture\n\nVariables in the dataset/application
+    are:\nOrography, Upstream area
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel: 
+  keywords: ECMWF,CEMS,EFAS,seasonal,forecast,river,discharge
+  sensorType:
+  license: proprietary
+  title: Seasonal forecasts of river discharge and related data by the European Flood Awareness System
+  missionStartDate: "2020-11-01T00:00:00Z"
+
+EFAS_SEASONAL_REFORECAST:
+  abstract: >
+    This dataset provides modelled daily hydrological time series forced with seasonal meteorological reforecasts.
+    The dataset is a consistent representation of the most important hydrological variables across the European
+    Flood Awareness (EFAS) domain. The temporal resolution is daily forecasts initialised once a month over the
+    reforecast period 1991-2020 of:\n\nRiver discharge\nSoil moisture for three soil layers\nSnow water
+    equivalent\n\nIt also provides static data on soil depth for the three soil layers. Soil moisture and river
+    discharge data are accompanied by ancillary files for interpretation (see related variables and links in the
+    documentation).\nThis dataset was produced by forcing the LISFLOOD hydrological model at a 5x5km gridded
+    resolution with seasonal meteorological ensemble reforecasts. Reforecasts are forecasts run over past dates
+    and are typically used to assess the skill of a forecast system or to develop tools for statistical error
+    correction of the forecasts. The reforecasts are initialised on the first of each month with a lead time of
+    215 days at 24-hour time steps. The forcing meteorological data are seasonal reforecasts from the European
+    Centre of Medium-range Weather Forecasts (ECMWF), consisting of 25 ensemble members up until December 2016,
+    and after that 51 members. Hydrometeorological reforecasts are available from 1991-01-01 up until 2020-10-01.
+    \nCompanion datasets, also available through the Climate Data Store (CDS), are seasonal forecasts, for which
+    the seasonal reforecasts can be useful for local skill assessment and post-processing of the seasonal forecasts.
+    For users looking for shorter time ranges there are medium-range forecasts and reforecasts, as well as
+    historical simulations which can be used to derive the hydrological climatology. For users looking for global
+    hydrological data, we refer to the Global Flood Awareness System (GloFAS) forecasts and historical simulations.
+    All these datasets are part of the operational flood forecasting within the Copernicus Emergency Management
+    Service (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24 hours, Snow
+    depth water equivalent, Soil depth, Volumetric soil moisture\n\nVariables in the dataset/application
+    are:\nOrography, Upstream area"
+  instrument:
+  platform: CEMS
+  platformSerialIdentifier: CEMS
+  processingLevel: 
+  keywords: ECMWF,CEMS,EFAS,seasonal,reforecast,river,discharge
+  sensorType:
+  license: proprietary
+  title: Seasonal reforecasts of river discharge and related data by the European Flood Awareness System
+  missionStartDate: "1991-01-01T00:00:00Z"
+  missionEndDate: "2020-10-01T00:00:00Z"
+
+# METEOBLUE --------------------------------------------------------------------------
+NEMSGLOBAL_TCDC:
+  abstract: |
+    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
+    NEMSGLOBAL has 30km spatial and 1h temporal resolutions and produces seamless
+    datasets from 1984 to 7 days ahead.
+  instrument:
+  platform: NEMSGLOBAL
+  platformSerialIdentifier: NEMSGLOBAL
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSGLOBAL,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: NEMSGLOBAL Total Cloud Cover daily mean
+  missionStartDate: "1984-01-01T00:00:00Z"
+
+NEMSAUTO_TCDC:
+  abstract: |
+    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) automatic
+    domain switch. NEMSAUTO is the automatic delivery of the highest resolution meteoblue
+    model available for any requested period of time and location. The NEMS model family
+    are improved NMM successors (operational since 2013). NEMS is a multi-scale model
+    (used from global down to local domains) and significantly improves cloud-development
+    and precipitation forecast.
+    Note that Automatic domain switching is only supported for multi point queries.
+    Support for polygons may follow later.
+  instrument:
+  platform: NEMSAUTO
+  platformSerialIdentifier: NEMSAUTO
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: NEMSAUTO Total Cloud Cover daily mean
+  missionStartDate: "1984-01-01T00:00:00Z"
 
 # COPERNICUS Digital Elevation Model
 COP_DEM_GLO30:
