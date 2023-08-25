@@ -11,6 +11,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
+from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.search.data_request_search")
 
@@ -91,10 +92,9 @@ class DataRequestSearch(Search):
             metadata = requests.get(metadata_url, headers=headers)
             metadata.raise_for_status()
         except requests.RequestException:
-            logger.error(
-                "metadata for product_type %s could not be retrieved", product_type
+            raise RequestError(
+                f"metadata for product_type {product_type} could not be retrieved"
             )
-            raise
         else:
             try:
                 url = self.config.data_request_url
@@ -107,11 +107,8 @@ class DataRequestSearch(Search):
                 request_job = requests.post(url, json=request_body, headers=headers)
                 request_job.raise_for_status()
             except requests.RequestException as e:
-                logger.error(
-                    "search job for product_type %s could not be created: %s, %s",
-                    product_type,
-                    str(e),
-                    request_job.text,
+                raise RequestError(
+                    f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
                 )
             else:
                 logger.info("search job for product_type %s created", product_type)
@@ -122,13 +119,11 @@ class DataRequestSearch(Search):
         status_url = self.config.status_url + data_request_id
         status_data = requests.get(status_url, headers=self.auth.headers).json()
         if "status_code" in status_data and status_data["status_code"] == 403:
-            logger.error("authentication token expired during request")
-            raise requests.RequestException
+            raise RequestError("authentication token expired during request")
         if status_data["status"] == "failed":
-            logger.error(
-                "data request job has failed, message: %s", status_data["message"]
+            raise RequestError(
+                f"data request job has failed, message: {status_data['message']}"
             )
-            raise requests.RequestException
         return status_data["status"] == "completed"
 
     def _get_result_data(self, data_request_id):

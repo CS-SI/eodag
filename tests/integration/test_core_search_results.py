@@ -264,3 +264,23 @@ class TestCoreSearchResults(EODagTestCase):
         for search_result in search_results:
             self.assertIsInstance(search_result.downloader, PluginTopic)
             self.assertIsInstance(search_result.downloader_auth, PluginTopic)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.do_search",
+        autospec=True,
+    )
+    def test_core_search_with_provider(self, mock_query):
+        """The core api must register search results downloaders"""
+        self.dag.set_preferred_provider("creodias")
+        search_results_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses/peps_search.json"
+        )
+        with open(search_results_file, encoding="utf-8") as f:
+            search_results_peps = json.load(f)
+
+        mock_query.return_value = search_results_peps["features"]
+        search_results, count = self.dag.search(
+            productType="S2_MSI_L1C", provider="peps"
+        )
+        # use given provider and not preferred provider
+        self.assertEqual("peps", search_results[0].provider)
