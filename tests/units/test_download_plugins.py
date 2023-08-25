@@ -167,7 +167,46 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isfile(path))
 
-        mock_requests_session_request.assert_called_once()
+        # mock_requests_session_request.assert_called_once()
+        mock_requests_session_request.assert_called_once_with(
+            mock.ANY,
+            "get",
+            self.product.remote_location,
+            stream=True,
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
+
+        # download a lone file with different extension and results output configuration
+        mock_requests_session_request.reset_mock()
+        self.product = EOProduct(
+            "meteoblue",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product_2",
+                id="dummy_2",
+            ),
+        )
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhereelse"
+        self.product.properties["id"] = "someotherproduct"
+
+        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product_2"))
+        self.assertTrue(os.path.isfile(os.path.join(path, os.listdir(path)[0])))
+        mock_requests_session_request.assert_called_once_with(
+            mock.ANY,
+            "post",
+            self.product.remote_location,
+            stream=True,
+            auth=None,
+            params={},
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
 
     @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -229,34 +268,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
         mock_requests_session.assert_not_called()
-
-        # download a lone file with different extension and results output configuration
-        mock_requests_get.reset_mock()
-        self.product = EOProduct(
-            "meteoblue",
-            dict(
-                geometry="POINT (0 0)",
-                title="dummy_product_2",
-                id="dummy_2",
-            ),
-        )
-        plugin = self.get_download_plugin(self.product)
-        self.product.location = self.product.remote_location = "http://somewhereelse"
-        self.product.properties["id"] = "someotherproduct"
-
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
-
-        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product_2"))
-        self.assertTrue(os.path.isfile(os.path.join(path, os.listdir(path)[0])))
-        mock_requests_get.assert_called_once_with(
-            "post",
-            self.product.remote_location,
-            stream=True,
-            auth=None,
-            params={},
-            headers=USER_AGENT,
-            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-        )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
