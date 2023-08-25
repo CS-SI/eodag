@@ -740,34 +740,34 @@ def format_metadata(search_param, *args, **kwargs):
             }
 
         @staticmethod
-        def convert_get_datetime(start_date: str, format: str) -> dict:
-            utc_start_date = MetadataFormatter.convert_to_iso_utc_datetime(start_date)
-            start_datetime = datetime.strptime(utc_start_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        def convert_get_datetime(date: str, format: str) -> dict:
+            utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
+            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
             if format == "list":
                 return {
-                    "year": [start_datetime.strftime("%Y")],
-                    "month": [start_datetime.strftime("%m")],
-                    "day": [start_datetime.strftime("%d")],
-                    "hour": [start_datetime.strftime("%H")],
-                    "minute": [start_datetime.strftime("%M")],
-                    "second": [start_datetime.strftime("%S")],
+                    "year": [date_object.strftime("%Y")],
+                    "month": [date_object.strftime("%m")],
+                    "day": [date_object.strftime("%d")],
+                    "hour": [date_object.strftime("%H")],
+                    "minute": [date_object.strftime("%M")],
+                    "second": [date_object.strftime("%S")],
                 }
             else:
                 return {
-                    "year": start_datetime.strftime("%Y"),
-                    "month": start_datetime.strftime("%m"),
-                    "day": start_datetime.strftime("%d"),
-                    "hour": start_datetime.strftime("%H"),
-                    "minute": start_datetime.strftime("%M"),
-                    "second": start_datetime.strftime("%S"),
+                    "year": date_object.strftime("%Y"),
+                    "month": date_object.strftime("%m"),
+                    "day": date_object.strftime("%d"),
+                    "hour": date_object.strftime("%H"),
+                    "minute": date_object.strftime("%M"),
+                    "second": date_object.strftime("%S"),
                 }
 
         @staticmethod
-        def convert_get_ecmwf_time(start_date: str) -> dict:
+        def convert_get_ecmwf_time(date: str) -> dict:
             return [
-                MetadataFormatter.convert_get_datetime(start_date, "str")["minute"]
+                MetadataFormatter.convert_get_datetime(date, "str")["hour"]
                 + ":"
-                + MetadataFormatter.convert_get_datetime(start_date, "str")["second"]
+                + MetadataFormatter.convert_get_datetime(date, "str")["minute"]
             ]
 
     for match in re.findall(r"\([A-Za-z]+\)", search_param):
