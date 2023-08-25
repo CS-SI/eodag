@@ -22,7 +22,6 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import requests
 import responses
 from requests import RequestException
 
@@ -972,7 +971,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         mock_requests_get.return_value = MockResponse(
             {"status": "failed", "message": "failed"}, 500
         )
-        with self.assertRaises(requests.RequestException):
+        with self.assertRaises(RequestError):
             self.search_plugin._check_request_status("123")
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
