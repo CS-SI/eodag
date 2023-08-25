@@ -5423,6 +5423,380 @@
         geometry: -180 -90 180 90
         id: $.productInfo.product
       storeDownloadUrl: True
+    SEASONAL_POSTPROCESSED_PL:
+      productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
+      providerProductType:
+        - ensemble_mean
+      variable:
+        - geopotential_anomaly
+        - specific_humidity_anomaly
+        - temperature_anomaly
+        - u_component_of_wind_anomaly
+        - v_component_of_wind_anomaly
+      pressure_level:
+        - "10"
+        - "30"
+        - "50"
+        - "100"
+        - "200"
+        - "300"
+        - "400"
+        - "500"
+        - "700"
+        - "850"
+        - "925"
+        - "1000"
+      leadtime_month:
+        - "1"
+      startTimeFromAscendingNode: "2017-01-01T00:00:00Z"
+      geometry: -180 -90 180 90
+      originating_centre: ecmwf
+      system: "5"
+      format: "grib"
+      metadata_mapping:
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        pressure_level:
+          - '{{ "multiStringSelectValues": [ {{"name": "pressure_level", "value": {pressure_level} }} ] }}'
+          - $.null
+        leadtime_month:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_month", "value": {leadtime_month} }} ] }}'
+          - $.null
+        originating_centre:
+          - '{{"stringChoiceValues": [ {{"name": "originating_centre", "value": "{originating_centre}" }} ] }}'
+          - $.null
+        system:
+          - '{{"stringChoiceValues": [ {{"name": "system", "value": "{system}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{ "multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+            ] }}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
+          - '$.extraInformation.footprint'
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    SEASONAL_POSTPROCESSED_SL:
+      productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
+      providerProductType:
+        - ensemble_mean
+      variable:
+        - 10m_u_component_of_wind_anomaly
+        - 10m_v_component_of_wind_anomaly
+        - 10m_wind_gust_anomaly
+        - 10m_wind_speed_anomaly
+      leadtime_month:
+        - "1"
+      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
+      geometry: -180 -90 180 90
+      originating_centre: ecmwf
+      system: "51"
+      format: "grib"
+      metadata_mapping:
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        leadtime_month:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_month", "value": {leadtime_month} }} ] }}'
+          - $.null
+        originating_centre:
+          - '{{"stringChoiceValues": [ {{"name": "originating_centre", "value": "{originating_centre}" }} ] }}'
+          - $.null
+        system:
+          - '{{"stringChoiceValues": [ {{"name": "system", "value": "{system}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{ "multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+            ] }}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
+          - '$.extraInformation.footprint'
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    SEASONAL_ORIGINAL_SL:
+      productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
+      variable:
+        - 10m_u_component_of_wind
+        - 10m_v_component_of_wind
+        - 10m_wind_gust_since_previous_post_processing
+      leadtime_hour:
+        - "0"
+        - "6"
+        - "12"
+        - "18"
+        - "24"
+        - "30"
+        - "36"
+        - "42"
+        - "48"
+        - "54"
+        - "60"
+        - "66"
+        - "72"
+        - "78"
+        - "84"
+        - "90"
+        - "96"
+        # - "102"
+        # - "108"
+        # - "114"
+        # - "120"
+        # - "126"
+        # - "132"
+        # - "138"
+        # - "144"
+        # - "150"
+        # - "156"
+        # - "162"
+        # - "168"
+        # - "174"
+        # - "180"
+        # - "186"
+        # - "192"
+        # - "198"
+      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
+      geometry: -180 -90 180 90
+      originating_centre: ecmwf
+      system: "51"
+      format: "grib"
+      metadata_mapping:
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        leadtime_hour:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_hour", "value": {leadtime_hour} }} ] }}'
+          - $.null
+        originating_centre:
+          - '{{"stringChoiceValues": [ {{"name": "originating_centre", "value": "{originating_centre}" }} ] }}'
+          - $.null
+        system:
+          - '{{"stringChoiceValues": [ {{"name": "system", "value": "{system}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{ "multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+            ] }}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
+          - '$.extraInformation.footprint'
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    SEASONAL_ORIGINAL_PL:
+      productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
+      variable:
+        - geopotential
+        - temperature
+      pressure_level:
+        - "10"
+        - "30"
+        - "50"
+        - "100"
+        - "200"
+        - "300"
+        - "400"
+        - "500"
+        - "700"
+        - "850"
+        - "925"
+        - "1000"
+      leadtime_hour:
+        - "12"
+        - "24"
+        - "36"
+        - "48"
+        - "60"
+        - "72"
+        - "84"
+        - "96"
+        # - "108"
+        # - "120"
+        # - "132"
+        # - "144"
+        # - "156"
+        # - "168"
+        # - "180"
+        # - "192"
+      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
+      geometry: -180 -90 180 90
+      originating_centre: ecmwf
+      system: "51"
+      format: "grib"
+      metadata_mapping:
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        pressure_level:
+          - '{{ "multiStringSelectValues": [ {{"name": "pressure_level", "value": {pressure_level} }} ] }}'
+          - $.null
+        leadtime_hour:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_hour", "value": {leadtime_hour} }} ] }}'
+          - $.null
+        originating_centre:
+          - '{{"stringChoiceValues": [ {{"name": "originating_centre", "value": "{originating_centre}" }} ] }}'
+          - $.null
+        system:
+          - '{{"stringChoiceValues": [ {{"name": "system", "value": "{system}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{ "multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+            ] }}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
+          - '$.extraInformation.footprint'
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    SEASONAL_MONTHLY_PL:
+      productType: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS
+      variable:
+        - geopotential
+        - temperature
+      providerProductType:
+        - ensemble_mean
+      leadtime_month:
+        - "1"
+      pressure_level:
+        - "10"
+        - "30"
+        - "50"
+        - "100"
+        - "200"
+        - "300"
+        - "400"
+        - "500"
+        - "700"
+        - "850"
+        - "925"
+        - "1000"
+      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
+      geometry: -180 -90 180 90
+      originating_centre: ecmwf
+      system: "51"
+      format: "grib"
+      metadata_mapping:
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        leadtime_month:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_month", "value": {leadtime_month} }} ] }}'
+          - $.null
+        pressure_level:
+          - '{{ "multiStringSelectValues": [ {{"name": "pressure_level", "value": {pressure_level} }} ] }}'
+          - $.null
+        originating_centre:
+          - '{{"stringChoiceValues": [ {{"name": "originating_centre", "value": "{originating_centre}" }} ] }}'
+          - $.null
+        system:
+          - '{{"stringChoiceValues": [ {{"name": "system", "value": "{system}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{ "multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+            ] }}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
+          - '$.extraInformation.footprint'
+        id: $.productInfo.product
+      storeDownloadUrl: True
+    SEASONAL_MONTHLY_SL:
+      productType: EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS
+      variable:
+        - 10m_u_component_of_wind
+        - 10m_wind_gust_since_previous_post_processing
+        - 10m_v_component_of_wind
+      providerProductType:
+        - ensemble_mean
+      leadtime_month:
+        - "1"
+      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
+      geometry: -180 -90 180 90
+      originating_centre: ecmwf
+      system: "51"
+      format: "grib"
+      metadata_mapping:
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        providerProductType:
+          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - $.null
+        leadtime_month:
+          - '{{ "multiStringSelectValues": [ {{"name": "leadtime_month", "value": {leadtime_month} }} ] }}'
+          - $.null
+        originating_centre:
+          - '{{"stringChoiceValues": [ {{"name": "originating_centre", "value": "{originating_centre}" }} ] }}'
+          - $.null
+        system:
+          - '{{"stringChoiceValues": [ {{"name": "system", "value": "{system}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode:
+          - >
+            {{ "multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+            ] }}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry:
+          - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
+          - '$.extraInformation.footprint'
+        id: $.productInfo.product
+      storeDownloadUrl: True
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker

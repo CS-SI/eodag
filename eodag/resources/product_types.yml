@@ -2273,6 +2273,290 @@ SATELLITE_METHANE:
   title: Methane data from 2002 to present derived from satellite observations
   missionStartDate: "2002-10-01T00:00:00Z"
 
+SEASONAL_POSTPROCESSED_PL:
+  abstract: >
+    This entry covers pressure-level data post-processed for bias adjustment on a monthly time resolution.
+    \nSeasonal forecasts provide a long-range outlook of changes in the Earth system over periods of a few weeks
+    or months, as a result of predictable changes in some of the slow-varying components of the system. For
+    example, ocean temperatures typically vary slowly, on timescales of weeks or months; as the ocean has an impact
+    on the overlaying atmosphere, the variability of its properties (e.g. temperature) can modify both local and
+    remote atmospheric conditions. Such modifications of the 'usual' atmospheric conditions are the essence of all
+    long-range (e.g. seasonal) forecasts. This is different from a weather forecast, which gives a lot more precise
+    detail - both in time and space - of the evolution of the state of the atmosphere over a few days into the
+    future. Beyond a few days, the chaotic nature of the atmosphere limits the possibility to predict precise
+    changes at local scales. This is one of the reasons long-range forecasts of atmospheric conditions have large
+    uncertainties. To quantify such uncertainties, long-range forecasts use ensembles, and meaningful forecast
+    products reflect a distributions of outcomes.\nGiven the complex, non-linear interactions between the individual
+    components of the Earth system, the best tools for long-range forecasting are climate models which include as
+    many of the key components of the system and possible; typically, such models include representations of the
+    atmosphere, ocean and land surface. These models are initialised with data describing the state of the system
+    at the starting point of the forecast, and used to predict the evolution of this state in time.\nWhile
+    uncertainties coming from imperfect knowledge of the initial conditions of the components of the Earth system
+    can be described with the use of ensembles, uncertainty arising from approximations made in the models are
+    very much dependent on the choice of model. A convenient way to quantify the effect of these approximations
+    is to combine outputs from several models, independently developed, initialised and operated.\nTo this effect,
+    the C3S provides a multi-system seasonal forecast service, where data produced by state-of-the-art seasonal
+    forecast systems developed, implemented and operated at forecast centres in several European countries is
+    collected, processed and combined to enable user-relevant applications. The composition of the C3S seasonal
+    multi-system and the full content of the database underpinning the service are described in the documentation.
+    The data is grouped in several catalogue entries (CDS datasets), currently defined by the type of variable
+    (single-level or multi-level, on pressure surfaces) and the level of post-processing applied (data at original
+    time resolution, processing on temporal aggregation and post-processing related to bias adjustment).\nThe
+    variables available in this data set are listed in the table below. The data includes forecasts created in
+    real-time since 2017.\n\nVariables in the dataset/application are:\nGeopotential anomaly, Specific humidity
+    anomaly, Temperature anomaly, U-component of wind anomaly, V-component of wind anomaly
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,seasonal,forecast,anomalies,pressure,levels
+  sensorType:
+  license: proprietary
+  title: Seasonal forecast anomalies on pressure levels
+  missionStartDate: "2017-01-01T00:00:00Z"
+
+SEASONAL_POSTPROCESSED_SL:
+  abstract: >
+    This entry covers single-level data post-processed for bias adjustment on a monthly time resolution.
+    \nSeasonal forecasts provide a long-range outlook of changes in the Earth system over periods of a few weeks
+    or months, as a result of predictable changes in some of the slow-varying components of the system. For
+    example, ocean temperatures typically vary slowly, on timescales of weeks or months; as the ocean has an
+    impact on the overlaying atmosphere, the variability of its properties (e.g. temperature) can modify both
+    local and remote atmospheric conditions. Such modifications of the 'usual' atmospheric conditions are the
+    essence of all long-range (e.g. seasonal) forecasts. This is different from a weather forecast, which gives
+    a lot more precise detail - both in time and space - of the evolution of the state of the atmosphere over a
+    few days into the future. Beyond a few days, the chaotic nature of the atmosphere limits the possibility to
+    predict precise changes at local scales. This is one of the reasons long-range forecasts of atmospheric
+    conditions have large uncertainties. To quantify such uncertainties, long-range forecasts use ensembles, and
+    meaningful forecast products reflect a distributions of outcomes.\nGiven the complex, non-linear interactions
+    between the individual components of the Earth system, the best tools for long-range forecasting are climate
+    models which include as many of the key components of the system and possible; typically, such models include
+    representations of the atmosphere, ocean and land surface. These models are initialised with data describing
+    the state of the system at the starting point of the forecast, and used to predict the evolution of this state
+    in time.\nWhile uncertainties coming from imperfect knowledge of the initial conditions of the components of
+    the Earth system can be described with the use of ensembles, uncertainty arising from approximations made in
+    the models are very much dependent on the choice of model. A convenient way to quantify the effect of these
+    approximations is to combine outputs from several models, independently developed, initialised and operated.\nTo
+    this effect, the C3S provides a multi-system seasonal forecast service, where data produced by state-of-the-art
+    seasonal forecast systems developed, implemented and operated at forecast centres in several European countries
+    is collected, processed and combined to enable user-relevant applications. The composition of the C3S seasonal
+    multi-system and the full content of the database underpinning the service are described in the documentation.
+    The data is grouped in several catalogue entries (CDS datasets), currently defined by the type of variable
+    (single-level or multi-level, on pressure surfaces) and the level of post-processing applied (data at original
+    time resolution, processing on temporal aggregation and post-processing related to bias adjustment).\nThe
+    variables available in this data set are listed in the table below. The data includes forecasts created in
+    real-time since 2017.\n\nVariables in the dataset/application are:\n10m u-component of wind anomaly, 10m
+    v-component of wind anomaly, 10m wind gust anomaly, 10m wind speed anomaly, 2m dewpoint temperature anomaly,
+    2m temperature anomaly, East-west surface stress anomalous rate of accumulation, Evaporation anomalous rate
+    of accumulation, Maximum 2m temperature in the last 24 hours anomaly, Mean sea level pressure anomaly, Mean
+    sub-surface runoff rate anomaly, Mean surface runoff rate anomaly, Minimum 2m temperature in the last 24 hours
+    anomaly, North-south surface stress anomalous rate of accumulation, Runoff anomalous rate of accumulation,
+    Sea surface temperature anomaly, Sea-ice cover anomaly, Snow density anomaly, Snow depth anomaly, Snowfall
+    anomalous rate of accumulation, Soil temperature anomaly level 1, Solar insolation anomalous rate of
+    accumulation, Surface latent heat flux anomalous rate of accumulation, Surface sensible heat flux anomalous
+    rate of accumulation, Surface solar radiation anomalous rate of accumulation, Surface solar radiation
+    downwards anomalous rate of accumulation, Surface thermal radiation anomalous rate of accumulation, Surface
+    thermal radiation downwards anomalous rate of accumulation, Top solar radiation anomalous rate of accumulation,
+    Top thermal radiation anomalous rate of accumulation, Total cloud cover anomaly, Total precipitation anomalous
+    rate of accumulation
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,seasonal,forecast,anomalies,single,levels
+  sensorType:
+  license: proprietary
+  title: Seasonal forecast anomalies on single levels
+  missionStartDate: "2017-01-01T00:00:00Z"
+
+SEASONAL_ORIGINAL_SL:
+  abstract: >
+    This entry covers single-level data at the original time resolution (once a day, or once every 6 hours,
+    depending on the variable). \nSeasonal forecasts provide a long-range outlook of changes in the Earth system
+    over periods of a few weeks or months, as a result of predictable changes in some of the slow-varying
+    components of the system. For example, ocean temperatures typically vary slowly, on timescales of weeks or
+    months; as the ocean has an impact on the overlaying atmosphere, the variability of its properties (e.g.
+    temperature) can modify both local and remote atmospheric conditions. Such modifications of the 'usual'
+    atmospheric conditions are the essence of all long-range (e.g. seasonal) forecasts. This is different from
+    a weather forecast, which gives a lot more precise detail - both in time and space - of the evolution of the 
+    state of the atmosphere over a few days into the future. Beyond a few days, the chaotic nature of the
+    atmosphere limits the possibility to predict precise changes at local scales. This is one of the reasons
+    long-range forecasts of atmospheric conditions have large uncertainties. To quantify such uncertainties,
+    long-range forecasts use ensembles, and meaningful forecast products reflect a distributions of outcomes.\nGiven
+    the complex, non-linear interactions between the individual components of the Earth system, the best tools for
+    long-range forecasting are climate models which include as many of the key components of the system and
+    possible; typically, such models include representations of the atmosphere, ocean and land surface. These
+    models are initialised with data describing the state of the system at the starting point of the forecast,
+    and used to predict the evolution of this state in time.\nWhile uncertainties coming from imperfect knowledge
+    of the initial conditions of the components of the Earth system can be described with the use of ensembles,
+    uncertainty arising from approximations made in the models are very much dependent on the choice of model.
+    A convenient way to quantify the effect of these approximations is to combine outputs from several models,
+    independently developed, initialised and operated.\nTo this effect, the C3S provides a multi-system seasonal
+    forecast service, where data produced by state-of-the-art seasonal forecast systems developed, implemented and
+    operated at forecast centres in several European countries is collected, processed and combined to enable
+    user-relevant applications. The composition of the C3S seasonal multi-system and the full content of the
+    database underpinning the service are described in the documentation. The data is grouped in several catalogue
+    entries (CDS datasets), currently defined by the type of variable (single-level or multi-level, on pressure
+    surfaces) and the level of post-processing applied (data at original time resolution, processing on temporal
+    aggregation and post-processing related to bias adjustment).\nThe variables available in this data set are
+    listed in the table below. The data includes forecasts created in real-time (since 2017) and retrospective
+    forecasts (hindcasts) initialised at equivalent intervals during the period 1993-2016.\n\nVariables in the
+    dataset/application are:\n10m u-component of wind, 10m v-component of wind, 10m wind gust since previous
+    post-processing, 2m dewpoint temperature, 2m temperature, Eastward turbulent surface stress, Evaporation,
+    Land-sea mask, Maximum 2m temperature in the last 24 hours, Mean sea level pressure, Minimum 2m temperature
+    in the last 24 hours, Northward turbulent surface stress, Orography, Runoff, Sea surface temperature, Sea-ice
+    cover, Snow density, Snow depth, Snowfall, Soil temperature level 1, Sub-surface runoff, Surface latent heat
+    flux, Surface net solar radiation, Surface net thermal radiation, Surface runoff, Surface sensible heat flux,
+    Surface solar radiation downwards, Surface thermal radiation downwards, TOA incident solar radiation, Top net
+    solar radiation, Top net thermal radiation, Total cloud cover, Total precipitation
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,seasonal,forecast,daily,single,levels
+  sensorType:
+  license: proprietary
+  title: Seasonal forecast daily and subdaily data on single levels
+  missionStartDate: "2017-01-01T00:00:00Z"
+
+SEASONAL_ORIGINAL_PL:
+  abstract: >
+    his entry covers pressure-level data at the original time resolution (once every 12 hours). \nSeasonal
+    forecasts provide a long-range outlook of changes in the Earth system over periods of a few weeks or months,
+    as a result of predictable changes in some of the slow-varying components of the system. For example, ocean
+    temperatures typically vary slowly, on timescales of weeks or months; as the ocean has an impact on the
+    overlaying atmosphere, the variability of its properties (e.g. temperature) can modify both local and remote
+    atmospheric conditions. Such modifications of the 'usual' atmospheric conditions are the essence of all
+    long-range (e.g. seasonal) forecasts. This is different from a weather forecast, which gives a lot more
+    precise detail - both in time and space - of the evolution of the state of the atmosphere over a few days
+    into the future. Beyond a few days, the chaotic nature of the atmosphere limits the possibility to predict
+    precise changes at local scales. This is one of the reasons long-range forecasts of atmospheric conditions
+    have large uncertainties. To quantify such uncertainties, long-range forecasts use ensembles, and meaningful
+    forecast products reflect a distributions of outcomes.\nGiven the complex, non-linear interactions between
+    the individual components of the Earth system, the best tools for long-range forecasting are climate models
+    which include as many of the key components of the system and possible; typically, such models include
+    representations of the atmosphere, ocean and land surface. These models are initialised with data describing
+    the state of the system at the starting point of the forecast, and used to predict the evolution of this state
+    in time.\nWhile uncertainties coming from imperfect knowledge of the initial conditions of the components of
+    the Earth system can be described with the use of ensembles, uncertainty arising from approximations made in
+    the models are very much dependent on the choice of model. A convenient way to quantify the effect of these
+    approximations is to combine outputs from several models, independently developed, initialised and
+    operated.\nTo this effect, the C3S provides a multi-system seasonal forecast service, where data produced
+    by state-of-the-art seasonal forecast systems developed, implemented and operated at forecast centres in
+    several European countries is collected, processed and combined to enable user-relevant applications. The
+    composition of the C3S seasonal multi-system and the full content of the database underpinning the service
+    are described in the documentation. The data is grouped in several catalogue entries (CDS datasets), currently
+    defined by the type of variable (single-level or multi-level, on pressure surfaces) and the level of
+    post-processing applied (data at original time resolution, processing on temporal aggregation and
+    post-processing related to bias adjustment).\nThe variables available in this data set are listed in the
+    table below. The data includes forecasts created in real-time (since 2017) and retrospective forecasts
+    (hindcasts) initialised at equivalent intervals during the period 1993-2016.\n\nVariables in the
+    dataset/application are:\nGeopotential, Specific humidity, Temperature, U-component of wind, V-component
+    of wind
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,seasonal,forecast,subdaily,pressure,levels
+  sensorType:
+  license: proprietary
+  title: Seasonal forecast subdaily data on pressure levels
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+SEASONAL_MONTHLY_PL:
+  abstract: >
+    This entry covers pressure-level data aggregated on a monthly time resolution. \nSeasonal forecasts provide
+    a long-range outlook of changes in the Earth system over periods of a few weeks or months, as a result of
+    predictable changes in some of the slow-varying components of the system. For example, ocean temperatures
+    typically vary slowly, on timescales of weeks or months; as the ocean has an impact on the overlaying
+    atmosphere, the variability of its properties (e.g. temperature) can modify both local and remote atmospheric
+    conditions. Such modifications of the 'usual' atmospheric conditions are the essence of all long-range
+    (e.g. seasonal) forecasts. This is different from a weather forecast, which gives a lot more precise detail
+    - both in time and space - of the evolution of the state of the atmosphere over a few days into the future.
+    Beyond a few days, the chaotic nature of the atmosphere limits the possibility to predict precise changes
+    at local scales. This is one of the reasons long-range forecasts of atmospheric conditions have large
+    uncertainties. To quantify such uncertainties, long-range forecasts use ensembles, and meaningful forecast
+    products reflect a distributions of outcomes.\nGiven the complex, non-linear interactions between the
+    individual components of the Earth system, the best tools for long-range forecasting are climate models
+    which include as many of the key components of the system and possible; typically, such models include
+    representations of the atmosphere, ocean and land surface. These models are initialised with data describing
+    the state of the system at the starting point of the forecast, and used to predict the evolution of this
+    state in time.\nWhile uncertainties coming from imperfect knowledge of the initial conditions of the components
+    of the Earth system can be described with the use of ensembles, uncertainty arising from approximations
+    made in the models are very much dependent on the choice of model. A convenient way to quantify the effect
+    of these approximations is to combine outputs from several models, independently developed, initialised and
+    operated.\nTo this effect, the C3S provides a multi-system seasonal forecast service, where data produced by
+    state-of-the-art seasonal forecast systems developed, implemented and operated at forecast centres in several
+    European countries is collected, processed and combined to enable user-relevant applications. The composition
+    of the C3S seasonal multi-system and the full content of the database underpinning the service are described
+    in the documentation. The data is grouped in several catalogue entries (CDS datasets), currently defined by
+    the type of variable (single-level or multi-level, on pressure surfaces) and the level of post-processing
+    applied (data at original time resolution, processing on temporal aggregation and post-processing related to
+    bias adjustment).\nThe variables available in this data set are listed in the table below. The data includes
+    forecasts created in real-time (since 2017) and retrospective forecasts (hindcasts) initialised at equivalent
+    intervals during the period 1993-2016.\n\nVariables in the dataset/application are:\nGeopotential, Specific
+    humidity, Temperature, U-component of wind, V-component of wind
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,seasonal,forecast,monthly,pressure,levels
+  sensorType:
+  license: proprietary
+  title: Seasonal forecast monthly statistics on pressure levels
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+SEASONAL_MONTHLY_SL:
+  abstract: >
+    This entry covers single-level data aggregated on a monthly time resolution. \nSeasonal forecasts provide
+    a long-range outlook of changes in the Earth system over periods of a few weeks or months, as a result of
+    predictable changes in some of the slow-varying components of the system. For example, ocean temperatures
+    typically vary slowly, on timescales of weeks or months; as the ocean has an impact on the overlaying
+    atmosphere, the variability of its properties (e.g. temperature) can modify both local and remote atmospheric
+    conditions. Such modifications of the 'usual' atmospheric conditions are the essence of all long-range
+    (e.g. seasonal) forecasts. This is different from a weather forecast, which gives a lot more precise detail
+    - both in time and space - of the evolution of the state of the atmosphere over a few days into the future.
+    Beyond a few days, the chaotic nature of the atmosphere limits the possibility to predict precise changes at
+    local scales. This is one of the reasons long-range forecasts of atmospheric conditions have large
+    uncertainties. To quantify such uncertainties, long-range forecasts use ensembles, and meaningful forecast
+    products reflect a distributions of outcomes.\nGiven the complex, non-linear interactions between the
+    individual components of the Earth system, the best tools for long-range forecasting are climate models
+    which include as many of the key components of the system and possible; typically, such models include
+    representations of the atmosphere, ocean and land surface. These models are initialised with data describing
+    the state of the system at the starting point of the forecast, and used to predict the evolution of this
+    state in time.\nWhile uncertainties coming from imperfect knowledge of the initial conditions of the
+    components of the Earth system can be described with the use of ensembles, uncertainty arising from
+    approximations made in the models are very much dependent on the choice of model. A convenient way to
+    quantify the effect of these approximations is to combine outputs from several models, independently
+    developed, initialised and operated.\nTo this effect, the C3S provides a multi-system seasonal forecast
+    service, where data produced by state-of-the-art seasonal forecast systems developed, implemented and
+    operated at forecast centres in several European countries is collected, processed and combined to enable
+    user-relevant applications. The composition of the C3S seasonal multi-system and the full content of the
+    database underpinning the service are described in the documentation. The data is grouped in several catalogue
+    entries (CDS datasets), currently defined by the type of variable (single-level or multi-level, on pressure
+    surfaces) and the level of post-processing applied (data at original time resolution, processing on temporal
+    aggregation and post-processing related to bias adjustment).\nThe variables available in this data set are
+    listed in the table below. The data includes forecasts created in real-time (since 2017) and retrospective
+    forecasts (hindcasts) initialised at equivalent intervals during the period 1993-2016.\n\nVariables in the
+    dataset/application are:\n10m u-component of wind, 10m v-component of wind, 10m wind gust since previous
+    post-processing, 10m wind speed, 2m dewpoint temperature, 2m temperature, East-west surface stress rate of
+    accumulation, Evaporation, Maximum 2m temperature in the last 24 hours, Mean sea level pressure, Mean
+    sub-surface runoff rate, Mean surface runoff rate, Minimum 2m temperature in the last 24 hours, North-south
+    surface stress rate of accumulation, Runoff, Sea surface temperature, Sea-ice cover, Snow density, Snow
+    depth, Snowfall, Soil temperature level 1, Solar insolation rate of accumulation, Surface latent heat flux,
+    Surface sensible heat flux, Surface solar radiation, Surface solar radiation downwards, Surface thermal
+    radiation, Surface thermal radiation downwards, Top solar radiation, Top thermal radiation, Total cloud cover,
+    Total precipitation
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,seasonal,forecast,monthly,single,levels
+  sensorType:
+  license: proprietary
+  title: Seasonal forecast monthly statistics on single levels
+  missionStartDate: "1993-01-01T00:00:00Z"
+
 # CEMS
 
 FIRE_HISTORICAL:
