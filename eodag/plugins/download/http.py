@@ -459,9 +459,7 @@ class HTTPDownload(Download):
                     os.makedirs(new_fs_path)
                 shutil.move(fs_path, new_fs_path)
                 # WARNING: A strong assumption is made here: there is only one file in the directory
-                file_path = os.path.join(
-                    new_fs_path, os.listdir(new_fs_path)[0]
-                )
+                file_path = os.path.join(new_fs_path, os.listdir(new_fs_path)[0])
                 new_file_path = file_path[: file_path.index(".zip")]
                 shutil.move(file_path, new_file_path)
             else:
@@ -470,9 +468,7 @@ class HTTPDownload(Download):
             return new_fs_path
 
         # Check that the downloaded file is not a lone file and must not be placed in a directory
-        if os.path.isfile(fs_path) and getattr(
-            self.config, "outputs_in_folder", False
-        ):
+        if os.path.isfile(fs_path) and getattr(self.config, "outputs_in_folder", False):
             new_fs_path = os.path.join(
                 os.path.dirname(fs_path),
                 sanitize(product.properties["title"]),
