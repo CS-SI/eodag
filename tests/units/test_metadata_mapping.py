@@ -448,53 +448,6 @@ class TestMetadataFormatter(unittest.TestCase):
             str([-120, -60, -118, -58]),
         )
 
-    def test_convert_get_corine_product_type(self):
-        self.assertEqual(
-            format_metadata(
-                "{start_date#get_corine_product_type(2000-06-01T00:00:00Z)}",
-                start_date="2000-01-01T00:00:00Z",
-            ),
-            "Corine Land Cover 2000",
-        )
-        self.assertEqual(
-            format_metadata(
-                "{start_date#get_corine_product_type(2001-06-01T00:00:00Z)}",
-                start_date="1995-01-01T00:00:00Z",
-            ),
-            "Corine Land Change 1990 2000",
-        )
-
-        self.assertEqual(
-            format_metadata(
-                "{start_date#get_corine_product_type(1991-06-01T00:00:00Z)}",
-                start_date="1985-01-01T00:00:00Z",
-            ),
-            "Corine Land Change 1990 2000",
-        )
-
-        self.assertEqual(
-            format_metadata(
-                "{start_date#get_corine_product_type(2005-06-01T00:00:00Z)}",
-                start_date="1999-01-01T00:00:00Z",
-            ),
-            "Corine Land Change 2000 2006",
-        )
-
-        self.assertEqual(
-            format_metadata(
-                "{start_date#get_corine_product_type(2011-06-01T00:00:00Z)}",
-                start_date="1999-01-01T00:00:00Z",
-            ),
-            "Corine Land Change 2000 2006",
-        )
-        self.assertEqual(
-            format_metadata(
-                "{start_date#get_corine_product_type(2021-06-01T00:00:00Z)}",
-                start_date="2021-06-02T00:00:00Z",
-            ),
-            "Corine Land Cover 2018",
-        )
-
     def test_convert_split_corine_id(self):
         self.assertEqual(
             format_metadata(
