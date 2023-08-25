@@ -12,8 +12,8 @@ from collections import namedtuple
 from shutil import make_archive, rmtree
 from typing import Dict, Optional
 
-import requests
 import dateutil.parser
+import requests
 from dateutil import tz
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse

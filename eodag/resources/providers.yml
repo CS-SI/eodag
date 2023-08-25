@@ -4057,7 +4057,7 @@
           - '{{"stringChoiceValues": [{{"name": "productType", "value": {id#split_id_into_s5p_params}["productType"]}}, {{"name": "processingMode", "value": {id#split_id_into_s5p_params}["processingMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s5p_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s5p_params}["startDate"], "end": {id#split_id_into_s5p_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
         processingLevel:
-          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s5p_id}'
     COP_DEM_GLO30:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
@@ -4195,73 +4195,411 @@
       storeDownloadUrl: True # if this parameter is set to true the download information for a product id will be cached and retrieved at the download request instead of executing a search
     ERA5_PL:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
+      providerProductType:
+        - ensemble_mean
+        - ensemble_members
+        - reanalysis
+        - ensemble_spread
+      variable:
+        - temperature
+        - fraction_of_cloud_cover
+        - geopotential
+        - ozone_mass_mixing_ratio
+        - potential_vorticity
+        - relative_humidity
+        - specific_cloud_ice_water_content
+        - specific_cloud_liquid_water_content
+        - specific_humidity
+        - specific_rain_water_content
+        - specific_snow_water_content
+        - vertical_velocity
+        - vorticity
+      pressure_level:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "7"
+        - "10"
+        - "20"
+        - "30"
+        - "50"
+        - "70"
+        - "100"
+        - "125"
+        - "150"
+        - "175"
+        - "200"
+        - "225"
+        - "250"
+        - "300"
+        - "350"
+        - "400"
+        - "450"
+        - "500"
+        - "550"
+        - "600"
+        - "650"
+        - "700"
+        - "750"
+        - "775"
+        - "800"
+        - "825"
+        - "850"
+        - "875"
+        - "900"
+        - "925"
+        - "950"
+        - "975"
+        - "1000"
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      format: grib # netcdf format may fail
       metadata_mapping:
-        # the given start time is used to determine the other filter params
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productEndDate'
         id: '$.productInfo.product'
+        startTimeFromAscendingNode:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"multiStringSelectValues": [{{"name": "product_type", "value": {providerProductType}}}]}}'
+          - '$.null'
+        variable:
+          - '{{"multiStringSelectValues": [{{"name": "variable", "value": {variable}}}]}}'
+          - '$.null'
+        pressure_level:
+          - '{{"multiStringSelectValues": [{{"name": "pressure_level", "value": {pressure_level}}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
-          - '-180 -90 180 90'
+          - '$.extraInformation.footprint'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    ERA5_PL_MONTHLY:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
+      providerProductType:
+        - monthly_averaged_ensemble_members
+        - monthly_averaged_ensemble_members_by_hour_of_day
+        - monthly_averaged_reanalysis
+        - monthly_averaged_reanalysis_by_hour_of_day
+      variable:
+        - divergence
+        - fraction_of_cloud_cover
+        - geopotential
+        - ozone_mass_mixing_ratio
+        - potential_vorticity
+        - relative_humidity
+        - specific_cloud_ice_water_content
+        - specific_cloud_liquid_water_content
+        - specific_humidity
+        - specific_rain_water_content
+        - specific_snow_water_content
+        - temperature
+        - u_component_of_wind
+        - v_component_of_wind
+        - vertical_velocity
+        - vorticity
+      pressure_level:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "7"
+        - "10"
+        - "20"
+        - "30"
+        - "50"
+        - "70"
+        - "100"
+        - "125"
+        - "150"
+        - "175"
+        - "200"
+        - "225"
+        - "250"
+        - "300"
+        - "350"
+        - "400"
+        - "450"
+        - "500"
+        - "550"
+        - "600"
+        - "650"
+        - "700"
+        - "750"
+        - "775"
+        - "800"
+        - "825"
+        - "850"
+        - "875"
+        - "900"
+        - "925"
+        - "950"
+        - "975"
+        - "1000"
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      format: grib # netcdf format may fail
+      metadata_mapping:
+        id: '$.productInfo.product'
+        startTimeFromAscendingNode:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"multiStringSelectValues": [{{"name": "product_type", "value": {providerProductType}}}]}}'
+          - '$.null'
+        variable:
+          - '{{"multiStringSelectValues": [{{"name": "variable", "value": {variable}}}]}}'
+          - '$.null'
+        pressure_level:
+          - '{{"multiStringSelectValues": [{{"name": "pressure_level", "value": {pressure_level}}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '$.extraInformation.footprint'
+        defaultGeometry: '-180 -90 180 90'
       storeDownloadUrl: True
     ERA5_LAND:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
+      variable:
+        - 2m_dewpoint_temperature
+        - 2m_temperature
+        - skin_temperature
+        - soil_temperature_level_1
+        - lake_bottom_temperature
+        - lake_total_layer_temperature
+        - lake_shape_factor
+        - snow_cover
+        - temperature_of_snow_layer
+        - snow_depth
+        - snow_albedo
+        - skin_reservoir_content
+        - volumetric_soil_water_layer_1
+        - forecast_albedo
+        - surface_net_thermal_radiation
+        - surface_net_solar_radiation
+        - evaporation_from_bare_soil
+        - evaporation_from_open_water_surfaces_excluding_oceans
+        - total_evaporation
+        - surface_runoff
+        - snow_evaporation
+        - potential_evaporation
+        - snow_density
+        - snowmelt
+        - surface_latent_heat_flux
+        - 10m_u_component_of_wind
+        - 10m_v_component_of_wind
+        - surface_pressure
+        - total_precipitation
+        - leaf_area_index_high_vegetation
+        - leaf_area_index_low_vegetation
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      format: grib # netcdf format may fail
       metadata_mapping:
-        # the given start time is used to determine the other filter params
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productEndDate'
         id: '$.productInfo.product'
+        startTimeFromAscendingNode:
+          - '{{"stringChoiceValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(string)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(string)}["month"]}}], "multiStringSelectValues": [{{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        variable:
+          - '{{"multiStringSelectValues": [{{"name": "variable", "value": {variable}}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
-          - '-180 -90 180 90'
-      storeDownloadUrl: True
-    ERA5_SL:
-      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
-      metadata_mapping:
-        # the given start time is used to determine the other filter params
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5sl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productEndDate'
-        id: '$.productInfo.product'
-        geometry:
-          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
-          - '-180 -90 180 90'
+          - '$.extraInformation.footprint'
+        defaultGeometry: '-180 -90 180 90'
       storeDownloadUrl: True
     ERA5_LAND_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
+      providerProductType:
+        - monthly_averaged_reanalysis
+        - monthly_averaged_reanalysis_by_hour_of_day
+      variable:
+        - 2m_dewpoint_temperature
+        - 2m_temperature
+        - skin_temperature
+        - soil_temperature_level_1
+        - lake_bottom_temperature
+        - lake_total_layer_temperature
+        - lake_shape_factor
+        - snow_cover
+        - temperature_of_snow_layer
+        - snow_depth
+        - snow_albedo
+        - skin_reservoir_content
+        - volumetric_soil_water_layer_1
+        - forecast_albedo
+        - surface_net_thermal_radiation
+        - surface_net_solar_radiation
+        - evaporation_from_bare_soil
+        - evaporation_from_open_water_surfaces_excluding_oceans
+        - total_evaporation
+        - surface_runoff
+        - snow_evaporation
+        - potential_evaporation
+        - snow_density
+        - snowmelt
+        - surface_latent_heat_flux
+        - 10m_u_component_of_wind
+        - 10m_v_component_of_wind
+        - surface_pressure
+        - total_precipitation
+        - leaf_area_index_high_vegetation
+        - leaf_area_index_low_vegetation
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      format: grib # netcdf format may fail
+      metadata_mapping:
+        id: '$.productInfo.product'
+        startTimeFromAscendingNode:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"multiStringSelectValues": [{{"name": "product_type", "value": {providerProductType}}}]}}'
+          - '$.null'
+        variable:
+          - '{{"multiStringSelectValues": [{{"name": "variable", "value": {variable}}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '$.extraInformation.footprint'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    ERA5_SL:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
+      providerProductType:
+        - ensemble_mean
+        - ensemble_members
+        - reanalysis
+        - ensemble_spread
+      variable:
+        - 10m_u_component_of_wind
+        - 10m_v_component_of_wind
+        - 2m_dewpoint_temperature
+        - 2m_temperature
+        - mean_sea_level_pressure
+        - mean_wave_direction
+        - mean_wave_period
+        - sea_surface_temperature
+        - significant_height_of_combined_wind_waves_and_swell
+        - surface_pressure
+        - total_precipitation
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      format: grib # netcdf format may fail
+      metadata_mapping:
+        id: '$.productInfo.product'
+        startTimeFromAscendingNode:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"multiStringSelectValues": [{{"name": "product_type", "value": {providerProductType}}}]}}'
+          - '$.null'
+        variable:
+          - '{{"multiStringSelectValues": [{{"name": "variable", "value": {variable}}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '$.extraInformation.footprint'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    ERA5_SL_MONTHLY:
+      productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
+      providerProductType:
+        - monthly_averaged_ensemble_members
+        - monthly_averaged_ensemble_members_by_hour_of_day
+        - monthly_averaged_reanalysis
+        - monthly_averaged_reanalysis_by_hour_of_day
+      variable:
+        - 10m_u_component_of_wind
+        - 10m_v_component_of_wind
+        - 2m_dewpoint_temperature
+        - 2m_temperature
+        - mean_sea_level_pressure
+        - mean_wave_direction
+        - mean_wave_period
+        - sea_surface_temperature
+        - significant_height_of_combined_wind_waves_and_swell
+        - surface_pressure
+        - total_precipitation
+      startTimeFromAscendingNode: "2023-01-01T00:00"
+      format: grib # netcdf format may fail
+      metadata_mapping:
+        id: '$.productInfo.product'
+        startTimeFromAscendingNode:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"multiStringSelectValues": [{{"name": "product_type", "value": {providerProductType}}}]}}'
+          - '$.null'
+        variable:
+          - '{{"multiStringSelectValues": [{{"name": "variable", "value": {variable}}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        geometry:
+          - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
+          - '$.extraInformation.footprint'
+        defaultGeometry: '-180 -90 180 90'
+      storeDownloadUrl: True
+    UERRA_EUROPE_SL:
+      productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+      variable: total_cloud_cover
+      origin: uerra_harmonie
+      startTimeFromAscendingNode: "2019-01-01T00:00"
+      format: grib # netcdf format may fail
+      metadata_mapping:
+        id: '$.productInfo.product'
+        startTimeFromAscendingNode:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        variable:
+          - '{{"stringChoiceValues": [{{"name": "variable", "value": "{variable}"}}]}}'
+          - '$.null'
+        origin:
+          - '{{"stringChoiceValues": [{{"name": "origin", "value": "{origin}"}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        geometry: '-180 -90 180 90'
       metadata_mapping:
         # the given start time is used to determine the other filter params
         startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["multiStringSelectValues"]}}'
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5land_monthly_params}["multiStringSelectValues"]}}'
+          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
           - '$.productInfo.productEndDate'
         id: '$.productInfo.product'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '-180 -90 180 90'
       storeDownloadUrl: True
-    # UERRA_EUROPE_SL:
-    #   productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
       format: zip
-      providerProductType: 
+      providerProductType:
         - elevation_change
-      file_version: 
+      file_version:
         - "20200824"
       metadata_mapping:
         variable:
@@ -4303,9 +4641,9 @@
       storeDownloadUrl: True
     FIRE_HISTORICAL:
       productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL
-      providerProductType: 
+      providerProductType:
         - reanalysis
-      dataset: 
+      dataset:
         - Consolidated dataset
       variable:
         - fire_danger_index
@@ -4321,7 +4659,7 @@
         - burning_index
         - energy_release_component
         - ignition_component
-      version: 
+      version:
         - "4.0"
       startTimeFromAscendingNode: "2020-01-01T00:00"
       metadata_mapping:
