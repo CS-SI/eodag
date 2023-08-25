@@ -273,7 +273,7 @@ class TestCoreSearchResults(EODagTestCase):
         """The core api must register search results downloaders"""
         self.dag.set_preferred_provider("creodias")
         search_results_file = os.path.join(
-            TEST_RESOURCES_PATH, "peps_search_result.geojson"
+            TEST_RESOURCES_PATH, "provider_responses/peps_search.json"
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_peps = json.load(f)
