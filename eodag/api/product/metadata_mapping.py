@@ -325,7 +325,9 @@ def format_metadata(search_param, *args, **kwargs):
                 # we assume geom is actually a bbox
                 return [float(x.strip()) for x in input_geom.split(" ")]
             else:
-                raise ValueError(f"Conversion to bounding box is not supported for: {input_geom}")
+                raise ValueError(
+                    f"Conversion to bounding box is not supported for: {input_geom}"
+                )
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom):
@@ -738,184 +740,6 @@ def format_metadata(search_param, *args, **kwargs):
             }
 
         @staticmethod
-        def convert_get_ecmwf_era5pl_params(start_date):
-            year = start_date[:4]
-            month = start_date[5:7]
-            day = start_date[8:10]
-            hour = start_date[11:14] + "00"
-            hour_num = int(start_date[11:13])
-            if hour_num % 3 == 0:
-                product_type = [
-                    "ensemble_spread",
-                    "ensemble_mean",
-                    "ensemble_members",
-                    "reanalysis",
-                ]
-            else:
-                product_type = ["reanalysis"]
-            multi_strings = [
-                {"name": "month", "value": [month]},
-                {"name": "year", "value": [year]},
-                {
-                    "name": "pressure_level",
-                    "value": [
-                        "1",
-                        "2",
-                        "3",
-                        "5",
-                        "7",
-                        "10",
-                        "20",
-                        "30",
-                        "50",
-                        "70",
-                        "100",
-                        "125",
-                        "150",
-                        "175",
-                        "200",
-                        "225",
-                        "250",
-                        "300",
-                        "350",
-                        "400",
-                        "450",
-                        "500",
-                        "550",
-                        "600",
-                        "650",
-                        "700",
-                        "750",
-                        "775",
-                        "800",
-                        "825",
-                        "850",
-                        "875",
-                        "900",
-                        "925",
-                        "950",
-                        "975",
-                        "1000",
-                    ],
-                },
-                {"name": "time", "value": [hour]},
-                {"name": "day", "value": [day]},
-                {
-                    "name": "variable",
-                    "value": [
-                        "divergence",
-                        "fraction_of_cloud_cover",
-                        "geopotential",
-                        "ozone_mass_mixing_ratio",
-                        "potential_vorticity",
-                        "relative_humidity",
-                        "specific_cloud_ice_water_content",
-                        "specific_cloud_liquid_water_content",
-                        "specific_humidity",
-                        "specific_rain_water_content",
-                        "specific_snow_water_content",
-                        "temperature",
-                        "u_component_of_wind",
-                        "v_component_of_wind",
-                        "vertical_velocity",
-                        "vorticity",
-                    ],
-                },
-                {"name": "product_type", "value": product_type},
-            ]
-            string_choices = [{"name": "format", "value": "grib"}]
-            return {
-                "multiStringSelectValues": multi_strings,
-                "stringChoiceValues": string_choices,
-            }
-
-        @staticmethod
-        def convert_get_ecmwf_era5land_params(start_date):
-            year = start_date[:4]
-            month = start_date[5:7]
-            day = start_date[8:10]
-            hour = start_date[11:14] + "00"
-            multi_strings = [
-                {
-                    "name": "variable",
-                    "value": [
-                        "evaporation_from_bare_soil",
-                        "evaporation_from_open_water_surfaces_excluding_oceans",
-                        "evaporation_from_the_top_of_canopy",
-                        "evaporation_from_vegetation_transpiration",
-                        "potential_evaporation",
-                        "runoff",
-                        "snow_evaporation",
-                        "sub_surface_runoff",
-                        "surface_runoff",
-                        "total_evaporation",
-                        "10m_u_component_of_wind",
-                        "10m_v_component_of_wind",
-                        "surface_pressure",
-                        "total_precipitation",
-                        "leaf_area_index_high_vegetation",
-                        "leaf_area_index_low_vegetation",
-                    ],
-                },
-                {"name": "day", "value": [day]},
-                {"name": "time", "value": [hour]},
-            ]
-            string_choices = [
-                {"name": "format", "value": "grib"},
-                {"name": "year", "value": year},
-                {"name": "month", "value": month},
-            ]
-            return {
-                "multiStringSelectValues": multi_strings,
-                "stringChoiceValues": string_choices,
-            }
-
-        @staticmethod
-        def convert_get_ecmwf_era5sl_params(start_date):
-            year = start_date[:4]
-            month = start_date[5:7]
-            day = start_date[8:10]
-            hour = start_date[11:14] + "00"
-            hour_num = int(start_date[11:13])
-            if hour_num % 3 == 0:
-                product_type = [
-                    "ensemble_spread",
-                    "ensemble_mean",
-                    "ensemble_members",
-                    "reanalysis",
-                ]
-            else:
-                product_type = ["reanalysis", "ensemble_members"]
-            multi_strings = [
-                {"name": "time", "value": [hour]},
-                {"name": "day", "value": [day]},
-                {"name": "month", "value": [month]},
-                {"name": "year", "value": [year]},
-                {
-                    "name": "variable",
-                    "value": [
-                        "10m_u_component_of_wind",
-                        "10m_v_component_of_wind",
-                        "2m_dewpoint_temperature",
-                        "2m_temperature",
-                        "mean_sea_level_pressure",
-                        "mean_wave_direction",
-                        "mean_wave_period",
-                        "sea_surface_temperature",
-                        "significant_height_of_combined_wind_waves_and_swell",
-                        "surface_pressure",
-                        "total_precipitation",
-                    ],
-                },
-                {"name": "product_type", "value": product_type},
-            ]
-            string_choices = [{"name": "format", "value": "grib"}]
-            return {
-                "multiStringSelectValues": multi_strings,
-                "stringChoiceValues": string_choices,
-            }
-
-        @staticmethod
         def convert_get_datetime(start_date: str, format: str) -> dict:
             utc_start_date = MetadataFormatter.convert_to_iso_utc_datetime(start_date)
             start_datetime = datetime.strptime(utc_start_date, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -946,72 +770,6 @@ def format_metadata(search_param, *args, **kwargs):
                 + MetadataFormatter.convert_get_datetime(start_date, "str")["second"]
             ]
 
-        @staticmethod
-        def convert_get_ecmwf_era5land_monthly_params(start_date):
-            year = start_date[:4]
-            month = start_date[5:7]
-            hour = start_date[11:14] + "00"
-            hour_num = int(start_date[11:13])
-            if hour_num % 3 == 0:
-                product_type = [
-                    "monthly_averaged_reanalysis",
-                    "monthly_averaged_reanalysis_by_hour_of_day",
-                ]
-            else:
-                product_type = ["monthly_averaged_reanalysis_by_hour_of_day"]
-            multi_strings = [
-                {"name": "time", "value": [hour]},
-                {"name": "product_type", "value": product_type},
-                {
-                    "name": "variable",
-                    "value": [
-                        "snow_albedo",
-                        "snow_cover",
-                        "snow_density",
-                        "snow_depth",
-                        "snow_depth_water_equivalent",
-                        "snowfall",
-                        "snowmelt",
-                        "temperature_of_snow_layer",
-                        "skin_reservoir_content",
-                        "volumetric_soil_water_layer_1",
-                        "volumetric_soil_water_layer_2",
-                        "volumetric_soil_water_layer_3",
-                        "volumetric_soil_water_layer_4",
-                        "forecast_albedo",
-                        "surface_latent_heat_flux",
-                        "surface_net_solar_radiation",
-                        "surface_net_thermal_radiation",
-                        "surface_sensible_heat_flux",
-                        "surface_solar_radiation_downwards",
-                        "surface_thermal_radiation_downwards",
-                        "evaporation_from_bare_soil",
-                        "evaporation_from_open_water_surfaces_excluding_oceans",
-                        "evaporation_from_the_top_of_canopy",
-                        "evaporation_from_vegetation_transpiration",
-                        "potential_evaporation",
-                        "runoff",
-                        "snow_evaporation",
-                        "sub_surface_runoff",
-                        "surface_runoff",
-                        "total_evaporation",
-                        "10m_u_component_of_wind",
-                        "10m_v_component_of_wind",
-                        "surface_pressure",
-                        "total_precipitation",
-                        "leaf_area_index_high_vegetation",
-                        "leaf_area_index_low_vegetation",
-                    ],
-                },
-                {"name": "year", "value": [year]},
-                {"name": "month", "value": [month]},
-            ]
-            string_choices = [{"name": "format", "value": "grib"}]
-            return {
-                "multiStringSelectValues": multi_strings,
-                "stringChoiceValues": string_choices,
-            }
-
     for match in re.findall(r"\([A-Za-z]+\)", search_param):
         param = match.replace("(", "").replace(")", "")
         if param in kwargs:
@@ -1023,10 +781,12 @@ def format_metadata(search_param, *args, **kwargs):
             r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
+
     while re.search(r"\([a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*", search_param):
         search_param = re.sub(
             r"(\([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)", r"\1_COLON_\2", search_param
         )
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 

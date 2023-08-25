@@ -1885,9 +1885,32 @@ CAMS_EAC4:
 # COPERNICUS CDS ----------------------------------------------------------------------
 ERA5_SL:
   abstract: |
-    ERA5 ECMWF climate reanalysis data on many atmospheric, land-surface and sea-state
-    parameters together with estimates of uncertainty.
-    Hourly data on Single Levels from 1959 to present.
+    ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades.
+    Data is available from 1940 onwards. ERA5 replaces the ERA-Interim reanalysis. Reanalysis combines model
+    data with observations from across the world into a globally complete and consistent dataset using the
+    laws of physics. This principle, called data assimilation, is based on the method used by numerical
+    weather prediction centres, where every so many hours (12 hours at ECMWF) a previous forecast is combined
+    with newly available observations in an optimal way to produce a new best estimate of the state of the
+    atmosphere, called analysis, from which an updated, improved forecast is issued. Reanalysis works in the
+    same way, but at reduced resolution to allow for the provision of a dataset spanning back several decades.
+    Reanalysis does not have the constraint of issuing timely forecasts, so there is more time to collect
+    observations, and when going further back in time, to allow for the ingestion of improved versions of
+    the original observations, which all benefit the quality of the reanalysis product. ERA5 provides hourly
+    estimates for a large number of atmospheric, ocean-wave and land-surface quantities. An uncertainty
+    estimate is sampled by an underlying 10-member ensemble at three-hourly intervals. Ensemble mean and
+    spread have been pre-computed for convenience. Such uncertainty estimates are closely related to the
+    information content of the available observing system which has evolved considerably over time. They
+    also indicate flow-dependent sensitive areas. To facilitate many climate applications, monthly-mean
+    averages have been pre-calculated too, though monthly means are not available for the ensemble mean
+    and spread. ERA5 is updated daily with a latency of about 5 days. In case that serious flaws are
+    detected in this early release (called ERA5T), this data could be different from the final release
+    2 to 3 months later. In case that this occurs users are notified. The data set presented here is a
+    regridded subset of the full ERA5 data set on native resolution. It is online on spinning disk, which
+    should ensure fast and easy access. It should satisfy the requirements for most common applications.
+    Data has been regridded to a regular lat-lon grid of 0.25 degrees for the reanalysis and 0.5 degrees
+    for the uncertainty estimate (0.5 and 1 degree respectively for ocean waves). There are four main sub
+    sets: hourly and monthly products, both on pressure levels (upper air fields) and single levels
+    (atmospheric,ocean-wave and land surface quantities).
   instrument:
   platform: ERA5
   platformSerialIdentifier: ERA5
@@ -1895,8 +1918,46 @@ ERA5_SL:
   keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels
   sensorType: ATMOSPHERIC
   license: proprietary
-  title: ERA5 Hourly data on Single Levels
-  missionStartDate: "1959-01-01T00:00:00Z"
+  title: ERA5 hourly data on single levels from 1940 to present
+  missionStartDate: "1940-01-01T00:00:00Z"
+
+ERA5_SL_MONTHLY:
+  abstract: |
+    ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades.
+    Data is available from 1940 onwards. ERA5 replaces the ERA-Interim reanalysis. Reanalysis combines model
+    data with observations from across the world into a globally complete and consistent dataset using the
+    laws of physics. This principle, called data assimilation, is based on the method used by numerical
+    weather prediction centres, where every so many hours (12 hours at ECMWF) a previous forecast is combined
+    with newly available observations in an optimal way to produce a new best estimate of the state of the
+    atmosphere, called analysis, from which an updated, improved forecast is issued. Reanalysis works in the
+    same way, but at reduced resolution to allow for the provision of a dataset spanning back several decades.
+    Reanalysis does not have the constraint of issuing timely forecasts, so there is more time to collect
+    observations, and when going further back in time, to allow for the ingestion of improved versions of the
+    original observations, which all benefit the quality of the reanalysis product. ERA5 provides hourly
+    estimates for a large number of atmospheric, ocean-wave and land-surface quantities. An uncertainty
+    estimate is sampled by an underlying 10-member ensemble at three-hourly intervals. Ensemble mean and
+    spread have been pre-computed for convenience. Such uncertainty estimates are closely related to the
+    information content of the available observing system which has evolved considerably over time. They
+    also indicate flow-dependent sensitive areas. To facilitate many climate applications, monthly-mean
+    averages have been pre-calculated too, though monthly means are not available for the ensemble mean
+    and spread. ERA5 is updated daily with a latency of about 5 days (monthly means are available around
+    the 6th of each month). In case that serious flaws are detected in this early release (called ERA5T),
+    this data could be different from the final release 2 to 3 months later. In case that this occurs users
+    are notified. The data set presented here is a regridded subset of the full ERA5 data set on native
+    resolution. It is online on spinning disk, which should ensure fast and easy access. It should satisfy
+    the requirements for most common applications. Data has been regridded to a regular lat-lon grid of 0.25
+    degrees for the reanalysis and 0.5 degrees for the uncertainty estimate (0.5 and 1 degree respectively for
+    ocean waves). There are four main sub sets: hourly and monthly products, both on pressure levels (upper
+    air fields) and single levels (atmospheric, ocean-wave and land surface quantities).
+  instrument:
+  platform: ERA5
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: Climate,ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,monthly,single,levels
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: ERA5 monthly averaged data on single levels from 1940 to present
+  missionStartDate: "1940-01-01T00:00:00Z"
 
 ERA5_PL:
   abstract: |
@@ -1938,8 +1999,51 @@ ERA5_PL:
   keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,pressure,levels
   sensorType: ATMOSPHERIC
   license: proprietary
-  title: ERA5 Hourly data on Pressure Levels
-  missionStartDate: "1959-01-01T00:00:00Z"
+  title: ERA5 hourly data on pressure levels from 1940 to present
+  missionStartDate: "1940-01-01T00:00:00Z"
+
+ERA5_PL_MONTHLY:
+  abstract: |
+    ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades.
+    Data is available from 1940 onwards. ERA5 replaces the ERA-Interim reanalysis. Reanalysis combines model
+    data with observations from across the world into a globally complete and consistent dataset using the
+    laws of physics. This principle, called data assimilation, is based on the method used by numerical
+    weather prediction centres, where every so many hours (12 hours at ECMWF) a previous forecast is combined
+    with newly available observations in an optimal way to produce a new best estimate of the state of the
+    atmosphere, called analysis, from which an updated, improved forecast is issued. Reanalysis works in the
+    same way, but at reduced resolution to allow for the provision of a dataset spanning back several decades.
+    Reanalysis does not have the constraint of issuing timely forecasts, so there is more time to collect
+    observations, and when going further back in time, to allow for the ingestion of improved versions of
+    the original observations, which all benefit the quality of the reanalysis product. ERA5 provides hourly
+    estimates for a large number of atmospheric, ocean-wave and land-surface quantities. An uncertainty
+    estimate is sampled by an underlying 10-member ensemble at three-hourly intervals. Ensemble mean and
+    spread have been pre-computed for convenience. Such uncertainty estimates are closely related to the
+    information content of the available observing system which has evolved considerably over time. They
+    also indicate flow-dependent sensitive areas. To facilitate many climate applications, monthly-mean
+    averages have been pre-calculated too, though monthly means are not available for the ensemble mean and
+    spread. ERA5 is updated daily with a latency of about 5 days (monthly means are available around the 6th
+    of each month). In case that serious flaws are detected in this early release (called ERA5T), this data
+    could be different from the final release 2 to 3 months later. So far this has only been the case for
+    the month September 2021, while it will also be the case for October, November and December 2021. For
+    months prior to September 2021 the final release has always been equal to ERA5T, and the goal is to
+    align the two again after December 2021. ERA5 is updated daily with a latency of about 5 days (monthly
+    means are available around the 6th of each month). In case that serious flaws are detected in this early
+    release (called ERA5T), this data could be different from the final release 2 to 3 months later. In case
+    that this occurs users are notified. The data set presented here is a regridded subset of the full ERA5
+    data set on native resolution. It is online on spinning disk, which should ensure fast and easy access.
+    It should satisfy the requirements for most common applications. Data has been regridded to a regular
+    lat-lon grid of 0.25 degrees for the reanalysis and 0.5 degrees for the uncertainty estimate (0.5 and 1
+    degree respectively for ocean waves). There are four main sub sets: hourly and monthly products, both on
+    pressure levels (upper air fields) and single levels (atmospheric, ocean-wave and land surface quantities).
+  instrument:
+  platform: ERA5
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: Climate,ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,monthly,pressure,levels
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: ERA5 monthly averaged data on pressure levels from 1940 to present
+  missionStartDate: "1940-01-01T00:00:00Z"
 
 ERA5_LAND:
   abstract: |
@@ -1981,7 +2085,7 @@ ERA5_LAND:
   keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,hourly,evolution
   sensorType: ATMOSPHERIC
   license: proprietary
-  title: ERA5-Land Hourly data
+  title: ERA5-Land hourly data from 1950 to present
   missionStartDate: "1950-01-01T00:00:00Z"
 
 ERA5_LAND_MONTHLY:
@@ -2016,51 +2120,50 @@ ERA5_LAND_MONTHLY:
   keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,monthly,evolution
   sensorType: ATMOSPHERIC
   license: proprietary
-  title: ERA5-Land Monthly data
+  title: ERA5-Land monthly averaged data from 1950 to present
   missionStartDate: "1950-01-01T00:00:00Z"
 
 UERRA_EUROPE_SL:
   abstract: |
-    This UERRA dataset contains analyses of surface and near-surface essential climate variables from UERRA-HARMONIE 
-    and MESCAN-SURFEX systems. Forecasts up to 30 hours initialised from the analyses at 00 and 12 UTC are available 
-    only through the CDS-API (see Documentation). UERRA-HARMONIE is a 3-dimensional variational data assimilation system, 
-    while MESCAN-SURFEX is a complementary surface analysis system. Using the Optimal Interpolation method, MESCAN provides 
-    the best estimate of daily accumulated precipitation and six-hourly air temperature and relative humidity at 
-    2 meters above the model topography. 
-    The land surface platform SURFEX is forced with downscaled forecast fields from UERRA-HARMONIE as well as 
-    MESCAN analyses. It is run offline, i.e. without feedback to the atmospheric analysis performed in MESCAN 
-    or the UERRA-HARMONIE data assimilation cycles. Using SURFEX offline allows to take full benefit of precipitation 
-    analysis and to use the more advanced physics options to better represent surface variables such as surface 
-    temperature and surface fluxes, and soil processes related to water and heat transfer in the soil and snow. 
-    In general, the assimilation systems are able to estimate biases between observations and to sift good-quality 
-    data from poor data. The laws of physics allow for estimates at locations where data coverage is low. 
-    The provision of estimates at each grid point in Europe for each regular output time, over a long period, 
-    always using the same format, makes reanalysis a very convenient and popular dataset to work with. 
-    The observing system has changed drastically over time, and although the assimilation system can resolve data holes, 
-    the much sparser observational networks, e.g. in 1960s, will have an impact on the quality of analyses leading 
-    to less accurate estimates. The improvement over global reanalysis products comes with the higher horizontal resolution 
-    that allows incorporating more regional details (e.g. topography). Moreover, it enables the system even to use more 
-    observations at places with dense observation networks. Variables in the dataset/application are: 10m wind direction, 
-    10m wind speed, 2m relative humidity, 2m temperature, Albedo, High cloud cover, Land sea mask, Low cloud cover, 
-    Mean sea level pressure, Medium cloud cover, Orography, Skin temperature, Snow density, Snow depth water equivalent, 
-    Surface pressure, Surface roughness, Total cloud cover, Total column integrated water vapour, Total precipitation
-  platform: UERRA
+    This UERRA dataset contains analyses of surface and near-surface essential climate variables from UERRA-HARMONIE
+    and MESCAN-SURFEX systems. Forecasts up to 30 hours initialised from the analyses at 00 and 12 UTC are available
+    only through the CDS-API (see Documentation). UERRA-HARMONIE is a 3-dimensional variational data assimilation system,
+    while MESCAN-SURFEX is a complementary surface analysis system. Using the Optimal Interpolation method, MESCAN
+    provides the best estimate of daily accumulated precipitation and six-hourly air temperature and relative humidit
+    at 2 meters above the model topography. The land surface platform SURFEX is forced with downscaled forecast fields
+    from UERRA-HARMONIE as well as MESCAN analyses. It is run offline, i.e. without feedback to the atmospheric analysis
+    performed in MESCAN or the UERRA-HARMONIE data assimilation cycles. Using SURFEX offline allows to take full benefit
+    of precipitation analysis and to use the more advanced physics options to better represent surface variables such as
+    surface temperature and surface fluxes, and soil processes related to water and heat transfer in the soil and snow.
+    In general, the assimilation systems are able to estimate biases between observations and to sift good-quality data
+    from poor data. The laws of physics allow for estimates at locations where data coverage is low. The provision of
+    estimates at each grid point in Europe for each regular output time, over a long period, always using the same format,
+    makes reanalysis a very convenient and popular dataset to work with. The observing system has changed drastically over
+    time, and although the assimilation system can resolve data holes, the much sparser observational networks, e.g. in
+    1960s, will have an impact on the quality of analyses leading to less accurate estimates. The improvement over global
+    reanalysis products comes with the higher horizontal resolution that allows incorporating more regional details
+    (e.g. topography). Moreover, it enables the system even to use more observations at places with dense observation
+    networks. Variables in the dataset/application are: 10m wind direction, 10m wind speed, 2m relative humidity, 2m
+    temperature, Albedo, High cloud cover, Land sea mask, Low cloud cover, Mean sea level pressure, Medium cloud cover,
+    Orography, Skin temperature, Snow density, Snow depth water equivalent, Surface pressure, Surface roughness, Total
+    cloud cover, Total column integrated water vapour, Total precipitation
+  platform: SURFEX
   instrument:
-  platformSerialIdentifier: UERRA
+  platformSerialIdentifier: SURFEX
   processingLevel:
-  keywords: ECMWF,Reanalysis,Spatial,coverage,Europe,Atmospheric,Copernicus,C3S,upper,air
-  sensorType:
+  keywords: Climate,ECMWF,Reanalysis,Regional,Europe,UERRA,UERRA-HARMONIE,SURFEX,MESCAN-SURFEX,CDS,Atmospheric,single,levels
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: UERRA regional reanalysis for Europe on single levels from 1961 to 2019
-  missionStartDate: "1961-01-01T00:00:00Z"
+  missionStartDate: "1918-10-18T00:00:00Z"
 
 GLACIERS_ELEVATION_AND_MASS_CHANGE:
   abstract: |
-    This dataset provides in situ and remote sensing derived glacier changes from individual glaciers globally. 
-    The dataset represents the latest homogenized state-of-the-art glacier change data collected by scientists 
-    and the national correspondents of each country as provided to the World Glacier Monitoring Service (WGMS). 
-    The product is an extract of the WGMS Fluctuations of Glacier (FoG) database and consists of two data sets 
-    providing time series of glacier changes: glacier elevation change series from the geodetic method and glacier 
+    This dataset provides in situ and remote sensing derived glacier changes from individual glaciers globally.
+    The dataset represents the latest homogenized state-of-the-art glacier change data collected by scientists
+    and the national correspondents of each country as provided to the World Glacier Monitoring Service (WGMS).
+    The product is an extract of the WGMS Fluctuations of Glacier (FoG) database and consists of two data sets
+    providing time series of glacier changes: glacier elevation change series from the geodetic method and glacier
     mass-balance series from the glaciological method
   platform: INSITU
   instrument:
@@ -2097,18 +2200,18 @@ GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY:
 
 FIRE_HISTORICAL:
   abstract: |
-    This data set provides complete historical reconstruction of meteorological conditions favourable to the start, 
-    spread and sustainability of fires. The fire danger metrics provided are part of a vast dataset produced by the 
-    Copernicus Emergency Management Service for the European Forest Fire Information System (EFFIS). The European 
-    Forest Fire Information System incorporates the fire danger indices for three different models developed in Canada, 
-    United States and Australia. In this dataset the fire danger indices are calculated using weather forecast from 
-    historical simulations provided by ECMWF ERA5 reanalysis. ERA5 by combining model data and a vast set of quality 
-    controlled observations provides a globally complete and consistent data-set and is regarded as a good proxy for 
-    observed atmospheric conditions. The selected data records in this data set are regularly extended with time as 
-    ERA5 forcing data become available. This dataset is produced by ECMWF in its role of the computational centre for 
-    fire danger forecast of the CEMS, on behalf of the Joint Research Centre which is the managing entity of the service. 
-    Variables in the dataset/application are: Build-up index, Burning index, Danger rating, Drought code, Duff moisture 
-    code, Energy release component, Fine fuel moisture code, Fire daily severity index, Fire danger index, Fire weather 
+    This data set provides complete historical reconstruction of meteorological conditions favourable to the start,
+    spread and sustainability of fires. The fire danger metrics provided are part of a vast dataset produced by the
+    Copernicus Emergency Management Service for the European Forest Fire Information System (EFFIS). The European
+    Forest Fire Information System incorporates the fire danger indices for three different models developed in Canada,
+    United States and Australia. In this dataset the fire danger indices are calculated using weather forecast from
+    historical simulations provided by ECMWF ERA5 reanalysis. ERA5 by combining model data and a vast set of quality
+    controlled observations provides a globally complete and consistent data-set and is regarded as a good proxy for
+    observed atmospheric conditions. The selected data records in this data set are regularly extended with time as
+    ERA5 forcing data become available. This dataset is produced by ECMWF in its role of the computational centre for
+    fire danger forecast of the CEMS, on behalf of the Joint Research Centre which is the managing entity of the service.
+    Variables in the dataset/application are: Build-up index, Burning index, Danger rating, Drought code, Duff moisture
+    code, Energy release component, Fine fuel moisture code, Fire daily severity index, Fire danger index, Fire weather
     index, Ignition component, Initial spread index, Keetch-Byram drought index, Spread component
   instrument:
   platform: CEMS
@@ -2254,42 +2357,6 @@ GLOFAS_SEASONAL_REFORECAST:
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
   missionStartDate: "2020-01-12T00:00:00Z"
 
-# METEOBLUE --------------------------------------------------------------------------
-NEMSGLOBAL_TCDC:
-  abstract: |
-    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
-    NEMSGLOBAL has 30km spatial and 1h temporal resolutions and produces seamless
-    datasets from 1984 to 7 days ahead.
-  instrument:
-  platform: NEMSGLOBAL
-  platformSerialIdentifier: NEMSGLOBAL
-  processingLevel:
-  keywords: meteoblue,NEMS,NEMSGLOBAL,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
-  sensorType: ATMOSPHERIC
-  license: proprietary
-  title: NEMSGLOBAL Total Cloud Cover daily mean
-  missionStartDate: "1984-01-01T00:00:00Z"
-
-NEMSAUTO_TCDC:
-  abstract: |
-    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) automatic
-    domain switch. NEMSAUTO is the automatic delivery of the highest resolution meteoblue
-    model available for any requested period of time and location. The NEMS model family
-    are improved NMM successors (operational since 2013). NEMS is a multi-scale model
-    (used from global down to local domains) and significantly improves cloud-development
-    and precipitation forecast.
-    Note that Automatic domain switching is only supported for multi point queries.
-    Support for polygons may follow later.
-  instrument:
-  platform: NEMSAUTO
-  platformSerialIdentifier: NEMSAUTO
-  processingLevel:
-  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
-  sensorType: ATMOSPHERIC
-  license: proprietary
-  title: NEMSAUTO Total Cloud Cover daily mean
-  missionStartDate: "1984-01-01T00:00:00Z"
-
 # COPERNICUS Digital Elevation Model
 COP_DEM_GLO30:
   abstract: |
@@ -2309,6 +2376,7 @@ COP_DEM_GLO30:
   title: COPERNICUS Digital Elevation Model (GLO-30)
   missionStartDate: "2010-06-21T00:00:00Z"
 
+# Copernicus Land Monitoring Service
 CLMS_CORINE:
   abstract: |
     The CORINE Land Cover (CLC) inventory was initiated in 1985 (reference year 1990). Updates have been produced in
@@ -2493,6 +2561,42 @@ EEA_DAILY_SSM_1KM:
   license: proprietary
   title: "Surface Soil Moisture: continental Europe daily (raster 1km) - version 1, Apr 2019"
   missionStartDate: "2015-01-01T00:00:00Z"
+
+# METEOBLUE --------------------------------------------------------------------------
+NEMSGLOBAL_TCDC:
+  abstract: |
+    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
+    NEMSGLOBAL has 30km spatial and 1h temporal resolutions and produces seamless
+    datasets from 1984 to 7 days ahead.
+  instrument:
+  platform: NEMSGLOBAL
+  platformSerialIdentifier: NEMSGLOBAL
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSGLOBAL,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: NEMSGLOBAL Total Cloud Cover daily mean
+  missionStartDate: "1984-01-01T00:00:00Z"
+
+NEMSAUTO_TCDC:
+  abstract: |
+    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) automatic
+    domain switch. NEMSAUTO is the automatic delivery of the highest resolution meteoblue
+    model available for any requested period of time and location. The NEMS model family
+    are improved NMM successors (operational since 2013). NEMS is a multi-scale model
+    (used from global down to local domains) and significantly improves cloud-development
+    and precipitation forecast.
+    Note that Automatic domain switching is only supported for multi point queries.
+    Support for polygons may follow later.
+  instrument:
+  platform: NEMSAUTO
+  platformSerialIdentifier: NEMSAUTO
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: NEMSAUTO Total Cloud Cover daily mean
+  missionStartDate: "1984-01-01T00:00:00Z"
 
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
