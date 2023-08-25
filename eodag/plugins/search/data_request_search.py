@@ -118,6 +118,11 @@ class DataRequestSearch(Search):
         performs the search for a provider where several steps are required to fetch the data
         """
         product_type = kwargs.get("productType", None)
+        # replace "product_type" to "providerProductType" in search args if exists
+        # for compatibility with DataRequestSearch method
+        if kwargs.get("product_type"):
+            kwargs["providerProductType"] = kwargs.pop("product_type", None)
+
         provider_product_type = self._map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 

@@ -1231,12 +1231,15 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
         self.search_plugin._add_product_type_metadata("CLMS_CORINE")
+        keywords = {
+            "format": "GeoTiff100mt",
+            "providerProductType": "Corine Land Cover 2018",
+        }
         self.search_plugin._create_data_request(
             "EO:CLMS:DAT:CORINE",
             "CLMS_CORINE",
             productType="EO:CLMS:DAT:CORINE",
-            startTimeFromAscendingNode="2000-01-01T00:00:00Z",
-            completionTimeFromAscendingNode="2000-01-01T00:00:00Z",
+            **keywords,
         )
         mock_requests_post.assert_called_with(
             self.search_plugin.config.data_request_url,
@@ -1244,7 +1247,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
                 "datasetId": "EO:CLMS:DAT:CORINE",
                 "stringChoiceValues": [
                     {"name": "format", "value": "GeoTiff100mt"},
-                    {"name": "product_type", "value": "Corine Land Cover 2000"},
+                    {"name": "product_type", "value": "Corine Land Cover 2018"},
                 ],
             },
             headers=getattr(self.search_plugin.auth, "headers", ""),

@@ -2465,7 +2465,7 @@ EFAS_FORECAST:
   instrument:
   platform: CEMS
   platformSerialIdentifier: CEMS
-  processingLevel: 
+  processingLevel:
   keywords: ECMWF,CEMS,EFAS,forecast,river,discharge
   sensorType:
   license: proprietary
@@ -2498,7 +2498,7 @@ EFAS_HISTORICAL:
   instrument:
   platform: CEMS
   platformSerialIdentifier: CEMS
-  processingLevel: 
+  processingLevel:
   keywords: ECMWF,CEMS,EFAS,historical,river,discharge
   sensorType:
   license: proprietary
@@ -2534,7 +2534,7 @@ EFAS_REFORECAST:
   instrument:
   platform: CEMS
   platformSerialIdentifier: CEMS
-  processingLevel: 
+  processingLevel:
   keywords: ECMWF,CEMS,EFAS,reforecast,river,discharge
   sensorType:
   license: proprietary
@@ -2570,7 +2570,7 @@ EFAS_SEASONAL:
   instrument:
   platform: CEMS
   platformSerialIdentifier: CEMS
-  processingLevel: 
+  processingLevel:
   keywords: ECMWF,CEMS,EFAS,seasonal,forecast,river,discharge
   sensorType:
   license: proprietary
@@ -2604,7 +2604,7 @@ EFAS_SEASONAL_REFORECAST:
   instrument:
   platform: CEMS
   platformSerialIdentifier: CEMS
-  processingLevel: 
+  processingLevel:
   keywords: ECMWF,CEMS,EFAS,seasonal,reforecast,river,discharge
   sensorType:
   license: proprietary
@@ -2852,6 +2852,28 @@ EEA_DAILY_SSM_1KM:
   license: proprietary
   title: "Surface Soil Moisture: continental Europe daily (raster 1km) - version 1, Apr 2019"
   missionStartDate: "2015-01-01T00:00:00Z"
+
+EEA_DAILY_VI:
+  abstract:
+    Vegetation Indices (VI) comprises four daily vegetation indices (PPI, NDVI, LAI and FAPAR) and quality information,
+    that are part of the Copernicus Land Monitoring Service (CLMS) HR-VPP product suite. The 10m resolution, daily updated
+    Plant Phenology Index (PPI), Normalized Difference Vegetation Index (NDVI), Leaf Area Index (LAI) and Fraction of Absorbed
+    Photosynthetically Active Radiation (fAPAR) are derived from Copernicus Sentinel-2 satellite observations. They are
+    provided together with a related quality indicator (QFLAG2) that flags clouds, shadows, snow, open water and other areas
+    where the VI retrieval is less reliable. These Vegetation Indices are made available as a set of raster files with 10 x 10m
+    resolution, in UTM/WGS84 projection corresponding to the Sentinel-2 tiling grid, for those tiles that cover the EEA38
+    countries and the United Kingdom and for the period from 2017 until today, with daily updates. The Vegetation Indices
+    are part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus
+    Land Monitoring Service (CLMS).
+  instrument:
+  platform: Sentinel-2
+  platformSerialIdentifier: S2A, S2B
+  processingLevel:
+  keywords: Land,Plant phenology index,Phenology,Vegetation,Sentinel-2,S2A,S2B
+  sensorType:
+  license: proprietary
+  title: Vegetation Indices, daily, UTM projection
+  missionStartDate:
 
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
