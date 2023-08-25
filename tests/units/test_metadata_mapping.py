@@ -577,219 +577,37 @@ class TestMetadataFormatter(unittest.TestCase):
         }
         self.assertEqual(str(expected_result), result)
 
-    def test_convert_get_ecmwf_era5pl_params(self):
-        result = format_metadata(
-            "{start_date#get_ecmwf_era5pl_params}", start_date="2006-06-02T01:10:00Z"
-        )
-        multi_strings = [
-            {"name": "month", "value": ["06"]},
-            {"name": "year", "value": ["2006"]},
-            {
-                "name": "pressure_level",
-                "value": [
-                    "1",
-                    "2",
-                    "3",
-                    "5",
-                    "7",
-                    "10",
-                    "20",
-                    "30",
-                    "50",
-                    "70",
-                    "100",
-                    "125",
-                    "150",
-                    "175",
-                    "200",
-                    "225",
-                    "250",
-                    "300",
-                    "350",
-                    "400",
-                    "450",
-                    "500",
-                    "550",
-                    "600",
-                    "650",
-                    "700",
-                    "750",
-                    "775",
-                    "800",
-                    "825",
-                    "850",
-                    "875",
-                    "900",
-                    "925",
-                    "950",
-                    "975",
-                    "1000",
-                ],
-            },
-            {"name": "time", "value": ["01:00"]},
-            {"name": "day", "value": ["02"]},
-            {
-                "name": "variable",
-                "value": [
-                    "divergence",
-                    "fraction_of_cloud_cover",
-                    "geopotential",
-                    "ozone_mass_mixing_ratio",
-                    "potential_vorticity",
-                    "relative_humidity",
-                    "specific_cloud_ice_water_content",
-                    "specific_cloud_liquid_water_content",
-                    "specific_humidity",
-                    "specific_rain_water_content",
-                    "specific_snow_water_content",
-                    "temperature",
-                    "u_component_of_wind",
-                    "v_component_of_wind",
-                    "vertical_velocity",
-                    "vorticity",
-                ],
-            },
-            {"name": "product_type", "value": ["reanalysis"]},
-        ]
-        string_choices = [{"name": "format", "value": "grib"}]
+    def test_convert_get_datetime(self):
+        to_format = "{date#get_datetime(list)}"
         expected_result = {
-            "multiStringSelectValues": multi_strings,
-            "stringChoiceValues": string_choices,
+            "year": ["2023"],
+            "month": ["01"],
+            "day": ["31"],
+            "hour": ["00"],
+            "minute": ["00"],
+            "second": ["00"],
         }
-        self.assertEqual(str(expected_result), result)
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T00:00"), str(expected_result)
+        )
+        to_format = "{date#get_datetime(string)}"
+        expected_result = {
+            "year": "2023",
+            "month": "01",
+            "day": "31",
+            "hour": "00",
+            "minute": "00",
+            "second": "00",
+        }
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T00:00"), str(expected_result)
+        )
 
-    def test_convert_get_ecmwf_era5land_params(self):
-        result = format_metadata(
-            "{start_date#get_ecmwf_era5land_params}", start_date="2006-06-02T01:10:00Z"
+    def test_convert_get_ecmwf_time(self):
+        to_format = "{date#get_ecmwf_time}"
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T00:00"), str(["00:00"])
         )
-        multi_strings = [
-            {
-                "name": "variable",
-                "value": [
-                    "evaporation_from_bare_soil",
-                    "evaporation_from_open_water_surfaces_excluding_oceans",
-                    "evaporation_from_the_top_of_canopy",
-                    "evaporation_from_vegetation_transpiration",
-                    "potential_evaporation",
-                    "runoff",
-                    "snow_evaporation",
-                    "sub_surface_runoff",
-                    "surface_runoff",
-                    "total_evaporation",
-                    "10m_u_component_of_wind",
-                    "10m_v_component_of_wind",
-                    "surface_pressure",
-                    "total_precipitation",
-                    "leaf_area_index_high_vegetation",
-                    "leaf_area_index_low_vegetation",
-                ],
-            },
-            {"name": "day", "value": ["02"]},
-            {"name": "time", "value": ["01:00"]},
-        ]
-        string_choices = [
-            {"name": "format", "value": "grib"},
-            {"name": "year", "value": "2006"},
-            {"name": "month", "value": "06"},
-        ]
-        expected_result = {
-            "multiStringSelectValues": multi_strings,
-            "stringChoiceValues": string_choices,
-        }
-        self.assertEqual(str(expected_result), result)
-
-    def test_convert_get_ecmwf_era5sl_params(self):
-        result = format_metadata(
-            "{start_date#get_ecmwf_era5sl_params}", start_date="2006-06-02T01:10:00Z"
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T23:59"), str(["23:59"])
         )
-        multi_strings = [
-            {"name": "time", "value": ["01:00"]},
-            {"name": "day", "value": ["02"]},
-            {"name": "month", "value": ["06"]},
-            {"name": "year", "value": ["2006"]},
-            {
-                "name": "variable",
-                "value": [
-                    "10m_u_component_of_wind",
-                    "10m_v_component_of_wind",
-                    "2m_dewpoint_temperature",
-                    "2m_temperature",
-                    "mean_sea_level_pressure",
-                    "mean_wave_direction",
-                    "mean_wave_period",
-                    "sea_surface_temperature",
-                    "significant_height_of_combined_wind_waves_and_swell",
-                    "surface_pressure",
-                    "total_precipitation",
-                ],
-            },
-            {"name": "product_type", "value": ["reanalysis", "ensemble_members"]},
-        ]
-        string_choices = [{"name": "format", "value": "grib"}]
-        expected_result = {
-            "multiStringSelectValues": multi_strings,
-            "stringChoiceValues": string_choices,
-        }
-        self.assertEqual(str(expected_result), result)
-
-    def test_convert_get_ecmwf_era5land_monthly_params(self):
-        result = format_metadata(
-            "{start_date#get_ecmwf_era5land_monthly_params}",
-            start_date="2006-06-02T01:10:00Z",
-        )
-        multi_strings = [
-            {"name": "time", "value": ["01:00"]},
-            {
-                "name": "product_type",
-                "value": ["monthly_averaged_reanalysis_by_hour_of_day"],
-            },
-            {
-                "name": "variable",
-                "value": [
-                    "snow_albedo",
-                    "snow_cover",
-                    "snow_density",
-                    "snow_depth",
-                    "snow_depth_water_equivalent",
-                    "snowfall",
-                    "snowmelt",
-                    "temperature_of_snow_layer",
-                    "skin_reservoir_content",
-                    "volumetric_soil_water_layer_1",
-                    "volumetric_soil_water_layer_2",
-                    "volumetric_soil_water_layer_3",
-                    "volumetric_soil_water_layer_4",
-                    "forecast_albedo",
-                    "surface_latent_heat_flux",
-                    "surface_net_solar_radiation",
-                    "surface_net_thermal_radiation",
-                    "surface_sensible_heat_flux",
-                    "surface_solar_radiation_downwards",
-                    "surface_thermal_radiation_downwards",
-                    "evaporation_from_bare_soil",
-                    "evaporation_from_open_water_surfaces_excluding_oceans",
-                    "evaporation_from_the_top_of_canopy",
-                    "evaporation_from_vegetation_transpiration",
-                    "potential_evaporation",
-                    "runoff",
-                    "snow_evaporation",
-                    "sub_surface_runoff",
-                    "surface_runoff",
-                    "total_evaporation",
-                    "10m_u_component_of_wind",
-                    "10m_v_component_of_wind",
-                    "surface_pressure",
-                    "total_precipitation",
-                    "leaf_area_index_high_vegetation",
-                    "leaf_area_index_low_vegetation",
-                ],
-            },
-            {"name": "year", "value": ["2006"]},
-            {"name": "month", "value": ["06"]},
-        ]
-        string_choices = [{"name": "format", "value": "grib"}]
-        expected_result = {
-            "multiStringSelectValues": multi_strings,
-            "stringChoiceValues": string_choices,
-        }
-        self.assertEqual(str(expected_result), result)
