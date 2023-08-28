@@ -30,7 +30,12 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
-from eodag.utils import _deprecated, dict_items_recursive_apply, string_to_jsonpath
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    _deprecated,
+    dict_items_recursive_apply,
+    string_to_jsonpath,
+)
 from eodag.utils.exceptions import (
     IdNotFoundError,
     MisconfiguredError,
@@ -606,7 +611,10 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     search_plugin = next(
         eodag_api._plugins_manager.get_search_plugins(product_type, provider)
     )
-    if search_plugin.config.products[product_type].get("storeDownloadUrl", False):
+    provider_product_type_config = search_plugin.config.products.get(
+        product_type, {}
+    ) or search_plugin.config.products.get(GENERIC_PRODUCT_TYPE, {})
+    if provider_product_type_config.get("storeDownloadUrl", False):
         if item_id not in search_plugin.download_info:
             logger.error(f"data for item {item_id} not found")
             raise IdNotFoundError(
