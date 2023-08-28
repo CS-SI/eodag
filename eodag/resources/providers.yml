@@ -5797,6 +5797,68 @@
           - '$.extraInformation.footprint'
         id: $.productInfo.product
       storeDownloadUrl: True
+    SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS:
+      productType: EO:ECMWF:DAT:SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
+      period:
+        - "1974"
+      ensemble_member:
+        - r12i1p1
+      experiment:
+        - historical
+      time_aggregation:
+        - daily
+      variable:
+        - 2m_air_temperature
+      providerProductType: essential_climate_variables
+      processing_type: bias_corrected
+      variable_type: absolute_values
+      horizontal_resolution: 5_km
+      rcm: cclm4_8_17
+      gcm: ec_earth
+      format: zip
+      metadata_mapping:
+        period:
+          - '{{ "multiStringSelectValues": [ {{"name": "period", "value": {period} }} ] }}'
+          - $.null
+        ensemble_member:
+          - '{{"multiStringSelectValues": [ {{"name": "ensemble_member", "value": {ensemble_member} }} ] }}'
+          - $.null
+        experiment:
+          - '{{"multiStringSelectValues": [ {{"name": "experiment", "value": {experiment} }} ] }}'
+          - $.null
+        time_aggregation:
+          - '{{ "multiStringSelectValues": [ {{"name": "time_aggregation", "value": {time_aggregation} }} ] }}'
+          - $.null
+        variable:
+          - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
+          - $.null
+        providerProductType:
+          - '{{"stringChoiceValues": [ {{"name": "product_type", "value": "{providerProductType}" }} ] }}'
+          - $.null
+        processing_type:
+          - '{{"stringChoiceValues": [ {{"name": "processing_type", "value": "{processing_type}" }} ] }}'
+          - $.null
+        variable_type:
+          - '{{"stringChoiceValues": [ {{"name": "variable_type", "value": "{variable_type}" }} ] }}'
+          - $.null
+        horizontal_resolution:
+          - '{{"stringChoiceValues": [ {{"name": "horizontal_resolution", "value": "{horizontal_resolution}" }} ] }}'
+          - $.null
+        rcm:
+          - '{{"stringChoiceValues": [ {{"name": "rcm", "value": "{rcm}" }} ] }}'
+          - $.null
+        gcm:
+          - '{{"stringChoiceValues": [ {{"name": "gcm", "value": "{gcm}" }} ] }}'
+          - $.null
+        format:
+          - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
+          - $.null
+        startTimeFromAscendingNode: $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry: -180 -90 180 90
+        id: $.productInfo.product
+      storeDownloadUrl: True
+      
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker
