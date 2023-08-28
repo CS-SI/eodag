@@ -3797,7 +3797,7 @@
           - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
         processingLevel:
-          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s2_id}'
         cloudCover:
           - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
@@ -3809,10 +3809,10 @@
           - '{{"stringChoiceValues": [{{"name": "productType", "value": {id#split_id_into_s1_params}["productType"]}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
         processingLevel:
-          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}, {{"name": "sensorMode", "value": {sensorMode}}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}, {{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s1_id}'
         sensorMode:
-          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": {processingLevel}}}, {{"name": "sensorMode", "value": {sensorMode}}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}, {{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
           - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
     S1_SAR_SLC:
       productType: EO:ESA:DAT:EODC-SENTINEL-1:L1_SLC
@@ -3827,7 +3827,7 @@
           - '{{"dateRangeSelectValues": [{{"name": "time", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
         sensorMode:
-          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": {sensorMode}}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
           - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
     S3_OLCI_L2LRR:
       productType: EO:ESA:DAT:SENTINEL-3:OL_2_LRR___
@@ -4065,6 +4065,8 @@
         id:
           - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {id#split_cop_dem_id}}}]}}'
           - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode: '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         defaultGeometry: '-180 -90 180 90'
     CLMS_CORINE:
       productType: EO:CLMS:DAT:CORINE
@@ -4646,6 +4648,25 @@
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '-180 -90 180 90'
       storeDownloadUrl: True
+    SATELLITE_SEA_LEVEL_BLACK_SEA:
+      productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
+      startTimeFromAscendingNode: "1993-01-01T00:00"
+      format: zip
+      metadata_mapping:
+        id: '$.productInfo.product'
+        format:
+          - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }}, {{"name": "variable", "value": "all" }} ] }}'
+          - '$.null'
+        startTimeFromAscendingNode:
+          - >
+            {{ "multiStringSelectValues": [
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+            ] }}
+          - $.productInfo.productStartDate
+        completionTimeFromAscendingNode: $.productInfo.productEndDate
+        geometry: -180 -90 180 90
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
@@ -5560,23 +5581,23 @@
         - "84"
         - "90"
         - "96"
-        # - "102"
-        # - "108"
-        # - "114"
-        # - "120"
-        # - "126"
-        # - "132"
-        # - "138"
-        # - "144"
-        # - "150"
-        # - "156"
-        # - "162"
-        # - "168"
-        # - "174"
-        # - "180"
-        # - "186"
-        # - "192"
-        # - "198"
+        - "102"
+        - "108"
+        - "114"
+        - "120"
+        - "126"
+        - "132"
+        - "138"
+        - "144"
+        - "150"
+        - "156"
+        - "162"
+        - "168"
+        - "174"
+        - "180"
+        - "186"
+        - "192"
+        - "198"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
       geometry: -180 -90 180 90
       originating_centre: ecmwf
@@ -5642,14 +5663,14 @@
         - "72"
         - "84"
         - "96"
-        # - "108"
-        # - "120"
-        # - "132"
-        # - "144"
-        # - "156"
-        # - "168"
-        # - "180"
-        # - "192"
+        - "108"
+        - "120"
+        - "132"
+        - "144"
+        - "156"
+        - "168"
+        - "180"
+        - "192"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
       geometry: -180 -90 180 90
       originating_centre: ecmwf
