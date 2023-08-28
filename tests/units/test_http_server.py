@@ -546,6 +546,28 @@ class RequestTestCase(unittest.TestCase):
             ),
         )
 
+    def test_intersects_post_search(self):
+        """POST search with intersects filtering through eodag server should return a valid response"""
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "intersects": {
+                    "type": "Polygon",
+                    "coordinates": [[[0, 43], [0, 44], [1, 44], [1, 43], [0, 43]]],
+                },
+            },
+            expected_search_kwargs=dict(
+                provider="peps",
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+
     def test_ids_post_search(self):
         """POST search with ids filtering through eodag server should return a valid response"""
         self._request_valid(

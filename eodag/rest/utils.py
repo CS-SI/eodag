@@ -263,13 +263,13 @@ def get_geometry(arguments):
             )
         )
 
-    if "intersects" in arguments and geom:
+    if "intersects" in arguments and arguments["intersects"] is not None and geom:
         new_geom = shape(arguments.pop("intersects"))
         if new_geom.intersects(geom):
             geom = new_geom.intersection(geom)
         else:
             geom = new_geom
-    elif "intersects" in arguments:
+    elif "intersects" in arguments and arguments["intersects"] is not None:
         geom = shape(arguments.pop("intersects"))
 
     if "geom" in arguments and geom:
