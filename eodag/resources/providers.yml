@@ -5879,7 +5879,7 @@
         geometry: -180 -90 180 90
         id: $.productInfo.product
       storeDownloadUrl: True
-      
+
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker
