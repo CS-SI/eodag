@@ -2305,15 +2305,40 @@ SEASONAL_POSTPROCESSED_PL:
     variables available in this data set are listed in the table below. The data includes forecasts created in
     real-time since 2017.\n\nVariables in the dataset/application are:\nGeopotential anomaly, Specific humidity
     anomaly, Temperature anomaly, U-component of wind anomaly, V-component of wind anomaly
+  keywords: ECMWF,CDS,C3S,seasonal,forecast,anomalies,pressure,levels
   platform:
   instrument:
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,seasonal,forecast,anomalies,pressure,levels
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast anomalies on pressure levels
   missionStartDate: "2017-01-01T00:00:00Z"
+SATELLITE_SEA_LEVEL_BLACK_SEA:
+  abstract: |
+    Sea level anomaly is the height of water over the mean sea surface in a given time and region. Up-to-date
+    altimeter standards are used to estimate the sea level anomalies with a mapping algorithm dedicated to the
+    Black sea region. Anomalies are computed with respect to a twenty-year mean reference period (1993-2012).
+    The steady number of reference satellite used in the production of this dataset contributes to the long-term
+    stability of the sea level record. Improvements of the accuracy, sampling of meso-scale processes and of the
+    high-latitude coverage were achieved by using a few additional satellite missions. New data are provided with
+    a delay of about 4-5 months relatively to near-real time or interim sea level products. This delay is mainly
+    due to the timeliness of the input data, the centred processing temporal window and the validation process.
+    However, this processing and validation adds stability and accuracy to the sea level variables and make them
+    adapted to climate applications. This dataset includes uncertainties for each grid cell. More details about
+    the sea level retrieval, additional filters, optimisation procedures, and the error estimation are given in
+    the Documentation section. Variables in the dataset/application are: Absolute dynamic topography, Absolute
+    geostrophic velocity meridian component, Absolute geostrophic velocity zonal component, Geostrophic velocity
+    anomalies meridian component, Geostrophic velocity anomalies zonal component, Sea level anomaly
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Climate,ECMWF,CDS,C3S,methane,sea
+  sensorType:
+  license: proprietary
+  title: Sea level daily gridded data from satellite observations for the Black Sea from 1993 to 2020
+  missionStartDate: "1993-01-01T00:00:00Z"
 
 SEASONAL_POSTPROCESSED_SL:
   abstract: >
@@ -2378,7 +2403,7 @@ SEASONAL_ORIGINAL_SL:
     months; as the ocean has an impact on the overlaying atmosphere, the variability of its properties (e.g.
     temperature) can modify both local and remote atmospheric conditions. Such modifications of the 'usual'
     atmospheric conditions are the essence of all long-range (e.g. seasonal) forecasts. This is different from
-    a weather forecast, which gives a lot more precise detail - both in time and space - of the evolution of the 
+    a weather forecast, which gives a lot more precise detail - both in time and space - of the evolution of the
     state of the atmosphere over a few days into the future. Beyond a few days, the chaotic nature of the
     atmosphere limits the possibility to predict precise changes at local scales. This is one of the reasons
     long-range forecasts of atmospheric conditions have large uncertainties. To quantify such uncertainties,
@@ -2556,6 +2581,7 @@ SEASONAL_MONTHLY_SL:
   license: proprietary
   title: Seasonal forecast monthly statistics on single levels
   missionStartDate: "1993-01-01T00:00:00Z"
+  missionEndDate: "2023-05-01T00:00:00Z"
 
 SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS:
   abstract: >
@@ -2932,42 +2958,6 @@ EFAS_SEASONAL_REFORECAST:
   title: Seasonal reforecasts of river discharge and related data by the European Flood Awareness System
   missionStartDate: "1991-01-01T00:00:00Z"
   missionEndDate: "2020-10-01T00:00:00Z"
-
-# METEOBLUE --------------------------------------------------------------------------
-NEMSGLOBAL_TCDC:
-  abstract: |
-    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
-    NEMSGLOBAL has 30km spatial and 1h temporal resolutions and produces seamless
-    datasets from 1984 to 7 days ahead.
-  instrument:
-  platform: NEMSGLOBAL
-  platformSerialIdentifier: NEMSGLOBAL
-  processingLevel:
-  keywords: meteoblue,NEMS,NEMSGLOBAL,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
-  sensorType: ATMOSPHERIC
-  license: proprietary
-  title: NEMSGLOBAL Total Cloud Cover daily mean
-  missionStartDate: "1984-01-01T00:00:00Z"
-
-NEMSAUTO_TCDC:
-  abstract: |
-    Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) automatic
-    domain switch. NEMSAUTO is the automatic delivery of the highest resolution meteoblue
-    model available for any requested period of time and location. The NEMS model family
-    are improved NMM successors (operational since 2013). NEMS is a multi-scale model
-    (used from global down to local domains) and significantly improves cloud-development
-    and precipitation forecast.
-    Note that Automatic domain switching is only supported for multi point queries.
-    Support for polygons may follow later.
-  instrument:
-  platform: NEMSAUTO
-  platformSerialIdentifier: NEMSAUTO
-  processingLevel:
-  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
-  sensorType: ATMOSPHERIC
-  license: proprietary
-  title: NEMSAUTO Total Cloud Cover daily mean
-  missionStartDate: "1984-01-01T00:00:00Z"
 
 # COPERNICUS Digital Elevation Model
 COP_DEM_GLO30:
