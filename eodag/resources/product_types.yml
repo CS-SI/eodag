@@ -3038,7 +3038,7 @@ CLMS_GLO_NDVI_1KM_LTS:
     period 1999-2017 is used to calculate Long Term Statistics (LTS) for each of the 36 10-daily periods (dekads)
     of the year. The calculated LTS include the minimum, median, maximum, average, standard deviation and the number
     of observations in the covered time series period. These LTS can be used as a reference for actual NDVI observations,
-    which allows evaluating whether vegetation conditions deviate from a `normal’ situation.
+    which allows evaluating whether vegetation conditions deviate from a 'normal' situation.
   instrument: VEGETATION,PROBA-V
   platform: SPOT
   platformSerialIdentifier:
