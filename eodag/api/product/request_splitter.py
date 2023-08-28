@@ -60,6 +60,8 @@ class RequestSplitter:
             )
 
     def _split_by_year(self, start_year, end_year, slice_duration):
+        if "year" not in self.metadata:
+            return self._split_by_year_with_dates(start_year, end_year, slice_duration)
         if "year" in self.multi_select_values:
             num_years = slice_duration
         else:
@@ -93,6 +95,10 @@ class RequestSplitter:
     def _split_by_month(
         self, start_year, end_year, start_month, end_month, slice_duration
     ):
+        if "month" not in self.metadata:
+            return self._split_by_month_with_dates(
+                start_year, end_year, start_month, end_month, slice_duration
+            )
         if "month" in self.multi_select_values:
             num_months = slice_duration
         else:
@@ -104,26 +110,35 @@ class RequestSplitter:
         for y in range(start_year, end_year + 1):
             while (m <= 12 and y < end_year) or (m <= end_month and y == end_year):
                 if i < num_months:
-                    months_slice.append(m)
+                    months_slice.append(str(m))
                     i += 1
                 else:
                     months_years.append({"year": [str(y)], "month": months_slice})
                     months_slice = [str(m)]
                     i = 1
+                if m == 12 or m == end_month and y == end_year:
+                    # don't create slices that go over 2 years because this cannot be configured with multiselect boxes
+                    months_years.append({"year": [str(y)], "month": months_slice})
                 m += 1
             m = 1
-            i = 1
+            i = 0
+            months_slice = []
 
         slices = []
         for row in months_years:
             record = {"year": row["year"], "month": row["month"]}
+            days = []
             if "day" in self.metadata:
-                days = self._get_days_for_months_and_years(row["month"], row)
+                days = self._get_days_for_months_and_years(row["month"], row["year"])
+                if len(days) == 0:
+                    continue
                 record["day"] = days
             if "time" in self.metadata:
                 times = self._get_times_for_days_months_and_years(
-                    days, row["month"], row
+                    days, row["month"], row["year"]
                 )
+                if len(days) == 0:
+                    continue
                 record["time"] = times
             slices.append(self._sort_record(record))
         return slices
@@ -195,3 +210,38 @@ class RequestSplitter:
         if "time" in record:
             record["time"] = sorted(record["time"], key=_hour_from_time)
         return record
+
+    def _split_by_year_with_dates(self, start_year, end_year, slice_duration):
+        slices = []
+        for year in range(start_year, end_year + 1, slice_duration):
+            start_date = datetime.datetime(year, 1, 1)
+            end_date = datetime.datetime(year + slice_duration - 1, 12, 31)
+            if end_date.year > end_year:
+                end_date = datetime.datetime(end_year, 12, 31)
+            slices.append({"start_date": start_date, "end_date": end_date})
+        return slices
+
+    def _split_by_month_with_dates(
+        self, start_year, end_year, start_month, end_month, slice_duration
+    ):
+        slices = []
+        start_date = datetime.datetime(start_year, start_month, 1)
+        if end_month == 12:
+            final_date = datetime.datetime(end_year, end_month, 31)
+        else:
+            final_date = datetime.datetime(
+                end_year, end_month + 1, 1
+            ) - datetime.timedelta(days=1)
+        end_date = start_date
+        current_year = start_year
+        while end_date < final_date:
+            new_month = start_date.month + slice_duration
+            if new_month <= 12:
+                end_date = datetime.datetime(
+                    current_year, new_month, 1
+                ) - datetime.timedelta(days=1)
+            else:
+                end_date = datetime.datetime(current_year, 12, 31)
+            slices.append({"start_date": start_date, "end_date": end_date})
+            start_date = end_date + datetime.timedelta(days=1)
+        return slices
