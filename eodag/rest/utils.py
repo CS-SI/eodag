@@ -9,10 +9,12 @@ import os
 import re
 from collections import namedtuple
 from shutil import make_archive, rmtree
+from typing import Dict, Optional
 
 import dateutil.parser
 from dateutil import tz
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
 
 import eodag
@@ -145,7 +147,6 @@ def search_bbox(request_bbox):
     search_bbox_keys = ["lonmin", "latmin", "lonmax", "latmax"]
 
     if request_bbox:
-
         try:
             request_bbox_list = [float(coord) for coord in request_bbox.split(",")]
         except ValueError as e:
@@ -881,6 +882,135 @@ def get_stac_extension_oseo(url):
     return StacCommon.get_stac_extension(
         url=url, stac_config=stac_config, extension="oseo", properties=oseo_properties
     )
+
+
+class QueryableProperty(BaseModel):
+    """A class representing a queryable property.
+
+    :param description: The description of the queryables property
+    :type description: str
+    :param ref: (optional) A reference link to the schema of the property.
+    :type ref: str
+    """
+
+    description: str
+    ref: Optional[str] = Field(default=None, serialization_alias="$ref")
+
+
+class Queryables(BaseModel):
+    """A class representing queryable properties for the STAC API.
+
+    :param json_schema: The URL of the JSON schema.
+    :type json_schema: str
+    :param q_id: (optional) The identifier of the queryables.
+    :type q_id: str
+    :param q_type: The type of the object.
+    :type q_type: str
+    :param title: The title of the queryables.
+    :type title: str
+    :param description: The description of the queryables
+    :type description: str
+    :param properties: A dictionary of queryable properties.
+    :type properties: dict
+    :param additional_properties: Whether additional properties are allowed.
+    :type additional_properties: bool
+    """
+
+    json_schema: str = Field(
+        default="https://json-schema.org/draft/2019-09/schema",
+        serialization_alias="$schema",
+    )
+    q_id: Optional[str] = Field(default=None, serialization_alias="$id")
+    q_type: str = Field(default="object", serialization_alias="type")
+    title: str = Field(default="Queryables for EODAG STAC API")
+    description: str = Field(
+        default="Queryable names for the EODAG STAC API Item Search filter."
+    )
+    properties: Dict[str, QueryableProperty] = Field(
+        default={
+            "id": QueryableProperty(
+                description="ID",
+                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/id",
+            ),
+            "collection": QueryableProperty(
+                description="Collection",
+                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/collection",
+            ),
+            "geometry": QueryableProperty(
+                description="Geometry",
+                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/geometry",
+            ),
+            "bbox": QueryableProperty(
+                description="Bbox",
+                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/bbox",
+            ),
+            "datetime": QueryableProperty(
+                description="Datetime",
+                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
+            ),
+            "ids": QueryableProperty(description="IDs"),
+        }
+    )
+    additional_properties: bool = Field(
+        default=True, serialization_alias="additionalProperties"
+    )
+
+    def get_properties(self) -> Dict[str, QueryableProperty]:
+        """Get the queryable properties.
+
+        :returns: A dictionary containing queryable properties.
+        :rtype: typing.Dict[str, QueryableProperty]
+        """
+        return self.properties
+
+    def __contains__(self, name: str):
+        return name in self.properties
+
+    def __setitem__(self, name: str, qprop: QueryableProperty):
+        self.properties[name] = qprop
+
+
+def rename_to_stac_standard(key: str) -> str:
+    """Fetch the queryable properties for a collection.
+
+    :param key: The camelCase key name obtained from a collection's metadata mapping.
+    :type key: str
+    :returns: The STAC-standardized property name if it exists, else the default camelCase queryable name
+    :rtype: str
+    """
+    # Load the stac config properties for renaming the properties
+    # to their STAC standard
+    stac_config_properties = stac_config["item"]["properties"]
+
+    for stac_property, value in stac_config_properties.items():
+        if str(value).endswith(key):
+            return stac_property
+    return key
+
+
+def fetch_collection_queryable_properties(
+    collection_id: str, provider: Optional[str] = None
+) -> set:
+    """Fetch the queryable properties for a collection.
+
+    :param collection_id: The ID of the collection.
+    :type collection_id: str
+    :param provider: (optional) The provider.
+    :type provider: str
+    :returns queryable_properties: A set containing the STAC standardized queryable properties for a collection.
+    :rtype queryable_properties: set
+    """
+    # Fetch the metadata mapping for collection-specific queryables
+    args = [collection_id, provider] if provider else [collection_id]
+    search_plugin = next(eodag_api._plugins_manager.get_search_plugins(*args))
+    mapping = dict(search_plugin.config.metadata_mapping)
+
+    # list of all the STAC standardized collection-specific queryables
+    queryable_properties = set()
+    for key, value in mapping.items():
+        if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+            queryable_properties.add(rename_to_stac_standard(key))
+    return queryable_properties
 
 
 def eodag_api_init():

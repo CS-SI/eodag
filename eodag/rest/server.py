@@ -18,11 +18,12 @@
 import io
 import logging
 import os
+import re
 import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
 from json.decoder import JSONDecodeError
-from typing import List, Union
+from typing import List, Optional, Union
 
 import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
@@ -37,8 +38,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
+    QueryableProperty,
+    Queryables,
     download_stac_item_by_id_stream,
     eodag_api_init,
+    fetch_collection_queryable_properties,
     get_detailled_collections_list,
     get_stac_api_version,
     get_stac_catalogs,
@@ -61,6 +65,7 @@ from eodag.utils.exceptions import (
 )
 
 logger = logging.getLogger("eodag.rest.server")
+CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")
 
 
 class APIRouter(FastAPIRouter):
@@ -593,6 +598,59 @@ async def stac_catalogs(catalogs, request: Request):
         provider=provider,
     )
     return jsonable_encoder(response)
+
+
+@router.get("/queryables", tags=["Capabilities"], response_model_exclude_none=True)
+def list_queryables(request: Request) -> Queryables:
+    """Returns the list of terms available for use when writing filter expressions.
+
+    This endpoint provides a list of terms that can be used as filters when querying
+    the data. These terms correspond to properties that can be filtered using comparison
+    operators.
+
+    :param request: The incoming request object.
+    :type request: fastapi.Request
+    :returns: An object containing the list of available queryable terms.
+    :rtype: eodag.rest.utils.Queryables
+    """
+
+    return Queryables(q_id=request.state.url)
+
+
+@router.get(
+    "/collections/{collection_id}/queryables",
+    tags=["Capabilities"],
+    response_model_exclude_none=True,
+)
+def list_collection_queryables(
+    request: Request, collection_id: str, provider: Optional[str] = None
+) -> Queryables:
+    """Returns the list of queryable properties for a specific collection.
+
+    This endpoint provides a list of properties that can be used as filters when querying
+    the specified collection. These properties correspond to characteristics of the data
+    that can be filtered using comparison operators.
+
+    :param request: The incoming request object.
+    :type request: fastapi.Request
+    :param collection_id: The identifier of the collection for which to retrieve queryable properties.
+    :type collection_id: str
+    :param provider: (optional) The provider for which to retrieve additional properties.
+    :type provider: str
+    :returns: An object containing the list of available queryable properties for the specified collection.
+    :rtype: eodag.rest.utils.Queryables
+    """
+
+    queryables = Queryables(q_id=request.state.url, additional_properties=False)
+    conf_args = [collection_id, provider] if provider else [collection_id]
+
+    provider_properties = set(fetch_collection_queryable_properties(*conf_args))
+
+    for prop in provider_properties:
+        titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop).title()
+        queryables[prop] = QueryableProperty(description=titled_name)
+
+    return queryables
 
 
 app.include_router(router)

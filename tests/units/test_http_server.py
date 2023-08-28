@@ -760,3 +760,18 @@ class RequestTestCase(unittest.TestCase):
         response = self._request_valid("/extensions/oseo/json-schema/schema.json")
         self.assertEqual(response["title"], "OpenSearch for Earth Observation")
         self.assertEqual(response["allOf"][0]["$ref"], "#/definitions/oseo")
+
+    def test_queryables(self):
+        """Request to /queryables should return a valid response."""
+        self._request_valid("queryables")
+
+    def test_product_type_queryables(self):
+        """Request to /collections/{collection_id}/queryables should return a valid response."""
+        self._request_valid(f"collections/{self.tested_product_type}/queryables")
+
+    def test_product_type_queryables_with_provider(self):
+        """Request a collection-specific list of queryables for a given provider."""
+
+        self._request_valid(
+            f"collections/{self.tested_product_type}/queryables?provider=peps"
+        )
