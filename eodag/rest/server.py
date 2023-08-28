@@ -288,6 +288,7 @@ class SearchBody(BaseModel):
     collections: Union[List[str], str]
     datetime: Union[str, None] = None
     bbox: Union[list, str, None] = None
+    intersects: Union[dict, None] = None
     limit: Union[int, None] = 20
     page: Union[int, None] = 1
     query: Union[dict, None] = None
