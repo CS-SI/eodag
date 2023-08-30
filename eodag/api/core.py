@@ -1498,7 +1498,7 @@ class EODataAccessGateway(object):
 
         try:
             if need_auth and auth_plugin and can_authenticate:
-                auth_plugin.authenticate()
+                search_plugin.auth = auth_plugin.authenticate()
 
             res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
