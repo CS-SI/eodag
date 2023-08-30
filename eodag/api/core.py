@@ -20,6 +20,7 @@ import os
 import re
 import shutil
 from operator import itemgetter
+from typing import List
 
 import geojson
 import pkg_resources
@@ -45,6 +46,7 @@ from eodag.config import (
 )
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
+from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     MockResponse,
@@ -891,7 +893,7 @@ class EODataAccessGateway(object):
             return a list as a result of their processing. This requirement is
             enforced here.
         """
-        search_kwargs = self._prepare_search(
+        search_plugins, search_kwargs = self._prepare_search(
             start=start,
             end=end,
             geom=geom,
@@ -899,15 +901,13 @@ class EODataAccessGateway(object):
             provider=provider,
             **kwargs,
         )
-        search_plugins = search_kwargs.pop("search_plugins", [])
+
         if search_kwargs.get("id"):
             # adds minimal pagination to be able to check only 1 product is returned
             search_kwargs.update(
                 page=1,
                 items_per_page=2,
             )
-            # remove auth from search_kwargs as a loop over providers will be performed
-            search_kwargs.pop("auth", None)
             return self._search_by_id(
                 search_kwargs.pop("id"), provider=provider, **search_kwargs
             )
@@ -981,10 +981,9 @@ class EODataAccessGateway(object):
                   matching the criteria
         :rtype: Iterator[:class:`~eodag.api.search_result.SearchResult`]
         """
-        search_kwargs = self._prepare_search(
+        search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        search_plugins = search_kwargs.pop("search_plugins")
         for i, search_plugin in enumerate(search_plugins):
             try:
                 return self.search_iter_page_plugin(
@@ -1198,10 +1197,9 @@ class EODataAccessGateway(object):
                 )
                 self.fetch_product_types_list()
 
-        search_kwargs = self._prepare_search(
+        search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
-        search_plugins = search_kwargs.get("search_plugins", [])
         for i, search_plugin in enumerate(search_plugins):
             if items_per_page is None:
                 items_per_page = search_plugin.config.pagination.get(
@@ -1279,13 +1277,8 @@ class EODataAccessGateway(object):
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
-            auth_plugin = self._plugins_manager.get_auth_plugin(plugin.provider)
-            if getattr(plugin.config, "need_auth", False) and callable(
-                getattr(auth_plugin, "authenticate", None)
-            ):
-                plugin.auth = auth_plugin.authenticate()
             plugin.clear()
-            results, _ = self._do_search(plugin, auth=auth_plugin, id=uid, **kwargs)
+            results, _ = self._do_search(plugin, id=uid, **kwargs)
             if len(results) == 1:
                 if not results[0].product_type:
                     # guess product type from properties
@@ -1311,8 +1304,7 @@ class EODataAccessGateway(object):
     def _prepare_search(
         self, start=None, end=None, geom=None, locations=None, provider=None, **kwargs
     ):
-        """Internal method to prepare the search kwargs and get the search
-        and auth plugins.
+        """Internal method to prepare the search kwargs and get the search plugins.
 
         Product query:
           * By id (plus optional 'provider')
@@ -1375,7 +1367,7 @@ class EODataAccessGateway(object):
                         "No product type could be guessed with provided arguments"
                     )
                 else:
-                    return kwargs
+                    return [], kwargs
 
         kwargs["productType"] = product_type
         if start is not None:
@@ -1412,7 +1404,7 @@ class EODataAccessGateway(object):
             )
             self.fetch_product_types_list()
 
-        search_plugins = []
+        search_plugins: List[Search] = []
         for plugin in self._plugins_manager.get_search_plugins(
             product_type=product_type
         ):
@@ -1442,7 +1434,6 @@ class EODataAccessGateway(object):
             )
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
-        auth_plugins = {}
         for search_plugin in search_plugins:
             try:
                 search_plugin.config.product_type_config = dict(
@@ -1466,23 +1457,7 @@ class EODataAccessGateway(object):
             # Remove the ID since this is equal to productType.
             search_plugin.config.product_type_config.pop("ID", None)
 
-            auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
-            auth_plugins[search_plugin.provider] = auth_plugin
-
-            # append auth to search plugin if needed
-            if getattr(search_plugin.config, "need_auth", False) and callable(
-                getattr(auth_plugin, "authenticate", None)
-            ):
-                try:
-                    search_plugin.auth = auth_plugin.authenticate()
-                except RuntimeError:
-                    logger.error(
-                        "could not authenticatate at provider %s",
-                        search_plugin.provider,
-                    )
-                    search_plugin.auth = None
-
-        return dict(search_plugins=search_plugins, auth=auth_plugins, **kwargs)
+        return search_plugins, kwargs
 
     def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
         """Internal method that performs a search on a given provider.
@@ -1514,22 +1489,18 @@ class EODataAccessGateway(object):
                 max_items_per_page,
             )
 
+        need_auth = getattr(search_plugin.config, "need_auth", False)
+        auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
+        can_authenticate = callable(getattr(auth_plugin, "authenticate", None))
+
         results = SearchResult([])
         total_results = 0
 
         try:
-            if "auth" in kwargs:
-                if isinstance(kwargs["auth"], dict):
-                    auth = kwargs["auth"][search_plugin.provider]
-                else:
-                    auth = kwargs["auth"]
-                kwargs.pop("auth")
-            else:
-                auth = None
+            if need_auth and auth_plugin and can_authenticate:
+                search_plugin.auth = auth_plugin.authenticate()
 
-            if "search_plugins" in kwargs:
-                kwargs.pop("search_plugins")
-            res, nb_res = search_plugin.query(count=count, auth=auth, **kwargs)
+            res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
             # Only do the pagination computations when it makes sense. For example,
             # for a search by id, we can reasonably guess that the provider will return
@@ -1615,7 +1586,7 @@ class EODataAccessGateway(object):
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    eo_product.register_downloader(download_plugin, auth)
+                    eo_product.register_downloader(download_plugin, auth_plugin)
 
             results.extend(res)
             total_results = None if nb_res is None else total_results + nb_res
