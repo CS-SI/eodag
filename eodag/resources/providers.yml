@@ -4235,19 +4235,6 @@
           - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
         defaultGeometry: '-180 -90 180 90'
-    SIS_HYDRO_METEO:
-      productType: EO:ECMWF:DAT:SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
-      metadata_mapping:
-        # the given datetimes are used to determine the other filter params
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["multiStringSelectValues"]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_sis_params(completionTimeFromAscendingNode)}["multiStringSelectValues"]}}'
-          - '$.productInfo.productEndDate'
-        id: '$.productInfo.product'
-        defaultGeometry: '-180 -90 180 90'
-      storeDownloadUrl: True # if this parameter is set to true the download information for a product id will be cached and retrieved at the download request instead of executing a search
     ERA5_PL:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
       providerProductType:
