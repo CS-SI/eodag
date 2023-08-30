@@ -4312,7 +4312,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4399,7 +4399,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4458,7 +4458,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(string)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(string)}["month"]}}], "multiStringSelectValues": [{{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(string)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(string)}["month"]}}], "multiStringSelectValues": [{{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         variable:
@@ -4514,7 +4514,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4555,7 +4555,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4596,7 +4596,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4622,7 +4622,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         variable:
@@ -4660,9 +4660,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -4752,9 +4752,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -4823,9 +4823,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -4866,9 +4866,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -4959,9 +4959,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5007,8 +5007,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5049,8 +5049,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5157,9 +5157,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }},
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }},
               {{ "name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time} }}
             ] }}
           - $.productInfo.productStartDate
@@ -5194,9 +5194,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }},
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }},
               {{ "name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time} }}
             ] }}
           - $.productInfo.productStartDate
@@ -5271,9 +5271,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5316,8 +5316,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5360,8 +5360,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5397,9 +5397,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-               {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+               {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5435,9 +5435,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-               {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+               {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5499,8 +5499,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5547,8 +5547,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5625,9 +5625,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5698,9 +5698,9 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5761,8 +5761,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5808,8 +5808,8 @@
         startTimeFromAscendingNode:
           - >
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
