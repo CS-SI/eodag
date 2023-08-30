@@ -4086,7 +4086,7 @@
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}, {{"name": "product_type", "value": "{id#split_corine_id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
         geometry: '-180 -90 180 90' # geometry is not available for this product type
-    CLMS_GLO_FCover_333M:
+    CLMS_GLO_FCOVER_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_FCOVER300_V1_333M
       startTimeFromAscendingNode: "2014-01-10T00:00"
       completionTimeFromAscendingNode: "2014-01-10T00:00"
@@ -4693,7 +4693,7 @@
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
-    GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY:
+    GLACIERS_DIST_RANDOLPH:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
       variable: all
       format: zip
@@ -5818,7 +5818,7 @@
           - '$.extraInformation.footprint'
         id: $.productInfo.product
       storeDownloadUrl: True
-    SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS:
+    SIS_HYDRO_MET_PROJ:
       productType: EO:ECMWF:DAT:SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
       period:
         - "1974"
