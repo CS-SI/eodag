@@ -2175,7 +2175,7 @@ GLACIERS_ELEVATION_AND_MASS_CHANGE:
   title: Glaciers elevation and mass change data from 1850 to present from the Fluctuations of Glaciers Database
   missionStartDate: "1850-01-01T00:00:00Z"
 
-GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY:
+GLACIERS_DIST_RANDOLPH:
   abstract: |
     A glacier is defined as a perennial mass of ice, and possibly firn and snow, originating on the land surface
     from the recrystallization of snow or other forms of solid precipitation and showing evidence of past or
@@ -2314,6 +2314,7 @@ SEASONAL_POSTPROCESSED_PL:
   license: proprietary
   title: Seasonal forecast anomalies on pressure levels
   missionStartDate: "2017-01-01T00:00:00Z"
+
 SATELLITE_SEA_LEVEL_BLACK_SEA:
   abstract: |
     Sea level anomaly is the height of water over the mean sea surface in a given time and region. Up-to-date
@@ -2583,7 +2584,7 @@ SEASONAL_MONTHLY_SL:
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2023-05-01T00:00:00Z"
 
-SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS:
+SIS_HYDRO_MET_PROJ:
   abstract: |
     This dataset provides precipitation and near surface air temperature for Europe as Essential Climate
     Variables (ECVs) and as a set of Climate Impact Indicators (CIIs) based on the ECVs. \nECV datasets
@@ -2998,7 +2999,7 @@ CLMS_CORINE:
   title: CORINE Land Cover
   missionStartDate: "1986-01-01T00:00:00Z"
 
-CLMS_GLO_FCover_333M:
+CLMS_GLO_FCOVER_333M:
   abstract: |
     The Fraction of Vegetation Cover (FCover) corresponds to the fraction of ground covered by green vegetation.
     Practically, it quantifies the spatial extent of the vegetation. Because it is independent from the illumination
