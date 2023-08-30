@@ -647,68 +647,6 @@ def format_metadata(search_param, *args, **kwargs):
             return product_type
 
         @staticmethod
-        def convert_get_ecmwf_sis_params(start_date, end_date):
-            start_year = max(int(start_date[:4]), 1970)
-            end_year = min(int(end_date[:4]), 2100)
-            slices = [[1971, 2000], [2011, 2040], [2041, 2070], [2071, 2100]]
-            variable_type = "absolute_values"
-            horizontal_resolution = "5_km"
-            processing_type = "bias_corrected"
-            if [start_year, end_year] in slices:
-                product_type = "climate_impact_indicators"
-                time_aggregation = ["annual_mean", "monthly_mean"]
-                variable = [
-                    "2m_air_temperature",
-                    "highest_5_day_precipitation_amount",
-                    "longest_dry_spells",
-                    "number_of_dry_spells",
-                    "precipitation",
-                ]
-                if end_year == 2000:
-                    experiment = ["historical"]
-                else:
-                    experiment = ["rcp_2_6", "rcp_8_5", "rcp_4_5"]
-                period = [str(start_year) + "_" + str(end_year)]
-                ensemble_member = ["r12i1p1", "r1i1p1", "r2i1p1"]
-            else:
-                product_type = "essential_climate_variables"
-                time_aggregation = ["daily"]
-                variable = [
-                    "2m_air_temperature",
-                    "precipitation",
-                ]  # variables available for this product type
-                if end_year <= 2005:
-                    experiment = ["historical"]
-                else:
-                    experiment = ["rcp_2_6", "rcp_8_5", "rcp_4_5"]
-                period = []
-                for y in range(start_year, end_year + 1):
-                    period.append(str(y))
-                ensemble_member = ["r12i1p1"]
-            params = {
-                "stringChoiceValues": [
-                    {"name": "product_type", "value": product_type},
-                    {"name": "processing_type", "value": processing_type},
-                    {"name": "variable_type", "value": variable_type},
-                    {"name": "horizontal_resolution", "value": horizontal_resolution},
-                    {"name": "rcm", "value": "cclm4_8_17"},
-                    {"name": "gcm", "value": "ec_earth"},
-                    {"name": "format", "value": "zip"},
-                ],
-                "multiStringSelectValues": [
-                    {"name": "variable", "value": variable},
-                    {"name": "experiment", "value": experiment},
-                    {"name": "period", "value": period},
-                    {"name": "time_aggregation", "value": time_aggregation},
-                    {"name": "ensemble_member", "value": ensemble_member},
-                ],
-            }
-            return {
-                "multiStringSelectValues": params["multiStringSelectValues"],
-                "stringChoiceValues": params["stringChoiceValues"],
-            }
-
-        @staticmethod
         def convert_get_datetime_dict(date: str, format: str) -> dict:
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
             date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
