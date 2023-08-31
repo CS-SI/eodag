@@ -464,8 +464,8 @@ class TestMetadataFormatter(unittest.TestCase):
             "Corine Land Change 2000 2006",
         )
 
-    def test_convert_get_datetime_dict(self):
-        to_format = "{date#get_datetime_dict(list)}"
+    def test_convert_to_datetime_dict(self):
+        to_format = "{date#to_datetime_dict(list)}"
         expected_result = {
             "year": ["2023"],
             "month": ["01"],
@@ -477,7 +477,7 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, date="2023-01-31T00:00"), str(expected_result)
         )
-        to_format = "{date#get_datetime_dict(string)}"
+        to_format = "{date#to_datetime_dict(string)}"
         expected_result = {
             "year": "2023",
             "month": "01",
