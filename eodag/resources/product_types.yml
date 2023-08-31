@@ -2132,7 +2132,7 @@ GLACIERS_ELEVATION_AND_MASS_CHANGE:
   platformSerialIdentifier: INSITU
   processingLevel:
   keywords: ECMWF,WGMS,INSITU,CDS,C3S,glacier,elevation,mass,change
-  sensorType: HYDROLOGICAL
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Glaciers elevation and mass change data from 1850 to present from the Fluctuations of Glaciers Database
   missionStartDate: "1850-01-01T00:00:00Z"
@@ -2152,7 +2152,7 @@ GLACIERS_DIST_RANDOLPH:
   platformSerialIdentifier: INSITU
   processingLevel:
   keywords: ECMWF,WGMS,INSITU,CDS,C3S,glacier,randolph,distribution,inventory
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Glaciers distribution data from the Randolph Glacier Inventory for year 2000
   missionStartDate: "2000-01-01T00:00:00Z"
@@ -2193,7 +2193,7 @@ SATELLITE_CARBON_DIOXIDE:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,carbon-dioxide
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Carbon dioxide data from 2002 to present derived from satellite observations
   missionStartDate: "2002-10-01T00:00:00Z"
@@ -2230,7 +2230,7 @@ SATELLITE_METHANE:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,methane
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Methane data from 2002 to present derived from satellite observations
   missionStartDate: "2002-10-01T00:00:00Z"
@@ -2298,7 +2298,7 @@ SATELLITE_SEA_LEVEL_BLACK_SEA:
   platformSerialIdentifier:
   processingLevel:
   keywords: Climate,ECMWF,CDS,C3S,methane,sea
-  sensorType:
+  sensorType: HYDROLOGICAL
   license: proprietary
   title: Sea level daily gridded data from satellite observations for the Black Sea from 1993 to 2020
   missionStartDate: "1993-01-01T00:00:00Z"
@@ -2352,7 +2352,7 @@ SEASONAL_POSTPROCESSED_SL:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,seasonal,forecast,anomalies,single,levels
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast anomalies on single levels
   missionStartDate: "2017-01-01T00:00:00Z"
@@ -2402,7 +2402,7 @@ SEASONAL_ORIGINAL_SL:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,seasonal,forecast,daily,single,levels
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast daily and subdaily data on single levels
   missionStartDate: "2017-01-01T00:00:00Z"
@@ -2446,7 +2446,7 @@ SEASONAL_ORIGINAL_PL:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,seasonal,forecast,subdaily,pressure,levels
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast subdaily data on pressure levels
   missionStartDate: "1993-01-01T00:00:00Z"
@@ -2489,7 +2489,7 @@ SEASONAL_MONTHLY_PL:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,seasonal,forecast,monthly,pressure,levels
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast monthly statistics on pressure levels
   missionStartDate: "1993-01-01T00:00:00Z"
@@ -2540,7 +2540,7 @@ SEASONAL_MONTHLY_SL:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,seasonal,forecast,monthly,single,levels
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast monthly statistics on single levels
   missionStartDate: "1993-01-01T00:00:00Z"
@@ -2577,7 +2577,7 @@ SIS_HYDRO_MET_PROJ:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,hydrology,meterology,water,precipitation,temperature
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Temperature and precipitation climate impact indicators from 1970 to 2100 derived from European climate projections
   missionStartDate: "1970-01-01T00:00:00Z"
@@ -2605,7 +2605,7 @@ FIRE_HISTORICAL:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,EFFIS,fire,historical,ERA5,european,sustainability,CEMS,system
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Fire danger indices historical data from the Copernicus Emergency Management Service
   missionStartDate: "1979-01-01T00:00:00Z"
@@ -2625,7 +2625,7 @@ GLOFAS_FORECAST:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,GloFAS,forecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related forecasted data by the Global Flood Awareness System
   missionStartDate: "2019-11-05T00:00:00Z"
@@ -2643,7 +2643,7 @@ GLOFAS_HISTORICAL:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,GloFAS,historical,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related historical data from the Global Flood Awareness System
   missionStartDate: "1991-01-01T00:00:00Z"
@@ -2674,7 +2674,7 @@ GLOFAS_REFORECAST:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,GloFAS,reforecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the Global Flood Awareness System
   missionStartDate: "1999-01-03T00:00:00Z"
@@ -2705,7 +2705,7 @@ GLOFAS_SEASONAL:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,GloFAS,seasonal,forecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecasts of river discharge and related data by the Global Flood Awareness System
   missionStartDate: "2020-01-12T00:00:00Z"
@@ -2739,7 +2739,7 @@ GLOFAS_SEASONAL_REFORECAST:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,GloFAS,seasonal,forecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
   missionStartDate: "2020-01-12T00:00:00Z"
@@ -2777,7 +2777,7 @@ EFAS_FORECAST:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,EFAS,forecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related forecasted data by the European Flood Awareness System
   missionStartDate: "2018-10-10T00:00:00Z"
@@ -2810,7 +2810,7 @@ EFAS_HISTORICAL:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,EFAS,historical,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related historical data from the European Flood Awareness System
   missionStartDate: "1991-01-01T00:00:00Z"
@@ -2846,7 +2846,7 @@ EFAS_REFORECAST:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,EFAS,reforecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the European Flood Awareness System
   missionStartDate: "1999-01-03T00:00:00Z"
@@ -2882,7 +2882,7 @@ EFAS_SEASONAL:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,EFAS,seasonal,forecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecasts of river discharge and related data by the European Flood Awareness System
   missionStartDate: "2020-11-01T00:00:00Z"
@@ -2916,7 +2916,7 @@ EFAS_SEASONAL_REFORECAST:
   platformSerialIdentifier: CEMS
   processingLevel:
   keywords: ECMWF,CEMS,EFAS,seasonal,reforecast,river,discharge
-  sensorType:
+  sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal reforecasts of river discharge and related data by the European Flood Awareness System
   missionStartDate: "1991-01-01T00:00:00Z"
@@ -2936,7 +2936,7 @@ COP_DEM_GLO30:
   platformSerialIdentifier:
   processingLevel:
   keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-30,DSM
-  sensorType: SAR-X, TOR
+  sensorType: ALTIMETRIC
   license: proprietary
   title: COPERNICUS Digital Elevation Model (GLO-30)
   missionStartDate: "2010-06-21T00:00:00Z"
@@ -2973,7 +2973,7 @@ CLMS_GLO_FCOVER_333M:
   platformSerialIdentifier:
   processingLevel:
   keywords: Land,Fraction-of-vegetation-cover,OLCI,PROBA-V,Sentinel-3
-  sensorType: OPTICAL
+  sensorType:
   license: proprietary
   title: Global 10-daily Fraction of Vegetation Cover 333m
   missionStartDate: "2014-01-10T00:00:00Z"
@@ -2988,7 +2988,7 @@ CLMS_GLO_NDVI_333M:
   platformSerialIdentifier:
   processingLevel:
   keywords: Land,NDVI,PROBA-V
-  sensorType: OPTICAL
+  sensorType:
   license: proprietary
   title: Global 10-daily Normalized Difference Vegetation Index 333M
   missionStartDate: "2014-01-01T00:00:00Z"
@@ -3007,7 +3007,7 @@ CLMS_GLO_NDVI_1KM_LTS:
   platformSerialIdentifier:
   processingLevel:
   keywords: Land,NDVI,LTS,SPOT,VEGETATION,PROBA-V
-  sensorType: OPTICAL
+  sensorType:
   license: proprietary
   title: "Normalized Difference Vegetation Index: global Long Term Statistics (raster 1km) - version 2, Apr 2019"
   missionStartDate: "1999-01-01T00:00:00Z"
@@ -3025,7 +3025,7 @@ CLMS_GLO_DMP_333M:
   platformSerialIdentifier:
   processingLevel:
   keywords: Land,Dry-matter-productivity,DMP,OLCI,PROBA-V,Sentinel-3
-  sensorType: OPTICAL
+  sensorType:
   license: proprietary
   title: 10-daily Dry Matter Productivity 333M
   missionStartDate: "2014-01-10T00:00:00Z"
@@ -3043,7 +3043,7 @@ CLMS_GLO_GDMP_333M:
   platformSerialIdentifier:
   processingLevel:
   keywords: Land,Gross-dry-matter-productivity,GDMP,GPP,OLCI,PROBA-V,Sentinel-3
-  sensorType: OPTICAL
+  sensorType:
   license: proprietary
   title: 10-daily Gross Dry Matter Productivity 333M
   missionStartDate: "2014-01-10T00:00:00Z"
@@ -3063,7 +3063,7 @@ CLMS_GLO_LAI_333M:
   platformSerialIdentifier:
   processingLevel:
   keywords: Land,Leaf-area-index,LAI,OLCI,PROBA-V,Sentinel-3
-  sensorType: OPTICAL
+  sensorType:
   license: proprietary
   title: Global 10-daily Leaf Area Index 333m
   missionStartDate: "2014-01-10T00:00:00Z"
@@ -3081,7 +3081,7 @@ CLMS_GLO_FAPAR_333M:
   platformSerialIdentifier:
   processingLevel:
   keywords: Land,Fraction-of-absorbed-PAR,FAPAR,OLCI,PROBA-V,Sentinel-3
-  sensorType: OPTICAL
+  sensorType:
   license: proprietary
   title: Global 10-daily Fraction of Absorbed PAR 333m
   missionStartDate: "2014-01-10T00:00:00Z"
@@ -3144,7 +3144,7 @@ EEA_DAILY_VI:
   platformSerialIdentifier: S2A, S2B
   processingLevel:
   keywords: Land,Plant-phenology-index,Phenology,Vegetation,Sentinel-2,S2A,S2B
-  sensorType:
+  sensorType: RADAR
   license: proprietary
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
