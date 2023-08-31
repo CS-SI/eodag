@@ -13,9 +13,7 @@ from shutil import make_archive, rmtree
 from typing import Dict, Optional
 
 import dateutil.parser
-import requests
 from dateutil import tz
-from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
@@ -37,7 +35,6 @@ from eodag.utils import (
     string_to_jsonpath,
 )
 from eodag.utils.exceptions import (
-    IdNotFoundError,
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
@@ -435,10 +432,7 @@ def search_products(product_type, arguments, stac_formatted=True):
         # We remove potential None values to use the default values of the search method
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)
 
-        try:
-            products, total = eodag_api.search(**criterias)
-        except requests.RequestException as e:
-            raise HTTPException(status_code=404, detail=str(e) if str(e) else None)
+        products, total = eodag_api.search(**criterias)
 
         products = filter_products(products, arguments, **criterias)
 
@@ -617,7 +611,7 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     if provider_product_type_config.get("storeDownloadUrl", False):
         if item_id not in search_plugin.download_info:
             logger.error(f"data for item {item_id} not found")
-            raise IdNotFoundError(
+            raise NotAvailableError(
                 f"download url for product {item_id} could not be found, please redo "
                 f"the search request to fetch the required data"
             )

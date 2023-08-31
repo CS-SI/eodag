@@ -32,7 +32,6 @@ from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
-from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
 from eodag.utils import (
@@ -319,15 +318,8 @@ def format_metadata(search_param, *args, **kwargs):
                     max_lon = max(max_lon, geom.bound[2])
                     max_lat = max(max_lat, geom.bound[3])
                 return [min_lon, min_lat, max_lon, max_lat]
-            elif isinstance(input_geom, BaseGeometry):
-                return list(input_geom.bounds[0:4])
-            elif isinstance(input_geom, str):
-                # we assume geom is actually a bbox
-                return [float(x.strip()) for x in input_geom.split(" ")]
             else:
-                raise ValueError(
-                    f"Conversion to bounding box is not supported for: {input_geom}"
-                )
+                return list(input_geom.bounds[0:4])
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom):
@@ -1095,14 +1087,23 @@ def format_query_params(product_type, config, **kwargs):
 
 
 def _resolve_hashes(formatted_query_param):
+    """
+    resolves structures of the format {"a": "abc", "b": "cde"}["a"] given in the formatted_query_param
+    the structure is replaced by the value corresponding to the given key in the hash
+    (in this case "abc")
+    """
+    # check if there is still a hash to be resolved
     while '}["' in formatted_query_param:
+        # find and parse code between {}
         ind_open = formatted_query_param.find('}["')
         ind_close = formatted_query_param.find('"]', ind_open)
         hash_start = formatted_query_param[:ind_open].rfind(": {") + 2
         h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
+        # find key and get value
         ind_key_start = formatted_query_param.find('"', ind_open) + 1
         key = formatted_query_param[ind_key_start:ind_close]
         value = h[key]
+        # replace hash with value
         if isinstance(value, str):
             formatted_query_param = formatted_query_param.replace(
                 formatted_query_param[hash_start : ind_close + 2], '"' + value + '"'

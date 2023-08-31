@@ -3753,6 +3753,8 @@
       max_items_per_page: 20
       total_items_nb_key_path: '$.totItems'
       next_page_url_key_path: '$.nextPage'
+    discover_product_types:
+      fetch_url: null
     metadata_mapping:
       productType:
         - '{{"datasetId": "{productType}"}}'
@@ -3771,16 +3773,6 @@
       title: '$.productInfo.product'
       orderLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
       storageStatus: 'OFFLINE'
-  discover_product_types:
-    fetch_url: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datasets'
-    result_type: json
-    results_entry: '$.content[*]'
-    generic_product_type_id: '$.datasetId'
-    generic_product_type_parsable_properties:
-      collection: '$.datasetId'
-    generic_product_type_parsable_metadata:
-      abstract: '$.abstract'
-      title: '$.title'
   auth: !plugin
     type: TokenAuth
     auth_uri: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/gettoken'
