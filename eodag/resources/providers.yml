@@ -4653,7 +4653,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }}, {{"name": "variable", "value": "all" }} ] }}'
           - '$.null'
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -4745,7 +4745,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "version", "value": {version} }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -4816,7 +4816,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -4859,7 +4859,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -4952,7 +4952,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5000,7 +5000,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
@@ -5042,7 +5042,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
@@ -5150,7 +5150,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5187,7 +5187,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5264,7 +5264,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5309,7 +5309,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
@@ -5353,7 +5353,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
@@ -5390,7 +5390,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5428,7 +5428,7 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5492,7 +5492,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
@@ -5540,7 +5540,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
@@ -5618,7 +5618,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5691,7 +5691,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
@@ -5754,7 +5754,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
@@ -5801,7 +5801,7 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
               {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
               {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
