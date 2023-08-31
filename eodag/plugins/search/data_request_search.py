@@ -221,7 +221,6 @@ class DataRequestSearch(Search):
                 raise RequestError(
                     f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
                 )
-                raise
             else:
                 logger.info("search job for product_type %s created", product_type)
                 return request_job.json()["jobId"]
