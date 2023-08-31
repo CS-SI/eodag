@@ -639,7 +639,7 @@ def format_metadata(search_param, *args, **kwargs):
             return product_type
 
         @staticmethod
-        def convert_get_datetime_dict(date: str, format: str) -> dict:
+        def convert_to_datetime_dict(date: str, format: str) -> dict:
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
             date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
             if format == "list":
@@ -664,9 +664,9 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_get_ecmwf_time(date: str) -> dict:
             return [
-                MetadataFormatter.convert_get_datetime_dict(date, "str")["hour"]
+                MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"]
                 + ":"
-                + MetadataFormatter.convert_get_datetime_dict(date, "str")["minute"]
+                + MetadataFormatter.convert_to_datetime_dict(date, "str")["minute"]
             ]
 
     for match in re.findall(r"\([A-Za-z]+\)", search_param):
