@@ -1390,15 +1390,8 @@
         downloadLink: 'ns:link[@rel="enclosure"]/@href'
         storageStatus: 'DIAS:onlineStatus/text()'
   auth: !plugin
-    # Mixed HTTPHeaderAuth and TokenAuth
-    type: TokenAuth
-    auth_uri: 'https://apis.mundiwebservices.com/token'
-    token_type: json
-    token_key: access_token
-    credentials:
-      grant_type: password
+    type: HTTPHeaderAuth
     headers:
-      Authorization: Basic cXJic1pTVjBUWTdkZzlNRGQ0Q3ZQVXkyQV9NYToxMU5oNGtFQjFva2NvZlBlRkRYemhudWxGR3dh
       Cookie: "seeedtoken={apikey}"
   products:
     # S1
