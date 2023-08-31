@@ -3782,8 +3782,26 @@
     headers:
       Authorization: Bearer $token
   products:
-    S2_MSI_L1C2A:
+    S2_MSI_L1C:
       productType: EO:ESA:DAT:SENTINEL-2:MSI
+      processingLevel: S2MSI1C
+      startTimeFromAscendingNode: "2015-07-16T00:00:00.000Z"
+      completionTimeFromAscendingNode: "2015-07-17T00:00:00.000Z"
+      metadata_mapping:
+        id:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
+          - '$.extraInformation.cloudCover'
+    S2_MSI_L2A:
+      productType: EO:ESA:DAT:SENTINEL-2:MSI
+      processingLevel: S2MSI2A
+      startTimeFromAscendingNode: "2018-03-26T00:00:00Z"
+      completionTimeFromAscendingNode: "2018-03-27T00:00:00Z"
       metadata_mapping:
         id:
           - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
