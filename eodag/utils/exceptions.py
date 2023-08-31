@@ -81,11 +81,3 @@ class NoMatchingProductType(Exception):
 
 class STACOpenerError(Exception):
     """An error indicating that a STAC file could not be opened"""
-
-
-class IdNotFoundError(Exception):
-    """An Error indicating that the id of the requested prodcut could not be found in
-    the cache and therefore the product could not be downloaded"""
-
-    def __init__(self, message):
-        self.message = message
