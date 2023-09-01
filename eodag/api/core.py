@@ -1263,8 +1263,6 @@ class EODataAccessGateway(object):
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
         """
-        if not provider:
-            provider = self.get_preferred_provider()[0]
         get_search_plugins_kwargs = dict(
             provider=provider, product_type=kwargs.get("productType", None)
         )
