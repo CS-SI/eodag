@@ -178,6 +178,17 @@ class StacItem(StacCommon):
             **kwargs,
         )
 
+    def __add_provider_to_url(self, url):
+        parts = urlparse(url)
+        query_dict = parse_qs(parts.query)
+        query_dict.update(provider=self.provider)
+        without_arg_url = (
+            f"{parts.scheme}://{parts.netloc}{parts.path}"
+            if parts.scheme
+            else f"{parts.netloc}{parts.path}"
+        )
+        return f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+
     def __get_item_list(self, search_results, catalog):
         """Build STAC items list from EODAG search results
 
@@ -211,27 +222,43 @@ class StacItem(StacCommon):
 
         item_list = []
         for product in search_results:
+            download_assets = {}
+            if "downloadLinks" in product.properties:
+                for key, link in product.properties["downloadLinks"].items():
+                    asset = {
+                        "href": item_model["assets"]["downloadLink"]["href"].replace(
+                            "/download", f"/{key}/download"
+                        ),
+                        "title": "Download " + key,
+                    }
+                    download_assets[key] = asset
+
             # parse jsonpath
             product_item = jsonpath_parse_dict_items(
                 item_model, {"product": product.__dict__}
             )
+            # if several assets are available for download
+            # -> replace asset with key download link with available assets
+            if len(download_assets) > 0:
+                product_item["assets"].pop("downloadLink")
+                product_item["assets"].update(download_assets)
+
             # add origin assets to product assets
             origin_assets = product_item["assets"].pop("origin_assets")
             if getattr(product, "assets", False):
                 product_item["assets"] = dict(product_item["assets"], **origin_assets)
             # append provider query-arg to download link if specified
             if self.provider:
-                parts = urlparse(product_item["assets"]["downloadLink"]["href"])
-                query_dict = parse_qs(parts.query)
-                query_dict.update(provider=self.provider)
-                without_arg_url = (
-                    f"{parts.scheme}://{parts.netloc}{parts.path}"
-                    if parts.scheme
-                    else f"{parts.netloc}{parts.path}"
-                )
-                product_item["assets"]["downloadLink"][
-                    "href"
-                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                if "downloadLink" in product_item["assets"]:
+                    product_item["assets"]["downloadLink"][
+                        "href"
+                    ] = self.__add_provider_to_url(
+                        product_item["assets"]["downloadLink"]["href"]
+                    )
+                else:
+                    for key, asset in product_item["assets"].items():
+                        if "Download" in asset["title"]:
+                            asset["href"] = self.__add_provider_to_url(asset["href"])
 
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
@@ -274,7 +301,6 @@ class StacItem(StacCommon):
         :rtype: dict
         """
         items_model = deepcopy(self.stac_config["items"])
-
         search_results.numberMatched = search_results.properties["totalResults"]
         search_results.numberReturned = len(search_results)
 
