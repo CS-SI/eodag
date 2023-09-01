@@ -842,9 +842,9 @@ class EODataAccessGateway(object):
 
         The default behaviour is to look for products on the provider with the
         highest priority supporting the requested product type. These priorities
-        are configurable through user configuration file or individual
-        environment variable. If the request to the provider with the highest priority
-        fails, the data will be request from the provider with the next highest priority.
+        are configurable through user configuration file or individual environment variable.
+        If the request to the provider with the highest priority fails or is empty, the data
+        will be request from the provider with the next highest priority.
         Only if the request fails for all available providers, an error will be thrown.
 
         :param page: (optional) The page number to return
@@ -881,8 +881,9 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :param provider: (optional) the provider to be used, if not set, the configured default provider
-                         will be used at first before trying others until finding results
+        :param provider: (optional) the provider to be used. If set, search fallback will be disabled.
+                         If not set, the configured preferred provider will be used at first
+                         before trying others until finding results.
         :type provider: str
         :type kwargs: Union[int, str, bool, dict]
         :returns: A collection of EO products matching the criteria and the total
@@ -1343,8 +1344,8 @@ class EODataAccessGateway(object):
                        * search criteria to guess the product type
                        * other criteria compatible with the provider
         :type kwargs: Any
-        :returns: The prepared kwargs to make a query.
-        :rtype: dict
+        :returns: Search plugins list and the prepared kwargs to make a query.
+        :rtype: tuple(list, dict)
         """
         product_type = kwargs.get("productType", None)
         if product_type is None:
