@@ -370,3 +370,27 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             mock_query.call_count, 4, "4 provider out of 6 must have been requested"
         )
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+    )
+    def test_core_search_fallback_given_provider(self, mock_query):
+        """Core search must not loop over providers if a provider is specified"""
+        product_type = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(product_type)
+        self.assertListEqual(
+            available_providers,
+            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
+        )
+
+        mock_query.return_value = ([], 0)
+
+        products, count = self.dag.search(productType="S1_SAR_SLC", provider="onda")
+        self.assertEqual(len(products), 0)
+        self.assertEqual(count, 0)
+        self.assertEqual(
+            mock_query.call_count,
+            1,
+            "only 1 provider out of 6 must have been requested",
+        )
