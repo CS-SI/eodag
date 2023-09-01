@@ -14,11 +14,15 @@ class RequestSplitter:
     """
 
     def __init__(self, config):
-        with open(config["constraints_file_path"]) as f:
+        self.config = config.__dict__
+        with open(self.config["constraints_file_path"]) as f:
             self.constraints = json.load(f)
-        self.metadata = config["metadata_mapping"]
-        self.multi_select_values = config["multi_select_values"]
-        self.split_time_delta = config["products_split_timedelta"]
+        self.metadata = self.config["metadata_mapping"]
+        if "multi_select_values" in self.config:
+            self.multi_select_values = self.config["multi_select_values"]
+        else:
+            self.multi_select_values = []
+        self.split_time_delta = self.config["products_split_timedelta"]
         self._check_config_valid()
 
     def _check_config_valid(self):
@@ -241,7 +245,13 @@ class RequestSplitter:
                     current_year, new_month, 1
                 ) - datetime.timedelta(days=1)
             else:
-                end_date = datetime.datetime(current_year, 12, 31)
+                new_month = new_month - 12
+                current_year += 1
+                end_date = datetime.datetime(
+                    current_year, new_month, 1
+                ) - datetime.timedelta(days=1)
+            if end_date > final_date:
+                end_date = final_date
             slices.append({"start_date": start_date, "end_date": end_date})
             start_date = end_date + datetime.timedelta(days=1)
         return slices
