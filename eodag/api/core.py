@@ -47,6 +47,7 @@ from eodag.config import (
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
+from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     MockResponse,
@@ -1412,6 +1413,13 @@ class EODataAccessGateway(object):
         for plugin in self._plugins_manager.get_search_plugins(
             product_type=product_type
         ):
+            # exclude BuildPostSearchResult plugins from search fallback for unknow product_type
+            if (
+                provider != plugin.provider
+                and product_type not in self.product_types_config
+                and isinstance(plugin, BuildPostSearchResult)
+            ):
+                continue
             search_plugins.append(plugin)
 
         if not provider:
