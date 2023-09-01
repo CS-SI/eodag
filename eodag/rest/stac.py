@@ -83,9 +83,6 @@ class StacCommon(object):
 
         self.data = {}
 
-        if self.provider and self.eodag_api.get_preferred_provider() != self.provider:
-            self.eodag_api.set_preferred_provider(self.provider)
-
     def update_data(self, data):
         """Updates data using given input STAC dict data
 

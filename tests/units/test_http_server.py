@@ -317,6 +317,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"search?collections={self.tested_product_type}",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -326,6 +327,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=0,43,1,44",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -344,22 +346,26 @@ class RequestTestCase(unittest.TestCase):
         side_effect=AuthenticationError("you are no authorized"),
     )
     def test_auth_error(self, mock_search):
-        """A request to eodag server raising a Authentication error must return a 401 HTTP error code"""
-        response = self.app.get(
-            f"search?collections={self.tested_product_type}", follow_redirects=True
-        )
-        response_content = json.loads(response.content.decode("utf-8"))
+        """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
 
-        self.assertEqual(401, response.status_code)
-        self.assertIn("description", response_content)
-        self.assertIn("AuthenticationError", response_content["description"])
-        self.assertIn("you are no authorized", response_content["description"])
+        with self.assertLogs(level="ERROR") as cm_logs:
+            response = self.app.get(
+                f"search?collections={self.tested_product_type}", follow_redirects=True
+            )
+            response_content = json.loads(response.content.decode("utf-8"))
+
+            self.assertIn("description", response_content)
+            self.assertIn("AuthenticationError", str(cm_logs.output))
+            self.assertIn("you are no authorized", str(cm_logs.output))
+
+        self.assertEqual(500, response.status_code)
 
     def test_filter(self):
         """latestIntersect filter should only keep the latest products once search area is fully covered"""
         result1 = self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -371,6 +377,7 @@ class RequestTestCase(unittest.TestCase):
         result2 = self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&filter=latestIntersect",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -386,6 +393,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -401,6 +409,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -411,6 +420,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"collections/{self.tested_product_type}/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -426,6 +436,7 @@ class RequestTestCase(unittest.TestCase):
         results = self._request_valid(
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -441,6 +452,7 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
             "?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -456,6 +468,7 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
             "?bbox=0,43,1,44&datetime=2018-01-20/2019-01-01",
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -489,6 +502,7 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
+                "provider": None,
                 "productType": self.tested_product_type,
             },
         )
@@ -499,6 +513,7 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
+                "provider": None,
                 "productType": self.tested_product_type,
             },
         )
@@ -521,11 +536,34 @@ class RequestTestCase(unittest.TestCase):
                 "query": {"eo:cloud_cover": {"lte": 10}},
             },
             expected_search_kwargs=dict(
+                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=True,
                 cloudCover=10,
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+
+    def test_intersects_post_search(self):
+        """POST search with intersects filtering through eodag server should return a valid response"""
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "intersects": {
+                    "type": "Polygon",
+                    "coordinates": [[[0, 43], [0, 44], [1, 44], [1, 43], [0, 43]]],
+                },
+            },
+            expected_search_kwargs=dict(
+                provider="peps",
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=True,
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -744,3 +782,18 @@ class RequestTestCase(unittest.TestCase):
         response = self._request_valid("/extensions/oseo/json-schema/schema.json")
         self.assertEqual(response["title"], "OpenSearch for Earth Observation")
         self.assertEqual(response["allOf"][0]["$ref"], "#/definitions/oseo")
+
+    def test_queryables(self):
+        """Request to /queryables should return a valid response."""
+        self._request_valid("queryables")
+
+    def test_product_type_queryables(self):
+        """Request to /collections/{collection_id}/queryables should return a valid response."""
+        self._request_valid(f"collections/{self.tested_product_type}/queryables")
+
+    def test_product_type_queryables_with_provider(self):
+        """Request a collection-specific list of queryables for a given provider."""
+
+        self._request_valid(
+            f"collections/{self.tested_product_type}/queryables?provider=peps"
+        )

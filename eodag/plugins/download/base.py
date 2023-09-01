@@ -373,7 +373,7 @@ class Download(PluginTopic):
                 shutil.move(extraction_dir, outputs_dir)
 
             elif fs_path.endswith(".tar.gz"):
-                with tarfile.open(fs_path, "r:gz") as zfile:
+                with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
                     progress_callback(1)

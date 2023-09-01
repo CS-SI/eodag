@@ -399,43 +399,6 @@ class TestStacUtils(unittest.TestCase):
         )
         self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
 
-        # Not STAC formatted
-        self.rest_utils.search_products(
-            "S2_MSI_L1C",
-            {
-                "geom": {
-                    "type": "Polygon",
-                    "coordinates": [
-                        [
-                            [0.25, 43.2],
-                            [0.25, 43.9],
-                            [2.8, 43.9],
-                            [2.8, 43.2],
-                            [0.25, 43.2],
-                        ]
-                    ],
-                },
-                "cloudCover": 50,
-                "dtstart": "2020-02-01T00:00:00.000Z",
-                "dtend": "2021-02-20T00:00:00.000Z",
-                "product_type": "S2_MSI_L1C",
-                "unserialized": "true",
-            },
-            stac_formatted=False,
-        )
-        call_args, call_kwargs = mock_do_search.call_args
-        # check if call_kwargs contains subset
-        self.assertLessEqual(
-            {
-                "productType": "S2_MSI_L1C",
-                "cloudCover": 50,
-                "startTimeFromAscendingNode": "2020-02-01T00:00:00",
-                "completionTimeFromAscendingNode": "2021-02-20T00:00:00",
-            }.items(),
-            call_kwargs.items(),
-        )
-        self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
-
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch._request",
         autospec=True,
@@ -447,6 +410,7 @@ class TestStacUtils(unittest.TestCase):
         mock__request.return_value.json.return_value = (
             self.earth_search_resp_search_json
         )
+        self.rest_utils.eodag_api.set_preferred_provider("peps")
 
         response = self.rest_utils.search_stac_items(
             url="http://foo/search",
@@ -467,6 +431,8 @@ class TestStacUtils(unittest.TestCase):
             "assets"
         ].items():
             self.assertIn((k, v), response["features"][0]["assets"].items())
+        # preferred provider should not be changed
+        self.assertEqual("peps", self.rest_utils.eodag_api.get_preferred_provider()[0])
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",

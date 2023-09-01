@@ -50,6 +50,7 @@ from eodag.config import (
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.header import HeaderAuth
+from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_property import FilterProperty
