@@ -44,7 +44,12 @@ from eodag.utils import (
     format_dict_items,
     path_to_uri,
 )
-from eodag.utils.exceptions import AuthenticationError, NotAvailableError, RequestError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    NoMatchingProductType,
+    NotAvailableError,
+    RequestError,
+)
 
 logger = logging.getLogger("eodag.plugins.apis.usgs")
 
@@ -96,7 +101,9 @@ class UsgsApi(Download, Api):
         """Search for data on USGS catalogues"""
         product_type = kwargs.get("productType")
         if product_type is None:
-            return [], 0
+            raise NoMatchingProductType(
+                "Cannot search on USGS without productType specified"
+            )
 
         self.authenticate()
 
