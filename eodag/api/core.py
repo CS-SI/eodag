@@ -1856,12 +1856,7 @@ class EODataAccessGateway(object):
             )
         )
 
-        # save preferred_provider and use provided one instead
-        preferred_provider, _ = self.get_preferred_provider()
-        self.set_preferred_provider(provider)
-        products, _ = self.search(productType=productType, **kwargs)
-        # restore preferred_provider
-        self.set_preferred_provider(preferred_provider)
+        products, _ = self.search(productType=productType, provider=provider, **kwargs)
 
         # restore plugin._request
         plugin._request = plugin_request
