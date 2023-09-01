@@ -915,27 +915,25 @@ class EODataAccessGateway(object):
             page=page,
             items_per_page=items_per_page,
         )
+        # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
-            try:
-                return self._do_search(
-                    search_plugin,
-                    count=True,
-                    raise_errors=raise_errors,
-                    **search_kwargs,
+            search_results, total_results = self._do_search(
+                search_plugin,
+                count=True,
+                raise_errors=raise_errors,
+                **search_kwargs,
+            )
+            if len(search_results) == 0 and i < len(search_plugins) - 1:
+                logger.warning(
+                    f"No result could be obtained from provider {search_plugin.provider}, "
+                    "we will try to get the data from another provider",
                 )
-            except RequestError:
-                if i < len(search_plugins) - 1:
-                    logger.warning(
-                        "No result could be obtained from provider %s, "
-                        "we will try to get the data from another provider",
-                        search_plugin.provider,
-                    )
-                else:
-                    logger.error(
-                        "No result could be obtained from any available " "provider"
-                    )
-                    raise
+            elif len(search_results) > 0:
+                return search_results, total_results
+
+        logger.error("No result could be obtained from any available provider")
+        return SearchResult([]), 0
 
     def search_iter_page(
         self,
@@ -1227,17 +1225,25 @@ class EODataAccessGateway(object):
                 )
                 return all_results
             except RequestError:
-                if i < len(search_plugins) - 1:
+                if len(all_results) == 0 and i < len(search_plugins) - 1:
                     logger.warning(
                         "No result could be obtained from provider %s, "
                         "we will try to get the data from another provider",
                         search_plugin.provider,
                     )
-                else:
+                elif len(all_results) == 0:
                     logger.error(
-                        "No result could be obtained from any available " "provider"
+                        "No result could be obtained from any available provider"
                     )
                     raise
+                elif len(all_results) > 0:
+                    logger.warning(
+                        "Found %s result(s) on provider '%s', but it may be incomplete "
+                        "as it ended with an error",
+                        len(all_results),
+                        search_plugin.provider,
+                    )
+                    return all_results
 
     def _search_by_id(self, uid, provider=None, **kwargs):
         """Internal method that enables searching a product by its id.
