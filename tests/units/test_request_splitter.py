@@ -3,6 +3,7 @@ import os
 import unittest
 
 from eodag.api.product.request_splitter import RequestSplitter
+from eodag.config import PluginConfig
 from eodag.utils.exceptions import MisconfiguredError
 from tests import TEST_RESOURCES_PATH
 
@@ -19,12 +20,14 @@ class TestRequestSplitter(unittest.TestCase):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
         multiselect_values = ["year"]
         split_time_values = {"param": "year", "duration": 2}
-        config = {
-            "metadata_mapping": metadata,
-            "multi_select_values": multiselect_values,
-            "constraints_file_path": self.constraints_file_path,
-            "products_split_timedelta": split_time_values,
-        }
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
         with self.assertRaises(MisconfiguredError):
             RequestSplitter(config)
 
@@ -32,12 +35,14 @@ class TestRequestSplitter(unittest.TestCase):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
         multiselect_values = ["year", "month", "day", "time"]
         split_time_values = {"param": "year", "duration": 2}
-        config = {
-            "metadata_mapping": metadata,
-            "multi_select_values": multiselect_values,
-            "constraints_file_path": self.constraints_file_path,
-            "products_split_timedelta": split_time_values,
-        }
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
         splitter = RequestSplitter(config)
         result = splitter.get_time_slices("2000-02-01", "2004-05-30")
         self.assertEqual(2, len(result))
@@ -57,12 +62,14 @@ class TestRequestSplitter(unittest.TestCase):
         ]
         self.assertDictEqual(expected_result[0], result[0])
         self.assertDictEqual(expected_result[1], result[1])
-        config = {
-            "metadata_mapping": metadata,
-            "multi_select_values": ["month", "day", "time"],
-            "constraints_file_path": self.constraints_file_path,
-            "products_split_timedelta": split_time_values,
-        }
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": ["month", "day", "time"],
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
         splitter = RequestSplitter(config)
         result = splitter.get_time_slices("2000-02-01", "2004-05-30")
         self.assertEqual(4, len(result))
@@ -101,12 +108,14 @@ class TestRequestSplitter(unittest.TestCase):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
         multiselect_values = ["year", "month", "day", "time"]
         split_time_values = {"param": "month", "duration": 2}
-        config = {
-            "metadata_mapping": metadata,
-            "multi_select_values": multiselect_values,
-            "constraints_file_path": self.constraints_file_path,
-            "products_split_timedelta": split_time_values,
-        }
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
         splitter = RequestSplitter(config)
         result = splitter.get_time_slices("2000-01-01", "2001-06-30")
         self.assertEqual(4, len(result))
@@ -124,12 +133,14 @@ class TestRequestSplitter(unittest.TestCase):
         }
         self.assertDictEqual(expected_result_row_1, result[0])
         self.assertDictEqual(expected_result_row_3, result[2])
-        config = {
-            "metadata_mapping": metadata,
-            "multi_select_values": ["year", "day", "time"],
-            "constraints_file_path": self.constraints_file_path,
-            "products_split_timedelta": split_time_values,
-        }
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": ["year", "day", "time"],
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
         splitter = RequestSplitter(config)
         result = splitter.get_time_slices("2000-01-01", "2001-06-30")
         self.assertEqual(13, len(result))
@@ -152,12 +163,14 @@ class TestRequestSplitter(unittest.TestCase):
         metadata = {"date": "date"}
         multiselect_values = []
         split_time_values = {"param": "year", "duration": 2}
-        config = {
-            "metadata_mapping": metadata,
-            "multi_select_values": multiselect_values,
-            "constraints_file_path": self.constraints_file_path,
-            "products_split_timedelta": split_time_values,
-        }
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
         splitter = RequestSplitter(config)
         result = splitter.get_time_slices("2000-02-01", "2004-05-30")
         self.assertEqual(3, len(result))
@@ -178,3 +191,34 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertDictEqual(expected_result[0], result[0])
         self.assertDictEqual(expected_result[1], result[1])
         self.assertDictEqual(expected_result[2], result[2])
+
+    def test_split_timespan_by_month_with_dates(self):
+        metadata = {"date": "date"}
+        multiselect_values = []
+        split_time_values = {"param": "month", "duration": 2}
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
+        splitter = RequestSplitter(config)
+        result = splitter.get_time_slices("2000-02-01", "2001-06-30")
+        self.assertEqual(9, len(result))
+        expected_result_row_1 = {
+            "start_date": datetime.datetime(2000, 2, 1),
+            "end_date": datetime.datetime(2000, 3, 31),
+        }
+        expected_result_row_6 = {
+            "start_date": datetime.datetime(2000, 12, 1),
+            "end_date": datetime.datetime(2001, 1, 31),
+        }
+        expected_result_row_9 = {
+            "start_date": datetime.datetime(2001, 6, 1),
+            "end_date": datetime.datetime(2001, 6, 30),
+        }
+        self.assertDictEqual(expected_result_row_1, result[0])
+        self.assertDictEqual(expected_result_row_6, result[5])
+        self.assertDictEqual(expected_result_row_9, result[8])
