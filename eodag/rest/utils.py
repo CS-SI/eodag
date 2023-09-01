@@ -30,6 +30,7 @@ from eodag.utils import _deprecated, dict_items_recursive_apply, string_to_jsonp
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
+    NotAvailableError,
     UnsupportedProductType,
     ValidationError,
 )
@@ -579,9 +580,15 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
-    product = search_product_by_id(
+    search_results = search_product_by_id(
         item_id, product_type=catalogs[0], provider=provider
-    )[0]
+    )
+    if len(search_results) > 0:
+        product = search_results[0]
+    else:
+        raise NotAvailableError(
+            f"Could not find {item_id} item in {catalogs[0]} collection for provider {provider}"
+        )
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
         auth_plugin = eodag_api._plugins_manager.get_auth_plugin(
