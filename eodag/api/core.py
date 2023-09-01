@@ -881,8 +881,8 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :param provider: (optional) the provider to be used, if not set, the configured
-                         default provider will be used
+        :param provider: (optional) the provider to be used, if not set, the configured default provider
+                         will be used at first before trying others until finding results
         :type provider: str
         :type kwargs: Union[int, str, bool, dict]
         :returns: A collection of EO products matching the criteria and the total
@@ -1409,13 +1409,16 @@ class EODataAccessGateway(object):
             )
             self.fetch_product_types_list()
 
+        preferred_provider = self.get_preferred_provider()[0]
+
         search_plugins: List[Search] = []
         for plugin in self._plugins_manager.get_search_plugins(
-            product_type=product_type
+            product_type=product_type, provider=provider
         ):
             # exclude BuildPostSearchResult plugins from search fallback for unknow product_type
             if (
                 provider != plugin.provider
+                and preferred_provider != plugin.provider
                 and product_type not in self.product_types_config
                 and isinstance(plugin, BuildPostSearchResult)
             ):
@@ -1423,7 +1426,7 @@ class EODataAccessGateway(object):
             search_plugins.append(plugin)
 
         if not provider:
-            provider = self.get_preferred_provider()[0]
+            provider = preferred_provider
         providers = [plugin.provider for plugin in search_plugins]
         if provider not in providers:
             logger.warning(
