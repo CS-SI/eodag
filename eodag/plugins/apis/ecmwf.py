@@ -22,6 +22,7 @@ import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
+from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -82,6 +83,13 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs.get("type", ""),
                 kwargs.get("levtype", ""),
             )
+
+        if not product_type:
+            product_type = kwargs["productType"]
+        self.config.constraints_file_path = getattr(self.config, "products", {})[
+            product_type
+        ]["constraints_file_path"]
+
         # start date
         if "startTimeFromAscendingNode" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
@@ -106,10 +114,32 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 90,
             ]
         kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
+        products = []
+        num_items = 0
+        if getattr(self.config, "products_split_timedelta", None):
+            request_splitter = RequestSplitter(self.config)
+            slices = request_splitter.get_time_slices(
+                kwargs["startTimeFromAscendingNode"],
+                kwargs["completionTimeFromAscendingNode"],
+            )
+            for slice in slices:
+                kwargs["startTimeFromAscendingNode"] = slice["start_date"].strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+                kwargs["completionTimeFromAscendingNode"] = slice["end_date"].strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+                result = BuildPostSearchResult.query(
+                    self,
+                    items_per_page=items_per_page,
+                    page=page,
+                    count=count,
+                    **kwargs,
+                )
+                products += result[0]
+                num_items += result[1]
 
-        return BuildPostSearchResult.query(
-            self, items_per_page=items_per_page, page=page, count=count, **kwargs
-        )
+        return products, num_items
 
     def authenticate(self):
         """Check credentials and returns information needed for auth

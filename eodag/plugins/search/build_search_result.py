@@ -157,7 +157,28 @@ class BuildPostSearchResult(PostJsonSearch):
         ] = product_id
 
         # update downloadLink
-        product_available_properties["downloadLink"] += f"?{qs}"
+        split_param = getattr(self.config, "assets_split_parameter", None)
+        print(product_available_properties["downloadLink"])
+        if split_param:
+            product_available_properties["downloadLinks"] = {}
+            param_values = parsed_properties[split_param]
+            if isinstance(param_values, str):
+                if "/" in param_values:
+                    param_values = param_values.split("/")
+                else:
+                    param_values = param_values.split(",")
+            for param_value in param_values:
+                print(param_value)
+                sorted_unpaginated_query_params[split_param] = param_value
+                params_str = geojson.dumps(sorted_unpaginated_query_params)
+                print(params_str)
+                link = product_available_properties["downloadLink"] + f"?{params_str}"
+                print(link)
+                product_available_properties["downloadLinks"][param_value] = link
+            print(product_available_properties["downloadLinks"])
+        else:
+            product_available_properties["downloadLink"] += f"?{qs}"
+            print(product_available_properties["downloadLink"])
 
         # parse metadata needing downloadLink
         for param, mapping in self.config.metadata_mapping.items():
@@ -177,6 +198,7 @@ class BuildPostSearchResult(PostJsonSearch):
             productType=product_type,
             properties=product_available_properties,
         )
+        print(product_available_properties)
 
         return [
             product,
