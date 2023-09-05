@@ -178,10 +178,12 @@ class StacItem(StacCommon):
             **kwargs,
         )
 
-    def __add_provider_to_url(self, url):
+    def __add_provider_and_variable_to_url(self, url, variable=None):
         parts = urlparse(url)
         query_dict = parse_qs(parts.query)
         query_dict.update(provider=self.provider)
+        if variable:
+            query_dict.update(variable=variable)
         without_arg_url = (
             f"{parts.scheme}://{parts.netloc}{parts.path}"
             if parts.scheme
@@ -227,9 +229,7 @@ class StacItem(StacCommon):
             if "downloadLinks" in product.properties:
                 for key, link in product.properties["downloadLinks"].items():
                     asset = {
-                        "href": item_model["assets"]["downloadLink"]["href"].replace(
-                            "/download", f"/{key}/download"
-                        ),
+                        "href": item_model["assets"]["downloadLink"]["href"],
                         "title": "Download " + key,
                     }
                     download_assets[key] = asset
@@ -266,13 +266,15 @@ class StacItem(StacCommon):
                 if "downloadLink" in product_item["assets"]:
                     product_item["assets"]["downloadLink"][
                         "href"
-                    ] = self.__add_provider_to_url(
+                    ] = self.__add_provider_and_variable_to_url(
                         product_item["assets"]["downloadLink"]["href"]
                     )
                 else:
                     for key, asset in product_item["assets"].items():
                         if "Download" in asset["title"]:
-                            asset["href"] = self.__add_provider_to_url(asset["href"])
+                            asset["href"] = self.__add_provider_and_variable_to_url(
+                                asset["href"], key
+                            )
 
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
@@ -311,7 +313,7 @@ class StacItem(StacCommon):
         :type search_results: :class:`~eodag.api.search_result.SearchResult`
         :param catalog: STAC catalog dict used for parsing item metadata
         :type catalog: dict
-        :returns: Items dictionnary
+        :returns: Items dictionary
         :rtype: dict
         """
         items_model = deepcopy(self.stac_config["items"])

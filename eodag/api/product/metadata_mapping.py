@@ -268,6 +268,8 @@ def format_metadata(search_param, *args, **kwargs):
             "2021-04-21" => "2021-04-21"
             "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
+            datetime_string = datetime_string.replace('"', "")
+            print(datetime_string)
             dt = isoparse(datetime_string)
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
@@ -632,6 +634,7 @@ def format_metadata(search_param, *args, **kwargs):
             return bbox
 
         @staticmethod
+<<<<<<< HEAD
         def convert_split_corine_id(product_id):
             if "clc" in product_id:
                 year = product_id.split("_")[1][3:]
@@ -704,6 +707,47 @@ def format_metadata(search_param, *args, **kwargs):
             return [
                 MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
+=======
+        def convert_download_id_to_datetimes(product_id):
+            dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
+            dates = dates_str.split("_")
+            start_date = datetime(
+                int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8])
+            )
+            end_date = datetime(
+                int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
+            )
+            return {
+                "start_date": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "end_date": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+
+        # @staticmethod
+        # def convert_get_corine_product_type(start_date, end_date):
+        #     start_year = start_date[:4]
+        #     end_year = end_date[:4]
+        #     print(start_year, end_year)
+        #     years = [1990, 2000, 2006, 2012, 2018]
+        #     if start_year == end_year and int(start_year) in years:
+        #         product_type = "Corine Land Cover " + start_year
+        #     else:
+        #         max_interception = 0
+        #         sel_years = [1990, 2000]
+        #         for i, year in enumerate(years[:-1]):
+        #             if int(end_year) < years[i+1] and i == 0:
+        #                 sel_years = [year, years[i+1]]
+        #                 break
+        #             elif int(start_year) > years[i+1]:
+        #                 continue
+        #             else:
+        #                 interception = min(years[i+1], int(end_year)) - max(year, int(start_year))
+        #                 if interception > max_interception:
+        #                     max_interception = interception
+        #                     sel_years = [year, years[i+1]]
+        #         product_type = "Corine Land Change " + str(sel_years[0]) + " " + str(sel_years[1])
+        #
+        #     return product_type
+>>>>>>> feat: download asset of ecmwf product
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
@@ -752,7 +796,7 @@ def properties_from_json(json, mapping, discovery_config=None):
                 used_jsonpaths.append(match[0].full_path)
             else:
                 extracted_value = NOT_AVAILABLE
-            if extracted_value is None:
+            if extracted_value is None or extracted_value == NOT_AVAILABLE:
                 properties[metadata] = None
             else:
                 if conversion_or_none is None:
@@ -1066,13 +1110,20 @@ def format_query_params(product_type, config, **kwargs):
     query_params = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
+<<<<<<< HEAD
     queryables = _get_queryables(kwargs, config, product_type_metadata_mapping)
+=======
+    queryables = _get_queryables(kwargs, config)
+    print(queryables)
+>>>>>>> feat: download asset of ecmwf product
 
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = kwargs[eodag_search_key]
+        print(eodag_search_key, provider_search_key, user_input)
 
         if COMPLEX_QS_REGEX.match(provider_search_key):
             parts = provider_search_key.split("=")
+            print(parts)
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
                     provider_search_key, product_type, **kwargs
@@ -1081,7 +1132,14 @@ def format_query_params(product_type, config, **kwargs):
                 if "{{" in provider_search_key:
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
+<<<<<<< HEAD
                         formatted_query_param = _resolve_hashes(formatted_query_param)
+=======
+                        formatted_query_param = _resolve_hashes(
+                            formatted_query_param.replace("'", '"')
+                        )
+
+>>>>>>> feat: download asset of ecmwf product
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
@@ -1092,10 +1150,25 @@ def format_query_params(product_type, config, **kwargs):
                 else:
                     query_params[eodag_search_key] = formatted_query_param
             else:
+                print("e")
                 provider_search_key, provider_value = parts
-                query_params.setdefault(provider_search_key, []).append(
-                    format_metadata(provider_value, product_type, **kwargs)
+                formatted_query_param = format_metadata(
+                    provider_value, product_type, **kwargs
                 )
+                if "}[" in formatted_query_param:
+                    print("c")
+                    print(formatted_query_param)
+                    formatted_query_param = _resolve_hashes(
+                        formatted_query_param.replace("'", '"')
+                    )
+                    query_params.setdefault(provider_search_key, []).append(
+                        formatted_query_param
+                    )
+                    print(query_params)
+                else:
+                    query_params.setdefault(provider_search_key, []).append(
+                        format_metadata(provider_value, product_type, **kwargs)
+                    )
         else:
             query_params[provider_search_key] = user_input
     # Now get all the literal search params (i.e params to be passed "as is"
@@ -1124,6 +1197,7 @@ def format_query_params(product_type, config, **kwargs):
 
 
 def _resolve_hashes(formatted_query_param):
+<<<<<<< HEAD
     """
     resolves structures of the format {"a": "abc", "b": "cde"}["a"] given in the formatted_query_param
     the structure is replaced by the value corresponding to the given key in the hash
@@ -1131,11 +1205,22 @@ def _resolve_hashes(formatted_query_param):
     """
     # check if there is still a hash to be resolved
     while '}["' in formatted_query_param:
+=======
+    print("r")
+    while '["' in formatted_query_param:
+>>>>>>> feat: download asset of ecmwf product
         # find and parse code between {}
         ind_open = formatted_query_param.find('}["')
         ind_close = formatted_query_param.find('"]', ind_open)
         hash_start = formatted_query_param[:ind_open].rfind(": {") + 2
+<<<<<<< HEAD
         h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
+=======
+        if hash_start < 2:
+            hash_start = formatted_query_param[:ind_open].rfind("{")
+        h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
+        print(h)
+>>>>>>> feat: download asset of ecmwf product
         # find key and get value
         ind_key_start = formatted_query_param.find('"', ind_open) + 1
         key = formatted_query_param[ind_key_start:ind_close]
@@ -1149,6 +1234,10 @@ def _resolve_hashes(formatted_query_param):
             formatted_query_param = formatted_query_param.replace(
                 formatted_query_param[hash_start : ind_close + 2], json.dumps(value)
             )
+<<<<<<< HEAD
+=======
+        print(formatted_query_param)
+>>>>>>> feat: download asset of ecmwf product
     return formatted_query_param
 
 

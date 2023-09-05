@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
+from datetime import datetime
 
 from jsonpath_ng.ext import parse
 from lxml import etree
@@ -498,3 +499,21 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, date="2023-01-31T23:59"), str(["23:00"])
         )
+
+    def test_convert_download_id_to_datetimes(self):
+        to_format = "{id#download_id_to_datetimes}"
+        self.assertEqual(
+            str(
+                format_metadata(
+                    to_format,
+                    id="TIGGE_CF_SFC_20211001_20211130_bdd1e9b05de325ce335190d2ff7aff826fc21388",
+                )
+            ),
+            str(
+                {
+                    "start_date": datetime(2021, 10, 1).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "end_date": datetime(2021, 11, 30).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+            ),
+        )
+
