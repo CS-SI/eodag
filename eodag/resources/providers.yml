@@ -3780,8 +3780,26 @@
     headers:
       Authorization: Bearer $token
   products:
-    S2_MSI_L1C2A:
+    S2_MSI_L1C:
       productType: EO:ESA:DAT:SENTINEL-2:MSI
+      processingLevel: S2MSI1C
+      startTimeFromAscendingNode: "2015-07-16T00:00:00.000Z"
+      completionTimeFromAscendingNode: "2015-07-17T00:00:00.000Z"
+      metadata_mapping:
+        id:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
+          - '$.extraInformation.cloudCover'
+    S2_MSI_L2A:
+      productType: EO:ESA:DAT:SENTINEL-2:MSI
+      processingLevel: S2MSI2A
+      startTimeFromAscendingNode: "2018-03-26T00:00:00Z"
+      completionTimeFromAscendingNode: "2018-03-27T00:00:00Z"
       metadata_mapping:
         id:
           - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
@@ -4289,7 +4307,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4376,7 +4394,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4435,7 +4453,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(string)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(string)}["month"]}}], "multiStringSelectValues": [{{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(string)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(string)}["month"]}}], "multiStringSelectValues": [{{"name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         variable:
@@ -4491,7 +4509,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4532,7 +4550,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4573,7 +4591,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         providerProductType:
@@ -4599,7 +4617,7 @@
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"]}}, {{"name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]}}, {{"name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]}}, {{"name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time}}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         variable:
@@ -4635,15 +4653,15 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }}, {{"name": "variable", "value": "all" }} ] }}'
           - '$.null'
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
@@ -4666,7 +4684,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "file_version", "value": {file_version} }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -4686,7 +4704,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "version", "value": [ "{version}" ] }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -4727,15 +4745,15 @@
           - '{{ "multiStringSelectValues": [ {{"name": "version", "value": {version} }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
     GLOFAS_FORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST
@@ -4780,7 +4798,7 @@
         - control_forecast
       format: grib
       startTimeFromAscendingNode: "2023-01-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4798,11 +4816,11 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -4823,7 +4841,7 @@
         - consolidated
       format: grib
       startTimeFromAscendingNode: "2023-01-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4841,11 +4859,11 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -4913,7 +4931,7 @@
         - lisflood
       format: grib
       startTimeFromAscendingNode: "1999-01-03T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4934,11 +4952,11 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -4964,7 +4982,7 @@
         - "144"
       format: grib
       startTimeFromAscendingNode: "2020-12-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -4982,10 +5000,10 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5006,7 +5024,7 @@
         - "24"
       format: grib
       startTimeFromAscendingNode: "2016-01-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5024,10 +5042,10 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5132,16 +5150,16 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }},
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }},
               {{ "name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time} }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_HISTORICAL:
@@ -5169,16 +5187,16 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }},
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }},
               {{ "name": "time", "value": {startTimeFromAscendingNode#get_ecmwf_time} }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_REFORECAST:
@@ -5246,15 +5264,15 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "hday", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "hday", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL:
@@ -5291,14 +5309,14 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL_REFORECAST:
@@ -5335,14 +5353,14 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "hyear", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "hyear", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "hmonth", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_CARBON_DIOXIDE:
@@ -5372,15 +5390,15 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-               {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+               {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_METHANE:
@@ -5410,15 +5428,15 @@
           - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-               {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+               {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_PL:
@@ -5447,7 +5465,7 @@
       leadtime_month:
         - "1"
       startTimeFromAscendingNode: "2017-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "5"
       format: "grib"
@@ -5474,10 +5492,10 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5498,7 +5516,7 @@
       leadtime_month:
         - "1"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5522,10 +5540,10 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5576,7 +5594,7 @@
         - "192"
         - "198"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5600,11 +5618,11 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5649,7 +5667,7 @@
         - "180"
         - "192"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5673,11 +5691,11 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }},
-              {{ "name": "day", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["day"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }},
+              {{ "name": "day", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5709,7 +5727,7 @@
         - "925"
         - "1000"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5736,10 +5754,10 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5759,7 +5777,7 @@
       leadtime_month:
         - "1"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5783,10 +5801,10 @@
           - '{{"stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
-          - >
+          - |
             {{ "multiStringSelectValues": [
-              {{ "name": "year", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["year"] }},
-              {{ "name": "month", "value": {startTimeFromAscendingNode#get_datetime_dict(list)}["month"] }}
+              {{ "name": "year", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"] }},
+              {{ "name": "month", "value": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"] }}
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
@@ -5853,7 +5871,7 @@
           - $.null
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
 

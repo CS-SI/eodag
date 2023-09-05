@@ -38,6 +38,7 @@ from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
     dict_items_recursive_apply,
+    get_geometry_from_various,
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
@@ -158,6 +159,10 @@ def format_metadata(search_param, *args, **kwargs):
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
+        - ``split_cop_dem_id``: get the bbox by splitting the product id
+        - ``split_corine_id``: get the product type by splitting the product id
+        - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
+        - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
 
     :param search_param: The string to be formatted
     :type search_param: str
@@ -303,7 +308,8 @@ def format_metadata(search_param, *args, **kwargs):
                 return [list(input_geom.bounds[0:4])]
 
         @staticmethod
-        def convert_to_bounds(input_geom):
+        def convert_to_bounds(input_geom_unformatted):
+            input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
                 # sort with larger one at first (stac-browser only plots first one)
@@ -639,7 +645,34 @@ def format_metadata(search_param, *args, **kwargs):
             return product_type
 
         @staticmethod
-        def convert_get_datetime_dict(date: str, format: str) -> dict:
+        def convert_to_datetime_dict(date: str, format: str) -> dict:
+            """Convert a date (str) to a dictionary where values are in the format given in argument
+
+            date == "2021-04-21T18:27:19.123Z" and format == "list" => {
+                "year": ["2021"],
+                "month": ["04"],
+                "day": ["21"],
+                "hour": ["18"],
+                "minute": ["27"],
+                "second": ["19"],
+            }
+            date == "2021-04-21T18:27:19.123Z" and format == "string" => {
+                "year": "2021",
+                "month": "04",
+                "day": "21",
+                "hour": "18",
+                "minute": "27",
+                "second": "19",
+            }
+            date == "2021-04-21" and format == "list" => {
+                "year": ["2021"],
+                "month": ["04"],
+                "day": ["21"],
+                "hour": ["00"],
+                "minute": ["00"],
+                "second": ["00"],
+            }
+            """
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
             date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
             if format == "list":
@@ -662,11 +695,14 @@ def format_metadata(search_param, *args, **kwargs):
                 }
 
         @staticmethod
-        def convert_get_ecmwf_time(date: str) -> dict:
+        def convert_get_ecmwf_time(date: str) -> list:
+            """Get the time of a date (str) in the ECMWF format (["HH:00"])
+
+            "2021-04-21T18:27:19.123Z" => ["18:00"]
+            "2021-04-21" => ["00:00"]
+            """
             return [
-                MetadataFormatter.convert_get_datetime_dict(date, "str")["hour"]
-                + ":"
-                + MetadataFormatter.convert_get_datetime_dict(date, "str")["minute"]
+                MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
 
     for match in re.findall(r"\([A-Za-z]+\)", search_param):
