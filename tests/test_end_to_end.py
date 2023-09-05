@@ -208,6 +208,14 @@ METEOBLUE_SEARCH_ARGS = [
     (today + 2 * day_span).isoformat(),
     [0.2, 43.2, 0.5, 43.5],
 ]
+WEKEO_SEARCH_ARGS = [
+    "wekeo",
+    "CLMS_CORINE",
+    # the following arguments will be ignored in the search
+    "2023-01-01",
+    "2023-01-01",
+    [-180, -90, 180, 90],
+]
 
 
 @pytest.mark.enable_socket
@@ -527,6 +535,11 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*METEOBLUE_SEARCH_ARGS)
         expected_filename = "{}.nc".format(product.properties["title"])
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_wekeo(self):
+        product = self.execute_search(*WEKEO_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename, timeout_sec=40)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
@@ -1090,6 +1103,20 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["productType", "start", "end", "geom"],
                         HYDROWBEB_NEXT_SEARCH_ARGS[1:],
+                    )
+                ),
+            )
+
+    def test_end_to_end_wrong_credentials_search_wekeo(self):
+        # It should already fail while searching for the products.
+        self.eodag.set_preferred_provider(WEKEO_SEARCH_ARGS[0])
+        with self.assertRaises(AuthenticationError):
+            results, _ = self.eodag.search(
+                raise_errors=True,
+                **dict(
+                    zip(
+                        ["productType", "start", "end", "geom"],
+                        WEKEO_SEARCH_ARGS[1:],
                     )
                 ),
             )
