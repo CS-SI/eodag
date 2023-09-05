@@ -38,6 +38,7 @@ from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
     dict_items_recursive_apply,
+    get_geometry_from_various,
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
@@ -307,7 +308,8 @@ def format_metadata(search_param, *args, **kwargs):
                 return [list(input_geom.bounds[0:4])]
 
         @staticmethod
-        def convert_to_bounds(input_geom):
+        def convert_to_bounds(input_geom_unformatted):
+            input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
                 # sort with larger one at first (stac-browser only plots first one)
