@@ -268,6 +268,8 @@ def format_metadata(search_param, *args, **kwargs):
             "2021-04-21" => "2021-04-21"
             "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
+            datetime_string = datetime_string.replace('"', "")
+            print(datetime_string)
             dt = isoparse(datetime_string)
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
@@ -705,6 +707,22 @@ def format_metadata(search_param, *args, **kwargs):
                 MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
 
+
+        @staticmethod
+        def convert_download_id_to_datetimes(product_id):
+            dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
+            dates = dates_str.split("_")
+            start_date = datetime(
+                int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8])
+            )
+            end_date = datetime(
+                int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
+            )
+            return {
+                "start_date": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "end_date": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(
@@ -752,7 +770,7 @@ def properties_from_json(json, mapping, discovery_config=None):
                 used_jsonpaths.append(match[0].full_path)
             else:
                 extracted_value = NOT_AVAILABLE
-            if extracted_value is None:
+            if extracted_value is None or extracted_value == NOT_AVAILABLE:
                 properties[metadata] = None
             else:
                 if conversion_or_none is None:
@@ -1059,9 +1077,11 @@ def format_query_params(product_type, config, **kwargs):
 
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = kwargs[eodag_search_key]
+        print(eodag_search_key, provider_search_key, user_input)
 
         if COMPLEX_QS_REGEX.match(provider_search_key):
             parts = provider_search_key.split("=")
+            print(parts)
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
                     provider_search_key, product_type, **kwargs
@@ -1071,6 +1091,7 @@ def format_query_params(product_type, config, **kwargs):
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
                         formatted_query_param = _resolve_hashes(formatted_query_param)
+
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
@@ -1081,10 +1102,25 @@ def format_query_params(product_type, config, **kwargs):
                 else:
                     query_params[eodag_search_key] = formatted_query_param
             else:
+                print("e")
                 provider_search_key, provider_value = parts
-                query_params.setdefault(provider_search_key, []).append(
-                    format_metadata(provider_value, product_type, **kwargs)
+                formatted_query_param = format_metadata(
+                    provider_value, product_type, **kwargs
                 )
+                if "}[" in formatted_query_param:
+                    print("c")
+                    print(formatted_query_param)
+                    formatted_query_param = _resolve_hashes(
+                        formatted_query_param.replace("'", '"')
+                    )
+                    query_params.setdefault(provider_search_key, []).append(
+                        formatted_query_param
+                    )
+                    print(query_params)
+                else:
+                    query_params.setdefault(provider_search_key, []).append(
+                        format_metadata(provider_value, product_type, **kwargs)
+                    )
         else:
             query_params[provider_search_key] = user_input
     # Now get all the literal search params (i.e params to be passed "as is"
@@ -1124,6 +1160,8 @@ def _resolve_hashes(formatted_query_param):
         ind_open = formatted_query_param.find('}["')
         ind_close = formatted_query_param.find('"]', ind_open)
         hash_start = formatted_query_param[:ind_open].rfind(": {") + 2
+        if hash_start < 2:
+            hash_start = formatted_query_param[:ind_open].rfind("{")
         h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
         # find key and get value
         ind_key_start = formatted_query_param.find('"', ind_open) + 1
