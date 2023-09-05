@@ -4648,11 +4648,15 @@
     SATELLITE_SEA_LEVEL_BLACK_SEA:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
       startTimeFromAscendingNode: "1993-01-01T00:00"
+      variable: all
       format: zip
       metadata_mapping:
         id: '$.productInfo.product'
+        variable:
+          - '{{ "stringChoiceValues": [ {{"name": "variable", "value": "{variable}" }} ] }}'
+          - $.null
         format:
-          - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }}, {{"name": "variable", "value": "all" }} ] }}'
+          - '{{ "stringChoiceValues": [ {{"name": "format", "value": "{format}" }} ] }}'
           - '$.null'
         startTimeFromAscendingNode:
           - |
