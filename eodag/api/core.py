@@ -143,6 +143,7 @@ class EODataAccessGateway(object):
         # Build a search index for product types
         self._product_types_index = None
         self.build_index()
+        self.last_used_plugin = None
 
         # set locations configuration
         if locations_conf_path is None:
@@ -932,6 +933,7 @@ class EODataAccessGateway(object):
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
+                self.last_used_plugin = search_plugin
                 return search_results, total_results
 
         logger.error("No result could be obtained from any available provider")
@@ -1947,3 +1949,8 @@ class EODataAccessGateway(object):
         plugin_conf = {"name": name}
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
+
+    def delete_request_job(self):
+        """delete request job after it is done (if it exists)"""
+        if self.last_used_plugin:
+            self.last_used_plugin.delete_request_job()

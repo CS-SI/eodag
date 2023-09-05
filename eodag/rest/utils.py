@@ -663,6 +663,8 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
             },
         )
 
+    eodag_api.delete_request_job()
+
     return StreamingResponse(**download_stream_dict)
 
 
@@ -860,6 +862,7 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
             product_type=result_catalog.search_args["product_type"],
             arguments=search_products_arguments,
         )
+    eodag_api.delete_request_job()
 
     return StacItem(
         url=url,

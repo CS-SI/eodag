@@ -46,6 +46,7 @@ class DataRequestSearch(Search):
                 self.config.pagination.get("next_page_url_key_path", None)
             )
         self.download_info = {}
+        self.current_request_id = ""
 
     def get_product_type_def_params(self, product_type, **kwargs):
         """Get the provider product type definition parameters"""
@@ -139,6 +140,7 @@ class DataRequestSearch(Search):
         data_request_id = self._create_data_request(
             provider_product_type, product_type, **keywords
         )
+        self.current_request_id = data_request_id
         request_finished = False
         while not request_finished:
             request_finished = self._check_request_status(data_request_id)
@@ -202,6 +204,7 @@ class DataRequestSearch(Search):
         if "status_code" in status_data and status_data["status_code"] in [403, 404]:
             raise RequestError("authentication token expired during request")
         if status_data["status"] == "failed":
+            self.current_request_id = ""
             raise RequestError(
                 f"data request job has failed, message: {status_data['message']}"
             )
@@ -275,6 +278,15 @@ class DataRequestSearch(Search):
                     "provider": self.provider,
                 }
         return products, total_items_nb
+
+    def delete_request_job(self):
+        """delete the request job when the result was returned to avoid too many jobs"""
+        request_id = self.current_request_id
+        url = self.config.data_request_url + "/" + request_id
+        try:
+            requests.delete(url, headers=self.auth.headers)
+        except requests.RequestException:
+            logger.error("data request job %s could not be deleted", request_id)
 
     def _check_uses_custom_filters(self, product_type):
         if (

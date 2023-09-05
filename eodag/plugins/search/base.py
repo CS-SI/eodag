@@ -62,3 +62,7 @@ class Search(PluginTopic):
     def discover_product_types(self):
         """Fetch product types list from provider using `discover_product_types` conf"""
         return
+
+    def delete_request_job(self):
+        """overwrite to delete jobs that were created during the search"""
+        pass
