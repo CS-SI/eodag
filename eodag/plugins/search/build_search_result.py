@@ -144,22 +144,31 @@ class BuildPostSearchResult(PostJsonSearch):
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 
         # build product id
-        id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s" % (
-            id_prefix,
+        if (
             parsed_properties["startTimeFromAscendingNode"]
-            .split("T")[0]
-            .replace("-", ""),
-            query_hash,
-        )
+            and parsed_properties["completionTimeFromAscendingNode"]
+        ):
+            id_prefix = (product_type or self.provider).upper()
+            product_id = "%s_%s_%s_%s" % (
+                id_prefix,
+                parsed_properties["startTimeFromAscendingNode"]
+                .split("T")[0]
+                .replace("-", ""),
+                parsed_properties["completionTimeFromAscendingNode"]
+                .split("T")[0]
+                .replace("-", ""),
+                query_hash,
+            )
+        else:
+            product_id = parsed_properties["id"]
         product_available_properties["id"] = product_available_properties[
             "title"
         ] = product_id
 
         # update downloadLink
         split_param = getattr(self.config, "assets_split_parameter", None)
-        print(product_available_properties["downloadLink"])
         if split_param:
+            print("sp")
             product_available_properties["downloadLinks"] = {}
             param_values = parsed_properties[split_param]
             if isinstance(param_values, str):
@@ -167,18 +176,20 @@ class BuildPostSearchResult(PostJsonSearch):
                     param_values = param_values.split("/")
                 else:
                     param_values = param_values.split(",")
+            elif not isinstance(param_values, list):
+                param_values = [param_values]
             for param_value in param_values:
-                print(param_value)
                 sorted_unpaginated_query_params[split_param] = param_value
                 params_str = geojson.dumps(sorted_unpaginated_query_params)
-                print(params_str)
                 link = product_available_properties["downloadLink"] + f"?{params_str}"
-                print(link)
                 product_available_properties["downloadLinks"][param_value] = link
-            print(product_available_properties["downloadLinks"])
         else:
             product_available_properties["downloadLink"] += f"?{qs}"
-            print(product_available_properties["downloadLink"])
+
+        if len(product_available_properties["downloadLinks"]) == 1:
+            product_available_properties["downloadLink"] = list(
+                product_available_properties["downloadLinks"].values()
+            )[0]
 
         # parse metadata needing downloadLink
         for param, mapping in self.config.metadata_mapping.items():
@@ -198,7 +209,6 @@ class BuildPostSearchResult(PostJsonSearch):
             productType=product_type,
             properties=product_available_properties,
         )
-        print(product_available_properties)
 
         return [
             product,

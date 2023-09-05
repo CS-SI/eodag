@@ -91,7 +91,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         ]["constraints_file_path"]
 
         # start date
-        if "startTimeFromAscendingNode" not in kwargs:
+        if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
                 getattr(self.config, "product_type_config", {}).get(
                     "missionStartDate", None
@@ -99,7 +99,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 or DEFAULT_MISSION_START_DATE
             )
         # end date
-        if "completionTimeFromAscendingNode" not in kwargs:
+        if "completionTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["completionTimeFromAscendingNode"] = getattr(
                 self.config, "product_type_config", {}
             ).get("missionEndDate", None) or datetime.utcnow().isoformat(
@@ -116,7 +116,10 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
         products = []
         num_items = 0
-        if getattr(self.config, "products_split_timedelta", None):
+        if (
+            getattr(self.config, "products_split_timedelta", None)
+            and "id" not in kwargs
+        ):
             request_splitter = RequestSplitter(self.config)
             slices = request_splitter.get_time_slices(
                 kwargs["startTimeFromAscendingNode"],
@@ -129,6 +132,8 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs["completionTimeFromAscendingNode"] = slice["end_date"].strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
+                print("ecmwf")
+                print(kwargs)
                 result = BuildPostSearchResult.query(
                     self,
                     items_per_page=items_per_page,
@@ -138,6 +143,16 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 )
                 products += result[0]
                 num_items += result[1]
+        else:
+            print("ecmwf")
+            print(kwargs)
+            products, num_items = BuildPostSearchResult.query(
+                self,
+                items_per_page=items_per_page,
+                page=page,
+                count=count,
+                **kwargs,
+            )
 
         return products, num_items
 
@@ -149,9 +164,12 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
         """
         # Get credentials from eodag or using ecmwf conf
+        print("auth")
+        print(getattr(self.config, "credentials", {}))
         email = getattr(self.config, "credentials", {}).get("username", None)
         key = getattr(self.config, "credentials", {}).get("password", None)
         url = getattr(self.config, "api_endpoint", None)
+        print(url)
         if not all([email, key, url]):
             key, url, email = get_apikey_values()
 
@@ -173,10 +191,14 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download data from ECMWF MARS"""
 
-        product_extension = ECMWF_MARS_KNOWN_FORMATS[
-            product.properties.get("format", "grib")
-        ]
+        if "format" in product.properties and product.properties["format"] is not None:
+            product_extension = ECMWF_MARS_KNOWN_FORMATS[
+                product.properties.get("format")
+            ]
+        else:
+            product_extension = ECMWF_MARS_KNOWN_FORMATS["grib"]
 
+        print(product.location)
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
@@ -184,6 +206,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             outputs_extension=f".{product_extension}",
             **kwargs,
         )
+        print(fs_path, record_filename)
 
         if not fs_path or not record_filename:
             if fs_path:
@@ -206,6 +229,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             ecmwf_log = logger.info
 
         auth_dict = self.authenticate()
+        print(auth_dict)
 
         # Send download request to ECMWF web API
         logger.info("Request download on ECMWF: %s" % download_request)
@@ -223,6 +247,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 ecmwf_server = ECMWFService(
                     service="mars", verbose=ecmwf_verbose, log=ecmwf_log, **auth_dict
                 )
+                print(ecmwf_server)
                 download_request.pop("dataset", None)
                 ecmwf_server.execute(download_request, fs_path)
         except APIException as e:

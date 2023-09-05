@@ -416,9 +416,10 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
     body = {}
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
+    variable = arguments.pop("variable", None)
 
     return download_stac_item_by_id_stream(
-        catalogs=[collection_id], item_id=item_id, provider=provider
+        catalogs=[collection_id], item_id=item_id, provider=provider, variable=variable
     )
 
 

@@ -443,7 +443,7 @@ def search_products(product_type, arguments, stac_formatted=True):
     return response
 
 
-def search_product_by_id(uid, product_type=None, provider=None):
+def search_product_by_id(uid, product_type=None, provider=None, variable=None):
     """Search a product by its id
 
     :param uid: The uid of the EO product
@@ -452,14 +452,17 @@ def search_product_by_id(uid, product_type=None, provider=None):
     :type product_type: str
     :param provider: (optional) The provider to be used
     :type provider: str
+    :param variable: value of the variable that should be queried for the product
+    :type variable: str
     :returns: A search result
     :rtype: :class:`~eodag.api.search_result.SearchResult`
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     :raises: RuntimeError
     """
+    print("utils", variable)
     try:
         products, total = eodag_api.search(
-            id=uid, productType=product_type, provider=provider
+            id=uid, productType=product_type, provider=provider, variable=variable
         )
         return products
     except ValidationError:
@@ -565,7 +568,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
+def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=None):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -574,13 +577,13 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     :type item_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :param zip: if the downloaded filed should be zipped
-    :type zip: str
+    :param variable: value of the variable that should be queried
+    :type variable: str
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
     product = search_product_by_id(
-        item_id, product_type=catalogs[0], provider=provider
+        item_id, product_type=catalogs[0], provider=provider, variable=variable
     )[0]
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)

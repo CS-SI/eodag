@@ -1500,6 +1500,10 @@ class EODataAccessGateway(object):
             if need_auth and auth_plugin and can_authenticate:
                 search_plugin.auth = auth_plugin.authenticate()
 
+            variable = kwargs.pop("variable", None)
+            if variable:
+                split_param = getattr(search_plugin.config, "assets_split_parameter")
+                kwargs[split_param] = variable
             res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
             # Only do the pagination computations when it makes sense. For example,
