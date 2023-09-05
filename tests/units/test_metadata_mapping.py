@@ -496,5 +496,5 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, date="2023-01-31T00:00"), str(["00:00"])
         )
         self.assertEqual(
-            format_metadata(to_format, date="2023-01-31T23:59"), str(["23:59"])
+            format_metadata(to_format, date="2023-01-31T23:59"), str(["23:00"])
         )

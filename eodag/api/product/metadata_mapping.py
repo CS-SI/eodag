@@ -694,15 +694,13 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_get_ecmwf_time(date: str) -> list:
-            """Get the time of a date (str) in the ECMWF format (["HH:MM"])
+            """Get the time of a date (str) in the ECMWF format (["HH:00"])
 
-            "2021-04-21T18:27:19.123Z" => ["18:27"]
+            "2021-04-21T18:27:19.123Z" => ["18:00"]
             "2021-04-21" => ["00:00"]
             """
             return [
-                MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"]
-                + ":"
-                + MetadataFormatter.convert_to_datetime_dict(date, "str")["minute"]
+                MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
 
     for match in re.findall(r"\([A-Za-z]+\)", search_param):
