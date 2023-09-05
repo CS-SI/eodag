@@ -705,22 +705,12 @@ def format_metadata(search_param, *args, **kwargs):
                 MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
 
-    for match in re.findall(r"\([A-Za-z]+\)", search_param):
-        param = match.replace("(", "").replace(")", "")
-        if param in kwargs:
-            search_param = search_param.replace(param, kwargs[param])
-
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(
             r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
-
-    while re.search(r"\([a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*", search_param):
-        search_param = re.sub(
-            r"(\([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)", r"\1_COLON_\2", search_param
-        )
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
