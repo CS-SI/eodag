@@ -378,8 +378,6 @@ def search_products(product_type, arguments, stac_formatted=True):
     try:
         arg_product_type = arguments.pop("product_type", None)
         provider = arguments.pop("provider", None)
-        if not provider:
-            provider = eodag_api.get_preferred_provider()[0]
 
         unserialized = arguments.pop("unserialized", None)
 
