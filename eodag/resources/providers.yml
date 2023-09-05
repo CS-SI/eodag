@@ -4663,7 +4663,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
@@ -4686,7 +4686,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "file_version", "value": {file_version} }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -4706,7 +4706,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "version", "value": [ "{version}" ] }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -4755,7 +4755,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
     GLOFAS_FORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST
@@ -4800,7 +4800,7 @@
         - control_forecast
       format: grib
       startTimeFromAscendingNode: "2023-01-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4843,7 +4843,7 @@
         - consolidated
       format: grib
       startTimeFromAscendingNode: "2023-01-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4933,7 +4933,7 @@
         - lisflood
       format: grib
       startTimeFromAscendingNode: "1999-01-03T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4984,7 +4984,7 @@
         - "144"
       format: grib
       startTimeFromAscendingNode: "2020-12-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5026,7 +5026,7 @@
         - "24"
       format: grib
       startTimeFromAscendingNode: "2016-01-01T00:00"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5161,7 +5161,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_HISTORICAL:
@@ -5198,7 +5198,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_REFORECAST:
@@ -5274,7 +5274,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL:
@@ -5318,7 +5318,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL_REFORECAST:
@@ -5362,7 +5362,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_CARBON_DIOXIDE:
@@ -5400,7 +5400,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_METHANE:
@@ -5438,7 +5438,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_PL:
@@ -5467,7 +5467,7 @@
       leadtime_month:
         - "1"
       startTimeFromAscendingNode: "2017-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "5"
       format: "grib"
@@ -5518,7 +5518,7 @@
       leadtime_month:
         - "1"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5596,7 +5596,7 @@
         - "192"
         - "198"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5669,7 +5669,7 @@
         - "180"
         - "192"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5729,7 +5729,7 @@
         - "925"
         - "1000"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5779,7 +5779,7 @@
       leadtime_month:
         - "1"
       startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
-      geometry: -180 -90 180 90
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       originating_centre: ecmwf
       system: "51"
       format: "grib"
@@ -5873,7 +5873,7 @@
           - $.null
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
       storeDownloadUrl: True
 
