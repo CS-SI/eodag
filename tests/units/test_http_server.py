@@ -317,7 +317,6 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"search?collections={self.tested_product_type}",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -327,7 +326,6 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=0,43,1,44",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -365,7 +363,6 @@ class RequestTestCase(unittest.TestCase):
         result1 = self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -377,7 +374,6 @@ class RequestTestCase(unittest.TestCase):
         result2 = self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&filter=latestIntersect",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -393,7 +389,6 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -409,7 +404,6 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -420,7 +414,6 @@ class RequestTestCase(unittest.TestCase):
         self._request_valid(
             f"collections/{self.tested_product_type}/items?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -436,7 +429,6 @@ class RequestTestCase(unittest.TestCase):
         results = self._request_valid(
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -452,7 +444,6 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
             "?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -468,7 +459,6 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
             "?bbox=0,43,1,44&datetime=2018-01-20/2019-01-01",
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -536,7 +526,6 @@ class RequestTestCase(unittest.TestCase):
                 "query": {"eo:cloud_cover": {"lte": 10}},
             },
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
@@ -559,7 +548,6 @@ class RequestTestCase(unittest.TestCase):
                 },
             },
             expected_search_kwargs=dict(
-                provider="peps",
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
