@@ -500,8 +500,8 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, date="2023-01-31T23:59"), str(["23:00"])
         )
 
-    def test_convert_download_id_to_datetimes(self):
-        to_format = "{id#download_id_to_datetimes}"
+    def test_convert_download_id_to_dates(self):
+        to_format = "{id#download_id_to_dates}"
         self.assertEqual(
             str(
                 format_metadata(
@@ -511,8 +511,8 @@ class TestMetadataFormatter(unittest.TestCase):
             ),
             str(
                 {
-                    "start_date": datetime(2021, 10, 1).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "end_date": datetime(2021, 11, 30).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "start_date": datetime(2021, 10, 1).strftime("%Y-%m-%d"),
+                    "end_date": datetime(2021, 11, 30).strftime("%Y-%m-%d"),
                 }
             ),
         )

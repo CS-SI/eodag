@@ -634,7 +634,6 @@ def format_metadata(search_param, *args, **kwargs):
             return bbox
 
         @staticmethod
-<<<<<<< HEAD
         def convert_split_corine_id(product_id):
             if "clc" in product_id:
                 year = product_id.split("_")[1][3:]
@@ -707,8 +706,8 @@ def format_metadata(search_param, *args, **kwargs):
             return [
                 MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
-=======
-        def convert_download_id_to_datetimes(product_id):
+
+        def convert_download_id_to_dates(product_id):
             dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
             dates = dates_str.split("_")
             start_date = datetime(
@@ -718,8 +717,8 @@ def format_metadata(search_param, *args, **kwargs):
                 int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
             )
             return {
-                "start_date": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "end_date": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": end_date.strftime("%Y-%m-%d"),
             }
 
         # @staticmethod
@@ -1099,12 +1098,8 @@ def format_query_params(product_type, config, **kwargs):
     query_params = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
-<<<<<<< HEAD
     queryables = _get_queryables(kwargs, config, product_type_metadata_mapping)
-=======
-    queryables = _get_queryables(kwargs, config)
-    print(queryables)
->>>>>>> feat: download asset of ecmwf product
+
 
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = kwargs[eodag_search_key]
@@ -1121,14 +1116,7 @@ def format_query_params(product_type, config, **kwargs):
                 if "{{" in provider_search_key:
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
-<<<<<<< HEAD
                         formatted_query_param = _resolve_hashes(formatted_query_param)
-=======
-                        formatted_query_param = _resolve_hashes(
-                            formatted_query_param.replace("'", '"')
-                        )
-
->>>>>>> feat: download asset of ecmwf product
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
@@ -1186,7 +1174,6 @@ def format_query_params(product_type, config, **kwargs):
 
 
 def _resolve_hashes(formatted_query_param):
-<<<<<<< HEAD
     """
     resolves structures of the format {"a": "abc", "b": "cde"}["a"] given in the formatted_query_param
     the structure is replaced by the value corresponding to the given key in the hash
@@ -1194,22 +1181,13 @@ def _resolve_hashes(formatted_query_param):
     """
     # check if there is still a hash to be resolved
     while '}["' in formatted_query_param:
-=======
-    print("r")
-    while '["' in formatted_query_param:
->>>>>>> feat: download asset of ecmwf product
         # find and parse code between {}
         ind_open = formatted_query_param.find('}["')
         ind_close = formatted_query_param.find('"]', ind_open)
         hash_start = formatted_query_param[:ind_open].rfind(": {") + 2
-<<<<<<< HEAD
-        h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
-=======
         if hash_start < 2:
             hash_start = formatted_query_param[:ind_open].rfind("{")
         h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
-        print(h)
->>>>>>> feat: download asset of ecmwf product
         # find key and get value
         ind_key_start = formatted_query_param.find('"', ind_open) + 1
         key = formatted_query_param[ind_key_start:ind_close]
@@ -1223,10 +1201,6 @@ def _resolve_hashes(formatted_query_param):
             formatted_query_param = formatted_query_param.replace(
                 formatted_query_param[hash_start : ind_close + 2], json.dumps(value)
             )
-<<<<<<< HEAD
-=======
-        print(formatted_query_param)
->>>>>>> feat: download asset of ecmwf product
     return formatted_query_param
 
 

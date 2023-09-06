@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 from eodag.utils.exceptions import MisconfiguredError
 
@@ -217,6 +218,9 @@ class RequestSplitter:
 
     def _split_by_year_with_dates(self, start_year, end_year, slice_duration):
         slices = []
+        min_max_dates = self._get_min_max_dates()
+        start_year = max(start_year, min_max_dates["min_date"].year)
+        end_year = min(end_year, min_max_dates["max_date"].year)
         for year in range(start_year, end_year + 1, slice_duration):
             start_date = datetime.datetime(year, 1, 1)
             end_date = datetime.datetime(year + slice_duration - 1, 12, 31)
@@ -229,13 +233,20 @@ class RequestSplitter:
         self, start_year, end_year, start_month, end_month, slice_duration
     ):
         slices = []
+        min_max_dates = self._get_min_max_dates()
         start_date = datetime.datetime(start_year, start_month, 1)
+        start_date = max(start_date, min_max_dates["min_date"])
+        start_year = start_date.year
+        start_month = start_date.month
         if end_month == 12:
             final_date = datetime.datetime(end_year, end_month, 31)
         else:
             final_date = datetime.datetime(
                 end_year, end_month + 1, 1
             ) - datetime.timedelta(days=1)
+        final_date = min(final_date, min_max_dates["max_date"])
+        end_year = final_date.year
+        end_month = final_date.month
         end_date = start_date
         current_year = start_year
         while end_date < final_date:
@@ -255,3 +266,38 @@ class RequestSplitter:
             slices.append({"start_date": start_date, "end_date": end_date})
             start_date = end_date + datetime.timedelta(days=1)
         return slices
+
+    def _get_min_max_dates(self):
+        if "startTimeFromAscendingNode" in self.metadata and isinstance(
+            self.metadata["startTimeFromAscendingNode"], list
+        ):
+            date_var = self.metadata["startTimeFromAscendingNode"][0].split("=")[0]
+        elif "completionTimeFromAscendingNode" in self.metadata and isinstance(
+            self.metadata["completionTimeFromAscendingNode"], list
+        ):
+            date_var = self.metadata["completionTimeFromAscendingNode"][0].split("=")[0]
+        else:
+            raise MisconfiguredError(
+                "No date variable configured; please check the configuration"
+            )
+
+        min_date = datetime.datetime(2100, 12, 31)
+        max_date = datetime.datetime(1900, 1, 1)
+        for constraint in self.constraints:
+            date_value = constraint[date_var]
+            if isinstance(date_value, list):
+                for date_str in date_value:
+                    dates = re.findall("[0-9]{4}-[0,1][0-9]-[0-3][0-9]", date_str)
+                    start_date = datetime.datetime.strptime(dates[0], "%Y-%m-%d")
+                    min_date = min(start_date, min_date)
+                    end_date = datetime.datetime.strptime(dates[1], "%Y-%m-%d")
+                    max_date = max(end_date, max_date)
+            else:
+                date_str = date_value
+                dates = re.findall("[0-9]{4}-[0,1][0-9]-[0-3][0-9]", date_str)
+                start_date = datetime.datetime.strptime(dates[0], "%Y-%m-%d")
+                min_date = min(start_date, min_date)
+                end_date = datetime.datetime.strptime(dates[1], "%Y-%m-%d")
+                max_date = max(end_date, max_date)
+
+        return {"min_date": min_date, "max_date": max_date}
