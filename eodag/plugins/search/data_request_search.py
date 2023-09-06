@@ -4,6 +4,7 @@ import time
 import requests
 
 from eodag import EOProduct
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import (
     format_query_params,
     mtd_cfg_as_conversion_and_querypath,
@@ -30,7 +31,6 @@ class DataRequestSearch(Search):
         self.config.__dict__.setdefault("results_entry", "content")
         self.config.__dict__.setdefault("pagination", {})
         self.config.__dict__.setdefault("free_text_search_operations", {})
-        self.next_page_url = None
         for product_type in self.config.products.keys():
             if "metadata_mapping" in self.config.products[product_type].keys():
                 self.config.products[product_type][
@@ -70,6 +70,7 @@ class DataRequestSearch(Search):
                 self.config.pagination.get("next_page_url_key_path", None)
             )
         self.download_info = {}
+        self.data_request_id = None
 
     def get_metadata_mapping(self, product_type=None):
         """Get the plugin metadata mapping configuration (product type specific if exists)"""
@@ -111,7 +112,7 @@ class DataRequestSearch(Search):
     def clear(self):
         """Clear search context"""
         super().clear()
-        self.next_page_url = None
+        self.data_request_id = None
 
     def query(self, *args, count=True, **kwargs):
         """
@@ -166,15 +167,26 @@ class DataRequestSearch(Search):
             }
         )
 
-        data_request_id = self._create_data_request(
-            provider_product_type, product_type, **keywords
-        )
-        request_finished = False
+        # ask for data_request_id if not set (it must exist when iterating over pages)
+        if not self.data_request_id:
+            data_request_id = self._create_data_request(
+                provider_product_type, product_type, **keywords
+            )
+            self.data_request_id = data_request_id
+            request_finished = False
+        else:
+            data_request_id = self.data_request_id
+            request_finished = True
+
         while not request_finished:
             request_finished = self._check_request_status(data_request_id)
             time.sleep(1)
         logger.info("search job for product_type %s finished", provider_product_type)
-        result = self._get_result_data(data_request_id)
+        result = self._get_result_data(
+            data_request_id,
+            kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE),
+            kwargs.get("page", DEFAULT_PAGE),
+        )
         # if exists, add the geometry from search args in the content of the response for each product
         if keywords.get("geometry"):
             for product_content in result["content"]:
@@ -227,24 +239,14 @@ class DataRequestSearch(Search):
             )
         return status_data["status"] == "completed"
 
-    def _get_result_data(self, data_request_id):
-        url = self.config.result_url.format(jobId=data_request_id)
+    def _get_result_data(self, data_request_id, items_per_page, page):
+        url = self.config.result_url.format(
+            jobId=data_request_id, items_per_page=items_per_page, page=page
+        )
         try:
-            result = requests.get(url, headers=self.auth.headers).json()
-            next_page_url_key_path = self.config.pagination.get(
-                "next_page_url_key_path", None
-            )
-            if next_page_url_key_path:
-                try:
-                    self.next_page_url = next_page_url_key_path.find(result)[0].value
-                    logger.debug(
-                        "Next page URL collected and set for the next search",
-                    )
-                except IndexError:
-                    logger.debug("Next page URL could not be collected")
-            return result
+            return requests.get(url, headers=self.auth.headers).json()
         except requests.RequestException:
-            logger.error("data from job %s could not be retrieved", data_request_id)
+            logger.error(f"Result could not be retrieved for {url}")
 
     def _convert_result_data(
         self, result_data, data_request_id, product_type, **kwargs

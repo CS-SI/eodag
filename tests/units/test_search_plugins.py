@@ -1270,9 +1270,11 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_get_result_data(self, mock_requests_get):
-        self.search_plugin._get_result_data("123")
+        self.search_plugin._get_result_data("123", items_per_page=5, page=1)
         mock_requests_get.assert_called_with(
-            self.search_plugin.config.result_url.format(jobId="123"),
+            self.search_plugin.config.result_url.format(
+                jobId="123", items_per_page=5, page=1
+            ),
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
 
