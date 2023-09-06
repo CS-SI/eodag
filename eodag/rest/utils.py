@@ -389,7 +389,6 @@ def search_products(product_type, arguments, stac_formatted=True):
             "productType": product_type if product_type else arg_product_type,
             "page": page,
             "items_per_page": items_per_page,
-            "raise_errors": True,
             "start": dtstart,
             "end": dtend,
             "geom": geom,

@@ -320,7 +320,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
             ),
         )
         self._request_valid(
@@ -329,7 +328,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -366,7 +364,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
             ),
         )
@@ -377,7 +374,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
             ),
         )
@@ -392,7 +388,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -407,7 +402,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -417,7 +411,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -432,7 +425,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-01T00:00:00",
                 end="2018-02-01T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -447,7 +439,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -462,7 +453,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-02-01T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -529,7 +519,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 cloudCover=10,
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
@@ -551,7 +540,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
