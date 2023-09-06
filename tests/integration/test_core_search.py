@@ -208,11 +208,18 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
+        "eodag.plugins.search.qssearch.requests.post",
+        autospec=True,
+        side_effect=RequestException,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.requests.get",
         autospec=True,
         side_effect=RequestException,
     )
-    def test_core_search_fallback_find_nothing(self, mock_get, mock_request, mock_auth):
+    def test_core_search_fallback_find_nothing(
+        self, mock_get, mock_post, mock_request, mock_auth
+    ):
         """Core search must loop over providers until finding a non empty result"""
         product_type = "S1_SAR_SLC"
         available_providers = self.dag.available_providers(product_type)
@@ -225,7 +232,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(len(products), 0)
         self.assertEqual(count, 0)
         self.assertEqual(
-            mock_get.call_count + mock_request.call_count,
+            mock_get.call_count + mock_post.call_count + mock_request.call_count,
             len(available_providers),
             "all available providers must have been requested",
         )
