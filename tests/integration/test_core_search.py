@@ -199,6 +199,10 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
 
     @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.requests.Request",
         autospec=True,
         side_effect=RequestException,
@@ -208,13 +212,13 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
         side_effect=RequestException,
     )
-    def test_core_search_fallback_find_nothing(self, mock_get, mock_request):
+    def test_core_search_fallback_find_nothing(self, mock_get, mock_request, mock_auth):
         """Core search must loop over providers until finding a non empty result"""
         product_type = "S1_SAR_SLC"
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
+            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara", "wekeo"],
         )
 
         products, count = self.dag.search(productType="S1_SAR_SLC")
@@ -242,7 +246,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
+            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara", "wekeo"],
         )
 
         self.assertRaises(
@@ -269,7 +273,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
+            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara", "wekeo"],
         )
 
         # peps comes 1st by priority
@@ -287,7 +291,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
             1,
-            "only 1 provider out of 6 must have been requested",
+            "only 1 provider out of 7 must have been requested",
         )
 
     # onda uses requests.Request then urllib with HTTPAdapter.build_response
@@ -318,7 +322,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
+            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara", "wekeo"],
         )
 
         # onda comes 4th by priority
@@ -353,7 +357,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
+            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara", "wekeo"],
         )
 
         mock_query.side_effect = [
@@ -367,7 +371,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(len(products), 1)
         self.assertEqual(count, 1)
         self.assertEqual(
-            mock_query.call_count, 4, "4 provider out of 6 must have been requested"
+            mock_query.call_count, 4, "4 provider out of 7 must have been requested"
         )
 
     @mock.patch(
@@ -380,7 +384,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara"],
+            ["cop_dataspace", "creodias", "mundi", "onda", "peps", "sara", "wekeo"],
         )
 
         mock_query.return_value = ([], 0)
@@ -391,5 +395,5 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             mock_query.call_count,
             1,
-            "only 1 provider out of 6 must have been requested",
+            "only 1 provider out of 7 must have been requested",
         )
