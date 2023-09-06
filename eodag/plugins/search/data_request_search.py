@@ -98,7 +98,6 @@ class DataRequestSearch(Search):
         else:
             try:
                 url = self.config.data_request_url
-                print(kwargs)
                 request_body = format_query_params(
                     eodag_product_type, self.config, **kwargs
                 )

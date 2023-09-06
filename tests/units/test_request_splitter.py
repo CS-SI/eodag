@@ -160,19 +160,27 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertDictEqual(expected_result_row_6, result[5])
 
     def test_split_timespan_by_year_with_dates(self):
-        metadata = {"date": "date"}
+        metadata = {
+            "startTimeFromAscendingNode": [
+                "date=startTimeFromAscendingNode/to/completionTimeFromAscendingNode",
+                "$.date",
+            ],
+            "completionTimeFromAscendingNode": "$.date",
+        }
         multiselect_values = []
         split_time_values = {"param": "year", "duration": 2}
         config = PluginConfig.from_mapping(
             {
                 "metadata_mapping": metadata,
                 "multi_select_values": multiselect_values,
-                "constraints_file_path": self.constraints_file_path,
+                "constraints_file_path": os.path.join(
+                    TEST_RESOURCES_PATH, "constraints_dates.json"
+                ),
                 "products_split_timedelta": split_time_values,
             }
         )
         splitter = RequestSplitter(config)
-        result = splitter.get_time_slices("2000-02-01", "2004-05-30")
+        result = splitter.get_time_slices("1999-02-01", "2004-05-30")
         self.assertEqual(3, len(result))
         expected_result = [
             {
@@ -193,19 +201,27 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertDictEqual(expected_result[2], result[2])
 
     def test_split_timespan_by_month_with_dates(self):
-        metadata = {"date": "date"}
+        metadata = {
+            "startTimeFromAscendingNode": [
+                "date=startTimeFromAscendingNode/to/completionTimeFromAscendingNode",
+                "$.date",
+            ],
+            "completionTimeFromAscendingNode": "$.date",
+        }
         multiselect_values = []
         split_time_values = {"param": "month", "duration": 2}
         config = PluginConfig.from_mapping(
             {
                 "metadata_mapping": metadata,
                 "multi_select_values": multiselect_values,
-                "constraints_file_path": self.constraints_file_path,
+                "constraints_file_path": os.path.join(
+                    TEST_RESOURCES_PATH, "constraints_dates.json"
+                ),
                 "products_split_timedelta": split_time_values,
             }
         )
         splitter = RequestSplitter(config)
-        result = splitter.get_time_slices("2000-02-01", "2001-06-30")
+        result = splitter.get_time_slices("1999-02-01", "2001-06-30")
         self.assertEqual(9, len(result))
         expected_result_row_1 = {
             "start_date": datetime.datetime(2000, 2, 1),

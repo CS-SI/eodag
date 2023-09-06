@@ -586,7 +586,7 @@ def format_metadata(search_param, *args, **kwargs):
             return bbox
 
         @staticmethod
-        def convert_download_id_to_datetimes(product_id):
+        def convert_download_id_to_dates(product_id):
             dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
             dates = dates_str.split("_")
             start_date = datetime(
@@ -596,8 +596,8 @@ def format_metadata(search_param, *args, **kwargs):
                 int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
             )
             return {
-                "start_date": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "end_date": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": end_date.strftime("%Y-%m-%d"),
             }
 
         # @staticmethod
