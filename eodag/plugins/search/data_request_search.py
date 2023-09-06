@@ -198,32 +198,22 @@ class DataRequestSearch(Search):
     def _create_data_request(self, product_type, eodag_product_type, **kwargs):
         headers = getattr(self.auth, "headers", "")
         try:
-            metadata_url = self.config.metadata_url + product_type
-            logger.debug(f"Sending metadata request: {metadata_url}")
-            metadata = requests.get(metadata_url, headers=headers)
-            metadata.raise_for_status()
-        except requests.RequestException:
+            url = self.config.data_request_url
+            request_body = format_query_params(
+                eodag_product_type, self.config, **kwargs
+            )
+            logger.debug(
+                f"Sending search job request to {url} with {str(request_body)}"
+            )
+            request_job = requests.post(url, json=request_body, headers=headers)
+            request_job.raise_for_status()
+        except requests.RequestException as e:
             raise RequestError(
-                f"metadata for product_type {product_type} could not be retrieved"
+                f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
             )
         else:
-            try:
-                url = self.config.data_request_url
-                request_body = format_query_params(
-                    eodag_product_type, self.config, **kwargs
-                )
-                logger.debug(
-                    f"Sending search job request to {url} with {str(request_body)}"
-                )
-                request_job = requests.post(url, json=request_body, headers=headers)
-                request_job.raise_for_status()
-            except requests.RequestException as e:
-                raise RequestError(
-                    f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
-                )
-            else:
-                logger.info("search job for product_type %s created", product_type)
-                return request_job.json()["jobId"]
+            logger.info("search job for product_type %s created", product_type)
+            return request_job.json()["jobId"]
 
     def _check_request_status(self, data_request_id):
         logger.info("checking status of request job %s", data_request_id)
