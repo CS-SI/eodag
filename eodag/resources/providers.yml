@@ -1874,7 +1874,7 @@
         - 'date={startTimeFromAscendingNode#to_iso_date}/to/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       id:
-        - 'date={id#download_id_to_datetimes}["start_date"]/to/{id#download_id_to_datetimes}["end_date"]'
+        - 'date={id#download_id_to_dates}["start_date"]/to/{id#download_id_to_dates}["end_date"]'
         - '$.id'
       # The geographic extent of the product
       geometry:
