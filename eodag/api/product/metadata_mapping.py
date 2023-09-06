@@ -634,6 +634,7 @@ def format_metadata(search_param, *args, **kwargs):
             return bbox
 
         @staticmethod
+<<<<<<< HEAD
         def convert_split_corine_id(product_id):
             if "clc" in product_id:
                 year = product_id.split("_")[1][3:]
@@ -710,6 +711,9 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_download_id_to_datetimes(product_id):
+=======
+        def convert_download_id_to_dates(product_id):
+>>>>>>> feat: split ecmwf products - download + constraints
             dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
             dates = dates_str.split("_")
             start_date = datetime(
@@ -719,8 +723,8 @@ def format_metadata(search_param, *args, **kwargs):
                 int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
             )
             return {
-                "start_date": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "end_date": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": end_date.strftime("%Y-%m-%d"),
             }
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat

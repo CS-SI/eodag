@@ -164,12 +164,10 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
         """
         # Get credentials from eodag or using ecmwf conf
-        print("auth")
-        print(getattr(self.config, "credentials", {}))
         email = getattr(self.config, "credentials", {}).get("username", None)
         key = getattr(self.config, "credentials", {}).get("password", None)
         url = getattr(self.config, "api_endpoint", None)
-        print(url)
+
         if not all([email, key, url]):
             key, url, email = get_apikey_values()
 
@@ -216,6 +214,14 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
         download_request = geojson.loads(urlsplit(product.location).query)
+        # remove string quotes within values
+        for param, param_value in download_request.items():
+            if isinstance(param_value, str):
+                download_request[param] = param_value.replace('"', "").replace("'", "")
+            elif isinstance(param_value, list):
+                for i, value in enumerate(param_value):
+                    if isinstance(value, str):
+                        param_value[i] = value.replace('"', "").replace("'", "")
 
         # Set verbosity
         eodag_verbosity = get_logging_verbose()
