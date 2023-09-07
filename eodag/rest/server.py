@@ -56,9 +56,11 @@ from eodag.rest.utils import (
 from eodag.utils import parse_header, update_nested_dict
 from eodag.utils.exceptions import (
     AuthenticationError,
+    DownloadError,
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
+    RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
@@ -245,6 +247,20 @@ async def handle_auth_error(request: Request, error):
         HTTPException(
             status_code=500,
             detail="Internal server error: please contact the administrator",
+        ),
+    )
+
+
+@app.exception_handler(DownloadError)
+@app.exception_handler(RequestError)
+async def handle_server_error(request: Request, error):
+    """These errors should be sent as internal server error with details to the client"""
+    logger.error(f"{type(error).__name__}: {str(error)}")
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=500,
+            detail=f"{type(error).__name__}: {str(error)}",
         ),
     )
 

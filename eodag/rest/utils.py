@@ -30,6 +30,7 @@ from eodag.utils import _deprecated, dict_items_recursive_apply, string_to_jsonp
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
+    NotAvailableError,
     UnsupportedProductType,
     ValidationError,
 )
@@ -377,8 +378,6 @@ def search_products(product_type, arguments, stac_formatted=True):
     try:
         arg_product_type = arguments.pop("product_type", None)
         provider = arguments.pop("provider", None)
-        if not provider:
-            provider = eodag_api.get_preferred_provider()[0]
 
         unserialized = arguments.pop("unserialized", None)
 
@@ -390,7 +389,6 @@ def search_products(product_type, arguments, stac_formatted=True):
             "productType": product_type if product_type else arg_product_type,
             "page": page,
             "items_per_page": items_per_page,
-            "raise_errors": True,
             "start": dtstart,
             "end": dtend,
             "geom": geom,
@@ -582,9 +580,16 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
-    product = search_product_by_id(
+
+    search_results = search_product_by_id(
         item_id, product_type=catalogs[0], provider=provider, variable=variable
-    )[0]
+    )
+    if len(search_results) > 0:
+        product = search_results[0]
+    else:
+        raise NotAvailableError(
+            f"Could not find {item_id} item in {catalogs[0]} collection for provider {provider}"
+        )
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
         auth_plugin = eodag_api._plugins_manager.get_auth_plugin(

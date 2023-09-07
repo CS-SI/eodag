@@ -47,6 +47,7 @@ from eodag.config import (
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
+from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     MockResponse,
@@ -841,9 +842,9 @@ class EODataAccessGateway(object):
 
         The default behaviour is to look for products on the provider with the
         highest priority supporting the requested product type. These priorities
-        are configurable through user configuration file or individual
-        environment variable. If the request to the provider with the highest priority
-        fails, the data will be request from the provider with the next highest priority.
+        are configurable through user configuration file or individual environment variable.
+        If the request to the provider with the highest priority fails or is empty, the data
+        will be request from the provider with the next highest priority.
         Only if the request fails for all available providers, an error will be thrown.
 
         :param page: (optional) The page number to return
@@ -880,8 +881,9 @@ class EODataAccessGateway(object):
         :type locations: dict
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
-        :param provider: (optional) the provider to be used, if not set, the configured
-                         default provider will be used
+        :param provider: (optional) the provider to be used. If set, search fallback will be disabled.
+                         If not set, the configured preferred provider will be used at first
+                         before trying others until finding results.
         :type provider: str
         :type kwargs: Union[int, str, bool, dict]
         :returns: A collection of EO products matching the criteria and the total
@@ -915,27 +917,25 @@ class EODataAccessGateway(object):
             page=page,
             items_per_page=items_per_page,
         )
+        # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
-            try:
-                return self._do_search(
-                    search_plugin,
-                    count=True,
-                    raise_errors=raise_errors,
-                    **search_kwargs,
+            search_results, total_results = self._do_search(
+                search_plugin,
+                count=True,
+                raise_errors=raise_errors,
+                **search_kwargs,
+            )
+            if len(search_results) == 0 and i < len(search_plugins) - 1:
+                logger.warning(
+                    f"No result could be obtained from provider {search_plugin.provider}, "
+                    "we will try to get the data from another provider",
                 )
-            except RequestError:
-                if i < len(search_plugins) - 1:
-                    logger.warning(
-                        "No result could be obtained from provider %s, "
-                        "we will try to get the data from another provider",
-                        search_plugin.provider,
-                    )
-                else:
-                    logger.error(
-                        "No result could be obtained from any available " "provider"
-                    )
-                    raise
+            elif len(search_results) > 0:
+                return search_results, total_results
+
+        logger.error("No result could be obtained from any available provider")
+        return SearchResult([]), 0
 
     def search_iter_page(
         self,
@@ -1227,17 +1227,25 @@ class EODataAccessGateway(object):
                 )
                 return all_results
             except RequestError:
-                if i < len(search_plugins) - 1:
+                if len(all_results) == 0 and i < len(search_plugins) - 1:
                     logger.warning(
                         "No result could be obtained from provider %s, "
                         "we will try to get the data from another provider",
                         search_plugin.provider,
                     )
-                else:
+                elif len(all_results) == 0:
                     logger.error(
-                        "No result could be obtained from any available " "provider"
+                        "No result could be obtained from any available provider"
                     )
                     raise
+                elif len(all_results) > 0:
+                    logger.warning(
+                        "Found %s result(s) on provider '%s', but it may be incomplete "
+                        "as it ended with an error",
+                        len(all_results),
+                        search_plugin.provider,
+                    )
+                    return all_results
 
     def _search_by_id(self, uid, provider=None, **kwargs):
         """Internal method that enables searching a product by its id.
@@ -1263,8 +1271,6 @@ class EODataAccessGateway(object):
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
         """
-        if not provider:
-            provider = self.get_preferred_provider()[0]
         get_search_plugins_kwargs = dict(
             provider=provider, product_type=kwargs.get("productType", None)
         )
@@ -1338,8 +1344,8 @@ class EODataAccessGateway(object):
                        * search criteria to guess the product type
                        * other criteria compatible with the provider
         :type kwargs: Any
-        :returns: The prepared kwargs to make a query.
-        :rtype: dict
+        :returns: Search plugins list and the prepared kwargs to make a query.
+        :rtype: tuple(list, dict)
         """
         product_type = kwargs.get("productType", None)
         if product_type is None:
@@ -1404,14 +1410,24 @@ class EODataAccessGateway(object):
             )
             self.fetch_product_types_list()
 
+        preferred_provider = self.get_preferred_provider()[0]
+
         search_plugins: List[Search] = []
         for plugin in self._plugins_manager.get_search_plugins(
-            product_type=product_type
+            product_type=product_type, provider=provider
         ):
+            # exclude BuildPostSearchResult plugins from search fallback for unknow product_type
+            if (
+                provider != plugin.provider
+                and preferred_provider != plugin.provider
+                and product_type not in self.product_types_config
+                and isinstance(plugin, BuildPostSearchResult)
+            ):
+                continue
             search_plugins.append(plugin)
 
         if not provider:
-            provider = self.get_preferred_provider()[0]
+            provider = preferred_provider
         providers = [plugin.provider for plugin in search_plugins]
         if provider not in providers:
             logger.warning(
@@ -1845,12 +1861,7 @@ class EODataAccessGateway(object):
             )
         )
 
-        # save preferred_provider and use provided one instead
-        preferred_provider, _ = self.get_preferred_provider()
-        self.set_preferred_provider(provider)
-        products, _ = self.search(productType=productType, **kwargs)
-        # restore preferred_provider
-        self.set_preferred_provider(preferred_provider)
+        products, _ = self.search(productType=productType, provider=provider, **kwargs)
 
         # restore plugin._request
         plugin._request = plugin_request
