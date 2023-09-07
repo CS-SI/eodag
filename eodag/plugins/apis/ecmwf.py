@@ -132,8 +132,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs["completionTimeFromAscendingNode"] = slice["end_date"].strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
-                print("ecmwf")
-                print(kwargs)
                 result = BuildPostSearchResult.query(
                     self,
                     items_per_page=items_per_page,
@@ -144,8 +142,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 products += result[0]
                 num_items += result[1]
         else:
-            print("ecmwf")
-            print(kwargs)
             products, num_items = BuildPostSearchResult.query(
                 self,
                 items_per_page=items_per_page,
@@ -196,7 +192,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         else:
             product_extension = ECMWF_MARS_KNOWN_FORMATS["grib"]
 
-        print(product.location)
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
@@ -204,7 +199,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             outputs_extension=f".{product_extension}",
             **kwargs,
         )
-        print(fs_path, record_filename)
 
         if not fs_path or not record_filename:
             if fs_path:
@@ -235,7 +229,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             ecmwf_log = logger.info
 
         auth_dict = self.authenticate()
-        print(auth_dict)
 
         # Send download request to ECMWF web API
         logger.info("Request download on ECMWF: %s" % download_request)
@@ -253,7 +246,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 ecmwf_server = ECMWFService(
                     service="mars", verbose=ecmwf_verbose, log=ecmwf_log, **auth_dict
                 )
-                print(ecmwf_server)
                 download_request.pop("dataset", None)
                 ecmwf_server.execute(download_request, fs_path)
         except APIException as e:
