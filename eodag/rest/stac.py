@@ -578,7 +578,8 @@ class StacCollection(StacCommon):
             # parse f-strings
             format_args = deepcopy(self.stac_config)
             format_args["collection"] = dict(
-                product_type_collection, **{"url": self.url, "root": self.root}
+                product_type_collection,
+                **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
             )
             product_type_collection = format_dict_items(
                 product_type_collection, **format_args
@@ -598,6 +599,14 @@ class StacCollection(StacCommon):
         """
         collections = deepcopy(self.stac_config["collections"])
         collections["collections"] = self.__get_collection_list(filters)
+
+        # # parse f-strings
+        format_args = deepcopy(self.stac_config)
+        format_args["collections"].update({"url": self.url, "root": self.root})
+
+        collections["links"] = [
+            format_dict_items(link, **format_args) for link in collections["links"]
+        ]
 
         collections["links"] += [
             {

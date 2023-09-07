@@ -29,7 +29,7 @@ landing_page:
   links:
     - rel: self
       type: "application/json"
-      href: "{catalog[root]}"
+      href: "{catalog[root]}/"
     - rel: service-desc
       type: "application/vnd.oai.openapi+json;version=3.0"
       href: "{catalog[root]}/api"
@@ -66,11 +66,11 @@ collections:
   links:
     - rel: self
       title: collections
-      href: /collections
+      href: "{collections[url]}"
     - rel: root
-      href: /
+      href: "{collections[root]}/"
     - rel: parent
-      href: /
+      href: "{collections[root]}/"
   collections:
     - "{collection}"
   stac_version: "{stac_version}"
@@ -84,12 +84,12 @@ collection:
   links:
     - rel: self
       title: "{collection[id]}"
-      href: "{collection[root]}/collections/{collection[id]}"
+      href: "{collection[url]}"
     - rel: root
-      href: "{collection[root]}"
+      href: "{collection[root]}/"
     - rel: items
       title: "items"
-      href: "{collection[root]}/collections/{collection[id]}/items"
+      href: "{collection[url]}/items"
   extent:
     spatial:
       bbox:
@@ -140,7 +140,7 @@ items:
       title: "items"
       href: "{catalog[url]}/items"
     - rel: root
-      href: /
+      href: "{catalog[root]}/"
     - rel: parent
       title: "{catalog[id]}"
       href: "{catalog[url]}"
@@ -208,13 +208,13 @@ item:
       title: "{item[id]}"
       href: "{catalog[url]}/items/{item[id]}"
     - rel: root
-      href: /
+      href: "{catalog[root]}/"
     - rel: parent
       title: "{catalog[id]}"
       href: "{catalog[url]}"
     - rel: collection
       title: "{item[collection]}"
-      href: "/collections/{item[collection]}"
+      href: "{catalog[url]}"
   assets:
     downloadLink:
         title: 'Download link'
