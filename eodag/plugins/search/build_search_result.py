@@ -18,6 +18,7 @@
 
 import hashlib
 import logging
+from datetime import datetime
 
 import geojson
 import orjson
@@ -29,6 +30,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     properties_from_json,
 )
+from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.utils import dict_items_recursive_sort
 
@@ -144,11 +146,11 @@ class BuildPostSearchResult(PostJsonSearch):
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 
         # build product id
+        id_prefix = (product_type or self.provider).upper()
         if (
             parsed_properties["startTimeFromAscendingNode"]
             and parsed_properties["completionTimeFromAscendingNode"]
         ):
-            id_prefix = (product_type or self.provider).upper()
             product_id = "%s_%s_%s_%s" % (
                 id_prefix,
                 parsed_properties["startTimeFromAscendingNode"]
@@ -168,7 +170,7 @@ class BuildPostSearchResult(PostJsonSearch):
         # update downloadLink
         split_param = getattr(self.config, "assets_split_parameter", None)
         if split_param:
-            print("sp")
+            request_splitter = RequestSplitter(self.config)
             product_available_properties["downloadLinks"] = {}
             param_values = parsed_properties[split_param]
             if isinstance(param_values, str):
@@ -178,7 +180,19 @@ class BuildPostSearchResult(PostJsonSearch):
                     param_values = param_values.split(",")
             elif not isinstance(param_values, list):
                 param_values = [param_values]
-            for param_value in param_values:
+
+            start_date = datetime.strptime(
+                product_id[len(id_prefix) + 1 : len(id_prefix) + 9], "%Y%m%d"
+            )
+            end_date = datetime.strptime(
+                product_id[len(id_prefix) + 10 : len(id_prefix) + 18], "%Y%m%d"
+            )
+            constraint_param_values = (
+                request_splitter.get_variables_for_timespan_and_params(
+                    start_date, end_date, parsed_properties, param_values
+                )
+            )
+            for param_value in constraint_param_values:
                 sorted_unpaginated_query_params[split_param] = param_value
                 params_str = geojson.dumps(sorted_unpaginated_query_params)
                 link = product_available_properties["downloadLink"] + f"?{params_str}"

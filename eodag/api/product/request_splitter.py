@@ -9,6 +9,23 @@ def _hour_from_time(time):
     return int(time[:2])
 
 
+def _parse_dates_from_string(date_str):
+    dates = re.findall("[0-9]{4}-[0,1][0-9]-[0-3][0-9]", date_str)
+    start_date = datetime.datetime.strptime(dates[0], "%Y-%m-%d")
+    end_date = datetime.datetime.strptime(dates[1], "%Y-%m-%d")
+    return {"start_date": start_date, "end_date": end_date}
+
+
+def _check_value_in_constraint(value, constraint_value):
+    if not isinstance(value, list):
+        return value in constraint_value or str(value) in constraint_value
+    else:
+        for record in value:
+            if record not in constraint_value and str(record) not in constraint_value:
+                return False
+        return True
+
+
 class RequestSplitter:
     """
     provides methods to split a request into several requests based on the given config and constraints
@@ -222,7 +239,7 @@ class RequestSplitter:
         start_year = max(start_year, min_max_dates["min_date"].year)
         end_year = min(end_year, min_max_dates["max_date"].year)
         for year in range(start_year, end_year + 1, slice_duration):
-            start_date = datetime.datetime(year, 1, 1)
+            start_date = max(datetime.datetime(year, 1, 1), min_max_dates["min_date"])
             end_date = datetime.datetime(year + slice_duration - 1, 12, 31)
             if end_date.year > end_year:
                 end_date = datetime.datetime(end_year, 12, 31)
@@ -237,7 +254,6 @@ class RequestSplitter:
         start_date = datetime.datetime(start_year, start_month, 1)
         start_date = max(start_date, min_max_dates["min_date"])
         start_year = start_date.year
-        start_month = start_date.month
         if end_month == 12:
             final_date = datetime.datetime(end_year, end_month, 31)
         else:
@@ -245,8 +261,6 @@ class RequestSplitter:
                 end_year, end_month + 1, 1
             ) - datetime.timedelta(days=1)
         final_date = min(final_date, min_max_dates["max_date"])
-        end_year = final_date.year
-        end_month = final_date.month
         end_date = start_date
         current_year = start_year
         while end_date < final_date:
@@ -267,37 +281,74 @@ class RequestSplitter:
             start_date = end_date + datetime.timedelta(days=1)
         return slices
 
-    def _get_min_max_dates(self):
+    def _get_date_var(self):
         if "startTimeFromAscendingNode" in self.metadata and isinstance(
             self.metadata["startTimeFromAscendingNode"], list
         ):
-            date_var = self.metadata["startTimeFromAscendingNode"][0].split("=")[0]
+            return self.metadata["startTimeFromAscendingNode"][0].split("=")[0]
         elif "completionTimeFromAscendingNode" in self.metadata and isinstance(
             self.metadata["completionTimeFromAscendingNode"], list
         ):
-            date_var = self.metadata["completionTimeFromAscendingNode"][0].split("=")[0]
+            return self.metadata["completionTimeFromAscendingNode"][0].split("=")[0]
         else:
             raise MisconfiguredError(
                 "No date variable configured; please check the configuration"
             )
 
+    def _get_min_max_dates(self):
+        date_var = self._get_date_var()
         min_date = datetime.datetime(2100, 12, 31)
         max_date = datetime.datetime(1900, 1, 1)
         for constraint in self.constraints:
             date_value = constraint[date_var]
             if isinstance(date_value, list):
                 for date_str in date_value:
-                    dates = re.findall("[0-9]{4}-[0,1][0-9]-[0-3][0-9]", date_str)
-                    start_date = datetime.datetime.strptime(dates[0], "%Y-%m-%d")
-                    min_date = min(start_date, min_date)
-                    end_date = datetime.datetime.strptime(dates[1], "%Y-%m-%d")
-                    max_date = max(end_date, max_date)
+                    dates = _parse_dates_from_string(date_str)
+                    min_date = min(dates["start_date"], min_date)
+                    max_date = max(dates["end_date"], max_date)
             else:
-                date_str = date_value
-                dates = re.findall("[0-9]{4}-[0,1][0-9]-[0-3][0-9]", date_str)
-                start_date = datetime.datetime.strptime(dates[0], "%Y-%m-%d")
-                min_date = min(start_date, min_date)
-                end_date = datetime.datetime.strptime(dates[1], "%Y-%m-%d")
-                max_date = max(end_date, max_date)
+                dates = _parse_dates_from_string(date_value)
+                min_date = min(dates["start_date"], min_date)
+                max_date = max(dates["end_date"], max_date)
 
         return {"min_date": min_date, "max_date": max_date}
+
+    def get_variables_for_timespan_and_params(
+        self, start_date, end_date, params, variables=None
+    ):
+        """
+        returns the variables that are available for a timespan based on the given constraints
+        :param start_date: start date of the timespan
+        :type start_date: datetime
+        :param end_date: end date of the timespan
+        :type end_date: datetime
+        :param params: keys and values of additional parameters where constraints could exist
+        :type params: dict
+        :param variables: (optional) selected variables, if not given all available variables will be returned
+        :type variables: list
+        :returns: list of available variables
+        :rtype: list
+        """
+        available_variables = []
+        variable_name = self.config["assets_split_parameter"]
+        date_var = self._get_date_var()
+        for constraint in self.constraints:
+            for dates in constraint[date_var]:
+                dates_constraint = _parse_dates_from_string(dates)
+                if (
+                    dates_constraint["start_date"] <= start_date
+                    and dates_constraint["end_date"] >= end_date
+                ):
+                    for key, value in params.items():
+                        if key not in constraint or _check_value_in_constraint(
+                            value, constraint[key]
+                        ):
+                            if variables:
+                                variables_str = [str(v) for v in variables]
+                                v = set(variables_str).intersection(
+                                    set(constraint[variable_name])
+                                )
+                                available_variables += list(v)
+                            else:
+                                available_variables += constraint[variable_name]
+        return available_variables

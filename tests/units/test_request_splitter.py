@@ -184,7 +184,7 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertEqual(3, len(result))
         expected_result = [
             {
-                "start_date": datetime.datetime(2000, 1, 1),
+                "start_date": datetime.datetime(2000, 2, 1),
                 "end_date": datetime.datetime(2001, 12, 31),
             },
             {
@@ -238,3 +238,71 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertDictEqual(expected_result_row_1, result[0])
         self.assertDictEqual(expected_result_row_6, result[5])
         self.assertDictEqual(expected_result_row_9, result[8])
+
+    def test_get_variables_for_timespan_and_params(self):
+        metadata = {
+            "startTimeFromAscendingNode": [
+                "date=startTimeFromAscendingNode/to/completionTimeFromAscendingNode",
+                "$.date",
+            ],
+            "completionTimeFromAscendingNode": "$.date",
+        }
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": [],
+                "constraints_file_path": os.path.join(
+                    TEST_RESOURCES_PATH, "constraints_dates.json"
+                ),
+                "products_split_timedelta": {"param": "month", "duration": 2},
+                "assets_split_parameter": "param",
+            }
+        )
+        splitter = RequestSplitter(config)
+        start_date = datetime.datetime(2001, 6, 1)
+        end_date = datetime.datetime(2001, 6, 30)
+        params = {"step": ["102", "108"]}
+        result = splitter.get_variables_for_timespan_and_params(
+            start_date, end_date, params
+        )
+        self.assertEqual(
+            str(["121", "122", "134", "136", "146", "147", "151"]), str(result)
+        )
+        result = splitter.get_variables_for_timespan_and_params(
+            start_date, end_date, params, ["121", "122"]
+        )
+        self.assertEqual(str(["121", "122"]), str(sorted(result)))
+        params = {"step": ["1"]}
+        result = splitter.get_variables_for_timespan_and_params(
+            start_date, end_date, params
+        )
+        self.assertEqual(str([]), str(result))
+        start_date = datetime.datetime(2006, 1, 1)
+        end_date = datetime.datetime(2007, 1, 1)
+        params = {"step": ["102", "108"]}
+        result = splitter.get_variables_for_timespan_and_params(
+            start_date, end_date, params
+        )
+        self.assertEqual(
+            str(["121", "122", "134", "136", "146", "147", "151", "165", "166"]),
+            str(result),
+        )
+        params = {"step": ["1"]}
+        result = splitter.get_variables_for_timespan_and_params(
+            start_date, end_date, params
+        )
+        self.assertEqual(
+            str(
+                [
+                    "228001",
+                    "228002",
+                    "228039",
+                    "228139",
+                    "228141",
+                    "228144",
+                    "228164",
+                    "228228",
+                ]
+            ),
+            str(result),
+        )
