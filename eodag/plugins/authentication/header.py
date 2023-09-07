@@ -19,6 +19,7 @@
 import requests.auth
 
 from eodag.plugins.authentication import Authentication
+from eodag.utils.http import HttpRequests
 
 
 class HTTPHeaderAuth(Authentication):
@@ -62,6 +63,13 @@ class HTTPHeaderAuth(Authentication):
             for header, value in self.config.headers.items()
         }
         return HeaderAuth(headers)
+
+    def http_requests(self) -> HttpRequests:
+        """
+        The nested class provides implementations for the requests methods that make authenticated HTTP requests
+        using a header-based authentication method.
+        """
+        return None
 
 
 class HeaderAuth(requests.auth.AuthBase):

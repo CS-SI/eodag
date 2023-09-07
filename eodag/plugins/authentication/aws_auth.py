@@ -17,6 +17,7 @@
 # limitations under the License.
 
 from eodag.plugins.authentication.base import Authentication
+from eodag.utils.http import HttpRequests
 
 
 class AwsAuth(Authentication):
@@ -54,3 +55,10 @@ class AwsAuth(Authentication):
 
         auth_keys = ["aws_access_key_id", "aws_secret_access_key", "profile_name"]
         return {k: getattr(self, k) for k in auth_keys if getattr(self, k)}
+
+    def http_requests(self) -> HttpRequests:
+        """
+        The nested class provides implementations for the requests methods that make authenticated HTTP requests
+        using a aws-based authentication method.
+        """
+        return None

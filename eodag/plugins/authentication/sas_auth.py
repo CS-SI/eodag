@@ -24,6 +24,7 @@ from requests.auth import AuthBase
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import USER_AGENT, deepcopy, format_dict_items
 from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.http import HttpRequests
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.auth.sas_auth")
@@ -91,3 +92,10 @@ class SASAuth(Authentication):
             signed_url_key=self.config.signed_url_key,
             headers=headers,
         )
+
+    def http_requests(self) -> HttpRequests:
+        """
+        The nested class provides implementations for the requests methods that make authenticated HTTP requests
+        using a sas-based authentication method.
+        """
+        return None

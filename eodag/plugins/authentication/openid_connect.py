@@ -27,6 +27,7 @@ from requests.auth import AuthBase
 from eodag.plugins.authentication import Authentication
 from eodag.utils import USER_AGENT, parse_qs, repeatfunc, urlparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+from eodag.utils.http import HttpRequests
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
@@ -285,6 +286,13 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 string.digits + string.ascii_lowercase + string.ascii_uppercase,
             )
         )
+
+    def http_requests(self) -> HttpRequests:
+        """
+        The nested class provides implementations for the requests methods that make authenticated HTTP requests
+        using a oidc-based authentication method.
+        """
+        return None
 
 
 class CodeAuthorizedAuth(AuthBase):

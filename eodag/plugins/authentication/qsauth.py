@@ -24,6 +24,7 @@ from requests.exceptions import RequestException
 from eodag.plugins.authentication import Authentication
 from eodag.utils import USER_AGENT
 from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.http import HttpRequests
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
@@ -75,6 +76,13 @@ class HttpQueryStringAuth(Authentication):
                 raise AuthenticationError(f"Could no authenticate: {str(e)}")
 
         return auth
+
+    def http_requests(self) -> HttpRequests:
+        """
+        The nested class provides implementations for the requests methods that make authenticated HTTP requests
+        using a querystring-based authentication method.
+        """
+        return None
 
 
 class QueryStringAuth(requests.auth.AuthBase):
