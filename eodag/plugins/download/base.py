@@ -33,6 +33,7 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NotAvailableError,
 )
+from eodag.utils.http import HttpRequests
 from eodag.utils.notebook import NotebookWidgets
 
 logger = logging.getLogger("eodag.plugins.download.base")
@@ -82,6 +83,7 @@ class Download(PluginTopic):
     def __init__(self, provider, config):
         super(Download, self).__init__(provider, config)
         self._authenticate = bool(getattr(self.config, "authenticate", False))
+        self.http = HttpRequests()
 
     def download(
         self,

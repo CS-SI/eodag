@@ -23,6 +23,7 @@ from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+from eodag.utils.http import HttpRequests
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.auth.keycloak")
@@ -151,3 +152,10 @@ class KeycloakOIDCPasswordAuth(Authentication):
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
         )
+
+    def http_requests(self) -> HttpRequests:
+        """
+        The nested class provides implementations for the requests methods that make authenticated HTTP requests
+        using a keycloak-based authentication method.
+        """
+        return None

@@ -1,8 +1,6 @@
 import logging
 import time
 
-import requests
-
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import (
     format_query_params,
@@ -61,7 +59,7 @@ class DataRequestSearch(Search):
 
     def query(self, *args, count=True, **kwargs):
         """
-        performs the search for a provider where several steps are required to fetch the data
+        performs the search for a provider when several steps are required to fetch the data
         """
         product_type = kwargs.get("productType", None)
         self._add_product_type_metadata(product_type)
@@ -85,39 +83,40 @@ class DataRequestSearch(Search):
         return self._convert_result_data(result, data_request_id, **kwargs)
 
     def _create_data_request(self, product_type, eodag_product_type, **kwargs):
-        headers = getattr(self.auth, "headers", "")
         try:
             metadata_url = self.config.metadata_url + product_type
             logger.debug(f"Sending metadata request: {metadata_url}")
-            metadata = requests.get(metadata_url, headers=headers)
-            metadata.raise_for_status()
-        except requests.RequestException:
+            _ = self.http.get(metadata_url)
+
+        except RequestError as e:
             raise RequestError(
-                f"metadata for product_type {product_type} could not be retrieved"
+                f"metadata for product_type {product_type} could not be retrieved",
+                f"{e}",
             )
-        else:
-            try:
-                url = self.config.data_request_url
-                request_body = format_query_params(
-                    eodag_product_type, self.config, **kwargs
-                )
-                logger.debug(
-                    f"Sending search job request to {url} with {str(request_body)}"
-                )
-                request_job = requests.post(url, json=request_body, headers=headers)
-                request_job.raise_for_status()
-            except requests.RequestException as e:
-                raise RequestError(
-                    f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
-                )
-            else:
-                logger.info("search job for product_type %s created", product_type)
-                return request_job.json()["jobId"]
+
+        request_job = None
+        try:
+            url = self.config.data_request_url
+            request_body = format_query_params(
+                eodag_product_type, self.config, **kwargs
+            )
+            logger.debug(
+                f"Sending search job request to {url} with {str(request_body)}"
+            )
+            request_job = self.http.post(url, json=request_body)
+        except RequestError as e:
+            raise RequestError(
+                f"search job for product_type {product_type} could not be created: {str(e)}"
+                + (f", {request_job.text}" if request_job is not None else "")
+            )
+
+        logger.info("search job for product_type %s created", product_type)
+        return request_job.json()["jobId"]
 
     def _check_request_status(self, data_request_id):
         logger.info("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
-        status_data = requests.get(status_url, headers=self.auth.headers).json()
+        status_data = self.http.get(status_url).json()
         if "status_code" in status_data and status_data["status_code"] == 403:
             raise RequestError("authentication token expired during request")
         if status_data["status"] == "failed":
@@ -129,7 +128,7 @@ class DataRequestSearch(Search):
     def _get_result_data(self, data_request_id):
         url = self.config.result_url.format(jobId=data_request_id)
         try:
-            result = requests.get(url, headers=self.auth.headers).json()
+            result = self.http.get(url).json()
             next_page_url_key_path = self.config.pagination.get(
                 "next_page_url_key_path", None
             )
@@ -142,7 +141,7 @@ class DataRequestSearch(Search):
                 except IndexError:
                     logger.debug("Next page URL could not be collected")
             return result
-        except requests.RequestException:
+        except RequestError:
             logger.error("data from job %s could not be retrieved", data_request_id)
 
     def _convert_result_data(self, result_data, data_request_id, **kwargs):
