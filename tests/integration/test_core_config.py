@@ -86,7 +86,7 @@ class TestCoreProvidersConfig(TestCase):
                     base_uri: https://foo.bar
             """
         )
-        self.dag.set_preferred_provider("foo_provider")
+        self.dag.available_providers.set_preferred("foo_provider")
 
         prods, _ = self.dag.search(raise_errors=True)
         self.assertEqual(prods[0].properties["title"], "foo")

@@ -244,7 +244,7 @@ class EndToEndBase(unittest.TestCase):
             search_criteria["items_per_page"] = items_per_page
         if page:
             search_criteria["page"] = page
-        self.eodag.set_preferred_provider(provider)
+        self.eodag.available_providers.set_preferred(provider)
         results, nb_results = self.eodag.search(**search_criteria)
         if offline:
             results = [
@@ -282,7 +282,7 @@ class EndToEndBase(unittest.TestCase):
             "end": end,
             "geom": geom,
         }
-        self.eodag.set_preferred_provider(provider)
+        self.eodag.available_providers.set_preferred(provider)
         results = self.eodag.search_all(
             productType=product_type, items_per_page=items_per_page, **search_criteria
         )
@@ -576,7 +576,7 @@ class TestEODagEndToEnd(EndToEndBase):
         tile_id = "53WPU"
 
         for provider in supported_providers:
-            self.eodag.set_preferred_provider(provider)
+            self.eodag.available_providers.set_preferred(provider)
             products, _ = self.eodag.search(
                 productType="S2_MSI_L1C",
                 start="2021-06-01",
@@ -799,7 +799,7 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # Search for products that are ONLINE and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
-        self.eodag.set_preferred_provider("peps")
+        self.eodag.available_providers.set_preferred("peps")
         search_results, _ = self.eodag.search(
             productType="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
@@ -985,7 +985,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.eodag.download(product)
 
     def test_end_to_end_wrong_apikey_search_aws_eos(self):
-        self.eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
+        self.eodag.available_providers.set_preferred(AWSEOS_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
@@ -1014,7 +1014,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             eodag = EODataAccessGateway(
                 user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
             )
-            eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
+            eodag.available_providers.set_preferred(AWSEOS_SEARCH_ARGS[0])
             results, nb_results = eodag.search(
                 raise_errors=True,
                 **dict(
@@ -1054,7 +1054,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_search_usgs(self):
         # It should already fail while searching for the products.
-        self.eodag.set_preferred_provider(USGS_RECENT_SEARCH_ARGS[0])
+        self.eodag.available_providers.set_preferred(USGS_RECENT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
@@ -1068,7 +1068,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_search_meteoblue(self):
         # It should already fail while searching for the products.
-        self.eodag.set_preferred_provider(METEOBLUE_SEARCH_ARGS[0])
+        self.eodag.available_providers.set_preferred(METEOBLUE_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
@@ -1082,7 +1082,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_search_hydroweb_next(self):
         # It should already fail while searching for the products.
-        self.eodag.set_preferred_provider(HYDROWBEB_NEXT_SEARCH_ARGS[0])
+        self.eodag.available_providers.set_preferred(HYDROWBEB_NEXT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,

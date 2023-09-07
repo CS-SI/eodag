@@ -18,7 +18,7 @@
 import logging
 from operator import attrgetter
 from pathlib import Path
-from typing import Optional
+from typing import Generator, Optional, Union
 
 import pkg_resources
 
@@ -125,7 +125,9 @@ class PluginManager(object):
                 product_type_providers.append(provider_config)
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)
 
-    def get_search_plugins(self, product_type=None, provider=None):
+    def get_search_plugins(
+        self, product_type: str = None, provider: str = None
+    ) -> Generator[Search, Api, None]:
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority, or the search plugin of the given provider
 
@@ -180,7 +182,7 @@ class PluginManager(object):
             ]:
                 yield get_plugin()
 
-    def get_download_plugin(self, product):
+    def get_download_plugin(self, provider: str) -> Union[Download, Api]:
         """Build and return the download plugin capable of downloading the given
         product.
 
@@ -189,16 +191,14 @@ class PluginManager(object):
         :returns: The download plugin capable of downloading the product
         :rtype: :class:`~eodag.plugins.download.Download`
         """
-        plugin_conf = self.providers_config[product.provider]
+        plugin_conf = self.providers_config[provider]
         try:
             plugin_conf.download.priority = plugin_conf.priority
-            plugin = self._build_plugin(
-                product.provider, plugin_conf.download, Download
-            )
+            plugin = self._build_plugin(provider, plugin_conf.download, Download)
             return plugin
         except AttributeError:
             plugin_conf.api.priority = plugin_conf.priority
-            plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
+            plugin = self._build_plugin(provider, plugin_conf.api, Api)
             return plugin
 
     def get_auth_plugin(self, provider: str) -> Optional[Authentication]:

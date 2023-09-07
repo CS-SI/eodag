@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import urllib.parse
+from typing import Union
 
 import requests
 from requests import RequestException
@@ -27,10 +28,12 @@ from shapely import geometry, geos, wkb, wkt
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
+from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    Download,
 )
 from eodag.utils import USER_AGENT, ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
@@ -221,7 +224,7 @@ class EOProduct(object):
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def register_downloader(self, downloader, authenticator):
+    def register_downloader(self, downloader: Union[Download, Api]):
         """Give to the product the information needed to download itself.
 
         :param downloader: The download method that it can use
@@ -233,7 +236,6 @@ class EOProduct(object):
                              :class:`~eodag.plugins.authentication.base.Authentication`
         """
         self.downloader = downloader
-        self.downloader_auth = authenticator
 
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")

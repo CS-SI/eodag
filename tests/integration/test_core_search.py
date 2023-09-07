@@ -77,7 +77,7 @@ class TestCoreSearch(unittest.TestCase):
     ):
 
         # QueryStringSearch (peps)
-        self.dag.set_preferred_provider("peps")
+        self.dag.available_providers.set_preferred("peps")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
@@ -99,7 +99,7 @@ class TestCoreSearch(unittest.TestCase):
     ):
         mock_query.return_value = ([], 0)
         # StacSearch (astraea_eod)
-        self.dag.set_preferred_provider("astraea_eod")
+        self.dag.available_providers.set_preferred("astraea_eod")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
@@ -121,7 +121,7 @@ class TestCoreSearch(unittest.TestCase):
     ):
         mock_request.return_value = MockResponse({"results": []})
         # PostJsonSearch (aws_eos)
-        self.dag.set_preferred_provider("aws_eos")
+        self.dag.available_providers.set_preferred("aws_eos")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
@@ -147,7 +147,7 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_get, mock_urlopen, mock_authenticate
     ):
         # ODataV4Search (onda)
-        self.dag.set_preferred_provider("onda")
+        self.dag.available_providers.set_preferred("onda")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
@@ -163,7 +163,7 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_login, mock_scene_search
     ):
         # UsgsApi (usgs)
-        self.dag.set_preferred_provider("usgs")
+        self.dag.available_providers.set_preferred("usgs")
         self.assertRaises(NoMatchingProductType, self.dag.search, raise_errors=True)
         self.assertRaises(
             RequestError, self.dag.search, raise_errors=True, productType="foo"
@@ -194,7 +194,7 @@ class TestCoreSearch(unittest.TestCase):
     ):
         mock_request.return_value = MockResponse({"results": []})
         # BuildPostSearchResult (meteoblue)
-        self.dag.set_preferred_provider("meteoblue")
+        self.dag.available_providers.set_preferred("meteoblue")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())

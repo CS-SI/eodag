@@ -269,7 +269,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         """EcmwfApi.download must call the appriate ecmwf api service"""
 
         dag = EODataAccessGateway()
-        dag.set_preferred_provider("ecmwf")
+        dag.available_providers.set_preferred("ecmwf")
         output_data_path = os.path.join(os.path.expanduser("~"), "data")
 
         # public dataset request
@@ -348,7 +348,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         """EcmwfApi.download_all must call the appriate ecmwf api service"""
 
         dag = EODataAccessGateway()
-        dag.set_preferred_provider("ecmwf")
+        dag.available_providers.set_preferred("ecmwf")
 
         eoproducts = SearchResult([])
 
@@ -836,7 +836,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         }
 
         dag = EODataAccessGateway()
-        dag.set_preferred_provider("cop_ads")
+        dag.available_providers.set_preferred("cop_ads")
         output_data_path = os.path.join(os.path.expanduser("~"), "data")
 
         # public dataset request
@@ -884,7 +884,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         }
 
         dag = EODataAccessGateway()
-        dag.set_preferred_provider("cop_ads")
+        dag.available_providers.set_preferred("cop_ads")
 
         eoproducts = SearchResult([])
 

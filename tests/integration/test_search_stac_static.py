@@ -84,7 +84,7 @@ class TestSearchStacStatic(unittest.TestCase):
                     flatten_top_dirs: True
         """
         )
-        self.dag.set_preferred_provider(self.static_stac_provider)
+        self.dag.available_providers.set_preferred(self.static_stac_provider)
 
     def tearDown(self):
         super(TestSearchStacStatic, self).tearDown()

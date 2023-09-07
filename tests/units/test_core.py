@@ -842,23 +842,25 @@ class TestCore(TestCoreBase):
                 str(cm_logs.output),
             )
 
-    def test_set_preferred_provider(self):
+    def test_set_preferred(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
 
-        self.assertEqual(self.dag.get_preferred_provider(), ("peps", 1))
+        self.assertEqual(self.dag.available_providers.get_preferred(), ("peps", 1))
 
         self.assertRaises(
-            UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
+            UnsupportedProvider,
+            self.dag.available_providers.set_preferred_provider,
+            "unknown",
         )
 
-        self.dag.set_preferred_provider("creodias")
-        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 2))
+        self.dag.available_providers.set_preferred("creodias")
+        self.assertEqual(self.dag.available_providers.get_preferred(), ("creodias", 2))
 
-        self.dag.set_preferred_provider("theia")
-        self.assertEqual(self.dag.get_preferred_provider(), ("theia", 3))
+        self.dag.available_providers.set_preferred("theia")
+        self.assertEqual(self.dag.available_providers.get_preferred(), ("theia", 3))
 
-        self.dag.set_preferred_provider("creodias")
-        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 4))
+        self.dag.available_providers.set_preferred("creodias")
+        self.assertEqual(self.dag.available_providers.get_preferred(), ("creodias", 4))
 
     def test_update_providers_config(self):
         """update_providers_config must update providers configuration"""
@@ -921,7 +923,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             )
             dag = EODataAccessGateway()
             # usgs priority is set to 5 in the test config overrides
-            self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
+            self.assertEqual(dag.available_providers.get_preferred(), ("usgs", 5))
             # peps outputs prefix is set to /data
             self.assertEqual(
                 dag.providers_config["peps"].download.outputs_prefix, "/data"
@@ -1307,9 +1309,9 @@ class TestCoreSearch(TestCoreBase):
 
     def test__prepare_search_search_plugin_has_known_product_properties(self):
         """_prepare_search must attach the product properties to the search plugin"""
-        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        prev_fav_provider = self.dag.available_providers.get_preferred()[0]
         try:
-            self.dag.set_preferred_provider("peps")
+            self.dag.available_providers.set_preferred("peps")
             base = {"productType": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             # Just check that the title has been set correctly. There are more (e.g.
@@ -1320,7 +1322,7 @@ class TestCoreSearch(TestCoreBase):
                 "SENTINEL2 Level-1C",
             )
         finally:
-            self.dag.set_preferred_provider(prev_fav_provider)
+            self.dag.available_providers.set_preferred(prev_fav_provider)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
@@ -1329,9 +1331,9 @@ class TestCoreSearch(TestCoreBase):
         self, mock_fetch_product_types_list
     ):
         """_prepare_search must be able to attach the generic product properties to the search plugin"""
-        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        prev_fav_provider = self.dag.available_providers.get_preferred()[0]
         try:
-            self.dag.set_preferred_provider("peps")
+            self.dag.available_providers.set_preferred("peps")
             base = {"productType": "product_unknown_to_eodag"}
             search_plugins, _ = self.dag._prepare_search(**base)
             # product_type_config is still created if the product is not known to eodag
@@ -1340,18 +1342,18 @@ class TestCoreSearch(TestCoreBase):
                 search_plugins[0].config.product_type_config["title"],
             )
         finally:
-            self.dag.set_preferred_provider(prev_fav_provider)
+            self.dag.available_providers.set_preferred(prev_fav_provider)
 
     def test__prepare_search_peps_plugins_product_available(self):
         """_prepare_search must return the search plugins when productType is defined"""
-        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        prev_fav_provider = self.dag.available_providers.get_preferred()[0]
         try:
-            self.dag.set_preferred_provider("peps")
+            self.dag.available_providers.set_preferred("peps")
             base = {"productType": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
-            self.dag.set_preferred_provider(prev_fav_provider)
+            self.dag.available_providers.set_preferred(prev_fav_provider)
 
     def test__prepare_search_no_plugins_when_search_by_id(self):
         """_prepare_search must not return the search and auth plugins for a search by id"""
@@ -1367,14 +1369,14 @@ class TestCoreSearch(TestCoreBase):
         # isn't available for the preferred provider but is made available by  another
         # one. In that case peps provides it and happens to be the first one on the list
         # of providers that make it available.
-        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        prev_fav_provider = self.dag.available_providers.get_preferred()[0]
         try:
-            self.dag.set_preferred_provider("theia")
+            self.dag.available_providers.set_preferred("theia")
             base = {"productType": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
-            self.dag.set_preferred_provider(prev_fav_provider)
+            self.dag.available_providers.set_preferred(prev_fav_provider)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
@@ -1773,7 +1775,7 @@ class TestCoreSearch(TestCoreBase):
                     productType: '{productType}'
         """
         dag.update_providers_config(dummy_provider_config)
-        dag.set_preferred_provider("dummy_provider")
+        dag.available_providers.set_preferred("dummy_provider")
 
         search_plugin = next(
             dag._plugins_manager.get_search_plugins(product_type="S2_MSI_L1C")
@@ -1833,7 +1835,7 @@ class TestCoreSearch(TestCoreBase):
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
-        dag.set_preferred_provider("dummy_provider")
+        dag.available_providers.set_preferred("dummy_provider")
         dag.search_all(productType="S2_MSI_L1C")
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 2)
 
@@ -1856,7 +1858,7 @@ class TestCoreSearch(TestCoreBase):
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
-        dag.set_preferred_provider("dummy_provider")
+        dag.available_providers.set_preferred("dummy_provider")
         dag.search_all(productType="S2_MSI_L1C")
         self.assertEqual(
             mocked_search_iter_page.call_args[1]["items_per_page"],
@@ -1882,7 +1884,7 @@ class TestCoreSearch(TestCoreBase):
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
-        dag.set_preferred_provider("dummy_provider")
+        dag.available_providers.set_preferred("dummy_provider")
         dag.search_all(productType="S2_MSI_L1C", items_per_page=7)
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
 
@@ -1909,7 +1911,7 @@ class TestCoreSearch(TestCoreBase):
         """
         mocked_request.side_effect = RequestError()
         dag.update_providers_config(dummy_provider_config)
-        dag.set_preferred_provider("dummy_provider")
+        dag.available_providers.set_preferred("dummy_provider")
         dag.search_all(productType="S2_MSI_L1C")
         mocked_authenticate.assert_called_once()
 

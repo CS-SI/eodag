@@ -248,7 +248,7 @@ class TestCoreSearchResults(EODagTestCase):
     def test_core_search_results_registered(self, mock_query):
         """The core api must register search results downloaders"""
         # QueryStringSearch provider
-        self.dag.set_preferred_provider("peps")
+        self.dag.available_providers.set_preferred("peps")
 
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
@@ -271,7 +271,7 @@ class TestCoreSearchResults(EODagTestCase):
     )
     def test_core_search_with_provider(self, mock_query):
         """The core api must register search results downloaders"""
-        self.dag.set_preferred_provider("creodias")
+        self.dag.available_providers.set_preferred("creodias")
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "provider_responses/peps_search.json"
         )

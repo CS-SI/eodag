@@ -464,9 +464,7 @@ def list_pt(ctx, **kwargs):
                         click.echo(text_wrapper.fill(str(value)))
     except UnsupportedProvider:
         click.echo("Unsupported provider. You may have a typo")
-        click.echo(
-            "Available providers: {}".format(", ".join(dag.available_providers()))
-        )
+        click.echo("Available providers: {}".format(", ".join(dag.available_providers)))
         sys.exit(1)
 
 

@@ -410,7 +410,7 @@ class TestStacUtils(unittest.TestCase):
         mock__request.return_value.json.return_value = (
             self.earth_search_resp_search_json
         )
-        self.rest_utils.eodag_api.set_preferred_provider("peps")
+        self.rest_utils.eodag_api.set_preferred("peps")
 
         response = self.rest_utils.search_stac_items(
             url="http://foo/search",
@@ -432,7 +432,7 @@ class TestStacUtils(unittest.TestCase):
         ].items():
             self.assertIn((k, v), response["features"][0]["assets"].items())
         # preferred provider should not be changed
-        self.assertEqual("peps", self.rest_utils.eodag_api.get_preferred_provider()[0])
+        self.assertEqual("peps", self.rest_utils.eodag_api.get_preferred()[0])
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",

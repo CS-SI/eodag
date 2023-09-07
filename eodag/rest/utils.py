@@ -379,7 +379,7 @@ def search_products(product_type, arguments, stac_formatted=True):
         arg_product_type = arguments.pop("product_type", None)
         provider = arguments.pop("provider", None)
         if not provider:
-            provider = eodag_api.get_preferred_provider()[0]
+            provider = eodag_api.available_providers.get_preferred()
 
         unserialized = arguments.pop("unserialized", None)
 
@@ -1007,5 +1007,5 @@ def eodag_api_init():
     eodag_api.fetch_product_types_list()
 
     # pre-build search plugins
-    for provider in eodag_api.available_providers():
+    for provider in eodag_api.available_providers.keys():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
