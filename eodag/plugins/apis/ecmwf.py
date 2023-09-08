@@ -86,9 +86,17 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
 
         if not product_type:
             product_type = kwargs["productType"]
-        self.config.constraints_file_path = getattr(self.config, "products", {})[
-            product_type
-        ]["constraints_file_path"]
+
+        if (
+            product_type in getattr(self.config, "products", {})
+            and "constraints_file_path"
+            in getattr(self.config, "products", {})[product_type]
+        ):
+            self.config.constraints_file_path = getattr(self.config, "products", {})[
+                product_type
+            ]["constraints_file_path"]
+        else:
+            self.config.constraints_file_path = ""
 
         # start date
         if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
@@ -126,12 +134,18 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs["completionTimeFromAscendingNode"],
             )
             for slice in slices:
-                kwargs["startTimeFromAscendingNode"] = slice["start_date"].strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
-                kwargs["completionTimeFromAscendingNode"] = slice["end_date"].strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
+                if isinstance(slice["start_date"], str):
+                    kwargs["startTimeFromAscendingNode"] = slice["start_date"]
+                else:
+                    kwargs["startTimeFromAscendingNode"] = slice["start_date"].strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"
+                    )
+                if isinstance(slice["end_date"], str):
+                    kwargs["completionTimeFromAscendingNode"] = slice["end_date"]
+                else:
+                    kwargs["completionTimeFromAscendingNode"] = slice[
+                        "end_date"
+                    ].strftime("%Y-%m-%dT%H:%M:%SZ")
                 result = BuildPostSearchResult.query(
                     self,
                     items_per_page=items_per_page,

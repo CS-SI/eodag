@@ -1539,7 +1539,9 @@ class EODataAccessGateway:
 
             variable = kwargs.pop("variable", None)
             if variable:
-                split_param = getattr(search_plugin.config, "assets_split_parameter")
+                split_param = getattr(
+                    search_plugin.config, "assets_split_parameter", "variable"
+                )
                 kwargs[split_param] = variable
             res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 

@@ -200,7 +200,10 @@ class BuildPostSearchResult(PostJsonSearch):
         else:
             product_available_properties["downloadLink"] += f"?{qs}"
 
-        if len(product_available_properties["downloadLinks"]) == 1:
+        if (
+            "downloadLinks" in product_available_properties
+            and len(product_available_properties["downloadLinks"]) == 1
+        ):
             product_available_properties["downloadLink"] = list(
                 product_available_properties["downloadLinks"].values()
             )[0]

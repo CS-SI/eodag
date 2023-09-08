@@ -269,7 +269,6 @@ def format_metadata(search_param, *args, **kwargs):
             "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
             datetime_string = datetime_string.replace('"', "")
-            print(datetime_string)
             dt = isoparse(datetime_string)
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
@@ -795,8 +794,10 @@ def properties_from_json(json, mapping, discovery_config=None):
                 used_jsonpaths.append(match[0].full_path)
             else:
                 extracted_value = NOT_AVAILABLE
-            if extracted_value is None or extracted_value == NOT_AVAILABLE:
+            if extracted_value is None:
                 properties[metadata] = None
+            elif extracted_value == NOT_AVAILABLE:
+                properties[metadata] = NOT_AVAILABLE
             else:
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value
@@ -1114,11 +1115,9 @@ def format_query_params(product_type, config, **kwargs):
 
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = kwargs[eodag_search_key]
-        print(eodag_search_key, provider_search_key, user_input)
 
         if COMPLEX_QS_REGEX.match(provider_search_key):
             parts = provider_search_key.split("=")
-            print(parts)
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
                     provider_search_key, product_type, **kwargs
@@ -1138,21 +1137,17 @@ def format_query_params(product_type, config, **kwargs):
                 else:
                     query_params[eodag_search_key] = formatted_query_param
             else:
-                print("e")
                 provider_search_key, provider_value = parts
                 formatted_query_param = format_metadata(
                     provider_value, product_type, **kwargs
                 )
                 if "}[" in formatted_query_param:
-                    print("c")
-                    print(formatted_query_param)
                     formatted_query_param = _resolve_hashes(
                         formatted_query_param.replace("'", '"')
                     )
                     query_params.setdefault(provider_search_key, []).append(
                         formatted_query_param
                     )
-                    print(query_params)
                 else:
                     query_params.setdefault(provider_search_key, []).append(
                         format_metadata(provider_value, product_type, **kwargs)
