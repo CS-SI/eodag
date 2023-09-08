@@ -33,8 +33,14 @@ class RequestSplitter:
 
     def __init__(self, config):
         self.config = config.__dict__
-        with open(self.config["constraints_file_path"]) as f:
-            self.constraints = json.load(f)
+        if (
+            "constraints_file_path" not in self.config
+            or not self.config["constraints_file_path"]
+        ):
+            self.constraints = {}
+        else:
+            with open(self.config["constraints_file_path"]) as f:
+                self.constraints = json.load(f)
         self.metadata = self.config["metadata_mapping"]
         if "multi_select_values" in self.config:
             self.multi_select_values = self.config["multi_select_values"]
@@ -44,6 +50,8 @@ class RequestSplitter:
         self._check_config_valid()
 
     def _check_config_valid(self):
+        if not self.split_time_delta:  # config vide
+            return True
         split_param = self.split_time_delta["param"]
         if (
             split_param == "year"
@@ -73,13 +81,16 @@ class RequestSplitter:
         start_year = int(start_date[:4])
         end_year = int(end_date[:4])
         if split_param == "year":
-            return self._split_by_year(start_year, end_year, slice_duration)
+            slices = self._split_by_year(start_year, end_year, slice_duration)
         elif split_param == "month":
             start_month = int(start_date[5:7])
             end_month = int(end_date[5:7])
-            return self._split_by_month(
+            slices = self._split_by_month(
                 start_year, end_year, start_month, end_month, slice_duration
             )
+        if not slices:
+            slices = [{"start_date": start_date, "end_date": end_date}]
+        return slices
 
     def _split_by_year(self, start_year, end_year, slice_duration):
         if "year" not in self.metadata:
@@ -173,6 +184,8 @@ class RequestSplitter:
         return list(months)
 
     def _get_months_for_year(self, year):
+        if not self.constraints:
+            return [str(m) for m in range(1, 13)]
         months = []
         for constraint in self.constraints:
             if year in constraint["year"] and len(months) < len(constraint["month"]):
@@ -181,6 +194,8 @@ class RequestSplitter:
 
     def _get_days_for_months_and_years(self, months, years):
         days = {str(i) for i in range(1, 32)}
+        if not self.constraints:
+            return days
         for month in months:
             constraints = self._get_constraints_for_month(month)
             possible_days = []
@@ -202,6 +217,8 @@ class RequestSplitter:
     def _get_times_for_days_months_and_years(self, days, months, years):
         hours = [i for i in range(0, 24)]
         times = {datetime.time(h).strftime("%H:00") for h in hours}
+        if not self.constraints:
+            return times
         for day in days:
             constraints = self._get_constraints_for_day(day)
             possible_times = []
@@ -234,6 +251,8 @@ class RequestSplitter:
         return record
 
     def _split_by_year_with_dates(self, start_year, end_year, slice_duration):
+        if (end_year - start_year) < slice_duration:
+            return None
         slices = []
         min_max_dates = self._get_min_max_dates()
         start_year = max(start_year, min_max_dates["min_date"].year)
@@ -249,6 +268,11 @@ class RequestSplitter:
     def _split_by_month_with_dates(
         self, start_year, end_year, start_month, end_month, slice_duration
     ):
+        month_diff = end_month - start_month
+        if month_diff < 0:
+            month_diff += 12
+        if (12 * (end_year - start_year) + month_diff) < slice_duration:
+            return None
         slices = []
         min_max_dates = self._get_min_max_dates()
         start_date = datetime.datetime(start_year, start_month, 1)
@@ -299,6 +323,8 @@ class RequestSplitter:
         date_var = self._get_date_var()
         min_date = datetime.datetime(2100, 12, 31)
         max_date = datetime.datetime(1900, 1, 1)
+        if not self.constraints:
+            return {"min_date": max_date, "max_date": min_date}
         for constraint in self.constraints:
             date_value = constraint[date_var]
             if isinstance(date_value, list):
@@ -330,6 +356,8 @@ class RequestSplitter:
         :rtype: list
         """
         available_variables = []
+        if not self.constraints:
+            return variables
         variable_name = self.config["assets_split_parameter"]
         date_var = self._get_date_var()
         for constraint in self.constraints:

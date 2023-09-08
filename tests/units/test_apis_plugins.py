@@ -121,6 +121,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def test_plugins_apis_ecmwf_query_dates_missing(self):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_path"] = ""
         results, _ = self.api_plugin.query(
             productType=self.product_type,
             startTimeFromAscendingNode="2020-01-01",
@@ -135,6 +137,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
 
         # missing start & stop
+        setattr(self.api_plugin.config, "products_split_timedelta", {})
         results, _ = self.api_plugin.query(
             productType=self.product_type,
         )
@@ -372,6 +375,34 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         assert mock_ecmwfdataserver_retrieve.call_count == 2
         assert len(paths) == 2
+
+    def test_plugins_apis_ecmwf_split_products(self):
+        """Ecmwf.query must split products by month"""
+        split_config = {"param": "month", "duration": 1}
+        setattr(self.api_plugin.config, "products_split_timedelta", split_config)
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_path"] = ""
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-04-02",
+            param="59/134",
+        )
+        self.assertEqual(4, len(results))
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-31"
+        )
+        eoproduct = results[1]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-02-01"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-02-29"
+        )
 
 
 class TestApisPluginUsgsApi(BaseApisPluginTest):
