@@ -2207,8 +2207,8 @@
     api_endpoint: https://api.ecmwf.int/v1
     extract: false
     products_split_timedelta:
-      param: month
-      duration: 2
+      param: month  # currently month and year are available
+      duration: 1
     assets_split_parameter: param
     metadata_mapping:
       productType: '$.productType'
