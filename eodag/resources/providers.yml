@@ -1015,7 +1015,7 @@
         - '{$.Footprint.`sub(/.*(SRID=[0-9]+;.*)/, \\1)`#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://datahub.creodias.eu/odata/v1/Products({uid})/$value'
+      downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
       collection:
