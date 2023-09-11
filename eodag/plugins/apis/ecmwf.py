@@ -86,6 +86,12 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
 
         if not product_type:
             product_type = kwargs["productType"]
+        self.config.__dict__["multi_select_values"] = self.config.products[
+            product_type
+        ]["multi_select_values"]
+        self.config.__dict__["constraints_file_path"] = self.config.products[
+            product_type
+        ]["constraints_file_path"]
 
         if (
             product_type in getattr(self.config, "products", {})
@@ -133,17 +139,17 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs["startTimeFromAscendingNode"],
                 kwargs["completionTimeFromAscendingNode"],
             )
-            for slice in slices:
-                if isinstance(slice["start_date"], str):
-                    kwargs["startTimeFromAscendingNode"] = slice["start_date"]
+            for time_slice in slices:
+                if isinstance(time_slice["start_date"], str):
+                    kwargs["startTimeFromAscendingNode"] = time_slice["start_date"]
                 else:
-                    kwargs["startTimeFromAscendingNode"] = slice["start_date"].strftime(
-                        "%Y-%m-%dT%H:%M:%SZ"
-                    )
-                if isinstance(slice["end_date"], str):
-                    kwargs["completionTimeFromAscendingNode"] = slice["end_date"]
+                    kwargs["startTimeFromAscendingNode"] = time_slice[
+                        "start_date"
+                    ].strftime("%Y-%m-%dT%H:%M:%SZ")
+                if isinstance(time_slice["end_date"], str):
+                    kwargs["completionTimeFromAscendingNode"] = time_slice["end_date"]
                 else:
-                    kwargs["completionTimeFromAscendingNode"] = slice[
+                    kwargs["completionTimeFromAscendingNode"] = time_slice[
                         "end_date"
                     ].strftime("%Y-%m-%dT%H:%M:%SZ")
                 result = BuildPostSearchResult.query(

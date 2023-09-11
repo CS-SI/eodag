@@ -2407,6 +2407,9 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
+    products_split_timedelta:
+      param: month  # currently month and year are available
+      duration: 1
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2634,6 +2637,12 @@
       api_product_type: reanalysis
       time: '00:00'
       format: netcdf
+      constraints_file_path: "eodag/resources/constraints/constraints_era5_sl.json"
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'

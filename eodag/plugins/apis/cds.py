@@ -22,6 +22,7 @@ import cdsapi
 import geojson
 import requests
 
+from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -69,11 +70,16 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
     ):
         """Build ready-to-download SearchResult"""
-
         # check productType, dates, geometry, use defaults if not specified
         # productType
         if not kwargs.get("productType"):
             kwargs["productType"] = kwargs.get("dataset", None)
+        self.config.__dict__["multi_select_values"] = self.config.products[
+            kwargs["productType"]
+        ]["multi_select_values"]
+        self.config.__dict__["constraints_file_path"] = self.config.products[
+            kwargs["productType"]
+        ]["constraints_file_path"]
         # start date
         if "startTimeFromAscendingNode" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
@@ -99,9 +105,36 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             ]
         kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
-        return BuildPostSearchResult.query(
-            self, items_per_page=items_per_page, page=page, count=count, **kwargs
-        )
+        products = []
+        num_items = 0
+        if (
+            getattr(self.config, "products_split_timedelta", None)
+            and "id" not in kwargs
+        ):
+            request_splitter = RequestSplitter(self.config)
+            slices = request_splitter.get_time_slices(
+                kwargs["startTimeFromAscendingNode"],
+                kwargs["completionTimeFromAscendingNode"],
+            )
+            kwargs.pop("startTimeFromAscendingNode")
+            kwargs.pop("completionTimeFromAscendingNode")
+            for time_slice in slices:
+                for key, value in time_slice.items():
+                    kwargs[key] = value
+                result = BuildPostSearchResult.query(
+                    self,
+                    items_per_page=items_per_page,
+                    page=page,
+                    count=count,
+                    **kwargs,
+                )
+                products += result[0]
+                num_items += result[1]
+        else:
+            products, num_items = BuildPostSearchResult.query(
+                self, items_per_page=items_per_page, page=page, count=count, **kwargs
+            )
+        return products, num_items
 
     def _get_cds_client(self, **auth_dict):
         """Returns cdsapi client."""
