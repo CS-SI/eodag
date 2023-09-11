@@ -149,7 +149,9 @@ class BuildPostSearchResult(PostJsonSearch):
         id_prefix = (product_type or self.provider).upper()
         if (
             parsed_properties["startTimeFromAscendingNode"]
+            and parsed_properties["startTimeFromAscendingNode"] != NOT_AVAILABLE
             and parsed_properties["completionTimeFromAscendingNode"]
+            and parsed_properties["completionTimeFromAscendingNode"] != NOT_AVAILABLE
         ):
             product_id = "%s_%s_%s_%s" % (
                 id_prefix,
@@ -163,6 +165,7 @@ class BuildPostSearchResult(PostJsonSearch):
             )
         else:
             product_id = parsed_properties["id"]
+
         product_available_properties["id"] = product_available_properties[
             "title"
         ] = product_id
