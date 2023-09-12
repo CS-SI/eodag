@@ -165,17 +165,15 @@ class BuildPostSearchResult(PostJsonSearch):
             elif not isinstance(param_values, list):
                 param_values = [param_values]
 
-            start_date = datetime.strptime(
-                product_id[len(id_prefix) + 1 : len(id_prefix) + 9], "%Y%m%d"
+            if len(param_values) == 1 and param_values[0] == NOT_AVAILABLE:
+                param_values = None
+
+            constraint_param_values = request_splitter.get_variables_for_product(
+                product_id[len(id_prefix) + 1 : len(id_prefix) + 18],
+                product_available_properties,
+                param_values,
             )
-            end_date = datetime.strptime(
-                product_id[len(id_prefix) + 10 : len(id_prefix) + 18], "%Y%m%d"
-            )
-            constraint_param_values = (
-                request_splitter.get_variables_for_timespan_and_params(
-                    start_date, end_date, parsed_properties, param_values
-                )
-            )
+
             for param_value in constraint_param_values:
                 sorted_unpaginated_query_params[split_param] = param_value
                 params_str = geojson.dumps(sorted_unpaginated_query_params)
@@ -232,12 +230,12 @@ class BuildPostSearchResult(PostJsonSearch):
                 .replace("-", ""),
                 query_hash,
             )
-        elif parsed_properties["year"] and parsed_properties["year"] != NOT_AVAILABLE:
+        elif "year" in parsed_properties and parsed_properties["year"] != NOT_AVAILABLE:
             years = [int(y) for y in parsed_properties["year"]]
             start_year = str(min(years))
             end_year = str(max(years))
             if (
-                parsed_properties["month"]
+                "month" in parsed_properties
                 and parsed_properties["month"] != NOT_AVAILABLE
             ):
                 months = [int(m) for m in parsed_properties["month"]]
@@ -245,7 +243,7 @@ class BuildPostSearchResult(PostJsonSearch):
                 end_month = str(max(months))
             else:
                 start_month = end_month = ""
-            if parsed_properties["day"] and parsed_properties["day"] != NOT_AVAILABLE:
+            if "day" in parsed_properties and parsed_properties["day"] != NOT_AVAILABLE:
                 days = [int(d) for d in parsed_properties["day"]]
                 start_day = str(min(days))
                 end_day = str(max(days))

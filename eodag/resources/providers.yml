@@ -2754,6 +2754,7 @@
     products_split_timedelta:
       param: month  # currently month and year are available
       duration: 1
+    assets_split_parameter: variable
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2761,7 +2762,9 @@
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
-      id: '$.id'
+      id:
+        - 'date={id#download_id_to_dates}["start_date"]/{id#download_id_to_dates}["end_date"]'
+        - '$.id'
       # The geographic extent of the product
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
