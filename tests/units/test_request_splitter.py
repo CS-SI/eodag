@@ -262,25 +262,25 @@ class TestRequestSplitter(unittest.TestCase):
         start_date = datetime.datetime(2001, 6, 1)
         end_date = datetime.datetime(2001, 6, 30)
         params = {"step": ["102", "108"]}
-        result = splitter.get_variables_for_timespan_and_params(
+        result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params
         )
         self.assertEqual(
             str(["121", "122", "134", "136", "146", "147", "151"]), str(result)
         )
-        result = splitter.get_variables_for_timespan_and_params(
+        result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params, ["121", "122"]
         )
         self.assertEqual(str(["121", "122"]), str(sorted(result)))
         params = {"step": ["1"]}
-        result = splitter.get_variables_for_timespan_and_params(
+        result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params
         )
         self.assertEqual(str([]), str(result))
         start_date = datetime.datetime(2006, 1, 1)
         end_date = datetime.datetime(2007, 1, 1)
         params = {"step": ["102", "108"]}
-        result = splitter.get_variables_for_timespan_and_params(
+        result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params
         )
         self.assertEqual(
@@ -288,7 +288,7 @@ class TestRequestSplitter(unittest.TestCase):
             str(result),
         )
         params = {"step": ["1"]}
-        result = splitter.get_variables_for_timespan_and_params(
+        result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params
         )
         self.assertEqual(
@@ -306,3 +306,28 @@ class TestRequestSplitter(unittest.TestCase):
             ),
             str(result),
         )
+
+    def test_get_variables_for_years_and_params(self):
+        metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
+        multiselect_values = ["year", "month", "day", "time"]
+        split_time_values = {"param": "year", "duration": 2}
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+                "assets_split_parameter": "variable",
+            }
+        )
+        splitter = RequestSplitter(config)
+        params = {"time": ["01:00"]}
+        result = splitter.get_variables_for_product("200101_200212", params)
+        result.sort()
+        self.assertEqual(str(["a", "b"]), str(result))
+        result = splitter.get_variables_for_product("200101_200212", params, ["b", "e"])
+        self.assertEqual(str(["b"]), str(result))
+        params = {"time": ["22:00"], "day": ["3"]}
+        result = splitter.get_variables_for_product("200101_200112", params)
+        result.sort()
+        self.assertEqual(str(["e", "f"]), str(result))

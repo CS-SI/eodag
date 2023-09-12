@@ -74,14 +74,29 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         # productType
         if not kwargs.get("productType"):
             kwargs["productType"] = kwargs.get("dataset", None)
-        self.config.__dict__["multi_select_values"] = self.config.products[
-            kwargs["productType"]
-        ]["multi_select_values"]
-        self.config.__dict__["constraints_file_path"] = self.config.products[
-            kwargs["productType"]
-        ]["constraints_file_path"]
+
+        if (
+            kwargs["productType"] in getattr(self.config, "products", {})
+            and "multi_select_values"
+            in getattr(self.config, "products", {})[kwargs["productType"]]
+        ):
+            self.config.multi_select_values = getattr(self.config, "products", {})[
+                kwargs["productType"]
+            ]["multi_select_values"]
+        else:
+            self.config.constraints_file_path = ""
+        if (
+            kwargs["productType"] in getattr(self.config, "products", {})
+            and "constraints_file_path"
+            in getattr(self.config, "products", {})[kwargs["productType"]]
+        ):
+            self.config.constraints_file_path = getattr(self.config, "products", {})[
+                kwargs["productType"]
+            ]["constraints_file_path"]
+        else:
+            self.config.constraints_file_path = ""
         # start date
-        if "startTimeFromAscendingNode" not in kwargs:
+        if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
                 getattr(self.config, "product_type_config", {}).get(
                     "missionStartDate", None
@@ -89,7 +104,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 or DEFAULT_MISSION_START_DATE
             )
         # end date
-        if "completionTimeFromAscendingNode" not in kwargs:
+        if "completionTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["completionTimeFromAscendingNode"] = getattr(
                 self.config, "product_type_config", {}
             ).get("missionEndDate", None) or datetime.utcnow().isoformat(
@@ -218,8 +233,12 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         download_request = geojson.loads(query_str)
 
         date_range = download_request.pop("date_range", False)
-        if date_range:
-            date = download_request.pop("date")
+        if date_range or "date" in download_request:
+            date_value = download_request.pop("date")
+            if isinstance(date_value, str):
+                date = date_value.replace('"', "").replace("'", "")
+            else:
+                date = date_value[0].replace('"', "").replace("'", "")
             start, end, *_ = date.split("/")
             _start = datetime.fromisoformat(start)
             _end = datetime.fromisoformat(end)
