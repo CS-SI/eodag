@@ -252,6 +252,7 @@ class RequestTestCase(unittest.TestCase):
         expected_search_kwargs=None,
         protocol="GET",
         post_data=None,
+        search_call_count=None,
     ):
         if protocol == "GET":
             response = self.app.get(url, follow_redirects=True)
@@ -262,7 +263,22 @@ class RequestTestCase(unittest.TestCase):
                 follow_redirects=True,
             )
 
-        if expected_search_kwargs is not None:
+        if search_call_count is not None:
+            self.assertEqual(mock_search.call_count, search_call_count)
+
+        if (
+            expected_search_kwargs is not None
+            and search_call_count is not None
+            and search_call_count > 1
+        ):
+            self.assertIsInstance(
+                expected_search_kwargs,
+                list,
+                "expected_search_kwargs must be a list if search_call_count > 1",
+            )
+            for single_search_kwargs in expected_search_kwargs:
+                mock_search.assert_any_call(**single_search_kwargs)
+        elif expected_search_kwargs is not None:
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
         self.assertEqual(200, response.status_code, response.text)
@@ -275,12 +291,14 @@ class RequestTestCase(unittest.TestCase):
         expected_search_kwargs=None,
         protocol="GET",
         post_data=None,
+        search_call_count=None,
     ):
         response = self._request_valid_raw(
             url,
             expected_search_kwargs=expected_search_kwargs,
             protocol=protocol,
             post_data=post_data,
+            search_call_count=search_call_count,
         )
 
         # Assert response format is GeoJSON
@@ -553,6 +571,19 @@ class RequestTestCase(unittest.TestCase):
                 "collections": [self.tested_product_type],
                 "ids": ["foo", "bar"],
             },
+            search_call_count=2,
+            expected_search_kwargs=[
+                {
+                    "provider": None,
+                    "id": "foo",
+                    "productType": self.tested_product_type,
+                },
+                {
+                    "provider": None,
+                    "id": "bar",
+                    "productType": self.tested_product_type,
+                },
+            ],
         )
 
     def test_search_response_contains_pagination_info(self):

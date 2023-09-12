@@ -308,6 +308,7 @@ class SearchBody(BaseModel):
     limit: Union[int, None] = 20
     page: Union[int, None] = 1
     query: Union[dict, None] = None
+    ids: Union[List[str], None] = None
 
 
 @router.get("/search", tags=["STAC"])
