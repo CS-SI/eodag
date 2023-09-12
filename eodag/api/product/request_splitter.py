@@ -26,6 +26,21 @@ def _check_value_in_constraint(value, constraint_value):
         return True
 
 
+def _check_constraint_params(params, constraint, variable_name, variables):
+    available_variables = []
+    for key, value in params.items():
+        if key not in constraint or _check_value_in_constraint(value, constraint[key]):
+            if variables:
+                variables_str = [str(v) for v in variables]
+                v = set(variables_str).intersection(set(constraint[variable_name]))
+                available_variables = list(v)
+            else:
+                available_variables = constraint[variable_name]
+        else:
+            available_variables = []
+    return available_variables
+
+
 class RequestSplitter:
     """
     provides methods to split a request into several requests based on the given config and constraints
@@ -339,7 +354,69 @@ class RequestSplitter:
 
         return {"min_date": min_date, "max_date": max_date}
 
-    def get_variables_for_timespan_and_params(
+    def get_variables_for_product(self, id_extract, params, variables=None):
+        """
+        returns the variables that are available for a timespan based on the given constraints
+        :param id_extract: the part of the id that contains the dates
+        :type id_extract: str
+        :param params: keys and values of additional parameters where constraints could exist
+        :type params: dict
+        :param variables: (optional) selected variables, if not given all available variables will be returned
+        :type variables: list
+        :returns: list of available variables
+        :rtype: list
+        """
+        if "year" not in self.metadata:
+            start_date = datetime.datetime.strptime(id_extract[:8], "%Y%m%d")
+            end_date = datetime.datetime.strptime(id_extract[9:], "%Y%m%d")
+            return self._get_variables_for_timespan_and_params(
+                start_date, end_date, params, variables
+            )
+        else:
+            start_year = int(id_extract[:4])
+            end_year = int(id_extract.split("_")[1][:4])
+            years = [str(y) for y in range(start_year, end_year + 1)]
+            if self.split_time_delta["param"] == "month":
+                start_month = int(id_extract[4:6])
+                end_month = int(id_extract.split("_")[1][4:6])
+                months = [str(m) for m in range(start_month, end_month + 1)]
+                return self._get_variables_for_months_and_params(
+                    years, months, params, variables
+                )
+            return self._get_variables_for_years_and_params(years, params, variables)
+
+    def _get_variables_for_years_and_params(self, years, params, variables=None):
+        if not self.constraints:
+            return variables
+        variable_name = self.config["assets_split_parameter"]
+        available_variables = []
+        for constraint in self.constraints:
+            years_intsersect = set(years).intersection(set(constraint["year"]))
+            if len(years_intsersect) == len(years):
+                available_variables += _check_constraint_params(
+                    params, constraint, variable_name, variables
+                )
+        return list(set(available_variables))
+
+    def _get_variables_for_months_and_params(
+        self, years, months, params, variables=None
+    ):
+        if not self.constraints:
+            return variables
+        variable_name = self.config["assets_split_parameter"]
+        available_variables = []
+        for constraint in self.constraints:
+            years_intsersect = set(years).intersection(set(constraint["year"]))
+            months_intersect = set(months).intersection(set(constraint["month"]))
+            if len(years_intsersect) == len(years) and len(months_intersect) == len(
+                months
+            ):
+                available_variables += _check_constraint_params(
+                    params, constraint, variable_name, variables
+                )
+        return list(set(available_variables))
+
+    def _get_variables_for_timespan_and_params(
         self, start_date, end_date, params, variables=None
     ):
         """
@@ -367,16 +444,7 @@ class RequestSplitter:
                     dates_constraint["start_date"] <= start_date
                     and dates_constraint["end_date"] >= end_date
                 ):
-                    for key, value in params.items():
-                        if key not in constraint or _check_value_in_constraint(
-                            value, constraint[key]
-                        ):
-                            if variables:
-                                variables_str = [str(v) for v in variables]
-                                v = set(variables_str).intersection(
-                                    set(constraint[variable_name])
-                                )
-                                available_variables += list(v)
-                            else:
-                                available_variables += constraint[variable_name]
-        return available_variables
+                    available_variables += _check_constraint_params(
+                        params, constraint, variable_name, variables
+                    )
+        return list(set(available_variables))

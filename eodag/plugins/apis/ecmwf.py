@@ -84,15 +84,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs.get("levtype", ""),
             )
 
-        if not product_type:
-            product_type = kwargs["productType"]
-        self.config.__dict__["multi_select_values"] = self.config.products[
-            product_type
-        ]["multi_select_values"]
-        self.config.__dict__["constraints_file_path"] = self.config.products[
-            product_type
-        ]["constraints_file_path"]
-
         if (
             product_type in getattr(self.config, "products", {})
             and "constraints_file_path"
