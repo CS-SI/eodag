@@ -49,14 +49,14 @@ class TestRequestSplitter(unittest.TestCase):
         expected_result = [
             {
                 "year": ["2000", "2001"],
-                "month": ["1", "2", "3", "4", "5"],
-                "day": ["1", "10", "20", "25"],
+                "month": ["01", "02", "03", "04", "05"],
+                "day": ["01", "10", "20", "25"],
                 "time": ["01:00", "12:00", "18:00", "22:00"],
             },
             {
                 "year": ["2002", "2003"],
-                "month": ["1", "2", "3"],
-                "day": ["1", "10", "20"],
+                "month": ["01", "02", "03"],
+                "day": ["01", "10", "20"],
                 "time": ["01:00", "12:00", "18:00"],
             },
         ]
@@ -76,26 +76,26 @@ class TestRequestSplitter(unittest.TestCase):
         expected_result = [
             {
                 "year": ["2000"],
-                "month": ["1", "2", "3", "4", "5"],
-                "day": ["1", "10", "20", "25"],
+                "month": ["01", "02", "03", "04", "05"],
+                "day": ["01", "10", "20", "25"],
                 "time": ["01:00", "12:00", "18:00", "22:00"],
             },
             {
                 "year": ["2001"],
-                "month": ["1", "2", "3", "4", "5"],
-                "day": ["1", "10", "20", "25"],
+                "month": ["01", "02", "03", "04", "05"],
+                "day": ["01", "10", "20", "25"],
                 "time": ["01:00", "12:00", "18:00", "22:00"],
             },
             {
                 "year": ["2002"],
-                "month": ["1", "2", "3"],
-                "day": ["1", "10", "20"],
+                "month": ["01", "02", "03"],
+                "day": ["01", "10", "20"],
                 "time": ["01:00", "12:00", "18:00"],
             },
             {
                 "year": ["2003"],
-                "month": ["1", "2", "3"],
-                "day": ["1", "10", "20"],
+                "month": ["01", "02", "03"],
+                "day": ["01", "10", "20"],
                 "time": ["01:00", "12:00", "18:00"],
             },
         ]
@@ -121,14 +121,14 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertEqual(4, len(result))
         expected_result_row_1 = {
             "year": ["2000"],
-            "month": ["1", "2"],
-            "day": ["1", "10", "20", "25"],
+            "month": ["01", "02"],
+            "day": ["01", "10", "20", "25"],
             "time": ["01:00", "12:00", "18:00", "22:00"],
         }
         expected_result_row_3 = {
             "year": ["2001"],
-            "month": ["1", "2"],
-            "day": ["1", "10", "20", "25"],
+            "month": ["01", "02"],
+            "day": ["01", "10", "20", "25"],
             "time": ["01:00", "12:00", "18:00", "22:00"],
         }
         self.assertDictEqual(expected_result_row_1, result[0])
@@ -146,14 +146,14 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertEqual(13, len(result))
         expected_result_row_1 = {
             "year": ["2000"],
-            "month": ["1"],
-            "day": ["1", "10", "20", "25"],
+            "month": ["01"],
+            "day": ["01", "10", "20", "25"],
             "time": ["01:00", "12:00", "18:00", "22:00"],
         }
         expected_result_row_6 = {
             "year": ["2000"],
-            "month": ["6"],
-            "day": ["3", "5"],
+            "month": ["06"],
+            "day": ["03", "05"],
             "time": ["01:00", "12:00", "18:00", "22:00"],
         }
         self.assertDictEqual(expected_result_row_1, result[0])
@@ -239,6 +239,43 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertDictEqual(expected_result_row_6, result[5])
         self.assertDictEqual(expected_result_row_9, result[8])
 
+    def test_dont_split_short_timespan(self):
+        metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
+        multiselect_values = ["year", "month", "day", "time"]
+        split_time_values = {"param": "year", "duration": 2}
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
+        splitter = RequestSplitter(config)
+        result = splitter.get_time_slices("2000-02-01", "2000-07-30")
+        self.assertEqual(1, len(result))
+        result[0]["month"].sort()
+        result[0]["day"].sort()
+        result[0]["time"].sort()
+        expected_result_row = {
+            "year": ["2000"],
+            "month": ["02", "03", "04", "05"],
+            "day": ["01", "10", "20", "25"],
+            "time": ["01:00", "12:00", "18:00", "22:00"],
+        }
+        self.assertDictEqual(expected_result_row, result[0])
+        result = splitter.get_time_slices("2000-02-01", "2000-02-12")
+        self.assertEqual(1, len(result))
+        result[0]["day"].sort()
+        result[0]["time"].sort()
+        expected_result_row = {
+            "year": ["2000"],
+            "month": ["02"],
+            "day": ["01", "10"],
+            "time": ["01:00", "12:00", "18:00", "22:00"],
+        }
+        self.assertDictEqual(expected_result_row, result[0])
+
     def test_get_variables_for_timespan_and_params(self):
         metadata = {
             "startTimeFromAscendingNode": [
@@ -265,12 +302,14 @@ class TestRequestSplitter(unittest.TestCase):
         result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params
         )
+        result.sort()
         self.assertEqual(
             str(["121", "122", "134", "136", "146", "147", "151"]), str(result)
         )
         result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params, ["121", "122"]
         )
+        result.sort()
         self.assertEqual(str(["121", "122"]), str(sorted(result)))
         params = {"step": ["1"]}
         result = splitter._get_variables_for_timespan_and_params(
@@ -283,6 +322,7 @@ class TestRequestSplitter(unittest.TestCase):
         result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params
         )
+        result.sort()
         self.assertEqual(
             str(["121", "122", "134", "136", "146", "147", "151", "165", "166"]),
             str(result),
@@ -291,6 +331,7 @@ class TestRequestSplitter(unittest.TestCase):
         result = splitter._get_variables_for_timespan_and_params(
             start_date, end_date, params
         )
+        result.sort()
         self.assertEqual(
             str(
                 [
@@ -327,7 +368,7 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertEqual(str(["a", "b"]), str(result))
         result = splitter.get_variables_for_product("200101_200212", params, ["b", "e"])
         self.assertEqual(str(["b"]), str(result))
-        params = {"time": ["22:00"], "day": ["3"]}
+        params = {"time": ["22:00"], "day": ["03"]}
         result = splitter.get_variables_for_product("200101_200112", params)
         result.sort()
         self.assertEqual(str(["e", "f"]), str(result))

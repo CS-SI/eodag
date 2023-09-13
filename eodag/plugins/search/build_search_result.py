@@ -239,14 +239,14 @@ class BuildPostSearchResult(PostJsonSearch):
                 and parsed_properties["month"] != NOT_AVAILABLE
             ):
                 months = [int(m) for m in parsed_properties["month"]]
-                start_month = str(min(months))
-                end_month = str(max(months))
+                start_month = "{:0>2d}".format(min(months))
+                end_month = "{:0>2d}".format(max(months))
             else:
                 start_month = end_month = ""
             if "day" in parsed_properties and parsed_properties["day"] != NOT_AVAILABLE:
                 days = [int(d) for d in parsed_properties["day"]]
-                start_day = str(min(days))
-                end_day = str(max(days))
+                start_day = "{:0>2d}".format(min(days))
+                end_day = "{:0>2d}".format(max(days))
             else:
                 start_day = end_day = ""
             product_id = "%s_%s_%s_%s" % (
