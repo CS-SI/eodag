@@ -83,17 +83,6 @@ class DataRequestSearch(Search):
         return self._convert_result_data(result, data_request_id, **kwargs)
 
     def _create_data_request(self, product_type, eodag_product_type, **kwargs):
-        try:
-            metadata_url = self.config.metadata_url + product_type
-            logger.debug(f"Sending metadata request: {metadata_url}")
-            _ = self.http.get(metadata_url)
-
-        except RequestError as e:
-            raise RequestError(
-                f"metadata for product_type {product_type} could not be retrieved",
-                f"{e}",
-            )
-
         request_job = None
         try:
             url = self.config.data_request_url

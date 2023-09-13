@@ -20,7 +20,6 @@ import logging
 import re
 
 import orjson
-import requests
 from lxml import etree
 
 from eodag.api.product import EOProduct
@@ -34,7 +33,6 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
-    USER_AGENT,
     _deprecated,
     dict_items_recursive_apply,
     format_dict_items,
@@ -43,7 +41,6 @@ from eodag.utils import (
     urlencode,
 )
 from eodag.utils.exceptions import MisconfiguredError, RequestError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -770,25 +767,23 @@ class QueryStringSearch(Search):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
-            # Handle unquoted URL parameters
-            unquoted_params = getattr(self.config, "dont_quote", None)
-
-            # Send request using HttpRequests class
             if info_message:
                 logger.info(info_message)
-            response = self.http.get(url, unquoted_params=unquoted_params)
-        except RequestError as e:
+
+            response = self.http.get(url)
+        except Exception as err:
+            err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
-                logger.exception("%s %s" % (exception_message, e))
+                logger.exception("%s %s" % (exception_message, err_msg))
             else:
                 logger.exception(
                     "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
                     url,
                     self.provider,
                     self.__class__.__name__,
-                    e,
+                    err_msg,
                 )
-            raise e
+            raise err
         return response
 
 
@@ -845,11 +840,8 @@ class ODataV4Search(QueryStringSearch):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
-                    response = requests.get(
-                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-                    )
-                    response.raise_for_status()
-                except requests.RequestException:
+                    response = self.http.get(metadata_url)
+                except Exception:
                     logger.exception(
                         "Skipping error while searching for %s %s instance:",
                         self.provider,
@@ -1059,10 +1051,29 @@ class PostJsonSearch(QueryStringSearch):
             urls.append(search_endpoint)
         return urls, total_results
 
-    def _request():
-        # TODO: like super _request but with post
-        # TODO: do we still need _request ? now that we have self.http ?
-        pass
+    def _request(self, url, info_message=None, exception_message=None):
+        try:
+            # perform the request using the next page arguments if they are defined
+            if getattr(self, "next_page_query_obj", None):
+                self.query_params = self.next_page_query_obj
+            if info_message:
+                logger.info(info_message)
+            logger.debug("Query parameters: %s" % self.query_params)
+            response = self.http.post(url, json=self.query_params)
+        except RequestError as err:
+            if exception_message:
+                logger.exception(exception_message)
+            else:
+                logger.exception(
+                    "Skipping error while requesting: %s (provider:%s, plugin:%s):",
+                    url,
+                    self.provider,
+                    self.__class__.__name__,
+                )
+            if "response" in locals():
+                logger.debug(response.content)
+            raise err
+        return response
 
 
 class StacSearch(PostJsonSearch):

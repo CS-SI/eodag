@@ -1,4 +1,6 @@
 import json
+import logging
+from copy import deepcopy
 from datetime import time
 from typing import Any, Dict, Iterable, List, Optional, Union
 from urllib.error import URLError
@@ -10,6 +12,8 @@ from requests.adapters import HTTPAdapter
 
 from eodag.config import USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, RequestError
+
+logger = logging.getLogger("eodag.utils.http")
 
 
 class HttpResponse:
@@ -97,7 +101,70 @@ class HttpRequests:
         :param default_headers: A dictionary of default HTTP headers to send with each request.
         """
         self.session = requests.Session()
-        self.default_headers = default_headers or USER_AGENT
+        self.default_headers = default_headers or deepcopy(USER_AGENT)
+
+    def _send_request(
+        self,
+        method: str,
+        url: str,
+        data: Optional[Union[Dict[str, Any], bytes]] = None,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: int = 10,
+        unquoted_params: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> HttpResponse:
+
+        if headers is None:
+            headers = {}
+
+        # Merge default headers with custom headers
+        headers = {**self.default_headers, **headers}
+
+        # Handle unquoted URL parameters
+        if unquoted_params:
+            # Keep unquoted desired params
+            base_url, params = url.split("?") if "?" in url else (url, "")
+            qry = quote(params)
+            for keep_unquoted in unquoted_params:
+                qry = qry.replace(quote(keep_unquoted), keep_unquoted)
+
+            # Prepare request for Response building
+            req = requests.Request(
+                method=method, url=base_url, headers=headers, **kwargs
+            )
+            prep = req.prepare()
+            prep.url = base_url + "?" + qry
+
+            # Send urllib request
+            urllib_req = Request(prep.url, headers=headers)
+            urllib_response = urlopen(urllib_req, timeout=timeout)
+
+            # Build Response
+            adapter = HTTPAdapter()
+            response = adapter.build_response(prep, urllib_response)
+        else:
+            # Send request using requests library
+            response = self.session.request(
+                method,
+                url,
+                data=data,
+                json=json,
+                headers=headers,
+                timeout=timeout,
+                **kwargs,
+            )
+
+        if response.status_code in [401, 403]:
+            # handle HTTP 401 Unauthorized and HTTP 403 Forbidden errors
+            raise AuthenticationError(f"{response.text}", response.status_code)
+        elif 400 <= response.status_code < 600:
+            raise RequestError(f"{response.text}", response.status_code)
+
+        stream = response.iter_content() if kwargs.get("stream") else None
+        return HttpResponse(
+            response.status_code, response.headers, response.text, stream
+        )
 
     def _request(
         self,
@@ -111,85 +178,16 @@ class HttpRequests:
         unquoted_params: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> HttpResponse:
-        """
-        Sends an HTTP request to the specified URL.
-
-        If the request fails due to a requests.exceptions.RequestException, it will wait for the specified delay
-        and then try again. If all attempts fail, it will re-raise the last exception.
-
-        If the server returns an HTTP 401 Unauthorized or HTTP 403 Forbidden error, this method will raise
-        an AuthenticationError.
-
-        Args:
-            method (str): The HTTP method to use for the request (e.g., "GET" or "POST").
-            url (str): The URL to send the request to.
-            data (dict, optional): Dictionary, list of tuples or bytes to send in the body of the request.
-            json (dict, optional): JSON data to send in the body of the request.
-            headers (dict, optional): Dictionary of HTTP headers to send with the request.
-            retries (int): The number of times to attempt the request before giving up.
-            delay (int): The number of seconds to wait between attempts.
-            unquoted_params (List[str], optional): A list of URL parameters that should not be quoted.
-            **kwargs: Optional arguments that `requests.request` takes.
-
-        Returns:
-            HttpResponse: The response from the server.
-
-        Raises:
-            AuthenticationError: If the server returns an HTTP 401 Unauthorized or HTTP 403 Forbidden error.
-            RequestError: If all attempts fail due to a requests.exceptions.RequestException.
-        """
-        if headers is None:
-            headers = {}
-
-        # Merge default headers with custom headers
-        headers = {**self.default_headers, **headers}
 
         for i in range(retries):
             try:
-                # Handle unquoted URL parameters
-                if unquoted_params:
-                    # Keep unquoted desired params
-                    base_url, params = url.split("?") if "?" in url else (url, "")
-                    qry = quote(params)
-                    for keep_unquoted in unquoted_params:
-                        qry = qry.replace(quote(keep_unquoted), keep_unquoted)
-
-                    # Prepare request for Response building
-                    req = requests.Request(
-                        method=method, url=base_url, headers=headers, **kwargs
-                    )
-                    prep = req.prepare()
-                    prep.url = base_url + "?" + qry
-
-                    # Send urllib request
-                    urllib_req = Request(prep.url, headers=headers)
-                    urllib_response = urlopen(urllib_req)
-
-                    # Build Response
-                    adapter = HTTPAdapter()
-                    response = adapter.build_response(prep, urllib_response)
-                else:
-                    # Send request using requests library
-                    response = self.session.request(
-                        method, url, data=data, json=json, headers=headers, **kwargs
-                    )
-
-                if response.status_code in [401, 403]:
-                    # handle HTTP 401 Unauthorized and HTTP 403 Forbidden errors
-                    raise AuthenticationError(
-                        f"HTTP {response.status_code}: {response.text}"
-                    )
-                elif 400 <= response.status_code < 600:
-                    raise RequestError(f"HTTP {response.status_code}: {response.text}")
-
-                stream = response.iter_content() if kwargs.get("stream") else None
-                return HttpResponse(
-                    response.status_code, response.headers, response.text, stream
+                # Call _send_request method instead of sending request directly
+                return self._send_request(
+                    method, url, data, json, headers, unquoted_params, **kwargs
                 )
             except (requests.RequestException, URLError) as e:
                 if i < retries - 1:  # i is zero indexed
-                    time.sleep(delay)  # wait before trying again
-                    continue
+                    time.sleep(delay * (2**i))  # exponential backoff
                 else:
                     raise RequestError(
                         f"{method} {url} with data={data} and json={json} failed after {retries} attempts. {e}"
@@ -356,3 +354,6 @@ class HttpRequests:
             unquoted_params=unquoted_params,
             **kwargs,
         )
+
+
+http = HttpRequests()

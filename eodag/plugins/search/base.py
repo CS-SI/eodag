@@ -21,7 +21,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.plugins.base import PluginTopic
-from eodag.utils.http import HttpRequests
+from eodag.utils.http import http
 
 
 class Search(PluginTopic):
@@ -46,7 +46,7 @@ class Search(PluginTopic):
             self.config.metadata_mapping,
             result_type=getattr(self.config, "result_type", "json"),
         )
-        self.http = HttpRequests()
+        self.http = http
 
     def clear(self):
         """Method used to clear a search context between two searches."""
