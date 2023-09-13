@@ -96,16 +96,42 @@ class RequestSplitter:
         start_year = int(start_date[:4])
         end_year = int(end_date[:4])
         if split_param == "year":
-            slices = self._split_by_year(start_year, end_year, slice_duration)
+            if (end_year - start_year) < slice_duration:
+                return self._format_result(start_date, end_date)
+            return self._split_by_year(start_year, end_year, slice_duration)
         elif split_param == "month":
             start_month = int(start_date[5:7])
             end_month = int(end_date[5:7])
-            slices = self._split_by_month(
+            if start_year == end_year and (end_month - start_month) < slice_duration:
+                return self._format_result(start_date, end_date)
+            return self._split_by_month(
                 start_year, end_year, start_month, end_month, slice_duration
             )
-        if not slices:
-            slices = [{"start_date": start_date, "end_date": end_date}]
-        return slices
+
+    def _format_result(self, start_date, end_date):
+        if "year" not in self.metadata:
+            return [{"start_date": start_date, "end_date": end_date}]
+        start_year = int(start_date[:4])
+        end_year = int(end_date[:4])
+        years = [str(y) for y in range(start_year, end_year + 1)]
+        start_month = int(start_date[5:7])
+        end_month = int(end_date[5:7])
+        start_day = int(start_date[8:10])
+        end_day = int(end_date[8:10])
+        if len(years) == 1:
+            selected_months = {
+                "{:0>2d}".format(m) for m in range(start_month, end_month + 1)
+            }
+            months = self._get_months_for_years(years, selected_months)
+        else:
+            months = self._get_months_for_years(years)
+        if len(months) == 1:
+            selected_days = {"{:0>2d}".format(d) for d in range(start_day, end_day + 1)}
+            days = self._get_days_for_months_and_years(months, years, selected_days)
+        else:
+            days = self._get_days_for_months_and_years(months, years)
+        times = self._get_times_for_days_months_and_years(days, months, years)
+        return [{"year": years, "month": months, "day": days, "time": times}]
 
     def _split_by_year(self, start_year, end_year, slice_duration):
         if "year" not in self.metadata:
@@ -158,11 +184,11 @@ class RequestSplitter:
         for y in range(start_year, end_year + 1):
             while (m <= 12 and y < end_year) or (m <= end_month and y == end_year):
                 if i < num_months:
-                    months_slice.append(str(m))
+                    months_slice.append("{:0>2d}".format(m))
                     i += 1
                 else:
                     months_years.append({"year": [str(y)], "month": months_slice})
-                    months_slice = [str(m)]
+                    months_slice = ["{:0>2d}".format(m)]
                     i = 1
                 if m == 12 or m == end_month and y == end_year:
                     # don't create slices that go over 2 years because this cannot be configured with multiselect boxes
@@ -191,24 +217,32 @@ class RequestSplitter:
             slices.append(self._sort_record(record))
         return slices
 
-    def _get_months_for_years(self, years):
-        months = {str(i) for i in range(1, 13)}
+    def _get_months_for_years(self, years, months=None):
+        if not months:
+            months = {"{:0>2d}".format(i) for i in range(1, 13)}
+        if not self.constraints:
+            return months
+        current_months = ()
         for year in years:
-            possible_months = self._get_months_for_year(year)
-            months = months.intersection(set(possible_months))
-        return list(months)
+            constraints = self._get_constraints_for_year(year)
+            for constraint in constraints:
+                possible_months = months.intersection(set(constraint["month"]))
+                if len(possible_months) > len(current_months):
+                    current_months = possible_months
+        return list(current_months)
 
-    def _get_months_for_year(self, year):
+    def _get_constraints_for_year(self, year):
         if not self.constraints:
             return [str(m) for m in range(1, 13)]
-        months = []
+        constraints = []
         for constraint in self.constraints:
-            if year in constraint["year"] and len(months) < len(constraint["month"]):
-                months = constraint["month"]
-        return months
+            if year in constraint["year"]:
+                constraints.append(constraint)
+        return constraints
 
-    def _get_days_for_months_and_years(self, months, years):
-        days = {str(i) for i in range(1, 32)}
+    def _get_days_for_months_and_years(self, months, years, days=None):
+        if not days:
+            days = {"{:0>2d}".format(i) for i in range(1, 32)}
         if not self.constraints:
             return days
         for month in months:
@@ -266,8 +300,6 @@ class RequestSplitter:
         return record
 
     def _split_by_year_with_dates(self, start_year, end_year, slice_duration):
-        if (end_year - start_year) < slice_duration:
-            return None
         slices = []
         min_max_dates = self._get_min_max_dates()
         start_year = max(start_year, min_max_dates["min_date"].year)
@@ -283,11 +315,6 @@ class RequestSplitter:
     def _split_by_month_with_dates(
         self, start_year, end_year, start_month, end_month, slice_duration
     ):
-        month_diff = end_month - start_month
-        if month_diff < 0:
-            month_diff += 12
-        if (12 * (end_year - start_year) + month_diff) < slice_duration:
-            return None
         slices = []
         min_max_dates = self._get_min_max_dates()
         start_date = datetime.datetime(start_year, start_month, 1)

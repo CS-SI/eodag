@@ -710,13 +710,23 @@ def format_metadata(search_param, *args, **kwargs):
         @staticmethod
         def convert_download_id_to_dates(product_id):
             dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
+            if not dates_str:
+                dates_str = re.search("[0-9]{6}_[0-9]{6}", product_id).group()
             dates = dates_str.split("_")
-            start_date = datetime(
-                int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8])
-            )
-            end_date = datetime(
-                int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
-            )
+            if len(dates[0]) == 8:
+                start_date = datetime(
+                    int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8])
+                )
+            else:
+                start_date = datetime(int(dates[0][:4]), int(dates[0][4:6]), 1)
+            if len(dates[0]) == 8:
+                end_date = datetime(
+                    int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
+                )
+            else:
+                end_date = datetime(
+                    int(dates[1][:4]), int(dates[1][4:6]) + 1, 1
+                ) - timedelta(days=1)
             return {
                 "start_date": start_date.strftime("%Y-%m-%d"),
                 "end_date": end_date.strftime("%Y-%m-%d"),
