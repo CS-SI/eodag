@@ -11,7 +11,12 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, format_dict_items, string_to_jsonpath
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    deepcopy,
+    format_dict_items,
+    string_to_jsonpath,
+)
 from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.search.data_request_search")
@@ -101,6 +106,12 @@ class DataRequestSearch(Search):
         else:
             return {}
 
+    def get_metadata_mapping(self, product_type=None):
+        """Get the plugin metadata mapping configuration (product type specific if exists)"""
+        return self.config.products.get(product_type, {}).get(
+            "metadata_mapping", self.config.metadata_mapping
+        )
+
     def discover_product_types(self):
         """Fetch product types is disabled for `DataRequestSearch`
 
@@ -123,7 +134,6 @@ class DataRequestSearch(Search):
         # for compatibility with DataRequestSearch method
         if kwargs.get("product_type"):
             kwargs["providerProductType"] = kwargs.pop("product_type", None)
-
         provider_product_type = self._map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
