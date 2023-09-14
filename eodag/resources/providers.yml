@@ -432,7 +432,7 @@
         parameters:
           - title
           - id
-        results_entry: ''
+        results_entry: '$'
         collection:
           - tileInfo
           - productInfo
