@@ -939,3 +939,36 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         assert mock_cds_download.call_count == len(eoproducts)
         assert len(paths) == len(eoproducts)
+
+    def test_plugins_apis_cds_split_products(self):
+        """cds.query must split products by month"""
+        api_plugin = self.get_search_plugin(provider="cop_cds")
+        split_config = {"param": "month", "duration": 1}
+        setattr(api_plugin.config, "products_split_timedelta", split_config)
+        products = getattr(api_plugin.config, "products")
+        products["ERA5_SL"][
+            "constraints_file_path"
+        ] = "../../eodag/resources/constraints/constraints_era5_sl.json"
+        results, _ = api_plugin.query(
+            productType="ERA5_SL",
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-04-02",
+            variable=["air_density_over_the_oceans", "lake_ice_depth"],
+        )
+        self.assertEqual(4, len(results))
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01T00:00:00Z"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-01-31T00:00:00Z",
+        )
+        eoproduct = results[1]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-02-01T00:00:00Z"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-02-29T00:00:00Z",
+        )
