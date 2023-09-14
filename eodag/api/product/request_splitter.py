@@ -61,7 +61,10 @@ class RequestSplitter:
             self.multi_select_values = self.config["multi_select_values"]
         else:
             self.multi_select_values = []
-        self.split_time_delta = self.config["products_split_timedelta"]
+        if "products_split_timedelta" in self.config:
+            self.split_time_delta = self.config["products_split_timedelta"]
+        else:
+            self.split_time_delta = {}
         self._check_config_valid()
 
     def _check_config_valid(self):
@@ -460,7 +463,7 @@ class RequestSplitter:
         :rtype: list
         """
         available_variables = []
-        if not self.constraints:
+        if not self.constraints and variables:
             return variables
         variable_name = self.config["assets_split_parameter"]
         date_var = self._get_date_var()
