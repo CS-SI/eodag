@@ -23,7 +23,8 @@ import urllib.parse
 
 import requests
 from requests import RequestException
-from shapely import geometry, geos, wkb, wkt
+from shapely import geometry, wkb, wkt
+from shapely.errors import ShapelyError
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
@@ -96,7 +97,10 @@ class EOProduct(object):
             and NOT_AVAILABLE not in str(value)
         }
         if "geometry" not in properties or (
-            properties["geometry"] == NOT_AVAILABLE
+            (
+                properties["geometry"] == NOT_AVAILABLE
+                or properties["geometry"] == NOT_MAPPED
+            )
             and "defaultGeometry" not in properties
         ):
             raise MisconfiguredError(
@@ -127,12 +131,12 @@ class EOProduct(object):
         if isinstance(product_geometry, str):
             try:
                 product_geometry = wkt.loads(product_geometry)
-            except geos.WKTReadingError:
+            except (ShapelyError, GEOSException):
                 try:
                     product_geometry = wkb.loads(product_geometry)
                 # Also catching TypeError because product_geometry can be a
                 # string and not a bytes string
-                except (geos.WKBReadingError, TypeError):
+                except (ShapelyError, GEOSException, TypeError):
                     # Giv up!
                     raise
         self.geometry = self.search_intersection = geometry.shape(product_geometry)
@@ -143,7 +147,7 @@ class EOProduct(object):
             )
             try:
                 self.search_intersection = self.geometry.intersection(searched_geom)
-            except GEOSException:
+            except (GEOSException, ShapelyError):
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
                     "geometry: %s",
