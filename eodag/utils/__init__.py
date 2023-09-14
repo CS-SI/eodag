@@ -72,6 +72,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
+from eodag.utils.exceptions import MisconfiguredError
 
 try:
     from importlib.metadata import metadata  # type: ignore
@@ -995,9 +996,10 @@ def format_string(key, str_to_format, **format_variables):
             # defaultdict usage will return "" for missing keys in format_args
             try:
                 result = str_to_format.format_map(defaultdict(str, **format_variables))
-            except TypeError:
-                logger.error("Unable to format str=%s" % str_to_format)
-                raise
+            except TypeError as e:
+                raise MisconfiguredError(
+                    f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
+                )
 
         # try to convert string to python object
         try:

@@ -209,7 +209,6 @@ async def default_exception_handler(request: Request, error):
     )
 
 
-@app.exception_handler(MisconfiguredError)
 @app.exception_handler(NoMatchingProductType)
 @app.exception_handler(UnsupportedProductType)
 @app.exception_handler(UnsupportedProvider)
@@ -238,6 +237,7 @@ async def handle_resource_not_found(request: Request, error):
     )
 
 
+@app.exception_handler(MisconfiguredError)
 @app.exception_handler(AuthenticationError)
 async def handle_auth_error(request: Request, error):
     """AuthenticationError should be sent as internal server error to the client"""

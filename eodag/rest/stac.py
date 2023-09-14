@@ -45,7 +45,6 @@ from eodag.utils import (
     urljoin,
 )
 from eodag.utils.exceptions import (
-    MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
     ValidationError,
@@ -361,7 +360,7 @@ class StacItem(StacCommon):
                 if pt["ID"] == product_type
             ][0]
         except IndexError:
-            raise MisconfiguredError(
+            raise NoMatchingProductType(
                 "Product type {} not available for {}".format(
                     product_type, self.provider
                 )

@@ -721,7 +721,7 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
         )
         arguments.pop("collections")
     else:
-        raise NoMatchingProductType("No product_type found in collections argument")
+        raise NoMatchingProductType("Invalid request, collections argument is missing")
 
     # get products by ids
     ids = arguments.get("ids", None)
