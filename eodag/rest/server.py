@@ -380,7 +380,7 @@ def stac_collections_items(collection_id, request: Request):
 @router.get("/collections/{collection_id}", tags=["Capabilities"])
 def collection_by_id(collection_id, request: Request):
     """STAC collection by id"""
-    url = request.state.url
+    url = request.state.url_root + "/collections"
     url_root = request.state.url_root
 
     body = {}
