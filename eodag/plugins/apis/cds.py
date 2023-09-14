@@ -95,6 +95,16 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             ]["constraints_file_path"]
         else:
             self.config.constraints_file_path = ""
+        if (
+            kwargs["productType"] in getattr(self.config, "products", {})
+            and "constraints_file_url"
+            in getattr(self.config, "products", {})[kwargs["productType"]]
+        ):
+            self.config.constraints_file_url = getattr(self.config, "products", {})[
+                kwargs["productType"]
+            ]["constraints_file_url"]
+        else:
+            self.config.constraints_file_url = ""
         # start date
         if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
