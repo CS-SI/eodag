@@ -1272,7 +1272,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         self.search_plugin._get_result_data("123", items_per_page=5, page=1)
         mock_requests_get.assert_called_with(
             self.search_plugin.config.result_url.format(
-                jobId="123", items_per_page=5, page=1
+                jobId="123", items_per_page=5, page=0
             ),
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )

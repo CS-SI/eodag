@@ -250,6 +250,7 @@ class DataRequestSearch(Search):
         return status_data["status"] == "completed"
 
     def _get_result_data(self, data_request_id, items_per_page, page):
+        page = page - 1 + self.config.pagination.get("start_page", 1)
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
         )

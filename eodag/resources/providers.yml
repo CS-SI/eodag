@@ -3750,6 +3750,7 @@
     results_entry: content
     two_passes_id_search: true
     pagination:
+      start_page: 0
       max_items_per_page: 20
       total_items_nb_key_path: '$.totItems'
     discover_product_types:
