@@ -1089,3 +1089,49 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             self.search_plugin.config.result_url.format(jobId="123"),
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_search_datareq_distinct_product_type_mtd_mapping(
+        self, mock__request
+    ):
+        """The metadata mapping for data_request_search should not mix specific product-types metadata-mapping"""
+
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+
+        mock__request.return_value = mock.Mock()
+        result = {
+            "context": {"matched": 1},
+            "features": [
+                {
+                    "id": "foo",
+                    "geometry": geojson_geometry,
+                },
+            ],
+        }
+        mock__request.return_value.json.side_effect = [result, result]
+
+        search_plugin = self.get_search_plugin("wekeo")
+
+        # update metadata_mapping only for S1_SAR_GRD
+        search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
+            None,
+            "baz",
+        )
+
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_GRD",
+            auth=None,
+        )
+        self.assertIn("bar", products[0].properties)
+        self.assertEqual(products[0].properties["bar"], "baz")
+
+        # search with another product type
+        self.assertNotIn(
+            "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
+        )
+
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_SLC",
+            auth=None,
+        )
+        self.assertNotIn("bar", products[0].properties)
