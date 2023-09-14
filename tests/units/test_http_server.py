@@ -810,6 +810,7 @@ class RequestTestCase(unittest.TestCase):
             post_data={
                 "collections": [self.tested_product_type],
                 "ids": ["foo", "bar"],
+                "variable": None,
             },
             search_call_count=2,
             expected_search_kwargs=[
