@@ -2,6 +2,8 @@ import datetime
 import json
 import re
 
+import requests
+
 from eodag.utils.exceptions import MisconfiguredError
 
 
@@ -49,13 +51,20 @@ class RequestSplitter:
     def __init__(self, config):
         self.config = config.__dict__
         if (
-            "constraints_file_path" not in self.config
-            or not self.config["constraints_file_path"]
+            "constraints_file_path" in self.config
+            and self.config["constraints_file_path"]
         ):
-            self.constraints = {}
-        else:
             with open(self.config["constraints_file_path"]) as f:
                 self.constraints = json.load(f)
+        elif (
+            "constraints_file_url" in self.config
+            and self.config["constraints_file_url"]
+        ):
+            res = requests.get(self.config["constraints_file_url"])
+            self.constraints = res.json()
+        else:
+            self.constraints = {}
+
         self.metadata = self.config["metadata_mapping"]
         if "multi_select_values" in self.config:
             self.multi_select_values = self.config["multi_select_values"]
