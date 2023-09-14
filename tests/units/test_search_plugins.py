@@ -1230,7 +1230,6 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
-        self.search_plugin._add_product_type_metadata("CLMS_CORINE")
         keywords = {
             "format": "GeoTiff100mt",
             "providerProductType": "Corine Land Cover 2018",
