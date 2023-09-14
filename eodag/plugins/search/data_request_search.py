@@ -10,7 +10,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
+from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, string_to_jsonpath
 from eodag.utils.exceptions import RequestError
 
 logger = logging.getLogger("eodag.search.data_request_search")
@@ -38,6 +38,30 @@ class DataRequestSearch(Search):
                 ] = mtd_cfg_as_conversion_and_querypath(
                     self.config.products[product_type]["metadata_mapping"]
                 )
+                # Complete and ready to use product type specific metadata-mapping
+                product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
+
+                # update config using provider product type definition metadata_mapping
+                # from another product
+                other_product_for_mapping = self.config.products[product_type].get(
+                    "metadata_mapping_from_product", ""
+                )
+                if other_product_for_mapping:
+                    other_product_type_def_params = self.get_product_type_def_params(
+                        other_product_for_mapping,  # **kwargs
+                    )
+                    product_type_metadata_mapping.update(
+                        other_product_type_def_params.get("metadata_mapping", {})
+                    )
+                # from current product
+                product_type_metadata_mapping.update(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
+
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = product_type_metadata_mapping
+
         if (
             self.config.result_type == "json"
             and "next_page_url_key_path" in self.config.pagination
@@ -45,6 +69,12 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
+
+    def get_metadata_mapping(self, product_type=None):
+        """Get the plugin metadata mapping configuration (product type specific if exists)"""
+        return self.config.products.get(product_type, {}).get(
+            "metadata_mapping", self.config.metadata_mapping
+        )
 
     def discover_product_types(self):
         """Fetch product types is disabled for `DataRequestSearch`
@@ -64,7 +94,7 @@ class DataRequestSearch(Search):
         performs the search for a provider where several steps are required to fetch the data
         """
         product_type = kwargs.get("productType", None)
-        self._add_product_type_metadata(product_type)
+        # self._add_product_type_metadata(product_type)
         provider_product_type = self._map_product_type(product_type)
         kwargs["productType"] = provider_product_type
         data_request_id = self._create_data_request(
@@ -160,7 +190,7 @@ class DataRequestSearch(Search):
                 self.provider,
                 properties_from_json(
                     result,
-                    self.config.metadata_mapping,
+                    self.get_metadata_mapping(kwargs.get("productType")),
                     discovery_config=getattr(self.config, "discover_metadata", {}),
                 ),
                 **kwargs,
@@ -216,12 +246,12 @@ class DataRequestSearch(Search):
             "productType", GENERIC_PRODUCT_TYPE
         )
 
-    def _add_product_type_metadata(self, product_type):
-        if (
-            product_type in self.config.products
-            and "metadata_mapping" in self.config.products[product_type]
-        ):
-            for key, mapping in self.config.products[product_type][
-                "metadata_mapping"
-            ].items():
-                self.config.metadata_mapping[key] = mapping
+    # def _add_product_type_metadata(self, product_type):
+    #     if (
+    #         product_type in self.config.products
+    #         and "metadata_mapping" in self.config.products[product_type]
+    #     ):
+    #         for key, mapping in self.config.products[product_type][
+    #             "metadata_mapping"
+    #         ].items():
+    #             self.config.metadata_mapping[key] = mapping
