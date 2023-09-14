@@ -40,20 +40,20 @@ from tests.context import (
 
 
 class BaseSearchPluginTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
+        super(BaseSearchPluginTest, self).setUp()
         providers_config = load_default_config()
-        cls.plugins_manager = PluginManager(providers_config)
-        cls.product_type = "S2_MSI_L1C"
+        self.plugins_manager = PluginManager(providers_config)
+        self.product_type = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
         geometry = get_geometry_from_various([], geometry=geom)
-        cls.search_criteria_s2_msi_l1c = {
-            "productType": cls.product_type,
+        self.search_criteria_s2_msi_l1c = {
+            "productType": self.product_type,
             "startTimeFromAscendingNode": "2020-08-08",
             "completionTimeFromAscendingNode": "2020-08-16",
             "geometry": geometry,
         }
-        cls.provider_resp_dir = Path(TEST_RESOURCES_PATH) / "provider_responses"
+        self.provider_resp_dir = Path(TEST_RESOURCES_PATH) / "provider_responses"
 
     def get_search_plugin(self, product_type=None, provider=None):
         return next(
@@ -68,6 +68,7 @@ class BaseSearchPluginTest(unittest.TestCase):
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):
+        super(TestSearchPluginQueryStringSearchXml, self).setUp()
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         provider = "mundi"
         self.mundi_search_plugin = self.get_search_plugin(self.product_type, provider)
@@ -162,6 +163,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
 
 class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def setUp(self):
+        super(TestSearchPluginQueryStringSearch, self).setUp()
         # One of the providers that has a QueryStringSearch Search plugin
         provider = "peps"
         self.peps_search_plugin = self.get_search_plugin(self.product_type, provider)
@@ -250,10 +252,14 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertIsNone(getattr(self.peps_search_plugin, "total_items_nb", None))
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_querystringseach_search_cloudcover_peps(
-        self, mock__request
+        self, mock__request, mock_normalize_results
     ):
         """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar product types"""  # noqa
 
@@ -362,6 +368,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
+        super(TestSearchPluginPostJsonSearch, self).setUp()
         # One of the providers that has a PostJsonSearch Search plugin
         provider = "aws_eos"
         self.awseos_search_plugin = self.get_search_plugin(self.product_type, provider)
@@ -454,6 +461,49 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_postjsonsearch_count_and_search_awseos_s2l2a(
+        self, mock__request
+    ):
+        """A query with a PostJsonSearch (here aws_eos) must return a single EOProduct when search by id using specific_qssearch"""  # noqa
+
+        mock_values = []
+        with open(self.provider_resp_dir / "s2l2a_tileInfo.json") as f:
+            mock_values.append(json.load(f))
+        with open(self.provider_resp_dir / "s2l2a_productInfo.json") as f:
+            mock_values.append(json.load(f))
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = mock_values
+
+        products, estimate = self.awseos_search_plugin.query(
+            auth=self.awseos_auth_plugin,
+            **{
+                "productType": "S2_MSI_L2A",
+                "id": "S2B_MSIL2A_20220101T000459_N0301_R130_T53DMB_20220101T012649",
+            },
+        )
+
+        self.assertEqual(mock__request.call_count, 2)
+        mock__request.assert_any_call(
+            mock.ANY,
+            "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/53/D/MB/2022/1/1/0/tileInfo.json",
+            info_message=mock.ANY,
+            exception_message=mock.ANY,
+        )
+        mock__request.assert_called_with(
+            mock.ANY,
+            "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/53/D/MB/2022/1/1/0/productInfo.json",
+            info_message=mock.ANY,
+            exception_message=mock.ANY,
+        )
+
+        self.assertEqual(estimate, 1)
+        self.assertEqual(len(products), 1)
+        self.assertIsInstance(products[0], EOProduct)
+
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
     )
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
@@ -490,9 +540,13 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # products count should not have been extracted from search results
         self.assertIsNone(getattr(self.awseos_search_plugin, "total_items_nb", None))
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
     @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
     def test_plugins_search_postjsonsearch_search_cloudcover_awseos(
-        self, mock_requests_post
+        self, mock_requests_post, mock_normalize_results
     ):
         """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar product types"""  # noqa
 
@@ -514,6 +568,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def setUp(self):
+        super(TestSearchPluginODataV4Search, self).setUp()
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
         self.onda_search_plugin = self.get_search_plugin(self.product_type, provider)
@@ -769,9 +824,15 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             self.assertEqual(len(error_message_indexes_list), 2)
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_odatav4search_search_cloudcover_onda(self, mock__request):
+    def test_plugins_search_odatav4search_search_cloudcover_onda(
+        self, mock__request, mock_normalize_results
+    ):
         """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar product types"""
         # per_product_metadata_query parameter is updated to False if it is necessary
         per_product_metadata_query = (
@@ -889,10 +950,55 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
 
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping(
+        self, mock__request
+    ):
+        """The metadata mapping for a stac provider should not mix specific product-types metadata-mapping"""
+
+        mock__request.return_value = mock.Mock()
+        result = {
+            "context": {"matched": 1},
+            "features": [
+                {
+                    "id": "foo",
+                    "geometry": None,
+                },
+            ],
+        }
+        mock__request.return_value.json.side_effect = [result, result]
+
+        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+
+        # update metadata_mapping only for S2_MSI_L1C
+        search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"]["bar"] = (
+            None,
+            "baz",
+        )
+
+        products, estimate = search_plugin.query(
+            productType="S2_MSI_L1C",
+            auth=None,
+        )
+        self.assertIn("bar", products[0].properties)
+        self.assertEqual(products[0].properties["bar"], "baz")
+
+        # search with another product type
+        self.assertNotIn(
+            "bar", search_plugin.config.products["S2_MSI_L2A"]["metadata_mapping"]
+        )
+
+        products, estimate = search_plugin.query(
+            productType="S2_MSI_L2A",
+            auth=None,
+        )
+        self.assertNotIn("bar", products[0].properties)
+
 
 class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
     def setUp(self, mock_requests_get):
+        super(TestSearchPluginBuildPostSearchResult, self).setUp()
         # One of the providers that has a BuildPostSearchResult Search plugin
         provider = "meteoblue"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
@@ -939,7 +1045,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         "eodag.plugins.authentication.token.requests.Session.get", autospec=True
     )
     def setUp(self, mock_requests_get):
-
+        super(TestSearchPluginDataRequestSearch, self).setUp()
         provider = "wekeo"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
         self.auth_plugin = self.get_auth_plugin(provider)
