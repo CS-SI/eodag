@@ -2980,6 +2980,8 @@
   name: sara
   priority: 0
   description: Sentinel Australasia Regional Access
+  roles:
+    - host
   search: !plugin
     type: QueryStringSearch
     # The endpoint is based off of the collection. There is a generic endpoint,
