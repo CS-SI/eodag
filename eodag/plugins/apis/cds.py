@@ -32,7 +32,7 @@ from eodag.plugins.download.base import (
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.utils import get_geometry_from_various, path_to_uri, urlsplit
+from eodag.utils import datetime_range, get_geometry_from_various, path_to_uri, urlsplit
 from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
 from eodag.utils.logging import get_logging_verbose
 
@@ -233,18 +233,28 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         download_request = geojson.loads(query_str)
 
         date_range = download_request.pop("date_range", False)
-        if date_range or "date" in download_request:
-            date_value = download_request.pop("date")
+        if date_range:
+            date_value = download_request.pop("date", None)
+            if not date_value:
+                date_value = date_range
             if isinstance(date_value, str):
                 date = date_value.replace('"', "").replace("'", "")
             else:
                 date = date_value[0].replace('"', "").replace("'", "")
             start, end, *_ = date.split("/")
-            request_splitter = RequestSplitter(self.config)
-            time_params = request_splitter.get_time_slices(start, end)
-            download_request["year"] = time_params[0]["year"]
-            download_request["month"] = time_params[0]["month"]
-            download_request["day"] = time_params[0]["day"]
+            if getattr(self.config, "products_split_timedelta", None):
+                request_splitter = RequestSplitter(self.config)
+                time_params = request_splitter.get_time_slices(start, end)
+                download_request["year"] = time_params[0]["year"]
+                download_request["month"] = time_params[0]["month"]
+                download_request["day"] = time_params[0]["day"]
+            else:
+                _start = datetime.fromisoformat(start)
+                _end = datetime.fromisoformat(end)
+                d_range = [d for d in datetime_range(_start, _end)]
+                download_request["year"] = [*{str(d.year) for d in d_range}]
+                download_request["month"] = [*{str(d.month) for d in d_range}]
+                download_request["day"] = [*{str(d.day) for d in d_range}]
 
         auth_dict = self.authenticate()
         dataset_name = download_request.pop("dataset")
