@@ -85,7 +85,49 @@ class RequestTestCase(unittest.TestCase):
         self.app = TestClient(self.eodag_http_server.app)
 
     def test_route(self):
-        self._request_valid("/")
+        result = self._request_valid("/", check_links=False)
+
+        # check links (root specfic)
+        self.assertIsInstance(result, dict)
+        self.assertIn("links", result, f"links not found in {str(result)}")
+        self.assertIsInstance(result["links"], list)
+        links = result["links"]
+
+        known_rel = [
+            "self",
+            "root",
+            "parent",
+            "child",
+            "items",
+            "service-desc",
+            "service-doc",
+            "conformance",
+            "search",
+            "data",
+        ]
+        required_links_rel = ["self"]
+
+        for link in links:
+            # known relations
+            self.assertIn(link["rel"], known_rel)
+            # must start with app base-url
+            assert link["href"].startswith(str(self.app.base_url))
+            if link["rel"] != "search":
+                # must be valid
+                self._request_valid_raw(link["href"])
+            else:
+                # missing collection
+                self._request_not_valid(link["href"])
+
+            if link["rel"] in required_links_rel:
+                required_links_rel.remove(link["rel"])
+
+        # required relations
+        self.assertEqual(
+            len(required_links_rel),
+            0,
+            f"missing {required_links_rel} relation(s) in {links}",
+        )
 
     def test_forward(self):
         response = self.app.get("/", follow_redirects=True)
@@ -292,6 +334,7 @@ class RequestTestCase(unittest.TestCase):
         protocol="GET",
         post_data=None,
         search_call_count=None,
+        check_links=True,
     ):
         response = self._request_valid_raw(
             url,
@@ -302,7 +345,52 @@ class RequestTestCase(unittest.TestCase):
         )
 
         # Assert response format is GeoJSON
-        return geojson.loads(response.content.decode("utf-8"))
+        result = geojson.loads(response.content.decode("utf-8"))
+
+        if check_links:
+            self.assert_links_valid(result)
+
+        return result
+
+    def assert_links_valid(self, element):
+        """Checks that element links are valid"""
+        self.assertIsInstance(element, dict)
+        self.assertIn("links", element, f"links not found in {str(element)}")
+        self.assertIsInstance(element["links"], list)
+        links = element["links"]
+
+        known_rel = [
+            "self",
+            "root",
+            "parent",
+            "child",
+            "items",
+            "service-desc",
+            "service-doc",
+            "conformance",
+            "search",
+            "data",
+            "collection",
+        ]
+        required_links_rel = ["self", "root"]
+
+        for link in links:
+            # known relations
+            self.assertIn(link["rel"], known_rel)
+            # must start with app base-url
+            assert link["href"].startswith(str(self.app.base_url))
+            # must be valid
+            self._request_valid_raw(link["href"])
+
+            if link["rel"] in required_links_rel:
+                required_links_rel.remove(link["rel"])
+
+        # required relations
+        self.assertEqual(
+            len(required_links_rel),
+            0,
+            f"missing {required_links_rel} relation(s) in {links}",
+        )
 
     def _request_not_valid(self, url):
         response = self.app.get(url, follow_redirects=True)
@@ -310,7 +398,7 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertIn("description", response_content)
-        self.assertIn("invalid", response_content["description"])
+        self.assertIn("invalid", response_content["description"].lower())
 
     def _request_not_found(self, url):
         response = self.app.get(url, follow_redirects=True)
@@ -768,16 +856,16 @@ class RequestTestCase(unittest.TestCase):
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""
-        self._request_valid("conformance")
+        self._request_valid("conformance", check_links=False)
 
     def test_service_desc(self):
         """Request to service_desc should return a valid response"""
-        service_desc = self._request_valid("api")
+        service_desc = self._request_valid("api", check_links=False)
         self.assertIn("openapi", service_desc.keys())
         self.assertIn("eodag", service_desc["info"]["title"].lower())
         self.assertGreater(len(service_desc["paths"].keys()), 0)
         # test a 2nd call (ending slash must be ignored)
-        self._request_valid("api/")
+        self._request_valid("api/", check_links=False)
 
     def test_service_doc(self):
         """Request to service_doc should return a valid response"""
@@ -786,21 +874,26 @@ class RequestTestCase(unittest.TestCase):
 
     def test_stac_extension_oseo(self):
         """Request to oseo extension should return a valid response"""
-        response = self._request_valid("/extensions/oseo/json-schema/schema.json")
+        response = self._request_valid(
+            "/extensions/oseo/json-schema/schema.json", check_links=False
+        )
         self.assertEqual(response["title"], "OpenSearch for Earth Observation")
         self.assertEqual(response["allOf"][0]["$ref"], "#/definitions/oseo")
 
     def test_queryables(self):
         """Request to /queryables should return a valid response."""
-        self._request_valid("queryables")
+        self._request_valid("queryables", check_links=False)
 
     def test_product_type_queryables(self):
         """Request to /collections/{collection_id}/queryables should return a valid response."""
-        self._request_valid(f"collections/{self.tested_product_type}/queryables")
+        self._request_valid(
+            f"collections/{self.tested_product_type}/queryables", check_links=False
+        )
 
     def test_product_type_queryables_with_provider(self):
         """Request a collection-specific list of queryables for a given provider."""
 
         self._request_valid(
-            f"collections/{self.tested_product_type}/queryables?provider=peps"
+            f"collections/{self.tested_product_type}/queryables?provider=peps",
+            check_links=False,
         )
