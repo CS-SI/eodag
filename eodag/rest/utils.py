@@ -4,6 +4,7 @@
 
 import ast
 import datetime
+import json
 import logging
 import os
 import re
@@ -259,7 +260,23 @@ def get_geometry(arguments: dict):
         geom = Polygon([(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)])
 
     elif arguments.get("intersects"):
-        geom = shape(arguments.pop("intersects"))
+        intersects_value = arguments.pop("intersects")
+        if isinstance(intersects_value, str):
+            try:
+                intersects_dict = json.loads(intersects_value)
+            except json.JSONDecodeError:
+                raise ValidationError(
+                    "The 'intersects' parameter is not a valid JSON string."
+                )
+        else:
+            intersects_dict = intersects_value
+
+        try:
+            geom = shape(intersects_dict)
+        except Exception as e:
+            raise ValidationError(
+                f"The 'intersects' parameter does not represent a valid geometry: {str(e)}"
+            )
 
     else:
         geom = None
