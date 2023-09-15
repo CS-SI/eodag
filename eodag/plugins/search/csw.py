@@ -189,7 +189,7 @@ class CSWSearch(Search):
         else:  # unknown matching is considered to be equal to 'fuzzy'
             constraints.append(PropertyIsLike(pt_tag, "%{}%".format(product_type)))
 
-        # footprint
+        # `footprint`
         fp = params.get("geometry")
         if fp:
             constraints.append(

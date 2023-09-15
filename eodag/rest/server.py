@@ -134,7 +134,6 @@ def eodag_openapi():
     openapi_schema = get_openapi(
         title=f"{root_catalog['title']} / eodag",
         version=getattr(metadata_obj, "version", None),
-        # description="This is a very custom OpenAPI schema",
         routes=app.routes,
     )
 

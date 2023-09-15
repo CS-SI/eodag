@@ -1887,30 +1887,19 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
 
     @unittest.skip("Disable until fixed")
-    # @mock.patch("eodag.plugins.manager.PluginManager.get_search_plugins.get_plugin", autospec=True)
-    @mock.patch("eodag.plugins.manager.PluginManager._build_plugin", autospec=True)
-    def test_search_all_request_error(self, mock_build_plugin):
+    def test_search_all_request_error(self):
         """search_all must stop iteration and move to next provider when error occurs"""
+
+        product_type = "S2_MSI_L1C"
         dag = EODataAccessGateway()
-        dummy_provider_config = """
-        dummy_provider:
-            search:
-                type: QueryStringSearch
-                api_endpoint: https://api.my_new_provider/search
-                pagination:
-                    next_page_url_tpl: 'dummy_next_page_url_tpl'
-                    next_page_url_key_path: '$.links[?(@.rel="next")].href'
-                metadata_mapping:
-                    dummy: 'dummy'
-            products:
-                S2_MSI_L1C:
-                    productType: '{productType}'
-        """
-        mock_build_plugin.return_value.query.side_effect = RequestError()
-        dag.update_providers_config(dummy_provider_config)
-        dag.set_preferred_provider("dummy_provider")
+
+        for plugin in dag._plugins_manager.get_search_plugins(
+            product_type=product_type
+        ):
+            plugin.query = mock.MagicMock()
+            plugin.query.side_effect = RequestError
+
         dag.search_all(productType="S2_MSI_L1C")
-        # mocked_authenticate.assert_called_once()
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True

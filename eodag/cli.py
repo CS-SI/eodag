@@ -218,7 +218,6 @@ def version():
 @click.option(
     "--items",
     type=int,
-    # default=DEFAULT_ITEMS_PER_PAGE,
     show_default=False,
     help="The number of items to return. Eodag is bound to whatever limitation the "
     "providers have on the number of results they return. This option allows "

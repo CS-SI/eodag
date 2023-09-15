@@ -324,7 +324,6 @@ class EODagTestCase(unittest.TestCase):
 
     def _set_download_simulation(self):
         self.requests_request.return_value = self._download_response_archive()
-        # self.requests_http_get.return_value = self._download_response_archive()
 
     def _download_response_archive(self):
         class Response(object):

@@ -96,7 +96,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         # a 'constant' string value, or a string of the form 'xpath(<path-to-a-value-to-be-retrieved>)'
         # and representing a value to be retrieved in the user consent form. The xpath must resolve
         # directly to a string value, not to an HTML element. Example:
-        # 'xpath(//input[@name="sessionDataKeyConsent"]/@value)'
+        # `xpath(//input[@name="sessionDataKeyConsent"]/@value)`
         user_consent_form_data:
 
         # (optional) A mapping giving additional data to be passed to the login POST request. The value follows the

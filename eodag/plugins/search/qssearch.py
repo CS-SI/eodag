@@ -99,6 +99,7 @@ class QueryStringSearch(Search):
 
         - **free_text_search_operations**: (optional) A tree structure of the form::
 
+            # noqa: E800
             <search-param>:     # e.g: $search
                 union: # how to join the operations below (e.g: ' AND ' -->
                        # '(op1 AND op2) AND (op3 OR op4)')
@@ -963,7 +964,7 @@ class ODataV4Search(QueryStringSearch):
                         metadata_update[metada_id] = metada_value
                     parsed_metadata_path.update(result, metadata_update)
 
-        # once metadata pre-mapping applied execute QueryStringSearch.normalize_results()
+        # once metadata pre-mapping applied execute QueryStringSearch.normalize_results
         products = super(ODataV4Search, self).normalize_results(results, **kwargs)
 
         return products

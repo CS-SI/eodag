@@ -22,6 +22,8 @@ repos:
     rev: 5.0.4 # needed for py < 3.8.1
     hooks:
     -   id: flake8
+        additional_dependencies:
+          - flake8-eradicate
 
 -   repo: 'https://github.com/ambv/black'
     rev: 22.12.0

@@ -351,7 +351,7 @@ def merge_mappings(mapping1, mapping2):
             # Even for "scalar" values (a.k.a not nested structures), first check if
             # the key from mapping1 is not the lowercase version of a key in mapping2.
             # Otherwise, create the key in mapping1. This is the meaning of
-            # m1_keys_lowercase.get(key, key)
+            # `m1_keys_lowercase.get(key, key)`
             current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
             if current_value is not None:
                 current_value_type = type(current_value)

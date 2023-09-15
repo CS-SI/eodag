@@ -387,7 +387,6 @@ class HTTPDownload(Download):
                     progress_callback,
                     **kwargs,
                 )
-                # product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError:
                 pass
@@ -953,7 +952,6 @@ class HTTPDownload(Download):
                     self._handle_asset_exception(e, asset)
                 else:
                     asset_rel_path = urlparse(asset["href"]).path.strip("/")
-                    # asset_rel_dir = os.path.dirname(asset_rel_path)
 
                     if not asset.get("filename", None):
                         # try getting filename in GET header if was not found in HEAD result

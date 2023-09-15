@@ -312,56 +312,60 @@ class TestConfigFunctions(unittest.TestCase):
         )
 
     def test_override_config_from_file(self):
-        """Default configuration must be overridden from a conf file"""
+        """Default configuration must be overridden from a conf file
+
+        # noqa: E800
+        Content of file_config_override.yml
+        usgs:
+          priority: 5
+          api:
+              extract: False
+              credentials:
+                  username: usr
+                  password: pwd
+
+        aws_eos:
+          search:
+              product_location_scheme: file
+          auth:
+              credentials:
+                  apikey: api-key
+                  aws_access_key_id: access-key-id
+                  aws_secret_access_key: secret-access-key
+
+        peps:
+          download:
+              outputs_prefix: /data
+
+        theia:
+            download:
+                outputs_prefix:
+
+        my_new_provider:
+            priority: 4
+            search:
+                type: StacSearch
+                api_endpoint: https://api.my_new_provider/search
+            products:
+                S2_MSI_L1C:
+                  productType: sentinel2_l1c
+                GENERIC_PRODUCT_TYPE:
+                  productType: '{productType}'
+            download:
+                type: AwsDownload
+                base_uri: https://api.my_new_provider
+                flatten_top_dirs: True
+            auth:
+                type: AwsAuth
+                credentials:
+                  aws_access_key_id: access-key-id
+                  aws_secret_access_key: secret-access-key
+        """
         default_config = config.load_default_config()
         file_path_override = os.path.join(
             os.path.dirname(__file__), "resources", "file_config_override.yml"
         )
-        # Content of file_config_override.yml
-        # usgs:
-        #   priority: 5
-        #   api:
-        #       extract: False
-        #       credentials:
-        #           username: usr
-        #           password: pwd
-        #
-        # aws_eos:
-        #   search:
-        #       product_location_scheme: file
-        #   auth:
-        #       credentials:
-        #           apikey: api-key
-        #           aws_access_key_id: access-key-id
-        #           aws_secret_access_key: secret-access-key
-        #
-        # peps:
-        #   download:
-        #       outputs_prefix: /data
-        #
-        # theia:
-        #     download:
-        #         outputs_prefix:
-        #
-        # my_new_provider:
-        #     priority: 4
-        #     search:
-        # noqa: F821      type: StacSearch
-        #         api_endpoint: https://api.my_new_provider/search
-        #     products:
-        #         S2_MSI_L1C:
-        #           productType: sentinel2_l1c
-        #         GENERIC_PRODUCT_TYPE:
-        #           productType: '{productType}'
-        #     download:
-        # noqa: F821      type: AwsDownload
-        #         base_uri: https://api.my_new_provider
-        #         flatten_top_dirs: True
-        #     auth:
-        # noqa: F821      type: AwsAuth
-        #         credentials:
-        #           aws_access_key_id: access-key-id
-        #           aws_secret_access_key: secret-access-key
+
         config.override_config_from_file(default_config, file_path_override)
         usgs_conf = default_config["usgs"]
         self.assertEqual(usgs_conf.priority, 5)
