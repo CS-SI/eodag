@@ -94,7 +94,6 @@ class DataRequestSearch(Search):
         performs the search for a provider where several steps are required to fetch the data
         """
         product_type = kwargs.get("productType", None)
-        # self._add_product_type_metadata(product_type)
         provider_product_type = self._map_product_type(product_type)
         kwargs["productType"] = provider_product_type
         data_request_id = self._create_data_request(
@@ -245,13 +244,3 @@ class DataRequestSearch(Search):
         return self.config.products.get(product_type, {}).get(
             "productType", GENERIC_PRODUCT_TYPE
         )
-
-    # def _add_product_type_metadata(self, product_type):
-    #     if (
-    #         product_type in self.config.products
-    #         and "metadata_mapping" in self.config.products[product_type]
-    #     ):
-    #         for key, mapping in self.config.products[product_type][
-    #             "metadata_mapping"
-    #         ].items():
-    #             self.config.metadata_mapping[key] = mapping

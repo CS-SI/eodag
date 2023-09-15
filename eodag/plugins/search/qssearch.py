@@ -990,23 +990,6 @@ class PostJsonSearch(QueryStringSearch):
             product_type, **kwargs
         )
 
-        # # update config using provider product type definition metadata_mapping
-        # # from another product
-        # other_product_for_mapping = self.product_type_def_params.get(
-        #     "metadata_mapping_from_product", ""
-        # )
-        # if other_product_for_mapping:
-        #     other_product_type_def_params = self.get_product_type_def_params(
-        #         other_product_for_mapping, **kwargs
-        #     )
-        #     self.config.metadata_mapping.update(
-        #         other_product_type_def_params.get("metadata_mapping", {})
-        #     )
-        # # from current product
-        # self.config.metadata_mapping.update(
-        #     self.product_type_def_params.get("metadata_mapping", {})
-        # )
-
         # Add to the query, the queryable parameters set in the provider product type definition
         keywords.update(
             {
