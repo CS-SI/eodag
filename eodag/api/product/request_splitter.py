@@ -14,7 +14,10 @@ def _hour_from_time(time):
 def _parse_dates_from_string(date_str):
     dates = re.findall("[0-9]{4}-[0,1][0-9]-[0-3][0-9]", date_str)
     start_date = datetime.datetime.strptime(dates[0], "%Y-%m-%d")
-    end_date = datetime.datetime.strptime(dates[1], "%Y-%m-%d")
+    if len(dates) < 2:
+        end_date = start_date
+    else:
+        end_date = datetime.datetime.strptime(dates[1], "%Y-%m-%d")
     return {"start_date": start_date, "end_date": end_date}
 
 

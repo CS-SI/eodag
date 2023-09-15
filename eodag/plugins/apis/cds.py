@@ -145,7 +145,22 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             kwargs.pop("completionTimeFromAscendingNode")
             for time_slice in slices:
                 for key, value in time_slice.items():
-                    kwargs[key] = value
+                    if key == "start_date":
+                        if isinstance(value, str):
+                            kwargs["startTimeFromAscendingNode"] = value
+                        else:
+                            kwargs["startTimeFromAscendingNode"] = value.strftime(
+                                "%Y-%m-%dT%H:%M:%SZ"
+                            )
+                    elif key == "end_date":
+                        if isinstance(value, str):
+                            kwargs["completionTimeFromAscendingNode"] = value
+                        else:
+                            kwargs["completionTimeFromAscendingNode"] = value.strftime(
+                                "%Y-%m-%dT%H:%M:%SZ"
+                            )
+                    else:
+                        kwargs[key] = value
                 result = BuildPostSearchResult.query(
                     self,
                     items_per_page=items_per_page,
@@ -241,6 +256,14 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         # separate url & parameters
         query_str = "".join(urlsplit(product.location).fragment.split("?", 1)[1:])
         download_request = geojson.loads(query_str)
+        # remove string quotes within values
+        for param, param_value in download_request.items():
+            if isinstance(param_value, str):
+                download_request[param] = param_value.replace('"', "").replace("'", "")
+            elif isinstance(param_value, list):
+                for i, value in enumerate(param_value):
+                    if isinstance(value, str):
+                        param_value[i] = value.replace('"', "").replace("'", "")
 
         date_range = download_request.pop("date_range", False)
         if date_range:
