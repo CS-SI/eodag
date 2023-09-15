@@ -77,12 +77,6 @@ class DataRequestSearch(Search):
         self.download_info = {}
         self.data_request_id = None
 
-    def get_metadata_mapping(self, product_type=None):
-        """Get the plugin metadata mapping configuration (product type specific if exists)"""
-        return self.config.products.get(product_type, {}).get(
-            "metadata_mapping", self.config.metadata_mapping
-        )
-
     def get_product_type_def_params(self, product_type, **kwargs):
         """Get the provider product type definition parameters"""
         if product_type in self.config.products.keys():
