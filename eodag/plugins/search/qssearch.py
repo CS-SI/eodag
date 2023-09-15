@@ -18,11 +18,8 @@
 
 import logging
 import re
-from urllib.error import URLError
-from urllib.request import Request, urlopen
 
 import orjson
-import requests
 from lxml import etree
 
 from eodag.api.product import EOProduct
@@ -36,17 +33,14 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
-    USER_AGENT,
     _deprecated,
     dict_items_recursive_apply,
     format_dict_items,
-    quote,
     string_to_jsonpath,
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.exceptions import MisconfiguredError, RequestError
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -773,52 +767,11 @@ class QueryStringSearch(Search):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
-            # auth if needed
-            kwargs = {}
-            if (
-                getattr(self.config, "need_auth", False)
-                and hasattr(self, "auth")
-                and callable(self.auth)
-            ):
-                kwargs["auth"] = self.auth
-            # requests auto quote url params, without any option to prevent it
-            # use urllib instead of requests if req must be sent unquoted
-            if hasattr(self.config, "dont_quote"):
-                # keep unquoted desired params
-                base_url, params = url.split("?") if "?" in url else (url, "")
-                qry = quote(params)
-                for keep_unquoted in self.config.dont_quote:
-                    qry = qry.replace(quote(keep_unquoted), keep_unquoted)
+            if info_message:
+                logger.info(info_message)
 
-                # prepare req for Response building
-                req = requests.Request(
-                    method="GET", url=base_url, headers=USER_AGENT, **kwargs
-                )
-                prep = req.prepare()
-                prep.url = base_url + "?" + qry
-                # send urllib req
-                if info_message:
-                    logger.info(info_message.replace(url, prep.url))
-                urllib_req = Request(prep.url, headers=USER_AGENT)
-                urllib_response = urlopen(urllib_req)
-                # py2 compatibility : prevent AttributeError: addinfourl instance has no attribute 'reason'
-                if not hasattr(urllib_response, "reason"):
-                    urllib_response.reason = ""
-                if not hasattr(urllib_response, "status") and hasattr(
-                    urllib_response, "code"
-                ):
-                    urllib_response.status = urllib_response.code
-                # build Response
-                adapter = requests.adapters.HTTPAdapter()
-                response = adapter.build_response(prep, urllib_response)
-            else:
-                if info_message:
-                    logger.info(info_message)
-                response = requests.get(
-                    url, timeout=HTTP_REQ_TIMEOUT, headers=USER_AGENT, **kwargs
-                )
-                response.raise_for_status()
-        except (requests.RequestException, URLError) as err:
+            response = self.http.get(url)
+        except Exception as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -830,7 +783,7 @@ class QueryStringSearch(Search):
                     self.__class__.__name__,
                     err_msg,
                 )
-            raise RequestError(str(err))
+            raise err
         return response
 
 
@@ -887,11 +840,8 @@ class ODataV4Search(QueryStringSearch):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
-                    response = requests.get(
-                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-                    )
-                    response.raise_for_status()
-                except requests.RequestException:
+                    response = self.http.get(metadata_url)
+                except Exception:
                     logger.exception(
                         "Skipping error while searching for %s %s instance:",
                         self.provider,
@@ -1103,45 +1053,14 @@ class PostJsonSearch(QueryStringSearch):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
-            # auth if needed
-            kwargs = {}
-            if (
-                getattr(self.config, "need_auth", False)
-                and hasattr(self, "auth")
-                and callable(self.auth)
-            ):
-                kwargs["auth"] = self.auth
-
             # perform the request using the next page arguments if they are defined
             if getattr(self, "next_page_query_obj", None):
                 self.query_params = self.next_page_query_obj
             if info_message:
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
-            response = requests.post(
-                url,
-                json=self.query_params,
-                headers=USER_AGENT,
-                timeout=HTTP_REQ_TIMEOUT,
-                **kwargs,
-            )
-            response.raise_for_status()
-        except (requests.RequestException, URLError) as err:
-            # check if error is identified as auth_error in provider conf
-            auth_errors = getattr(self.config, "auth_error_code", [None])
-            if not isinstance(auth_errors, list):
-                auth_errors = [auth_errors]
-            if (
-                hasattr(err.response, "status_code")
-                and err.response.status_code in auth_errors
-            ):
-                raise AuthenticationError(
-                    "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
-                        err.response.status_code,
-                        err.response.text.strip(),
-                        self.provider,
-                    )
-                )
+            response = self.http.post(url, json=self.query_params)
+        except RequestError as err:
             if exception_message:
                 logger.exception(exception_message)
             else:
@@ -1153,7 +1072,7 @@ class PostJsonSearch(QueryStringSearch):
                 )
             if "response" in locals():
                 logger.debug(response.content)
-            raise RequestError(str(err))
+            raise err
         return response
 
 

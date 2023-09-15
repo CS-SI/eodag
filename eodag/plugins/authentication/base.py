@@ -15,8 +15,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils.http import HttpRequests
 
 
 class Authentication(PluginTopic):
@@ -52,3 +54,14 @@ class Authentication(PluginTopic):
                     self.provider, ", ".join(missing_credentials)
                 )
             )
+
+    def http_requests(self) -> HttpRequests:
+        """Returns an instance of the HttpRequests class.
+
+        This function should be implemented by subclasses to provide an instance of the HttpRequests class
+        that can be used to make authenticated HTTP requests.
+
+        Returns:
+            HttpRequests: An instance of the HttpRequests class.
+        """
+        raise NotImplementedError

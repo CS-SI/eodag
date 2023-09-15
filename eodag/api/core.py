@@ -63,6 +63,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     NoMatchingProductType,
+    NotAvailableError,
     PluginImplementationError,
     RequestError,
     UnsupportedProvider,
@@ -1226,7 +1227,7 @@ class EODataAccessGateway(object):
                     search_plugin.provider,
                 )
                 return all_results
-            except RequestError:
+            except NotAvailableError:
                 if len(all_results) == 0 and i < len(search_plugins) - 1:
                     logger.warning(
                         "No result could be obtained from provider %s, "

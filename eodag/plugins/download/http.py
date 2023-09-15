@@ -25,10 +25,8 @@ from itertools import chain
 from urllib.parse import parse_qs, urlparse
 
 import geojson
-import requests
 import requests_ftp
 from lxml import etree
-from requests import RequestException
 from stream_zip import NO_COMPRESSION_64, stream_zip
 
 from eodag.api.product.metadata_mapping import (
@@ -58,7 +56,9 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NotAvailableError,
+    RequestError,
 )
+from eodag.utils.http import HttpResponse
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.http")
@@ -142,7 +142,8 @@ class HTTPDownload(Download):
             order_url = product.properties["orderLink"]
             order_kwargs = {}
 
-        with requests.request(
+        response: HttpResponse
+        with self.http.request(
             method=order_method,
             url=order_url,
             auth=auth,
@@ -150,11 +151,10 @@ class HTTPDownload(Download):
             **order_kwargs,
         ) as response:
             try:
-                response.raise_for_status()
                 ordered_message = response.text
                 logger.debug(ordered_message)
                 logger.info("%s was ordered", product.properties["title"])
-            except RequestException as e:
+            except RequestError as e:
                 logger.warning(
                     "%s could not be ordered, request returned %s",
                     product.properties["title"],
@@ -222,7 +222,7 @@ class HTTPDownload(Download):
             status_url = product.properties["orderStatusLink"]
             status_kwargs = {}
 
-        with requests.request(
+        with self.http.request(
             method=status_method,
             url=status_url,
             auth=auth,
@@ -232,7 +232,6 @@ class HTTPDownload(Download):
             **status_kwargs,
         ) as response:
             try:
-                response.raise_for_status()
                 status_message = response.text
                 status_dict = response.json()
                 # display progress percentage
@@ -278,8 +277,7 @@ class HTTPDownload(Download):
                         f"Search for new location: {product.properties['searchLink']}"
                     )
                     # search again
-                    response = requests.get(product.properties["searchLink"])
-                    response.raise_for_status()
+                    response = self.http.get(product.properties["searchLink"])
                     if (
                         self.config.order_status_on_success.get("result_type", "json")
                         == "xml"
@@ -338,7 +336,7 @@ class HTTPDownload(Download):
                             f"after order success. Please search and download {product} again"
                         )
 
-            except RequestException as e:
+            except RequestError as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
                     product.properties["title"],
@@ -513,21 +511,8 @@ class HTTPDownload(Download):
         )
 
     def _process_exception(self, e, product, ordered_message):
-        # check if error is identified as auth_error in provider conf
-        auth_errors = getattr(self.config, "auth_error_code", [None])
-        if not isinstance(auth_errors, list):
-            auth_errors = [auth_errors]
-        if e.response.status_code in auth_errors:
-            raise AuthenticationError(
-                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                % (
-                    e.response.status_code,
-                    e.response.text.strip(),
-                    self.provider,
-                )
-            )
         # product not available
-        elif product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
+        if product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
             msg = (
                 ordered_message
                 if ordered_message and not e.response.text.strip()
@@ -582,7 +567,7 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
-        ordered_message = ""
+        # ordered_message = ""
         if (
             "orderLink" in product.properties
             and "storageStatus" in product.properties
@@ -615,9 +600,10 @@ class HTTPDownload(Download):
             req_kwargs = {}
 
         # url where data is downloaded from can be ftp -> add ftp adapter
-        requests_ftp.monkeypatch_session()
-        s = requests.Session()
-        with s.request(
+
+        requests_ftp.monkeypatch_session(self.http.session)
+        self.stream: HttpResponse
+        with self.http.request(
             req_method,
             req_url,
             stream=True,
@@ -627,19 +613,13 @@ class HTTPDownload(Download):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             **req_kwargs,
         ) as self.stream:
-            try:
-                self.stream.raise_for_status()
-
-            except RequestException as e:
-                self._process_exception(e, product, ordered_message)
-            else:
-                stream_size = self._check_stream_size(product)
-                product.headers = self.stream.headers
-                progress_callback.reset(total=stream_size)
-                for chunk in self.stream.iter_content(chunk_size=64 * 1024):
-                    if chunk:
-                        progress_callback(len(chunk))
-                        yield chunk
+            stream_size = self._check_stream_size(product)
+            product.headers = self.stream.headers
+            progress_callback.reset(total=stream_size)
+            for chunk in self.stream.iter_content(chunk_size=64 * 1024):
+                if chunk:
+                    progress_callback(len(chunk))
+                    yield chunk
 
     def _stream_download_assets(
         self,
@@ -702,14 +682,14 @@ class HTTPDownload(Download):
 
         # loop for assets download
         for asset in assets_values:
-
             if asset["href"].startswith("file:"):
                 logger.info(
                     f"Local asset detected. Download skipped for {asset['href']}"
                 )
                 continue
 
-            with requests.get(
+            stream: HttpResponse
+            with self.http.get(
                 asset["href"],
                 stream=True,
                 auth=auth,
@@ -717,41 +697,34 @@ class HTTPDownload(Download):
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             ) as stream:
-                try:
-                    stream.raise_for_status()
-                except RequestException as e:
-                    self._handle_asset_exception(e, asset)
-                else:
-                    asset_rel_path = (
-                        asset["rel_path"]
-                        .replace(assets_common_subdir, "")
-                        .strip(os.sep)
-                        if flatten_top_dirs
-                        else asset["rel_path"]
+                asset_rel_path = (
+                    asset["rel_path"].replace(assets_common_subdir, "").strip(os.sep)
+                    if flatten_top_dirs
+                    else asset["rel_path"]
+                )
+                asset_rel_dir = os.path.dirname(asset_rel_path)
+
+                if not asset.get("filename", None):
+                    # try getting filename in GET header if was not found in HEAD result
+                    asset_content_disposition = stream.headers.get(
+                        "content-disposition", None
                     )
-                    asset_rel_dir = os.path.dirname(asset_rel_path)
+                    if asset_content_disposition:
+                        asset["filename"] = parse_header(
+                            asset_content_disposition
+                        ).get_param("filename", None)
 
-                    if not asset.get("filename", None):
-                        # try getting filename in GET header if was not found in HEAD result
-                        asset_content_disposition = stream.headers.get(
-                            "content-disposition", None
-                        )
-                        if asset_content_disposition:
-                            asset["filename"] = parse_header(
-                                asset_content_disposition
-                            ).get_param("filename", None)
+                if not asset.get("filename", None):
+                    # default filename extracted from path
+                    asset["filename"] = os.path.basename(asset["rel_path"])
 
-                    if not asset.get("filename", None):
-                        # default filename extracted from path
-                        asset["filename"] = os.path.basename(asset["rel_path"])
-
-                    yield (
-                        os.path.join(asset_rel_dir, asset["filename"]),
-                        modified_at,
-                        perms,
-                        NO_COMPRESSION_64,
-                        get_chunks(stream),
-                    )
+                yield (
+                    os.path.join(asset_rel_dir, asset["filename"]),
+                    modified_at,
+                    perms,
+                    NO_COMPRESSION_64,
+                    get_chunks(stream),
+                )
 
     def _download_assets(
         self,
@@ -867,7 +840,7 @@ class HTTPDownload(Download):
         for asset in assets_values:
             if not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
-                asset_headers = requests.head(
+                asset_headers = self.http.head(
                     asset["href"],
                     auth=auth,
                     headers=USER_AGENT,
@@ -894,7 +867,8 @@ class HTTPDownload(Download):
 
                 if not asset.get("size", 0):
                     # GET request for size
-                    with requests.get(
+                    stream: HttpResponse
+                    with self.http.get(
                         asset["href"],
                         stream=True,
                         auth=auth,
@@ -932,14 +906,14 @@ class HTTPDownload(Download):
         modified_at = datetime.now()
         perms = 0o600
 
-        def get_chunks(stream):
+        def get_chunks(stream: HttpResponse):
             for chunk in stream.iter_content(chunk_size=64 * 1024):
                 if chunk:
                     progress_callback(len(chunk))
                     yield chunk
 
         for asset in assets_values:
-            with requests.get(
+            with self.http.get(
                 asset["href"],
                 stream=True,
                 auth=auth,
@@ -947,35 +921,30 @@ class HTTPDownload(Download):
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             ) as stream:
-                try:
-                    stream.raise_for_status()
-                except RequestException as e:
-                    self._handle_asset_exception(e, asset)
-                else:
-                    asset_rel_path = urlparse(asset["href"]).path.strip("/")
-                    # asset_rel_dir = os.path.dirname(asset_rel_path)
+                asset_rel_path = urlparse(asset["href"]).path.strip("/")
+                # asset_rel_dir = os.path.dirname(asset_rel_path)
 
-                    if not asset.get("filename", None):
-                        # try getting filename in GET header if was not found in HEAD result
-                        asset_content_disposition = stream.headers.get(
-                            "content-disposition", None
-                        )
-                        if asset_content_disposition:
-                            asset["filename"] = parse_header(
-                                asset_content_disposition
-                            ).get_param("filename", None)
-
-                    if not asset.get("filename", None):
-                        # default filename extracted from path
-                        asset["filename"] = os.path.basename(asset_rel_path)
-
-                    yield (
-                        asset["filename"],
-                        modified_at,
-                        perms,
-                        NO_COMPRESSION_64,
-                        get_chunks(stream),
+                if not asset.get("filename", None):
+                    # try getting filename in GET header if was not found in HEAD result
+                    asset_content_disposition = stream.headers.get(
+                        "content-disposition", None
                     )
+                    if asset_content_disposition:
+                        asset["filename"] = parse_header(
+                            asset_content_disposition
+                        ).get_param("filename", None)
+
+                if not asset.get("filename", None):
+                    # default filename extracted from path
+                    asset["filename"] = os.path.basename(asset_rel_path)
+
+                yield (
+                    asset["filename"],
+                    modified_at,
+                    perms,
+                    NO_COMPRESSION_64,
+                    get_chunks(stream),
+                )
 
     def download_all(
         self,
