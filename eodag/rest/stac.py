@@ -464,7 +464,6 @@ class StacItem(StacCommon):
         )
         # parse f-strings
         format_args = deepcopy(self.stac_config)
-        # format_args["collection"] = dict(catalog.as_dict(), **{"url": catalog.url})
         format_args["catalog"] = dict(
             catalog.as_dict(), **{"url": catalog.url, "root": catalog.root}
         )
@@ -560,10 +559,6 @@ class StacCollection(StacCommon):
                     )
                 ).provider
             )
-            #
-            # if provider not in self.eodag_api.available_providers():
-            #     for p in self.eodag_api._plugins_manager.get_search_plugins(product_type=product_type["ID"]):
-            #         print(p.provider)
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(

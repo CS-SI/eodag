@@ -582,40 +582,13 @@ def format_metadata(search_param, *args, **kwargs):
             bbox = [long_num - 1, lat_num - 1, long_num + 1, lat_num + 1]
             return bbox
 
-        # @staticmethod
-        # def convert_get_corine_product_type(start_date, end_date):
-        #     start_year = start_date[:4]
-        #     end_year = end_date[:4]
-        #     print(start_year, end_year)
-        #     years = [1990, 2000, 2006, 2012, 2018]
-        #     if start_year == end_year and int(start_year) in years:
-        #         product_type = "Corine Land Cover " + start_year
-        #     else:
-        #         max_interception = 0
-        #         sel_years = [1990, 2000]
-        #         for i, year in enumerate(years[:-1]):
-        #             if int(end_year) < years[i+1] and i == 0:
-        #                 sel_years = [year, years[i+1]]
-        #                 break
-        #             elif int(start_year) > years[i+1]:
-        #                 continue
-        #             else:
-        #                 interception = min(years[i+1], int(end_year)) - max(year, int(start_year))
-        #                 if interception > max_interception:
-        #                     max_interception = interception
-        #                     sel_years = [year, years[i+1]]
-        #         product_type = "Corine Land Change " + str(sel_years[0]) + " " + str(sel_years[1])
-        #
-        #     return product_type
-
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(
             r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
-    # if re.search(r"\([a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*", search_param):
-    #     search_param = search_param.replace(":", "_COLON_")
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
@@ -889,7 +862,6 @@ def properties_from_xml(
     discovery_pattern = discovery_config.get("metadata_pattern", None)
     discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
-        # discovered_properties = discovery_path.find(json)
         discovered_properties = root.xpath(
             discovery_path,
             namespaces={k or empty_ns_prefix: v for k, v in root.nsmap.items()},

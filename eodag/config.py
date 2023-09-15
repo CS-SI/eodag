@@ -55,7 +55,6 @@ class SimpleYamlProxyConfig(object):
     def __init__(self, conf_file_path):
         try:
             self.source = cached_yaml_load(conf_file_path)
-            # self.source = deepcopy(cached_yaml_load(conf_file_path))
         except yaml.parser.ParserError as e:
             print("Unable to load user configuration file")
             raise e
