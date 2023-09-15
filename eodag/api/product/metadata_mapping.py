@@ -952,10 +952,15 @@ def format_query_params(product_type, config, **kwargs):
     # . not allowed in eodag_search_key, replaced with %2E
     kwargs = {k.replace(".", "%2E"): v for k, v in kwargs.items()}
 
+    product_type_metadata_mapping = dict(
+        config.metadata_mapping,
+        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+    )
+
     query_params = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
-    queryables = _get_queryables(kwargs, config)
+    queryables = _get_queryables(kwargs, config, product_type_metadata_mapping)
 
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = kwargs[eodag_search_key]
@@ -995,7 +1000,13 @@ def format_query_params(product_type, config, **kwargs):
     # Now add formatted free text search parameters (this is for cases where a
     # complex query through a free text search parameter is available for the
     # provider and needed for the consumer)
-    literal_search_params.update(_format_free_text_search(config, **kwargs))
+    product_type_metadata_mapping = dict(
+        config.metadata_mapping,
+        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+    )
+    literal_search_params.update(
+        _format_free_text_search(config, product_type_metadata_mapping, **kwargs)
+    )
     for provider_search_key, provider_value in literal_search_params.items():
         if isinstance(provider_value, list):
             query_params.setdefault(provider_search_key, []).extend(provider_value)
@@ -1018,7 +1029,7 @@ def _resolve_hashes(formatted_query_param):
     return formatted_query_param
 
 
-def _format_free_text_search(config, **kwargs):
+def _format_free_text_search(config, metadata_mapping, **kwargs):
     """Build the free text search parameter using the search parameters"""
     query_params = {}
     if not getattr(config, "free_text_search_operations", None):
@@ -1038,7 +1049,7 @@ def _format_free_text_search(config, **kwargs):
                 if any(
                     re.search(rf"{{{kw}[}}#]", operand)
                     and val is not None
-                    and isinstance(config.metadata_mapping.get(kw, []), list)
+                    and isinstance(metadata_mapping.get(kw, []), list)
                     for kw, val in kwargs.items()
                 )
             )
@@ -1058,15 +1069,13 @@ def _format_free_text_search(config, **kwargs):
     return query_params
 
 
-def _get_queryables(search_params, config):
+def _get_queryables(search_params, config, metadata_mapping):
     """Retrieve the metadata mappings that are query-able"""
     logger.debug("Retrieving queryable metadata from metadata_mapping")
     queryables = {}
     for eodag_search_key, user_input in search_params.items():
         if user_input is not None:
-            md_mapping = config.metadata_mapping.get(
-                eodag_search_key, (None, NOT_MAPPED)
-            )
+            md_mapping = metadata_mapping.get(eodag_search_key, (None, NOT_MAPPED))
             _, md_value = md_mapping
             # query param from defined metadata_mapping
             if md_mapping is not None and isinstance(md_mapping, list):

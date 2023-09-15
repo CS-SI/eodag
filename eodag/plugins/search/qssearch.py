@@ -23,6 +23,7 @@ from urllib.request import Request, urlopen
 
 import orjson
 import requests
+import yaml
 from lxml import etree
 
 from eodag.api.product import EOProduct
@@ -38,6 +39,7 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     USER_AGENT,
     _deprecated,
+    deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
     quote,
@@ -236,6 +238,29 @@ class QueryStringSearch(Search):
                 ] = mtd_cfg_as_conversion_and_querypath(
                     self.config.products[product_type]["metadata_mapping"]
                 )
+                # Complete and ready to use product type specific metadata-mapping
+                product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
+
+                # update config using provider product type definition metadata_mapping
+                # from another product
+                other_product_for_mapping = self.config.products[product_type].get(
+                    "metadata_mapping_from_product", ""
+                )
+                if other_product_for_mapping:
+                    other_product_type_def_params = self.get_product_type_def_params(
+                        other_product_for_mapping,  # **kwargs
+                    )
+                    product_type_metadata_mapping.update(
+                        other_product_type_def_params.get("metadata_mapping", {})
+                    )
+                # from current product
+                product_type_metadata_mapping.update(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
+
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = product_type_metadata_mapping
 
     def clear(self):
         """Clear search context"""
@@ -405,33 +430,21 @@ class QueryStringSearch(Search):
             product_type, **kwargs
         )
 
-        # update config using provider product type definition metadata_mapping
-        # from another product
-        other_product_for_mapping = self.product_type_def_params.get(
-            "metadata_mapping_from_product", ""
-        )
-        if other_product_for_mapping:
-            other_product_type_def_params = self.get_product_type_def_params(
-                other_product_for_mapping, **kwargs
-            )
-            self.config.metadata_mapping.update(
-                other_product_type_def_params.get("metadata_mapping", {})
-            )
-        # from current product
-        self.config.metadata_mapping.update(
-            self.product_type_def_params.get("metadata_mapping", {})
-        )
-
         # if product_type_def_params is set, remove product_type as it may conflict with this conf
         if self.product_type_def_params:
             keywords.pop("productType", None)
+
+        product_type_metadata_mapping = dict(
+            self.config.metadata_mapping,
+            **self.product_type_def_params.get("metadata_mapping", {}),
+        )
         keywords.update(
             {
                 k: v
                 for k, v in self.product_type_def_params.items()
                 if k not in keywords.keys()
-                and k in self.config.metadata_mapping.keys()
-                and isinstance(self.config.metadata_mapping[k], list)
+                and k in product_type_metadata_mapping.keys()
+                and isinstance(product_type_metadata_mapping[k], list)
             }
         )
 
@@ -620,7 +633,15 @@ class QueryStringSearch(Search):
                     except IndexError:
                         logger.debug("Next page merge could not be collected")
 
-                result = resp_as_json.get(self.config.results_entry, [])
+                results_entry = string_to_jsonpath(
+                    self.config.results_entry, force=True
+                )
+                try:
+                    result = results_entry.find(resp_as_json)[0].value
+                except Exception:
+                    result = []
+                if not isinstance(result, list):
+                    result = [result]
 
                 if getattr(self, "need_count", False):
                     # extract total_items_nb from search results
@@ -664,7 +685,7 @@ class QueryStringSearch(Search):
                 self.provider,
                 QueryStringSearch.extract_properties[self.config.result_type](
                     result,
-                    self.config.metadata_mapping,
+                    self.get_metadata_mapping(kwargs.get("productType")),
                     discovery_config=getattr(self.config, "discover_metadata", {}),
                 ),
                 **kwargs,
@@ -771,6 +792,12 @@ class QueryStringSearch(Search):
         else:
             return {}
 
+    def get_metadata_mapping(self, product_type=None):
+        """Get the plugin metadata mapping configuration (product type specific if exists)"""
+        return self.config.products.get(product_type, {}).get(
+            "metadata_mapping", self.config.metadata_mapping
+        )
+
     def _request(self, url, info_message=None, exception_message=None):
         try:
             # auth if needed
@@ -849,7 +876,7 @@ class AwsSearch(QueryStringSearch):
             day = str(int(result["properties"]["completionDate"][8:10]))
 
             properties = QueryStringSearch.extract_properties[self.config.result_type](
-                result, self.config.metadata_mapping
+                result, self.get_metadata_mapping(kwargs.get("productType"))
             )
 
             properties["downloadLink"] = (
@@ -963,23 +990,6 @@ class PostJsonSearch(QueryStringSearch):
             product_type, **kwargs
         )
 
-        # update config using provider product type definition metadata_mapping
-        # from another product
-        other_product_for_mapping = self.product_type_def_params.get(
-            "metadata_mapping_from_product", ""
-        )
-        if other_product_for_mapping:
-            other_product_type_def_params = self.get_product_type_def_params(
-                other_product_for_mapping, **kwargs
-            )
-            self.config.metadata_mapping.update(
-                other_product_type_def_params.get("metadata_mapping", {})
-            )
-        # from current product
-        self.config.metadata_mapping.update(
-            self.product_type_def_params.get("metadata_mapping", {})
-        )
-
         # Add to the query, the queryable parameters set in the provider product type definition
         keywords.update(
             {
@@ -1000,10 +1010,17 @@ class PostJsonSearch(QueryStringSearch):
                     "specific_qssearch", {"parameters": []}
                 )["parameters"]
             ):
+                # config backup
+                plugin_config_backup = yaml.dump(self.config)
+
                 self.config.api_endpoint = query_value
-                self.config.metadata_mapping = self.config.products[product_type][
-                    "specific_qssearch"
-                ]["metadata_mapping"]
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.products[product_type]["specific_qssearch"][
+                        "metadata_mapping"
+                    ]
+                )
                 self.config.results_entry = self.config.products[product_type][
                     "specific_qssearch"
                 ]["results_entry"]
@@ -1013,22 +1030,35 @@ class PostJsonSearch(QueryStringSearch):
                 self.config.merge_responses = self.config.products[product_type][
                     "specific_qssearch"
                 ].get("merge_responses", None)
-                super(PostJsonSearch, self).__init__(
-                    provider=self.provider, config=self.config
-                )
+
                 self.count_hits = lambda *x, **y: 1
                 self._request = super(PostJsonSearch, self)._request
-                return super(PostJsonSearch, self).query(
-                    items_per_page=items_per_page, page=page, **kwargs
-                )
+
+                try:
+                    eo_products, total_items = super(PostJsonSearch, self).query(
+                        items_per_page=items_per_page, page=page, **kwargs
+                    )
+                except Exception:
+                    raise
+                finally:
+                    # restore config
+                    self.config = yaml.load(
+                        plugin_config_backup, self.config.yaml_loader
+                    )
+
+                return eo_products, total_items
 
         # If we were not able to build query params but have queryable search criteria,
         # this means the provider does not support the search criteria given. If so,
         # stop searching right away
+        product_type_metadata_mapping = dict(
+            self.config.metadata_mapping,
+            **self.product_type_def_params.get("metadata_mapping", {}),
+        )
         if not qp and any(
             k
             for k in keywords.keys()
-            if isinstance(self.config.metadata_mapping.get(k, []), list)
+            if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
             return [], 0
         self.query_params = qp
