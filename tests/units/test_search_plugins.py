@@ -160,6 +160,45 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         # products count should not have been extracted from search results
         self.assertIsNone(getattr(self.mundi_search_plugin, "total_items_nb", None))
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_xml_distinct_product_type_mtd_mapping(
+        self, mock__request, mock_count_hits
+    ):
+        """The metadata mapping for XML QueryStringSearch should not mix specific product-types metadata-mapping"""
+        with open(self.provider_resp_dir / "mundi_search.xml", "rb") as f:
+            mundi_resp_search = f.read()
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.content = mundi_resp_search
+
+        search_plugin = self.get_search_plugin(self.product_type, "mundi")
+
+        # update metadata_mapping only for S1_SAR_GRD
+        search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
+            None,
+            "dc:creator/text()",
+        )
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_GRD",
+            auth=None,
+        )
+        self.assertIn("bar", products[0].properties)
+        self.assertEqual(products[0].properties["bar"], "dhus")
+
+        # search with another product type
+        self.assertNotIn(
+            "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
+        )
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_SLC",
+            auth=None,
+        )
+        self.assertNotIn("bar", products[0].properties)
+
 
 class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def setUp(self):
@@ -365,6 +404,49 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             keywords_list,
         )
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringseach_distinct_product_type_mtd_mapping(
+        self, mock__request
+    ):
+        """The metadata mapping for QueryStringSearch should not mix specific product-types metadata-mapping"""
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        mock__request.return_value = mock.Mock()
+        result = {
+            "totalResults": 1,
+            "features": [
+                {
+                    "id": "foo",
+                    "geometry": geojson_geometry,
+                },
+            ],
+        }
+        mock__request.return_value.json.side_effect = [result, result]
+        search_plugin = self.get_search_plugin(self.product_type, "peps")
+
+        # update metadata_mapping only for S1_SAR_GRD
+        search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
+            None,
+            "baz",
+        )
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_GRD",
+            auth=None,
+        )
+        self.assertIn("bar", products[0].properties)
+        self.assertEqual(products[0].properties["bar"], "baz")
+
+        # search with another product type
+        self.assertNotIn(
+            "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
+        )
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_SLC",
+            auth=None,
+        )
+        self.assertNotIn("bar", products[0].properties)
+
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
@@ -564,6 +646,49 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.assertNotIn(
             "cloudCoverPercentage", str(mock_requests_post.call_args_list[-1][1])
         )
+
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_plugins_search_postjsonsearch_distinct_product_type_mtd_mapping(
+        self, mock__request
+    ):
+        """The metadata mapping for PostJsonSearch should not mix specific product-types metadata-mapping"""
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        mock__request.return_value = mock.Mock()
+        result = {
+            "meta": {"page": 1, "found": 1, "limit": 2},
+            "results": [
+                {
+                    "id": "foo",
+                    "dataGeometry": geojson_geometry,
+                },
+            ],
+        }
+        mock__request.return_value.json.side_effect = [result, result]
+
+        # update metadata_mapping only for S1_SAR_GRD
+        self.awseos_search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"][
+            "bar"
+        ] = (
+            None,
+            "baz",
+        )
+        products, estimate = self.awseos_search_plugin.query(
+            productType="S1_SAR_GRD",
+            auth=self.awseos_auth_plugin,
+        )
+        self.assertIn("bar", products[0].properties)
+        self.assertEqual(products[0].properties["bar"], "baz")
+
+        # search with another product type
+        self.assertNotIn(
+            "bar",
+            self.awseos_search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"],
+        )
+        products, estimate = self.awseos_search_plugin.query(
+            productType="S2_MSI_L1C",
+            auth=self.awseos_auth_plugin,
+        )
+        self.assertNotIn("bar", products[0].properties)
 
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
@@ -859,6 +984,49 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         mock__request.assert_called()
         self.assertNotIn("cloudCoverPercentage", mock__request.call_args_list[-1][0][1])
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_distinct_product_type_mtd_mapping(
+        self, mock__request
+    ):
+        """The metadata mapping for ODataV4Search should not mix specific product-types metadata-mapping"""
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        mock__request.return_value = mock.Mock()
+        result = {
+            "context": {"matched": 1},
+            "features": [
+                {
+                    "id": "foo",
+                    "geometry": geojson_geometry,
+                },
+            ],
+        }
+        mock__request.return_value.json.side_effect = [result, result]
+        search_plugin = self.get_search_plugin("onda")
+
+        # update metadata_mapping only for S1_SAR_GRD
+        search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
+            None,
+            "baz",
+        )
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_GRD",
+            auth=None,
+        )
+        self.assertIn("bar", products[0].properties)
+        self.assertEqual(products[0].properties["bar"], "baz")
+
+        # search with another product type
+        self.assertNotIn(
+            "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
+        )
+        products, estimate = search_plugin.query(
+            productType="S1_SAR_SLC",
+            auth=None,
+        )
+        self.assertNotIn("bar", products[0].properties)
+
 
 class TestSearchPluginStacSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
@@ -955,7 +1123,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         """The metadata mapping for a stac provider should not mix specific product-types metadata-mapping"""
-
         mock__request.return_value = mock.Mock()
         result = {
             "context": {"matched": 1},
@@ -967,7 +1134,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             ],
         }
         mock__request.return_value.json.side_effect = [result, result]
-
         search_plugin = self.get_search_plugin(self.product_type, "earth_search")
 
         # update metadata_mapping only for S2_MSI_L1C
@@ -975,7 +1141,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             None,
             "baz",
         )
-
         products, estimate = search_plugin.query(
             productType="S2_MSI_L1C",
             auth=None,
@@ -987,7 +1152,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertNotIn(
             "bar", search_plugin.config.products["S2_MSI_L2A"]["metadata_mapping"]
         )
-
         products, estimate = search_plugin.query(
             productType="S2_MSI_L2A",
             auth=None,
@@ -1001,7 +1165,7 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
         super(TestSearchPluginBuildPostSearchResult, self).setUp()
         # One of the providers that has a BuildPostSearchResult Search plugin
         provider = "meteoblue"
-        self.search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.search_plugin = self.get_search_plugin(provider=provider)
         self.auth_plugin = self.get_auth_plugin(provider)
         self.auth_plugin.config.credentials = {"cred": "entials"}
         self.search_plugin.auth = self.auth_plugin.authenticate()
@@ -1095,9 +1259,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         """The metadata mapping for data_request_search should not mix specific product-types metadata-mapping"""
-
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
-
         mock__request.return_value = mock.Mock()
         result = {
             "context": {"matched": 1},
@@ -1109,7 +1271,6 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             ],
         }
         mock__request.return_value.json.side_effect = [result, result]
-
         search_plugin = self.get_search_plugin("wekeo")
 
         # update metadata_mapping only for S1_SAR_GRD
@@ -1117,7 +1278,6 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             None,
             "baz",
         )
-
         products, estimate = search_plugin.query(
             productType="S1_SAR_GRD",
             auth=None,
@@ -1129,7 +1289,6 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         self.assertNotIn(
             "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
         )
-
         products, estimate = search_plugin.query(
             productType="S1_SAR_SLC",
             auth=None,
