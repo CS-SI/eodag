@@ -290,9 +290,12 @@ class TestStacUtils(unittest.TestCase):
 
     def test_get_stac_collection_by_id(self):
         """get_stac_collection_by_id runs without any error"""
-        self.rest_utils.get_stac_collection_by_id(
+        r = self.rest_utils.get_stac_collection_by_id(
             url="", root="", collection_id="S2_MSI_L1C"
         )
+        self.assertIsNotNone(r)
+        self.assertEqual(9, len(r["providers"]))
+        self.assertEqual(1, r["providers"][0]["priority"])
 
     def test_get_stac_collections(self):
         """get_stac_collections runs without any error"""

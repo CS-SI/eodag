@@ -545,29 +545,36 @@ class StacCollection(StacCommon):
         :rtype: list
         """
         collection_model = deepcopy(self.stac_config["collection"])
+        provider_model = deepcopy(self.stac_config["provider"])
 
         product_types = self.__get_product_types(filters)
 
         collection_list = []
         for product_type in product_types:
-            # get default provider for each product_type
-            product_type_provider = (
-                self.provider
-                or next(
-                    self.eodag_api._plugins_manager.get_search_plugins(
-                        product_type=product_type["ID"]
-                    )
-                ).provider
-            )
+            # get available providers each product_type
+            providers = [
+                plugin.provider
+                for plugin in self.eodag_api._plugins_manager.get_search_plugins(
+                    product_type=product_type["ID"]
+                )
+            ]
+            if self.provider and self.provider in providers:
+                providers.remove(self.provider)
+                providers.insert(0, self.provider)
+            providers_models = []
+            for provider in providers:
+                provider_m = jsonpath_parse_dict_items(
+                    provider_model,
+                    {"provider": self.eodag_api.providers_config[provider].__dict__},
+                )
+                providers_models.append(provider_m)
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(
                 collection_model,
                 {
                     "product_type": product_type,
-                    "provider": self.eodag_api.providers_config[
-                        product_type_provider
-                    ].__dict__,
+                    "providers": providers_models,
                 },
             )
             # parse f-strings
@@ -622,7 +629,7 @@ class StacCollection(StacCommon):
 
         :param collection_id: Product type as collection ID
         :type collection_id: str
-        :returns: Collection dictionnary
+        :returns: Collection dictionary
         :rtype: dict
         """
         collection_list = self.__get_collection_list()

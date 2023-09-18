@@ -538,7 +538,7 @@ def get_stac_collection_by_id(url, root, collection_id, provider=None):
     :type collection_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :returns: Collection dictionnary
+    :returns: Collection dictionary
     :rtype: dict
     """
     return StacCollection(
