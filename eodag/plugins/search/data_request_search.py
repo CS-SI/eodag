@@ -231,7 +231,6 @@ class DataRequestSearch(Search):
             logger.info("search job for product_type %s created", product_type)
             return request_job.json()["jobId"]
 
-
     def _check_request_status(self, data_request_id):
         logger.info("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
