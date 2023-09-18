@@ -129,4 +129,4 @@ to each provider supported by ``eodag``:
 
       curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/termsaccepted/Copernicus_General_License
 
-  * Add your WEkEO credentials to the user configuration file.
+  * Add your WEkEO credentials (*username*, *password*) to the user configuration file.
