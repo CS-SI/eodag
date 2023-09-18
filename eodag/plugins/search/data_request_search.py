@@ -234,14 +234,25 @@ class DataRequestSearch(Search):
     def _check_request_status(self, data_request_id):
         logger.info("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
-        status_data = requests.get(status_url, headers=self.auth.headers).json()
-        if "status_code" in status_data and status_data["status_code"] in [403, 404]:
-            raise RequestError("authentication token expired during request")
-        if status_data["status"] == "failed":
-            raise RequestError(
-                f"data request job has failed, message: {status_data['message']}"
-            )
-        return status_data["status"] == "completed"
+        try:
+            status_resp = requests.get(status_url, headers=self.auth.headers)
+            status_resp.raise_for_status()
+        except requests.RequestException as e:
+            raise RequestError(f"_check_request_status failed: {str(e)}")
+        else:
+            status_data = status_resp.json()
+            if "status_code" in status_data and status_data["status_code"] in [
+                403,
+                404,
+            ]:
+                logger.error(f"_check_request_status failed: {status_data}")
+                raise RequestError("authentication token expired during request")
+            if status_data["status"] == "failed":
+                logger.error(f"_check_request_status failed: {status_data}")
+                raise RequestError(
+                    f"data request job has failed, message: {status_data['message']}"
+                )
+            return status_data["status"] == "completed"
 
     def _get_result_data(self, data_request_id, items_per_page, page):
         page = page - 1 + self.config.pagination.get("start_page", 1)
