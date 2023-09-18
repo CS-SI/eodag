@@ -516,4 +516,3 @@ class TestMetadataFormatter(unittest.TestCase):
                 }
             ),
         )
-

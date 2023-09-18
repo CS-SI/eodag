@@ -244,7 +244,6 @@ class DataRequestSearch(Search):
         except requests.RequestException as e:
             raise RequestError(f"_cancel_request failed: {str(e)}")
 
-
     def _check_request_status(self, data_request_id):
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
