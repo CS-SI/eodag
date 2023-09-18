@@ -1030,7 +1030,7 @@ S3_SRA:
 
 S3_SRA_A:
   abstract: |
-    A Level 1A SRAL product contains one "measurement data file" containing the L1A measurements parameters: |
+    A Level 1A SRAL product contains one "measurement data file" containing the L1A measurements parameters:
     ECHO_SAR_Ku: L1A Tracking measurements (sorted and calibrated) in SAR mode - Ku-band (80-Hz)
     ECHO_PLRM: L1A Tracking measurements (sorted and calibrated) in pseudo-LRM mode - Ku and C bands (80-Hz)
   instrument: SRAL
@@ -1045,7 +1045,7 @@ S3_SRA_A:
 
 S3_SRA_BS:
   abstract: |
-    A Level 1B-S SRAL product contains one "measurement data file" containing the L1b measurements parameters: |
+    A Level 1B-S SRAL product contains one "measurement data file" containing the L1b measurements parameters:
     ECHO_SAR_Ku : L1b Tracking measurements in SAR mode - Ku band (20-Hz) as defined in the L1b MEAS product
                   completed with SAR expert information
     ECHO_PLRM : L1b Tracking measurements in pseudo-LRM mode - Ku and C bands (20-Hz) as defined in the L1b
@@ -1609,7 +1609,7 @@ S5P_L2_NP_BD3:
     of VIIRS (Visible Infra-red Imaging Radiometer Suite) on the U.S. S-NPP (Suomi - National Polar-orbiting
     Partnership). S5P flies in a so-called loose formation with the S-NPP with a temporal separation between them of
     less than 5 minutes.
-    The main information contained in the S5P-NPP product is: |
+    The main information contained in the S5P-NPP product is:
     1. A statistical summary for each S5P FOV of the NPP-VIIRS L2 Cloud Mask (VCM).
     2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
     This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
@@ -1633,7 +1633,7 @@ S5P_L2_NP_BD6:
     of VIIRS (Visible Infra-red Imaging Radiometer Suite) on the U.S. S-NPP (Suomi - National Polar-orbiting
     Partnership). S5P flies in a so-called loose formation with the S-NPP with a temporal separation between them of
     less than 5 minutes.
-    The main information contained in the S5P-NPP product is: |
+    The main information contained in the S5P-NPP product is:
     1. A statistical summary for each S5P FOV of the NPP-VIIRS L2 Cloud Mask (VCM).
     2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
     This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
@@ -1657,7 +1657,7 @@ S5P_L2_NP_BD7:
     of VIIRS (Visible Infra-red Imaging Radiometer Suite) on the U.S. S-NPP (Suomi - National Polar-orbiting
     Partnership). S5P flies in a so-called loose formation with the S-NPP with a temporal separation between them of
     less than 5 minutes.
-    The main information contained in the S5P-NPP product is: |
+    The main information contained in the S5P-NPP product is:
     1. A statistical summary for each S5P FOV of the NPP-VIIRS L2 Cloud Mask (VCM).
     2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
     This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
