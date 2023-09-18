@@ -669,9 +669,6 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         self.product_dataset = "cams-global-reanalysis-eac4"
         self.product_type_params = {
             "dataset": self.product_dataset,
-            "stream": "oper",
-            "class": "mc",
-            "expver": "0001",
             "variable": [
                 "dust_aerosol_0.03-0.55um_mixing_ratio",
                 "dust_aerosol_0.55-0.9um_mixing_ratio",
@@ -727,6 +724,8 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
     def test_plugins_apis_cds_query_dates_missing(self):
         """CdsApi.query must use default dates if missing"""
         # given start & stop
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_url"] = ""
         results, _ = self.api_plugin.query(
             productType=self.product_type,
             startTimeFromAscendingNode="2020-01-01",
@@ -741,6 +740,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
 
         # missing start & stop
+        setattr(self.api_plugin.config, "products_split_timedelta", {})
         results, _ = self.api_plugin.query(
             productType=self.product_type,
         )
@@ -799,6 +799,8 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
 
     def test_plugins_apis_cds_query_with_producttype(self):
         """CdsApi.query must build a EOProduct from input parameters with predefined product type"""
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_url"] = ""
         results, _ = self.api_plugin.query(
             **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
         )
