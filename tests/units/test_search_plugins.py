@@ -1230,6 +1230,27 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
+        keywords = {
+            "format": "GeoTiff100mt",
+            "providerProductType": "Corine Land Cover 2018",
+        }
+        self.search_plugin._create_data_request(
+            "EO:CLMS:DAT:CORINE",
+            "CLMS_CORINE",
+            productType="EO:CLMS:DAT:CORINE",
+            **keywords,
+        )
+        mock_requests_post.assert_called_with(
+            self.search_plugin.config.data_request_url,
+            json={
+                "datasetId": "EO:CLMS:DAT:CORINE",
+                "stringChoiceValues": [
+                    {"name": "format", "value": "GeoTiff100mt"},
+                    {"name": "product_type", "value": "Corine Land Cover 2018"},
+                ],
+            },
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+        )
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_check_request_status(self, mock_requests_get):
@@ -1248,9 +1269,11 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_get_result_data(self, mock_requests_get):
-        self.search_plugin._get_result_data("123")
+        self.search_plugin._get_result_data("123", items_per_page=5, page=1)
         mock_requests_get.assert_called_with(
-            self.search_plugin.config.result_url.format(jobId="123"),
+            self.search_plugin.config.result_url.format(
+                jobId="123", items_per_page=5, page=0
+            ),
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
 

@@ -104,3 +104,31 @@ to each provider supported by ``eodag``:
   * Add these credentials to the user configuration file.
 
 * ``earth_search_cog``: no authentication needed.
+
+* ``wekeo``: you need an access token to authenticate and to accept terms and conditions with it:
+
+  * Create an account on `WEkEO <https://www.wekeo.eu/register>`__
+
+  * Add your WEkEO credentials (*username*, *password*) to the user configuration file.
+
+  * You will then need to accept Copernicus terms and conditions (for once). To do this, follow the
+    `tutorial guidelines <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_wekeo.html#Registration>`__
+    or run the following commands in your terminal.
+
+  * First, get a token from your base64-encoded credentials (replace USERNAME and PASSWORD with your credentials):
+
+    .. code-block:: bash
+
+      curl -X GET --header "Authorization: Basic $(echo USERNAME:PASSWORD | base64)" "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/gettoken"
+
+    The WEkEO API will respond with a token:
+
+    .. code-block:: bash
+
+      { "access_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy" }
+
+  * Accept terms and conditions by running this command and replacing <access_token>:
+
+    .. code-block:: bash
+
+      curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/termsaccepted/Copernicus_General_License

@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
 
 import eodag
+from eodag import EOProduct
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
@@ -27,7 +28,12 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
-from eodag.utils import _deprecated, dict_items_recursive_apply, string_to_jsonpath
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    _deprecated,
+    dict_items_recursive_apply,
+    string_to_jsonpath,
+)
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -427,6 +433,7 @@ def search_products(product_type, arguments, stac_formatted=True):
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)
 
         products, total = eodag_api.search(**criterias)
+
         products = filter_products(products, arguments, **criterias)
 
         if not unserialized:
@@ -594,15 +601,39 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
-    search_results = search_product_by_id(
-        item_id, product_type=catalogs[0], provider=provider
+    product_type = catalogs[0]
+    search_plugin = next(
+        eodag_api._plugins_manager.get_search_plugins(product_type, provider)
     )
-    if len(search_results) > 0:
-        product = search_results[0]
+    provider_product_type_config = search_plugin.config.products.get(
+        product_type, {}
+    ) or search_plugin.config.products.get(GENERIC_PRODUCT_TYPE, {})
+    if provider_product_type_config.get("storeDownloadUrl", False):
+        if item_id not in search_plugin.download_info:
+            logger.error(f"data for item {item_id} not found")
+            raise NotAvailableError(
+                f"download url for product {item_id} could not be found, please redo "
+                f"the search request to fetch the required data"
+            )
+        product_data = search_plugin.download_info[item_id]
+        properties = {
+            "id": item_id,
+            "orderLink": product_data["orderLink"],
+            "downloadLink": product_data["downloadLink"],
+            "geometry": "-180 -90 180 90",
+        }
+        product = EOProduct(provider or product_data["provider"], properties)
     else:
-        raise NotAvailableError(
-            f"Could not find {item_id} item in {catalogs[0]} collection for provider {provider}"
+        search_results = search_product_by_id(
+            item_id, product_type=product_type, provider=provider
         )
+        if len(search_results) > 0:
+            product = search_results[0]
+        else:
+            raise NotAvailableError(
+                f"Could not find {item_id} item in {product_type} collection for provider {provider}"
+            )
+
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
         auth_plugin = eodag_api._plugins_manager.get_auth_plugin(

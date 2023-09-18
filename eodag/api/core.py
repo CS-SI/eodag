@@ -1626,11 +1626,10 @@ class EODataAccessGateway(object):
                         "the total number of products matching the search criteria"
                     )
         except Exception:
-            logger.info(
-                "No result from provider '%s' due to an error during search. Raise "
-                "verbosity of log messages for details",
-                search_plugin.provider,
-            )
+            log_msg = f"No result from provider '{search_plugin.provider}' due to an error during search."
+            if not raise_errors:
+                log_msg += " Raise verbosity of log messages for details"
+            logger.info(log_msg)
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next

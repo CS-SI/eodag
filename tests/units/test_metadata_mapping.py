@@ -353,6 +353,36 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
+    def test_convert_get_processing_level_from_s1_id(self):
+        to_format = "{id#get_processing_level_from_s1_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
+            ),
+            "LEVEL1",
+        )
+
+    def test_convert_get_sensor_mode_from_s1_id(self):
+        to_format = "{id#get_sensor_mode_from_s1_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
+            ),
+            "IW",
+        )
+
+    def test_convert_get_processing_level_from_s2_id(self):
+        to_format = "{id#get_processing_level_from_s2_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S2A_MSIL1C_20160602T065342_N0202_R077_T39KVU_20160602T065342",
+            ),
+            "S2MSIL1C",
+        )
+
     def test_convert_split_id_into_s3_params(self):
         to_format = "{id#split_id_into_s3_params}"
         expected = {
@@ -387,6 +417,16 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
+    def test_convert_get_processing_level_from_s5p_id(self):
+        to_format = "{id#get_processing_level_from_s5p_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                id="S5P_RPRO_L2__NP_BD7_20180531T223852_20180601T002220_03271_01_010002_20190528T184222",
+            ),
+            "L2",
+        )
+
     def test_convert_split_cop_dem_id(self):
         to_format = "{id#split_cop_dem_id}"
         self.assertEqual(
@@ -406,4 +446,55 @@ class TestMetadataFormatter(unittest.TestCase):
                 )
             ),
             str([-120, -60, -118, -58]),
+        )
+
+    def test_convert_split_corine_id(self):
+        self.assertEqual(
+            format_metadata(
+                "{id#split_corine_id}",
+                id="u2006_clc2000_v2020_20u1_raster100m",
+            ),
+            "Corine Land Cover 2000",
+        )
+        self.assertEqual(
+            format_metadata(
+                "{id#split_corine_id}",
+                id="u2006_cha0006_v2020_20u1_raster100m",
+            ),
+            "Corine Land Change 2000 2006",
+        )
+
+    def test_convert_to_datetime_dict(self):
+        to_format = "{date#to_datetime_dict(list)}"
+        expected_result = {
+            "year": ["2023"],
+            "month": ["01"],
+            "day": ["31"],
+            "hour": ["00"],
+            "minute": ["00"],
+            "second": ["00"],
+        }
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T00:00"), str(expected_result)
+        )
+        to_format = "{date#to_datetime_dict(string)}"
+        expected_result = {
+            "year": "2023",
+            "month": "01",
+            "day": "31",
+            "hour": "00",
+            "minute": "00",
+            "second": "00",
+        }
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T00:00"), str(expected_result)
+        )
+
+    def test_convert_get_ecmwf_time(self):
+        to_format = "{date#get_ecmwf_time}"
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T00:00"), str(["00:00"])
+        )
+        self.assertEqual(
+            format_metadata(to_format, date="2023-01-31T23:59"), str(["23:00"])
         )

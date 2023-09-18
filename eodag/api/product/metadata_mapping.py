@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import json
 import logging
 import re
 from datetime import datetime, timedelta
@@ -37,6 +38,7 @@ from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
     dict_items_recursive_apply,
+    get_geometry_from_various,
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
@@ -157,6 +159,10 @@ def format_metadata(search_param, *args, **kwargs):
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
+        - ``split_cop_dem_id``: get the bbox by splitting the product id
+        - ``split_corine_id``: get the product type by splitting the product id
+        - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
+        - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
 
     :param search_param: The string to be formatted
     :type search_param: str
@@ -234,7 +240,7 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(date_time, timespec="milliseconds"):
+        def convert_to_iso_utc_datetime(date_time: str, timespec="milliseconds") -> str:
             """Convert a date_time (str) to its ISO 8601 representation in UTC
 
             "2021-04-21" => "2021-04-21T00:00:00.000Z"
@@ -300,6 +306,26 @@ def format_metadata(search_param, *args, **kwargs):
                 return [list(x.bounds[0:4]) for x in geoms]
             else:
                 return [list(input_geom.bounds[0:4])]
+
+        @staticmethod
+        def convert_to_bounds(input_geom_unformatted):
+            input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
+            if isinstance(input_geom, MultiPolygon):
+                geoms = [geom for geom in input_geom.geoms]
+                # sort with larger one at first (stac-browser only plots first one)
+                geoms.sort(key=lambda x: x.area, reverse=True)
+                min_lon = 180
+                min_lat = 90
+                max_lon = -180
+                max_lat = -90
+                for geom in geoms:
+                    min_lon = min(min_lon, geom.bound[0])
+                    min_lat = min(min_lat, geom.bound[1])
+                    max_lon = max(max_lon, geom.bound[2])
+                    max_lat = max(max_lat, geom.bound[3])
+                return [min_lon, min_lat, max_lon, max_lat]
+            else:
+                return list(input_geom.bounds[0:4])
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom):
@@ -533,6 +559,23 @@ def format_metadata(search_param, *args, **kwargs):
             return params
 
         @staticmethod
+        def convert_get_processing_level_from_s1_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            level = "LEVEL" + parts[3][0]
+            return level
+
+        @staticmethod
+        def convert_get_sensor_mode_from_s1_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            return parts[1]
+
+        @staticmethod
+        def convert_get_processing_level_from_s2_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            processing_level = "S2" + parts[1]
+            return processing_level
+
+        @staticmethod
         def convert_split_id_into_s3_params(product_id):
             parts = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
@@ -567,6 +610,12 @@ def format_metadata(search_param, *args, **kwargs):
             return params
 
         @staticmethod
+        def convert_get_processing_level_from_s5p_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            processing_level = parts[2].replace("_", "")
+            return processing_level
+
+        @staticmethod
         def convert_split_cop_dem_id(product_id):
             parts = product_id.split("_")
             lattitude = parts[3]
@@ -581,6 +630,80 @@ def format_metadata(search_param, *args, **kwargs):
                 long_num = -1 * int(longitude[1:])
             bbox = [long_num - 1, lat_num - 1, long_num + 1, lat_num + 1]
             return bbox
+
+        @staticmethod
+        def convert_split_corine_id(product_id):
+            if "clc" in product_id:
+                year = product_id.split("_")[1][3:]
+                product_type = "Corine Land Cover " + year
+            else:
+                years = [1990, 2000, 2006, 2012, 2018]
+                end_year = product_id[1:5]
+                i = years.index(int(end_year))
+                start_year = str(years[i - 1])
+                product_type = "Corine Land Change " + start_year + " " + end_year
+            return product_type
+
+        @staticmethod
+        def convert_to_datetime_dict(date: str, format: str) -> dict:
+            """Convert a date (str) to a dictionary where values are in the format given in argument
+
+            date == "2021-04-21T18:27:19.123Z" and format == "list" => {
+                "year": ["2021"],
+                "month": ["04"],
+                "day": ["21"],
+                "hour": ["18"],
+                "minute": ["27"],
+                "second": ["19"],
+            }
+            date == "2021-04-21T18:27:19.123Z" and format == "string" => {
+                "year": "2021",
+                "month": "04",
+                "day": "21",
+                "hour": "18",
+                "minute": "27",
+                "second": "19",
+            }
+            date == "2021-04-21" and format == "list" => {
+                "year": ["2021"],
+                "month": ["04"],
+                "day": ["21"],
+                "hour": ["00"],
+                "minute": ["00"],
+                "second": ["00"],
+            }
+            """
+            utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
+            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            if format == "list":
+                return {
+                    "year": [date_object.strftime("%Y")],
+                    "month": [date_object.strftime("%m")],
+                    "day": [date_object.strftime("%d")],
+                    "hour": [date_object.strftime("%H")],
+                    "minute": [date_object.strftime("%M")],
+                    "second": [date_object.strftime("%S")],
+                }
+            else:
+                return {
+                    "year": date_object.strftime("%Y"),
+                    "month": date_object.strftime("%m"),
+                    "day": date_object.strftime("%d"),
+                    "hour": date_object.strftime("%H"),
+                    "minute": date_object.strftime("%M"),
+                    "second": date_object.strftime("%S"),
+                }
+
+        @staticmethod
+        def convert_get_ecmwf_time(date: str) -> list:
+            """Get the time of a date (str) in the ECMWF format (["HH:00"])
+
+            "2021-04-21T18:27:19.123Z" => ["18:00"]
+            "2021-04-21" => ["00:00"]
+            """
+            return [
+                MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
+            ]
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
@@ -943,15 +1066,17 @@ def format_query_params(product_type, config, **kwargs):
                 formatted_query_param = format_metadata(
                     provider_search_key, product_type, **kwargs
                 )
+                formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_key:
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
-                        formatted_query_param = _resolve_hashes(
-                            formatted_query_param.replace("'", '"')
-                        )
+                        formatted_query_param = _resolve_hashes(formatted_query_param)
                     # json query string (for POST request)
                     update_nested_dict(
-                        query_params, orjson.loads(formatted_query_param)
+                        query_params,
+                        orjson.loads(formatted_query_param),
+                        extend_list_values=True,
+                        allow_extend_duplicates=False,
                     )
                 else:
                     query_params[eodag_search_key] = formatted_query_param
@@ -988,16 +1113,31 @@ def format_query_params(product_type, config, **kwargs):
 
 
 def _resolve_hashes(formatted_query_param):
-    while '["' in formatted_query_param:
-        ind_open = formatted_query_param.find('["')
-        ind_close = formatted_query_param.find('"]')
-        hash_start = formatted_query_param[:ind_open].rfind("{")
-        h = orjson.loads(formatted_query_param[hash_start:ind_open])
-        key = formatted_query_param[ind_open + 2 : ind_close]
+    """
+    resolves structures of the format {"a": "abc", "b": "cde"}["a"] given in the formatted_query_param
+    the structure is replaced by the value corresponding to the given key in the hash
+    (in this case "abc")
+    """
+    # check if there is still a hash to be resolved
+    while '}["' in formatted_query_param:
+        # find and parse code between {}
+        ind_open = formatted_query_param.find('}["')
+        ind_close = formatted_query_param.find('"]', ind_open)
+        hash_start = formatted_query_param[:ind_open].rfind(": {") + 2
+        h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
+        # find key and get value
+        ind_key_start = formatted_query_param.find('"', ind_open) + 1
+        key = formatted_query_param[ind_key_start:ind_close]
         value = h[key]
-        formatted_query_param = formatted_query_param.replace(
-            formatted_query_param[hash_start : ind_close + 2], '"' + value + '"'
-        )
+        # replace hash with value
+        if isinstance(value, str):
+            formatted_query_param = formatted_query_param.replace(
+                formatted_query_param[hash_start : ind_close + 2], '"' + value + '"'
+            )
+        else:
+            formatted_query_param = formatted_query_param.replace(
+                formatted_query_param[hash_start : ind_close + 2], json.dumps(value)
+            )
     return formatted_query_param
 
 
