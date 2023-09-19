@@ -181,7 +181,8 @@ class StacItem(StacCommon):
     def __add_provider_and_variable_to_url(self, url, variable=None):
         parts = urlparse(url)
         query_dict = parse_qs(parts.query)
-        query_dict.update(provider=self.provider)
+        if self.provider:
+            query_dict.update(provider=self.provider)
         if variable:
             query_dict.update(variable=variable)
         without_arg_url = (
@@ -262,7 +263,7 @@ class StacItem(StacCommon):
             if getattr(product, "assets", False):
                 product_item["assets"] = dict(product_item["assets"], **origin_assets)
             # append provider query-arg to download link if specified
-            if self.provider:
+            if self.provider or "downloadLinks" in product.properties:
                 if "downloadLink" in product_item["assets"]:
                     product_item["assets"]["downloadLink"][
                         "href"

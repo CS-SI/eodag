@@ -491,11 +491,12 @@ def stac_catalogs_item_download(catalogs, item_id, request: Request):
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
+    variable = arguments.pop("variable", None)
 
     catalogs = catalogs.strip("/").split("/")
 
     return download_stac_item_by_id_stream(
-        catalogs=catalogs, item_id=item_id, provider=provider
+        catalogs=catalogs, item_id=item_id, provider=provider, variable=variable
     )
 
 
