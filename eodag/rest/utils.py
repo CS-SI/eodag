@@ -604,7 +604,6 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
-<<<<<<< HEAD
     product_type = catalogs[0]
     search_plugin = next(
         eodag_api._plugins_manager.get_search_plugins(product_type, provider)
@@ -629,7 +628,7 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
         product = EOProduct(provider or product_data["provider"], properties)
     else:
         search_results = search_product_by_id(
-            item_id, product_type=product_type, provider=provider
+            item_id, product_type=product_type, provider=provider, variable=variable
         )
         if len(search_results) > 0:
             product = search_results[0]
@@ -638,11 +637,6 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
                 f"Could not find {item_id} item in {product_type} collection for provider {provider}"
             )
 
-=======
-    product = search_product_by_id(
-        item_id, product_type=catalogs[0], provider=provider, variable=variable
-    )[0]
->>>>>>> feat: download asset of ecmwf product
     if product.downloader is None:
         download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
         auth_plugin = eodag_api._plugins_manager.get_auth_plugin(

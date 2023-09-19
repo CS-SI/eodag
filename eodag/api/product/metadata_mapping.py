@@ -706,7 +706,6 @@ def format_metadata(search_param, *args, **kwargs):
                 MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
 
-
         @staticmethod
         def convert_download_id_to_dates(product_id):
             dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
