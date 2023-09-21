@@ -30,11 +30,11 @@ from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,

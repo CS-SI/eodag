@@ -89,7 +89,8 @@ GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
-HTTP_REQ_TIMEOUT = 5
+HTTP_REQ_TIMEOUT = 5  # in seconds
+DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")

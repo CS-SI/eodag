@@ -58,7 +58,6 @@ from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.base import (
     Download,
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
 )
 from eodag.plugins.download.http import HTTPDownload
@@ -66,6 +65,7 @@ from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     get_bucket_name_and_prefix,
