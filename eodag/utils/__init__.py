@@ -80,14 +80,16 @@ except ImportError:  # pragma: no cover
     # for python < 3.8
     from importlib_metadata import metadata  # type: ignore
 
-DEFAULT_PROJ = "EPSG:4326"
-
 logger = py_logging.getLogger("eodag.utils")
+
+DEFAULT_PROJ = "EPSG:4326"
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 
 eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
+
+HTTP_REQ_TIMEOUT = 5
 
 JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")

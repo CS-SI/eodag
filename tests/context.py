@@ -66,6 +66,7 @@ from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     get_bucket_name_and_prefix,
     get_geometry_from_various,
@@ -99,6 +100,6 @@ from eodag.utils.exceptions import (
     ValidationError,
     STACOpenerError,
 )
-from eodag.utils.stac_reader import fetch_stac_items, HTTP_REQ_TIMEOUT, _TextOpener
+from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH
 from usgs.api import USGSAuthExpiredError, USGSError

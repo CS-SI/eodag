@@ -22,9 +22,8 @@ import requests.auth
 from requests.exceptions import RequestException
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import USER_AGENT
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
 class HttpQueryStringAuth(Authentication):

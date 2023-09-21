@@ -45,6 +45,7 @@ from eodag.plugins.download.base import (
     Download,
 )
 from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
@@ -59,7 +60,6 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NotAvailableError,
 )
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.http")
 

@@ -23,9 +23,8 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils import USER_AGENT, RequestsTokenAuth
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, RequestsTokenAuth
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.authentication.token")
 

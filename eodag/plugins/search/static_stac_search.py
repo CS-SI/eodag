@@ -25,8 +25,8 @@ from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.search.qssearch import StacSearch
-from eodag.utils import MockResponse
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT, fetch_stac_items
+from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
+from eodag.utils.stac_reader import fetch_stac_items
 
 logger = logging.getLogger("eodag.plugins.search.static_stac_search")
 

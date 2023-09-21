@@ -27,6 +27,7 @@ import yaml.parser
 from pkg_resources import resource_filename
 
 from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
@@ -39,7 +40,6 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.config")
 

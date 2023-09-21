@@ -34,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.download.base import Download
 from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
@@ -42,7 +43,6 @@ from eodag.utils import (
     rename_subfolder,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError, NotAvailableError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.aws")
 

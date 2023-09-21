@@ -35,6 +35,7 @@ from eodag.plugins.download.base import (
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
     get_bucket_name_and_prefix,
@@ -48,7 +49,6 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     RequestError,
 )
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.s3rest")
 
