@@ -199,6 +199,9 @@ class DataRequestSearch(Search):
 
         # loop to check search job status
         search_timeout = int(getattr(self.config, "timeout", HTTP_REQ_TIMEOUT))
+        logger.info(
+            f"checking status of request job {data_request_id} (timeout={search_timeout}s)"
+        )
         check_beginning = datetime.now()
         while not request_finished:
             request_finished = self._check_request_status(data_request_id)
@@ -272,7 +275,7 @@ class DataRequestSearch(Search):
             raise RequestError(f"_cancel_request failed: {str(e)}")
 
     def _check_request_status(self, data_request_id):
-        logger.info("checking status of request job %s", data_request_id)
+        logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
         try:
             status_resp = requests.get(
