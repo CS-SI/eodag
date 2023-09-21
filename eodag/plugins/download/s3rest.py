@@ -30,11 +30,12 @@ from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
     get_bucket_name_and_prefix,
@@ -48,7 +49,6 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     RequestError,
 )
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.s3rest")
 

@@ -25,11 +25,10 @@ import concurrent.futures
 import orjson
 import pystac
 
+from eodag.utils import HTTP_REQ_TIMEOUT
 from eodag.utils.exceptions import STACOpenerError
 
 logger = logging.getLogger("eodag.utils.stac_reader")
-
-HTTP_REQ_TIMEOUT = 5
 
 
 class _TextOpener:

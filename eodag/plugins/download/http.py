@@ -41,10 +41,11 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
 from eodag.utils import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
@@ -59,7 +60,6 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NotAvailableError,
 )
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.http")
 
@@ -146,6 +146,7 @@ class HTTPDownload(Download):
             method=order_method,
             url=order_url,
             auth=auth,
+            timeout=HTTP_REQ_TIMEOUT,
             headers=dict(getattr(self.config, "order_headers", {}), **USER_AGENT),
             **order_kwargs,
         ) as response:
@@ -226,6 +227,7 @@ class HTTPDownload(Download):
             method=status_method,
             url=status_url,
             auth=auth,
+            timeout=HTTP_REQ_TIMEOUT,
             headers=dict(
                 getattr(self.config, "order_status_headers", {}), **USER_AGENT
             ),
@@ -278,7 +280,11 @@ class HTTPDownload(Download):
                         f"Search for new location: {product.properties['searchLink']}"
                     )
                     # search again
-                    response = requests.get(product.properties["searchLink"])
+                    response = requests.get(
+                        product.properties["searchLink"],
+                        timeout=HTTP_REQ_TIMEOUT,
+                        headers=USER_AGENT,
+                    )
                     response.raise_for_status()
                     if (
                         self.config.order_status_on_success.get("result_type", "json")

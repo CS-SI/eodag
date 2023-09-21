@@ -25,7 +25,7 @@ from lxml import html
 
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_stac_provider_config
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())

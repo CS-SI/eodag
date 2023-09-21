@@ -37,6 +37,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     _deprecated,
     deepcopy,
@@ -48,7 +49,6 @@ from eodag.utils import (
     urlencode,
 )
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.search.qssearch")
 
@@ -801,6 +801,7 @@ class QueryStringSearch(Search):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
+            timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
             # auth if needed
             kwargs = {}
             if (
@@ -828,14 +829,7 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message.replace(url, prep.url))
                 urllib_req = Request(prep.url, headers=USER_AGENT)
-                urllib_response = urlopen(urllib_req)
-                # py2 compatibility : prevent AttributeError: addinfourl instance has no attribute 'reason'
-                if not hasattr(urllib_response, "reason"):
-                    urllib_response.reason = ""
-                if not hasattr(urllib_response, "status") and hasattr(
-                    urllib_response, "code"
-                ):
-                    urllib_response.status = urllib_response.code
+                urllib_response = urlopen(urllib_req, timeout=timeout)
                 # build Response
                 adapter = requests.adapters.HTTPAdapter()
                 response = adapter.build_response(prep, urllib_response)
@@ -843,7 +837,7 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message)
                 response = requests.get(
-                    url, timeout=HTTP_REQ_TIMEOUT, headers=USER_AGENT, **kwargs
+                    url, timeout=timeout, headers=USER_AGENT, **kwargs
                 )
                 response.raise_for_status()
         except (requests.RequestException, URLError) as err:
@@ -1153,7 +1147,7 @@ class PostJsonSearch(QueryStringSearch):
                 url,
                 json=self.query_params,
                 headers=USER_AGENT,
-                timeout=HTTP_REQ_TIMEOUT,
+                timeout=getattr(self.config, "timeout", HTTP_REQ_TIMEOUT),
                 **kwargs,
             )
             response.raise_for_status()

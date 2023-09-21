@@ -40,7 +40,6 @@ logger = logging.getLogger("eodag.plugins.download.base")
 # default wait times in minutes
 DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
 DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
-DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 
 class Download(PluginTopic):

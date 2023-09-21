@@ -25,9 +25,8 @@ from lxml import etree
 from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import USER_AGENT, parse_qs, repeatfunc, urlparse
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):

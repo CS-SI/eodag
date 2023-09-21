@@ -50,6 +50,7 @@ from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
     deepcopy,
@@ -67,7 +68,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedProvider,
 )
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT, fetch_stac_items
+from eodag.utils.stac_reader import fetch_stac_items
 
 logger = logging.getLogger("eodag.core")
 

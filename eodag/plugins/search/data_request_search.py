@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 
@@ -15,11 +15,13 @@ from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
+    HTTP_REQ_TIMEOUT,
+    USER_AGENT,
     deepcopy,
     format_dict_items,
     string_to_jsonpath,
 )
-from eodag.utils.exceptions import RequestError
+from eodag.utils.exceptions import NotAvailableError, RequestError
 
 logger = logging.getLogger("eodag.search.data_request_search")
 
@@ -195,9 +197,24 @@ class DataRequestSearch(Search):
             data_request_id = self.data_request_id
             request_finished = True
 
+        # loop to check search job status
+        search_timeout = int(getattr(self.config, "timeout", HTTP_REQ_TIMEOUT))
+        logger.info(
+            f"checking status of request job {data_request_id} (timeout={search_timeout}s)"
+        )
+        check_beginning = datetime.now()
         while not request_finished:
             request_finished = self._check_request_status(data_request_id)
-            time.sleep(1)
+            if not request_finished and datetime.now() >= check_beginning + timedelta(
+                seconds=search_timeout
+            ):
+                self._cancel_request(data_request_id)
+                raise NotAvailableError(
+                    f"Timeout reached when checking search job status for {self.provider}"
+                )
+            elif not request_finished:
+                time.sleep(1)
+
         logger.info("search job for product_type %s finished", provider_product_type)
         result = self._get_result_data(
             data_request_id,
@@ -225,7 +242,7 @@ class DataRequestSearch(Search):
         )
 
     def _create_data_request(self, product_type, eodag_product_type, **kwargs):
-        headers = getattr(self.auth, "headers", "")
+        headers = getattr(self.auth, "headers", USER_AGENT)
         try:
             url = self.config.data_request_url
             request_body = format_query_params(
@@ -234,7 +251,9 @@ class DataRequestSearch(Search):
             logger.debug(
                 f"Sending search job request to {url} with {str(request_body)}"
             )
-            request_job = requests.post(url, json=request_body, headers=headers)
+            request_job = requests.post(
+                url, json=request_body, headers=headers, timeout=HTTP_REQ_TIMEOUT
+            )
             request_job.raise_for_status()
         except requests.RequestException as e:
             raise RequestError(
@@ -244,11 +263,24 @@ class DataRequestSearch(Search):
             logger.info("search job for product_type %s created", product_type)
             return request_job.json()["jobId"]
 
+    def _cancel_request(self, data_request_id):
+        logger.info("deleting request job %s", data_request_id)
+        delete_url = f"{self.config.data_request_url}/{data_request_id}"
+        try:
+            delete_resp = requests.delete(
+                delete_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+            )
+            delete_resp.raise_for_status()
+        except requests.RequestException as e:
+            raise RequestError(f"_cancel_request failed: {str(e)}")
+
     def _check_request_status(self, data_request_id):
-        logger.info("checking status of request job %s", data_request_id)
+        logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
         try:
-            status_resp = requests.get(status_url, headers=self.auth.headers)
+            status_resp = requests.get(
+                status_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+            )
             status_resp.raise_for_status()
         except requests.RequestException as e:
             raise RequestError(f"_check_request_status failed: {str(e)}")
@@ -273,7 +305,9 @@ class DataRequestSearch(Search):
             jobId=data_request_id, items_per_page=items_per_page, page=page
         )
         try:
-            return requests.get(url, headers=self.auth.headers).json()
+            return requests.get(
+                url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+            ).json()
         except requests.RequestException:
             logger.error(f"Result could not be retrieved for {url}")
 
