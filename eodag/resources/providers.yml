@@ -880,7 +880,8 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
-    need_auth: false
+    timeout: 60
+    need_auth:
     dont_quote:
       - '['
       - ']'
@@ -1571,6 +1572,7 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    timeout: 60
     need_auth: false
     dont_quote:
       - '['
@@ -3745,6 +3747,7 @@
     metadata_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/"
     status_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/status/"
     result_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/jobs/{jobId}/result?size={items_per_page}&page={page}"
+    timeout: 60
     need_auth: true
     auth_error_code: 401
     results_entry: content

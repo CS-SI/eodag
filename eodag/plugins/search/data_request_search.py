@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 
@@ -21,7 +21,7 @@ from eodag.utils import (
     format_dict_items,
     string_to_jsonpath,
 )
-from eodag.utils.exceptions import RequestError
+from eodag.utils.exceptions import NotAvailableError, RequestError
 
 logger = logging.getLogger("eodag.search.data_request_search")
 
@@ -197,9 +197,21 @@ class DataRequestSearch(Search):
             data_request_id = self.data_request_id
             request_finished = True
 
+        # loop to check search job status
+        search_timeout = int(getattr(self.config, "timeout", HTTP_REQ_TIMEOUT))
+        check_beginning = datetime.now()
         while not request_finished:
             request_finished = self._check_request_status(data_request_id)
-            time.sleep(1)
+            if not request_finished and datetime.now() >= check_beginning + timedelta(
+                seconds=search_timeout
+            ):
+                self._cancel_request(data_request_id)
+                raise NotAvailableError(
+                    f"Timeout reached when checking search job status for {self.provider}"
+                )
+            elif not request_finished:
+                time.sleep(1)
+
         logger.info("search job for product_type %s finished", provider_product_type)
         result = self._get_result_data(
             data_request_id,
@@ -247,6 +259,17 @@ class DataRequestSearch(Search):
         else:
             logger.info("search job for product_type %s created", product_type)
             return request_job.json()["jobId"]
+
+    def _cancel_request(self, data_request_id):
+        logger.info("deleting request job %s", data_request_id)
+        delete_url = f"{self.config.data_request_url}/{data_request_id}"
+        try:
+            delete_resp = requests.delete(
+                delete_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+            )
+            delete_resp.raise_for_status()
+        except requests.RequestException as e:
+            raise RequestError(f"_cancel_request failed: {str(e)}")
 
     def _check_request_status(self, data_request_id):
         logger.info("checking status of request job %s", data_request_id)

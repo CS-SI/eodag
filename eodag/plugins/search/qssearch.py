@@ -801,6 +801,7 @@ class QueryStringSearch(Search):
 
     def _request(self, url, info_message=None, exception_message=None):
         try:
+            timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
             # auth if needed
             kwargs = {}
             if (
@@ -828,7 +829,7 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message.replace(url, prep.url))
                 urllib_req = Request(prep.url, headers=USER_AGENT)
-                urllib_response = urlopen(urllib_req, timeout=HTTP_REQ_TIMEOUT)
+                urllib_response = urlopen(urllib_req, timeout=timeout)
                 # build Response
                 adapter = requests.adapters.HTTPAdapter()
                 response = adapter.build_response(prep, urllib_response)
@@ -836,7 +837,7 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message)
                 response = requests.get(
-                    url, timeout=HTTP_REQ_TIMEOUT, headers=USER_AGENT, **kwargs
+                    url, timeout=timeout, headers=USER_AGENT, **kwargs
                 )
                 response.raise_for_status()
         except (requests.RequestException, URLError) as err:
@@ -1146,7 +1147,7 @@ class PostJsonSearch(QueryStringSearch):
                 url,
                 json=self.query_params,
                 headers=USER_AGENT,
-                timeout=HTTP_REQ_TIMEOUT,
+                timeout=getattr(self.config, "timeout", HTTP_REQ_TIMEOUT),
                 **kwargs,
             )
             response.raise_for_status()
