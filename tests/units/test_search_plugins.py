@@ -15,17 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import json
 import re
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+import dateutil
 import responses
 from requests import RequestException
 
 from tests.context import (
+    DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
     USER_AGENT,
@@ -1277,43 +1279,125 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             headers=getattr(self.search_plugin.auth, "headers", ""),
         )
 
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_search_datareq_distinct_product_type_mtd_mapping(
-        self, mock__request
-    ):
+    def test_plugins_search_datareq_distinct_product_type_mtd_mapping(self):
         """The metadata mapping for data_request_search should not mix specific product-types metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
-        mock__request.return_value = mock.Mock()
         result = {
-            "context": {"matched": 1},
-            "features": [
+            "totItems": 1,
+            "content": [
                 {
-                    "id": "foo",
-                    "geometry": geojson_geometry,
+                    "productInfo": {"product": "FOO_BAR_BAZ_QUX_QUUX_CORGE"},
+                    "extraInformation": {"footprint": geojson_geometry},
+                    "url": "http://foo.bar",
                 },
             ],
         }
-        mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin("wekeo")
 
-        # update metadata_mapping only for S1_SAR_GRD
-        search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
-            None,
-            "baz",
-        )
-        products, estimate = search_plugin.query(
-            productType="S1_SAR_GRD",
-            auth=None,
-        )
-        self.assertIn("bar", products[0].properties)
-        self.assertEqual(products[0].properties["bar"], "baz")
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            responses.add(
+                responses.POST,
+                self.search_plugin.config.data_request_url,
+                status=200,
+                json={"jobId": "123"},
+            )
+            responses.add(
+                responses.GET,
+                self.search_plugin.config.status_url + "123",
+                json={"status": "completed"},
+            )
+            responses.add(
+                responses.GET,
+                self.search_plugin.config.result_url.format(
+                    jobId=123, items_per_page=20, page=0
+                ),
+                json=result,
+            )
 
-        # search with another product type
-        self.assertNotIn(
-            "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
-        )
-        products, estimate = search_plugin.query(
-            productType="S1_SAR_SLC",
-            auth=None,
-        )
-        self.assertNotIn("bar", products[0].properties)
+            # update metadata_mapping only for S1_SAR_GRD
+            self.search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"][
+                "bar"
+            ] = (
+                None,
+                "baz",
+            )
+            products, estimate = self.search_plugin.query(
+                productType="S1_SAR_GRD",
+                auth=None,
+            )
+            self.assertIn("bar", products[0].properties)
+            self.assertEqual(products[0].properties["bar"], "baz")
+
+            # search with another product type
+            self.assertNotIn(
+                "bar",
+                self.search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"],
+            )
+            products, estimate = self.search_plugin.query(
+                productType="S1_SAR_SLC",
+                auth=None,
+            )
+            self.assertNotIn("bar", products[0].properties)
+
+        run()
+
+    def test_plugins_search_datareq_dates_required(self):
+        """data_request_search query should use default dates if required"""
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        result = {
+            "totItems": 1,
+            "content": [
+                {
+                    "productInfo": {"product": "FOO_BAR_BAZ_QUX_QUUX_CORGE"},
+                    "extraInformation": {"footprint": geojson_geometry},
+                    "url": "http://foo.bar",
+                },
+            ],
+        }
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            responses.add(
+                responses.POST,
+                self.search_plugin.config.data_request_url,
+                status=200,
+                json={"jobId": "123"},
+            )
+            responses.add(
+                responses.GET,
+                self.search_plugin.config.status_url + "123",
+                json={"status": "completed"},
+            )
+            responses.add(
+                responses.GET,
+                self.search_plugin.config.result_url.format(
+                    jobId=123, items_per_page=20, page=0
+                ),
+                json=result,
+            )
+
+            self.assertTrue(self.search_plugin.config.dates_required)
+
+            products, estimate = self.search_plugin.query(
+                productType="S1_SAR_GRD",
+                auth=None,
+            )
+
+            request_dict = json.loads(responses.calls[0].request.body)
+
+            self.assertEqual(request_dict["datasetId"], "EO:ESA:DAT:SENTINEL-1:SAR")
+            self.assertEqual(
+                dateutil.parser.parse(
+                    request_dict["dateRangeSelectValues"][0]["start"]
+                ),
+                dateutil.parser.parse(DEFAULT_MISSION_START_DATE),
+            )
+            self.assertLess(
+                datetime.now(timezone.utc)
+                - dateutil.parser.parse(
+                    request_dict["dateRangeSelectValues"][0]["end"]
+                ),
+                timedelta(minutes=1),
+            )
+
+        run()
