@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import datetime
 
 import requests
 
@@ -11,6 +12,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.search.base import Search
+from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     deepcopy,
@@ -170,6 +172,17 @@ class DataRequestSearch(Search):
                 and isinstance(self.config.metadata_mapping[k], list)
             }
         )
+
+        # update dates if needed
+        if getattr(self.config, "dates_required", True):
+            if not keywords.get("startTimeFromAscendingNode", None):
+                keywords["startTimeFromAscendingNode"] = getattr(
+                    self.config, "product_type_config", {}
+                ).get("missionStartDate", DEFAULT_MISSION_START_DATE)
+            if not keywords.get("completionTimeFromAscendingNode", None):
+                keywords["completionTimeFromAscendingNode"] = getattr(
+                    self.config, "product_type_config", {}
+                ).get("missionEndDate", datetime.utcnow().isoformat())
 
         # ask for data_request_id if not set (it must exist when iterating over pages)
         if not self.data_request_id:
