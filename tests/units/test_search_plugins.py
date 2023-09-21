@@ -1231,6 +1231,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             self.search_plugin.config.data_request_url,
             json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
             headers=getattr(self.search_plugin.auth, "headers", ""),
+            timeout=HTTP_REQ_TIMEOUT,
         )
         keywords = {
             "format": "GeoTiff100mt",
@@ -1252,6 +1253,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
                 ],
             },
             headers=getattr(self.search_plugin.auth, "headers", ""),
+            timeout=HTTP_REQ_TIMEOUT,
         )
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
@@ -1261,6 +1263,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         mock_requests_get.assert_called_with(
             self.search_plugin.config.status_url + "123",
             headers=getattr(self.search_plugin.auth, "headers", ""),
+            timeout=HTTP_REQ_TIMEOUT,
         )
         assert successful
         mock_requests_get.return_value = MockResponse(
@@ -1277,6 +1280,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
                 jobId="123", items_per_page=5, page=0
             ),
             headers=getattr(self.search_plugin.auth, "headers", ""),
+            timeout=HTTP_REQ_TIMEOUT,
         )
 
     def test_plugins_search_datareq_distinct_product_type_mtd_mapping(self):
