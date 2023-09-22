@@ -11,6 +11,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
@@ -156,6 +157,88 @@ class DataRequestSearch(Search):
                     self.config, "product_type_config", {}
                 ).get("missionEndDate", datetime.utcnow().isoformat())
 
+        self._add_constraints_info_to_config()
+        products = []
+        num_items = 0
+        if (
+            getattr(self.config, "products_split_timedelta", None)
+            and "id" not in kwargs
+        ):
+            request_splitter = RequestSplitter(self.config)
+            slices = request_splitter.get_time_slices(
+                kwargs["startTimeFromAscendingNode"],
+                kwargs["completionTimeFromAscendingNode"],
+            )
+            kwargs.pop("startTimeFromAscendingNode")
+            keywords.pop("startTimeFromAscendingNode")
+            kwargs.pop("completionTimeFromAscendingNode")
+            keywords.pop("completionTimeFromAscendingNode")
+            for time_slice in slices:
+                for key, value in time_slice.items():
+                    if key == "start_date":
+                        if isinstance(value, str):
+                            kwargs["startTimeFromAscendingNode"] = value
+                            keywords["startTimeFromAscendingNode"] = value
+                        else:
+                            kwargs["startTimeFromAscendingNode"] = value.strftime(
+                                "%Y-%m-%dT%H:%M:%SZ"
+                            )
+                            keywords["startTimeFromAscendingNode"] = value.strftime(
+                                "%Y-%m-%dT%H:%M:%SZ"
+                            )
+                    elif key == "end_date":
+                        if isinstance(value, str):
+                            kwargs["completionTimeFromAscendingNode"] = value
+                            keywords["completionTimeFromAscendingNode"] = value
+                        else:
+                            kwargs["completionTimeFromAscendingNode"] = value.strftime(
+                                "%Y-%m-%dT%H:%M:%SZ"
+                            )
+                            keywords[
+                                "completionTimeFromAscendingNode"
+                            ] = value.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    else:
+                        kwargs[key] = value
+                        keywords[key] = value
+
+                param_variable = self.config.assets_split_parameter
+                if param_variable:
+                    selected_vars = keywords.pop(param_variable, None)
+                    variables = request_splitter.get_variables_for_search_params(
+                        keywords, selected_vars
+                    )
+                    product = None
+                    for variable in variables:
+                        keywords[param_variable] = [variable]
+                        result = self._get_products(
+                            product_type, provider_product_type, keywords, **kwargs
+                        )
+                        if not product:
+                            product = result[0][0]
+                            product.properties["downloadLinks"] = {}
+                            product.properties["orderLinks"] = {}
+                            num_items += 1
+                        product.properties["downloadLinks"][
+                            variable
+                        ] = product.properties["downloadLink"]
+                        product.properties["orderLinks"][variable] = product.properties[
+                            "orderLink"
+                        ]
+                    products.append(product)
+                    keywords[param_variable] = selected_vars
+                else:
+                    result = self._get_products(
+                        product_type, provider_product_type, keywords, **kwargs
+                    )
+                    products += result[0]
+                    num_items += result[1]
+        else:
+            products, num_items = self._get_products(
+                product_type, provider_product_type, keywords, **kwargs
+            )
+        return products, num_items
+
+    def _get_products(self, product_type, provider_product_type, keywords, **kwargs):
         # ask for data_request_id if not set (it must exist when iterating over pages)
         if not self.data_request_id:
             data_request_id = self._create_data_request(
@@ -328,10 +411,31 @@ class DataRequestSearch(Search):
                 # is not possible
                 self.download_info[p.properties["id"]] = {
                     "requestJobId": data_request_id,
-                    "orderLink": p.properties["orderLink"],
-                    "downloadLink": p.properties["downloadLink"],
                     "provider": self.provider,
                 }
+                if "downloadLinks" in p.properties:
+                    if "downloadLinks" not in self.download_info[p.properties["id"]]:
+                        self.download_info[p.properties["id"]]["downloadLinks"] = {}
+                    for variable, downloadLink in p.properties["downloadLinks"].items():
+                        self.download_info[p.properties["id"]]["downloadLinks"][
+                            variable
+                        ] = downloadLink
+                else:
+                    self.download_info[p.properties["id"]][
+                        "downloadLink"
+                    ] = p.properties["downloadLink"]
+                if "orderLinks" in p.properties:
+                    if "orderLinks" not in self.download_info[p.properties["id"]]:
+                        self.download_info[p.properties["id"]]["orderLinks"] = {}
+                    for variable, orderLink in p.properties["orderLinks"].items():
+                        self.download_info[p.properties["id"]]["orderLinks"][
+                            variable
+                        ] = orderLink.replace("requestJobId", str(data_request_id))
+                else:
+                    self.download_info[p.properties["id"]]["orderLink"] = p.properties[
+                        "orderLink"
+                    ]
+
         return products, total_items_nb
 
     def _check_uses_custom_filters(self, product_type):
@@ -365,3 +469,42 @@ class DataRequestSearch(Search):
         return self.config.products.get(product_type, {}).get(
             "productType", GENERIC_PRODUCT_TYPE
         )
+
+    def _add_constraints_info_to_config(self):
+        if "products_split_timedelta" in self.product_type_def_params:
+            self.config.products_split_timedelta = self.product_type_def_params[
+                "products_split_timedelta"
+            ]
+        else:
+            self.config.products_split_timedelta = None
+        if "assets_split_parameter" in self.product_type_def_params:
+            self.config.assets_split_parameter = self.product_type_def_params[
+                "assets_split_parameter"
+            ]
+        else:
+            self.config.assets_split_parameter = ""
+        if "multi_select_values" in self.product_type_def_params:
+            self.config.multi_select_values = self.product_type_def_params[
+                "multi_select_values"
+            ]
+        else:
+            self.config.multi_select_values = []
+        if "constraints_file_path" in self.product_type_def_params:
+            self.constraints_file_path = self.product_type_def_params[
+                "constraints_file_path"
+            ]
+        else:
+            self.config.constraints_file_path = ""
+        if "constraints_file_url" in self.product_type_def_params:
+            self.config.constraints_file_url = self.product_type_def_params[
+                "constraints_file_url"
+            ]
+        else:
+            self.config.constraints_file_url = ""
+        if "constraints_param" in self.product_type_def_params:
+            self.config.constraints_param = self.product_type_def_params[
+                "constraints_param"
+            ]
+        else:
+            self.config.constraints_param = None
+        self.config.auth = self.auth
