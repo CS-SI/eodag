@@ -4325,6 +4325,17 @@
         - "1000"
       startTimeFromAscendingNode: "2023-01-01T00:00"
       format: grib # netcdf format may fail
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4346,6 +4357,18 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '$.null'
         defaultGeometry: '-180 -90 180 90'
       storeDownloadUrl: True
     ERA5_PL_MONTHLY:

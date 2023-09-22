@@ -1,3 +1,4 @@
+import copy
 import datetime
 import json
 import re
@@ -55,15 +56,23 @@ class RequestSplitter:
             and self.config["constraints_file_path"]
         ):
             with open(self.config["constraints_file_path"]) as f:
-                self.constraints = json.load(f)
+                self.constraints_data = json.load(f)
         elif (
             "constraints_file_url" in self.config
             and self.config["constraints_file_url"]
         ):
-            res = requests.get(self.config["constraints_file_url"])
-            self.constraints = res.json()
+            if "auth" in self.config:
+                headers = getattr(self.config["auth"], "headers", "")
+                res = requests.get(self.config["constraints_file_url"], headers=headers)
+            else:
+                res = requests.get(self.config["constraints_file_url"])
+            self.constraints_data = res.json()
         else:
-            self.constraints = {}
+            self.constraints_data = {}
+        if "constraints_param" in self.config and self.config["constraints_param"]:
+            self.constraints = self.constraints_data[self.config["constraints_param"]]
+        else:
+            self.constraints = self.constraints_data
 
         self.metadata = self.config["metadata_mapping"]
         if "multi_select_values" in self.config:
@@ -423,6 +432,39 @@ class RequestSplitter:
                     years, months, params, variables
                 )
             return self._get_variables_for_years_and_params(years, params, variables)
+
+    def get_variables_for_search_params(self, search_params, variables=None):
+        """
+        returns the variables that are available for the given search parameters based on the given constraints
+        :param search_params: keys and values of time parameters and additional parameters where constraints could exist
+        :type search_params: dict
+        :param variables: (optional) selected variables, if not given all available variables will be returned
+        :type variables: list
+        :returns: list of available variables
+        :rtype: list
+        """
+        params = copy.deepcopy(search_params)
+        if "year" in params:
+            years = params.pop("year")
+            if self.split_time_delta["param"] == "month":
+                months = params.pop("month")
+                return self._get_variables_for_months_and_params(
+                    years, months, params, variables
+                )
+            else:
+                return self._get_variables_for_years_and_params(
+                    years, params, variables
+                )
+        else:
+            start_date = datetime.datetime.strptime(
+                params.pop("startTimeFromAscendingNode"), "%Y-%m-%dT%H:%M:%SZ"
+            )
+            end_date = datetime.datetime.strptime(
+                params.pop("completionTimeFromAscendingNode"), "%Y-%m-%dT%H:%M:%SZ"
+            )
+            return self._get_variables_for_timespan_and_params(
+                start_date, end_date, params, variables
+            )
 
     def _get_variables_for_years_and_params(self, years, params, variables=None):
         if not self.constraints:

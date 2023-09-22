@@ -619,12 +619,20 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
                 f"the search request to fetch the required data"
             )
         product_data = search_plugin.download_info[item_id]
-        properties = {
-            "id": item_id,
-            "orderLink": product_data["orderLink"],
-            "downloadLink": product_data["downloadLink"],
-            "geometry": "-180 -90 180 90",
-        }
+        if "orderLinks" in product_data and "downloadLinks" in product_data:
+            properties = {
+                "id": item_id,
+                "orderLinks": product_data["orderLinks"],
+                "downloadLinks": product_data["downloadLinks"],
+                "geometry": "-180 -90 180 90",
+            }
+        else:
+            properties = {
+                "id": item_id,
+                "orderLink": product_data["orderLink"],
+                "downloadLink": product_data["downloadLink"],
+                "geometry": "-180 -90 180 90",
+            }
         product = EOProduct(provider or product_data["provider"], properties)
     else:
         search_results = search_product_by_id(
