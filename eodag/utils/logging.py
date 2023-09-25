@@ -91,7 +91,9 @@ def setup_logging(verbose, no_progress_bar=False):
                 "disable_existing_loggers": False,
                 "formatters": {
                     "verbose": {
-                        "format": "%(asctime)-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s"
+                        "format": (
+                            "%(asctime)-15s %(name)-32s [%(levelname)-8s] (%(module)-17s tid=%(thread)d) %(message)s"
+                        )
                     }
                 },
                 "handlers": {
