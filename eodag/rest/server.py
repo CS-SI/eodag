@@ -22,7 +22,6 @@ import re
 import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
-from json.decoder import JSONDecodeError
 from typing import List, Optional, Union
 
 import pkg_resources
@@ -351,8 +350,7 @@ def collections(request: Request):
     url = request.state.url
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_collections(
@@ -371,8 +369,7 @@ def stac_collections_items(collection_id, request: Request):
     url = request.state.url
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = search_stac_items(
@@ -392,8 +389,7 @@ def collection_by_id(collection_id, request: Request):
     url = request.state.url_root + "/collections"
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_collection_by_id(
@@ -407,14 +403,13 @@ def collection_by_id(collection_id, request: Request):
 
 
 @router.get("/collections/{collection_id}/items/{item_id}", tags=["Data"])
-async def stac_collections_item(collection_id, item_id, request: Request):
+def stac_collections_item(collection_id, item_id, request: Request):
     """STAC collection item by id"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_item_by_id(
@@ -441,8 +436,7 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
     """STAC collection item local download"""
     logger.debug(f"URL: {request.url}")
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     return download_stac_item_by_id_stream(
@@ -451,7 +445,7 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}/items", tags=["Data"])
-async def stac_catalogs_items(catalogs, request: Request):
+def stac_catalogs_items(catalogs, request: Request):
     """Fetch catalog's features
     ---
     tags:
@@ -485,11 +479,8 @@ async def stac_catalogs_items(catalogs, request: Request):
     logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
@@ -505,7 +496,7 @@ async def stac_catalogs_items(catalogs, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}/items/{item_id}", tags=["Data"])
-async def stac_catalogs_item(catalogs, item_id, request: Request):
+def stac_catalogs_item(catalogs, item_id, request: Request):
     """Fetch catalog's single features
     ---
     tags:
@@ -542,11 +533,8 @@ async def stac_catalogs_item(catalogs, item_id, request: Request):
     logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
@@ -570,14 +558,11 @@ async def stac_catalogs_item(catalogs, item_id, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}/items/{item_id}/download", tags=["Data"])
-async def stac_catalogs_item_download(catalogs, item_id, request: Request):
+def stac_catalogs_item_download(catalogs, item_id, request: Request):
     """STAC item local download"""
     logger.debug(f"URL: {request.url}")
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
@@ -588,7 +573,7 @@ async def stac_catalogs_item_download(catalogs, item_id, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}", tags=["Capabilities"])
-async def stac_catalogs(catalogs, request: Request):
+def stac_catalogs(catalogs, request: Request):
     """Describe the given catalog and list available sub-catalogs
     ---
     tags:
@@ -616,11 +601,8 @@ async def stac_catalogs(catalogs, request: Request):
     logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
