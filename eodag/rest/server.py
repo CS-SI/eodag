@@ -35,6 +35,7 @@ from fastapi.types import Any, Callable, DecoratedCallable
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
     QueryableProperty,
@@ -307,7 +308,7 @@ class SearchBody(BaseModel):
     datetime: Union[str, None] = None
     bbox: Union[list, str, None] = None
     intersects: Union[dict, None] = None
-    limit: Union[int, None] = 20
+    limit: Union[int, None] = DEFAULT_ITEMS_PER_PAGE
     page: Union[int, None] = 1
     query: Union[dict, None] = None
     ids: Union[List[str], None] = None
