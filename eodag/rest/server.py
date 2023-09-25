@@ -119,6 +119,7 @@ stac_api_config = load_stac_api_config()
 @router.get("/api", tags=["Capabilities"])
 def eodag_openapi():
     """Customized openapi"""
+    logger.debug("URL: /api")
     if app.openapi_schema:
         return app.openapi_schema
 
@@ -267,6 +268,7 @@ async def handle_server_error(request: Request, error):
 @router.get("/", tags=["Capabilities"])
 def catalogs_root(request: Request):
     """STAC catalogs root"""
+    logger.debug(f"URL: {request.url}")
 
     response = get_stac_catalogs(
         url=request.state.url,
@@ -281,6 +283,7 @@ def catalogs_root(request: Request):
 @router.get("/conformance", tags=["Capabilities"])
 def conformance():
     """STAC conformance"""
+    logger.debug("URL: /conformance")
     response = get_stac_conformance()
 
     return jsonable_encoder(response)
@@ -289,6 +292,7 @@ def conformance():
 @router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
 def stac_extension_oseo(request: Request):
     """STAC OGC / OpenSearch extension for EO"""
+    logger.debug(f"URL: {request.url}")
     response = get_stac_extension_oseo(url=request.state.url)
 
     return jsonable_encoder(response)
@@ -314,6 +318,9 @@ class SearchBody(BaseModel):
 @router.post("/search", tags=["STAC"])
 def stac_search(request: Request, search_body: SearchBody = None):
     """STAC collections items"""
+    logger.debug(f"URL: {request.url}")
+    logger.debug(f"Body: {search_body}")
+
     url = request.state.url
     url_root = request.state.url_root
 
@@ -340,6 +347,7 @@ def collections(request: Request):
 
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
     """
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
@@ -359,6 +367,7 @@ def collections(request: Request):
 @router.get("/collections/{collection_id}/items", tags=["Data"])
 def stac_collections_items(collection_id, request: Request):
     """STAC collections items"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
@@ -379,6 +388,7 @@ def stac_collections_items(collection_id, request: Request):
 @router.get("/collections/{collection_id}", tags=["Capabilities"])
 def collection_by_id(collection_id, request: Request):
     """STAC collection by id"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url_root + "/collections"
     url_root = request.state.url_root
 
@@ -399,6 +409,7 @@ def collection_by_id(collection_id, request: Request):
 @router.get("/collections/{collection_id}/items/{item_id}", tags=["Data"])
 async def stac_collections_item(collection_id, item_id, request: Request):
     """STAC collection item by id"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
@@ -428,6 +439,7 @@ async def stac_collections_item(collection_id, item_id, request: Request):
 @router.get("/collections/{collection_id}/items/{item_id}/download", tags=["Data"])
 def stac_collections_item_download(collection_id, item_id, request: Request):
     """STAC collection item local download"""
+    logger.debug(f"URL: {request.url}")
 
     body = {}
     arguments = dict(request.query_params, **body)
@@ -470,6 +482,7 @@ async def stac_catalogs_items(catalogs, request: Request):
         '500':
             $ref: '#/components/responses/ServerError
     '"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
     try:
@@ -526,6 +539,7 @@ async def stac_catalogs_item(catalogs, item_id, request: Request):
         '500':
           $ref: '#/components/responses/ServerError'
     """
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
     try:
@@ -558,6 +572,7 @@ async def stac_catalogs_item(catalogs, item_id, request: Request):
 @router.get("/catalogs/{catalogs:path}/items/{item_id}/download", tags=["Data"])
 async def stac_catalogs_item_download(catalogs, item_id, request: Request):
     """STAC item local download"""
+    logger.debug(f"URL: {request.url}")
     try:
         body = await request.json()
     except JSONDecodeError:
@@ -598,6 +613,7 @@ async def stac_catalogs(catalogs, request: Request):
         '500':
             $ref: '#/components/responses/ServerError'
     """
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
     try:
@@ -630,6 +646,7 @@ def list_queryables(request: Request) -> Queryables:
     :returns: An object containing the list of available queryable terms.
     :rtype: eodag.rest.utils.Queryables
     """
+    logger.debug(f"URL: {request.url}")
 
     return Queryables(q_id=request.state.url)
 
@@ -657,6 +674,7 @@ def list_collection_queryables(
     :returns: An object containing the list of available queryable properties for the specified collection.
     :rtype: eodag.rest.utils.Queryables
     """
+    logger.debug(f"URL: {request.url}")
 
     queryables = Queryables(q_id=request.state.url, additional_properties=False)
     conf_args = [collection_id, provider] if provider else [collection_id]
