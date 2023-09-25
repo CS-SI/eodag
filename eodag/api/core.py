@@ -305,11 +305,13 @@ class EODataAccessGateway(object):
         for provider, provider_conf in conf_update.items():
             if (
                 provider in self.providers_config
+                and provider_conf.get("search", {}) is not None
                 and "metadata_mapping" in provider_conf.get("search", {})
             ):
                 search_plugin_key = "search"
             elif (
                 provider in self.providers_config
+                and provider_conf.get("api", {}) is not None
                 and "metadata_mapping" in provider_conf.get("api", {})
             ):
                 search_plugin_key = "api"
@@ -334,15 +336,27 @@ class EODataAccessGateway(object):
                     conf_update[provider][search_plugin_key]["metadata_mapping"],
                 )
 
+        # restore the pruned configuration
+        for provider, pruned_conf in self._pruned_providers_config.items():
+            logger.info(
+                "%s: provider restored from the pruned configurations",
+                provider,
+            )
+            self.providers_config[provider] = pruned_conf
         override_config_from_mapping(self.providers_config, conf_update)
+
         stac_provider_config = load_stac_provider_config()
         for provider in conf_update.keys():
             provider_config_init(self.providers_config[provider], stac_provider_config)
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
 
+        # filter out providers needing auth that have no credentials set
+        self._prune_providers_list()
+
     def _prune_providers_list(self):
         """Removes from config providers needing auth that have no credentials set."""
+        self._pruned_providers_config = {}
         update_needed = False
         for provider in list(self.providers_config.keys()):
             conf = self.providers_config[provider]
@@ -356,6 +370,9 @@ class EODataAccessGateway(object):
                 )
                 if not credentials_exist:
                     # credentials needed but not found
+                    self._pruned_providers_config[provider] = self.providers_config[
+                        provider
+                    ]
                     del self.providers_config[provider]
                     update_needed = True
                     logger.info(
@@ -365,6 +382,9 @@ class EODataAccessGateway(object):
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
                 if not hasattr(conf, "auth"):
                     # credentials needed but no auth plugin was found
+                    self._pruned_providers_config[provider] = self.providers_config[
+                        provider
+                    ]
                     del self.providers_config[provider]
                     update_needed = True
                     logger.info(
@@ -380,6 +400,9 @@ class EODataAccessGateway(object):
                 )
                 if not credentials_exist:
                     # credentials needed but not found
+                    self._pruned_providers_config[provider] = self.providers_config[
+                        provider
+                    ]
                     del self.providers_config[provider]
                     update_needed = True
                     logger.info(
@@ -388,6 +411,9 @@ class EODataAccessGateway(object):
                     )
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
+                self._pruned_providers_config[provider] = self.providers_config[
+                    provider
+                ]
                 del self.providers_config[provider]
                 logger.info(
                     "%s: provider has been pruned because no api or search plugin could be found",
