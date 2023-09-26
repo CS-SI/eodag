@@ -229,11 +229,14 @@ class RequestSplitter:
                     continue
                 record["day"] = days
             if "time" in self.metadata:
-                times = self._get_times_for_days_months_and_years(
-                    days, row["month"], row["year"]
-                )
-                if len(days) == 0:
-                    continue
+                if "day" in self.metadata:
+                    times = self._get_times_for_days_months_and_years(
+                        days, row["month"], row["year"]
+                    )
+                else:
+                    times = self._get_times_for_months_and_years(
+                        row["month"], row["year"]
+                    )
                 record["time"] = times
             slices.append(self._sort_record(record))
         return slices
@@ -299,6 +302,22 @@ class RequestSplitter:
                     == len(months)
                     and len(possible_times) < len(constraint["time"])
                 ):
+                    possible_times = constraint["time"]
+            times = times.intersection(set(possible_times))
+        return list(times)
+
+    def _get_times_for_months_and_years(self, months, years):
+        hours = [i for i in range(0, 24)]
+        times = {datetime.time(h).strftime("%H:00") for h in hours}
+        if not self.constraints:
+            return times
+        for month in months:
+            constraints = self._get_constraints_for_month(month)
+            possible_times = []
+            for constraint in constraints:
+                if len(set(years).intersection(set(constraint["year"]))) == len(
+                    years
+                ) and len(possible_times) < len(constraint["time"]):
                     possible_times = constraint["time"]
             times = times.intersection(set(possible_times))
         return list(times)
