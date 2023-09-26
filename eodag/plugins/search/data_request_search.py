@@ -232,13 +232,35 @@ class DataRequestSearch(Search):
                             product = result[0][0]
                             product.properties["downloadLinks"] = {}
                             product.properties["orderLinks"] = {}
+                            self.download_info[product.properties["id"]][
+                                "downloadLinks"
+                            ] = {}
+                            self.download_info[product.properties["id"]][
+                                "orderLinks"
+                            ] = {}
                             num_items += 1
+                        else:
+                            product.properties["orderLink"] = result[0][0].properties[
+                                "orderLink"
+                            ]
+                            product.properties["downloadLink"] = result[0][
+                                0
+                            ].properties["downloadLink"]
                         product.properties["downloadLinks"][
+                            variable
+                        ] = product.properties["downloadLink"]
+                        self.download_info[product.properties["id"]]["downloadLinks"][
                             variable
                         ] = product.properties["downloadLink"]
                         product.properties["orderLinks"][variable] = product.properties[
                             "orderLink"
                         ]
+                        self.download_info[product.properties["id"]]["orderLinks"][
+                            variable
+                        ] = product.properties["orderLink"].replace(
+                            "requestJobId", str(self.data_request_id)
+                        )
+                        self.data_request_id = None
                     products.append(product)
                     keywords[param_variable] = selected_vars
                 else:
@@ -396,10 +418,10 @@ class DataRequestSearch(Search):
                 if "downloadLinks" in p.properties:
                     if "downloadLinks" not in self.download_info[p.properties["id"]]:
                         self.download_info[p.properties["id"]]["downloadLinks"] = {}
-                    for variable, downloadLink in p.properties["downloadLinks"].items():
-                        self.download_info[p.properties["id"]]["downloadLinks"][
-                            variable
-                        ] = downloadLink
+                    # for variable, downloadLink in p.properties["downloadLinks"].items():
+                    #     self.download_info[p.properties["id"]]["downloadLinks"][
+                    #         variable
+                    #     ] = downloadLink
                 else:
                     self.download_info[p.properties["id"]][
                         "downloadLink"
@@ -407,10 +429,10 @@ class DataRequestSearch(Search):
                 if "orderLinks" in p.properties:
                     if "orderLinks" not in self.download_info[p.properties["id"]]:
                         self.download_info[p.properties["id"]]["orderLinks"] = {}
-                    for variable, orderLink in p.properties["orderLinks"].items():
-                        self.download_info[p.properties["id"]]["orderLinks"][
-                            variable
-                        ] = orderLink.replace("requestJobId", str(data_request_id))
+                    # for variable, orderLink in p.properties["orderLinks"].items():
+                    #     self.download_info[p.properties["id"]]["orderLinks"][
+                    #         variable
+                    #     ] = orderLink.replace("requestJobId", str(data_request_id))
                 else:
                     self.download_info[p.properties["id"]]["orderLink"] = p.properties[
                         "orderLink"
