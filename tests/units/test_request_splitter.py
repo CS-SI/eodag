@@ -75,25 +75,25 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertEqual(4, len(result))
         expected_result = [
             {
-                "year": ["2000"],
+                "year": "2000",
                 "month": ["01", "02", "03", "04", "05"],
                 "day": ["01", "10", "20", "25"],
                 "time": ["01:00", "12:00", "18:00", "22:00"],
             },
             {
-                "year": ["2001"],
+                "year": "2001",
                 "month": ["01", "02", "03", "04", "05"],
                 "day": ["01", "10", "20", "25"],
                 "time": ["01:00", "12:00", "18:00", "22:00"],
             },
             {
-                "year": ["2002"],
+                "year": "2002",
                 "month": ["01", "02", "03"],
                 "day": ["01", "10", "20"],
                 "time": ["01:00", "12:00", "18:00"],
             },
             {
-                "year": ["2003"],
+                "year": "2003",
                 "month": ["01", "02", "03"],
                 "day": ["01", "10", "20"],
                 "time": ["01:00", "12:00", "18:00"],
@@ -146,13 +146,13 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertEqual(13, len(result))
         expected_result_row_1 = {
             "year": ["2000"],
-            "month": ["01"],
+            "month": "01",
             "day": ["01", "10", "20", "25"],
             "time": ["01:00", "12:00", "18:00", "22:00"],
         }
         expected_result_row_6 = {
             "year": ["2000"],
-            "month": ["06"],
+            "month": "06",
             "day": ["03", "05"],
             "time": ["01:00", "12:00", "18:00", "22:00"],
         }

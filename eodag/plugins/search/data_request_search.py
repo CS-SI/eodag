@@ -218,12 +218,15 @@ class DataRequestSearch(Search):
                             product = result[0][0]
                             product.properties["downloadLinks"] = {}
                             product.properties["orderLinks"] = {}
-                            self.download_info[product.properties["id"]][
-                                "downloadLinks"
-                            ] = {}
-                            self.download_info[product.properties["id"]][
-                                "orderLinks"
-                            ] = {}
+                            if self.config.products[product_type].get(
+                                "storeDownloadUrl", False
+                            ):
+                                self.download_info[product.properties["id"]][
+                                    "downloadLinks"
+                                ] = {}
+                                self.download_info[product.properties["id"]][
+                                    "orderLinks"
+                                ] = {}
                             num_items += 1
                         else:
                             product.properties["orderLink"] = result[0][0].properties[
@@ -235,17 +238,21 @@ class DataRequestSearch(Search):
                         product.properties["downloadLinks"][
                             variable
                         ] = product.properties["downloadLink"]
-                        self.download_info[product.properties["id"]]["downloadLinks"][
-                            variable
-                        ] = product.properties["downloadLink"]
                         product.properties["orderLinks"][variable] = product.properties[
                             "orderLink"
                         ]
-                        self.download_info[product.properties["id"]]["orderLinks"][
-                            variable
-                        ] = product.properties["orderLink"].replace(
-                            "requestJobId", str(self.data_request_id)
-                        )
+                        if self.config.products[product_type].get(
+                            "storeDownloadUrl", False
+                        ):
+                            self.download_info[product.properties["id"]][
+                                "downloadLinks"
+                            ][variable] = product.properties["downloadLink"]
+
+                            self.download_info[product.properties["id"]]["orderLinks"][
+                                variable
+                            ] = product.properties["orderLink"].replace(
+                                "requestJobId", str(self.data_request_id)
+                            )
                         self.data_request_id = None
                     products.append(product)
                     keywords[param_variable] = selected_vars
@@ -320,12 +327,12 @@ class DataRequestSearch(Search):
             elif time_split_var == "month":
                 year = keywords["year"][0]
                 month = min(keywords["month"])
-                start_date = datetime.datetime(int(year), int(month), 1).strftime(
+                start_date = datetime(int(year), int(month), 1).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
             else:
                 year = min(keywords["year"])
-                start_date = datetime.datetime(int(year), 1, 1).strftime(
+                start_date = datetime(int(year), 1, 1).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
             result["content"][0]["productInfo"]["productStartDate"] = start_date
@@ -336,11 +343,11 @@ class DataRequestSearch(Search):
                 month = max(keywords["month"])
                 m = min(int(month) + 1, 12)
                 end_date = (
-                    datetime.datetime(int(year), m, 1) - datetime.timedelta(days=1)
+                    datetime(int(year), m, 1) - timedelta(days=1)
                 ).strftime("%Y-%m-%dT%H:%M:%SZ")
             else:
                 year = max(keywords["year"])
-                end_date = datetime.datetime(int(year), 12, 31).strftime(
+                end_date = datetime(int(year), 12, 31).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
             result["content"][0]["productInfo"]["productEndDate"] = end_date
@@ -476,10 +483,6 @@ class DataRequestSearch(Search):
                 if "downloadLinks" in p.properties:
                     if "downloadLinks" not in self.download_info[p.properties["id"]]:
                         self.download_info[p.properties["id"]]["downloadLinks"] = {}
-                    # for variable, downloadLink in p.properties["downloadLinks"].items():
-                    #     self.download_info[p.properties["id"]]["downloadLinks"][
-                    #         variable
-                    #     ] = downloadLink
                 else:
                     self.download_info[p.properties["id"]][
                         "downloadLink"
@@ -487,10 +490,6 @@ class DataRequestSearch(Search):
                 if "orderLinks" in p.properties:
                     if "orderLinks" not in self.download_info[p.properties["id"]]:
                         self.download_info[p.properties["id"]]["orderLinks"] = {}
-                    # for variable, orderLink in p.properties["orderLinks"].items():
-                    #     self.download_info[p.properties["id"]]["orderLinks"][
-                    #         variable
-                    #     ] = orderLink.replace("requestJobId", str(data_request_id))
                 else:
                     self.download_info[p.properties["id"]]["orderLink"] = p.properties[
                         "orderLink"

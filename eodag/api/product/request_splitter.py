@@ -69,7 +69,11 @@ class RequestSplitter:
             self.constraints_data = res.json()
         else:
             self.constraints_data = {}
-        if "constraints_param" in self.config and self.config["constraints_param"]:
+        if (
+            "constraints_param" in self.config
+            and self.config["constraints_param"]
+            and self.config["constraints_param"] in self.constraints_data
+        ):
             self.constraints = self.constraints_data[self.config["constraints_param"]]
         else:
             self.constraints = self.constraints_data
