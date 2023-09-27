@@ -305,13 +305,11 @@ class EODataAccessGateway(object):
         for provider, provider_conf in conf_update.items():
             if (
                 provider in self.providers_config
-                and provider_conf.get("search", {}) is not None
                 and "metadata_mapping" in provider_conf.get("search", {})
             ):
                 search_plugin_key = "search"
             elif (
                 provider in self.providers_config
-                and provider_conf.get("api", {}) is not None
                 and "metadata_mapping" in provider_conf.get("api", {})
             ):
                 search_plugin_key = "api"

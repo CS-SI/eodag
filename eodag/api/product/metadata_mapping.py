@@ -1019,7 +1019,11 @@ def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="jso
         if metadata not in dest_dict:
             dest_dict[metadata] = (None, NOT_MAPPED)
         else:
-            conversion, path = get_metadata_path(dest_dict[metadata])
+            try:
+                conversion, path = get_metadata_path(dest_dict[metadata])
+            except TypeError:
+                logger.warning("Skipping metadata '%s'" % str(metadata))
+                continue
             if result_type == "json":
                 parsed_path = string_to_jsonpath(path)
                 if isinstance(parsed_path, str):
