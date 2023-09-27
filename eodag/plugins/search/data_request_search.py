@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 from datetime import datetime, timedelta
@@ -307,6 +308,43 @@ class DataRequestSearch(Search):
                     product_content["extraInformation"]["footprint"] = keywords[
                         "geometry"
                     ]
+        # set correct start and end dates for splitted products (api will return current time)
+        time_split_var = None
+        if getattr(self.config, "products_split_timedelta", None):
+            time_split_var = getattr(self.config, "products_split_timedelta", None)[
+                "param"
+            ]
+        if time_split_var:
+            if keywords.get("startTimeFromAscendingNode"):
+                start_date = keywords.get("startTimeFromAscendingNode")
+            elif time_split_var == "month":
+                year = keywords["year"][0]
+                month = min(keywords["month"])
+                start_date = datetime.datetime(int(year), int(month), 1).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            else:
+                year = min(keywords["year"])
+                start_date = datetime.datetime(int(year), 1, 1).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            result["content"][0]["productInfo"]["productStartDate"] = start_date
+            if keywords.get("completionTimeFromAscendingNode"):
+                end_date = keywords.get("completionTimeFromAscendingNode")
+            elif time_split_var == "month":
+                year = keywords["year"][0]
+                month = max(keywords["month"])
+                m = min(int(month) + 1, 12)
+                end_date = (
+                    datetime.datetime(int(year), m, 1) - datetime.timedelta(days=1)
+                ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            else:
+                year = max(keywords["year"])
+                end_date = datetime.datetime(int(year), 12, 31).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            result["content"][0]["productInfo"]["productEndDate"] = end_date
+
         logger.info("result retrieved from search job")
         if self._check_uses_custom_filters(product_type):
             result = self._apply_additional_filters(
