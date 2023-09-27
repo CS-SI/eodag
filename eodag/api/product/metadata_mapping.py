@@ -1013,17 +1013,24 @@ def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="jso
     :returns: dest_dict
     :rtype: dict
     """
+    # check if the configuration has already been converted
+    some_configured_value = (
+        next(iter(dest_dict.values())) if dest_dict else next(iter(src_dict.values()))
+    )
+    if (
+        isinstance(some_configured_value, list)
+        and isinstance(some_configured_value[1], tuple)
+        or isinstance(some_configured_value, tuple)
+    ):
+        return dest_dict or src_dict
+
     if not dest_dict:
         dest_dict = deepcopy(src_dict)
     for metadata in src_dict:
         if metadata not in dest_dict:
             dest_dict[metadata] = (None, NOT_MAPPED)
         else:
-            try:
-                conversion, path = get_metadata_path(dest_dict[metadata])
-            except TypeError:
-                logger.warning("Skipping metadata '%s'" % str(metadata))
-                continue
+            conversion, path = get_metadata_path(dest_dict[metadata])
             if result_type == "json":
                 parsed_path = string_to_jsonpath(path)
                 if isinstance(parsed_path, str):
