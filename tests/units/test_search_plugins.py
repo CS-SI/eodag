@@ -25,6 +25,7 @@ from unittest import mock
 import responses
 from requests import RequestException
 
+from eodag.utils import RequestsTokenAuth
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
@@ -1317,3 +1318,46 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.DataRequestSearch._check_request_status",
+        autospec=True,
+    )
+    def test_plugins_search_query_split(self, mock_status, mock_get, mock_post):
+        result = {
+            "content": [
+                {
+                    "downloadUri": "",
+                    "extraInformation": None,
+                    "filename": "file.grib",
+                    "order": "",
+                    "productInfo": {
+                        "datasetId": "EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS",
+                        "product": "13e4a43d691bf8f8cbf6e8ccb9c34b4f",
+                        "productEndDate": "2023-09-27T07:41:57Z",
+                        "productStartDate": "2023-09-27T07:41:57Z",
+                    },
+                    "size": 1913575680,
+                    "url": "download",
+                }
+            ]
+        }
+        mock_get.return_value = MockResponse(result, 200)
+        mock_status.return_value = True
+        params = {
+            "productType": "ERA5_PL_MONTHLY",
+            "startTimeFromAscendingNode": "2021-09-01T06:00:00",
+            "completionTimeFromAscendingNode": "2021-10-22T07:00:00",
+        }
+        products = getattr(self.search_plugin.config, "products")
+        products["ERA5_PL_MONTHLY"]["constraints_file_path"] = ""
+        products["ERA5_PL_MONTHLY"]["constraints_file_url"] = ""
+        products["ERA5_PL_MONTHLY"]["storeDownloadUrl"] = False
+        self.search_plugin.auth = RequestsTokenAuth(
+            "token", "header", headers="headers"
+        )
+        result, num_products = self.search_plugin.query(**params)
+        self.assertEqual(32, mock_post.call_count)  # 1 call per month and variable
+        self.assertEqual(2, num_products)  # 1 product per month
