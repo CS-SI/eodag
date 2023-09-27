@@ -184,6 +184,8 @@ class RequestSplitter:
             if "time" in self.metadata:
                 times = self._get_times_for_days_months_and_years(days, months, row)
                 record["time"] = times
+            if "year" not in self.multi_select_values:
+                record["year"] = row[0]
             slices.append(self._sort_record(record))
         return slices
 
@@ -238,6 +240,10 @@ class RequestSplitter:
                         row["month"], row["year"]
                     )
                 record["time"] = times
+            if "year" not in self.multi_select_values:
+                record["year"] = row["year"][0]
+            if "month" not in self.multi_select_values:
+                record["month"] = row["month"][0]
             slices.append(self._sort_record(record))
         return slices
 
@@ -330,8 +336,9 @@ class RequestSplitter:
         return constraints
 
     def _sort_record(self, record):
-        record["year"] = sorted(record["year"], key=int)
-        if "month" in record:
+        if isinstance(record["year"], list):
+            record["year"] = sorted(record["year"], key=int)
+        if "month" in record and isinstance(record["month"], list):
             record["month"] = sorted(record["month"], key=int)
         if "day" in record:
             record["day"] = sorted(record["day"], key=int)
@@ -465,8 +472,12 @@ class RequestSplitter:
         params = copy.deepcopy(search_params)
         if "year" in params:
             years = params.pop("year")
+            if isinstance(years, str):
+                years = [years]
             if self.split_time_delta["param"] == "month":
                 months = params.pop("month")
+                if isinstance(months, str):
+                    months = [months]
                 return self._get_variables_for_months_and_params(
                     years, months, params, variables
                 )
