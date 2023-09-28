@@ -165,7 +165,9 @@ class DataRequestSearch(Search):
             getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
-            request_splitter = RequestSplitter(self.config)
+            request_splitter = RequestSplitter(
+                self.config, self.get_metadata_mapping(product_type)
+            )
             slices = request_splitter.get_time_slices(
                 kwargs["startTimeFromAscendingNode"],
                 kwargs["completionTimeFromAscendingNode"],
@@ -325,13 +327,22 @@ class DataRequestSearch(Search):
             if keywords.get("startTimeFromAscendingNode"):
                 start_date = keywords.get("startTimeFromAscendingNode")
             elif time_split_var == "month":
-                year = keywords["year"][0]
-                month = min(keywords["month"])
+                if isinstance(keywords["year"], str):
+                    year = keywords["year"]
+                else:
+                    year = keywords["year"][0]
+                if isinstance(keywords["month"], str):
+                    month = keywords["month"]
+                else:
+                    month = min(keywords["month"])
                 start_date = datetime(int(year), int(month), 1).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
             else:
-                year = min(keywords["year"])
+                if isinstance(keywords["year"], str):
+                    year = keywords["year"]
+                else:
+                    year = min(keywords["year"])
                 start_date = datetime(int(year), 1, 1).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
@@ -339,14 +350,23 @@ class DataRequestSearch(Search):
             if keywords.get("completionTimeFromAscendingNode"):
                 end_date = keywords.get("completionTimeFromAscendingNode")
             elif time_split_var == "month":
-                year = keywords["year"][0]
-                month = max(keywords["month"])
+                if isinstance(keywords["year"], str):
+                    year = keywords["year"]
+                else:
+                    year = keywords["year"][0]
+                if isinstance(keywords["month"], str):
+                    month = keywords["month"]
+                else:
+                    month = max(keywords["month"])
                 m = min(int(month) + 1, 12)
                 end_date = (
                     datetime(int(year), m, 1) - timedelta(days=1)
                 ).strftime("%Y-%m-%dT%H:%M:%SZ")
             else:
-                year = max(keywords["year"])
+                if isinstance(keywords["year"], str):
+                    year = keywords["year"]
+                else:
+                    year = max(keywords["year"])
                 end_date = datetime(int(year), 12, 31).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )

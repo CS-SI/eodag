@@ -49,7 +49,7 @@ class RequestSplitter:
     provides methods to split a request into several requests based on the given config and constraints
     """
 
-    def __init__(self, config):
+    def __init__(self, config, metadata_mapping):
         self.config = config.__dict__
         if (
             "constraints_file_path" in self.config
@@ -78,7 +78,7 @@ class RequestSplitter:
         else:
             self.constraints = self.constraints_data
 
-        self.metadata = self.config["metadata_mapping"]
+        self.metadata = metadata_mapping
         if "multi_select_values" in self.config:
             self.multi_select_values = self.config["multi_select_values"]
         else:

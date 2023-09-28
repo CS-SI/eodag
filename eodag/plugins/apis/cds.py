@@ -136,7 +136,9 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
-            request_splitter = RequestSplitter(self.config)
+            request_splitter = RequestSplitter(
+                self.config, self.config.metadata_mapping
+            )
             slices = request_splitter.get_time_slices(
                 kwargs["startTimeFromAscendingNode"],
                 kwargs["completionTimeFromAscendingNode"],
@@ -253,7 +255,9 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 date = date_value[0].replace('"', "").replace("'", "")
             start, end, *_ = date.split("/")
             if getattr(self.config, "products_split_timedelta", None):
-                request_splitter = RequestSplitter(self.config)
+                request_splitter = RequestSplitter(
+                    self.config, self.config.metadata_mapping
+                )
                 time_params = request_splitter.get_time_slices(start, end)
                 download_request["year"] = time_params[0]["year"]
                 download_request["month"] = time_params[0]["month"]

@@ -29,7 +29,7 @@ class TestRequestSplitter(unittest.TestCase):
             }
         )
         with self.assertRaises(MisconfiguredError):
-            RequestSplitter(config)
+            RequestSplitter(config, metadata)
 
     def test_split_timespan_by_year(self):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
@@ -43,7 +43,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices("2000-02-01", "2004-05-30")
         self.assertEqual(2, len(result))
         expected_result = [
@@ -70,7 +70,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices("2000-02-01", "2004-05-30")
         self.assertEqual(4, len(result))
         expected_result = [
@@ -116,7 +116,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices("2000-01-01", "2001-06-30")
         self.assertEqual(4, len(result))
         expected_result_row_1 = {
@@ -141,7 +141,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices("2000-01-01", "2001-06-30")
         self.assertEqual(13, len(result))
         expected_result_row_1 = {
@@ -179,7 +179,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices("1999-02-01", "2004-05-30")
         self.assertEqual(3, len(result))
         expected_result = [
@@ -220,7 +220,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices("1999-02-01", "2001-06-30")
         self.assertEqual(9, len(result))
         expected_result_row_1 = {
@@ -251,7 +251,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices("2000-02-01", "2000-07-30")
         self.assertEqual(1, len(result))
         result[0]["month"].sort()
@@ -295,7 +295,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "assets_split_parameter": "param",
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         start_date = datetime.datetime(2001, 6, 1)
         end_date = datetime.datetime(2001, 6, 30)
         params = {"step": ["102", "108"]}
@@ -361,7 +361,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "assets_split_parameter": "variable",
             }
         )
-        splitter = RequestSplitter(config)
+        splitter = RequestSplitter(config, metadata)
         params = {"time": ["01:00"]}
         result = splitter.get_variables_for_product("200101_200212", params)
         result.sort()

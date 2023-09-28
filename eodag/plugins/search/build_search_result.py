@@ -154,7 +154,9 @@ class BuildPostSearchResult(PostJsonSearch):
         # update downloadLink
         split_param = getattr(self.config, "assets_split_parameter", None)
         if split_param:
-            request_splitter = RequestSplitter(self.config)
+            request_splitter = RequestSplitter(
+                self.config, self.config.metadata_mapping
+            )
             product_available_properties["downloadLinks"] = {}
             param_values = parsed_properties[split_param]
             if isinstance(param_values, str):

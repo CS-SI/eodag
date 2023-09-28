@@ -3962,16 +3962,16 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         year:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
           - '$.null'
         month:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
           - '$.null'
         day:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
           - '$.null'
         time:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
       storeDownloadUrl: True
     ERA5_PL_MONTHLY:
@@ -4070,13 +4070,13 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         year:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
           - '$.null'
         month:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
           - '$.null'
         time:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
       storeDownloadUrl: True
     ERA5_LAND:
@@ -4142,10 +4142,10 @@
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}, {{"name": "year", "value": "{year}"}}, {{"name": "month", "value": "{month}"}}]}}'
           - '$.null'
         day:
-          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
           - '$.null'
         time:
-          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
@@ -4216,13 +4216,13 @@
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
           - '$.null'
         year:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
           - '$.null'
         month:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
           - '$.null'
         time:
-          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}, {{"name": "month", "value": {month}}}, {{"name": "time", "value": {time}}}]}}'
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
@@ -4249,6 +4249,17 @@
         - surface_pressure
         - total_precipitation
       format: grib # netcdf format may fail
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4263,6 +4274,18 @@
           - '$.null'
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
@@ -4289,6 +4312,16 @@
         - surface_pressure
         - total_precipitation
       format: grib # netcdf format may fail
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - time
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4303,6 +4336,15 @@
           - '$.null'
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
