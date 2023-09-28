@@ -356,7 +356,9 @@ class EODataAccessGateway(object):
 
     def _prune_providers_list(self):
         """Removes from config providers needing auth that have no credentials set."""
-        self._pruned_providers_config = {}
+        # store pruned providers configs
+        if not hasattr(self, "_pruned_providers_config"):
+            self._pruned_providers_config = {}
         update_needed = False
         for provider in list(self.providers_config.keys()):
             conf = self.providers_config[provider]
