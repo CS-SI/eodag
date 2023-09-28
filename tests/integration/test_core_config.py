@@ -120,6 +120,7 @@ class TestCoreProvidersConfig(TestCase):
         )
 
         # update pruned provider with credentials
+        self.assertNotIn("usgs", self.dag.providers_config)
         self.dag.update_providers_config(
             """
             usgs:
