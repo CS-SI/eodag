@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: The SpatioTemporal Asset Catalog API
-  version: 0.9.0
+  version: 1.0.0
   license:
     name: Apache License 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0'
@@ -15,21 +15,12 @@ info:
   contact:
     name: STAC Specification
     url: 'http://stacspec.org'
-tags:
-  - name: Capabilities
-    description: essential characteristics of this API
-  - name: Data
-    description: access to data (features)
-  - name: STAC
-    description: >-
-      Extension to OGC API - Features to support STAC metadata model and search
-      API
 paths:
   /:
     get:
       tags:
         - Capabilities
-      summary: landing page
+      summary: STAC API landing page
       description: |-
         Returns the root STAC Catalog or STAC Collection that is the entry point
         for users to browse with STAC Browser or for search engines to crawl.
@@ -44,6 +35,20 @@ paths:
           $ref: '#/components/responses/LandingPage'
         '500':
           $ref: '#/components/responses/ServerError'
+  /api:
+    get:
+      tags:
+        - Capabilities
+      summary: Eodag Openapi
+      description: Customized openapi
+      operationId: eodag_openapi_api_get
+      responses:
+          '200':
+              description: Successful response
+              content:
+                  application/json:
+                      schema:
+                          type: object
   /conformance:
     get:
       tags:
@@ -58,25 +63,126 @@ paths:
           $ref: '#/components/responses/ConformanceDeclaration'
         '500':
           $ref: '#/components/responses/ServerError'
-  /collections:
+  /queryables:
     get:
       tags:
         - Capabilities
-      summary: the feature collections in the dataset
+      responses:
+        '200':
+          $ref: '#/components/responses/Queryables'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      summary: Get the JSON Schema queryables that apply to all collections.
+      operationId: getQueryables
+      description: |-
+          The Queryables mechanism allows a client to discover what terms are available
+          for use when writing filter expressions. These terms are defined over the entire catalog.
+
+          The decision as to which queryables to define for the entire catalog is at the discretion
+          of the implementer, and can be anywhere between none and the union of all queryables
+          cross all collections.
+  /catalogs/{catalogPath}:
+    get:
+      tags:
+      - Capabilities
+      summary: Provide details about a given catalog
+      description: |-
+          Detail the contents in the given catalog provided with `catalogPath`.
+      parameters:
+      - $ref: '#/components/parameters/catalogPath'
+      responses:
+          '200':
+              description: The catalog's description
+              content:
+                  application/json:
+                      schema:
+                          $ref: '#/components/schemas/collection'
+          '500':
+              $ref: '#/components/responses/ServerError'
+  /catalogs/{catalogPath}/items:
+    get:
+      tags:
+      - Data
+      summary: List features in a given catalog
+      description: |-
+          Fetch features in the given catalog provided with `catalogs`.
+      parameters:
+        - $ref: '#/components/parameters/catalogPath'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/limit'
+      responses:
+          '200':
+              description: The list of items found for the given catalog.
+              type: array
+              content:
+                  application/json:
+                      schema:
+                          $ref: '#/components/schemas/itemCollection'
+          '500':
+              $ref: '#/components/responses/ServerError'
+  /catalogs/{catalogPath}/items/{featureId}:
+    get:
+      tags:
+      - Data
+      summary: fetch a single feature from a catalog
+      description: |-
+          Fetch the feature with id `featureId` in the given catalog provided.
+          with `catalogs`.
+      parameters:
+        - $ref: '#/components/parameters/catalogPath'
+        - $ref: '#/components/parameters/featureId'
+      responses:
+          '200':
+            $ref: '#/components/responses/Feature'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/ServerError'
+  /catalogs/{catalogPath}/items/{featureId}/download:
+      get:
+        tags:
+        - Data
+        summary: download a single feature from a catalog
+        description: |-
+            Download the feature with id `featureId` in the given catalog provided.
+            with `catalogs`.
+        parameters:
+          - $ref: '#/components/parameters/catalogPath'
+          - $ref: '#/components/parameters/featureId'
+        responses:
+          '200':
+            description: Successful `application/zip` response
+            content:
+              application/octet-stream:
+                schema:
+                  type: string
+                  format: binary
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/ServerError'
+  /collections:
+   get:
+      tags:
+        - Capabilities
+      summary: The feature collections in the dataset.
+      description: A body of Feature Collections that belong or are used together with additional links. Request may not return the full set of metadata per Feature Collection.
       operationId: getCollections
       responses:
         '200':
           $ref: '#/components/responses/Collections'
         '500':
           $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}':
+  /collections/{collectionId}:
     get:
       tags:
         - Capabilities
-      summary: describe the feature collection with id `collectionId`
-      operationId: describeCollection
       parameters:
         - $ref: '#/components/parameters/collectionId'
+      summary: Describe the feature Collection for the given `collectionId`.
+      description: A single Feature Colletion for the given `collectionId`. Request this endpoint to get a full list of metadata for the Feature Collection.
+      operationId: describeCollection
       responses:
         '200':
           $ref: '#/components/responses/Collection'
@@ -84,11 +190,37 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/items':
+  /collections/{collectionId}/queryables:
+    get:
+      tags:
+        - Capabilities
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      summary: Get the JSON Schema queryables that apply to a given collection.
+      operationId: getQueryablesForCollection
+      description: |-
+          The Queryables mechanism allows a client to discover what terms are available
+          for use when writing filter expressions. These terms are defined per collection.\
+
+          When used as a subresource of the collection resource,
+          it returns queryables pertaining only to that single collection.
+      responses:
+        '200':
+          $ref: '#/components/responses/Queryables'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /collections/{collectionId}/items:
     get:
       tags:
         - Data
-      summary: fetch features
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/ids'
       description: |-
         Fetch features of the feature collection with id `collectionId`.
 
@@ -97,12 +229,8 @@ paths:
         collection of features of a similar type, based on a common schema.
 
         Use content negotiation to request HTML or GeoJSON.
+      summary: List of items available in a given collection
       operationId: getFeatures
-      parameters:
-        - $ref: '#/components/parameters/collectionId'
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
       responses:
         '200':
           $ref: '#/components/responses/Features'
@@ -112,10 +240,13 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/items/{featureId}':
+  /collections/{collectionId}/items/{featureId}:
     get:
       tags:
         - Data
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/featureId'
       summary: fetch a single feature
       description: |-
         Fetch the feature with id `featureId` in the feature collection
@@ -123,12 +254,33 @@ paths:
 
         Use content negotiation to request HTML or GeoJSON.
       operationId: getFeature
-      parameters:
-        - $ref: '#/components/parameters/collectionId'
-        - $ref: '#/components/parameters/featureId'
       responses:
         '200':
           $ref: '#/components/responses/Feature'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /collections/{collectionId}/items/{featureId}/download:
+    get:
+      tags:
+        - Data
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/featureId'
+      summary: download a single feature assets archive
+      description: |-
+        Download the feature with id `featureId` in the feature collection
+        with id `collectionId`.
+      operationId: getFeature
+      responses:
+        '200':
+          description: Successful `application/zip` response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -151,11 +303,12 @@ paths:
       tags:
         - STAC
       parameters:
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/ids'
-        - $ref: '#/components/parameters/collectionsArray'
+      - $ref: '#/components/parameters/bbox'
+      - $ref: '#/components/parameters/datetime'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/intersects'
+      - $ref: '#/components/parameters/ids'
+      - $ref: '#/components/parameters/query'
       responses:
         '200':
           description: A feature collection.
@@ -176,6 +329,14 @@ paths:
               schema:
                 type: string
     post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/searchBody'
+      tags:
+        - STAC
       summary: Search STAC items with full-featured filtering.
       description: |-
         retrieve items matching filters. Intended as the standard, full-featured
@@ -186,13 +347,6 @@ paths:
         link referring to this endpoint with `rel` set to `search` and `method`
         set to `POST` to the `links` array in `GET /`.
       operationId: postSearchSTAC
-      tags:
-        - STAC
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/searchBody'
       responses:
         '200':
           description: A feature collection.
@@ -214,6 +368,32 @@ paths:
                 type: string
 components:
   parameters:
+    q:
+      name: q
+      in: query
+      description: |-
+        The optional q parameter supports keyword searching.  Only records
+        whose text fields contain one or more of the specified search terms
+        are selected.  The specific set of text keys/fields/properties of a
+        record to which the q operator is applied is up to the description
+        of the server.   Implementations should, however, apply the q
+        operator to the title, description and keywords keys/fields/properties.
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+    intersects:
+      name: intersects
+      in: query
+      description: Searches items by performing intersection between their geometry and provided GeoJSON geometry. All GeoJSON geometry types must be supported.
+      required: false
+      schema:
+        $ref: '#/components/schemas/geometryGeoJSON'
+      style: form
+      explode: false
     bbox:
       name: bbox
       in: query
@@ -294,6 +474,27 @@ components:
       in: path
       description: local identifier of a collection
       required: true
+      schema:
+        type: string
+    catalogPath:
+      name: catalogPath
+      in: path
+      required: true
+      description: |-
+              The catalog's path.
+              For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
+      schema:
+        type: string
+    query:
+      name: query
+      x-stac-api-fragment: query
+      in: query
+      description: |-
+        **Extension:** Query
+
+        Query for properties in items.
+        Use the JSON form of the query used in POST.
+      required: false
       schema:
         type: string
     datetime:
@@ -383,6 +584,29 @@ components:
         $ref: '#/components/schemas/collectionsArray'
       explode: false
   schemas:
+    query:
+      type: object
+      description: Define which properties to query and the operations to apply
+      example:
+        eo:cloud_cover:
+          gt: 8
+          lt: 50
+        platform:
+          eq: 'landsat-8'
+        datetime:
+          gte: '2018-02-12T00:00:00Z'
+          lte: '2018-03-18T12:31:12Z'
+        pl:item_type:
+          startsWith: PSScene
+        product:
+          in:
+            - foo
+            - bar
+            - baz
+        eo:gsd:
+          in:
+            - 10
+            - 20
     collection:
       type: object
       required:
@@ -621,8 +845,6 @@ components:
       required:
         - code
       properties:
-        code:
-          type: string
         description:
           type: string
     extent:
@@ -1728,6 +1950,16 @@ components:
             type: string
     NotFound:
       description: The requested URI was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+    Queryables:
+      description: A JSON Schema defining the Queryables allowed in filter expressions
+      content:
+        application/schema+json:
+          schema:
+            type: object
     ServerError:
       description: A server error occurred.
       content:
@@ -1742,3 +1974,22 @@ servers:
     description: Development server
   - url: 'http://www.cool-sat.com'
     description: Production server
+tags:
+  - name: Capabilities
+    description: essential characteristics of this API
+  - name: Data
+    description: access to data (features)
+  - name: STAC
+    description: >-
+      Extension to OGC API - Features to support STAC metadata model and search
+      API
+  # - name: STAC API - Core
+  #   description: Part of STAC API v1.0.0 - Core definition
+  # - name: STAC API - Collections
+  #   description: Part of STAC API v1.0.0 - Collections definition
+  # - name: STAC API - Features
+  #   description: Part of STAC API v1.0.0 - Features definition
+  # - name: STAC API - Item Search
+  #   description: Part of STAC API v1.0.0 - Item Search definition
+  # - name: STAC API - Filter Extension
+  #   description: Part of STAC API v1.0.0 - Filter extension definition
