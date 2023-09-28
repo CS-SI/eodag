@@ -135,7 +135,9 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
-            request_splitter = RequestSplitter(self.config)
+            request_splitter = RequestSplitter(
+                self.config, self.config.metadata_mapping
+            )
             slices = request_splitter.get_time_slices(
                 kwargs["startTimeFromAscendingNode"],
                 kwargs["completionTimeFromAscendingNode"],
