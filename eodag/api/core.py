@@ -301,6 +301,15 @@ class EODataAccessGateway(object):
         :type yaml_conf: str
         """
         conf_update = yaml.safe_load(yaml_conf)
+
+        # restore the pruned configuration
+        for provider, pruned_conf in self._pruned_providers_config.items():
+            logger.info(
+                "%s: provider restored from the pruned configurations",
+                provider,
+            )
+            self.providers_config[provider] = pruned_conf
+
         # check if metada-mapping as already been built as jsonpath in providers_config
         for provider, provider_conf in conf_update.items():
             if (
@@ -334,13 +343,6 @@ class EODataAccessGateway(object):
                     conf_update[provider][search_plugin_key]["metadata_mapping"],
                 )
 
-        # restore the pruned configuration
-        for provider, pruned_conf in self._pruned_providers_config.items():
-            logger.info(
-                "%s: provider restored from the pruned configurations",
-                provider,
-            )
-            self.providers_config[provider] = pruned_conf
         override_config_from_mapping(self.providers_config, conf_update)
 
         stac_provider_config = load_stac_provider_config()
