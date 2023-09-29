@@ -172,16 +172,19 @@ class DataRequestSearch(Search):
                 start_time = kwargs.pop("startTimeFromAscendingNode")
                 keywords.pop("startTimeFromAscendingNode")
             else:
+                keywords.pop("startTimeFromAscendingNode", None)
                 start_time = None
             if "completionTimeFromAscendingNode" in kwargs:
                 end_time = kwargs.pop("completionTimeFromAscendingNode")
                 keywords.pop("completionTimeFromAscendingNode")
             else:
+                keywords.pop("completionTimeFromAscendingNode", None)
                 end_time = None
             num_products = kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE)
+            page = kwargs.get("page", DEFAULT_PAGE)
 
             slices = request_splitter.get_time_slices(
-                start_time, end_time, num_products
+                start_time, end_time, num_products, page
             )
             for time_slice in slices:
                 for key, value in time_slice.items():
@@ -217,6 +220,8 @@ class DataRequestSearch(Search):
                     variables = request_splitter.get_variables_for_search_params(
                         keywords, selected_vars
                     )
+                    if len(variables) == 0:
+                        continue
                     product = None
                     for variable in variables:
                         keywords[param_variable] = [variable]
