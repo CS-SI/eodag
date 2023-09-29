@@ -112,21 +112,83 @@ class RequestSplitter:
                 "month, choose a smaller granularity"
             )
 
-    def get_time_slices(self, start_date, end_date):
+    def get_time_slices(self, start_date=None, end_date=None, num_products=20, page=1):
         """
         splits a timespan into slices based on the given config and constraints
         """
         split_param = self.split_time_delta["param"]
         slice_duration = self.split_time_delta["duration"]
-        start_year = int(start_date[:4])
-        end_year = int(end_date[:4])
+        total_duration = int(num_products) * slice_duration
+        if not end_date:
+            end_date_v = datetime.datetime.today()
+        else:
+            try:
+                end_date_v = datetime.datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                end_date_v = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        start_date_v = None
+        if start_date:
+            try:
+                start_date_v = datetime.datetime.strptime(
+                    start_date, "%Y-%m-%dT%H:%M:%SZ"
+                )
+            except ValueError:
+                start_date_v = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+
         if split_param == "year":
+            if page > 1:
+                end_date_v = end_date_v - datetime.timedelta(
+                    days=((page - 1) * total_duration * 365 + 365)
+                )
+            if not end_date:
+                end_date = end_date_v.strftime("%Y-%m-%d")
+            end_year = int(end_date[:4])
+            if start_date_v and start_date_v > end_date_v:
+                return []
+            if not start_date or (
+                start_date_v
+                and start_date_v
+                < end_date_v - datetime.timedelta(days=(total_duration * 365))
+            ):
+                start_date_v = end_date_v - datetime.timedelta(
+                    days=(total_duration * 365)
+                )
+                start_date = start_date_v.strftime("%Y-%m-%d")
+            start_year = int(start_date[:4])
             if (end_year - start_year) < slice_duration:
                 return self._format_result(start_date, end_date)
             return self._split_by_year(start_year, end_year, slice_duration)
         elif split_param == "month":
-            start_month = int(start_date[5:7])
+            end_date = end_date_v.strftime("%Y-%m-%d")
+            end_year = int(end_date[:4])
             end_month = int(end_date[5:7])
+            if page > 1:
+                end_year = end_year - ((page - 1) * total_duration) // 12
+                end_month = end_month - ((page - 1) * total_duration) % 12 - 1
+                if end_month < 1:
+                    end_month = 12 - abs(end_month)
+                    end_year -= 1
+            if not start_date:
+                start_year = end_year - total_duration // 12
+                start_month = end_month - (total_duration % 12)
+                if start_month < 1:
+                    start_month = 12 - abs(start_month)
+                    start_year -= 1
+            else:
+                start_month = int(start_date[5:7])
+                start_year = int(start_date[:4])
+                if end_month >= start_month:
+                    diff = (end_year - start_year) * 12 + (end_month - start_month)
+                else:
+                    diff = (end_year - start_year) * 12 + (
+                        12 - abs(end_month - start_month)
+                    )
+                if diff > total_duration:
+                    start_year = end_year - total_duration // 12
+                    start_month = end_month - (total_duration % 12)
+                    if start_month < 1:
+                        start_month = 12 - abs(start_month)
+                        start_year -= 1
             if start_year == end_year and (end_month - start_month) < slice_duration:
                 return self._format_result(start_date, end_date)
             return self._split_by_month(
@@ -176,15 +238,23 @@ class RequestSplitter:
                 years.append(years_slice)
                 years_slice = [str(y)]
                 i = 1
+                if y == end_year:
+                    years.append(years_slice)
         slices = []
         for row in years:
             record = {"year": row}
+            months = []
+            days = []
             if "month" in self.metadata:
                 months = self._get_months_for_years(row)
-                record["month"] = months
+            if len(months) == 0:
+                continue
+            record["month"] = months
             if "day" in self.metadata:
                 days = self._get_days_for_months_and_years(months, row)
-                record["day"] = days
+            if len(days) == 0:
+                continue
+            record["day"] = days
             if "time" in self.metadata:
                 times = self._get_times_for_days_months_and_years(days, months, row)
                 record["time"] = times
