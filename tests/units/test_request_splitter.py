@@ -104,6 +104,41 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertDictEqual(expected_result[2], result[2])
         self.assertDictEqual(expected_result[3], result[3])
 
+    def test_split_timespan_by_year_without_input_dates(self):
+        metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
+        multiselect_values = ["year", "month", "day", "time"]
+        split_time_values = {"param": "year", "duration": 1}
+        config = PluginConfig.from_mapping(
+            {
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
+        splitter = RequestSplitter(config, metadata)
+        result = splitter.get_time_slices()
+        self.assertEqual(3, len(result))
+        years = [r["year"][0] for r in result]
+        years.sort()
+        self.assertEqual(str(["2003", "2004", "2005"]), str(years))
+        result = splitter.get_time_slices(num_products=25)
+        self.assertEqual(6, len(result))
+        result = splitter.get_time_slices("2002-01-01")
+        self.assertEqual(3, len(result))
+        years = [r["year"][0] for r in result]
+        years.sort()
+        self.assertEqual(str(["2003", "2004", "2005"]), str(years))
+        result = splitter.get_time_slices(end_date="2004-07-01")
+        self.assertEqual(5, len(result))
+        years = [r["year"][0] for r in result]
+        years.sort()
+        self.assertEqual(str(["2000", "2001", "2002", "2003", "2004"]), str(years))
+        result = splitter.get_time_slices(page=2)
+        self.assertEqual(3, len(result))
+        years = [r["year"][0] for r in result]
+        years.sort()
+        self.assertEqual(str(["2000", "2001", "2002"]), str(years))
+
     def test_split_timespan_by_month(self):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
         multiselect_values = ["year", "month", "day", "time"]
@@ -158,6 +193,29 @@ class TestRequestSplitter(unittest.TestCase):
         }
         self.assertDictEqual(expected_result_row_1, result[0])
         self.assertDictEqual(expected_result_row_6, result[5])
+
+    def test_split_timespan_by_month_without_input_dates(self):
+        metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
+        multiselect_values = ["year", "month", "day", "time"]
+        split_time_values = {"param": "month", "duration": 1}
+        config = PluginConfig.from_mapping(
+            {
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+            }
+        )
+        splitter = RequestSplitter(config, metadata)
+        result = splitter.get_time_slices()
+        self.assertEqual(0, len(result))
+        result = splitter.get_time_slices(end_date="2001-12-31")
+        self.assertEqual(11, len(result))
+        result = splitter.get_time_slices(end_date="2001-12-31", num_products=25)
+        self.assertEqual(14, len(result))
+        result = splitter.get_time_slices(end_date="2002-01-31", num_products=25)
+        self.assertEqual(15, len(result))
+        result = splitter.get_time_slices(num_products=24, page=9)
+        self.assertEqual(1, len(result))
 
     def test_split_timespan_by_year_with_dates(self):
         metadata = {

@@ -183,14 +183,21 @@ class DataRequestSearch(Search):
             request_splitter = RequestSplitter(
                 self.config, self.get_metadata_mapping(product_type)
             )
+            if "startTimeFromAscendingNode" in kwargs:
+                start_time = kwargs.pop("startTimeFromAscendingNode")
+                keywords.pop("startTimeFromAscendingNode")
+            else:
+                start_time = None
+            if "completionTimeFromAscendingNode" in kwargs:
+                end_time = kwargs.pop("completionTimeFromAscendingNode")
+                keywords.pop("completionTimeFromAscendingNode")
+            else:
+                end_time = None
+            num_products = kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE)
+
             slices = request_splitter.get_time_slices(
-                kwargs["startTimeFromAscendingNode"],
-                kwargs["completionTimeFromAscendingNode"],
+                start_time, end_time, num_products
             )
-            kwargs.pop("startTimeFromAscendingNode")
-            keywords.pop("startTimeFromAscendingNode")
-            kwargs.pop("completionTimeFromAscendingNode")
-            keywords.pop("completionTimeFromAscendingNode")
             for time_slice in slices:
                 for key, value in time_slice.items():
                     if key == "start_date":
