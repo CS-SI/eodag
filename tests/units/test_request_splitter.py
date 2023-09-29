@@ -44,7 +44,7 @@ class TestRequestSplitter(unittest.TestCase):
             }
         )
         splitter = RequestSplitter(config, metadata)
-        result = splitter.get_time_slices("2000-02-01", "2004-05-30")
+        result = splitter.get_time_slices("2000-02-01", "2003-05-30")
         self.assertEqual(2, len(result))
         expected_result = [
             {
@@ -71,7 +71,7 @@ class TestRequestSplitter(unittest.TestCase):
             }
         )
         splitter = RequestSplitter(config, metadata)
-        result = splitter.get_time_slices("2000-02-01", "2004-05-30")
+        result = splitter.get_time_slices("2000-02-01", "2003-05-30")
         self.assertEqual(4, len(result))
         expected_result = [
             {
@@ -117,27 +117,27 @@ class TestRequestSplitter(unittest.TestCase):
         )
         splitter = RequestSplitter(config, metadata)
         result = splitter.get_time_slices()
-        self.assertEqual(3, len(result))
+        self.assertEqual(2, len(result))
         years = [r["year"][0] for r in result]
         years.sort()
-        self.assertEqual(str(["2003", "2004", "2005"]), str(years))
+        self.assertEqual(str(["2004", "2005"]), str(years))
         result = splitter.get_time_slices(num_products=25)
         self.assertEqual(6, len(result))
         result = splitter.get_time_slices("2002-01-01")
-        self.assertEqual(3, len(result))
+        self.assertEqual(2, len(result))
         years = [r["year"][0] for r in result]
         years.sort()
-        self.assertEqual(str(["2003", "2004", "2005"]), str(years))
+        self.assertEqual(str(["2004", "2005"]), str(years))
         result = splitter.get_time_slices(end_date="2004-07-01")
         self.assertEqual(5, len(result))
         years = [r["year"][0] for r in result]
         years.sort()
         self.assertEqual(str(["2000", "2001", "2002", "2003", "2004"]), str(years))
         result = splitter.get_time_slices(page=2)
-        self.assertEqual(3, len(result))
+        self.assertEqual(4, len(result))
         years = [r["year"][0] for r in result]
         years.sort()
-        self.assertEqual(str(["2000", "2001", "2002"]), str(years))
+        self.assertEqual(str(["2000", "2001", "2002", "2003"]), str(years))
 
     def test_split_timespan_by_month(self):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
@@ -209,7 +209,7 @@ class TestRequestSplitter(unittest.TestCase):
         result = splitter.get_time_slices()
         self.assertEqual(0, len(result))
         result = splitter.get_time_slices(end_date="2001-12-31")
-        self.assertEqual(11, len(result))
+        self.assertEqual(10, len(result))
         result = splitter.get_time_slices(end_date="2001-12-31", num_products=25)
         self.assertEqual(14, len(result))
         result = splitter.get_time_slices(end_date="2002-01-31", num_products=25)

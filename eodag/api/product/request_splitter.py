@@ -138,7 +138,7 @@ class RequestSplitter:
         if split_param == "year":
             if page > 1:
                 end_date_v = end_date_v - datetime.timedelta(
-                    days=((page - 1) * total_duration * 365 + 365)
+                    days=((page - 1) * total_duration * 365)
                 )
             if not end_date:
                 end_date = end_date_v.strftime("%Y-%m-%d")
@@ -151,7 +151,7 @@ class RequestSplitter:
                 < end_date_v - datetime.timedelta(days=(total_duration * 365))
             ):
                 start_date_v = end_date_v - datetime.timedelta(
-                    days=(total_duration * 365)
+                    days=(total_duration * 365 - 365)
                 )
                 start_date = start_date_v.strftime("%Y-%m-%d")
             start_year = int(start_date[:4])
@@ -164,16 +164,19 @@ class RequestSplitter:
             end_month = int(end_date[5:7])
             if page > 1:
                 end_year = end_year - ((page - 1) * total_duration) // 12
-                end_month = end_month - ((page - 1) * total_duration) % 12 - 1
+                end_month = end_month - ((page - 1) * total_duration) % 12
                 if end_month < 1:
                     end_month = 12 - abs(end_month)
                     end_year -= 1
             if not start_date:
                 start_year = end_year - total_duration // 12
-                start_month = end_month - (total_duration % 12)
+                start_month = end_month - (total_duration % 12) + 1
                 if start_month < 1:
                     start_month = 12 - abs(start_month)
                     start_year -= 1
+                elif start_month > 12:
+                    start_month = start_month - 12
+                    start_year += 1
             else:
                 start_month = int(start_date[5:7])
                 start_year = int(start_date[:4])
@@ -185,10 +188,13 @@ class RequestSplitter:
                     )
                 if diff > total_duration:
                     start_year = end_year - total_duration // 12
-                    start_month = end_month - (total_duration % 12)
+                    start_month = end_month - (total_duration % 12) + 1
                     if start_month < 1:
                         start_month = 12 - abs(start_month)
                         start_year -= 1
+                    elif start_month > 12:
+                        start_month = start_month - 12
+                        start_year += 1
             if start_year == end_year and (end_month - start_month) < slice_duration:
                 return self._format_result(start_date, end_date)
             return self._split_by_month(
@@ -238,8 +244,8 @@ class RequestSplitter:
                 years.append(years_slice)
                 years_slice = [str(y)]
                 i = 1
-                if y == end_year:
-                    years.append(years_slice)
+            if y == end_year:
+                years.append(years_slice)
         slices = []
         for row in years:
             record = {"year": row}
@@ -313,6 +319,8 @@ class RequestSplitter:
                     times = self._get_times_for_months_and_years(
                         row["month"], row["year"]
                     )
+                if len(times) == 0:
+                    continue
                 record["time"] = times
             if "year" not in self.multi_select_values:
                 record["year"] = row["year"][0]
