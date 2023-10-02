@@ -4336,6 +4336,7 @@
         param: month  # currently month and year are available
         duration: 1
       assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4445,6 +4446,7 @@
         param: month  # currently month and year are available
         duration: 1
       assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4522,6 +4524,7 @@
         param: month  # currently month and year are available
         duration: 1
       assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4600,6 +4603,7 @@
         param: month  # currently month and year are available
         duration: 1
       assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4661,6 +4665,7 @@
         param: month  # currently month and year are available
         duration: 1
       assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4724,6 +4729,7 @@
         param: month  # currently month and year are available
         duration: 1
       assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
