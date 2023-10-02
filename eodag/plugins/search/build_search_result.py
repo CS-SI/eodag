@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import calendar
 import hashlib
 import logging
 from datetime import datetime
@@ -35,6 +35,75 @@ from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.utils import dict_items_recursive_sort
 
 logger = logging.getLogger("eodag.search.build_search_result")
+
+
+def get_product_id(
+    id_prefix, parsed_properties, query_hash, update_start_end_time=True
+):
+    """
+    creates a product id based on the the given prefix, the time parameters in the properties and an additional string
+    :param id_prefix: first part of the id
+    :type id_prefix: str
+    :param parsed_properties: properties of the product
+    :type parsed_properties: dict
+    :param query_hash: string to be added at the end of the id
+    :type query_hash: str
+    :param update_start_end_time: (optional) if the start and end time in the properties
+                                  should be updated based on other time parameters (year, month, day)
+    :type update_start_end_time: bool
+    """
+    if (
+        "startTimeFromAscendingNode" in parsed_properties
+        and parsed_properties["startTimeFromAscendingNode"]
+        and parsed_properties["startTimeFromAscendingNode"] != NOT_AVAILABLE
+        and "completionTimeFromAscendingNode" in parsed_properties
+        and parsed_properties["completionTimeFromAscendingNode"]
+        and parsed_properties["completionTimeFromAscendingNode"] != NOT_AVAILABLE
+    ):
+        product_id = "%s_%s_%s_%s" % (
+            id_prefix,
+            parsed_properties["startTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            parsed_properties["completionTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            query_hash,
+        )
+    elif "year" in parsed_properties and parsed_properties["year"] != NOT_AVAILABLE:
+        years = [int(y) for y in parsed_properties["year"]]
+        start_year = str(min(years))
+        end_year = str(max(years))
+        if "month" in parsed_properties and parsed_properties["month"] != NOT_AVAILABLE:
+            months = [int(m) for m in parsed_properties["month"]]
+            start_month = "{:0>2d}".format(min(months))
+            end_month = "{:0>2d}".format(max(months))
+        else:
+            start_month = "01"
+            end_month = "12"
+        if "day" in parsed_properties and parsed_properties["day"] != NOT_AVAILABLE:
+            days = [int(d) for d in parsed_properties["day"]]
+            start_day = "{:0>2d}".format(min(days))
+            end_day = "{:0>2d}".format(max(days))
+        else:
+            start_day = "01"
+            end_day = str(calendar.monthrange(int(end_year), int(end_month))[1])
+        product_id = "%s_%s_%s_%s" % (
+            id_prefix,
+            start_year + start_month + start_day,
+            end_year + end_month + end_day,
+            query_hash,
+        )
+        if update_start_end_time:
+            parsed_properties["startTimeFromAscendingNode"] = datetime(
+                int(start_year), int(start_month), int(start_day)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            parsed_properties["completionTimeFromAscendingNode"] = datetime(
+                int(end_year), int(end_month), int(end_day)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        product_id = parsed_properties["id"]
+    return product_id
 
 
 class BuildPostSearchResult(PostJsonSearch):
@@ -140,7 +209,7 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # build product id
         id_prefix = (product_type or self.provider).upper()
-        product_id = self._get_product_id(id_prefix, parsed_properties, query_hash)
+        product_id = get_product_id(id_prefix, parsed_properties, query_hash)
         product_available_properties = {
             k: v
             for (k, v) in parsed_properties.items()
@@ -214,55 +283,3 @@ class BuildPostSearchResult(PostJsonSearch):
         return [
             product,
         ]
-
-    def _get_product_id(self, id_prefix, parsed_properties, query_hash):
-        if (
-            parsed_properties["startTimeFromAscendingNode"]
-            and parsed_properties["startTimeFromAscendingNode"] != NOT_AVAILABLE
-            and parsed_properties["completionTimeFromAscendingNode"]
-            and parsed_properties["completionTimeFromAscendingNode"] != NOT_AVAILABLE
-        ):
-            product_id = "%s_%s_%s_%s" % (
-                id_prefix,
-                parsed_properties["startTimeFromAscendingNode"]
-                .split("T")[0]
-                .replace("-", ""),
-                parsed_properties["completionTimeFromAscendingNode"]
-                .split("T")[0]
-                .replace("-", ""),
-                query_hash,
-            )
-        elif "year" in parsed_properties and parsed_properties["year"] != NOT_AVAILABLE:
-            years = [int(y) for y in parsed_properties["year"]]
-            start_year = str(min(years))
-            end_year = str(max(years))
-            if (
-                "month" in parsed_properties
-                and parsed_properties["month"] != NOT_AVAILABLE
-            ):
-                months = [int(m) for m in parsed_properties["month"]]
-                start_month = "{:0>2d}".format(min(months))
-                end_month = "{:0>2d}".format(max(months))
-            else:
-                start_month = end_month = ""
-            if "day" in parsed_properties and parsed_properties["day"] != NOT_AVAILABLE:
-                days = [int(d) for d in parsed_properties["day"]]
-                start_day = "{:0>2d}".format(min(days))
-                end_day = "{:0>2d}".format(max(days))
-            else:
-                start_day = end_day = ""
-            product_id = "%s_%s_%s_%s" % (
-                id_prefix,
-                start_year + start_month + start_day,
-                end_year + end_month + end_day,
-                query_hash,
-            )
-            parsed_properties["startTimeFromAscendingNode"] = datetime(
-                int(start_year), int(start_month), int(start_day)
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-            parsed_properties["completionTimeFromAscendingNode"] = datetime(
-                int(end_year), int(end_month), int(end_day)
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-        else:
-            product_id = parsed_properties["id"]
-        return product_id

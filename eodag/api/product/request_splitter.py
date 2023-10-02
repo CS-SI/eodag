@@ -125,7 +125,12 @@ class RequestSplitter:
             try:
                 end_date_v = datetime.datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%SZ")
             except ValueError:
-                end_date_v = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+                try:
+                    end_date_v = datetime.datetime.strptime(
+                        end_date, "%Y-%m-%dT%H:%M:%S"
+                    )
+                except ValueError:
+                    end_date_v = datetime.datetime.strptime(end_date, "%Y-%m-%d")
         start_date_v = None
         if start_date:
             try:
@@ -133,7 +138,12 @@ class RequestSplitter:
                     start_date, "%Y-%m-%dT%H:%M:%SZ"
                 )
             except ValueError:
-                start_date_v = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+                try:
+                    start_date_v = datetime.datetime.strptime(
+                        start_date, "%Y-%m-%dT%H:%M:%S"
+                    )
+                except ValueError:
+                    start_date_v = datetime.datetime.strptime(start_date, "%Y-%m-%d")
 
         if split_param == "year":
             if page > 1:

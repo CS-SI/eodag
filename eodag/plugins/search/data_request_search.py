@@ -15,6 +15,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.plugins.search.build_search_result import get_product_id
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
@@ -180,6 +181,7 @@ class DataRequestSearch(Search):
             else:
                 keywords.pop("completionTimeFromAscendingNode", None)
                 end_time = None
+
             num_products = kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE)
             page = kwargs.get("page", DEFAULT_PAGE)
 
@@ -217,59 +219,16 @@ class DataRequestSearch(Search):
                 param_variable = self.config.assets_split_parameter
                 if param_variable:
                     selected_vars = keywords.pop(param_variable, None)
+                    if not selected_vars and "variable" in self.product_type_def_params:
+                        selected_vars = self.product_type_def_params["variable"]
                     variables = request_splitter.get_variables_for_search_params(
                         keywords, selected_vars
                     )
                     if len(variables) == 0:
                         continue
-                    product = None
-                    for variable in variables:
-                        keywords[param_variable] = [variable]
-                        result = self._get_products(
-                            product_type, provider_product_type, keywords, **kwargs
-                        )
-                        if not product:
-                            product = result[0][0]
-                            product.properties["downloadLinks"] = {}
-                            product.properties["orderLinks"] = {}
-                            if self.config.products[product_type].get(
-                                "storeDownloadUrl", False
-                            ):
-                                self.download_info[product.properties["id"]][
-                                    "downloadLinks"
-                                ] = {}
-                                self.download_info[product.properties["id"]][
-                                    "orderLinks"
-                                ] = {}
-                            num_items += 1
-                        else:
-                            product.properties["orderLink"] = result[0][0].properties[
-                                "orderLink"
-                            ]
-                            product.properties["downloadLink"] = result[0][
-                                0
-                            ].properties["downloadLink"]
-                        product.properties["downloadLinks"][
-                            variable
-                        ] = product.properties["downloadLink"]
-                        product.properties["orderLinks"][variable] = product.properties[
-                            "orderLink"
-                        ]
-                        if self.config.products[product_type].get(
-                            "storeDownloadUrl", False
-                        ):
-                            self.download_info[product.properties["id"]][
-                                "downloadLinks"
-                            ][variable] = product.properties["downloadLink"]
-
-                            self.download_info[product.properties["id"]]["orderLinks"][
-                                variable
-                            ] = product.properties["orderLink"].replace(
-                                "requestJobId", str(self.data_request_id)
-                            )
-                        self.data_request_id = None
+                    product = self._create_product(variables, product_type, keywords)
                     products.append(product)
-                    keywords[param_variable] = selected_vars
+                    num_items += 1
                 else:
                     result = self._get_products(
                         product_type, provider_product_type, keywords, **kwargs
@@ -281,6 +240,30 @@ class DataRequestSearch(Search):
                 product_type, provider_product_type, keywords, **kwargs
             )
         return products, num_items
+
+    def _create_product(self, variables, product_type, keywords):
+        id_prefix = "P_" + product_type
+        product_id = get_product_id(id_prefix, keywords, self.provider, False)
+        download_links = {}
+        for variable in variables:
+            download_links[variable] = self.product_type_def_params["downloadLink"]
+
+        time_split_var = self.config.products_split_timedelta["param"]
+        dates = self._get_start_and_end_date_from_keywords(keywords, time_split_var)
+
+        properties = {
+            "id": product_id,
+            "title": product_id,
+            "downloadLinks": download_links,
+            "startTimeFromAscendingNode": dates["start_date"],
+            "completionTimeFromAscendingNode": dates["end_date"],
+        }
+        if "geometry" in keywords:
+            properties["geometry"] = keywords["geometry"]
+        else:
+            properties["geometry"] = "-180 -90 180 90"
+        properties = dict(getattr(self.config, "product_type_config", {}), **properties)
+        return EOProduct(self.provider, properties, productType=product_type)
 
     def _get_products(self, product_type, provider_product_type, keywords, **kwargs):
         # ask for data_request_id if not set (it must exist when iterating over pages)
@@ -336,53 +319,11 @@ class DataRequestSearch(Search):
                 "param"
             ]
         if time_split_var:
-            if keywords.get("startTimeFromAscendingNode"):
-                start_date = keywords.get("startTimeFromAscendingNode")
-            elif time_split_var == "month":
-                if isinstance(keywords["year"], str):
-                    year = keywords["year"]
-                else:
-                    year = keywords["year"][0]
-                if isinstance(keywords["month"], str):
-                    month = keywords["month"]
-                else:
-                    month = min(keywords["month"])
-                start_date = datetime(int(year), int(month), 1).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
-            else:
-                if isinstance(keywords["year"], str):
-                    year = keywords["year"]
-                else:
-                    year = min(keywords["year"])
-                start_date = datetime(int(year), 1, 1).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
-            result["content"][0]["productInfo"]["productStartDate"] = start_date
-            if keywords.get("completionTimeFromAscendingNode"):
-                end_date = keywords.get("completionTimeFromAscendingNode")
-            elif time_split_var == "month":
-                if isinstance(keywords["year"], str):
-                    year = keywords["year"]
-                else:
-                    year = keywords["year"][0]
-                if isinstance(keywords["month"], str):
-                    month = keywords["month"]
-                else:
-                    month = max(keywords["month"])
-                m = min(int(month) + 1, 12)
-                end_date = (
-                    datetime(int(year), m, 1) - timedelta(days=1)
-                ).strftime("%Y-%m-%dT%H:%M:%SZ")
-            else:
-                if isinstance(keywords["year"], str):
-                    year = keywords["year"]
-                else:
-                    year = max(keywords["year"])
-                end_date = datetime(int(year), 12, 31).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
-            result["content"][0]["productInfo"]["productEndDate"] = end_date
+            dates = self._get_start_and_end_date_from_keywords(keywords, time_split_var)
+            result["content"][0]["productInfo"]["productStartDate"] = dates[
+                "start_date"
+            ]
+            result["content"][0]["productInfo"]["productEndDate"] = dates["end_date"]
 
         logger.info("result retrieved from search job")
         if self._check_uses_custom_filters(product_type):
@@ -392,6 +333,54 @@ class DataRequestSearch(Search):
         return self._convert_result_data(
             result, data_request_id, product_type, **kwargs
         )
+
+    def _get_start_and_end_date_from_keywords(self, keywords, time_split_var):
+        if keywords.get("startTimeFromAscendingNode"):
+            start_date = keywords.get("startTimeFromAscendingNode")
+        elif time_split_var == "month":
+            if isinstance(keywords["year"], str):
+                year = keywords["year"]
+            else:
+                year = keywords["year"][0]
+            if isinstance(keywords["month"], str):
+                month = keywords["month"]
+            else:
+                month = min(keywords["month"])
+            start_date = datetime(int(year), int(month), 1).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        else:
+            if isinstance(keywords["year"], str):
+                year = keywords["year"]
+            else:
+                year = min(keywords["year"])
+            start_date = datetime(int(year), 1, 1).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        if keywords.get("completionTimeFromAscendingNode"):
+            end_date = keywords.get("completionTimeFromAscendingNode")
+        elif time_split_var == "month":
+            if isinstance(keywords["year"], str):
+                year = keywords["year"]
+            else:
+                year = keywords["year"][0]
+            if isinstance(keywords["month"], str):
+                month = keywords["month"]
+            else:
+                month = max(keywords["month"])
+            m = min(int(month) + 1, 12)
+            end_date = (
+                datetime(int(year), m, 1) - timedelta(days=1)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            if isinstance(keywords["year"], str):
+                year = keywords["year"]
+            else:
+                year = max(keywords["year"])
+            end_date = datetime(int(year), 12, 31).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        return {"start_date": start_date, "end_date": end_date}
 
     def _create_data_request(self, product_type, eodag_product_type, **kwargs):
         headers = getattr(self.auth, "headers", USER_AGENT)

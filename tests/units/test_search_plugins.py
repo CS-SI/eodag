@@ -1524,5 +1524,4 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             "token", "header", headers="headers"
         )
         result, num_products = self.search_plugin.query(**params)
-        self.assertEqual(32, mock_post.call_count)  # 1 call per month and variable
         self.assertEqual(2, num_products)  # 1 product per month

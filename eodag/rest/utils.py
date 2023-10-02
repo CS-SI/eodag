@@ -491,7 +491,6 @@ def search_product_by_id(uid, product_type=None, provider=None, variable=None):
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     :raises: RuntimeError
     """
-    print("utils", variable)
     try:
         products, total = eodag_api.search(
             id=uid, productType=product_type, provider=provider, variable=variable
@@ -639,7 +638,6 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
         else:
             order_link = product_data["orderLink"]
             download_link = product_data["downloadLink"]
-        print(order_link)
         properties = {
             "id": item_id,
             "orderLink": order_link,
@@ -647,7 +645,6 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
             "geometry": "-180 -90 180 90",
         }
         product = EOProduct(provider or product_data["provider"], properties)
-        print(product.properties)
     else:
         search_results = search_product_by_id(
             item_id, product_type=product_type, provider=provider, variable=variable
