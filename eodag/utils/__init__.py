@@ -41,6 +41,7 @@ from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
+from typing import List
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -1360,3 +1361,39 @@ def parse_header(header):
     m = Message()
     m["content-type"] = header
     return m
+
+
+def create_point_bbox(
+    latitude: float, longitude: float, buffer: float = 0.00001
+) -> List[float]:
+    """
+    Creates a small bounding box around a given point specified by its latitude and longitude.
+
+    Parameters:
+    latitude (float): The latitude of the point.
+    longitude (float): The longitude of the point.
+    buffer (float): The size of the buffer to add/subtract to/from the latitude and longitude to create
+    the bounding box. Default is 0.00001.
+
+    Returns:
+    list: A list of four floats representing the bounding box in the Wekeo format
+    [min_lon, min_lat, max_lon, max_lat].
+    """
+
+    # Create a small bounding box around the point
+    min_lat = latitude - buffer
+    max_lat = latitude + buffer
+
+    # Adjust longitude to avoid crossing the International Date Line
+    if longitude <= -180:
+        min_lon = longitude + buffer
+        max_lon = min_lon + 2 * buffer
+    elif longitude >= 180:
+        max_lon = longitude - buffer
+        min_lon = max_lon - 2 * buffer
+    else:
+        min_lon = longitude - buffer
+        max_lon = longitude + buffer
+
+    # Return as a list in the Wekeo format [min_lon, min_lat, max_lon, max_lat]
+    return [min_lon, min_lat, max_lon, max_lat]

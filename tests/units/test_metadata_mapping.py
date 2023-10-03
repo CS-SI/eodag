@@ -436,7 +436,7 @@ class TestMetadataFormatter(unittest.TestCase):
                     id="Copernicus_DSM_10_N59_00_E119_00",
                 )
             ),
-            str([118, 58, 120, 60]),
+            str([118.99999, 58.99999, 119.00001, 59.00001]),
         )
         self.assertEqual(
             str(
@@ -445,7 +445,7 @@ class TestMetadataFormatter(unittest.TestCase):
                     id="Copernicus_DSM_10_S59_00_W119_00",
                 )
             ),
-            str([-120, -60, -118, -58]),
+            str([-119.00001, -59.00001, -118.99999, -58.99999]),
         )
 
     def test_convert_split_corine_id(self):

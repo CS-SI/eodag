@@ -18,6 +18,7 @@
 import ast
 import json
 import logging
+import os
 import re
 from datetime import datetime, timedelta
 from string import Formatter
@@ -36,6 +37,7 @@ from shapely.ops import transform
 
 from eodag.utils import (
     DEFAULT_PROJ,
+    create_point_bbox,
     deepcopy,
     dict_items_recursive_apply,
     get_geometry_from_various,
@@ -617,19 +619,35 @@ def format_metadata(search_param, *args, **kwargs):
 
         @staticmethod
         def convert_split_cop_dem_id(product_id):
-            parts = product_id.split("_")
-            lattitude = parts[3]
-            longitude = parts[5]
-            if lattitude[0] == "N":
-                lat_num = int(lattitude[1:])
+            product_id_without_extension, _ = os.path.splitext(product_id)
+
+            # Extract the latitude and longitude string from the product_id
+            latlon_string = product_id_without_extension.split("_")[3:7]
+
+            # Split the string into latitude and longitude parts
+            lat_str, lat_dec, lon_str, lon_dec = latlon_string
+
+            # Determine the sign of the latitude
+            if lat_str[0] == "N":
+                lat_sign = 1
+            elif lat_str[0] == "S":
+                lat_sign = -1
             else:
-                lat_num = -1 * int(lattitude[1:])
-            if longitude[0] == "E":
-                long_num = int(longitude[1:])
+                raise ValueError("Invalid latitude string")
+
+            # Determine the sign of the longitude
+            if lon_str[0] == "E":
+                lon_sign = 1
+            elif lon_str[0] == "W":
+                lon_sign = -1
             else:
-                long_num = -1 * int(longitude[1:])
-            bbox = [long_num - 1, lat_num - 1, long_num + 1, lat_num + 1]
-            return bbox
+                raise ValueError("Invalid longitude string")
+
+            # Convert the latitude and longitude strings to floats
+            latitude = lat_sign * (float(lat_str[1:]) + float(lat_dec) / 100)
+            longitude = lon_sign * (float(lon_str[1:]) + float(lon_dec) / 100)
+
+            return create_point_bbox(latitude, longitude)
 
         @staticmethod
         def convert_split_corine_id(product_id):
