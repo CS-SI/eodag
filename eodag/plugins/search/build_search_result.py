@@ -174,6 +174,7 @@ class BuildPostSearchResult(PostJsonSearch):
         :rtype: list
         """
         product_type = kwargs.get("productType")
+        split_result = kwargs.get("split_result", False)
 
         result = results[0]
 
@@ -231,7 +232,8 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # update downloadLink
         split_param = getattr(self.config, "assets_split_parameter", None)
-        if split_param:
+        print(split_param, split_result)
+        if split_param and split_result:
             request_splitter = RequestSplitter(
                 self.config, self.config.metadata_mapping
             )
@@ -261,6 +263,7 @@ class BuildPostSearchResult(PostJsonSearch):
                 product_available_properties["downloadLinks"][param_value] = link
         else:
             product_available_properties["downloadLink"] += f"?{qs}"
+        print(product_available_properties)
 
         if (
             "downloadLinks" in product_available_properties

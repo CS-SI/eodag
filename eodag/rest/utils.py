@@ -396,7 +396,7 @@ def get_criterias_from_metadata_mapping(metadata_mapping, arguments):
     return criterias
 
 
-def search_products(product_type, arguments, stac_formatted=True):
+def search_products(product_type, arguments, stac_formatted=True, split_result=False):
     """Returns product search results
 
     :param product_type: The product type criteria
@@ -442,7 +442,7 @@ def search_products(product_type, arguments, stac_formatted=True):
         # We remove potential None values to use the default values of the search method
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)
 
-        products, total = eodag_api.search(**criterias)
+        products, total = eodag_api.search(split_result=split_result, **criterias)
 
         products = filter_products(products, arguments, **criterias)
 
@@ -746,7 +746,9 @@ def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers
     ).get_stac_catalog()
 
 
-def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
+def search_stac_items(
+    url, arguments, root="/", catalogs=[], provider=None, split_result=False
+):
     """Get items collection dict for given catalogs list
 
     :param url: Requested URL
@@ -886,6 +888,7 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
                 )
         search_results = search_products(
             product_type=result_catalog.search_args["product_type"],
+            split_result=split_result,
             arguments=search_products_arguments,
         )
 

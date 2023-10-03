@@ -559,7 +559,9 @@ class RequestSplitter:
             if self.split_time_delta["param"] == "month":
                 start_month = int(id_extract[4:6])
                 end_month = int(id_extract.split("_")[1][4:6])
-                months = [str(m) for m in range(start_month, end_month + 1)]
+                months = [
+                    "{:0>2d}".format(m) for m in range(start_month, end_month + 1)
+                ]
                 return self._get_variables_for_months_and_params(
                     years, months, params, variables
                 )

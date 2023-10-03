@@ -71,7 +71,13 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         return [{}]
 
     def query(
-        self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
+        self,
+        product_type=None,
+        items_per_page=None,
+        page=None,
+        count=True,
+        split_result=False,
+        **kwargs,
     ):
         """Build ready-to-download SearchResult"""
 
@@ -132,7 +138,8 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         products = []
         num_items = 0
         if (
-            getattr(self.config, "products_split_timedelta", None)
+            split_result
+            and getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
             request_splitter = RequestSplitter(
@@ -160,6 +167,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                     items_per_page=items_per_page,
                     page=page,
                     count=count,
+                    split_result=True,
                     **kwargs,
                 )
                 products += result[0]
