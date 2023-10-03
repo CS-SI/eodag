@@ -228,13 +228,27 @@ class RequestSplitter:
             months = self._get_months_for_years(years, selected_months)
         else:
             months = self._get_months_for_years(years)
-        if len(months) == 1:
-            selected_days = {"{:0>2d}".format(d) for d in range(start_day, end_day + 1)}
-            days = self._get_days_for_months_and_years(months, years, selected_days)
+        if "day" in self.metadata:
+            if len(months) == 1:
+                selected_days = {
+                    "{:0>2d}".format(d) for d in range(start_day, end_day + 1)
+                }
+                days = self._get_days_for_months_and_years(months, years, selected_days)
+            else:
+                days = self._get_days_for_months_and_years(months, years)
+            times = self._get_times_for_days_months_and_years(days, months, years)
+            if "month" not in self.multi_select_values:
+                months = months[0]
+            if "year" not in self.multi_select_values:
+                years = years[0]
+            return [{"year": years, "month": months, "day": days, "time": times}]
         else:
-            days = self._get_days_for_months_and_years(months, years)
-        times = self._get_times_for_days_months_and_years(days, months, years)
-        return [{"year": years, "month": months, "day": days, "time": times}]
+            times = self._get_times_for_months_and_years(months, years)
+            if "month" not in self.multi_select_values:
+                months = months[0]
+            if "year" not in self.multi_select_values:
+                years = years[0]
+            return [{"year": years, "month": months, "time": times}]
 
     def _split_by_year(self, start_year, end_year, slice_duration):
         if "year" not in self.metadata:

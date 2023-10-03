@@ -1,5 +1,6 @@
 import datetime
 import logging
+import re
 import time
 from datetime import datetime, timedelta
 
@@ -101,6 +102,11 @@ class DataRequestSearch(Search):
         performs the search for a provider where several steps are required to fetch the data
         """
         product_type = kwargs.get("productType", None)
+        search_by_id = False
+        # replace id of atmospheric product by params it was created from
+        if "id" in kwargs and kwargs["id"][:3] == "ATM":
+            search_by_id = True
+            self._get_params_from_id(kwargs)
         # replace "product_type" to "providerProductType" in search args if exists
         # for compatibility with DataRequestSearch method
         if kwargs.get("product_type"):
@@ -217,7 +223,7 @@ class DataRequestSearch(Search):
                         keywords[key] = value
 
                 param_variable = self.config.assets_split_parameter
-                if param_variable:
+                if param_variable and not search_by_id:
                     selected_vars = keywords.pop(param_variable, None)
                     if not selected_vars and "variable" in self.product_type_def_params:
                         selected_vars = self.product_type_def_params["variable"]
@@ -241,8 +247,26 @@ class DataRequestSearch(Search):
             )
         return products, num_items
 
+    def _get_params_from_id(self, params):
+        product_id = params.pop("id")
+        dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
+        dates = dates_str.split("_")
+        start_date = datetime.datetime(
+            int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8])
+        )
+        end_date = datetime.datetime(
+            int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
+        )
+        params["startTimeFromAscendingNode"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        params["completionTimeFromAscendingNode"] = end_date.strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+        param_variable = self.config.assets_split_parameter
+        if param_variable in params and isinstance(params[param_variable], str):
+            params[param_variable] = [params[param_variable]]
+
     def _create_product(self, variables, product_type, keywords):
-        id_prefix = "P_" + product_type
+        id_prefix = "ATM_" + product_type
         product_id = get_product_id(id_prefix, keywords, self.provider, False)
         download_links = {}
         for variable in variables:

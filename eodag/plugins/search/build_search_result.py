@@ -71,13 +71,21 @@ def get_product_id(
             query_hash,
         )
     elif "year" in parsed_properties and parsed_properties["year"] != NOT_AVAILABLE:
-        years = [int(y) for y in parsed_properties["year"]]
-        start_year = str(min(years))
-        end_year = str(max(years))
+        if isinstance(parsed_properties["year"], str):
+            start_year = parsed_properties["year"]
+            end_year = parsed_properties["year"]
+        else:
+            years = [int(y) for y in parsed_properties["year"]]
+            start_year = str(min(years))
+            end_year = str(max(years))
         if "month" in parsed_properties and parsed_properties["month"] != NOT_AVAILABLE:
-            months = [int(m) for m in parsed_properties["month"]]
-            start_month = "{:0>2d}".format(min(months))
-            end_month = "{:0>2d}".format(max(months))
+            if isinstance(parsed_properties["month"], str):
+                start_month = parsed_properties["month"]
+                end_month = parsed_properties["month"]
+            else:
+                months = [int(m) for m in parsed_properties["month"]]
+                start_month = "{:0>2d}".format(min(months))
+                end_month = "{:0>2d}".format(max(months))
         else:
             start_month = "01"
             end_month = "12"
@@ -88,6 +96,7 @@ def get_product_id(
         else:
             start_day = "01"
             end_day = str(calendar.monthrange(int(end_year), int(end_month))[1])
+
         product_id = "%s_%s_%s_%s" % (
             id_prefix,
             start_year + start_month + start_day,

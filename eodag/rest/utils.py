@@ -620,7 +620,10 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=N
     provider_product_type_config = search_plugin.config.products.get(
         product_type, {}
     ) or search_plugin.config.products.get(GENERIC_PRODUCT_TYPE, {})
-    if provider_product_type_config.get("storeDownloadUrl", False):
+    if (
+        provider_product_type_config.get("storeDownloadUrl", False)
+        and item_id[:3] != "ATM"
+    ):
         if item_id not in search_plugin.download_info:
             logger.error(f"data for item {item_id} not found")
             raise NotAvailableError(
