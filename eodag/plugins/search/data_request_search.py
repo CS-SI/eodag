@@ -317,10 +317,8 @@ class DataRequestSearch(Search):
         """Build EOProducts from provider results"""
         results_entry = self.config.results_entry
         results = result_data[results_entry]
-        normalize_remaining_count = len(results)
         logger.debug(
-            "Adapting %s plugin results to eodag product representation"
-            % normalize_remaining_count
+            "Adapting %s plugin results to eodag product representation" % len(results)
         )
         products = []
         for result in results:
@@ -338,11 +336,16 @@ class DataRequestSearch(Search):
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
             products.append(product)
+        # postprocess filtering needed when provider does not natively offer filtering by id
+        if "id" in kwargs:
+            products = [
+                p for p in products if product.properties["id"] == kwargs["id"]
+            ] or products
         total_items_nb_key_path = string_to_jsonpath(
             self.config.pagination["total_items_nb_key_path"]
         )
-        if len(total_items_nb_key_path.find(result_data)) > 0:
-            total_items_nb = total_items_nb_key_path.find(result_data)[0].value
+        if len(total_items_nb_key_path.find(results)) > 0:
+            total_items_nb = total_items_nb_key_path.find(results)[0].value
         else:
             total_items_nb = 0
         for p in products:
