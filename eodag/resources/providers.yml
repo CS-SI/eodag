@@ -831,7 +831,6 @@
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
-
   products:
     S1_SAR_OCN:
       productType: OCN
@@ -878,54 +877,18 @@
     - host
   url: https://creodias.eu/
   search: !plugin
-    type: ODataV4Search
-    api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
-    timeout: 60
+    type: QueryStringSearch
+    api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth:
-    dont_quote:
-      - '['
-      - ']'
-      - '$'
-      - '='
-      - '&'
-      - ':'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
-      total_items_nb_key_path: '$."@odata.count"'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
-    results_entry: 'value'
-    free_text_search_operations:
-      $filter:
-        union: ' or '
-        wrapper: '{}'
-        operations:
-          and:
-            - "Collection/Name eq '{collection}'"
-            - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{orbitNumber}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection}')"
-            - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
-            - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
-      search_param:
-        free_text_search_operations:
-          $filter:
-            operations:
-              and:
-                -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
-      metadata_path: '$.Attributes.*'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
     discover_product_types:
       fetch_url: 'https://datahub.creodias.eu/stac/collections'
       result_type: json
@@ -943,87 +906,96 @@
         license: '$.license'
         title: '$.title'
         missionStartDate: '$.extent.temporal.interval[0][0]'
-    per_product_metadata_query: false
-    metadata_pre_mapping:
-      metadata_path: '$.Attributes'
-      metadata_path_id: 'Name'
-      metadata_path_value: 'Value'
     metadata_mapping:
-      # Opensearch resource identifier within the search engine context (in our case
-      # within the context of the data provider)
-      # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
-      #   but `free_text_search_operations.$filter.operations.and` entries are then used instead.
-      uid: '$.Id'
-      # OpenSearch Parameters for Collection Search (Table 3)
+      uid: '$.id'
       productType:
-        - null
-        - '$.Attributes.productType'
-      platform:
-        - null
-        - '$.Attributes.platformShortName'
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.collection'
       platformSerialIdentifier:
-        - null
-        - '$.Attributes.platformSerialIdentifier'
+        - platform
+        - '$.properties.platform'
       instrument:
-        - null
-        - '$.Attributes.instrumentShortName'
+        - instrument
+        - '$.properties.instrument'
       processingLevel:
-        - null
-        - '$.Attributes.processingLevel'
+        - processingLevel
+        - '$.properties.processingLevel'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.Name'
+      title: '$.properties.title'
+      topicCategory: '$.properties.topicCategory'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
       resolution:
-        - null
-        - '$.Attributes.spatialResolution'
+        - 'resolution'
+        - '$.properties.resolution'
       organisationName:
-        - null
-        - '$.Attributes.authority'
-      publicationDate: '$.PublicationDate'
+        - 'organisationName'
+        - '$.properties.organisationName'
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+
       # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier:
+        - 'parentIdentifier'
+        - '$.properties.parentIdentifier'
+      acquisitionType: '$.properties.acquisitionType'
       orbitNumber:
-        - null
-        - '$.Attributes.orbitNumber'
+        - 'orbitNumber'
+        - '$.properties.orbitNumber'
       orbitDirection:
-        - null
-        - '$.Attributes.orbitDirection'
+        - 'orbitDirection'
+        - '$.properties.orbitDirection'
+      swathIdentifier:
+        - 'swath'
+        - '$.properties.swath'
       cloudCover:
-        - null
-        - '$.Attributes.cloudCover'
-      modificationDate: '$.ModificationDate'
+        - 'cloudCover=[0,{cloudCover}]'
+        - '$.properties.cloudCover'
+      snowCover:
+        - 'snowCover=[0,{snowCover}]'
+        - '$.properties.snowCover'
+      productVersion: '$.properties.version'
+      productQualityStatus: '$.properties.onlineQualityCheck'
+      processorName: '$.properties.processingName'
+      processingCenter: '$.properties.processingCenter'
+      creationDate: '$.properties.dhusIngestDate'
+      modificationDate: '$.properties.updated'
       sensorMode:
-        - null
-        - '$.Attributes.operationalMode'
+        - 'sensorMode'
+        - '$.properties.sensorMode'
+
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
-        - null
-        - '$.ContentDate.Start'
+        - startDate
+        - '$.properties.startDate'
       completionTimeFromAscendingNode:
-        - null
-        - '$.ContentDate.End'
-      polarizationChannels:
-        - null
-        - '$.Attributes.polarisationChannels'
+        - completionDate
+        - '$.properties.completionDate'
+      polarizationMode:
+        - 'polarisation'
+        - '$.properties.polarisation'
+
       # Custom parameters (not defined in the base document referenced above)
       id:
-        - null
-        - '{$.Name#remove_extension}'
+        - 'productIdentifier={id#remove_extension}'
+        - '$.properties.productIdentifier'
       tileIdentifier:
-        - null
-        - '$.Attributes.tileId'
+        - 'tileid'
+        - '$.properties.mgrs'
       # The geographic extent of the product
       geometry:
-        - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.]+).*/, \\1)`#from_ewkt}'
+        - 'geometry={geometry#to_rounded_wkt}'
+        - '$.geometry'
+      # The url of the quicklook
+      quicklook: '$.properties.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
-      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
-      collection:
-        - null
-        - $.null
+      downloadLink: 'https://datahub.creodias.eu/odata/v1/Products({uid})/$value'
+      # storageStatus must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      productIdentifier: '$.S3Path'
+      thumbnail: '$.properties.thumbnail'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://zipper.creodias.eu/download/'
@@ -1040,14 +1012,7 @@
     token_qs_key: 'token'
     auth_error_code: 401
   products:
-    # S2
-    S2_MSI_L1C:
-      collection: SENTINEL-2
-      productType: S2MSI1C
-    S2_MSI_L2A:
-      collection: SENTINEL-2
-      productType: S2MSI2A
-    # S1
+      # S1
     S1_SAR_RAW:
       productType: RAW
       collection: SENTINEL-1
@@ -1068,6 +1033,13 @@
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+    # S2
+    S2_MSI_L1C:
+      collection: SENTINEL-2
+      productType: S2MSI1C
+    S2_MSI_L2A:
+      collection: SENTINEL-2
+      productType: S2MSI2A
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___
