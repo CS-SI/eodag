@@ -22,6 +22,7 @@ try:
 except ImportError:  # pragma: no cover
     # for python < 3.8
     from importlib_metadata import metadata  # type: ignore
+from typing import Dict
 
 # -- General configuration ------------------------------------------------
 
@@ -188,7 +189,7 @@ htmlhelp_basename = "eodagdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
+latex_elements: Dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

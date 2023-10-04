@@ -162,7 +162,7 @@ def eodag_openapi():
     return app.openapi_schema
 
 
-app.openapi = eodag_openapi
+app.__setattr__("openapi", eodag_openapi)
 
 # Cross-Origin Resource Sharing
 allowed_origins = os.getenv("EODAG_CORS_ALLOWED_ORIGINS")
@@ -316,7 +316,7 @@ class SearchBody(BaseModel):
 
 @router.get("/search", tags=["STAC"])
 @router.post("/search", tags=["STAC"])
-def stac_search(request: Request, search_body: SearchBody = None):
+def stac_search(request: Request, search_body: Optional[SearchBody] = None):
     """STAC collections items"""
     logger.debug(f"URL: {request.url}")
     logger.debug(f"Body: {search_body}")

@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+from typing import Optional
 
 import requests
 
@@ -71,7 +72,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
     TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
     # already retrieved token store, to be used if authenticate() fails (OTP use-case)
-    retrieved_token = None
+    retrieved_token: Optional[str] = None
 
     def __init__(self, provider, config):
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
