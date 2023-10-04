@@ -1041,6 +1041,17 @@ def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="jso
     :returns: dest_dict
     :rtype: dict
     """
+    # check if the configuration has already been converted
+    some_configured_value = (
+        next(iter(dest_dict.values())) if dest_dict else next(iter(src_dict.values()))
+    )
+    if (
+        isinstance(some_configured_value, list)
+        and isinstance(some_configured_value[1], tuple)
+        or isinstance(some_configured_value, tuple)
+    ):
+        return dest_dict or src_dict
+
     if not dest_dict:
         dest_dict = deepcopy(src_dict)
     for metadata in src_dict:

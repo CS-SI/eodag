@@ -468,6 +468,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             url=self.product.properties["orderLink"],
             auth=auth,
             headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
@@ -489,6 +490,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             url=self.product.properties["orderLink"],
             auth=auth,
             headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
         )
         # orderLink with query query args
         mock_request.reset_mock()
@@ -499,6 +501,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             url="http://somewhere/order",
             auth=auth,
             headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
             json={"foo": ["bar"]},
         )
 

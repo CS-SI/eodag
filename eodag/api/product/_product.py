@@ -28,12 +28,13 @@ from shapely.errors import ShapelyError
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
-from eodag.plugins.download.base import (
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
+from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
+from eodag.utils import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    USER_AGENT,
+    ProgressCallback,
+    get_geometry_from_various,
 )
-from eodag.utils import USER_AGENT, ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 try:

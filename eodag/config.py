@@ -27,6 +27,7 @@ import yaml.parser
 from pkg_resources import resource_filename
 
 from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
@@ -39,7 +40,6 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.config")
 
@@ -226,12 +226,18 @@ class PluginConfig(yaml.YAMLObject):
 
 
 def load_default_config():
-    """Load the providers configuration into a dictionnary
+    """Load the providers configuration into a dictionnary.
+
+    Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
+    variable if exists.
 
     :returns: The default provider's configuration
     :rtype: dict
     """
-    return load_config(resource_filename("eodag", "resources/providers.yml"))
+    eodag_providers_cfg_file = os.getenv(
+        "EODAG_PROVIDERS_CFG_FILE"
+    ) or resource_filename("eodag", "resources/providers.yml")
+    return load_config(eodag_providers_cfg_file)
 
 
 def load_config(config_path):
@@ -242,6 +248,7 @@ def load_config(config_path):
     :returns: The default provider's configuration
     :rtype: dict
     """
+    logger.debug(f"Loading configuration from {config_path}")
     config = {}
     try:
         # Providers configs are stored in this file as separated yaml documents

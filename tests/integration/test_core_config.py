@@ -119,6 +119,55 @@ class TestCoreProvidersConfig(TestCase):
             self.dag.providers_config["foo_provider"].auth.type, "GenericAuth"
         )
 
+        # update pruned provider with credentials
+        self.assertNotIn("usgs", self.dag.providers_config)
+        self.dag.update_providers_config(
+            """
+            usgs:
+                api:
+                    credentials:
+                        username: foo
+                        password: bar
+            """
+        )
+        self.assertIsInstance(self.dag.providers_config["usgs"].api, PluginConfig)
+        self.assertEqual(
+            self.dag.providers_config["usgs"].api.credentials["username"], "foo"
+        )
+
+        # add new provider that requires auth but without credentials
+        self.dag.update_providers_config(
+            """
+            bar_provider:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                    need_auth: True
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+            """
+        )
+        self.assertIn("bar_provider", self.dag.providers_config)
+
+        # update provider with credentials
+        self.dag.update_providers_config(
+            """
+            bar_provider:
+                auth:
+                    credentials:
+                        username: bar
+                        password: foo
+            """
+        )
+        self.assertIsInstance(
+            self.dag.providers_config["bar_provider"].auth, PluginConfig
+        )
+        self.assertEqual(
+            self.dag.providers_config["bar_provider"].auth.credentials["username"],
+            "bar",
+        )
+
 
 class TestCoreProductTypesConfig(TestCase):
     def setUp(self):

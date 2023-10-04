@@ -900,7 +900,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         cls.mock_os_environ.stop()
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
-        """The core object must use the locations file pointed to by the EODAG_LOCS_CFG_FILE env var"""
+        """The core object must use the locations file pointed by the EODAG_LOCS_CFG_FILE env var"""
         try:
             os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_locations_override.yml"
@@ -914,7 +914,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ.pop("EODAG_LOCS_CFG_FILE", None)
 
     def test_core_object_prioritize_config_file_in_envvar(self):
-        """The core object must use the config file pointed to by the EODAG_CFG_FILE env var"""
+        """The core object must use the config file pointed by the EODAG_CFG_FILE env var"""
         try:
             os.environ["EODAG_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_config_override.yml"
@@ -928,6 +928,22 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             )
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)
+
+    def test_core_object_prioritize_providers_file_in_envvar(self):
+        """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_FILE env var"""
+        try:
+            os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+                TEST_RESOURCES_PATH, "file_providers_override.yml"
+            )
+            dag = EODataAccessGateway()
+            # only foo_provider in conf
+            self.assertEqual(dag.available_providers(), ["foo_provider"])
+            self.assertEqual(
+                dag.providers_config["foo_provider"].search.api_endpoint,
+                "https://foo.bar/search",
+            )
+        finally:
+            os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):

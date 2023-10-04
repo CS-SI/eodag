@@ -20,10 +20,10 @@ for products in a provider's catalog, how to download products, etc. However, us
 to complete this configuration with additional settings, such as provider credentials. Users can
 also override pre-configured settings (e.g. the download folder).
 
-YAML configuration file
-^^^^^^^^^^^^^^^^^^^^^^^
+YAML user configuration file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The first time ``eodag`` is used after an install a default YAML configuration file is saved
+The first time ``eodag`` is used after an install, a default YAML user configuration file is saved
 in a local directory (``~/.config/eodag/eodag.yml`` on Linux).
 
 This YAML file contains a template that shows how to complete the configuration of one or
@@ -86,8 +86,11 @@ to the configuration file. In that case it is also loaded automatically:
 Environment variable configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``eodag`` can also be configured with environment variables, which have **priority over**
-the YAML file configuration.
+Providers configuration using environment variables
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+
+``eodag`` providers can also be configured with environment variables, which have **priority over**
+the YAML user configuration file.
 
 The name of the environment variables understood by ``eodag`` must follow the pattern
 ``EODAG__KEY1__KEY2__[...]__KEYN`` (note the double underscore between the keys).
@@ -116,13 +119,32 @@ Each configuration parameter can be set with an environment variable.
 
 .. note::
 
-   Setting credentials must be done according to the `provider's plugin <https://eodag.readthedocs.io/en/stable/plugins.html#plugins-available>`_ (auth | api):
+   Setting credentials must be done according to the
+   `provider's plugin <https://eodag.readthedocs.io/en/stable/plugins.html#plugins-available>`_ (auth | api):
 
    * Authentication plugin: ``EODAG__<PROVIDER>__AUTH__CREDENTIALS__<KEY>``
 
    * API plugin: ``EODAG__<PROVIDER>__API__CREDENTIALS__<KEY>``
 
-   ``<KEY>`` should be replaced with the adapted credentials key (``USERNAME``, ``PASSWORD``, ``APIKEY``, ...) according to the provider configuration template in `the YAML configuration file <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-configuration-file>`_.
+   ``<KEY>`` should be replaced with the adapted credentials key (``USERNAME``, ``PASSWORD``, ``APIKEY``, ...) according
+   to the provider configuration template in
+   `the YAML user configuration file\
+   <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_.
+
+
+Core configuration using environment variables
+""""""""""""""""""""""""""""""""""""""""""""""
+
+Some EODAG core settings can be overriden using environment variables:
+
+* ``EODAG_CFG_FILE`` for defining the desired path to the `user configuration file\
+  <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_
+* ``EODAG_LOCS_CFG_FILE`` for defining the desired path to the
+  `locations <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#Locations-search>`_
+  configuration file
+* ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file
+* ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the `external product types configuration file\
+  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
 
 CLI configuration
 ^^^^^^^^^^^^^^^^^
@@ -254,7 +276,8 @@ Use OTP through Python code
 """""""""""""""""""""""""""
 
 ``creodias`` needs a temporary 6-digits code to authenticate in addition of the ``username`` and ``password``. Check
-`Creodias documentation <https://creodias.docs.cloudferro.com/en/latest/gettingstarted/Two-Factor-Authentication-for-Creodias-Site.html>`_
+`Creodias documentation\
+<https://creodias.docs.cloudferro.com/en/latest/gettingstarted/Two-Factor-Authentication-for-Creodias-Site.html>`_
 to see how to get this code once you are registered. This OTP code will only be valid for a few seconds, so you will
 better set it dynamically in your python code instead of storing it statically in your user configuration file.
 
@@ -284,8 +307,8 @@ will be stored and used if further authentication tries fail:
    dag._plugins_manager.get_auth_plugin("creodias").authenticate()
 
 Please note that authentication mechanism is already included in
-`download methods <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_download.html>`_ , so you could also directly execute a
-download to retrieve the token while the OTP is still valid.
+`download methods <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_download.html>`_ , so you could
+also directly execute a download to retrieve the token while the OTP is still valid.
 
 Use OTP through CLI
 """""""""""""""""""

@@ -22,7 +22,6 @@ import re
 import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
-from json.decoder import JSONDecodeError
 from typing import List, Optional, Union
 
 import pkg_resources
@@ -36,6 +35,7 @@ from fastapi.types import Any, Callable, DecoratedCallable
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
     QueryableProperty,
@@ -119,6 +119,7 @@ stac_api_config = load_stac_api_config()
 @router.get("/api", tags=["Capabilities"])
 def eodag_openapi():
     """Customized openapi"""
+    logger.debug("URL: /api")
     if app.openapi_schema:
         return app.openapi_schema
 
@@ -267,6 +268,7 @@ async def handle_server_error(request: Request, error):
 @router.get("/", tags=["Capabilities"])
 def catalogs_root(request: Request):
     """STAC catalogs root"""
+    logger.debug(f"URL: {request.url}")
 
     response = get_stac_catalogs(
         url=request.state.url,
@@ -281,6 +283,7 @@ def catalogs_root(request: Request):
 @router.get("/conformance", tags=["Capabilities"])
 def conformance():
     """STAC conformance"""
+    logger.debug("URL: /conformance")
     response = get_stac_conformance()
 
     return jsonable_encoder(response)
@@ -289,6 +292,7 @@ def conformance():
 @router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
 def stac_extension_oseo(request: Request):
     """STAC OGC / OpenSearch extension for EO"""
+    logger.debug(f"URL: {request.url}")
     response = get_stac_extension_oseo(url=request.state.url)
 
     return jsonable_encoder(response)
@@ -304,7 +308,7 @@ class SearchBody(BaseModel):
     datetime: Union[str, None] = None
     bbox: Union[list, str, None] = None
     intersects: Union[dict, None] = None
-    limit: Union[int, None] = 20
+    limit: Union[int, None] = DEFAULT_ITEMS_PER_PAGE
     page: Union[int, None] = 1
     query: Union[dict, None] = None
     ids: Union[List[str], None] = None
@@ -314,6 +318,9 @@ class SearchBody(BaseModel):
 @router.post("/search", tags=["STAC"])
 def stac_search(request: Request, search_body: SearchBody = None):
     """STAC collections items"""
+    logger.debug(f"URL: {request.url}")
+    logger.debug(f"Body: {search_body}")
+
     url = request.state.url
     url_root = request.state.url_root
 
@@ -346,11 +353,11 @@ def collections(request: Request):
 
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
     """
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_collections(
@@ -365,11 +372,11 @@ def collections(request: Request):
 @router.get("/collections/{collection_id}/items", tags=["Data"])
 def stac_collections_items(collection_id, request: Request):
     """STAC collections items"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
     split_result_str = arguments.pop("split_result", "False")
     split_result = split_result_str.lower() == "true"
@@ -388,11 +395,11 @@ def stac_collections_items(collection_id, request: Request):
 @router.get("/collections/{collection_id}", tags=["Capabilities"])
 def collection_by_id(collection_id, request: Request):
     """STAC collection by id"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url_root + "/collections"
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_collection_by_id(
@@ -406,13 +413,13 @@ def collection_by_id(collection_id, request: Request):
 
 
 @router.get("/collections/{collection_id}/items/{item_id}", tags=["Data"])
-async def stac_collections_item(collection_id, item_id, request: Request):
+def stac_collections_item(collection_id, item_id, request: Request):
     """STAC collection item by id"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_item_by_id(
@@ -437,9 +444,9 @@ async def stac_collections_item(collection_id, item_id, request: Request):
 @router.get("/collections/{collection_id}/items/{item_id}/download", tags=["Data"])
 def stac_collections_item_download(collection_id, item_id, request: Request):
     """STAC collection item local download"""
+    logger.debug(f"URL: {request.url}")
 
-    body = {}
-    arguments = dict(request.query_params, **body)
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
     variable = arguments.pop("variable", None)
 
@@ -449,7 +456,7 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}/items", tags=["Data"])
-async def stac_catalogs_items(catalogs, request: Request):
+def stac_catalogs_items(catalogs, request: Request):
     """Fetch catalog's features
     ---
     tags:
@@ -480,13 +487,11 @@ async def stac_catalogs_items(catalogs, request: Request):
         '500':
             $ref: '#/components/responses/ServerError
     '"""
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
     split_result_str = arguments.pop("split_result", "False")
     split_result = split_result_str.lower() == "true"
@@ -505,7 +510,7 @@ async def stac_catalogs_items(catalogs, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}/items/{item_id}", tags=["Data"])
-async def stac_catalogs_item(catalogs, item_id, request: Request):
+def stac_catalogs_item(catalogs, item_id, request: Request):
     """Fetch catalog's single features
     ---
     tags:
@@ -539,13 +544,11 @@ async def stac_catalogs_item(catalogs, item_id, request: Request):
         '500':
           $ref: '#/components/responses/ServerError'
     """
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
@@ -569,13 +572,11 @@ async def stac_catalogs_item(catalogs, item_id, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}/items/{item_id}/download", tags=["Data"])
-async def stac_catalogs_item_download(catalogs, item_id, request: Request):
+def stac_catalogs_item_download(catalogs, item_id, request: Request):
     """STAC item local download"""
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+    logger.debug(f"URL: {request.url}")
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
     variable = arguments.pop("variable", None)
 
@@ -587,7 +588,7 @@ async def stac_catalogs_item_download(catalogs, item_id, request: Request):
 
 
 @router.get("/catalogs/{catalogs:path}", tags=["Capabilities"])
-async def stac_catalogs(catalogs, request: Request):
+def stac_catalogs(catalogs, request: Request):
     """Describe the given catalog and list available sub-catalogs
     ---
     tags:
@@ -612,13 +613,11 @@ async def stac_catalogs(catalogs, request: Request):
         '500':
             $ref: '#/components/responses/ServerError'
     """
+    logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
-    try:
-        body = await request.json()
-    except JSONDecodeError:
-        body = {}
-    arguments = dict(request.query_params, **body)
+
+    arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     catalogs = catalogs.strip("/").split("/")
@@ -644,6 +643,7 @@ def list_queryables(request: Request) -> Queryables:
     :returns: An object containing the list of available queryable terms.
     :rtype: eodag.rest.utils.Queryables
     """
+    logger.debug(f"URL: {request.url}")
 
     return Queryables(q_id=request.state.url)
 
@@ -671,6 +671,7 @@ def list_collection_queryables(
     :returns: An object containing the list of available queryable properties for the specified collection.
     :rtype: eodag.rest.utils.Queryables
     """
+    logger.debug(f"URL: {request.url}")
 
     queryables = Queryables(q_id=request.state.url, additional_properties=False)
     conf_args = [collection_id, provider] if provider else [collection_id]

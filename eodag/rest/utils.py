@@ -299,15 +299,25 @@ def get_datetime(arguments):
     :rtype: Tuple[Optional[str], Optional[str]]
     """
     datetime_str = arguments.pop("datetime", None)
+
     if datetime_str:
         datetime_split = datetime_str.split("/")
-        if len(datetime_split) == 1:
-            return get_date(datetime_split[0]), None
-        elif len(datetime_split) == 2:
-            return get_date(datetime_split[0]), get_date(datetime_split[1])
-    dtstart = get_date(arguments.pop("dtstart", None))
-    dtend = get_date(arguments.pop("dtend", None))
-    return dtstart, dtend
+        if len(datetime_split) > 1:
+            dtstart = datetime_split[0] if datetime_split[0] != ".." else None
+            dtend = datetime_split[1] if datetime_split[1] != ".." else None
+        elif len(datetime_split) == 1:
+            # same time for start & end if only one is given
+            dtstart, dtend = datetime_split[0:1] * 2
+        else:
+            return None, None
+
+        return get_date(dtstart), get_date(dtend)
+
+    else:
+        # return already set (dtstart, dtend) or None
+        dtstart = get_date(arguments.pop("dtstart", None))
+        dtend = get_date(arguments.pop("dtend", None))
+        return get_date(dtstart), get_date(dtend)
 
 
 def get_metadata_query_paths(metadata_mapping):
@@ -806,27 +816,8 @@ def search_stac_items(
             "totalResults": len(search_results),
         }
     else:
-        # get datetime
         if "datetime" in arguments.keys() and arguments["datetime"] is not None:
-            dtime_split = arguments.get("datetime", "").split("/")
-            if len(dtime_split) > 1:
-                arguments["dtstart"] = (
-                    dtime_split[0]
-                    if dtime_split[0] != ".."
-                    else datetime.datetime.min.isoformat() + "Z"
-                )
-                arguments["dtend"] = (
-                    dtime_split[1]
-                    if dtime_split[1] != ".."
-                    else datetime.datetime.now(datetime.timezone.utc)
-                    .isoformat()
-                    .replace("+00:00", "")
-                    + "Z"
-                )
-            elif len(dtime_split) == 1:
-                # same time for start & end if only one is given
-                arguments["dtstart"], arguments["dtend"] = dtime_split[0:1] * 2
-            arguments.pop("datetime")
+            arguments["dtstart"], arguments["dtend"] = get_datetime(arguments)
 
         search_products_arguments = dict(
             arguments,
@@ -834,12 +825,20 @@ def search_stac_items(
             **{"unserialized": "true", "provider": provider},
         )
 
-        # check if time filtering appears twice
+        # check if time filtering appears both in search arguments and catalog
         if set(["dtstart", "dtend"]) <= set(arguments.keys()) and set(
             ["dtstart", "dtend"]
         ) <= set(result_catalog.search_args.keys()):
-            search_date_min = dateutil.parser.parse(arguments["dtstart"])
-            search_date_max = dateutil.parser.parse(arguments["dtend"])
+            search_date_min = (
+                dateutil.parser.parse(arguments["dtstart"])
+                if arguments["dtstart"]
+                else datetime.datetime.min
+            )
+            search_date_max = (
+                dateutil.parser.parse(arguments["dtend"])
+                if arguments["dtend"]
+                else datetime.datetime.now()
+            )
             catalog_date_min = dateutil.parser.parse(
                 result_catalog.search_args["dtstart"]
             )

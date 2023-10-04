@@ -880,7 +880,8 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
-    need_auth: false
+    timeout: 60
+    need_auth:
     dont_quote:
       - '['
       - ']'
@@ -1571,6 +1572,7 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+    timeout: 60
     need_auth: false
     dont_quote:
       - '['
@@ -3764,10 +3766,12 @@
     metadata_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/"
     status_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/status/"
     result_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/jobs/{jobId}/result?size={items_per_page}&page={page}"
+    timeout: 60
     need_auth: true
     auth_error_code: 401
     results_entry: content
     two_passes_id_search: true
+    dates_required: true
     pagination:
       start_page: 0
       max_items_per_page: 20
@@ -3804,8 +3808,6 @@
     S2_MSI_L1C:
       productType: EO:ESA:DAT:SENTINEL-2:MSI
       processingLevel: S2MSI1C
-      startTimeFromAscendingNode: "2015-07-16T00:00:00.000Z"
-      completionTimeFromAscendingNode: "2015-07-17T00:00:00.000Z"
       metadata_mapping:
         id:
           - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
@@ -3819,8 +3821,6 @@
     S2_MSI_L2A:
       productType: EO:ESA:DAT:SENTINEL-2:MSI
       processingLevel: S2MSI2A
-      startTimeFromAscendingNode: "2018-03-26T00:00:00Z"
-      completionTimeFromAscendingNode: "2018-03-27T00:00:00Z"
       metadata_mapping:
         id:
           - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
@@ -4117,8 +4117,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     CLMS_GLO_FCOVER_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_FCOVER300_V1_333M
-      startTimeFromAscendingNode: "2014-01-10T00:00"
-      completionTimeFromAscendingNode: "2014-01-10T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4130,8 +4128,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     CLMS_GLO_NDVI_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI300_V1_333M
-      startTimeFromAscendingNode: "2014-01-01T00:00"
-      completionTimeFromAscendingNode: "2014-01-01T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4143,8 +4139,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     CLMS_GLO_NDVI_1KM_LTS:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI_V2_1KM_LTS
-      startTimeFromAscendingNode: "1999-01-01T00:00"
-      completionTimeFromAscendingNode: "1999-01-01T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4156,8 +4150,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     CLMS_GLO_DMP_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_DMP300_V1_333M
-      startTimeFromAscendingNode: "2014-01-10T00:00"
-      completionTimeFromAscendingNode: "2014-01-10T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4169,8 +4161,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     CLMS_GLO_GDMP_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_GDMP300_V1_333M
-      startTimeFromAscendingNode: "2014-01-10T00:00"
-      completionTimeFromAscendingNode: "2014-01-10T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4182,8 +4172,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     CLMS_GLO_LAI_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_LAI300_V1_333M
-      startTimeFromAscendingNode: "2014-01-10T00:00"
-      completionTimeFromAscendingNode: "2014-01-10T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4195,8 +4183,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     CLMS_GLO_FAPAR_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_FAPAR300_V1_333M
-      startTimeFromAscendingNode: "2014-01-10T00:00"
-      completionTimeFromAscendingNode: "2014-01-10T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4208,8 +4194,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     EEA_DAILY_SWI_1KM:
       productType: EO:EEA:DAT:VEGETATION:DAILY_SWI_1KM_EUROPE_V1
-      startTimeFromAscendingNode: "2015-01-01T00:00"
-      completionTimeFromAscendingNode: "2015-01-01T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4221,8 +4205,6 @@
         geometry: '-180 -90 180 90' # geometry is not available for this product type
     EEA_DAILY_SSM_1KM:
       productType: EO:EEA:DAT:VEGETATION:DAILY_SSM_1KM_EUROPE_V1
-      startTimeFromAscendingNode: "2015-01-01T00:00"
-      completionTimeFromAscendingNode: "2015-01-01T00:00"
       metadata_mapping:
         id: '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
@@ -4323,7 +4305,6 @@
         - "950"
         - "975"
         - "1000"
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       format: grib # netcdf format may fail
       constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS"
       constraints_param: constraints
@@ -4434,7 +4415,6 @@
         - "950"
         - "975"
         - "1000"
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       format: grib # netcdf format may fail
       constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS"
       constraints_param: constraints
@@ -4513,7 +4493,6 @@
         - total_precipitation
         - leaf_area_index_high_vegetation
         - leaf_area_index_low_vegetation
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       format: grib # netcdf format may fail
       constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_LAND"
       constraints_param: constraints
@@ -4591,7 +4570,6 @@
         - total_precipitation
         - leaf_area_index_high_vegetation
         - leaf_area_index_low_vegetation
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       format: grib # netcdf format may fail
       constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS"
       constraints_param: constraints
@@ -4652,7 +4630,6 @@
         - significant_height_of_combined_wind_waves_and_swell
         - surface_pressure
         - total_precipitation
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       format: grib # netcdf format may fail
       constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS"
       constraints_param: constraints
@@ -4717,7 +4694,6 @@
         - significant_height_of_combined_wind_waves_and_swell
         - surface_pressure
         - total_precipitation
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       format: grib # netcdf format may fail
       constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS"
       constraints_param: constraints
@@ -4763,7 +4739,6 @@
       productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
       variable: total_cloud_cover
       origin: uerra_harmonie
-      startTimeFromAscendingNode: "2019-01-01T00:00"
       format: grib # netcdf format may fail
       metadata_mapping:
         id: '$.productInfo.product'
@@ -4796,7 +4771,6 @@
       storeDownloadUrl: True
     SATELLITE_SEA_LEVEL_BLACK_SEA:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
-      startTimeFromAscendingNode: "1993-01-01T00:00"
       variable: all
       format: zip
       variable: all
@@ -4887,7 +4861,6 @@
         - ignition_component
       version:
         - "4.0"
-      startTimeFromAscendingNode: "2020-01-01T00:00"
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4954,7 +4927,6 @@
       providerProductType:
         - control_forecast
       format: grib
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4997,7 +4969,6 @@
       providerProductType:
         - consolidated
       format: grib
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5087,7 +5058,6 @@
       hydrological_model:
         - lisflood
       format: grib
-      startTimeFromAscendingNode: "1999-01-03T00:00"
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5138,7 +5108,6 @@
         - "120"
         - "144"
       format: grib
-      startTimeFromAscendingNode: "2020-12-01T00:00"
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5180,7 +5149,6 @@
       leadtime_hour:
         - "24"
       format: grib
-      startTimeFromAscendingNode: "2016-01-01T00:00"
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5283,7 +5251,6 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5323,7 +5290,6 @@
       productType: EO:ECMWF:DAT:EFAS_HISTORICAL
       soil_level:
         - "1"
-      startTimeFromAscendingNode: "2023-01-01T00:00"
       system_version: version_4_0
       variable: volumetric_soil_moisture
       model_levels: soil_levels
@@ -5397,7 +5363,6 @@
         - "186"
         - "192"
         - "198"
-      startTimeFromAscendingNode: "1999-01-03T00:00:00Z"
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
@@ -5445,7 +5410,6 @@
         - "144"
         - "168"
         - "192"
-      startTimeFromAscendingNode: "2020-12-01T00:00"
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
@@ -5489,7 +5453,6 @@
         - "144"
         - "168"
         - "192"
-      startTimeFromAscendingNode: "2020-01-01T00:00"
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
@@ -5526,7 +5489,6 @@
         - level_2
       version:
         - "4.0"
-      startTimeFromAscendingNode: "2002-10-01T00:00"
       variable: xco2
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
@@ -5564,7 +5526,6 @@
         - level_2
       version:
         - "4.0"
-      startTimeFromAscendingNode: "2002-10-01T00:00"
       variable: xch4
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
@@ -5621,7 +5582,6 @@
         - "1000"
       leadtime_month:
         - "1"
-      startTimeFromAscendingNode: "2017-01-01T00:00:00Z"
       originating_centre: ecmwf
       system: "5"
       format: grib
@@ -5672,7 +5632,6 @@
         - 10m_wind_speed_anomaly
       leadtime_month:
         - "1"
-      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
       originating_centre: ecmwf
       system: "51"
       format: grib
@@ -5750,7 +5709,6 @@
         - "186"
         - "192"
         - "198"
-      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
       originating_centre: ecmwf
       system: "51"
       format: grib
@@ -5823,7 +5781,6 @@
         - "168"
         - "180"
         - "192"
-      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
       originating_centre: ecmwf
       system: "51"
       format: grib
@@ -5883,7 +5840,6 @@
         - "850"
         - "925"
         - "1000"
-      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
       originating_centre: ecmwf
       system: "51"
       format: grib
@@ -5933,7 +5889,6 @@
         - ensemble_mean
       leadtime_month:
         - "1"
-      startTimeFromAscendingNode: "2023-01-01T00:00:00Z"
       originating_centre: ecmwf
       system: "51"
       format: grib

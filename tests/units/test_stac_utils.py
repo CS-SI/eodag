@@ -219,9 +219,17 @@ class TestStacUtils(unittest.TestCase):
         self.assertEqual(dtstart, start)
         self.assertEqual(dtend, end)
 
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"../{end}"})
+        self.assertEqual(dtstart, None)
+        self.assertEqual(dtend, end)
+
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"{start}/.."})
+        self.assertEqual(dtstart, start)
+        self.assertEqual(dtend, None)
+
         dtstart, dtend = self.rest_utils.get_datetime({"datetime": start})
         self.assertEqual(dtstart, start)
-        self.assertIsNone(dtend)
+        self.assertEqual(dtstart, dtend)
 
         dtstart, dtend = self.rest_utils.get_datetime({"dtstart": start, "dtend": end})
         self.assertEqual(dtstart, start)

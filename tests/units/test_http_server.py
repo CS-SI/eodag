@@ -504,6 +504,37 @@ class RequestTestCase(unittest.TestCase):
                 split_result=False,
             ),
         )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20/..",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=../2018-01-25",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                end="2018-01-25T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-01-20T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
 
     def test_date_search_from_items(self):
         """Search through eodag server collection/items endpoint using dates filering should return a valid response"""
@@ -592,6 +623,64 @@ class RequestTestCase(unittest.TestCase):
             [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
         )
 
+    def test_catalog_browse_date_search(self):
+        """Browsing catalogs with date filtering through eodag server should return a valid response"""
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-01T00:00:00",
+                end="2018-02-01T00:00:00",
+            ),
+        )
+        # args & catalog intersection
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/2018-02-15",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-02-01T00:00:00",
+            ),
+        )
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/..",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-02-01T00:00:00",
+            ),
+        )
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2018-01-05",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-01T00:00:00",
+                end="2018-01-05T00:00:00",
+            ),
+        )
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-05",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-05T00:00:00",
+                end="2018-01-05T00:00:00",
+            ),
+        )
+        result = self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2017-08-01",
+        )
+        self.assertEqual(len(result["features"]), 0)
+
     def test_search_item_id_from_catalog(self):
         """Search by id through eodag server /catalog endpoint should return a valid response"""
         self._request_valid(
@@ -661,6 +750,67 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
                 split_result=False,
+            ),
+        )
+
+    def test_date_post_search(self):
+        """POST search with datetime filtering through eodag server should return a valid response"""
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "2018-01-20/2018-01-25",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-01-25T00:00:00",
+            ),
+        )
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "2018-01-20/..",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+            ),
+        )
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "../2018-01-25",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                end="2018-01-25T00:00:00",
+            ),
+        )
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "2018-01-20",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-01-20T00:00:00",
             ),
         )
 
