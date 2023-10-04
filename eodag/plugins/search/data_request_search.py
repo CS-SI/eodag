@@ -183,7 +183,6 @@ class DataRequestSearch(Search):
 
         self._add_constraints_info_to_config()
         products = []
-        num_items = 0
         if (
             kwargs.get("split_result", False)
             and getattr(self.config, "products_split_timedelta", None)
@@ -208,7 +207,7 @@ class DataRequestSearch(Search):
             num_products = kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE)
             page = kwargs.get("page", DEFAULT_PAGE)
 
-            slices = request_splitter.get_time_slices(
+            slices, num_items = request_splitter.get_time_slices(
                 start_time, end_time, num_products, page
             )
             for time_slice in slices:
@@ -251,16 +250,14 @@ class DataRequestSearch(Search):
                         continue
                     product = self._create_product(variables, product_type, keywords)
                     products.append(product)
-                    num_items += 1
                 else:
                     result = self._get_products(
                         product_type, provider_product_type, keywords, **kwargs
                     )
                     products += result[0]
-                    num_items += result[1]
         else:
             products, num_items = self._get_products(
-                product_type, provider_product_type, keywords, **kwargs
+                product_type, provider_product_type, keywords, False, **kwargs
             )
         return products, num_items
 
@@ -306,7 +303,9 @@ class DataRequestSearch(Search):
         properties = dict(getattr(self.config, "product_type_config", {}), **properties)
         return EOProduct(self.provider, properties, productType=product_type)
 
-    def _get_products(self, product_type, provider_product_type, keywords, **kwargs):
+    def _get_products(
+        self, product_type, provider_product_type, keywords, split_result, **kwargs
+    ):
         # ask for data_request_id if not set (it must exist when iterating over pages)
         if not self.data_request_id:
             data_request_id = self._create_data_request(
