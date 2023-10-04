@@ -388,6 +388,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             startTimeFromAscendingNode="2020-01-01",
             completionTimeFromAscendingNode="2020-04-02",
             param="59/134",
+            split_result=True,
         )
         self.assertEqual(4, len(results))
         eoproduct = results[0]
@@ -1050,9 +1051,10 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             startTimeFromAscendingNode="2020-01-01",
             completionTimeFromAscendingNode="2020-04-02",
             variable=["geopotential", "surface_pressure"],
+            split_result=True,
         )
         self.assertEqual(3, len(results))
-        eoproduct = results[0]
+        eoproduct = results[2]
         self.assertEqual(
             eoproduct.properties["startTimeFromAscendingNode"], "2020-02-01T00:00:00Z"
         )
@@ -1068,7 +1070,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             eoproduct.properties["completionTimeFromAscendingNode"],
             "2020-03-29T00:00:00Z",
         )
-        eoproduct = results[2]
+        eoproduct = results[0]
         self.assertEqual(
             eoproduct.properties["startTimeFromAscendingNode"], "2020-04-01T00:00:00Z"
         )

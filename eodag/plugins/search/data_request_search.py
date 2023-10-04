@@ -257,7 +257,7 @@ class DataRequestSearch(Search):
                     products += result[0]
         else:
             products, num_items = self._get_products(
-                product_type, provider_product_type, keywords, False, **kwargs
+                product_type, provider_product_type, keywords, **kwargs
             )
         return products, num_items
 
