@@ -137,7 +137,6 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
         products = []
-        num_items = 0
         if (
             split_result
             and getattr(self.config, "products_split_timedelta", None)
@@ -146,7 +145,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             request_splitter = RequestSplitter(
                 self.config, self.config.metadata_mapping
             )
-            slices = request_splitter.get_time_slices(
+            slices, num_items = request_splitter.get_time_slices(
                 kwargs["startTimeFromAscendingNode"],
                 kwargs["completionTimeFromAscendingNode"],
             )
@@ -164,7 +163,6 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                     **kwargs,
                 )
                 products += result[0]
-                num_items += result[1]
         else:
             products, num_items = BuildPostSearchResult.query(
                 self, items_per_page=items_per_page, page=page, count=count, **kwargs
@@ -266,7 +264,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 request_splitter = RequestSplitter(
                     self.config, self.config.metadata_mapping
                 )
-                time_params = request_splitter.get_time_slices(start, end)
+                time_params = request_splitter.get_time_slices(start, end)[0]
                 download_request["year"] = time_params[0]["year"]
                 download_request["month"] = time_params[0]["month"]
                 download_request["day"] = time_params[0]["day"]

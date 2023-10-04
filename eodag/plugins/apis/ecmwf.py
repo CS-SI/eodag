@@ -136,7 +136,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             ]
         kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
         products = []
-        num_items = 0
         if (
             split_result
             and getattr(self.config, "products_split_timedelta", None)
@@ -145,7 +144,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             request_splitter = RequestSplitter(
                 self.config, self.config.metadata_mapping
             )
-            slices = request_splitter.get_time_slices(
+            slices, num_items = request_splitter.get_time_slices(
                 kwargs["startTimeFromAscendingNode"],
                 kwargs["completionTimeFromAscendingNode"],
             )
@@ -171,7 +170,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                     **kwargs,
                 )
                 products += result[0]
-                num_items += result[1]
         else:
             products, num_items = BuildPostSearchResult.query(
                 self,
