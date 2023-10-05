@@ -878,8 +878,8 @@
   url: https://creodias.eu/
   search: !plugin
     type: QueryStringSearch
-    api_endpoint: 'https://finder.creodias.eu/resto/api/collections/{collection}/search.json'
-    need_auth:
+    api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
+    need_auth: false
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -890,9 +890,9 @@
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
     discover_product_types:
-      fetch_url: 'https://datahub.creodias.eu/stac/collections'
+      fetch_url: https://finder.creodias.eu/attributes.json
       result_type: json
-      results_entry: '$.collections[*]'
+      results_entry: 'collections[?billing=="free"]'
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
         collection: '$.id'
@@ -922,7 +922,7 @@
         - processingLevel
         - '$.properties.processingLevel'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.properties.title'
+      title: '{$.properties.title#remove_extension}'
       topicCategory: '$.properties.topicCategory'
       keyword: '$.properties.keywords'
       abstract: '$.properties.description'
@@ -964,7 +964,6 @@
       sensorMode:
         - 'sensorMode'
         - '$.properties.sensorMode'
-
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
         - startDate
@@ -978,22 +977,25 @@
 
       # Custom parameters (not defined in the base document referenced above)
       id:
-        - 'productIdentifier={id#remove_extension}'
-        - '$.properties.productIdentifier'
+        - 'productIdentifier=%{id#remove_extension}%'
+        - '{$.properties.title#remove_extension}'
       tileIdentifier:
         - 'tileid'
         - '$.properties.mgrs'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
-        - '$.geometry'
+        # - '$.geometry'
+        - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
       # The url of the quicklook
       quicklook: '$.properties.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://datahub.creodias.eu/odata/v1/Products({uid})/$value'
+      downloadLink: 'https://zipper.creodias.eu/download/{uid}'
       # storageStatus must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
+      # storageStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
+      storageStatus: '$.properties.status'
+
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
   download: !plugin
@@ -1015,22 +1017,22 @@
       # S1
     S1_SAR_RAW:
       productType: RAW
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_GRD:
       productType: GRD
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_SLC:
       productType: SLC
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_OCN:
       productType: OCN
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     # S2
@@ -1042,155 +1044,155 @@
       productType: S2MSI2A
     # S3 SRAL
     S3_SRA:
-      productType: SR_1_SRA___
-      collection: SENTINEL-3
+      productType: SRA
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_A:
-      productType: SR_1_SRA_A_
-      collection: SENTINEL-3
+      productType: SRA_A
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_BS:
-      productType: SR_1_SRA_BS
-      collection: SENTINEL-3
+      productType: SRA_BS
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_LAN:
-      productType: SR_2_LAN___
-      collection: SENTINEL-3
+      productType: LAN
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_WAT:
-      productType: SR_2_WAT___
-      collection: SENTINEL-3
+      productType: WAT
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     # S3 OLCI
     S3_EFR:
-      productType: OL_1_EFR___
-      collection: SENTINEL-3
+      productType: EFR
+      collection: Sentinel3
     S3_ERR:
-      productType: OL_1_ERR___
-      collection: SENTINEL-3
+      productType: ERR
+      collection: Sentinel3
     S3_OLCI_L2LRR:
-      productType: OL_2_LRR___
-      collection: SENTINEL-3
+      productType: LRR
+      collection: Sentinel3
     S3_OLCI_L2LFR:
-      productType: OL_2_LFR___
-      collection: SENTINEL-3
+      productType: LFR
+      collection: Sentinel3
     S3_OLCI_L2WRR:
-      productType: OL_2_WRR___
-      collection: SENTINEL-3
+      productType: WRR
+      collection: Sentinel3
     S3_OLCI_L2WFR:
-      productType: OL_2_WFR___
-      collection: SENTINEL-3
+      productType: WFR
+      collection: Sentinel3
     # S3 SLSTR
     S3_SLSTR_L1RBT:
-      productType: SL_1_RBT___
-      collection: SENTINEL-3
+      productType: RBT
+      collection: Sentinel3
     S3_SLSTR_L2LST:
-      productType: SL_2_LST___
-      collection: SENTINEL-3
+      productType: LST
+      collection: Sentinel3
     S3_SLSTR_L2WST:
-      productType: SL_2_WST___
-      collection: SENTINEL-3
+      productType: WST
+      collection: Sentinel3
     S3_SLSTR_L2AOD:
-      productType: SL_2_AOD___
-      collection: SENTINEL-3
+      productType: AOD___
+      collection: Sentinel3
     S3_SLSTR_L2FRP:
-      productType: SL_2_FRP___
-      collection: SENTINEL-3
+      productType: FRP___
+      collection: Sentinel3
     # S3 SY
     S3_SY_AOD:
       productType: SY_2_AOD___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_SYN:
       productType: SY_2_SYN___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_V10:
       productType: SY_2_V10___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_VG1:
       productType: SY_2_VG1___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_VGP:
       productType: SY_2_VGP___
-      collection: SENTINEL-3
+      collection: Sentinel3
     # S5P L1
     S5P_L1B_IR_SIR:
       productType: L1B_IR_SIR
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_IR_UVN:
       productType: L1B_IR_UVN
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD1:
       productType: L1B_RA_BD1
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD2:
       productType: L1B_RA_BD2
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD3:
       productType: L1B_RA_BD3
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD4:
       productType: L1B_RA_BD4
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD5:
       productType: L1B_RA_BD5
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD6:
       productType: L1B_RA_BD6
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD7:
       productType: L1B_RA_BD7
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD8:
       productType: L1B_RA_BD8
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     # S5P L2
     S5P_L2_NO2:
       productType: L2__NO2___
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_CLOUD:
       productType: L2__CLOUD_
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_O3:
       productType: L2__O3____
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_CO:
       productType: L2__CO____
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_AER_AI:
       productType: L2__AER_AI
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_O3_PR:
       productType: L2__O3__PR
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_O3_TCL:
       productType: L2__O3_TCL
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_AER_LH:
       productType: L2__AER_LH
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_HCHO:
       productType: L2__HCHO__
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_CH4:
       productType: L2__CH4___
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_NP_BD3:
       productType: L2__NP_BD3
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_NP_BD6:
       productType: L2__NP_BD6
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_NP_BD7:
       productType: L2__NP_BD7
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_SO2:
       productType: L2__SO2___
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
