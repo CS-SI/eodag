@@ -17,6 +17,9 @@
 # limitations under the License.
 
 
+from typing import Any
+
+
 def check_ipython():
     """Check if called from ipython"""
     try:
@@ -44,9 +47,9 @@ class NotebookWidgets(object):
     """Display / handle ipython widgets"""
 
     is_notebook = False
-    html_box = None
+    html_box: Any = None
     html_box_shown = False
-    display = None
+    display: Any = None
 
     def __init__(self):
         self.is_notebook = check_notebook()
