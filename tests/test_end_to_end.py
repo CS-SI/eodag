@@ -500,7 +500,7 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(
             *COP_ADS_SEARCH_ARGS, search_kwargs_dict=COP_ADS_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_cop_cds(self):

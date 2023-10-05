@@ -291,7 +291,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             output_data_path, "%s" % eoproduct.properties["title"]
         )
         arg_path = os.path.join(
-            output_data_path, "%s.grib" % eoproduct.properties["title"]
+            output_data_path,
+            "%s" % eoproduct.properties["title"],
+            "%s.grib" % eoproduct.properties["title"],
         )
         path = eoproduct.download(outputs_prefix=output_data_path)
         mock_ecmwfservice_execute.assert_not_called()
@@ -326,7 +328,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             output_data_path, "%s" % eoproduct.properties["title"]
         )
         arg_path = os.path.join(
-            output_data_path, "%s.nc" % eoproduct.properties["title"]
+            output_data_path,
+            "%s" % eoproduct.properties["title"],
+            "%s.nc" % eoproduct.properties["title"],
         )
         path = eoproduct.download(outputs_prefix=output_data_path)
         download_request = geojson.loads(urlsplit(eoproduct.remote_location).query)
