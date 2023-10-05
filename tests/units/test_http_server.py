@@ -512,6 +512,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -522,6 +523,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -533,6 +535,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00",
                 end="2018-01-20T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
+                split_result=False,
             ),
         )
 
@@ -633,6 +636,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-01T00:00:00",
                 end="2018-02-01T00:00:00",
+                split_result=False,
             ),
         )
         # args & catalog intersection
@@ -644,6 +648,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-02-01T00:00:00",
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -654,6 +659,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-02-01T00:00:00",
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -664,6 +670,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-01T00:00:00",
                 end="2018-01-05T00:00:00",
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -674,6 +681,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-05T00:00:00",
                 end="2018-01-05T00:00:00",
+                split_result=False,
             ),
         )
         result = self._request_valid(
@@ -768,6 +776,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -782,6 +791,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -796,6 +806,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 end="2018-01-25T00:00:00",
+                split_result=False,
             ),
         )
         self._request_valid(
@@ -811,6 +822,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-01-20T00:00:00",
+                split_result=False,
             ),
         )
 
