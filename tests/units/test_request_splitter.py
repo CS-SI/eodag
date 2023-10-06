@@ -103,6 +103,40 @@ class TestRequestSplitter(unittest.TestCase):
         self.assertDictEqual(expected_result[1], result[1])
         self.assertDictEqual(expected_result[2], result[2])
         self.assertDictEqual(expected_result[3], result[3])
+        result, num_items = splitter.get_time_slices(
+            "2000-02-01", "2003-05-30", constraint_values={"time": "22:00"}
+        )
+        self.assertEqual(4, len(result))
+        expected_result = [
+            {
+                "year": "2003",
+                "month": ["12"],
+                "day": ["01", "10", "20", "25"],
+                "time": ["01:00", "12:00", "18:00", "22:00"],
+            },
+            {
+                "year": "2002",
+                "month": ["12"],
+                "day": ["01", "10", "20", "25"],
+                "time": ["01:00", "12:00", "18:00", "22:00"],
+            },
+            {
+                "year": "2001",
+                "month": ["01", "02", "03", "04", "05"],
+                "day": ["01", "10", "20", "25"],
+                "time": ["01:00", "12:00", "18:00", "22:00"],
+            },
+            {
+                "year": "2000",
+                "month": ["01", "02", "03", "04", "05"],
+                "day": ["01", "10", "20", "25"],
+                "time": ["01:00", "12:00", "18:00", "22:00"],
+            },
+        ]
+        self.assertDictEqual(expected_result[0], result[0])
+        self.assertDictEqual(expected_result[1], result[1])
+        self.assertDictEqual(expected_result[2], result[2])
+        self.assertDictEqual(expected_result[3], result[3])
 
     def test_split_timespan_by_year_without_input_dates(self):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}
@@ -199,6 +233,19 @@ class TestRequestSplitter(unittest.TestCase):
         }
         self.assertDictEqual(expected_result_row_13, result[12])
         self.assertDictEqual(expected_result_row_8, result[7])
+        result, num_items = splitter.get_time_slices(
+            "2002-01-01", "2002-12-30", constraint_values={"time": "22:00"}
+        )
+        self.assertEqual(1, len(result))
+        expected_result = [
+            {
+                "year": ["2002"],
+                "month": "12",
+                "day": ["01", "10", "20", "25"],
+                "time": ["01:00", "12:00", "18:00", "22:00"],
+            }
+        ]
+        self.assertDictEqual(expected_result[0], result[0])
 
     def test_split_timespan_by_month_without_input_dates(self):
         metadata = {"year": "year", "month": "month", "day": "day", "time": "time"}

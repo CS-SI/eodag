@@ -113,7 +113,14 @@ class RequestSplitter:
                 "month, choose a smaller granularity"
             )
 
-    def get_time_slices(self, start_date=None, end_date=None, num_products=20, page=1):
+    def get_time_slices(
+        self,
+        start_date=None,
+        end_date=None,
+        num_products=20,
+        page=1,
+        constraint_values=None,
+    ):
         """
         splits a timespan into slices based on the given config and constraints
         """
@@ -138,6 +145,7 @@ class RequestSplitter:
                 slice_duration,
                 num_products,
                 (page - 1) * num_products,
+                constraint_values,
             )
         elif split_param == "month":
             end_year = int(end_date[:4])
@@ -154,6 +162,7 @@ class RequestSplitter:
                 slice_duration,
                 num_products,
                 num_products * (page - 1),
+                constraint_values,
             )
 
     def _format_result(self, start_date, end_date):
@@ -170,7 +179,7 @@ class RequestSplitter:
             selected_months = {
                 "{:0>2d}".format(m) for m in range(start_month, end_month + 1)
             }
-            months = self._get_months_for_years(years, selected_months)
+            months = self._get_months_for_years(years, months=selected_months)
         else:
             months = self._get_months_for_years(years)
         if "day" in self.metadata:
@@ -178,7 +187,9 @@ class RequestSplitter:
                 selected_days = {
                     "{:0>2d}".format(d) for d in range(start_day, end_day + 1)
                 }
-                days = self._get_days_for_months_and_years(months, years, selected_days)
+                days = self._get_days_for_months_and_years(
+                    months, years, days=selected_days
+                )
             else:
                 days = self._get_days_for_months_and_years(months, years)
             times = self._get_times_for_days_months_and_years(days, months, years)
@@ -196,7 +207,13 @@ class RequestSplitter:
             return [{"year": years, "month": months, "time": times}], 1
 
     def _split_by_year(
-        self, start_year, end_year, slice_duration, num_results, offset=0
+        self,
+        start_year,
+        end_year,
+        slice_duration,
+        num_results,
+        offset=0,
+        constraint_values=None,
     ):
         if "year" not in self.metadata:
             return self._split_by_year_with_dates(
@@ -226,7 +243,9 @@ class RequestSplitter:
             months = []
             days = []
             if "month" in self.metadata:
-                months = self._get_months_for_years(row)
+                months = self._get_months_for_years(
+                    row, constraint_values=constraint_values
+                )
             if len(months) == 0:
                 continue
             record["month"] = months
@@ -256,6 +275,7 @@ class RequestSplitter:
         slice_duration,
         num_results,
         offset=0,
+        constraint_values=None,
     ):
         if "month" not in self.metadata:
             return self._split_by_month_with_dates(
@@ -298,7 +318,9 @@ class RequestSplitter:
             record = {"year": row["year"], "month": row["month"]}
             days = []
             if "day" in self.metadata:
-                days = self._get_days_for_months_and_years(row["month"], row["year"])
+                days = self._get_days_for_months_and_years(
+                    row["month"], row["year"], constraint_values=constraint_values
+                )
                 if len(days) == 0:
                     continue
                 record["day"] = days
@@ -309,7 +331,7 @@ class RequestSplitter:
                     )
                 else:
                     times = self._get_times_for_months_and_years(
-                        row["month"], row["year"]
+                        row["month"], row["year"], constraint_values=constraint_values
                     )
                 if len(times) == 0:
                     continue
@@ -325,36 +347,46 @@ class RequestSplitter:
             slices.append(self._sort_record(record))
         return slices, i
 
-    def _get_months_for_years(self, years, months=None):
+    def _get_months_for_years(self, years, constraint_values=None, months=None):
         if not months:
             months = {"{:0>2d}".format(i) for i in range(1, 13)}
         if not self.constraints:
             return months
         current_months = ()
         for year in years:
-            constraints = self._get_constraints_for_year(year)
+            constraints = self._get_constraints_for_year(year, constraint_values)
             for constraint in constraints:
                 possible_months = months.intersection(set(constraint["month"]))
                 if len(possible_months) > len(current_months):
                     current_months = possible_months
         return list(current_months)
 
-    def _get_constraints_for_year(self, year):
+    def _get_constraints_for_year(self, year, constraint_values=None):
         if not self.constraints:
             return [str(m) for m in range(1, 13)]
         constraints = []
         for constraint in self.constraints:
             if year in constraint["year"]:
-                constraints.append(constraint)
+                matches_constraint = True
+                if constraint_values:
+                    for key, value in constraint_values.items():
+                        if key in constraint and not _check_value_in_constraint(
+                            value, constraint[key]
+                        ):
+                            matches_constraint = False
+                if matches_constraint:
+                    constraints.append(constraint)
         return constraints
 
-    def _get_days_for_months_and_years(self, months, years, days=None):
+    def _get_days_for_months_and_years(
+        self, months, years, constraint_values=None, days=None
+    ):
         if not days:
             days = {"{:0>2d}".format(i) for i in range(1, 32)}
         if not self.constraints:
             return days
         for month in months:
-            constraints = self._get_constraints_for_month(month)
+            constraints = self._get_constraints_for_month(month, constraint_values)
             possible_days = []
             for constraint in constraints:
                 if len(set(years).intersection(set(constraint["year"]))) == len(
@@ -364,11 +396,20 @@ class RequestSplitter:
             days = days.intersection(set(possible_days))
         return list(days)
 
-    def _get_constraints_for_month(self, month):
+    def _get_constraints_for_month(self, month, constraint_values=None):
         constraints = []
         for constraint in self.constraints:
             if month in constraint["month"]:
-                constraints.append(constraint)
+                matches_constraint = True
+                if constraint_values:
+                    for key, value in constraint_values.items():
+                        if key in constraint and not _check_value_in_constraint(
+                            value, constraint[key]
+                        ):
+                            matches_constraint = False
+                            break
+                if matches_constraint:
+                    constraints.append(constraint)
         return constraints
 
     def _get_times_for_days_months_and_years(self, days, months, years):
@@ -390,13 +431,13 @@ class RequestSplitter:
             times = times.intersection(set(possible_times))
         return list(times)
 
-    def _get_times_for_months_and_years(self, months, years):
+    def _get_times_for_months_and_years(self, months, years, constraint_values=None):
         hours = [i for i in range(0, 24)]
         times = {datetime.time(h).strftime("%H:00") for h in hours}
         if not self.constraints:
             return times
         for month in months:
-            constraints = self._get_constraints_for_month(month)
+            constraints = self._get_constraints_for_month(month, constraint_values)
             possible_times = []
             for constraint in constraints:
                 if len(set(years).intersection(set(constraint["year"]))) == len(

@@ -193,7 +193,7 @@ class DataRequestSearch(Search):
             page = kwargs.get("page", DEFAULT_PAGE)
 
             slices, num_items = request_splitter.get_time_slices(
-                start_time, end_time, num_products, page
+                start_time, end_time, num_products, page, keywords
             )
             for time_slice in slices:
                 for key, value in time_slice.items():
@@ -228,6 +228,8 @@ class DataRequestSearch(Search):
                     selected_vars = keywords.pop(param_variable, None)
                     if not selected_vars and "variable" in self.product_type_def_params:
                         selected_vars = self.product_type_def_params["variable"]
+                    if isinstance(selected_vars, str):
+                        selected_vars = [selected_vars]
                     variables = request_splitter.get_variables_for_search_params(
                         keywords, selected_vars
                     )
@@ -250,19 +252,25 @@ class DataRequestSearch(Search):
         product_id = params.pop("id")
         dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
         dates = dates_str.split("_")
-        start_date = datetime.datetime(
-            int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8])
-        )
-        end_date = datetime.datetime(
-            int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
-        )
+        start_date = datetime(int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8]))
+        end_date = datetime(int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8]))
         params["startTimeFromAscendingNode"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         params["completionTimeFromAscendingNode"] = end_date.strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
         param_variable = self.config.assets_split_parameter
-        if param_variable in params and isinstance(params[param_variable], str):
+        if (
+            param_variable in params
+            and isinstance(params[param_variable], str)
+            and param_variable in self.config.multi_select_values
+        ):
             params[param_variable] = [params[param_variable]]
+        elif (
+            param_variable in params
+            and not isinstance(params[param_variable], str)
+            and param_variable not in self.config.multi_select_values
+        ):
+            params[param_variable] = params[param_variable][0]
 
     def _create_product(self, variables, product_type, keywords):
         id_prefix = "ATM_" + product_type

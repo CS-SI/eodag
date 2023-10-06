@@ -2646,6 +2646,7 @@
         - month
         - day
         - time
+        - variable
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'
@@ -3935,6 +3936,7 @@
         - month
         - day
         - time
+        - variable
       products_split_timedelta:
         param: month  # currently month and year are available
         duration: 1
@@ -4044,6 +4046,7 @@
         - year
         - month
         - time
+        - variable
       products_split_timedelta:
         param: month  # currently month and year are available
         duration: 1
@@ -4121,6 +4124,7 @@
       multi_select_values:
         - day
         - time
+        - variable
       products_split_timedelta:
         param: month  # currently month and year are available
         duration: 1
@@ -4199,6 +4203,7 @@
         - year
         - month
         - time
+        - variable
       products_split_timedelta:
         param: month  # currently month and year are available
         duration: 1
@@ -4260,6 +4265,7 @@
         - month
         - day
         - time
+        - variable
       products_split_timedelta:
         param: month  # currently month and year are available
         duration: 1
@@ -4323,6 +4329,7 @@
         - year
         - month
         - time
+        - variable
       products_split_timedelta:
         param: month  # currently month and year are available
         duration: 1
@@ -4362,6 +4369,18 @@
       variable: total_cloud_cover
       origin: uerra_harmonie
       format: grib # netcdf format may fail
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4380,6 +4399,18 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SATELLITE_SEA_LEVEL_BLACK_SEA:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
