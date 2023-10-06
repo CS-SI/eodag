@@ -4416,6 +4416,15 @@
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
       variable: all
       format: zip
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
       metadata_mapping:
         id: '$.productInfo.product'
         variable:
@@ -4434,6 +4443,16 @@
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+      storeDownloadUrl: True
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
@@ -4482,11 +4501,9 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
     FIRE_HISTORICAL:
-      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL
-      providerProductType:
-        - reanalysis
-      dataset:
-        - Consolidated dataset
+      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
+      providerProductType: reanalysis
+      dataset_type: consolidated_dataset
       variable:
         - fire_danger_index
         - build_up_index
@@ -4501,20 +4518,38 @@
         - burning_index
         - energy_release_component
         - ignition_component
-      version:
-        - "4.0"
+      system_version:
+        - "4_1"
+      format:
+        - grib
+      grid: "original_grid"
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
-          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - '{{ "stringChoiceValues": [ {{"name": "product_type", "value": "{providerProductType}" }} ] }}'
           - $.null
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
           - $.null
-        dataset:
-          - '{{ "multiStringSelectValues": [ {{"name": "dataset", "value": {dataset} }} ] }}'
+        dataset_type:
+          - '{{ "stringChoiceValues": [ {{"name": "dataset_type", "value": "{dataset_type}" }} ] }}'
           - $.null
         version:
-          - '{{ "multiStringSelectValues": [ {{"name": "version", "value": {version} }} ] }}'
+          - '{{ "multiStringSelectValues": [ {{"name": "system_version", "value": {version} }} ] }}'
+          - $.null
+        grid:
+          - '{{ "stringChoiceValues": [ {{"name": "grid", "value": "{grid}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
           - |
@@ -4527,6 +4562,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
     GLOFAS_FORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST
       variable:

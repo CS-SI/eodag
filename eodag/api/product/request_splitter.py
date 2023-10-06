@@ -133,7 +133,8 @@ class RequestSplitter:
                 self.config.get("product_type_config", {}).get("missionStartDate", None)
                 or DEFAULT_MISSION_START_DATE
             )
-
+        if constraint_values and "assets_split_parameter" in self.config:
+            constraint_values.pop(self.config["assets_split_parameter"], None)
         if split_param == "year":
             start_year = int(start_date[:4])
             end_year = int(end_date[:4])
@@ -192,19 +193,27 @@ class RequestSplitter:
                 )
             else:
                 days = self._get_days_for_months_and_years(months, years)
-            times = self._get_times_for_days_months_and_years(days, months, years)
+            if "time" in self.metadata:
+                times = self._get_times_for_days_months_and_years(days, months, years)
             if "month" not in self.multi_select_values:
                 months = months[0]
             if "year" not in self.multi_select_values:
                 years = years[0]
-            return [{"year": years, "month": months, "day": days, "time": times}], 1
+            if "time" in self.metadata:
+                return [{"year": years, "month": months, "day": days, "time": times}], 1
+            else:
+                return [{"year": years, "month": months, "day": days}], 1
         else:
-            times = self._get_times_for_months_and_years(months, years)
+            if "time" in self.metadata:
+                times = self._get_times_for_months_and_years(months, years)
             if "month" not in self.multi_select_values:
                 months = months[0]
             if "year" not in self.multi_select_values:
                 years = years[0]
-            return [{"year": years, "month": months, "time": times}], 1
+            if "time" in self.metadata:
+                return [{"year": years, "month": months, "time": times}], 1
+            else:
+                return [{"year": years, "month": months}], 1
 
     def _split_by_year(
         self,

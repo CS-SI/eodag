@@ -193,7 +193,7 @@ class DataRequestSearch(Search):
             page = kwargs.get("page", DEFAULT_PAGE)
 
             slices, num_items = request_splitter.get_time_slices(
-                start_time, end_time, num_products, page, keywords
+                start_time, end_time, num_products, page, deepcopy(keywords)
             )
             for time_slice in slices:
                 for key, value in time_slice.items():
@@ -242,6 +242,7 @@ class DataRequestSearch(Search):
                         product_type, provider_product_type, keywords, **kwargs
                     )
                     products += result[0]
+                    self.data_request_id = None
         else:
             products, num_items = self._get_products(
                 product_type, provider_product_type, keywords, **kwargs
