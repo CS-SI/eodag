@@ -221,19 +221,15 @@ class EOProduct(object):
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def register_downloader(self, downloader, authenticator):
+    def register_downloader(self, downloader):
         """Give to the product the information needed to download itself.
 
         :param downloader: The download method that it can use
         :type downloader: Concrete subclass of
                           :class:`~eodag.plugins.download.base.Download` or
                           :class:`~eodag.plugins.api.base.Api`
-        :param authenticator: The authentication method needed to perform the download
-        :type authenticator: Concrete subclass of
-                             :class:`~eodag.plugins.authentication.base.Authentication`
         """
         self.downloader = downloader
-        self.downloader_auth = authenticator
 
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")

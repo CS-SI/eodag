@@ -15,6 +15,8 @@ from eodag.utils.exceptions import AuthenticationError, RequestError
 
 logger = logging.getLogger("eodag.utils.http")
 
+HTTP_REQ_TIMEOUT = 5
+
 
 class HttpResponse:
     """
@@ -110,7 +112,7 @@ class HttpRequests:
         data: Optional[Union[Dict[str, Any], bytes]] = None,
         json: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: int = 10,
+        timeout: int = HTTP_REQ_TIMEOUT,
         unquoted_params: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> HttpResponse:

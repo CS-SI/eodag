@@ -16,16 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from urllib.parse import parse_qs, urlparse
-
-import requests.auth
-from requests.exceptions import RequestException
+import logging
+from typing import Any, Dict, List, Optional, Union
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import AuthenticationError
-from eodag.utils.http import HttpRequests
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+
+logger = logging.getLogger("eodag.authentication.qsauth")
 
 
 class HttpQueryStringAuth(Authentication):
@@ -60,43 +57,64 @@ class HttpQueryStringAuth(Authentication):
         """Authenticate"""
         self.validate_config_credentials()
 
-        auth = QueryStringAuth(**self.config.credentials)
-
-        auth_uri = getattr(self.config, "auth_uri", None)
-        if auth_uri:
-            try:
-                response = requests.get(
-                    auth_uri,
-                    timeout=HTTP_REQ_TIMEOUT,
-                    headers=USER_AGENT,
-                    auth=auth,
-                )
-                response.raise_for_status()
-            except RequestException as e:
-                raise AuthenticationError(f"Could no authenticate: {str(e)}")
-
-        return auth
-
-    def http_requests(self) -> HttpRequests:
+    def prepare_authenticated_request(
+        self,
+        method: str,
+        url: str,
+        data: Optional[Union[Dict[str, Any], bytes]] = None,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        retries: int = 3,
+        delay: int = 1,
+        timeout: int = 10,
+        unquoted_params: Optional[List[str]] = None,
+        **kwargs: Any
+    ) -> Dict[str, Any]:
         """
-        The nested class provides implementations for the requests methods that make authenticated HTTP requests
-        using a querystring-based authentication method.
+        Prepares an authenticated HTTP request.
+
+        This function adds authentication details to the request parameters. It first authenticates the session by calling `self.authenticate()`. Then it adds the credentials stored in `self.config.credentials` to the query parameters of the URL.
+
+        Parameters:
+            method (str): The HTTP method for the request.
+            url (str): The URL for the request.
+            data (dict or bytes, optional): The data to send in the body of the request. Defaults to None.
+            json (dict, optional): The JSON data to send in the body of the request. Defaults to None.
+            headers (dict, optional): A dictionary of headers to send with the request. Defaults to None.
+            retries (int, optional): The number of times to retry the request in case of failure. Defaults to 3.
+            delay (int, optional): The delay between retries in seconds. Defaults to 1.
+            timeout (int, optional): The timeout for the request in seconds. Defaults to 10.
+            unquoted_params (list of str, optional): A list of parameters that should not be URL encoded. Defaults to None.
+            **kwargs: Variable length keyword arguments.
+
+        Returns:
+            dict: A dictionary with all the request parameters including the modified URL.
+
+        Raises:
+            Exception: If an error occurs while authenticating.
         """
-        return None
+        self.authenticate()
 
-
-class QueryStringAuth(requests.auth.AuthBase):
-    """ "QueryStringAuth custom authentication class to be used with requests module"""
-
-    def __init__(self, **parse_args):
-        self.parse_args = parse_args
-
-    def __call__(self, request):
-        """Perform the actual authentication"""
-        parts = urlparse(request.url)
+        parts = urlparse(url)
         query_dict = parse_qs(parts.query)
-        query_dict.update(self.parse_args)
-        url_without_args = parts._replace(query=None).geturl()
+        query_dict.update(self.config.credentials)
 
-        request.prepare_url(url_without_args, query_dict)
-        return request
+        # Convert the updated query parameters back into a string
+        query_string = urlencode(query_dict, doseq=True)
+
+        # Construct the new URL
+        new_parts = parts._replace(query=query_string)
+        url = urlunparse(new_parts)
+
+        return {
+            "method": method,
+            "url": url,
+            "data": data,
+            "json": json,
+            "headers": headers,
+            "retries": retries,
+            "delay": delay,
+            "timeout": timeout,
+            "unquoted_params": unquoted_params,
+            **kwargs,
+        }

@@ -39,7 +39,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.http import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.config")
 

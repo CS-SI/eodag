@@ -17,14 +17,11 @@
 # limitations under the License.
 import logging
 
-import requests
-
 from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
-from eodag.utils.http import HttpRequests
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+from eodag.utils.http import HttpRequests, http
 
 logger = logging.getLogger("eodag.plugins.auth.keycloak")
 
@@ -77,7 +74,6 @@ class KeycloakOIDCPasswordAuth(Authentication):
 
     def __init__(self, provider, config):
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
-        self.session = requests.Session()
 
     def validate_config_credentials(self):
         """Validate configured credentials"""
@@ -102,17 +98,14 @@ class KeycloakOIDCPasswordAuth(Authentication):
         }
         credentials = {k: v for k, v in self.config.credentials.items()}
         try:
-            response = self.session.post(
+            response = http.post(
                 self.TOKEN_URL_TEMPLATE.format(
                     auth_base_uri=self.config.auth_base_uri.rstrip("/"),
                     realm=self.config.realm,
                 ),
                 data=dict(req_data, **credentials),
-                headers=USER_AGENT,
-                timeout=HTTP_REQ_TIMEOUT,
             )
-            response.raise_for_status()
-        except requests.RequestException as e:
+        except RequestError as e:
             if self.retrieved_token:
                 # try using already retrieved token if authenticate() fails (OTP use-case)
                 return CodeAuthorizedAuth(
@@ -121,30 +114,17 @@ class KeycloakOIDCPasswordAuth(Authentication):
                     key=getattr(self.config, "token_qs_key", None),
                 )
             response_text = getattr(e.response, "text", "").strip()
-            # check if error is identified as auth_error in provider conf
-            auth_errors = getattr(self.config, "auth_error_code", [None])
-            if not isinstance(auth_errors, list):
-                auth_errors = [auth_errors]
-            if (
-                hasattr(e.response, "status_code")
-                and e.response.status_code in auth_errors
-            ):
-                raise AuthenticationError(
-                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                    % (e.response.status_code, response_text, self.provider)
-                )
-            # other error
-            else:
-                import traceback as tb
+            import traceback as tb
 
-                logger.error(
-                    f"Provider {self.provider} returned {e.response.status_code}: {response_text}"
+            logger.error(
+                f"Provider {self.provider} returned {e.response.status_code}: {response_text}"
+            )
+            logger.error(
+                "Something went wrong while trying to get access token:\n{}".format(
+                    tb.format_exc()
                 )
-                raise AuthenticationError(
-                    "Something went wrong while trying to get access token:\n{}".format(
-                        tb.format_exc()
-                    )
-                )
+            )
+            raise e
 
         self.retrieved_token = response.json()["access_token"]
         return CodeAuthorizedAuth(

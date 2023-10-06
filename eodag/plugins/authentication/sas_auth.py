@@ -24,7 +24,7 @@ from urllib.parse import unquote
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import format_dict_items
 from eodag.utils.exceptions import AuthenticationError
-from eodag.utils.http import HttpRequests, HttpResponse, http
+from eodag.utils.http import http
 
 logger = logging.getLogger("eodag.plugins.auth.sas_auth")
 
@@ -93,45 +93,7 @@ class SASAuth(Authentication):
             # The signed URL has expired.
             return False
 
-    def http_requests(self) -> HttpRequests:
-        """
-        Returns an instance of SASAuthHttpRequests that makes authenticated HTTP requests using a
-        SAS-based authentication method.
-
-        The returned object is initialized with the current instance of SASAuth, which means it will
-        use the same authentication information (signed URLs and their expiration dates) that have
-        been stored in the current SASAuth instance.
-
-        :return: An instance of SASAuthHttpRequests initialized with the current SASAuth instance.
-        """
-        return SASAuthHttpRequests(auth=self)
-
-
-class SASAuthHttpRequests(HttpRequests):
-    """
-    This class is a child of the HttpRequests class and is used for making HTTP requests with SAS authentication.
-
-    Attributes:
-        auth (SASAuth): An instance of the SASAuth class used for SAS authentication.
-        default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-        Defaults to None.
-    """
-
-    def __init__(
-        self, auth: SASAuth, default_headers: Optional[Dict[str, str]] = None
-    ) -> None:
-        """
-        The constructor for the SASAuthHttpRequests class.
-
-        Parameters:
-            auth (SASAuth): An instance of the SASAuth class used for SAS authentication.
-            default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-            Defaults to None.
-        """
-        super().__init__(default_headers)
-        self.auth = auth
-
-    def _send_request(
+    def prepare_authenticated_request(
         self,
         method: str,
         url: str,
@@ -143,39 +105,22 @@ class SASAuthHttpRequests(HttpRequests):
         timeout: int = 10,
         unquoted_params: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> HttpResponse:
-        """
-        This method sends an HTTP request with SAS authentication.
+    ) -> Dict[str, Any]:
 
-        Parameters:
-            method (str): The HTTP method to use for the request.
-            url (str): The URL to send the request to.
-            data (dict or bytes, optional): The data to include in the request body. Defaults to None.
-            json (dict, optional): The JSON data to include in the request body. Defaults to None.
-            headers (dict, optional): A dictionary of headers to include in the request. Defaults to None.
-            retries (int, optional): The number of times to retry the request if it fails. Defaults to 3.
-            delay (int, optional): The delay between retries in seconds. Defaults to 1.
-            timeout (int, optional): The timeout for the request in seconds. Defaults to 10.
-            unquoted_params (list of str, optional): A list of parameter names that should not be URL encoded.
-            Defaults to None.
-            **kwargs: Any additional keyword arguments are passed through to the request.
+        if not self.is_authenticated(url):
+            self.authenticate()
 
-        Returns:
-            HttpResponse: The server's response to the request.
-        """
+        url = self.signed_urls[url]
 
-        if not self.auth.is_authenticated(url):
-            self.auth.authenticate()
-
-        return super()._send_request(
-            method=method,
-            url=self.auth.signed_urls[url],
-            data=data,
-            json=json,
-            headers=headers,
-            retries=retries,
-            delay=delay,
-            timeout=timeout,
-            unquoted_params=unquoted_params,
+        return {
+            "method": method,
+            "url": url,
+            "data": data,
+            "json": json,
+            "headers": headers,
+            "retries": retries,
+            "delay": delay,
+            "timeout": timeout,
+            "unquoted_params": unquoted_params,
             **kwargs,
-        )
+        }

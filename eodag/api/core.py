@@ -20,7 +20,7 @@ import os
 import re
 import shutil
 from operator import itemgetter
-from typing import List
+from typing import List, Union
 
 import geojson
 import pkg_resources
@@ -31,6 +31,7 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
+from eodag.api.product._product import EOProduct
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
@@ -44,7 +45,14 @@ from eodag.config import (
     override_config_from_mapping,
     provider_config_init,
 )
-from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
+from eodag.plugins.apis.base import Api
+from eodag.plugins.authentication.aws_auth import AwsAuth
+from eodag.plugins.download.aws import AwsDownload
+from eodag.plugins.download.base import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    Download,
+)
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
@@ -68,7 +76,8 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedProvider,
 )
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT, fetch_stac_items
+from eodag.utils.http import HTTP_REQ_TIMEOUT
+from eodag.utils.stac_reader import fetch_stac_items
 
 logger = logging.getLogger("eodag.core")
 
@@ -1476,7 +1485,13 @@ class EODataAccessGateway(object):
 
         return search_plugins, kwargs
 
-    def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
+    def _do_search(
+        self,
+        search_plugin: Union[Search, Api],
+        count=True,
+        raise_errors=False,
+        **kwargs,
+    ):
         """Internal method that performs a search on a given provider.
 
         :param search_plugin: A search plugin
@@ -1508,14 +1523,13 @@ class EODataAccessGateway(object):
 
         need_auth = getattr(search_plugin.config, "need_auth", False)
         auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
-        can_authenticate = callable(getattr(auth_plugin, "authenticate", None))
 
         results = SearchResult([])
         total_results = 0
 
         try:
-            if need_auth and auth_plugin and can_authenticate:
-                search_plugin.auth = auth_plugin.authenticate()
+            if need_auth and auth_plugin and isinstance(search_plugin, Search):
+                search_plugin.http = auth_plugin.http_requests()
 
             res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
@@ -1600,10 +1614,7 @@ class EODataAccessGateway(object):
                         eo_product.product_type = guesses[0]
 
                 if eo_product.search_intersection is not None:
-                    download_plugin = self._plugins_manager.get_download_plugin(
-                        eo_product
-                    )
-                    eo_product.register_downloader(download_plugin, auth_plugin)
+                    self._setup_downloader(eo_product)
 
             results.extend(res)
             total_results = None if nb_res is None else total_results + nb_res
@@ -1782,14 +1793,8 @@ class EODataAccessGateway(object):
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         products = self.deserialize(filename)
-        for i, product in enumerate(products):
-            if product.downloader is None:
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(product.provider)
-                products[i].register_downloader(
-                    self._plugins_manager.get_download_plugin(product), auth
-                )
+        for product in enumerate(products):
+            self._setup_downloader(product)
         return products
 
     @_deprecated(
@@ -1867,7 +1872,7 @@ class EODataAccessGateway(object):
 
     def download(
         self,
-        product,
+        product: EOProduct,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -1927,14 +1932,27 @@ class EODataAccessGateway(object):
 
         return path
 
-    def _setup_downloader(self, product):
-        if product.downloader is None:
-            auth = product.downloader_auth
-            if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(product.provider)
-            product.register_downloader(
-                self._plugins_manager.get_download_plugin(product), auth
-            )
+    def _setup_downloader(self, product: EOProduct):
+        if product.downloader is not None:
+            return
+
+        auth = product.downloader_auth
+        if auth is None:
+            auth = self._plugins_manager.get_auth_plugin(product.provider)
+
+        download = self._plugins_manager.get_download_plugin(product)
+
+        if isinstance(download, AwsDownload):
+            if isinstance(auth, AwsAuth):
+                download.s3 = auth.s3Requests(download.requester_pays)
+            else:
+                raise MisconfiguredError(
+                    "AwsDownload is only supported with AwsAuth plugin"
+                )
+        elif isinstance(download, Download):
+            download.http = auth.http_requests()
+
+        product.register_downloader(download)
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration

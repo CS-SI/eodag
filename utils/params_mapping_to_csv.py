@@ -20,12 +20,12 @@ import json
 import logging
 import os
 
-import requests
 from lxml import html
 
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_stac_provider_config
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.exceptions import RequestError
+from eodag.utils.http import HTTP_REQ_TIMEOUT, http
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -104,7 +104,7 @@ def params_mapping_to_csv(
 
             # create metadata mapping table rows
             try:
-                page = requests.get(ogc_doc_url, timeout=HTTP_REQ_TIMEOUT)
+                page = http.get(ogc_doc_url, timeout=HTTP_REQ_TIMEOUT)
                 # page reachable, read infos from remote html
                 tree = html.fromstring(page.content.decode("utf8"))
 
@@ -155,7 +155,7 @@ def params_mapping_to_csv(
                     json.dump(params_rows, f)
                     f.write("\n")
 
-            except requests.RequestException:
+            except RequestError:
                 # page unreachable, read infos from previously saved json
                 with open(OFFLINE_OPENSEARCH_JSON, "r") as f:
                     params_rows = json.load(f)

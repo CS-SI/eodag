@@ -16,19 +16,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import re
 import string
 from random import SystemRandom
+from typing import Any, Dict, List, Optional, Union
+from urllib.parse import urlencode, urlunparse
 
-import requests
 from lxml import etree
-from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import USER_AGENT, parse_qs, repeatfunc, urlparse
+from eodag.utils import parse_qs, repeatfunc, urlparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
-from eodag.utils.http import HttpRequests
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.http import http
+
+logger = logging.getLogger("eodag.authentication.qsauth")
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):
@@ -137,7 +139,14 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 'Provider config parameter "token_provision" with value "qs" must have '
                 '"token_qs_key" config parameter as well'
             )
-        self.session = requests.Session()
+        elif self.config.token_provision != "header":
+            raise MisconfiguredError(
+                'Provider config parameter "token_provision must have value "qs" or "header"'
+            )
+
+        self.token: str = ""
+        self.token_provision = self.config.token_provision
+        self.token_key = getattr(self.config, "token_qs_key", None)
 
     def authenticate(self):
         """Authenticate"""
@@ -148,20 +157,16 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             user_consent_response = self.grant_user_consent(authentication_response)
             exchange_url = user_consent_response.url
         try:
-            token = self.exchange_code_for_token(exchange_url, state)
-        except Exception:
+            self.token = self.exchange_code_for_token(exchange_url, state)
+        except Exception as e:
             import traceback as tb
 
-            raise AuthenticationError(
+            logger.error(
                 "Something went wrong while trying to get authorization token:\n{}".format(
                     tb.format_exc()
                 )
             )
-        return CodeAuthorizedAuth(
-            token,
-            self.config.token_provision,
-            key=getattr(self.config, "token_qs_key", None),
-        )
+            raise e
 
     def authenticate_user(self, state):
         """Authenticate user"""
@@ -173,12 +178,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             "state": state,
             "redirect_uri": self.config.redirect_uri,
         }
-        authorization_response = self.session.get(
-            self.config.authorization_uri,
-            params=params,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-        )
+        authorization_response = http.get(self.config.authorization_uri, params=params)
 
         login_document = etree.HTML(authorization_response.text)
         login_form = login_document.xpath(self.config.login_form_xpath)[0]
@@ -199,9 +199,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             auth_uri = login_form.xpath(
                 self.config.login_form_xpath.rstrip("/") + "/@action"
             )[0]
-        return self.session.post(
-            auth_uri, data=login_data, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-        )
+        return http.post(auth_uri, data=login_data)
 
     def grant_user_consent(self, authentication_response):
         """Grant user consent"""
@@ -214,12 +212,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             key: self._constant_or_xpath_extracted(value, user_consent_form)
             for key, value in self.config.user_consent_form_data.items()
         }
-        return self.session.post(
-            self.config.authorization_uri,
-            data=user_consent_data,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-        )
+        return http.post(self.config.authorization_uri, data=user_consent_data)
 
     def exchange_code_for_token(self, authorized_url, state):
         """Get exchange code for token"""
@@ -257,12 +250,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         post_request_kwargs = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
-        r = self.session.post(
-            self.config.token_uri,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            **post_request_kwargs
-        )
+        r = http.post(self.config.token_uri, **post_request_kwargs)
         return r.json()[self.config.token_key]
 
     def _constant_or_xpath_extracted(self, value, form_element):
@@ -287,32 +275,61 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         )
 
-    def http_requests(self) -> HttpRequests:
+    def prepare_authenticated_request(
+        self,
+        method: str,
+        url: str,
+        data: Optional[Union[Dict[str, Any], bytes]] = None,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        retries: int = 3,
+        delay: int = 1,
+        timeout: int = 10,
+        unquoted_params: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
         """
-        The nested class provides implementations for the requests methods that make authenticated HTTP requests
-        using a oidc-based authentication method.
+        Prepares an authenticated HTTP request.
+
+        This function adds authentication details to the request parameters. It first authenticates the session by calling `self.authenticate()`. Then, depending on the value of `self.token_provision`, it adds the token to the query parameters of the URL or to the headers.
+
+        Parameters:
+            method (str): The HTTP method for the request.
+            url (str): The URL for the request.
+            data (dict or bytes, optional): The data to send in the body of the request. Defaults to None.
+            json (dict, optional): The JSON data to send in the body of the request. Defaults to None.
+            headers (dict, optional): A dictionary of headers to send with the request. Defaults to None.
+            retries (int, optional): The number of times to retry the request in case of failure. Defaults to 3.
+            delay (int, optional): The delay between retries in seconds. Defaults to 1.
+            timeout (int, optional): The timeout for the request in seconds. Defaults to 10.
+            unquoted_params (list of str, optional): A list of parameters that should not be URL encoded. Defaults to None.
+            **kwargs: Variable length keyword arguments.
+
+        Returns:
+            dict: A dictionary with all the request parameters including the possibly modified URL and headers.
+
+        Raises:
+            Exception: If an error occurs while authenticating.
         """
-        return None
+        self.authenticate()
 
+        if self.token_provision == "qs":
+            parts = urlparse(url)
+            query_dict = {**parse_qs(parts.query), self.token_key: self.token}
+            url = urlunparse(parts._replace(query=urlencode(query_dict, doseq=True)))
 
-class CodeAuthorizedAuth(AuthBase):
-    """CodeAuthorizedAuth custom authentication class to be used with requests module"""
+        else:
+            headers = {**(headers or {}), "Authorization": f"Bearer {self.token}"}
 
-    def __init__(self, token, where, key=None):
-        self.token = token
-        self.where = where
-        self.key = key
-
-    def __call__(self, request):
-        """Perform the actual authentication"""
-        if self.where == "qs":
-            parts = urlparse(request.url)
-            query_dict = parse_qs(parts.query)
-            query_dict.update({self.key: self.token})
-            url_without_args = parts._replace(query=None).geturl()
-
-            request.prepare_url(url_without_args, query_dict)
-
-        elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
-        return request
+        return {
+            "method": method,
+            "url": url,
+            "data": data,
+            "json": json,
+            "headers": headers,
+            "retries": retries,
+            "delay": delay,
+            "timeout": timeout,
+            "unquoted_params": unquoted_params,
+            **kwargs,
+        }

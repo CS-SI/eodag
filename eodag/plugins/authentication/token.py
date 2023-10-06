@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils.exceptions import MisconfiguredError
-from eodag.utils.http import HttpRequests, HttpResponse, http
+from eodag.utils.http import http
 
 logger = logging.getLogger("eodag.authentication.token")
 
@@ -143,40 +143,7 @@ class TokenAuth(Authentication):
             return False
         return True
 
-    def http_requests(self) -> HttpRequests:
-        """
-        Returns an instance of TokenAuthHttpRequests initialized with this TokenAuth instance.
-
-        :return: An instance of TokenAuthHttpRequests initialized with this TokenAuth instance.
-        """
-        return TokenAuthHttpRequests(auth=self)
-
-
-class TokenAuthHttpRequests(HttpRequests):
-    """
-    This class is a child of the HttpRequests class and is used for making HTTP requests with token authentication.
-
-    Attributes:
-        auth (TokenAuth): An instance of the TokenAuth class used for token authentication.
-        default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-        Defaults to None.
-    """
-
-    def __init__(
-        self, auth: TokenAuth, default_headers: Optional[Dict[str, str]] = None
-    ) -> None:
-        """
-        The constructor for the TokenAuthHttpRequests class.
-
-        Parameters:
-            auth (TokenAuth): An instance of the TokenAuth class used for token authentication.
-            default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-            Defaults to None.
-        """
-        super().__init__(default_headers)
-        self.auth = auth
-
-    def _send_request(
+    def prepare_authenticated_request(
         self,
         method: str,
         url: str,
@@ -188,9 +155,11 @@ class TokenAuthHttpRequests(HttpRequests):
         timeout: int = 10,
         unquoted_params: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> HttpResponse:
+    ) -> Dict[str, Any]:
         """
-        Sends an HTTP request with token authentication.
+        Prepares an authenticated HTTP request.
+
+        This function adds authentication details to the request parameters. It first checks if the current session is authenticated, and if not, it authenticates the session. Then it adds authentication headers to the request.
 
         Parameters:
             method (str): The HTTP method for the request.
@@ -201,31 +170,33 @@ class TokenAuthHttpRequests(HttpRequests):
             retries (int, optional): The number of times to retry the request in case of failure. Defaults to 3.
             delay (int, optional): The delay between retries in seconds. Defaults to 1.
             timeout (int, optional): The timeout for the request in seconds. Defaults to 10.
-            unquoted_params (list of str, optional): A list of parameters that should not be URL encoded.
-            Defaults to None.
+            unquoted_params (list of str, optional): A list of parameters that should not be URL encoded. Defaults to None.
             **kwargs: Variable length keyword arguments.
 
         Returns:
-            HttpResponse: The HTTP response received from the server.
+            dict: A dictionary with all the parameters including the modified headers.
 
         Raises:
-            Exception: If an error occurs while sending the request.
+            Exception: If an error occurs while authenticating.
         """
-        if not self.auth.is_authenticated():
-            self.auth.authenticate()
+        if not self.is_authenticated():
+            self.authenticate()
 
-        headers = {**headers, **self.auth.headers} if headers else self.auth.headers
+        # Add authentication headers
+        if headers is not None:
+            headers = {**headers, **self.auth.headers}
+        else:
+            headers = self.auth.headers
 
-        super()._send_request(
-            self,
-            method=method,
-            url=url,
-            data=data,
-            json=json,
-            headers=headers,
-            retries=retries,
-            delay=delay,
-            timeout=timeout,
-            unquoted_params=unquoted_params,
+        return {
+            "method": method,
+            "url": url,
+            "data": data,
+            "json": json,
+            "headers": headers,
+            "retries": retries,
+            "delay": delay,
+            "timeout": timeout,
+            "unquoted_params": unquoted_params,
             **kwargs,
-        )
+        }

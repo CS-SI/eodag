@@ -19,7 +19,6 @@
 from typing import Any, Dict, List, Optional, Union
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils.http import HttpRequests, HttpResponse
 
 
 class HTTPHeaderAuth(Authentication):
@@ -63,45 +62,7 @@ class HTTPHeaderAuth(Authentication):
             for header, value in self.config.headers.items()
         }
 
-    def http_requests(self) -> HttpRequests:
-        """
-        Returns an instance of HeaderAuthHttpRequests initialized with the current instance.
-
-        This method is used to create a new HTTP request object that uses header-based authentication.
-        The returned object provides implementations for the requests methods that make authenticated HTTP requests.
-
-        :return: An instance of HeaderAuthHttpRequests initialized with the current instance.
-        """
-        return HeaderAuthHttpRequests(header_auth=self)
-
-
-class HeaderAuthHttpRequests(HttpRequests):
-    """
-    This class is a child of the HttpRequests class and is used for making HTTP requests with header authentication.
-
-    Attributes:
-        header_auth (HTTPHeaderAuth): An instance of the HTTPHeaderAuth class used for header authentication.
-        default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-        Defaults to None.
-    """
-
-    def __init__(
-        self,
-        header_auth: HTTPHeaderAuth,
-        default_headers: Optional[Dict[str, str]] = None,
-    ) -> None:
-        """
-        The constructor for the HeaderAuthHttpRequests class.
-
-        Parameters:
-            header_auth (HTTPHeaderAuth): An instance of the HTTPHeaderAuth class used for header authentication.
-            default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-            Defaults to None.
-        """
-        super().__init__(default_headers)
-        self.header_auth = header_auth
-
-    def _send_request(
+    def prepare_authenticated_request(
         self,
         method: str,
         url: str,
@@ -112,10 +73,12 @@ class HeaderAuthHttpRequests(HttpRequests):
         delay: int = 1,
         timeout: int = 10,
         unquoted_params: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> HttpResponse:
+        **kwargs: Any
+    ) -> Dict[str, Any]:
         """
-        Sends an HTTP request with header authentication.
+        Prepares an authenticated HTTP request with header authentication.
+
+        This function adds authentication details to the request headers. It first authenticates the session by calling `self.header_auth.authenticate()`. Then it updates the headers with the authentication headers from `self.header_auth`.
 
         Parameters:
             method (str): The HTTP method for the request.
@@ -126,31 +89,29 @@ class HeaderAuthHttpRequests(HttpRequests):
             retries (int, optional): The number of times to retry the request in case of failure. Defaults to 3.
             delay (int, optional): The delay between retries in seconds. Defaults to 1.
             timeout (int, optional): The timeout for the request in seconds. Defaults to 10.
-            unquoted_params (list of str, optional): A list of parameters that should not be URL encoded.
-            Defaults to None.
+            unquoted_params (list of str, optional): A list of parameters that should not be URL encoded. Defaults to None.
             **kwargs: Variable length keyword arguments.
 
         Returns:
-            HttpResponse: The HTTP response received from the server.
+            dict: A dictionary with all the request parameters including the possibly modified headers.
 
         Raises:
-            Exception: If an error occurs while sending the request.
+            Exception: If an error occurs while authenticating.
         """
-        self.header_auth.authenticate()
+        self.authenticate()
 
         headers = headers or {}
-        headers = {**self.header_auth.headers, **headers}
+        headers = {**self.headers, **headers}
 
-        super()._send_request(
-            self,
-            method=method,
-            url=url,
-            data=data,
-            json=json,
-            headers=headers,
-            retries=retries,
-            delay=delay,
-            timeout=timeout,
-            unquoted_params=unquoted_params,
+        return {
+            "method": method,
+            "url": url,
+            "data": data,
+            "json": json,
+            "headers": headers,
+            "retries": retries,
+            "delay": delay,
+            "timeout": timeout,
+            "unquoted_params": unquoted_params,
             **kwargs,
-        )
+        }

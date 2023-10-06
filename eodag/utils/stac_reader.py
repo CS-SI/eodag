@@ -17,19 +17,15 @@
 # limitations under the License.
 import logging
 import re
-import socket
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
 
 import concurrent.futures
 import orjson
 import pystac
 
-from eodag.utils.exceptions import STACOpenerError
+from eodag.utils.exceptions import RequestError, STACOpenerError
+from eodag.utils.http import http
 
 logger = logging.getLogger("eodag.utils.stac_reader")
-
-HTTP_REQ_TIMEOUT = 5
 
 
 class _TextOpener:
@@ -58,8 +54,8 @@ class _TextOpener:
     def read_http_remote_json(self, url, as_json):
         """Read JSON remote HTTP file"""
         try:
-            res = urlopen(url, timeout=self.timeout)
-            content_type = res.getheader("Content-Type")
+            res = http.get(url, timeout=self.timeout)
+            content_type = res.headers.get("Content-Type")
             if content_type is None:
                 encoding = "utf-8"
             else:
@@ -68,18 +64,9 @@ class _TextOpener:
                     encoding = "utf-8"
                 else:
                     encoding = m.group(1)
-            content = res.read().decode(encoding)
+            content = res.content.decode(encoding)
             return orjson.loads(content) if as_json else content
-        except URLError as e:
-            if isinstance(e.reason, socket.timeout):
-                logger.error("%s: %s", url, e)
-                raise socket.timeout(
-                    f"{url} with a timeout of {self.timeout} seconds"
-                ) from None
-            else:
-                logger.debug("read_http_remote_json is not the right STAC opener")
-                raise STACOpenerError
-        except HTTPError:
+        except RequestError:
             logger.debug("read_http_remote_json is not the right STAC opener")
             raise STACOpenerError
 
