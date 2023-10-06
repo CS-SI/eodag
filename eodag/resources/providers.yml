@@ -3339,6 +3339,7 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
+    timeout: 60
     need_auth: false
     dont_quote:
       - '['
