@@ -551,16 +551,16 @@ class StacCollection(StacCommon):
 
         collection_list = []
         for product_type in product_types:
-            # get available providers each product_type
-            providers = [
-                plugin.provider
-                for plugin in self.eodag_api._plugins_manager.get_search_plugins(
-                    product_type=product_type["ID"]
-                )
-            ]
-            if self.provider and self.provider in providers:
-                providers.remove(self.provider)
-                providers.insert(0, self.provider)
+            if self.provider:
+                providers = [self.provider]
+            else:
+                # get available providers for each product_type
+                providers = [
+                    plugin.provider
+                    for plugin in self.eodag_api._plugins_manager.get_search_plugins(
+                        product_type=product_type["ID"]
+                    )
+                ]
             providers_models = []
             for provider in providers:
                 provider_m = jsonpath_parse_dict_items(
