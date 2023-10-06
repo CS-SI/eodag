@@ -517,13 +517,7 @@ class StacCollection(StacCommon):
         if filters is None:
             filters = {}
         try:
-            guessed_product_types = self.eodag_api.guess_product_type(
-                instrument=filters.get("instrument"),
-                platform=filters.get("platform"),
-                platformSerialIdentifier=filters.get("platformSerialIdentifier"),
-                sensorType=filters.get("sensorType"),
-                processingLevel=filters.get("processingLevel"),
-            )
+            guessed_product_types = self.eodag_api.guess_product_type(**filters)
         except NoMatchingProductType:
             guessed_product_types = []
         if guessed_product_types:
@@ -625,10 +619,12 @@ class StacCollection(StacCommon):
         :returns: Collection dictionnary
         :rtype: dict
         """
-        collection_list = self.__get_collection_list()
+        collection_list = self.__get_collection_list(
+            filters={"productType": collection_id}
+        )
 
         try:
-            collection = [c for c in collection_list if c["id"] == collection_id][0]
+            collection = collection_list[0]
         except IndexError:
             raise NotAvailableError("%s collection not found" % collection_id)
 
