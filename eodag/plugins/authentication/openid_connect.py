@@ -19,16 +19,14 @@
 import re
 import string
 from random import SystemRandom
+from typing import Any
 
-import requests
 from lxml import etree
-from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import USER_AGENT, parse_qs, repeatfunc, urlparse
+from eodag.utils import parse_qs, repeatfunc, urlparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
-from eodag.utils.http import HttpRequests
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.http import HttpRequestParams, add_qs_params
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):
@@ -124,8 +122,13 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
     RESPONSE_TYPE = "code"
     CONFIG_XPATH_REGEX = re.compile(r"^xpath\((?P<xpath_value>.+)\)$")
 
-    def __init__(self, provider, config):
-        super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
+    token: str = ""
+    where: str = ""
+    key: str = ""
+
+    def validate_config_credentials(self):
+        """Validate configured credentials"""
+        super(OIDCAuthorizationCodeFlowAuth, self).validate_config_credentials()
         if getattr(self.config, "token_provision", None) not in ("qs", "header"):
             raise MisconfiguredError(
                 'Provider config parameter "token_provision" must be one of "qs" or "header"'
@@ -137,10 +140,12 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 'Provider config parameter "token_provision" with value "qs" must have '
                 '"token_qs_key" config parameter as well'
             )
-        self.session = requests.Session()
+        self.where = self.config.token_provision
+        self.key = getattr(self.config, "token_qs_key", "")
 
-    def authenticate(self):
+    def authenticate(self, **kwargs: Any) -> Any:
         """Authenticate"""
+        self.validate_config_credentials()
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
@@ -148,7 +153,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             user_consent_response = self.grant_user_consent(authentication_response)
             exchange_url = user_consent_response.url
         try:
-            token = self.exchange_code_for_token(exchange_url, state)
+            self.token = self.exchange_code_for_token(exchange_url, state)
         except Exception:
             import traceback as tb
 
@@ -157,11 +162,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                     tb.format_exc()
                 )
             )
-        return CodeAuthorizedAuth(
-            token,
-            self.config.token_provision,
-            key=getattr(self.config, "token_qs_key", None),
-        )
 
     def authenticate_user(self, state):
         """Authenticate user"""
@@ -173,11 +173,8 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             "state": state,
             "redirect_uri": self.config.redirect_uri,
         }
-        authorization_response = self.session.get(
-            self.config.authorization_uri,
-            params=params,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
+        authorization_response = self.http.get(
+            self.config.authorization_uri, params=params
         )
 
         login_document = etree.HTML(authorization_response.text)
@@ -191,7 +188,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         }
         # Add the credentials
         login_data.update(self.config.credentials)
-        auth_uri = getattr(self.config, "authentication_uri", None)
+        auth_uri = getattr(self.config, "authentication_uri")
         # Retrieve the authentication_uri from the login form if so configured
         if self.config.authentication_uri_source == "login-form":
             # Given that the login_form_xpath resolves to an HTML element, if suffices to add '/@action' to get
@@ -199,9 +196,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             auth_uri = login_form.xpath(
                 self.config.login_form_xpath.rstrip("/") + "/@action"
             )[0]
-        return self.session.post(
-            auth_uri, data=login_data, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-        )
+        return self.http.post(auth_uri, data=login_data)
 
     def grant_user_consent(self, authentication_response):
         """Grant user consent"""
@@ -214,12 +209,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             key: self._constant_or_xpath_extracted(value, user_consent_form)
             for key, value in self.config.user_consent_form_data.items()
         }
-        return self.session.post(
-            self.config.authorization_uri,
-            data=user_consent_data,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-        )
+        return self.http.post(self.config.authorization_uri, data=user_consent_data)
 
     def exchange_code_for_token(self, authorized_url, state):
         """Get exchange code for token"""
@@ -257,12 +247,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         post_request_kwargs = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
-        r = self.session.post(
-            self.config.token_uri,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            **post_request_kwargs
-        )
+        r = self.http.post(self.config.token_uri, **post_request_kwargs)  # type: ignore
         return r.json()[self.config.token_key]
 
     def _constant_or_xpath_extracted(self, value, form_element):
@@ -287,32 +272,27 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         )
 
-    def http_requests(self) -> HttpRequests:
+    def prepare_authenticated_http_request(
+        self, params: HttpRequestParams
+    ) -> HttpRequestParams:
         """
-        The nested class provides implementations for the requests methods that make authenticated HTTP requests
-        using a oidc-based authentication method.
+        Prepare an authenticated HTTP request.
+
+        :param HttpRequestParams params: The parameters for the HTTP request.
+
+        :return: The parameters for the authenticated HTTP request.
+        :rtype: HttpRequestParams
+
+        :note: This function modifies the `params` instance directly and also returns it. The returned value is the same
+            instance that was passed in, not a new one.
         """
-        return None
+        # generate a new access token
+        self.authenticate()
 
-
-class CodeAuthorizedAuth(AuthBase):
-    """CodeAuthorizedAuth custom authentication class to be used with requests module"""
-
-    def __init__(self, token, where, key=None):
-        self.token = token
-        self.where = where
-        self.key = key
-
-    def __call__(self, request):
-        """Perform the actual authentication"""
+        # Add token to headers or query parameters based on self.where
         if self.where == "qs":
-            parts = urlparse(request.url)
-            query_dict = parse_qs(parts.query)
-            query_dict.update({self.key: self.token})
-            url_without_args = parts._replace(query=None).geturl()
+            params.url = add_qs_params(params.url, {self.key: [self.token]})
+        else:
+            params.headers["Authorization"] = f"Bearer {self.token}"
 
-            request.prepare_url(url_without_args, query_dict)
-
-        elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
-        return request
+        return params

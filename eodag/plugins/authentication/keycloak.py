@@ -16,15 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-
-import requests
+from typing import Any
 
 from eodag.plugins.authentication import Authentication
-from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
-from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
-from eodag.utils.http import HttpRequests
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+from eodag.utils.http import HttpRequestParams, add_qs_params
 
 logger = logging.getLogger("eodag.plugins.auth.keycloak")
 
@@ -72,12 +68,9 @@ class KeycloakOIDCPasswordAuth(Authentication):
     GRANT_TYPE = "password"
     TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
-    # already retrieved token store, to be used if authenticate() fails (OTP use-case)
-    retrieved_token = None
-
-    def __init__(self, provider, config):
-        super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
-        self.session = requests.Session()
+    # token store, to be used if authenticate() fails (OTP use-case)
+    token: str = ""
+    key: str = ""
 
     def validate_config_credentials(self):
         """Validate configured credentials"""
@@ -86,15 +79,27 @@ class KeycloakOIDCPasswordAuth(Authentication):
         for param in self.REQUIRED_PARAMS:
             if not hasattr(self.config, param):
                 raise MisconfiguredError(
-                    "The following authentication configuration is missing for provider ",
-                    f"{self.provider}: {param}",
+                    "The following authentication configuration is missing for provider "
+                    f"{self.provider}: {param}"
                 )
 
-    def authenticate(self):
+        if self.config.token_provision == "qs" and not getattr(
+            self.config, "token_qs_key", ""
+        ):
+            raise MisconfiguredError(
+                'Provider config parameter "token_provision" with value "qs" must have '
+                '"token_qs_key" config parameter as well'
+            )
+
+        self.where = self.config.token_provision
+        self.key = getattr(self.config, "token_qs_key", "")
+
+    def authenticate(self, **kwargs: Any) -> Any:
         """
         Makes authentication request
         """
         self.validate_config_credentials()
+
         req_data = {
             "client_id": self.config.client_id,
             "client_secret": self.config.client_secret,
@@ -102,60 +107,47 @@ class KeycloakOIDCPasswordAuth(Authentication):
         }
         credentials = {k: v for k, v in self.config.credentials.items()}
         try:
-            response = self.session.post(
-                self.TOKEN_URL_TEMPLATE.format(
+            response = self.http.post(
+                url=self.TOKEN_URL_TEMPLATE.format(
                     auth_base_uri=self.config.auth_base_uri.rstrip("/"),
                     realm=self.config.realm,
                 ),
                 data=dict(req_data, **credentials),
-                headers=USER_AGENT,
-                timeout=HTTP_REQ_TIMEOUT,
             )
-            response.raise_for_status()
-        except requests.RequestException as e:
-            if self.retrieved_token:
-                # try using already retrieved token if authenticate() fails (OTP use-case)
-                return CodeAuthorizedAuth(
-                    self.retrieved_token,
-                    self.config.token_provision,
-                    key=getattr(self.config, "token_qs_key", None),
-                )
-            response_text = getattr(e.response, "text", "").strip()
-            # check if error is identified as auth_error in provider conf
-            auth_errors = getattr(self.config, "auth_error_code", [None])
-            if not isinstance(auth_errors, list):
-                auth_errors = [auth_errors]
-            if (
-                hasattr(e.response, "status_code")
-                and e.response.status_code in auth_errors
-            ):
-                raise AuthenticationError(
-                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                    % (e.response.status_code, response_text, self.provider)
-                )
-            # other error
-            else:
+            self.token = response.json()["access_token"]
+        except RequestError as e:
+            # try using already retrieved token if authenticate() fails (OTP use-case)
+            if not self.token:
                 import traceback as tb
 
-                logger.error(
-                    f"Provider {self.provider} returned {e.response.status_code}: {response_text}"
-                )
+                logger.error(f"Provider {self.provider} returned {e}")
                 raise AuthenticationError(
                     "Something went wrong while trying to get access token:\n{}".format(
                         tb.format_exc()
                     )
                 )
 
-        self.retrieved_token = response.json()["access_token"]
-        return CodeAuthorizedAuth(
-            self.retrieved_token,
-            self.config.token_provision,
-            key=getattr(self.config, "token_qs_key", None),
-        )
+    def prepare_authenticated_http_request(
+        self, params: HttpRequestParams
+    ) -> HttpRequestParams:
+        """
+        Prepare an authenticated HTTP request.
 
-    def http_requests(self) -> HttpRequests:
+        :param HttpRequestParams params: The parameters for the HTTP request.
+
+        :return: The parameters for the authenticated HTTP request.
+        :rtype: HttpRequestParams
+
+        :note: This function modifies the `params` instance directly and also returns it. The returned value is the same
+            instance that was passed in, not a new one.
         """
-        The nested class provides implementations for the requests methods that make authenticated HTTP requests
-        using a keycloak-based authentication method.
-        """
-        return None
+        # generate a new access token
+        self.authenticate()
+
+        # Add token to headers or query parameters based on self.where
+        if self.where == "qs":
+            params.url = add_qs_params(params.url, {self.key: [self.token]})
+        else:
+            params.headers["Authorization"] = f"Bearer {self.token}"
+
+        return params

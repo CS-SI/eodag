@@ -25,10 +25,10 @@ from itertools import chain
 from urllib.parse import parse_qs, urlparse
 
 import geojson
-import requests_ftp
 from lxml import etree
 from stream_zip import NO_COMPRESSION_64, stream_zip
 
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -59,7 +59,6 @@ from eodag.utils.exceptions import (
     RequestError,
 )
 from eodag.utils.http import HttpResponse
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
 logger = logging.getLogger("eodag.plugins.download.http")
 
@@ -99,8 +98,7 @@ class HTTPDownload(Download):
 
     def orderDownload(
         self,
-        product,
-        auth=None,
+        product: EOProduct,
         **kwargs,
     ):
         """Send product order request.
@@ -124,8 +122,6 @@ class HTTPDownload(Download):
 
         :param product: The EO product to order
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
@@ -142,24 +138,23 @@ class HTTPDownload(Download):
             order_url = product.properties["orderLink"]
             order_kwargs = {}
 
-        response: HttpResponse
-        with self.http.request(
-            method=order_method,
-            url=order_url,
-            auth=auth,
-            headers=dict(getattr(self.config, "order_headers", {}), **USER_AGENT),
-            **order_kwargs,
-        ) as response:
-            try:
+        try:
+            with self.http.request(
+                method=order_method,
+                url=order_url,
+                headers=getattr(self.config, "order_headers", None),
+                **order_kwargs,  # type: ignore
+            ) as response:
                 ordered_message = response.text
                 logger.debug(ordered_message)
                 logger.info("%s was ordered", product.properties["title"])
-            except RequestError as e:
-                logger.warning(
-                    "%s could not be ordered, request returned %s",
-                    product.properties["title"],
-                    f"{e.response.content} - {e}",
-                )
+        except RequestError as e:
+            logger.warning(
+                "%s could not be ordered, request returned %s",
+                product.properties["title"],
+                e,
+            )
+            return
 
         order_metadata_mapping = getattr(self.config, "order_on_response", {}).get(
             "metadata_mapping", {}
@@ -183,8 +178,7 @@ class HTTPDownload(Download):
 
     def orderDownloadStatus(
         self,
-        product,
-        auth=None,
+        product: EOProduct,
         **kwargs,
     ):
         """Send product order status request.
@@ -204,8 +198,6 @@ class HTTPDownload(Download):
 
         :param product: The ordered EO product
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
@@ -222,16 +214,13 @@ class HTTPDownload(Download):
             status_url = product.properties["orderStatusLink"]
             status_kwargs = {}
 
-        with self.http.request(
-            method=status_method,
-            url=status_url,
-            auth=auth,
-            headers=dict(
-                getattr(self.config, "order_status_headers", {}), **USER_AGENT
-            ),
-            **status_kwargs,
-        ) as response:
-            try:
+        try:
+            with self.http.request(
+                method=status_method,
+                url=status_url,
+                headers=getattr(self.config, "order_status_headers", None),
+                **status_kwargs,  # type: ignore
+            ) as response:
                 status_message = response.text
                 status_dict = response.json()
                 # display progress percentage
@@ -297,7 +286,6 @@ class HTTPDownload(Download):
                                 f"{product.properties['searchLink']} request. "
                                 f"Please search and download {product} again"
                             )
-                            return
                         try:
                             assert isinstance(
                                 results, list
@@ -335,18 +323,17 @@ class HTTPDownload(Download):
                             "JSON response parsing is not implemented yet for new searches "
                             f"after order success. Please search and download {product} again"
                         )
-
-            except RequestError as e:
-                logger.warning(
-                    "%s order status could not be checked, request returned %s",
-                    product.properties["title"],
-                    e,
-                )
+        except RequestError as e:
+            logger.warning(
+                "%s order status could not be checked, request returned %s",
+                product.properties["title"],
+                e,
+            )
+            return
 
     def download(
         self,
-        product,
-        auth=None,
+        product: EOProduct,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -381,7 +368,6 @@ class HTTPDownload(Download):
                     product,
                     fs_path.replace(".zip", ""),
                     record_filename,
-                    auth,
                     progress_callback,
                     **kwargs,
                 )
@@ -393,16 +379,16 @@ class HTTPDownload(Download):
         url = product.remote_location
 
         @self._download_retry(product, wait, timeout)
-        def download_request(product, auth, progress_callback, wait, timeout, **kwargs):
+        def download_request(product, progress_callback, wait, timeout, **kwargs):
             chunks = self._stream_download(
-                product, auth, progress_callback, wait, timeout, **kwargs
+                product, progress_callback, wait, timeout, **kwargs
             )
 
             with open(fs_path, "wb") as fhandle:
                 for chunk in chunks:
                     fhandle.write(chunk)
 
-        download_request(product, auth, progress_callback, wait, timeout, **kwargs)
+        download_request(product, progress_callback, wait, timeout, **kwargs)
 
         with open(record_filename, "w") as fh:
             fh.write(url)
@@ -445,21 +431,18 @@ class HTTPDownload(Download):
 
     def _stream_download_dict(
         self,
-        product,
-        auth=None,
+        product: EOProduct,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs,
     ):
-        r"""
+        """
         Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -481,7 +464,7 @@ class HTTPDownload(Download):
         ):
             try:
                 chunks_tuples = self._stream_download_assets(
-                    product, auth, progress_callback, **kwargs
+                    product, progress_callback, **kwargs
                 )
 
                 outputs_filename = (
@@ -500,7 +483,7 @@ class HTTPDownload(Download):
                 pass
 
         chunks = self._stream_download(
-            product, auth, progress_callback, wait, timeout, **kwargs
+            product, progress_callback, wait, timeout, **kwargs
         )
         # start reading chunks to set product.headers
         first_chunk = next(chunks)
@@ -510,6 +493,7 @@ class HTTPDownload(Download):
             headers=product.headers,
         )
 
+    # TODO: this method is not used ?
     def _process_exception(self, e, product, ordered_message):
         # product not available
         if product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
@@ -538,7 +522,6 @@ class HTTPDownload(Download):
     def _stream_download(
         self,
         product,
-        auth=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -549,8 +532,6 @@ class HTTPDownload(Download):
         and returns a generator yielding the chunks of the file
         :param product: product for which the assets should be downloaded
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -573,10 +554,10 @@ class HTTPDownload(Download):
             and "storageStatus" in product.properties
             and product.properties["storageStatus"] == OFFLINE_STATUS
         ):
-            self.orderDownload(product=product, auth=auth)
+            self.orderDownload(product)
 
         if product.properties.get("orderStatusLink", None):
-            self.orderDownloadStatus(product=product, auth=auth)
+            self.orderDownloadStatus(product)
 
         params = kwargs.pop("dl_url_params", None) or getattr(
             self.config, "dl_url_params", {}
@@ -599,19 +580,13 @@ class HTTPDownload(Download):
             req_url = url
             req_kwargs = {}
 
-        # url where data is downloaded from can be ftp -> add ftp adapter
-
-        requests_ftp.monkeypatch_session(self.http.session)
-        self.stream: HttpResponse
         with self.http.request(
             req_method,
             req_url,
             stream=True,
-            auth=auth,
             params=params,
-            headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            **req_kwargs,
+            **req_kwargs,  # type: ignore
         ) as self.stream:
             stream_size = self._check_stream_size(product)
             product.headers = self.stream.headers
@@ -623,8 +598,7 @@ class HTTPDownload(Download):
 
     def _stream_download_assets(
         self,
-        product,
-        auth=None,
+        product: EOProduct,
         progress_callback=None,
         **kwargs,
     ):
@@ -647,7 +621,7 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = self._get_asset_sizes(assets_values, auth, params)
+        total_size = self._get_asset_sizes(assets_values, params)
 
         progress_callback.reset(total=total_size)
 
@@ -692,9 +666,7 @@ class HTTPDownload(Download):
             with self.http.get(
                 asset["href"],
                 stream=True,
-                auth=auth,
                 params=params,
-                headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             ) as stream:
                 asset_rel_path = (
@@ -731,7 +703,6 @@ class HTTPDownload(Download):
         product,
         fs_dir_path,
         record_filename,
-        auth=None,
         progress_callback=None,
         **kwargs,
     ):
@@ -747,7 +718,7 @@ class HTTPDownload(Download):
             raise NotAvailableError("No assets available for %s" % product)
 
         chunks_tuples = self._stream_download_assets(
-            product, auth, progress_callback, **kwargs
+            product, progress_callback, **kwargs
         )
 
         # remove existing incomplete file
@@ -815,6 +786,7 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
+    # TODO: not used ?
     def _handle_asset_exception(self, e, asset):
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
@@ -833,19 +805,14 @@ class HTTPDownload(Download):
             logger.warning("Unexpected error: %s" % e)
             logger.warning("Skipping %s" % asset["href"])
 
-    def _get_asset_sizes(self, assets_values, auth, params, zipped=False):
+    def _get_asset_sizes(self, assets_values, params, zipped=False):
         total_size = 0
 
         # loop for assets size & filename
         for asset in assets_values:
             if not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
-                asset_headers = self.http.head(
-                    asset["href"],
-                    auth=auth,
-                    headers=USER_AGENT,
-                    timeout=HTTP_REQ_TIMEOUT,
-                ).headers
+                asset_headers = self.http.head(asset["href"]).headers
 
                 if not asset.get("size", 0):
                     # size from HEAD header / Content-length
@@ -867,11 +834,9 @@ class HTTPDownload(Download):
 
                 if not asset.get("size", 0):
                     # GET request for size
-                    stream: HttpResponse
                     with self.http.get(
                         asset["href"],
                         stream=True,
-                        auth=auth,
                         params=params,
                         headers=USER_AGENT,
                         timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -889,7 +854,7 @@ class HTTPDownload(Download):
                 total_size += asset["size"]
         return total_size
 
-    def _stream_assets(self, product, auth=None, progress_callback=None, **kwargs):
+    def _stream_assets(self, product, progress_callback=None, **kwargs):
         assets_values = [
             a for a in getattr(product, "assets", {}).values() if "href" in a
         ]
@@ -899,7 +864,7 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = self._get_asset_sizes(assets_values, auth, params)
+        total_size = self._get_asset_sizes(assets_values, params)
         progress_callback.reset(total_size)
 
         # zipped files properties
@@ -916,7 +881,6 @@ class HTTPDownload(Download):
             with self.http.get(
                 asset["href"],
                 stream=True,
-                auth=auth,
                 params=params,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -949,7 +913,6 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products,
-        auth=None,
         downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
@@ -961,7 +924,6 @@ class HTTPDownload(Download):
         """
         return super(HTTPDownload, self).download_all(
             products,
-            auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
             wait=wait,

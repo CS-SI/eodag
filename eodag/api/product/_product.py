@@ -21,18 +21,20 @@ import os
 import re
 import urllib.parse
 
-import requests
-from requests import RequestException
 from shapely import geometry, geos, wkb, wkt
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
+from eodag.plugins.authentication.aws_auth import AwsAuth
+from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    Download,
 )
-from eodag.utils import USER_AGENT, ProgressCallback, get_geometry_from_various
+from eodag.utils import ProgressCallback, get_geometry_from_various
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 try:
@@ -221,7 +223,7 @@ class EOProduct(object):
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def register_downloader(self, downloader, authenticator):
+    def register_downloader(self, downloader: Download, authenticator: Authentication):
         """Give to the product the information needed to download itself.
 
         :param downloader: The download method that it can use
@@ -267,6 +269,11 @@ class EOProduct(object):
                     logger.debug(
                         f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
                     )
+
+        if isinstance(downloader, AwsDownload) and isinstance(authenticator, AwsAuth):
+            downloader.s3 = authenticator.s3Requests()
+        else:
+            downloader.http = authenticator.http_requests()
 
     def download(
         self,
@@ -390,6 +397,12 @@ class EOProduct(object):
         :rtype: str
         """
 
+        if self.downloader is None:
+            raise RuntimeError(
+                "EO product is unable to download quicklook due to lacking of a "
+                "download plugin"
+            )
+
         def format_quicklook_address():
             """If the quicklook address is a Python format string, resolve the
             formatting with the properties of the product."""
@@ -450,26 +463,12 @@ class EOProduct(object):
                     fd.write(base64.b64decode(img))
                 return quicklook_file
 
-            auth = (
-                self.downloader_auth.authenticate()
-                if self.downloader_auth is not None
-                else None
-            )
-            with requests.get(
-                self.properties["quicklook"],
-                stream=True,
-                auth=auth,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            ) as stream:
-                try:
-                    stream.raise_for_status()
-                except RequestException as e:
-                    import traceback as tb
-
-                    logger.error("Error while getting resource :\n%s", tb.format_exc())
-                    return str(e)
-                else:
+            try:
+                with self.downloader.http.get(
+                    self.properties["quicklook"],
+                    stream=True,
+                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                ) as stream:
                     stream_size = int(stream.headers.get("content-length", 0))
                     progress_callback.reset(stream_size)
                     with open(quicklook_file, "wb") as fhandle:
@@ -478,6 +477,11 @@ class EOProduct(object):
                                 fhandle.write(chunk)
                                 progress_callback(len(chunk))
                     logger.info("Download recorded in %s", quicklook_file)
+            except Exception as e:
+                import traceback as tb
+
+                logger.error("Error while getting resource :\n%s", tb.format_exc())
+                return str(e)
 
             # close progress bar if needed
             if close_progress_callback:

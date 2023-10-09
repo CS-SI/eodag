@@ -20,14 +20,12 @@ import os
 import tempfile
 
 import orjson
-import requests
 import yaml
 import yaml.constructor
 import yaml.parser
 from pkg_resources import resource_filename
 
 from eodag.utils import (
-    USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
     deepcopy,
@@ -38,8 +36,8 @@ from eodag.utils import (
     update_nested_dict,
     uri_to_path,
 )
-from eodag.utils.exceptions import ValidationError
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.exceptions import RequestError, ValidationError
+from eodag.utils.http import http
 
 logger = logging.getLogger("eodag.config")
 
@@ -481,12 +479,8 @@ def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
     if conf_uri.lower().startswith("http"):
         # read from remote
         try:
-            response = requests.get(
-                conf_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
+            return http.get(conf_uri).json()
+        except RequestError as e:
             logger.debug(e)
             logger.warning(
                 "Could not read remote external product types conf from %s", conf_uri

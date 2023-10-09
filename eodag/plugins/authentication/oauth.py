@@ -16,8 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
+
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils.http import HttpRequests
 
 
 class OAuth(Authentication):
@@ -28,16 +29,9 @@ class OAuth(Authentication):
         self.access_key = None
         self.secret_key = None
 
-    def authenticate(self):
+    def authenticate(self, **kwargs: Any) -> Any:
         """Authenticate"""
         self.validate_config_credentials()
         self.access_key = self.config.credentials["aws_access_key_id"]
         self.secret_key = self.config.credentials["aws_secret_access_key"]
         return self.access_key, self.secret_key
-
-    def http_requests(self) -> HttpRequests:
-        """
-        The nested class provides implementations for the requests methods that make authenticated HTTP requests
-        using a oauth-based authentication method.
-        """
-        return None

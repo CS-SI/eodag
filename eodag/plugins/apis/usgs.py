@@ -20,9 +20,7 @@ import shutil
 import tarfile
 import zipfile
 
-import requests
 from jsonpath_ng.ext import parse
-from requests import RequestException
 from usgs import USGSAuthExpiredError, USGSError, api
 
 from eodag.api.product import EOProduct
@@ -39,13 +37,13 @@ from eodag.plugins.download.base import (
 )
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
-    USER_AGENT,
     ProgressCallback,
     format_dict_items,
     path_to_uri,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
+    EODAGError,
     NoMatchingProductType,
     NotAvailableError,
     RequestError,
@@ -202,7 +200,7 @@ class UsgsApi(Download, Api):
                 f"Product type {usgs_dataset} may not exist on USGS EE catalog"
             )
             api.logout()
-            raise RequestError(e)
+            raise RequestError(**e.__dict__)
 
         api.logout()
 
@@ -291,34 +289,20 @@ class UsgsApi(Download, Api):
         @self._download_retry(product, wait, timeout)
         def download_request(product, fs_path, progress_callback, **kwargs):
             try:
-                with requests.get(
+                with self.http.get(
                     req_url,
                     stream=True,
-                    headers=USER_AGENT,
                     timeout=wait * 60,
                 ) as stream:
-                    try:
-                        stream.raise_for_status()
-                    except RequestException as e:
-                        if hasattr(e, "response") and hasattr(e.response, "content"):
-                            error_message = f"{e.response.content} - {e}"
-                        else:
-                            error_message = str(e)
-                        raise NotAvailableError(error_message)
-                    else:
-                        stream_size = int(stream.headers.get("content-length", 0))
-                        progress_callback.reset(total=stream_size)
-                        with open(fs_path, "wb") as fhandle:
-                            for chunk in stream.iter_content(chunk_size=64 * 1024):
-                                if chunk:
-                                    fhandle.write(chunk)
-                                    progress_callback(len(chunk))
-            except requests.exceptions.Timeout as e:
-                if hasattr(e, "response") and hasattr(e.response, "content"):
-                    error_message = f"{e.response.content} - {e}"
-                else:
-                    error_message = str(e)
-                raise NotAvailableError(error_message)
+                    stream_size = int(stream.headers.get("content-length", 0))
+                    progress_callback.reset(total=stream_size)
+                    with open(fs_path, "wb") as fhandle:
+                        for chunk in stream.iter_content(chunk_size=64 * 1024):
+                            if chunk:
+                                fhandle.write(chunk)
+                                progress_callback(len(chunk))
+            except EODAGError as e:
+                raise NotAvailableError(**e.__dict__)
 
         download_request(product, fs_path, progress_callback, **kwargs)
 

@@ -180,7 +180,7 @@ class PluginManager(object):
             ]:
                 yield get_plugin()
 
-    def get_download_plugin(self, product):
+    def get_download_plugin(self, product) -> Download:
         """Build and return the download plugin capable of downloading the given
         product.
 

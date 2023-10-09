@@ -16,16 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from urllib.parse import parse_qs, urlparse
-
-import requests.auth
-from requests.exceptions import RequestException
+import logging
+from typing import Any
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import AuthenticationError
-from eodag.utils.http import HttpRequests
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.http import HttpRequestParams, add_qs_params, http
+
+logger = logging.getLogger("eodag.authentication.token")
 
 
 class HttpQueryStringAuth(Authentication):
@@ -56,47 +53,34 @@ class HttpQueryStringAuth(Authentication):
     :meth:`~eodag.plugins.authentication.query_string.HttpQueryStringAuth.authenticate`
     """
 
-    def authenticate(self):
+    def validate_config_credentials(self):
+        """Validate configured credentials"""
+        super().validate_config_credentials()
+        self.credentials = self.config.credentials
+        self.auth_uri = getattr(self.config, "auth_uri", "")
+
+    def authenticate(self, **kwargs: Any) -> Any:
         """Authenticate"""
         self.validate_config_credentials()
 
-        auth = QueryStringAuth(**self.config.credentials)
+        if self.auth_uri:
+            http.get(add_qs_params(self.auth_uri, **self.credentials))
 
-        auth_uri = getattr(self.config, "auth_uri", None)
-        if auth_uri:
-            try:
-                response = requests.get(
-                    auth_uri,
-                    timeout=HTTP_REQ_TIMEOUT,
-                    headers=USER_AGENT,
-                    auth=auth,
-                )
-                response.raise_for_status()
-            except RequestException as e:
-                raise AuthenticationError(f"Could no authenticate: {str(e)}")
-
-        return auth
-
-    def http_requests(self) -> HttpRequests:
+    def prepare_authenticated_http_request(
+        self, params: HttpRequestParams
+    ) -> HttpRequestParams:
         """
-        The nested class provides implementations for the requests methods that make authenticated HTTP requests
-        using a querystring-based authentication method.
+        Prepare an authenticated HTTP request.
+
+        :param HttpRequestParams params: The parameters for the HTTP request.
+
+        :return: The parameters for the authenticated HTTP request.
+        :rtype: HttpRequestParams
+
+        :note: This function modifies the `params` instance directly and also returns it. The returned value is the same
+            instance that was passed in, not a new one.
         """
-        return None
+        self.authenticate()
+        params.url = add_qs_params(params.url, **self.credentials)
 
-
-class QueryStringAuth(requests.auth.AuthBase):
-    """ "QueryStringAuth custom authentication class to be used with requests module"""
-
-    def __init__(self, **parse_args):
-        self.parse_args = parse_args
-
-    def __call__(self, request):
-        """Perform the actual authentication"""
-        parts = urlparse(request.url)
-        query_dict = parse_qs(parts.query)
-        query_dict.update(self.parse_args)
-        url_without_args = parts._replace(query=None).geturl()
-
-        request.prepare_url(url_without_args, query_dict)
-        return request
+        return params

@@ -9,7 +9,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, string_to_jsonpath
-from eodag.utils.exceptions import RequestError
+from eodag.utils.exceptions import AuthenticationError, RequestError
 
 logger = logging.getLogger("eodag.search.data_request_search")
 
@@ -105,9 +105,12 @@ class DataRequestSearch(Search):
     def _check_request_status(self, data_request_id):
         logger.info("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
-        status_data = self.http.get(status_url).json()
-        if "status_code" in status_data and status_data["status_code"] == 403:
-            raise RequestError("authentication token expired during request")
+        try:
+            status_data = self.http.get(status_url).json()
+        except AuthenticationError as e:
+            logger.warn(e)
+            raise RequestError("Authentication token expired during request")
+
         if status_data["status"] == "failed":
             raise RequestError(
                 f"data request job has failed, message: {status_data['message']}"

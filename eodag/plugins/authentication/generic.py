@@ -15,100 +15,65 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils.http import HttpRequests, HttpResponse
+from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils.http import HttpRequestParams
 
 
 class GenericAuth(Authentication):
     """GenericAuth authentication plugin"""
 
-    def authenticate(self):
+    method: str = ""
+
+    def validate_config_credentials(self):
+        """
+        Validate configured credentials.
+
+        :raises MisconfiguredError: If the authentication method is not supported.
+        """
+        super().validate_config_credentials()
+        self.method = getattr(self.config, "method", "")
+        if not self.method:
+            self.method = "basic"
+
+        if self.method not in ["basic", "digest"]:
+            raise MisconfiguredError(
+                "Generic authentication supports method basic or digest"
+            )
+
+    def authenticate(self, **kwargs: Any) -> Any:
         """Authenticate"""
         self.validate_config_credentials()
-        method = getattr(self.config, "method", None)
-        if not method:
-            method = "basic"
-        if method == "basic":
+
+        if self.method == "basic":
             return HTTPBasicAuth(
                 self.config.credentials["username"],
                 self.config.credentials["password"],
             )
-        if method == "digest":
+        else:
             return HTTPDigestAuth(
                 self.config.credentials["username"],
                 self.config.credentials["password"],
             )
 
-    def http_requests(self) -> HttpRequests:
+    def prepare_authenticated_http_request(
+        self, params: HttpRequestParams
+    ) -> HttpRequestParams:
         """
-        Returns an instance of GenericAuthHttpRequests for sending HTTP requests
-        with basic-based authentication or digest-based authentication.
+        Prepare an authenticated HTTP request.
 
-        :return: An instance of GenericAuthHttpRequests.
+        :param HttpRequestParams params: The parameters for the HTTP request.
+
+        :return: The parameters for the authenticated HTTP request.
+        :rtype: HttpRequestParams
+
+        :note: This function modifies the `params` instance directly and also returns it. The returned value is the same
+            instance that was passed in, not a new one.
         """
-        return GenericAuthHttpRequests(self)
+        params.extra_params["auth"] = self.authenticate()
 
-
-class GenericAuthHttpRequests(HttpRequests):
-    """
-    A class for sending HTTP requests with token-based authentication.
-    """
-
-    def __init__(self, auth: GenericAuth):
-        """
-        Initialize the GenericAuthHttpRequests instance with an authentication object.
-
-        :param auth: The authentication object to use for token-based authentication.
-        """
-        super().__init__()
-        self.auth = auth
-
-    def _request(
-        self,
-        method: str,
-        url: str,
-        data: Optional[Union[Dict[str, Any], bytes]] = None,
-        json: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        retries: int = 3,
-        delay: int = 1,
-        unquoted_params: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> HttpResponse:
-        """
-        Sends an HTTP request to the specified URL with token-based authentication.
-
-        If the request fails due to a requests.exceptions.RequestException, it will wait for the specified delay
-        and then try again. If all attempts fail, it will re-raise the last exception.
-
-        Args:
-            method (str): The HTTP method to use for the request (e.g., "GET" or "POST").
-            url (str): The URL to send the request to.
-            data (dict, optional): Dictionary, list of tuples or bytes to send in the body of the request.
-            json (dict, optional): JSON data to send in the body of the request.
-            headers (dict, optional): Dictionary of HTTP headers to send with the request.
-            retries (int): The number of times to attempt the request before giving up.
-            delay (int): The number of seconds to wait between attempts.
-            unquoted_params (List[str], optional): A list of URL parameters that should not be quoted.
-            **kwargs: Optional arguments that `requests.request` takes.
-
-        Returns:
-            HttpResponse: The response from the server.
-        """
-        return super()._request(
-            method=method,
-            url=url,
-            data=data,
-            json=json,
-            headers=headers,
-            retries=retries,
-            delay=delay,
-            unquoted_params=unquoted_params,
-            auth=self.auth.authenticate(),
-            **kwargs,
-        )
+        return params

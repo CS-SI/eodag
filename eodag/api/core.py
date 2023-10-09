@@ -1783,13 +1783,13 @@ class EODataAccessGateway(object):
         """
         products = self.deserialize(filename)
         for i, product in enumerate(products):
-            if product.downloader is None:
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(product.provider)
-                products[i].register_downloader(
-                    self._plugins_manager.get_download_plugin(product), auth
-                )
+            if product.downloader:
+                continue
+            auth = self._plugins_manager.get_auth_plugin(product.provider)
+            if not auth:
+                raise MisconfiguredError("Auth plugin is required")
+            downloader = self._plugins_manager.get_download_plugin(product)
+            products[i].register_downloader(downloader, auth)
         return products
 
     @_deprecated(

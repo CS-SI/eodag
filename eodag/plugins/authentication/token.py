@@ -18,11 +18,11 @@
 import logging
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils.exceptions import MisconfiguredError
-from eodag.utils.http import HttpRequests, HttpResponse, http
+from eodag.utils.exceptions import EODAGError, MisconfiguredError
+from eodag.utils.http import HttpRequestParams, http
 
 logger = logging.getLogger("eodag.authentication.token")
 
@@ -30,12 +30,13 @@ logger = logging.getLogger("eodag.authentication.token")
 class TokenAuth(Authentication):
     """TokenAuth authentication plugin"""
 
-    def __init__(self, provider, config):
+    validity_period: Optional[timedelta]
+    expiration_time: Optional[datetime]
+
+    def __init__(self, provider: str, config):
         super(TokenAuth, self).__init__(provider, config)
         self.token: str = ""
-        self.headers: Dict = {}
-        self.validity_period: timedelta = None
-        self.expiration_time: datetime = None
+        self.validate_config_credentials()
 
     @staticmethod
     def str_to_timedelta(duration_str: str) -> timedelta:
@@ -96,13 +97,15 @@ class TokenAuth(Authentication):
 
         if "$token" not in self.config.headers.get("Authorization", ""):
             raise MisconfiguredError(
-                "Cannot generate headers. ",
-                "Authorization header is missing from auth configuration.",
+                "Cannot generate headers: Authorization header is missing from auth configuration."
             )
 
-    def authenticate(self):
+    def authenticate(self, **kwargs: Any) -> Any:
         """Authenticate"""
-        self.validate_config_credentials()
+
+        # authenticate only if required
+        if self.is_authenticated():
+            return
 
         try:
             response = http.request(
@@ -111,11 +114,8 @@ class TokenAuth(Authentication):
                 data=self.config.credentials,
                 headers=getattr(self.config, "headers", None),
             )
-        except Exception as e:
-            response_text = getattr(e.response, "text", "").strip()
-            logger.error(
-                f"Could no get authentication token: {str(e)}, {response_text}"
-            )
+        except EODAGError as e:
+            logger.error(f"Could no get authentication token: {str(e)}")
             raise e
 
         if getattr(self.config, "token_type", "text") == "json":
@@ -143,89 +143,22 @@ class TokenAuth(Authentication):
             return False
         return True
 
-    def http_requests(self) -> HttpRequests:
+    def prepare_authenticated_http_request(
+        self, params: HttpRequestParams
+    ) -> HttpRequestParams:
         """
-        Returns an instance of TokenAuthHttpRequests initialized with this TokenAuth instance.
+        Prepare an authenticated HTTP request.
 
-        :return: An instance of TokenAuthHttpRequests initialized with this TokenAuth instance.
+        :param HttpRequestParams params: The parameters for the HTTP request.
+
+        :return: The parameters for the authenticated HTTP request.
+        :rtype: HttpRequestParams
+
+        :note: This function modifies the `params` instance directly and also returns it. The returned value is the same
+            instance that was passed in, not a new one.
         """
-        return TokenAuthHttpRequests(auth=self)
+        self.authenticate()
 
+        params.headers.update(self.headers)
 
-class TokenAuthHttpRequests(HttpRequests):
-    """
-    This class is a child of the HttpRequests class and is used for making HTTP requests with token authentication.
-
-    Attributes:
-        auth (TokenAuth): An instance of the TokenAuth class used for token authentication.
-        default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-        Defaults to None.
-    """
-
-    def __init__(
-        self, auth: TokenAuth, default_headers: Optional[Dict[str, str]] = None
-    ) -> None:
-        """
-        The constructor for the TokenAuthHttpRequests class.
-
-        Parameters:
-            auth (TokenAuth): An instance of the TokenAuth class used for token authentication.
-            default_headers (dict, optional): A dictionary of default headers to be included in all requests.
-            Defaults to None.
-        """
-        super().__init__(default_headers)
-        self.auth = auth
-
-    def _send_request(
-        self,
-        method: str,
-        url: str,
-        data: Optional[Union[Dict[str, Any], bytes]] = None,
-        json: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        retries: int = 3,
-        delay: int = 1,
-        timeout: int = 10,
-        unquoted_params: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> HttpResponse:
-        """
-        Sends an HTTP request with token authentication.
-
-        Parameters:
-            method (str): The HTTP method for the request.
-            url (str): The URL for the request.
-            data (dict or bytes, optional): The data to send in the body of the request. Defaults to None.
-            json (dict, optional): The JSON data to send in the body of the request. Defaults to None.
-            headers (dict, optional): A dictionary of headers to send with the request. Defaults to None.
-            retries (int, optional): The number of times to retry the request in case of failure. Defaults to 3.
-            delay (int, optional): The delay between retries in seconds. Defaults to 1.
-            timeout (int, optional): The timeout for the request in seconds. Defaults to 10.
-            unquoted_params (list of str, optional): A list of parameters that should not be URL encoded.
-            Defaults to None.
-            **kwargs: Variable length keyword arguments.
-
-        Returns:
-            HttpResponse: The HTTP response received from the server.
-
-        Raises:
-            Exception: If an error occurs while sending the request.
-        """
-        if not self.auth.is_authenticated():
-            self.auth.authenticate()
-
-        headers = {**headers, **self.auth.headers} if headers else self.auth.headers
-
-        super()._send_request(
-            self,
-            method=method,
-            url=url,
-            data=data,
-            json=json,
-            headers=headers,
-            retries=retries,
-            delay=delay,
-            timeout=timeout,
-            unquoted_params=unquoted_params,
-            **kwargs,
-        )
+        return params

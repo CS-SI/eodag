@@ -41,6 +41,7 @@ from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
+from typing import Optional, Tuple
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -1247,7 +1248,9 @@ def cached_yaml_load_all(config_path):
     return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
 
 
-def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
+def get_bucket_name_and_prefix(
+    url: str, bucket_path_level: Optional[int] = None
+) -> Tuple[Optional[str], str]:
     """Extract bucket name and prefix from URL
 
     :param url: (optional) URL to use as product.location
@@ -1259,20 +1262,22 @@ def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
     """
     bucket, prefix = None, None
 
-    scheme, netloc, path, params, query, fragment = urlparse(url)
+    scheme, netloc, path, _, _, _ = urlparse(url)
     subdomain = netloc.split(".")[0]
     path = path.strip("/")
 
-    if scheme and bucket_path_level is None:
+    if scheme and not bucket_path_level:
         bucket = subdomain
         prefix = path
-    elif not scheme and bucket_path_level is None:
+    elif not scheme and not bucket_path_level:
         prefix = path
-    elif bucket_path_level is not None:
+    elif bucket_path_level:
         parts = path.split("/")
         bucket, prefix = parts[bucket_path_level], "/".join(
             parts[(bucket_path_level + 1) :]
         )
+    else:
+        prefix = ""
 
     return bucket, prefix
 

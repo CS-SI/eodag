@@ -23,9 +23,6 @@ import os.path
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
-import requests
-from requests import RequestException
-
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -35,20 +32,13 @@ from eodag.plugins.download.base import (
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
-    USER_AGENT,
     ProgressCallback,
     get_bucket_name_and_prefix,
     path_to_uri,
     unquote,
     urljoin,
 )
-from eodag.utils.exceptions import (
-    AuthenticationError,
-    DownloadError,
-    NotAvailableError,
-    RequestError,
-)
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
+from eodag.utils.exceptions import DownloadError, EODAGError, NotAvailableError
 
 logger = logging.getLogger("eodag.plugins.download.s3rest")
 
@@ -87,7 +77,6 @@ class S3RestDownload(Download):
     def download(
         self,
         product,
-        auth=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -97,8 +86,6 @@ class S3RestDownload(Download):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -126,21 +113,18 @@ class S3RestDownload(Download):
             and "storageStatus" in product.properties
             and product.properties["storageStatus"] != ONLINE_STATUS
         ):
-            self.http_download_plugin.orderDownload(product=product, auth=auth)
+            self.http_download_plugin.orderDownload(product)
 
         @self._download_retry(product, wait, timeout)
         def download_request(
             product,
-            auth,
             progress_callback,
             ordered_message,
             **kwargs,
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):
-                self.http_download_plugin.orderDownloadStatus(
-                    product=product, auth=auth
-                )
+                self.http_download_plugin.orderDownloadStatus(product)
 
             # get bucket urls
             bucket_name, prefix = get_bucket_name_and_prefix(
@@ -168,34 +152,19 @@ class S3RestDownload(Download):
 
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
-            bucket_contents = requests.get(
-                nodes_list_url, auth=auth, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-            )
+
             try:
-                bucket_contents.raise_for_status()
-            except requests.RequestException as err:
-                # check if error is identified as auth_error in provider conf
-                auth_errors = getattr(self.config, "auth_error_code", [None])
-                if not isinstance(auth_errors, list):
-                    auth_errors = [auth_errors]
-                if err.response.status_code in auth_errors:
-                    raise AuthenticationError(
-                        "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                        % (
-                            err.response.status_code,
-                            err.response.text.strip(),
-                            self.provider,
-                        )
-                    )
+                bucket_contents = self.http.get(nodes_list_url)
+            except EODAGError as err:
                 # product not available
-                elif (
+                if (
                     product.properties.get("storageStatus", ONLINE_STATUS)
                     != ONLINE_STATUS
                 ):
                     msg = (
                         ordered_message
-                        if ordered_message and not err.response.text.strip()
-                        else err.response.text.strip()
+                        if ordered_message and not str(err)
+                        else str(err)
                     )
                     raise NotAvailableError(
                         "%s(initially %s) requested, returned: %s"
@@ -212,9 +181,9 @@ class S3RestDownload(Download):
                         nodes_list_url,
                         self.provider,
                         self.__class__.__name__,
-                        bucket_contents.text,
+                        err,
                     )
-                    raise RequestError(str(err))
+                    raise err
             try:
                 xmldoc = minidom.parseString(bucket_contents.text)
             except ExpatError as err:
@@ -291,27 +260,23 @@ class S3RestDownload(Download):
                 if not os.path.isdir(local_filename_dir):
                     os.makedirs(local_filename_dir)
 
-                with requests.get(
-                    node_url,
-                    stream=True,
-                    auth=auth,
-                    headers=USER_AGENT,
-                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                ) as stream:
-                    try:
-                        stream.raise_for_status()
-                    except RequestException:
-                        import traceback as tb
-
-                        logger.error(
-                            "Error while getting resource :\n%s", tb.format_exc()
-                        )
-                    else:
+                try:
+                    with self.http.get(
+                        node_url,
+                        stream=True,
+                        timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    ) as stream:
                         with open(local_filename, "wb") as fhandle:
                             for chunk in stream.iter_content(chunk_size=64 * 1024):
                                 if chunk:
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
+                except EODAGError as e:
+                    import traceback as tb
+
+                    logger.error(
+                        "Error while getting resource : %s\n%s", str(e), tb.format_exc()
+                    )
 
             with open(record_filename, "w") as fh:
                 fh.write(product.remote_location)
@@ -322,7 +287,6 @@ class S3RestDownload(Download):
 
         return download_request(
             product,
-            auth,
             progress_callback,
             ordered_message,
             **kwargs,

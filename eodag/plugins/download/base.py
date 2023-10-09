@@ -88,7 +88,6 @@ class Download(PluginTopic):
     def download(
         self,
         product,
-        auth=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -99,8 +98,6 @@ class Download(PluginTopic):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -125,7 +122,6 @@ class Download(PluginTopic):
     def _stream_download_dict(
         self,
         product,
-        auth=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
         timeout=DEFAULT_DOWNLOAD_TIMEOUT,
@@ -136,8 +132,6 @@ class Download(PluginTopic):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -406,7 +400,6 @@ class Download(PluginTopic):
     def download_all(
         self,
         products,
-        auth=None,
         downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
@@ -421,8 +414,6 @@ class Download(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
                                     :class:`~eodag.utils.DownloadedCallback` and override
