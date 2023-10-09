@@ -645,38 +645,25 @@ class EODataAccessGateway(object):
         for provider in providers_to_fetch:
             if hasattr(self.providers_config[provider], "search"):
                 search_plugin_config = self.providers_config[provider].search
-            elif hasattr(self.providers_config[provider], "api"):
-                search_plugin_config = self.providers_config[provider].api
+            # FIXME: api plugins do not implement discover_product_types() ??
+            # elif hasattr(self.providers_config[provider], "api"):
+            #     search_plugin_config = self.providers_config[provider].api
             else:
-                return
+                # FIXME: why do we return here ? continue ?
+                # return
+                continue
             if getattr(search_plugin_config, "discover_product_types", None):
                 search_plugin = next(
                     self._plugins_manager.get_search_plugins(provider=provider)
                 )
-                # append auth to search plugin if needed
-                if getattr(search_plugin.config, "need_auth", False):
-                    auth_plugin = self._plugins_manager.get_auth_plugin(
-                        search_plugin.provider
-                    )
-                    if callable(getattr(auth_plugin, "authenticate", None)):
-                        try:
-                            search_plugin.auth = auth_plugin.authenticate()
-                        except (AuthenticationError, MisconfiguredError) as e:
-                            logger.warning(
-                                f"Could not authenticate on {provider}: {str(e)}"
-                            )
-                            ext_product_types_conf[provider] = None
-                            continue
-                    else:
-                        logger.warning(
-                            f"Could not authenticate on {provider} using {auth_plugin} plugin"
-                        )
-                        ext_product_types_conf[provider] = None
-                        continue
-
-                ext_product_types_conf[
-                    provider
-                ] = search_plugin.discover_product_types()
+                try:
+                    ext_product_types_conf[
+                        provider
+                    ] = search_plugin.discover_product_types()  # type: ignore
+                except (AuthenticationError, MisconfiguredError):
+                    logger.warning(f"Could not authenticate on {provider}")
+                    ext_product_types_conf[provider] = None
+                    continue
 
         return ext_product_types_conf
 
@@ -1603,7 +1590,7 @@ class EODataAccessGateway(object):
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    eo_product.register_downloader(download_plugin, auth_plugin)
+                    eo_product.register_downloader(download_plugin)
 
             results.extend(res)
             total_results = None if nb_res is None else total_results + nb_res
@@ -1782,14 +1769,10 @@ class EODataAccessGateway(object):
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         products = self.deserialize(filename)
-        for i, product in enumerate(products):
-            if product.downloader:
-                continue
-            auth = self._plugins_manager.get_auth_plugin(product.provider)
-            if not auth:
-                raise MisconfiguredError("Auth plugin is required")
-            downloader = self._plugins_manager.get_download_plugin(product)
-            products[i].register_downloader(downloader, auth)
+        for product in products:
+            product.register_downloader(
+                self._plugins_manager.get_download_plugin(product)
+            )
         return products
 
     @_deprecated(
@@ -1920,21 +1903,12 @@ class EODataAccessGateway(object):
         if product.location.startswith("file:/"):
             logger.info("Local product detected. Download skipped")
             return uri_to_path(product.location)
-        self._setup_downloader(product)
+        product.register_downloader(self._plugins_manager.get_download_plugin(product))
         path = product.download(
             progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
         )
 
         return path
-
-    def _setup_downloader(self, product):
-        if product.downloader is None:
-            auth = product.downloader_auth
-            if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(product.provider)
-            product.register_downloader(
-                self._plugins_manager.get_download_plugin(product), auth
-            )
 
     def get_cruncher(self, name, **options):
         """Build a crunch plugin from a configuration

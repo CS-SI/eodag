@@ -20,14 +20,13 @@ import logging
 import os
 import re
 import urllib.parse
+from typing import Union
 
 from shapely import geometry, geos, wkb, wkt
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
-from eodag.plugins.authentication.aws_auth import AwsAuth
-from eodag.plugins.authentication.base import Authentication
-from eodag.plugins.download.aws import AwsDownload
+from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -223,7 +222,7 @@ class EOProduct(object):
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def register_downloader(self, downloader: Download, authenticator: Authentication):
+    def register_downloader(self, downloader: Union[Download, Api]):
         """Give to the product the information needed to download itself.
 
         :param downloader: The download method that it can use
@@ -235,7 +234,6 @@ class EOProduct(object):
                              :class:`~eodag.plugins.authentication.base.Authentication`
         """
         self.downloader = downloader
-        self.downloader_auth = authenticator
 
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")
@@ -269,11 +267,6 @@ class EOProduct(object):
                     logger.debug(
                         f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
                     )
-
-        if isinstance(downloader, AwsDownload) and isinstance(authenticator, AwsAuth):
-            downloader.s3 = authenticator.s3Requests()
-        else:
-            downloader.http = authenticator.http_requests()
 
     def download(
         self,
@@ -317,12 +310,6 @@ class EOProduct(object):
                 "download plugin"
             )
 
-        auth = (
-            self.downloader_auth.authenticate()
-            if self.downloader_auth is not None
-            else self.downloader_auth
-        )
-
         # resolve remote location if needed with downloader configuration
         self.remote_location = urllib.parse.unquote(self.remote_location) % vars(
             self.downloader.config
@@ -336,7 +323,6 @@ class EOProduct(object):
 
         fs_path = self.downloader.download(
             self,
-            auth=auth,
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,

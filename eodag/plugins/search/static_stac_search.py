@@ -125,7 +125,6 @@ class StaticStacSearch(StacSearch):
             )
         # Filter by other properties
         skip_eodag_internal_parameters = [
-            "auth",
             "raise_errors",
             "productType",
             "locations",

@@ -19,6 +19,7 @@ from shapely.geometry import Polygon, shape
 
 import eodag
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config, load_stac_provider_config
@@ -581,27 +582,15 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
         item_id, product_type=catalogs[0], provider=provider
     )
     if len(search_results) > 0:
-        product = search_results[0]
+        product: EOProduct = search_results[0]
     else:
         raise NotAvailableError(
             f"Could not find {item_id} item in {catalogs[0]} collection for provider {provider}"
         )
-    if product.downloader is None:
-        download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
-        auth_plugin = eodag_api._plugins_manager.get_auth_plugin(
-            download_plugin.provider
-        )
-        product.register_downloader(download_plugin, auth_plugin)
 
-    auth = (
-        product.downloader_auth.authenticate()
-        if product.downloader_auth is not None
-        else product.downloader_auth
-    )
+    product.register_downloader(eodag_api._plugins_manager.get_download_plugin(product))
     try:
-        download_stream_dict = product.downloader._stream_download_dict(
-            product, auth=auth
-        )
+        download_stream_dict = product.downloader._stream_download_dict(product)
     except NotImplementedError:
         logger.warning(
             f"Download streaming not supported for {product.downloader}: downloading locally then delete"

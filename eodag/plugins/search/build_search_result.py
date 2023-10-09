@@ -115,8 +115,7 @@ class BuildPostSearchResult(PostJsonSearch):
             unpaginated_query_params = self.query_params
         result = dict(result, **unpaginated_query_params)
 
-        # update result with search args if not None (and not auth)
-        kwargs.pop("auth", None)
+        # update result with search args if not None
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
         # parse porperties

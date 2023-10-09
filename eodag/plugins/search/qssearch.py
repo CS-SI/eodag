@@ -1007,6 +1007,7 @@ class PostJsonSearch(QueryStringSearch):
             self.need_count = True
             self.total_items_nb = None
 
+        # HTTP_INTERFACE: remove auth
         if "auth" in kwargs and hasattr(kwargs["auth"], "config"):
             auth_conf_dict = getattr(kwargs["auth"].config, "credentials", {})
         else:

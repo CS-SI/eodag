@@ -59,6 +59,7 @@ class CSWSearch(Search):
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
+        # HTTP_INTERFACE: remove auth
         if auth is not None:
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
         else:

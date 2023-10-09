@@ -25,7 +25,7 @@ from typing import Optional, Tuple
 from botocore.exceptions import ClientError
 from lxml import etree
 
-from eodag.api.product._product import EOProduct
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,

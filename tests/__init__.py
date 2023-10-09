@@ -191,17 +191,18 @@ class EODagTestCase(unittest.TestCase):
     def compute_csw_records(self, mock_catalog, raise_error_for="", *args, **kwargs):
         if raise_error_for:
             for constraint in kwargs["constraints"]:
-                if constraint.propertyname == raise_error_for:
-                    exception_report = etree.parse(
-                        StringIO(
-                            '<ExceptionReport xmlns="http://www.opengis.net/ows/1.1" '
-                            'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation='  # noqa
-                            '"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.0.0" language="en">'  # noqa
-                            '<Exception exceptionCode="NoApplicableCode"><ExceptionText>Unknown exception</ExceptionText>'  # noqa
-                            "</Exception></ExceptionReport>"
-                        )
+                if constraint.propertyname != raise_error_for:
+                    continue
+                exception_report = etree.parse(
+                    StringIO(
+                        '<ExceptionReport xmlns="http://www.opengis.net/ows/1.1" '
+                        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation='
+                        '"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.0.0" language="en">'
+                        '<Exception exceptionCode="NoApplicableCode"><ExceptionText>Unknown exception</ExceptionText>'
+                        "</Exception></ExceptionReport>"
                     )
-                    raise ExceptionReport(exception_report)
+                )
+                raise ExceptionReport(exception_report)
         bbox_wgs84 = random.choice(
             [
                 None,
@@ -316,7 +317,7 @@ class EODagTestCase(unittest.TestCase):
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         if product is None:
             product = self._dummy_product()
-        product.register_downloader(downloader, None)
+        product.register_downloader(downloader)
         return product
 
     def _clean_product(self, product_path):

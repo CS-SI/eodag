@@ -161,7 +161,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
 
         return auth_dict
 
-    def download(self, product, auth=None, progress_callback=None, **kwargs):
+    def download(self, product, progress_callback=None, **kwargs):
         """Download data from providers using CDS API"""
 
         product_extension = CDS_KNOWN_FORMATS[product.properties.get("format", "grib")]
@@ -230,7 +230,6 @@ class CdsApi(Download, Api, BuildPostSearchResult):
     def download_all(
         self,
         products,
-        auth=None,
         downloaded_callback=None,
         progress_callback=None,
         wait=DEFAULT_DOWNLOAD_WAIT,
@@ -242,7 +241,6 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         """
         return super(CdsApi, self).download_all(
             products,
-            auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
             wait=wait,

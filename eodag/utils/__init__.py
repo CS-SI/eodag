@@ -67,7 +67,6 @@ from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
-from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
@@ -130,39 +129,6 @@ def _deprecated(reason="", version=None):
         return wrapper
 
     return decorator
-
-
-class RequestsTokenAuth(AuthBase):
-    """A custom authentication class to be used with requests module"""
-
-    def __init__(self, token, where, qs_key=None, headers=None):
-        self.token = token
-        self.where = where
-        self.qs_key = qs_key
-        self.headers = headers
-
-    def __call__(self, request):
-        """Perform the actual authentication"""
-        if self.headers and isinstance(self.headers, dict):
-            for k, v in self.headers.items():
-                request.headers[k] = v
-        if self.where == "qs":
-            parts = urlparse(request.url)
-            qs = parse_qs(parts.query)
-            qs[self.qs_key] = self.token
-            request.url = urlunparse(
-                (
-                    parts.scheme,
-                    parts.netloc,
-                    parts.path,
-                    parts.params,
-                    urlencode(qs),
-                    parts.fragment,
-                )
-            )
-        elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
-        return request
 
 
 class FloatRange(click.types.FloatParamType):

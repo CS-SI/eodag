@@ -18,19 +18,22 @@
 import logging
 from operator import attrgetter
 from pathlib import Path
-from typing import Optional
+from typing import Generator, Optional, Type, Union, cast
 
 import pkg_resources
 
-from eodag.config import load_config, merge_configs
+from eodag.api.product import EOProduct
+from eodag.config import PluginConfig, load_config, merge_configs
 from eodag.plugins.apis.base import Api
-from eodag.plugins.authentication.base import Authentication
-from eodag.plugins.base import EODAGPluginMount
+from eodag.plugins.authentication.aws_auth import AwsAuth
+from eodag.plugins.authentication.base import AuthenticatedHttpRequests, Authentication
+from eodag.plugins.base import EODAGPluginMount, PluginTopic
 from eodag.plugins.crunch.base import Crunch
+from eodag.plugins.download.aws import AwsDownload
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE
-from eodag.utils.exceptions import UnsupportedProvider
+from eodag.utils.exceptions import MisconfiguredError, UnsupportedProvider
 
 logger = logging.getLogger("eodag.plugins.manager")
 
@@ -125,7 +128,9 @@ class PluginManager(object):
                 product_type_providers.append(provider_config)
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)
 
-    def get_search_plugins(self, product_type=None, provider=None):
+    def get_search_plugins(
+        self, product_type: Optional[str] = None, provider: Optional[str] = None
+    ) -> Generator[Union[Search, Api], None, None]:
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority, or the search plugin of the given provider
 
@@ -141,15 +146,27 @@ class PluginManager(object):
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProductType`
         """
 
-        def get_plugin():
+        def get_plugin() -> Union[Search, Api]:
+            plugin: Union[Search, Api]
             try:
                 config.search.products = config.products
                 config.search.priority = config.priority
-                plugin = self._build_plugin(config.name, config.search, Search)
+                plugin = cast(
+                    Search, self._build_plugin(config.name, config.search, Search)
+                )
+                if getattr(config, "need_auth", False) and not isinstance(
+                    plugin.http, AuthenticatedHttpRequests
+                ):
+                    auth = self.get_auth_plugin(provider)  # type: ignore
+                    if not auth:
+                        raise MisconfiguredError(
+                            f"No authentication plugin found for provider {provider}"
+                        )
+                    plugin.http = auth.http_requests()
             except AttributeError:
                 config.api.products = config.products
                 config.api.priority = config.priority
-                plugin = self._build_plugin(config.name, config.api, Api)
+                plugin = cast(Api, self._build_plugin(config.name, config.search, Api))
             return plugin
 
         if provider is not None:
@@ -180,7 +197,7 @@ class PluginManager(object):
             ]:
                 yield get_plugin()
 
-    def get_download_plugin(self, product) -> Download:
+    def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
         """Build and return the download plugin capable of downloading the given
         product.
 
@@ -189,16 +206,31 @@ class PluginManager(object):
         :returns: The download plugin capable of downloading the product
         :rtype: :class:`~eodag.plugins.download.Download`
         """
+        plugin: Union[Download, Api]
         plugin_conf = self.providers_config[product.provider]
         try:
             plugin_conf.download.priority = plugin_conf.priority
-            plugin = self._build_plugin(
-                product.provider, plugin_conf.download, Download
+            plugin = cast(
+                Download,
+                self._build_plugin(product.provider, plugin_conf.download, Download),
             )
+            if not isinstance(plugin, AuthenticatedHttpRequests):
+                auth = self.get_auth_plugin(product.provider)
+                if not auth:
+                    raise MisconfiguredError(
+                        f"An auth plugin is required for provider {product.provider}"
+                        f" with download plugin {type(plugin)}"
+                    )
+                elif isinstance(plugin, AwsDownload) and isinstance(auth, AwsAuth):
+                    plugin.s3 = auth.s3Requests()
+                else:
+                    plugin.http = auth.http_requests()
             return plugin
         except AttributeError:
             plugin_conf.api.priority = plugin_conf.priority
-            plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
+            plugin = cast(
+                Api, self._build_plugin(product.provider, plugin_conf.api, Api)
+            )
             return plugin
 
     def get_auth_plugin(self, provider: str) -> Optional[Authentication]:
@@ -213,7 +245,10 @@ class PluginManager(object):
         plugin_conf = self.providers_config[provider]
         try:
             plugin_conf.auth.priority = plugin_conf.priority
-            plugin = self._build_plugin(provider, plugin_conf.auth, Authentication)
+            plugin = cast(
+                Authentication,
+                self._build_plugin(provider, plugin_conf.auth, Authentication),
+            )
             return plugin
         except AttributeError:
             # We guess the plugin being built is of type Api, therefore no need
@@ -264,12 +299,13 @@ class PluginManager(object):
             if provider_name == provider:
                 self._built_plugins_cache[(provider, topic_class)].priority = priority
 
-    def _build_plugin(self, provider, plugin_conf, topic_class):
+    def _build_plugin(
+        self, provider: str, plugin_conf: PluginConfig, topic_class: Type[PluginTopic]
+    ) -> Union[Search, Download, Authentication, Crunch, Api]:
         """Build the plugin of the given topic with the given plugin configuration and
         registered as the given provider
 
-        :param provider: The provider for which to build the plugin
-        :type provider: str
+        :param str provider: The provider for which to build the plugin
         :param plugin_conf: The configuration of the plugin to be built
         :type plugin_conf: :class:`~eodag.config.PluginConfig`
         :param topic_class: The type of plugin to build
