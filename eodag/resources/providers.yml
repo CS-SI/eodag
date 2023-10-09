@@ -1871,7 +1871,6 @@
     type: EcmwfApi
     api_endpoint: https://api.ecmwf.int/v1
     extract: false
-    outputs_in_folder: true
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -3418,7 +3417,6 @@
     order_status_error:
       status: error
     outputs_extension: .nc
-    outputs_in_folder: true
   auth: !plugin
     type: HttpQueryStringAuth
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'

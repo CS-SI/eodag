@@ -19,7 +19,9 @@ import io
 import os
 import shutil
 import stat
+import tarfile
 import unittest
+import zipfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from unittest import mock
@@ -155,9 +157,9 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
     def test_plugins_download_http_ok(self, mock_requests_session_request):
-        """HTTPDownload.download() must create an outputfile"""
+        """HTTPDownload.download() must create an output directory when the file is not an archive"""
 
-        # download a lone file with a ".zip" extension
+        # download a product with the ".zip" output extension that is not a zip file
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -165,9 +167,17 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         path = plugin.download(self.product, outputs_prefix=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
-        self.assertTrue(os.path.isfile(path))
+        self.assertTrue(os.path.isdir(path))
+        file_path = os.path.join(path, os.listdir(path)[0])
+        outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
+        self.assertTrue(
+            os.path.isfile(file_path)
+            and outputs_extension == ".zip"
+            and not (zipfile.is_zipfile(file_path) or tarfile.is_tarfile(file_path))
+        )
+        # two elements must be found (the output directory of the product and the hidden directory ".downloaded")
+        self.assertEqual(len(os.listdir(self.output_dir)), 2)
 
-        # mock_requests_session_request.assert_called_once()
         mock_requests_session_request.assert_called_once_with(
             mock.ANY,
             "get",
@@ -179,7 +189,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
         )
 
-        # download a lone file with different extension and results output configuration
+        # download another product with a different file output extension
         mock_requests_session_request.reset_mock()
         self.product = EOProduct(
             "meteoblue",
@@ -196,7 +206,17 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         path = plugin.download(self.product, outputs_prefix=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product_2"))
-        self.assertTrue(os.path.isfile(os.path.join(path, os.listdir(path)[0])))
+        self.assertTrue(os.path.isdir(path))
+        file_path = os.path.join(path, os.listdir(path)[0])
+        outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
+        self.assertTrue(
+            os.path.isfile(file_path)
+            and outputs_extension == ".nc"
+            and not (zipfile.is_zipfile(file_path) or tarfile.is_tarfile(file_path))
+        )
+        # now three elements must be found (the output directory of the new product must have been added)
+        self.assertEqual(len(os.listdir(self.output_dir)), 3)
+
         mock_requests_session_request.assert_called_once_with(
             mock.ANY,
             "post",
@@ -219,7 +239,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.location = (
             self.product.remote_location
-        ) = "http://somewhere/dowload_from_location"
+        ) = "http://somewhere/download_from_location"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
@@ -252,7 +272,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_session.assert_called_once()
         # re-enable product download
         self.product.location = self.product.remote_location
-        os.remove(path)
+        shutil.rmtree(path)
         mock_requests_get.reset_mock()
         mock_requests_session.reset_mock()
 

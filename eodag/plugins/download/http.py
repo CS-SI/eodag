@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import shutil
+import tarfile
 import zipfile
 from datetime import datetime
 from email.message import Message
@@ -451,10 +452,7 @@ class HTTPDownload(Download):
                 "Downloaded product is not a Zip File. Please check its file type before using it"
             )
             new_fs_path = fs_path[: fs_path.index(".zip")]
-            # Check that the downloaded file is not a lone file and must not be placed in a directory
-            if os.path.isfile(fs_path) and getattr(
-                self.config, "outputs_in_folder", False
-            ):
+            if os.path.isfile(fs_path) and not tarfile.is_tarfile(fs_path):
                 if not os.path.isdir(new_fs_path):
                     os.makedirs(new_fs_path)
                 shutil.move(fs_path, new_fs_path)
@@ -467,8 +465,9 @@ class HTTPDownload(Download):
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
 
-        # Check that the downloaded file is not a lone file and must not be placed in a directory
-        if os.path.isfile(fs_path) and getattr(self.config, "outputs_in_folder", False):
+        if os.path.isfile(fs_path) and not (
+            zipfile.is_zipfile(fs_path) or tarfile.is_tarfile(fs_path)
+        ):
             new_fs_path = os.path.join(
                 os.path.dirname(fs_path),
                 sanitize(product.properties["title"]),
