@@ -490,3 +490,105 @@ class TestRequestSplitter(unittest.TestCase):
         result = splitter.get_variables_for_product("200101_200112", params)
         result.sort()
         self.assertEqual(str(["e", "f"]), str(result))
+
+    def test_apply_additional_splitting(self):
+        metadata = {
+            "year": "year",
+            "month": "month",
+            "day": "day",
+            "leadtime_hour": "leadtime_hour",
+            "type": "type",
+        }
+        multiselect_values = ["year", "month", "day", "leadtime_hour"]
+        split_time_values = {"param": "month", "duration": 1}
+        other_split_params = ["leadtime_hour"]
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": multiselect_values,
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+                "assets_split_parameter": "variable",
+                "other_product_split_params": other_split_params,
+            }
+        )
+        splitter = RequestSplitter(config, metadata)
+        request_params = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["24", "48", "72"],
+        }
+        splitted_params = splitter.apply_additional_splitting(request_params)
+        self.assertEqual(3, len(splitted_params))
+        row_1 = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["24"],
+        }
+        row_2 = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["48"],
+        }
+        row_3 = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["72"],
+        }
+        self.assertDictEqual(row_1, splitted_params[0])
+        self.assertDictEqual(row_2, splitted_params[1])
+        self.assertDictEqual(row_3, splitted_params[2])
+        config = PluginConfig.from_mapping(
+            {
+                "metadata_mapping": metadata,
+                "multi_select_values": [
+                    "year",
+                    "month",
+                    "day",
+                    "leadtime_hour",
+                    "type",
+                ],
+                "constraints_file_path": self.constraints_file_path,
+                "products_split_timedelta": split_time_values,
+                "assets_split_parameter": "variable",
+                "other_product_split_params": ["leadtime_hour", "type"],
+            }
+        )
+        splitter = RequestSplitter(config, metadata)
+        request_params = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["24", "48", "72"],
+            "type": ["A", "B"],
+        }
+        splitted_params = splitter.apply_additional_splitting(request_params)
+        self.assertEqual(6, len(splitted_params))
+        row_1 = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["24"],
+            "type": ["A"],
+        }
+        assert row_1 in splitted_params
+        row_2 = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["24"],
+            "type": ["B"],
+        }
+        assert row_2 in splitted_params
+        row_3 = {
+            "year": ["2022"],
+            "month": ["1"],
+            "day": ["1", "2", "3"],
+            "leadtime_hour": ["48"],
+            "type": ["A"],
+        }
+        assert row_3 in splitted_params

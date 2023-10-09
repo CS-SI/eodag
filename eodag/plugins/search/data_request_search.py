@@ -192,9 +192,17 @@ class DataRequestSearch(Search):
             num_products = kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE)
             page = kwargs.get("page", DEFAULT_PAGE)
 
-            slices, num_items = request_splitter.get_time_slices(
-                start_time, end_time, num_products, page, deepcopy(keywords)
-            )
+            if len(self.config.other_product_split_params):
+                # pagination will be handled later
+                slices, num_slices = request_splitter.get_time_slices(
+                    start_time, end_time, 1000000, 1, deepcopy(keywords)
+                )
+            else:
+                slices, num_slices = request_splitter.get_time_slices(
+                    start_time, end_time, num_products, page, deepcopy(keywords)
+                )
+            num_params = 0
+            counter = 0
             for time_slice in slices:
                 for key, value in time_slice.items():
                     if key == "start_date":
@@ -223,26 +231,41 @@ class DataRequestSearch(Search):
                         kwargs[key] = value
                         keywords[key] = value
 
-                param_variable = self.config.assets_split_parameter
-                if param_variable and not search_by_id:
-                    selected_vars = keywords.pop(param_variable, None)
-                    if not selected_vars and "variable" in self.product_type_def_params:
-                        selected_vars = self.product_type_def_params["variable"]
-                    if isinstance(selected_vars, str):
-                        selected_vars = [selected_vars]
-                    variables = request_splitter.get_variables_for_search_params(
-                        keywords, selected_vars
-                    )
-                    if len(variables) == 0:
+                keywords_array = request_splitter.apply_additional_splitting(keywords)
+                num_params = len(keywords_array)
+                for kw in keywords_array:
+                    counter += 1
+                    if counter < (page - 1) * num_products:
                         continue
-                    product = self._create_product(variables, product_type, keywords)
-                    products.append(product)
-                else:
-                    result = self._get_products(
-                        product_type, provider_product_type, keywords, **kwargs
-                    )
-                    products += result[0]
-                    self.data_request_id = None
+                    param_variable = self.config.assets_split_parameter
+                    if param_variable and not search_by_id:
+                        selected_vars = kw.pop(param_variable, None)
+                        if (
+                            not selected_vars
+                            and "variable" in self.product_type_def_params
+                        ):
+                            selected_vars = self.product_type_def_params["variable"]
+                        if isinstance(selected_vars, str):
+                            selected_vars = [selected_vars]
+                        variables = request_splitter.get_variables_for_search_params(
+                            kw, selected_vars
+                        )
+                        print(variables)
+                        if len(variables) == 0:
+                            continue
+                        product = self._create_product(variables, product_type, kw)
+                        products.append(product)
+                    else:
+                        result = self._get_products(
+                            product_type, provider_product_type, kw, **kwargs
+                        )
+                        products += result[0]
+                        self.data_request_id = None
+                    if len(products) == num_products:
+                        break
+                if len(products) == num_products:
+                    break
+            num_items = num_slices * num_params
         else:
             products, num_items = self._get_products(
                 product_type, provider_product_type, keywords, **kwargs
@@ -591,6 +614,12 @@ class DataRequestSearch(Search):
             ]
         else:
             self.config.products_split_timedelta = None
+        if "other_product_split_params" in self.product_type_def_params:
+            self.config.other_product_split_params = self.product_type_def_params[
+                "other_product_split_params"
+            ]
+        else:
+            self.config.other_product_split_params = []
         if "assets_split_parameter" in self.product_type_def_params:
             self.config.assets_split_parameter = self.product_type_def_params[
                 "assets_split_parameter"
@@ -621,4 +650,8 @@ class DataRequestSearch(Search):
             ]
         else:
             self.config.constraints_param = None
+        if "constraint_mappings" in self.product_type_def_params:
+            self.config.constraint_mappings = self.product_type_def_params[
+                "constraint_mappings"
+            ]
         self.config.auth = self.auth

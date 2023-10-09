@@ -78,6 +78,14 @@ class RequestSplitter:
             self.constraints = self.constraints_data[self.config["constraints_param"]]
         else:
             self.constraints = self.constraints_data
+        if "constraint_mappings" in self.config:
+            self._adapt_constraints_from_mapping()
+        # make month in constraint numeric if it is not
+        self._convert_constraint_months_to_numeric()
+        if "other_product_split_params" in self.config:
+            self.other_product_split_params = self.config["other_product_split_params"]
+        else:
+            self.other_product_split_params = []
 
         self.metadata = metadata_mapping
         if "multi_select_values" in self.config:
@@ -123,6 +131,16 @@ class RequestSplitter:
     ):
         """
         splits a timespan into slices based on the given config and constraints
+        :param start_date: start of the time span to be split
+        :type start_date: str
+        :param end_date: end of the time span to be split
+        :type end_date: str
+        :param num_products: maximum number of products to be returned
+        :type num_products: int
+        :param page: page to be returned (in case result has more than num_products rows)
+        :type page: int
+        :param constraint_values: constraints to be considered when creating the slices (e.g. format, version)
+        :type constraint_values: dict
         """
         split_param = self.split_time_delta["param"]
         slice_duration = self.split_time_delta["duration"]
@@ -708,3 +726,50 @@ class RequestSplitter:
                         params, constraint, variable_name, variables
                     )
         return list(set(available_variables))
+
+    def _adapt_constraints_from_mapping(self):
+        mappings = self.config["constraint_mappings"]
+        for key, mapped_value in mappings.items():
+            for constraint in self.constraints:
+                if mapped_value in constraint:
+                    value = constraint.pop(mapped_value)
+                    constraint[key] = value
+
+    def _convert_constraint_months_to_numeric(self):
+        for constraint in self.constraints:
+            if "month" not in constraint:
+                break
+            months = []
+            changed = False
+            for m in constraint["month"]:
+                if m.isnumeric():
+                    break
+                else:
+                    month = datetime.datetime.strptime(m, "%B").month
+                    months.append("{:0>2d}".format(month))
+                    changed = True
+            if changed:
+                constraint["month"] = months
+
+    def apply_additional_splitting(self, request_params):
+        """
+        applies splitting by additional parameters (other than time),
+        e.g. one row per lead time hour
+        """
+        if len(self.other_product_split_params) == 0:
+            return [request_params]
+        splitted_request_params = []
+        request_params_list = [copy.deepcopy(request_params)]
+        for param in self.other_product_split_params:
+            splitted_request_params = []
+            if param in request_params:
+                values = request_params[param]
+                for value in values:
+                    for row in request_params_list:
+                        if param in self.multi_select_values:
+                            row[param] = [value]
+                        else:
+                            row[param] = value
+                        splitted_request_params.append(copy.deepcopy(row))
+            request_params_list = copy.deepcopy(splitted_request_params)
+        return splitted_request_params
