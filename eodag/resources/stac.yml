@@ -111,12 +111,7 @@ collection:
     - '$.product_type.processingLevel'
     - '$.product_type.sensorType'
   license: '$.product_type.license'
-  providers:
-    - name: '$.provider.name'
-      description: '$.provider.description'
-      # one or more of "producer" "licensor" "processor" "host"
-      roles: '$.provider.roles'
-      url: '$.provider.url'
+  providers: '$.providers'
   summaries:
     constellation:
       - '$.product_type.platform'
@@ -125,6 +120,14 @@ collection:
     intruments:
       - '$.product_type.instrument'
     processing:level: '$.product_type.processingLevel'
+
+provider:
+  name: '$.provider.name'
+  description: '$.provider.description'
+  # one or more of "producer" "licensor" "processor" "host"
+  roles: '$.provider.roles'
+  url: '$.provider.url'
+  priority: '$.provider.priority'
 
 # Data ------------------------------------------------------------------------
 
