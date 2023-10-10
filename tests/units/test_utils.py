@@ -26,6 +26,7 @@ from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from eodag.utils import create_point_bbox
 from tests.context import (
     DownloadedCallback,
     ProgressCallback,
@@ -290,3 +291,20 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(shallow_copied["a"][0]["b"][0], 5)
         # deep copy did not change
         self.assertEqual(deep_copied["a"][0]["b"][0], 0)
+
+    def test_create_point_bbox(self):
+        # Test with default buffer
+        bbox = create_point_bbox(-0.1278, 51.5074)
+        self.assertEqual(bbox, [-0.12781, 51.50739, -0.12779, 51.50741])
+
+        # Test with custom buffer
+        bbox = create_point_bbox(-0.1278, 51.5074, 0.1)
+        self.assertEqual(bbox, [-0.2278, 51.4074, -0.0278, 51.6074])
+
+        # Test with longitude <= -180
+        bbox = create_point_bbox(-180, 51.5074)
+        self.assertEqual(bbox, [-179.99999, 51.50739, -179.99997, 51.50741])
+
+        # Test with longitude >= 180
+        bbox = create_point_bbox(180, 51.5074)
+        self.assertEqual(bbox, [179.99999, 51.50739, 180.00001, 51.50741])
