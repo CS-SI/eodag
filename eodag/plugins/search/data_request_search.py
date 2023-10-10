@@ -250,7 +250,6 @@ class DataRequestSearch(Search):
                         variables = request_splitter.get_variables_for_search_params(
                             kw, selected_vars
                         )
-                        print(variables)
                         if len(variables) == 0:
                             continue
                         product = self._create_product(variables, product_type, kw)
@@ -274,6 +273,7 @@ class DataRequestSearch(Search):
 
     def _get_params_from_id(self, params):
         product_id = params.pop("id")
+        # update dates
         dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
         dates = dates_str.split("_")
         start_date = datetime(int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8]))
@@ -282,6 +282,7 @@ class DataRequestSearch(Search):
         params["completionTimeFromAscendingNode"] = end_date.strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
+        # update asset variable
         param_variable = self.config.assets_split_parameter
         if (
             param_variable in params
@@ -295,10 +296,26 @@ class DataRequestSearch(Search):
             and param_variable not in self.config.multi_select_values
         ):
             params[param_variable] = params[param_variable][0]
+        # update other split param values
+        ind_dates = product_id.find(dates_str)
+        ind_other = ind_dates + 18
+        other_param_values = product_id[ind_other:].split("_")
+        for i, p in enumerate(self.config.other_product_split_params):
+            if p in self.config.multi_select_values:
+                params[p] = [other_param_values[i]]
+            else:
+                params[p] = other_param_values[i]
 
     def _create_product(self, variables, product_type, keywords):
         id_prefix = "ATM_" + product_type
-        product_id = get_product_id(id_prefix, keywords, self.provider, False)
+        suffix_values = []
+        for p in self.config.other_product_split_params:
+            if isinstance(keywords[p], str):
+                suffix_values.append(keywords[p])
+            else:
+                suffix_values.append(keywords[p][0])
+        suffix = "_".join(suffix_values) + "_" + self.provider
+        product_id = get_product_id(id_prefix, keywords, suffix, False)
         download_links = {}
         for variable in variables:
             download_links[variable] = self.product_type_def_params["downloadLink"]
@@ -383,6 +400,17 @@ class DataRequestSearch(Search):
             result["content"][0]["productInfo"]["productEndDate"] = dates["end_date"]
 
         logger.info("result retrieved from search job")
+        if len(self.config.other_product_split_params) > 0:
+            suffix_values = []
+            for p in self.config.other_product_split_params:
+                if isinstance(keywords[p], str):
+                    suffix_values.append(keywords[p])
+                else:
+                    suffix_values.append(keywords[p][0])
+            suffix = "_".join(suffix_values)
+            for product in result["content"]:
+                product["productInfo"]["product"] += "_" + suffix
+
         if self._check_uses_custom_filters(product_type):
             result = self._apply_additional_filters(
                 result, self.config.products[product_type]["custom_filters"]

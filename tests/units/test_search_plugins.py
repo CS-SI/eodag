@@ -1484,6 +1484,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         run()
 
     def test_plugins_search_query_split(self):
+        # split by time
         params = {
             "productType": "ERA5_PL_MONTHLY",
             "startTimeFromAscendingNode": "2021-09-01T06:00:00",
@@ -1497,3 +1498,15 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         result, num_products = self.search_plugin.query(**params)
         self.assertEqual(2, num_products)  # 1 product per month
         self.assertEqual(16, len(result[0].properties["downloadLinks"]))
+        # split by time and lead time hour
+        params = {
+            "productType": "GLOFAS_FORECAST",
+            "startTimeFromAscendingNode": "2021-09-01T06:00:00",
+            "completionTimeFromAscendingNode": "2021-10-22T07:00:00",
+            "split_result": True,
+        }
+        products["GLOFAS_FORECAST"]["constraints_file_path"] = ""
+        products["GLOFAS_FORECAST"]["constraints_file_url"] = ""
+        products["GLOFAS_FORECAST"]["storeDownloadUrl"] = False
+        result, num_products = self.search_plugin.query(**params)
+        self.assertEqual(60, num_products)  # 1 product per month and lead time hour

@@ -141,6 +141,8 @@ class RequestSplitter:
         :type page: int
         :param constraint_values: constraints to be considered when creating the slices (e.g. format, version)
         :type constraint_values: dict
+        :returns: list of time slices given either as dates or by year, month, day, time
+        :rtype: list
         """
         split_param = self.split_time_delta["param"]
         slice_duration = self.split_time_delta["duration"]
@@ -755,6 +757,10 @@ class RequestSplitter:
         """
         applies splitting by additional parameters (other than time),
         e.g. one row per lead time hour
+        :param request_params: parameters of the request to be split
+        :type request_params: dict
+        :returns: list with request params split into several requests
+        :rtype: list
         """
         if len(self.other_product_split_params) == 0:
             return [request_params]
