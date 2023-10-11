@@ -762,7 +762,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
 
 # @unittest.skip("skip auto run")
-class TestEODagEndToEndComplete(unittest.TestCase):
+class TestEODagEndToEndComplete(EndToEndBase):
     """Make real and complete test cases that search for products, download them and
     extract them. There should be just a tiny number of these tests which can be quite
     long to run.
@@ -812,13 +812,13 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # Search for products that are ONLINE and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
-        self.eodag.set_preferred_provider("peps")
         search_results, _ = self.eodag.search(
             productType="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
             geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
             items_per_page=100,
+            provider="peps",
         )
         prods_sorted_by_size = SearchResult(
             sorted(search_results, key=lambda p: p.properties["resourceSize"])
