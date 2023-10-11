@@ -84,26 +84,29 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs.get("levtype", ""),
             )
 
-        if (
-            product_type in getattr(self.config, "products", {})
-            and "constraints_file_path"
-            in getattr(self.config, "products", {})[product_type]
-        ):
-            self.config.constraints_file_path = getattr(self.config, "products", {})[
-                product_type
-            ]["constraints_file_path"]
-        else:
-            self.config.constraints_file_path = ""
-        if (
-            product_type in getattr(self.config, "products", {})
-            and "constraints_file_url"
-            in getattr(self.config, "products", {})[product_type]
-        ):
-            self.config.constraints_file_url = getattr(self.config, "products", {})[
-                product_type
-            ]["constraints_file_url"]
-        else:
-            self.config.constraints_file_url = ""
+        if product_type in getattr(self.config, "products", {}):
+            if "constraints" in getattr(self.config, "products", {})[product_type]:
+                self.config.constraints = getattr(self.config, "products", {})[
+                    product_type
+                ]["constraints"]
+            if (
+                "constraints_file_path"
+                in getattr(self.config, "products", {})[product_type]
+            ):
+                self.config.constraints_file_path = getattr(
+                    self.config, "products", {}
+                )[product_type]["constraints_file_path"]
+            else:
+                self.config.constraints_file_path = ""
+            if (
+                "constraints_file_url"
+                in getattr(self.config, "products", {})[product_type]
+            ):
+                self.config.constraints_file_url = getattr(self.config, "products", {})[
+                    product_type
+                ]["constraints_file_url"]
+            else:
+                self.config.constraints_file_url = ""
 
         # start date
         if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:

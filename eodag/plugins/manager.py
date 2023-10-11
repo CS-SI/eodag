@@ -125,7 +125,9 @@ class PluginManager(object):
                 product_type_providers.append(provider_config)
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)
 
-    def get_search_plugins(self, product_type=None, provider=None):
+    def get_search_plugins(
+        self, product_type=None, provider=None, provider_constraints=None
+    ):
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority, or the search plugin of the given provider
 
@@ -155,6 +157,10 @@ class PluginManager(object):
         if provider is not None:
             try:
                 config = self.providers_config[provider]
+                if provider_constraints:
+                    for product, p_data in config.products.items():
+                        if product in provider_constraints:
+                            p_data["constraints"] = provider_constraints[product]
             except KeyError:
                 raise UnsupportedProvider
             yield get_plugin()

@@ -50,7 +50,9 @@ class RequestSplitter:
 
     def __init__(self, config):
         self.config = config.__dict__
-        if (
+        if "constraints" in self.config:
+            self.constraints = self.config["constraints"]
+        elif (
             "constraints_file_path" in self.config
             and self.config["constraints_file_path"]
         ):

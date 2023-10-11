@@ -46,6 +46,7 @@ logger = logging.getLogger("eodag.config")
 EXT_PRODUCT_TYPES_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
 )
+CONSTRAINTS_URI = "https://cs-si.github.io/eodag/eodag/resources/constraints.json"
 
 
 class SimpleYamlProxyConfig(object):
@@ -468,6 +469,31 @@ def load_stac_provider_config():
     ).source
 
 
+def _fetch_json_data_from_uri(uri, data_type):
+    logger.info("Fetching %s from %s", data_type, uri)
+    if uri.lower().startswith("http"):
+        # read from remote
+        try:
+            response = requests.get(uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.debug(e)
+            logger.warning("Could not read remote %s from %s", data_type, uri)
+            return {}
+    elif uri.lower().startswith("file"):
+        uri = uri_to_path(uri)
+
+    # read from local
+    try:
+        with open(uri, "rb") as f:
+            return orjson.loads(f.read())
+    except (orjson.JSONDecodeError, FileNotFoundError) as e:
+        logger.debug(e)
+        logger.warning("Could not read local %s from %s", data_type, uri)
+        return {}
+
+
 def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
     """Read external product types conf
 
@@ -476,31 +502,16 @@ def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
     :returns: The external product types configuration
     :rtype: dict
     """
-    logger.info("Fetching external product types from %s", conf_uri)
-    if conf_uri.lower().startswith("http"):
-        # read from remote
-        try:
-            response = requests.get(
-                conf_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            logger.debug(e)
-            logger.warning(
-                "Could not read remote external product types conf from %s", conf_uri
-            )
-            return {}
-    elif conf_uri.lower().startswith("file"):
-        conf_uri = uri_to_path(conf_uri)
+    return _fetch_json_data_from_uri(conf_uri, "external product types conf")
 
-    # read from local
-    try:
-        with open(conf_uri, "rb") as f:
-            return orjson.loads(f.read())
-    except (orjson.JSONDecodeError, FileNotFoundError) as e:
-        logger.debug(e)
-        logger.warning(
-            "Could not read local external product types conf from %s", conf_uri
-        )
-        return {}
+
+def get_constraints(constraints_uri=CONSTRAINTS_URI):
+    """Read constraints from file
+    return constraints for all providers and product types where they are available
+
+    :param constraints_uri URI to local or remote constraints file
+    :type constraints_uri: str
+    :returns: The constraints in json format
+    :rtype: dict
+    """
+    return _fetch_json_data_from_uri(constraints_uri, "constraints")

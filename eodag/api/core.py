@@ -35,6 +35,7 @@ from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypa
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
+    get_constraints,
     get_ext_product_types_conf,
     load_default_config,
     load_stac_provider_config,
@@ -103,6 +104,7 @@ class EODataAccessGateway(object):
         self._plugins_manager = PluginManager(self.providers_config)
         # use updated providers_config
         self.providers_config = self._plugins_manager.providers_config
+        self.constraints = {}
 
         # First level override: From a user configuration file
         if user_conf_file_path is None:
@@ -1952,3 +1954,16 @@ class EODataAccessGateway(object):
         plugin_conf = {"name": name}
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
+
+    def load_constraints(self):
+        """loads the constraints from the url given in the env variables or the default source
+
+        :returns: the constraints in the format $.provider.product_type.constraints
+        :rtype: dict
+        """
+        constraints_url = os.getenv("EODAG_CONSTRAINTS_FILE_URL")
+        if constraints_url:
+            self.constraints = get_constraints(constraints_url)
+        else:
+            self.constraints = get_constraints()
+        return self.constraints

@@ -1053,7 +1053,13 @@ def fetch_collection_queryable_properties(
 def eodag_api_init():
     """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
     eodag_api.fetch_product_types_list()
+    constraints = eodag_api.load_constraints()
 
     # pre-build search plugins
     for provider in eodag_api.available_providers():
-        next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
+        provider_constraints = constraints.get(provider, None)
+        next(
+            eodag_api._plugins_manager.get_search_plugins(
+                provider=provider, provider_constraints=provider_constraints
+            )
+        )

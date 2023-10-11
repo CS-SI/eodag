@@ -75,36 +75,43 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         if not kwargs.get("productType"):
             kwargs["productType"] = kwargs.get("dataset", None)
 
-        if (
-            kwargs["productType"] in getattr(self.config, "products", {})
-            and "multi_select_values"
-            in getattr(self.config, "products", {})[kwargs["productType"]]
-        ):
-            self.config.multi_select_values = getattr(self.config, "products", {})[
-                kwargs["productType"]
-            ]["multi_select_values"]
-        else:
-            self.config.constraints_file_path = ""
-        if (
-            kwargs["productType"] in getattr(self.config, "products", {})
-            and "constraints_file_path"
-            in getattr(self.config, "products", {})[kwargs["productType"]]
-        ):
-            self.config.constraints_file_path = getattr(self.config, "products", {})[
-                kwargs["productType"]
-            ]["constraints_file_path"]
-        else:
-            self.config.constraints_file_path = ""
-        if (
-            kwargs["productType"] in getattr(self.config, "products", {})
-            and "constraints_file_url"
-            in getattr(self.config, "products", {})[kwargs["productType"]]
-        ):
-            self.config.constraints_file_url = getattr(self.config, "products", {})[
-                kwargs["productType"]
-            ]["constraints_file_url"]
-        else:
-            self.config.constraints_file_url = ""
+        if kwargs["productType"] in getattr(self.config, "products", {}):
+            if (
+                "multi_select_values"
+                in getattr(self.config, "products", {})[kwargs["productType"]]
+            ):
+                self.config.multi_select_values = getattr(self.config, "products", {})[
+                    kwargs["productType"]
+                ]["multi_select_values"]
+            else:
+                self.config.multi_select_values = []
+
+            if (
+                "constraints"
+                in getattr(self.config, "products", {})[kwargs["productType"]]
+            ):
+                self.config.constraints = getattr(self.config, "products", {})[
+                    kwargs["productType"]
+                ]["constraints"]
+
+            if (
+                "constraints_file_path"
+                in getattr(self.config, "products", {})[kwargs["productType"]]
+            ):
+                self.config.constraints_file_path = getattr(
+                    self.config, "products", {}
+                )[kwargs["productType"]]["constraints_file_path"]
+            else:
+                self.config.constraints_file_path = ""
+            if (
+                "constraints_file_url"
+                in getattr(self.config, "products", {})[kwargs["productType"]]
+            ):
+                self.config.constraints_file_url = getattr(self.config, "products", {})[
+                    kwargs["productType"]
+                ]["constraints_file_url"]
+            else:
+                self.config.constraints_file_url = ""
         # start date
         if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
