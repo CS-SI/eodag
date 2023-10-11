@@ -1,0 +1,158 @@
+earthdata_lars_asdc:
+  priority: 0
+  search: 
+    type: StacSearch
+    results_entry: features
+    api_endpoint: https://cmr.earthdata.nasa.gov/stac/LARC_ASDC/search/
+    need_auth: false
+    pagination:
+      max_items_per_page: 500
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_:-]+$'
+      search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
+      metadata_path: '$.properties.*'
+    discover_product_types:
+        fetch_url: https://cmr.earthdata.nasa.gov/stac/LARC_ASDC/collections
+        result_type: json
+        results_entry: 'collections[*]'
+        generic_product_type_id: '$.id'
+        generic_product_type_parsable_properties:
+          productType: '$.id'
+        generic_product_type_parsable_metadata:
+          abstract: '$.description'
+          license: '$.license'
+          title: '$.id'
+          missionStartDate: '$.extent.temporal.interval[0][0]'
+    metadata_mapping:
+      productType:
+        - '{{"collections":["{productType}"]}}'
+        - '$.collection'
+      title: '$.id'
+      id:
+        - '{{"ids":["{id}"]}}'
+        - '$.id'
+      collection: '$.collection'
+      bbox: '$.bbox'
+      geometry: 
+        - '{{"intersects":{geometry#to_geojson}}}'
+        - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      completionTimeFromAscendingNode:
+        - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime(seconds)}/{completionTimeFromAscendingNode#to_iso_utc_datetime(seconds)}"}}'
+        - '$.properties.end_datetime'
+      downloadLink: '$.assets.data.href'
+      assets: '$.assets'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download:
+    type: HTTPDownload
+    base_uri: 'https://asdc.larc.nasa.gov/data/'
+    extract: true
+
+earthdata_obdaac:
+  priority: 0
+  search: 
+    type: StacSearch
+    results_entry: features
+    api_endpoint: https://cmr.earthdata.nasa.gov/stac/OB_DAAC/search/
+    need_auth: false
+    pagination:
+      max_items_per_page: 500
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_:-]+$'
+      search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
+      metadata_path: '$.properties.*'
+    discover_product_types:
+        fetch_url: https://cmr.earthdata.nasa.gov/stac/OB_DAAC/collections
+        result_type: json
+        results_entry: 'collections[*]'
+        generic_product_type_id: '$.id'
+        generic_product_type_parsable_properties:
+          productType: '$.id'
+        generic_product_type_parsable_metadata:
+          abstract: '$.description'
+          license: '$.license'
+          title: '$.id'
+          missionStartDate: '$.extent.temporal.interval[0][0]'
+    metadata_mapping:
+      productType:
+        - '{{"collections":["{productType}"]}}'
+        - '$.collection'
+      title: '$.id'
+      id:
+        - '{{"ids":["{id}"]}}'
+        - '$.id'
+      collection: '$.collection'
+      bbox: '$.bbox'
+      geometry: 
+        - '{{"intersects":{geometry#to_geojson}}}'
+        - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      completionTimeFromAscendingNode:
+        - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime(seconds)}/{completionTimeFromAscendingNode#to_iso_utc_datetime(seconds)}"}}'
+        - '$.properties.end_datetime'
+      downloadLink: '$.assets.data.href'
+      assets: '$.assets'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download:
+    type: HTTPDownload
+    base_uri: 'https://oceandata.sci.gsfc.nasa.gov/cmr/getfile/'
+    extract: true
+
+earthdata_podaac:
+  priority: 0
+  search: 
+    type: StacSearch
+    results_entry: features
+    api_endpoint: https://cmr.earthdata.nasa.gov/cloudstac/POCLOUD/search
+    need_auth: false
+    pagination:
+      max_items_per_page: 500
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_:-]+$'
+      search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
+      metadata_path: '$.properties.*'
+    discover_product_types:
+        fetch_url: https://cmr.earthdata.nasa.gov/cloudstac/POCLOUD/collections
+        result_type: json
+        results_entry: 'collections[*]'
+        generic_product_type_id: '$.id'
+        generic_product_type_parsable_properties:
+          productType: '$.id'
+        generic_product_type_parsable_metadata:
+          abstract: '$.description'
+          license: '$.license'
+          title: '$.id'
+          missionStartDate: '$.extent.temporal.interval[0][0]'
+    metadata_mapping:
+      productType:
+        - '{{"collections":["{productType}"]}}'
+        - '$.collection'
+      title: '$.id'
+      id:
+        - '{{"ids":["{id}"]}}'
+        - '$.id'
+      collection: '$.collection'
+      bbox: '$.bbox'
+      geometry: 
+        - '{{"intersects":{geometry#to_geojson}}}'
+        - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      completionTimeFromAscendingNode:
+        - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime(seconds)}/{completionTimeFromAscendingNode#to_iso_utc_datetime(seconds)}"}}'
+        - '$.properties.end_datetime'
+      downloadLink: '$.assets.data.href'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download:
+    type: SessionDownloadPlugin
+    base_uri: 'https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/'
+  auth:
+     type: GenericAuth
+     credentials:
+       username: 
+       password: 
