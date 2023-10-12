@@ -17,6 +17,8 @@
 # limitations under the License.
 from typing import Any, Dict, List, Optional
 
+from requests.auth import AuthBase as HttpBaseAuth
+
 from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
 from eodag.utils.http import HttpRequestParams, HttpRequests, HttpResponse
@@ -35,7 +37,7 @@ class Authentication(PluginTopic):
         super().__init__(provider, config)
         self.http = HttpRequests()
 
-    def authenticate(self, **kwargs: Any) -> Any:
+    def authenticate(self, **kwargs: Any) -> HttpBaseAuth:
         """
         Authenticate with the service.
 
@@ -90,23 +92,6 @@ class Authentication(PluginTopic):
         """
         return AuthenticatedHttpRequests(self)
 
-    def prepare_authenticated_http_request(
-        self, params: HttpRequestParams
-    ) -> HttpRequestParams:
-        """
-        Prepare an authenticated HTTP request.
-
-        :param HttpRequestParams params: The parameters for the HTTP request.
-
-        :return: The parameters for the authenticated HTTP request.
-        :rtype: HttpRequestParams
-
-        :raises NotImplementedError: This is an abstract method that should be implemented by subclasses.
-        """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement the prepare_authenticated_http_request method."
-        )
-
 
 class AuthenticatedHttpRequests(HttpRequests):
     """
@@ -157,15 +142,23 @@ class AuthenticatedHttpRequests(HttpRequests):
 
         :raises Exception: If an error occurs while sending the request.
         """
+        auth = self.auth.authenticate(
+            HttpRequestParams(
+                method=method,
+                url=url,
+                headers=headers,
+                timeout=timeout,
+                unquoted_params=unquoted_params,
+                extra_params=kwargs,
+            )
+        )
+
         return super()._send_request(
-            **self.auth.prepare_authenticated_http_request(
-                params=HttpRequestParams(
-                    method=method,
-                    url=url,
-                    headers=headers or {},
-                    timeout=timeout,
-                    unquoted_params=unquoted_params,
-                    extra_params=kwargs,
-                )
-            ).to_dict()
+            auth=auth,
+            method=method,
+            url=url,
+            headers=headers,
+            timeout=timeout,
+            unquoted_params=unquoted_params,
+            **kwargs,
         )

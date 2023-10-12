@@ -21,7 +21,6 @@ from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils.exceptions import MisconfiguredError
-from eodag.utils.http import HttpRequestParams
 
 
 class GenericAuth(Authentication):
@@ -59,21 +58,3 @@ class GenericAuth(Authentication):
                 self.config.credentials["username"],
                 self.config.credentials["password"],
             )
-
-    def prepare_authenticated_http_request(
-        self, params: HttpRequestParams
-    ) -> HttpRequestParams:
-        """
-        Prepare an authenticated HTTP request.
-
-        :param HttpRequestParams params: The parameters for the HTTP request.
-
-        :return: The parameters for the authenticated HTTP request.
-        :rtype: HttpRequestParams
-
-        :note: This function modifies the `params` instance directly and also returns it. The returned value is the same
-            instance that was passed in, not a new one.
-        """
-        params.extra_params["auth"] = self.authenticate()
-
-        return params

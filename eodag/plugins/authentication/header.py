@@ -19,7 +19,7 @@
 from typing import Any
 
 from eodag.plugins.authentication import Authentication
-from eodag.plugins.authentication.base import HttpRequestParams
+from eodag.plugins.authentication.base import HttpBaseAuth, HttpRequestParams
 
 
 class HTTPHeaderAuth(Authentication):
@@ -80,3 +80,15 @@ class HTTPHeaderAuth(Authentication):
         params.headers.update(self.authenticate())
 
         return params
+
+
+class HeaderAuth(HttpBaseAuth):
+    """HeaderAuth custom authentication class to be used with requests module"""
+
+    def __init__(self, authentication_headers):
+        self.auth_headers = authentication_headers
+
+    def __call__(self, request):
+        """Perform the actual authentication"""
+        request.headers.update(self.auth_headers)
+        return request
