@@ -4789,10 +4789,29 @@
         - "1080"
         - "1104"
       system_version:
-        - version_3_1
+        - version_4_0
       hydrological_model:
         - lisflood
       format: grib
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST"
+      constraints_param: constraints
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -4826,6 +4845,15 @@
           - $.extraInformation.footprint
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "hday", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     GLOFAS_SEASONAL:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL
@@ -4843,6 +4871,20 @@
         - "120"
         - "144"
       format: grib
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -4872,6 +4914,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     GLOFAS_SEASONAL_REFORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST
@@ -4884,6 +4932,24 @@
       leadtime_hour:
         - "24"
       format: grib
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST"
+      constraints_param: constraints
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -4913,6 +4979,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_FORECAST:
       productType: EO:ECMWF:DAT:EFAS_FORECAST
