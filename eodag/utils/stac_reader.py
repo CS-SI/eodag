@@ -18,7 +18,8 @@
 import logging
 import re
 import socket
-from urllib.error import HTTPError, URLError
+from typing import Any, Callable, Dict, List, Optional, Union
+from urllib.error import URLError
 from urllib.request import urlopen
 
 import concurrent.futures
@@ -35,13 +36,13 @@ class _TextOpener:
     """Exhaust read methods for pystac.StacIO in the order defined
     in the openers list"""
 
-    def __init__(self, timeout):
+    def __init__(self, timeout: int) -> None:
         self.openers = [self.read_local_json, self.read_http_remote_json]
         # Only used by read_http_remote_json
         self.timeout = timeout
 
     @staticmethod
-    def read_local_json(url, as_json):
+    def read_local_json(url: str, as_json: bool = False) -> Any:
         """Read JSON local file"""
         try:
             if as_json:
@@ -54,7 +55,7 @@ class _TextOpener:
             logger.debug("read_local_json is not the right STAC opener")
             raise STACOpenerError
 
-    def read_http_remote_json(self, url, as_json):
+    def read_http_remote_json(self, url: str, as_json: bool = False) -> Any:
         """Read JSON remote HTTP file"""
         try:
             res = urlopen(url, timeout=self.timeout)
@@ -78,11 +79,8 @@ class _TextOpener:
             else:
                 logger.debug("read_http_remote_json is not the right STAC opener")
                 raise STACOpenerError
-        except HTTPError:
-            logger.debug("read_http_remote_json is not the right STAC opener")
-            raise STACOpenerError
 
-    def __call__(self, url, as_json=False):
+    def __call__(self, url: str, as_json: bool = False) -> Any:
         res = None
         while self.openers:
             try:
@@ -98,8 +96,11 @@ class _TextOpener:
 
 
 def fetch_stac_items(
-    stac_path, recursive=False, max_connections=100, timeout=HTTP_REQ_TIMEOUT
-):
+    stac_path: str,
+    recursive: bool = False,
+    max_connections: int = 100,
+    timeout: int = HTTP_REQ_TIMEOUT,
+) -> List[Dict[Any, Any]]:
     """Fetch STAC item from a single item file or items from a catalog.
 
     :param stac_path: A STAC object filepath
@@ -132,11 +133,16 @@ def fetch_stac_items(
         raise STACOpenerError(f"{stac_path} must be a STAC catalog or a STAC item")
 
 
-def _fetch_stac_items_from_catalog(cat, recursive, max_connections, _text_opener):
+def _fetch_stac_items_from_catalog(
+    cat: pystac.Catalog,
+    recursive: bool,
+    max_connections: int,
+    _text_opener: Callable[[str, bool], Any],
+) -> List[Any]:
     """Fetch items from a STAC catalog"""
     # pystac cannot yet return links from a single file catalog, see:
     # https://github.com/stac-utils/pystac/issues/256
-    extensions = getattr(cat, "stac_extensions", None)
+    extensions: Optional[Union[List[str], str]] = getattr(cat, "stac_extensions", None)
     if extensions:
         extensions = extensions if isinstance(extensions, list) else [extensions]
         if "single-file-stac" in extensions:
@@ -146,7 +152,9 @@ def _fetch_stac_items_from_catalog(cat, recursive, max_connections, _text_opener
     # Making the links absolutes allow for both relative and absolute links
     # to be handled.
     if not recursive:
-        hrefs = [link.get_absolute_href() for link in cat.get_item_links()]
+        hrefs: List[Optional[str]] = [
+            link.get_absolute_href() for link in cat.get_item_links()
+        ]
     else:
         hrefs = []
         for parent_catalog, _, _ in cat.walk():
@@ -154,14 +162,14 @@ def _fetch_stac_items_from_catalog(cat, recursive, max_connections, _text_opener
                 link.get_absolute_href() for link in parent_catalog.get_item_links()
             ]
 
-    items = []
+    items: List[Dict[Any, Any]] = []
     if hrefs:
         logger.debug("Fetching %s items", len(hrefs))
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_connections
         ) as executor:
             future_to_href = (
-                executor.submit(_text_opener, href, True) for href in hrefs
+                executor.submit(_text_opener, str(href), True) for href in hrefs
             )
             for future in concurrent.futures.as_completed(future_to_href):
                 item = future.result()

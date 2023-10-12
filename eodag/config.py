@@ -18,6 +18,7 @@
 import logging
 import os
 import tempfile
+from typing import Any, Dict, ItemsView, Iterator, Optional, Tuple, Union, ValuesView
 
 import orjson
 import requests
@@ -52,31 +53,31 @@ class SimpleYamlProxyConfig:
     """A simple configuration class acting as a proxy to an underlying dict object
     as returned by yaml.load"""
 
-    def __init__(self, conf_file_path):
+    def __init__(self, conf_file_path: str) -> None:
         try:
-            self.source = cached_yaml_load(conf_file_path)
+            self.source: Dict[str, Any] = cached_yaml_load(conf_file_path)
         except yaml.parser.ParserError as e:
             print("Unable to load user configuration file")
             raise e
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Any) -> Any:
         return self.source[item]
 
-    def __contains__(self, item):
+    def __contains__(self, item: Any) -> Any:
         return item in self.source
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self.source)
 
-    def items(self):
+    def items(self) -> ItemsView[str, Any]:
         """Iterate over keys and values of source"""
         return self.source.items()
 
-    def values(self):
+    def values(self) -> ValuesView[Any]:
         """Iterate over values of source"""
         return self.source.values()
 
-    def update(self, other):
+    def update(self, other: "SimpleYamlProxyConfig") -> None:
         """Update a :class:`~eodag.config.SimpleYamlProxyConfig`"""
         if not isinstance(other, self.__class__):
             raise ValueError("'{}' must be of type {}".format(other, self.__class__))
@@ -110,7 +111,7 @@ class ProviderConfig(yaml.YAMLObject):
     yaml_tag = "!provider"
 
     @classmethod
-    def from_yaml(cls, loader, node):
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> "ProviderConfig":
         """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         for node_key, node_value in node.value:
@@ -120,7 +121,7 @@ class ProviderConfig(yaml.YAMLObject):
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping):
+    def from_mapping(cls, mapping: Dict[str, Any]) -> "ProviderConfig":
         """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
         cls.validate(mapping)
         for key in ("api", "search", "download", "auth"):
@@ -131,7 +132,7 @@ class ProviderConfig(yaml.YAMLObject):
         return c
 
     @staticmethod
-    def validate(config_keys):
+    def validate(config_keys: Union[Tuple[str, ...], Dict[str, Any]]):
         """Validate a :class:`~eodag.config.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
@@ -149,7 +150,7 @@ class ProviderConfig(yaml.YAMLObject):
                 "type of plugin"
             )
 
-    def update(self, mapping):
+    def update(self, mapping: Optional[Dict[str, Any]]):
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
@@ -167,7 +168,7 @@ class ProviderConfig(yaml.YAMLObject):
             },
         )
         for key in ("api", "search", "download", "auth"):
-            current_value = getattr(self, key, None)
+            current_value: Optional[Dict[str, Any]] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if current_value is not None:
                 current_value.update(mapping_value)
@@ -192,27 +193,27 @@ class PluginConfig(yaml.YAMLObject):
     yaml_tag = "!plugin"
 
     @classmethod
-    def from_yaml(cls, loader, node):
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> "PluginConfig":
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping):
+    def from_mapping(cls, mapping: Dict[str, Any]) -> "PluginConfig":
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         c = cls()
         c.__dict__.update(mapping)
         return c
 
     @staticmethod
-    def validate(config_keys):
+    def validate(config_keys: Tuple[Any, ...]) -> None:
         """Validate a :class:`~eodag.config.PluginConfig`"""
         if "type" not in config_keys:
             raise ValidationError(
                 "A Plugin config must specify the Plugin it configures"
             )
 
-    def update(self, mapping):
+    def update(self, mapping: Optional[Dict[Any, Any]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
@@ -225,7 +226,7 @@ class PluginConfig(yaml.YAMLObject):
         )
 
 
-def load_default_config():
+def load_default_config() -> Dict[str, Any]:
     """Load the providers configuration into a dictionnary.
 
     Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
@@ -240,7 +241,7 @@ def load_default_config():
     return load_config(eodag_providers_cfg_file)
 
 
-def load_config(config_path):
+def load_config(config_path: str) -> Dict[str, Any]:
     """Load the providers configuration into a dictionnary from a given file
 
     :param config_path: The path to the provider config file
@@ -249,7 +250,7 @@ def load_config(config_path):
     :rtype: dict
     """
     logger.debug(f"Loading configuration from {config_path}")
-    config = {}
+    config: Dict[str, Any] = {}
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it
@@ -265,7 +266,10 @@ def load_config(config_path):
     return config
 
 
-def provider_config_init(provider_config, stac_search_default_conf=None):
+def provider_config_init(
+    provider_config: ProviderConfig,
+    stac_search_default_conf: Optional[Dict[str, Any]] = None,
+) -> None:
     """Applies some default values to provider config
 
     :param provider_config: An eodag provider configuration
@@ -301,7 +305,7 @@ def provider_config_init(provider_config, stac_search_default_conf=None):
         pass
 
 
-def override_config_from_file(config, file_path):
+def override_config_from_file(config: Dict[str, Any], file_path: str) -> None:
     """Override a configuration with the values in a file
 
     :param config: An eodag providers configuration dictionary
@@ -321,14 +325,16 @@ def override_config_from_file(config, file_path):
     override_config_from_mapping(config, config_in_file)
 
 
-def override_config_from_env(config):
+def override_config_from_env(config: Dict[str, Any]) -> None:
     """Override a configuration with environment variables values
 
     :param config: An eodag providers configuration dictionary
     :type config: dict
     """
 
-    def build_mapping_from_env(env_var, env_value, mapping):
+    def build_mapping_from_env(
+        env_var: str, env_value: str, mapping: Dict[str, Any]
+    ) -> None:
         """Recursively build a dictionary from an environment variable.
 
         The environment variable must respect the pattern: KEY1__KEY2__[...]__KEYN.
@@ -368,7 +374,9 @@ def override_config_from_env(config):
     override_config_from_mapping(config, mapping_from_env)
 
 
-def override_config_from_mapping(config, mapping):
+def override_config_from_mapping(
+    config: Dict[str, Any], mapping: Dict[str, Any]
+) -> None:
     """Override a configuration with the values in a mapping
 
     :param config: An eodag providers configuration dictionary
@@ -377,7 +385,8 @@ def override_config_from_mapping(config, mapping):
     :type mapping: dict
     """
     for provider, new_conf in mapping.items():
-        old_conf = config.get(provider)
+        new_conf: Dict[str, Any]
+        old_conf: Optional[Dict[str, Any]] = config.get(provider)
         if old_conf is not None:
             old_conf.update(new_conf)
         else:
@@ -398,7 +407,7 @@ def override_config_from_mapping(config, mapping):
                 logger.debug(tb.format_exc())
 
 
-def merge_configs(config, other_config):
+def merge_configs(config: Dict[str, Any], other_config: Dict[str, Any]) -> None:
     """Override a configuration with the values of another configuration
 
     :param config: An eodag providers configuration dictionary
@@ -432,7 +441,7 @@ def merge_configs(config, other_config):
             config[provider] = new_conf
 
 
-def load_yml_config(yml_path):
+def load_yml_config(yml_path: str) -> Dict[Any, Any]:
     """Load a conf dictionnary from given yml absolute path
 
     :returns: The yml configuration file
@@ -442,7 +451,7 @@ def load_yml_config(yml_path):
     return dict_items_recursive_apply(config.source, string_to_jsonpath)
 
 
-def load_stac_config():
+def load_stac_config() -> Dict[str, Any]:
     """Load the stac configuration into a dictionnary
 
     :returns: The stac configuration
@@ -453,7 +462,7 @@ def load_stac_config():
     )
 
 
-def load_stac_api_config():
+def load_stac_api_config() -> Dict[str, Any]:
     """Load the stac API configuration into a dictionnary
 
     :returns: The stac API configuration
@@ -464,7 +473,7 @@ def load_stac_api_config():
     )
 
 
-def load_stac_provider_config():
+def load_stac_provider_config() -> Dict[str, Any]:
     """Load the stac provider configuration into a dictionnary
 
     :returns: The stac provider configuration
@@ -475,7 +484,9 @@ def load_stac_provider_config():
     ).source
 
 
-def get_ext_product_types_conf(conf_uri=EXT_PRODUCT_TYPES_CONF_URI):
+def get_ext_product_types_conf(
+    conf_uri: str = EXT_PRODUCT_TYPES_CONF_URI,
+) -> Dict[str, Any]:
     """Read external product types conf
 
     :param conf_uri: URI to local or remote configuration file

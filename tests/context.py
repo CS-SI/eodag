@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 from eodag import EODataAccessGateway, api, config, setup_logging
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
-from eodag.api.product import EOProduct
+from eodag.api.product import EOProduct, DownloadedCallback
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.base import DatasetDriver
 from eodag.api.product.metadata_mapping import (
@@ -77,7 +77,6 @@ from eodag.utils import (
     path_to_uri,
     ProgressCallback,
     uri_to_path,
-    DownloadedCallback,
     parse_qsl,
     urlsplit,
     GENERIC_PRODUCT_TYPE,
