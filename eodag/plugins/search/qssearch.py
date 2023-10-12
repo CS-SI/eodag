@@ -760,45 +760,6 @@ class QueryStringSearch(Search):
         )
         return collections
 
-    def map_product_type(self, product_type, **kwargs):
-        """Map the eodag product type to the provider product type"""
-        if product_type is None:
-            return
-        logger.debug("Mapping eodag product type to provider product type")
-        return self.config.products.get(product_type, {}).get(
-            "productType", GENERIC_PRODUCT_TYPE
-        )
-
-    def get_product_type_def_params(self, product_type, **kwargs):
-        """Get the provider product type definition parameters"""
-        if product_type in self.config.products.keys():
-            logger.debug(
-                "Getting provider product type definition parameters for %s",
-                product_type,
-            )
-            return self.config.products[product_type]
-        elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
-            logger.debug(
-                "Getting generic provider product type definition parameters for %s",
-                product_type,
-            )
-            return {
-                k: v
-                for k, v in format_dict_items(
-                    self.config.products[GENERIC_PRODUCT_TYPE], **kwargs
-                ).items()
-                if v
-            }
-
-        else:
-            return {}
-
-    def get_metadata_mapping(self, product_type=None):
-        """Get the plugin metadata mapping configuration (product type specific if exists)"""
-        return self.config.products.get(product_type, {}).get(
-            "metadata_mapping", self.config.metadata_mapping
-        )
-
     def _request(self, url, info_message=None, exception_message=None):
         try:
             timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)

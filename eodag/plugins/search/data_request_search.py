@@ -18,7 +18,6 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     deepcopy,
-    format_dict_items,
     string_to_jsonpath,
 )
 from eodag.utils.exceptions import NotAvailableError, RequestError
@@ -80,35 +79,6 @@ class DataRequestSearch(Search):
             )
         self.download_info = {}
         self.data_request_id = None
-
-    def get_product_type_def_params(self, product_type, **kwargs):
-        """Get the provider product type definition parameters"""
-        if product_type in self.config.products.keys():
-            logger.debug(
-                "Getting provider product type definition parameters for %s",
-                product_type,
-            )
-            return self.config.products[product_type]
-        elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
-            logger.debug(
-                "Getting generic provider product type definition parameters for %s",
-                product_type,
-            )
-            return {
-                k: v
-                for k, v in format_dict_items(
-                    self.config.products[GENERIC_PRODUCT_TYPE], **kwargs
-                ).items()
-                if v
-            }
-        else:
-            return {}
-
-    def get_metadata_mapping(self, product_type=None):
-        """Get the plugin metadata mapping configuration (product type specific if exists)"""
-        return self.config.products.get(product_type, {}).get(
-            "metadata_mapping", self.config.metadata_mapping
-        )
 
     def discover_product_types(self):
         """Fetch product types is disabled for `DataRequestSearch`
