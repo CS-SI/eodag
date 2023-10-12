@@ -993,7 +993,6 @@
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/download/{uid}'
       # storageStatus must be one of ONLINE, STAGING, OFFLINE
-      # storageStatus: '{$.properties.status#get_group_name((?P<ONLINE>(0|34|37))|(?P<STAGING>32)|(?P<OFFLINE>31))}'
       storageStatus: '$.properties.status'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
