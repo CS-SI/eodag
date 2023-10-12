@@ -16,11 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.plugins.base import PluginTopic
+from eodag.utils import GENERIC_PRODUCT_TYPE, format_dict_items
+
+logger = logging.getLogger("eodag.plugins.search.base")
 
 
 class Search(PluginTopic):
@@ -62,3 +67,59 @@ class Search(PluginTopic):
     def discover_product_types(self):
         """Fetch product types list from provider using `discover_product_types` conf"""
         return
+
+    def map_product_type(self, product_type, **kwargs):
+        """Get the provider product type from eodag product type
+
+        :param product_type: eodag product type
+        :type product_type: str
+        :returns: provider product type
+        :rtype: str
+        """
+        if product_type is None:
+            return
+        logger.debug("Mapping eodag product type to provider product type")
+        return self.config.products.get(product_type, {}).get(
+            "productType", GENERIC_PRODUCT_TYPE
+        )
+
+    def get_product_type_def_params(self, product_type, **kwargs):
+        """Get the provider product type definition parameters and specific settings
+
+        :param product_type: the desired product type
+        :type product_type: str
+        :returns: The product type definition parameters
+        :rtype: dict
+        """
+        if product_type in self.config.products.keys():
+            logger.debug(
+                "Getting provider product type definition parameters for %s",
+                product_type,
+            )
+            return self.config.products[product_type]
+        elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
+            logger.debug(
+                "Getting generic provider product type definition parameters for %s",
+                product_type,
+            )
+            return {
+                k: v
+                for k, v in format_dict_items(
+                    self.config.products[GENERIC_PRODUCT_TYPE], **kwargs
+                ).items()
+                if v
+            }
+        else:
+            return {}
+
+    def get_metadata_mapping(self, product_type=None):
+        """Get the plugin metadata mapping configuration (product type specific if exists)
+
+        :param product_type: the desired product type
+        :type product_type: str
+        :returns: The product type specific metadata-mapping
+        :rtype: dict
+        """
+        return self.config.products.get(product_type, {}).get(
+            "metadata_mapping", self.config.metadata_mapping
+        )
