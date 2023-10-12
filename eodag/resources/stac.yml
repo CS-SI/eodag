@@ -180,6 +180,7 @@ item:
   geometry: '$.product.geometry'
   type: "Feature"
   collection: '$.product.product_type'
+  providers: '$.providers'
   properties:
     datetime: '$.product.properties.startTimeFromAscendingNode'
     start_datetime: '$.product.properties.startTimeFromAscendingNode'

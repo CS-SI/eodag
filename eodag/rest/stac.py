@@ -194,6 +194,7 @@ class StacItem(StacCommon):
         item_model = self.__filter_item_model_properties(
             self.stac_config["item"], search_results[0].product_type
         )
+        provider_model = deepcopy(self.stac_config["provider"])
 
         # check if some items need to be converted
         need_conversion = {}
@@ -212,8 +213,21 @@ class StacItem(StacCommon):
         item_list = []
         for product in search_results:
             # parse jsonpath
+            provider_dict = jsonpath_parse_dict_items(
+                provider_model,
+                {
+                    "provider": self.eodag_api.providers_config[
+                        product.provider
+                    ].__dict__
+                },
+            )
+
             product_item = jsonpath_parse_dict_items(
-                item_model, {"product": product.__dict__}
+                item_model,
+                {
+                    "product": product.__dict__,
+                    "providers": provider_dict,
+                },
             )
             # add origin assets to product assets
             origin_assets = product_item["assets"].pop("origin_assets")
@@ -448,6 +462,12 @@ class StacItem(StacCommon):
         item_model = self.__filter_item_model_properties(
             self.stac_config["item"], product_type
         )
+        provider_model = deepcopy(self.stac_config["provider"])
+
+        provider_dict = jsonpath_parse_dict_items(
+            provider_model,
+            {"provider": self.eodag_api.providers_config[product.provider].__dict__},
+        )
 
         catalog = StacCatalog(
             url=self.url.split("/items")[0],
@@ -460,7 +480,11 @@ class StacItem(StacCommon):
 
         # parse jsonpath
         product_item = jsonpath_parse_dict_items(
-            item_model, {"product": product.__dict__}
+            item_model,
+            {
+                "product": product.__dict__,
+                "providers": provider_dict,
+            },
         )
         # parse f-strings
         format_args = deepcopy(self.stac_config)
