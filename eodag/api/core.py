@@ -245,6 +245,7 @@ class EODataAccessGateway:
 
             product_types_schema = Schema(
                 ID=fields.STORED,
+                alias=fields.STORED,
                 abstract=fields.STORED,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
@@ -497,9 +498,10 @@ class EODataAccessGateway:
                 for product_type_id in provider_supported_products:
                     if product_type_id == GENERIC_PRODUCT_TYPE:
                         continue
-                    product_type = dict(
-                        ID=product_type_id, **self.product_types_config[product_type_id]
-                    )
+                    config = self.product_types_config[product_type_id]
+                    if "alias" in config:
+                        product_type_id = config["alias"]
+                    product_type = dict(ID=product_type_id, **config)
                     if product_type_id not in product_types:
                         product_types.append(product_type)
                 return sorted(product_types, key=itemgetter("ID"))
