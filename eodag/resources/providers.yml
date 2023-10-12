@@ -5058,6 +5058,21 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_FORECAST"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5092,6 +5107,18 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_HISTORICAL:
       productType: EO:ECMWF:DAT:EFAS_HISTORICAL
@@ -5100,6 +5127,22 @@
       system_version: version_4_0
       variable: volumetric_soil_moisture
       model_levels: soil_levels
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_HISTORICAL"
+      constraints_param: constraints
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         soil_level:
           - '{{ "multiStringSelectValues": [ {{"name": "soil_level", "value": {soil_level} }} ] }}'
@@ -5128,6 +5171,18 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "hday", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_REFORECAST:
       productType: EO:ECMWF:DAT:EFAS_REFORECAST
@@ -5173,6 +5228,24 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_REFORECAST"
+      constraints_param: constraints
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - day
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5203,6 +5276,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "hday", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_SEASONAL:
       productType: EO:ECMWF:DAT:EFAS_SEASONAL
@@ -5220,6 +5302,19 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_SEASONAL"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         soil_level:
           - '{{ "multiStringSelectValues": [ {{"name": "soil_level", "value": {soil_level} }} ] }}'
@@ -5246,6 +5341,12 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_SEASONAL_REFORECAST:
       productType: EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST
@@ -5263,6 +5364,22 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST"
+      constraints_param: constraints
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+      multi_select_values:
+        - year
+        - month
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         soil_level:
           - '{{ "multiStringSelectValues": [ {{"name": "soil_level", "value": {soil_level} }} ] }}'
@@ -5289,6 +5406,12 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SATELLITE_CARBON_DIOXIDE:
       productType: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE

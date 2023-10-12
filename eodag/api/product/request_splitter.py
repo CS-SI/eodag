@@ -395,7 +395,7 @@ class RequestSplitter:
             return [str(m) for m in range(1, 13)]
         constraints = []
         for constraint in self.constraints:
-            if year in constraint["year"]:
+            if "year" in constraint and year in constraint["year"]:
                 matches_constraint = True
                 if constraint_values:
                     for key, value in constraint_values.items():
@@ -428,7 +428,7 @@ class RequestSplitter:
     def _get_constraints_for_month(self, month, constraint_values=None):
         constraints = []
         for constraint in self.constraints:
-            if month in constraint["month"]:
+            if "month" in constraint and month in constraint["month"]:
                 matches_constraint = True
                 if constraint_values:
                     for key, value in constraint_values.items():
@@ -479,7 +479,7 @@ class RequestSplitter:
     def _get_constraints_for_day(self, day):
         constraints = []
         for constraint in self.constraints:
-            if day in constraint["day"]:
+            if "day" in constraint and day in constraint["day"]:
                 constraints.append(constraint)
         return constraints
 
@@ -671,6 +671,8 @@ class RequestSplitter:
         variable_name = self.config["assets_split_parameter"]
         available_variables = []
         for constraint in self.constraints:
+            if "year" not in constraint:
+                continue
             years_intsersect = set(years).intersection(set(constraint["year"]))
             if len(years_intsersect) == len(years):
                 available_variables += _check_constraint_params(
@@ -686,6 +688,8 @@ class RequestSplitter:
         variable_name = self.config["assets_split_parameter"]
         available_variables = []
         for constraint in self.constraints:
+            if "year" not in constraint or "month" not in constraint:
+                continue
             years_intsersect = set(years).intersection(set(constraint["year"]))
             months_intersect = set(months).intersection(set(constraint["month"]))
             if len(years_intsersect) == len(years) and len(months_intersect) == len(
