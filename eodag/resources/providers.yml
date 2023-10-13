@@ -4043,7 +4043,7 @@
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s5p_id}'
-    COP_DEM_GLO30:
+    COP_DEM_GLO30_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
       metadata_mapping:
         id:
