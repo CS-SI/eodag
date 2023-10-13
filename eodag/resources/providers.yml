@@ -1192,6 +1192,27 @@
     S5P_L2_SO2:
       productType: L2__SO2___
       collection: Sentinel5P
+    # COP DEM
+    COP_DEM_GLO30_DGED:
+      productType: DGE_30
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
+    COP_DEM_GLO30_DTED:
+      productType: DTE_30
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
+    COP_DEM_GLO90_DGED:
+      productType: DGE_90
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
+    COP_DEM_GLO90_DTED:
+      productType: DTE_90
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
@@ -4043,8 +4064,17 @@
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s5p_id}'
-    COP_DEM_GLO30:
+    COP_DEM_GLO30_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
+      metadata_mapping:
+        id:
+          - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {id#split_cop_dem_id}}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode: '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90'
+    COP_DEM_GLO90_DGED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-90-DGED__2022_1
       metadata_mapping:
         id:
           - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {id#split_cop_dem_id}}}]}}'

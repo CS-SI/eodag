@@ -2923,22 +2923,69 @@ EFAS_SEASONAL_REFORECAST:
   missionEndDate: "2020-10-01T00:00:00Z"
 
 # COPERNICUS Digital Elevation Model
-COP_DEM_GLO30:
+COP_DEM_GLO30_DGED:
   abstract: |
-    The Copernicus DEM is a Digital Surface Model (DSM) which represents the surface of the Earth including buildings,
-    infrastructure and vegetation. We provide two instances of Copernicus DEM named GLO-30 Public and GLO-90. GLO-30
-    provides worldwide coverage at 30 meters. Note that ocean areas do not have tiles, there one can assume height
-    values equal to zero. Data is provided as Cloud Optimized GeoTIFFs. Several releases are currently available for
-    all Copernicus DEM instances, only the last one is provided as 2022 release. A full collection of tiles can be
-    found via FTP and PANDA Catalogue under dataset names marked with '2022_1'.
+    Defence Gridded Elevation Data (DGED) formatted Copernicus DEM GLO-30 data.
+    The Copernicus Digital Elevation Model is a Digital Surface Model (DSM) that represents the surface of the Earth
+    including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
+    GLO-30 and GLO-90. GLO-30 provides worldwide coverage at 30 meters.Data were acquired through the TanDEM-X mission
+    between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
   instrument:
   platform: TerraSAR
   platformSerialIdentifier:
   processingLevel:
-  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-30,DSM
+  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-30,DSM,GDGED
   sensorType: ALTIMETRIC
   license: proprietary
-  title: COPERNICUS Digital Elevation Model (GLO-30)
+  title: Copernicus DEM GLO-30 DGED
+  missionStartDate: "2010-06-21T00:00:00Z"
+COP_DEM_GLO30_DTED:
+  abstract: |
+    Digital Terrain Elevation Data (DTED) formatted Copernicus DEM GLO-30 data.
+    The Copernicus Digital Elevation Model is a Digital Surface Model (DSM) that represents the surface of the Earth
+    including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
+    GLO-30 and GLO-90. GLO-30 provides worldwide coverage at 30 meters.Data were acquired through the TanDEM-X mission
+    between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
+  instrument:
+  platform: TerraSAR
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-30,DSM,DTED
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Copernicus DEM GLO-30 DTED
+  missionStartDate: "2010-06-21T00:00:00Z"
+COP_DEM_GLO90_DGED:
+  abstract: |
+    Defence Gridded Elevation Data (DGED) formatted Copernicus DEM GLO-90 data.
+    The Copernicus Digital Elevation Model is a Digital Surface Model (DSM) that represents the surface of the Earth
+    including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
+    GLO-30 and GLO-90. GLO-90 provides worldwide coverage at 90 meters.Data were acquired through the TanDEM-X mission
+    between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
+  instrument:
+  platform: TerraSAR
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-90,DSM,GDGED
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Copernicus DEM GLO-90 DGED
+  missionStartDate: "2010-06-21T00:00:00Z"
+COP_DEM_GLO90_DTED:
+  abstract: |
+    Digital Terrain Elevation Data (DTED) formatted Copernicus DEM GLO-90 data.
+    The Copernicus Digital Elevation Model is a Digital Surface Model (DSM) that represents the surface of the Earth
+    including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
+    GLO-30 and GLO-90. GLO-90 provides worldwide coverage at 90 meters.Data were acquired through the TanDEM-X mission
+    between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
+  instrument:
+  platform: TerraSAR
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-90,DSM,DTED
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Copernicus DEM GLO-90 DTED
   missionStartDate: "2010-06-21T00:00:00Z"
 
 # Copernicus Land Monitoring Service
