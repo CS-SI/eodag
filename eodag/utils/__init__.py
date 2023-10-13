@@ -1144,7 +1144,7 @@ def get_geometry_from_various(locations_config=[], **query_args):
     return geom
 
 
-class MockResponse(object):
+class MockResponse:
     """Fake requests response"""
 
     def __init__(self, json_data, status_code):

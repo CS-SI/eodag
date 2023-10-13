@@ -47,7 +47,7 @@ except ImportError:
 logger = logging.getLogger("eodag.api.product")
 
 
-class EOProduct(object):
+class EOProduct:
     """A wrapper around an Earth Observation Product originating from a search.
 
     Every Search plugin instance must build an instance of this class for each of
