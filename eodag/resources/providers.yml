@@ -4073,6 +4073,15 @@
         startTimeFromAscendingNode: '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         defaultGeometry: '-180 -90 180 90'
+    COP_DEM_GLO90_DGED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-90-DGED__2022_1
+      metadata_mapping:
+        id:
+          - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {id#split_cop_dem_id}}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode: '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        defaultGeometry: '-180 -90 180 90'
     CLMS_CORINE:
       productType: EO:CLMS:DAT:CORINE
       providerProductType: "Corine Land Cover 2018"

@@ -102,7 +102,7 @@ class TestCore(TestCoreBase):
         "CLMS_GLO_NDVI_333M": ["wekeo"],
         "COP_DEM_GLO30_DGED": ["creodias", "wekeo"],
         "COP_DEM_GLO30_DTED": ["creodias"],
-        "COP_DEM_GLO90_DGED": ["creodias"],
+        "COP_DEM_GLO90_DGED": ["creodias", "wekeo"],
         "COP_DEM_GLO90_DTED": ["creodias"],
         "EEA_DAILY_SSM_1KM": ["wekeo"],
         "EEA_DAILY_SWI_1KM": ["wekeo"],
@@ -348,6 +348,7 @@ class TestCore(TestCoreBase):
         "cop_dataspace",
         "planetary_computer",
         "hydroweb_next",
+        "wekeo",
     ]
 
     def setUp(self):
