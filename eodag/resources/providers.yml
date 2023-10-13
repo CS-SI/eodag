@@ -2996,6 +2996,7 @@
     type: QueryStringSearch
     api_endpoint: 'http://catalogue.dataspace.copernicus.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
+    timeout: 10
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -3005,19 +3006,11 @@
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
-    # discover_product_types:
-    #   fetch_url: https://finder.creodias.eu/attributes.json
-    #   result_type: json
-    #   results_entry: 'collections[?billing=="free"]'
-    #   generic_product_type_id: '$.id'
-    #   generic_product_type_parsable_properties:
-    #     collection: '$.id'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
-      # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
-      #   but `free_text_search_operations.$filter.operations.and` entries are then used instead.
       uid: '$.id'
+      # OpenSearch Parameters for Collection Search (Table 3)
       productType:
         - productType
         - '$.properties.productType'
@@ -3061,15 +3054,12 @@
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      # polarizationChannels:
-      #   - null
-      #   - '$.Attributes.polarisationChannels'
-      polarizationMode:
+      polarizationChannels:
         - 'polarisation'
         - '$.properties.polarisation'
       # Custom parameters (not defined in the base document referenced above)
       id:
-        - 'productIdentifier=%{id#remove_extension}%'
+        - 'productIdentifier={id#remove_extension}'
         - '{$.properties.title#remove_extension}'
       tileIdentifier:
         - 'tileid'
