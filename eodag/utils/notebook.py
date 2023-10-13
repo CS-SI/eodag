@@ -43,7 +43,7 @@ def check_notebook():
         return False  # Probably standard Python interpreter
 
 
-class NotebookWidgets(object):
+class NotebookWidgets:
     """Display / handle ipython widgets"""
 
     is_notebook = False

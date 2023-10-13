@@ -326,7 +326,7 @@ class EODagTestCase(unittest.TestCase):
         self.requests_request.return_value = self._download_response_archive()
 
     def _download_response_archive(self):
-        class Response(object):
+        class Response:
             """Emulation of a response to requests.get method for a zipped product"""
 
             def __init__(response):

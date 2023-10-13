@@ -56,7 +56,7 @@ DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
 STAC_CATALOGS_PREFIX = "catalogs"
 
 
-class StacCommon(object):
+class StacCommon:
     """Stac common object
 
     :param url: Requested URL

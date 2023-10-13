@@ -80,7 +80,7 @@ DEFAULT_ITEMS_PER_PAGE = 20
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
 
-class EODataAccessGateway(object):
+class EODataAccessGateway:
     """An API for downloading a wide variety of geospatial products originating
     from different types of providers.
 

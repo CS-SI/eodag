@@ -35,7 +35,7 @@ from eodag.utils.exceptions import UnsupportedProvider
 logger = logging.getLogger("eodag.plugins.manager")
 
 
-class PluginManager(object):
+class PluginManager:
     """A manager for the plugins.
 
     The role of instances of this class (normally only one instance exists,

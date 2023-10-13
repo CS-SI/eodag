@@ -48,7 +48,7 @@ EXT_PRODUCT_TYPES_CONF_URI = (
 )
 
 
-class SimpleYamlProxyConfig(object):
+class SimpleYamlProxyConfig:
     """A simple configuration class acting as a proxy to an underlying dict object
     as returned by yaml.load"""
 
