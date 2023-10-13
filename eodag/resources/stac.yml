@@ -306,13 +306,7 @@ catalogs:
         - "{collection[keywords][4]}"
       license: "{collection[license]}"
       properties: "{collection[properties]}"
-      providers:
-        - name: "{collection[providers][0][name]}"
-          description: "{collection[providers][0][description]}"
-          # one or more of "producer" "licensor" "processor" "host"
-          roles:
-            - "{collection[providers][0][roles][0]}"
-          url: "{collection[providers][0][url]}"
+      providers: "{collection[providers]}"
       summaries: "{collection[summaries]}"
 
   years_list:
