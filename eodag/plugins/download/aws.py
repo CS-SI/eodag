@@ -242,7 +242,7 @@ class AwsDownload(Download):
         SAFE-build is configured for a given provider and product type.
         If the product title is configured to be updated during download and
         SAFE-formatted, its destination path will be:
-        `{outputs_prefix}/{title}/{updated_title}.SAFE`
+        `{outputs_prefix}/{title}`
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
