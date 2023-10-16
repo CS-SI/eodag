@@ -15,7 +15,7 @@ peps_search.json are results obtained from https://peps.cnes.fr/ catalog and eod
 eodag_search_result_theia.geojson is derived from results from https://theia.cnes.fr/ catalog.
 
 
-The product S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE found under products and under products/as_archive
+The product S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911 found under products and under products/as_archive
 was found on https://finder.eocloud.eu/www/ catalog. It has been modified (some files have been removed to keep it lightweighted)
 for the purpose of our use. Terms and use of the original product can be found here:
 https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
