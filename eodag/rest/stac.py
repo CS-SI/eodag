@@ -226,7 +226,7 @@ class StacItem(StacCommon):
                 item_model,
                 {
                     "product": product.__dict__,
-                    "providers": provider_dict,
+                    "providers": [provider_dict],
                 },
             )
             # add origin assets to product assets
