@@ -50,7 +50,7 @@ from eodag.utils.exceptions import (
     RequestError,
 )
 
-logger = logging.getLogger("eodag.plugins.download.s3rest")
+logger = logging.getLogger("eodag.download.s3rest")
 
 
 class S3RestDownload(Download):

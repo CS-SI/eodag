@@ -44,7 +44,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError, NotAvailableError
 
-logger = logging.getLogger("eodag.plugins.download.aws")
+logger = logging.getLogger("eodag.download.aws")
 
 # AWS chunk path identify patterns
 

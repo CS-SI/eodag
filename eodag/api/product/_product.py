@@ -44,7 +44,7 @@ except ImportError:
     from shapely.errors import TopologicalError as GEOSException
 
 
-logger = logging.getLogger("eodag.api.product")
+logger = logging.getLogger("eodag.product")
 
 
 class EOProduct:

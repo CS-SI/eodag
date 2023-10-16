@@ -25,7 +25,7 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, format_dict_items
 from eodag.utils.exceptions import AuthenticationError
 
-logger = logging.getLogger("eodag.plugins.auth.sas_auth")
+logger = logging.getLogger("eodag.auth.sas_auth")
 
 
 class RequestsSASAuth(AuthBase):

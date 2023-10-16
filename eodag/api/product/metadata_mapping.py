@@ -46,7 +46,7 @@ from eodag.utils import (
     update_nested_dict,
 )
 
-logger = logging.getLogger("eodag.api.product.metadata_mapping")
+logger = logging.getLogger("eodag.product.metadata_mapping")
 
 SEP = r"#"
 INGEST_CONVERSION_REGEX = re.compile(

@@ -32,7 +32,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.utils import dict_items_recursive_sort
 
-logger = logging.getLogger("eodag.plugins.search.build_search_result")
+logger = logging.getLogger("eodag.search.build_search_result")
 
 
 class BuildPostSearchResult(PostJsonSearch):

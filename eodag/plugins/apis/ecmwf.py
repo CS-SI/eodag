@@ -35,7 +35,7 @@ from eodag.utils import get_geometry_from_various, path_to_uri, urlsplit
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
-logger = logging.getLogger("eodag.plugins.apis.ecmwf")
+logger = logging.getLogger("eodag.apis.ecmwf")
 
 ECMWF_MARS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 

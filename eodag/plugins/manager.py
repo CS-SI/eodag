@@ -32,7 +32,7 @@ from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from eodag.utils.exceptions import UnsupportedProvider
 
-logger = logging.getLogger("eodag.plugins.manager")
+logger = logging.getLogger("eodag.manager")
 
 
 class PluginManager:

@@ -25,7 +25,7 @@ from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 
-logger = logging.getLogger("eodag.plugins.auth.keycloak")
+logger = logging.getLogger("eodag.auth.keycloak")
 
 
 class KeycloakOIDCPasswordAuth(Authentication):

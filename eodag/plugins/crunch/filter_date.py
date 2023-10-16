@@ -25,7 +25,7 @@ from dateutil import tz
 
 from eodag.plugins.crunch.base import Crunch
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_date")
+logger = logging.getLogger("eodag.crunch.date")
 
 
 class FilterDate(Crunch):

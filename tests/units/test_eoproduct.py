@@ -505,7 +505,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_register_downloader_resolve_ignored(self):
         """eoproduct.register_donwloader must ignore unresolvable locations and properties"""
 
-        logger = logging.getLogger("eodag.api.product")
+        logger = logging.getLogger("eodag.product")
         with mock.patch.object(logger, "debug") as mock_debug:
 
             downloadable_product = self._dummy_downloadable_product(

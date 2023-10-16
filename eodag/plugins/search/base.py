@@ -25,7 +25,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.base import PluginTopic
 from eodag.utils import GENERIC_PRODUCT_TYPE, format_dict_items
 
-logger = logging.getLogger("eodag.plugins.search.base")
+logger = logging.getLogger("eodag.search.base")
 
 
 class Search(PluginTopic):

@@ -35,7 +35,7 @@ from eodag.utils.exceptions import (
 )
 from eodag.utils.notebook import NotebookWidgets
 
-logger = logging.getLogger("eodag.plugins.download.base")
+logger = logging.getLogger("eodag.download.base")
 
 # default wait times in minutes
 DEFAULT_DOWNLOAD_WAIT = 2  # in minutes

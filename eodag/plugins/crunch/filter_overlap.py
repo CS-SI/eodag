@@ -28,7 +28,7 @@ except ImportError:
     from shapely.errors import TopologicalError as GEOSException
 
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_overlap")
+logger = logging.getLogger("eodag.crunch.overlap")
 
 
 class FilterOverlap(Crunch):
