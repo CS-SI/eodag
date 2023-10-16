@@ -326,16 +326,25 @@ class RequestSplitter:
         m = end_month
         for y in range(end_year, start_year - 1, -1):
             while (m >= 1 and y > start_year) or (m >= start_month and y == start_year):
+                months = self._get_months_for_years(
+                    [str(y)], constraint_values=constraint_values, months={str(m)}
+                )
                 if i < num_months:
-                    months_slice.append("{:0>2d}".format(m))
+                    if str(m) in months:
+                        months_slice.append("{:0>2d}".format(m))
                     i += 1
                 else:
-                    months_years.append({"year": [str(y)], "month": months_slice})
-                    months_slice = ["{:0>2d}".format(m)]
+                    if len(months_slice) > 0:
+                        months_years.append({"year": [str(y)], "month": months_slice})
+                    if str(m) in months:
+                        months_slice = ["{:0>2d}".format(m)]
+                    else:
+                        months_slice = []
                     i = 1
                 if m == 1 or m == start_month and y == start_year:
                     # don't create slices that go over 2 years because this cannot be configured with multiselect boxes
-                    months_years.append({"year": [str(y)], "month": months_slice})
+                    if len(months_slice) > 0:
+                        months_years.append({"year": [str(y)], "month": months_slice})
                 m -= 1
             m = 12
             i = 0

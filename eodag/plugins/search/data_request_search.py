@@ -235,13 +235,16 @@ class DataRequestSearch(Search):
                         keywords[key] = value
 
                 param_variable = self.config.assets_split_parameter
-                selected_vars = keywords.pop(param_variable, None)
+                if param_variable:
+                    selected_vars = keywords.pop(param_variable, None)
+                else:
+                    selected_vars = []
 
                 keywords_array = request_splitter.apply_additional_splitting(keywords)
                 num_params = len(keywords_array)
                 for kw in keywords_array:
                     counter += 1
-                    if counter < (page - 1) * num_products:
+                    if num_params > 1 and counter <= (page - 1) * num_products:
                         continue
 
                     if param_variable and not search_by_id:
@@ -260,6 +263,8 @@ class DataRequestSearch(Search):
                         product = self._create_product(variables, product_type, kw)
                         products.append(product)
                     else:
+                        if param_variable:
+                            kw[param_variable] = selected_vars
                         result = self._get_products(
                             product_type, provider_product_type, kw, **kwargs
                         )
