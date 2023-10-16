@@ -37,7 +37,7 @@ from eodag.plugins.search.base import Search
 from eodag.utils import DEFAULT_PROJ
 from eodag.utils.import_system import patch_owslib_requests
 
-logger = logging.getLogger("eodag.plugins.search.csw")
+logger = logging.getLogger("eodag.search.csw")
 
 SUPPORTED_REFERENCE_SCHEMES = ["WWW:DOWNLOAD-1.0-http--download"]
 

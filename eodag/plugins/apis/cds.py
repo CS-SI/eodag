@@ -35,7 +35,7 @@ from eodag.utils import datetime_range, get_geometry_from_various, path_to_uri, 
 from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
 from eodag.utils.logging import get_logging_verbose
 
-logger = logging.getLogger("eodag.plugins.apis.cds")
+logger = logging.getLogger("eodag.apis.cds")
 
 CDS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 

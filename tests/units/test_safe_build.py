@@ -32,7 +32,7 @@ class TestSafeBuild(unittest.TestCase):
         super(TestSafeBuild, self).setUp()
 
         self.awsd = AwsDownload("some_provider", {})
-        self.logger = logging.getLogger("eodag.plugins.download.aws")
+        self.logger = logging.getLogger("eodag.download.aws")
 
         self.tmp_download_dir = TemporaryDirectory()
         self.tmp_download_path = self.tmp_download_dir.name

@@ -471,7 +471,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 responses.POST, self.awseos_url, status=500, body=b"test error message"
             )
 
-            with self.assertLogs("eodag.plugins.search.qssearch", level="DEBUG") as cm:
+            with self.assertLogs("eodag.search.qssearch", level="DEBUG") as cm:
                 with self.assertRaises(RequestError):
                     products, estimate = self.awseos_search_plugin.query(
                         page=1,

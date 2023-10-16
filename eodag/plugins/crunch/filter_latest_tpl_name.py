@@ -22,7 +22,7 @@ import re
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import ValidationError
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_latest_tpl_name")
+logger = logging.getLogger("eodag.crunch.latest_tpl_name")
 
 
 class FilterLatestByName(Crunch):

@@ -20,7 +20,7 @@ import logging
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 
-logger = logging.getLogger("eodag.plugins.apis.base")
+logger = logging.getLogger("eodag.apis.base")
 
 
 class Api(PluginTopic):

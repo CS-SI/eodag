@@ -51,7 +51,7 @@ from eodag.utils.exceptions import (
     RequestError,
 )
 
-logger = logging.getLogger("eodag.plugins.apis.usgs")
+logger = logging.getLogger("eodag.apis.usgs")
 
 
 class UsgsApi(Download, Api):

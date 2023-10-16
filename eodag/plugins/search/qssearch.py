@@ -50,7 +50,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
 
-logger = logging.getLogger("eodag.plugins.search.qssearch")
+logger = logging.getLogger("eodag.search.qssearch")
 
 
 class QueryStringSearch(Search):

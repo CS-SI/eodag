@@ -61,7 +61,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
 )
 
-logger = logging.getLogger("eodag.plugins.download.http")
+logger = logging.getLogger("eodag.download.http")
 
 
 class HTTPDownload(Download):
