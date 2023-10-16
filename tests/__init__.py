@@ -49,7 +49,7 @@ class EODagTestCase(unittest.TestCase):
             "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
         )
         self.local_filename = (
-            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE"
+            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911"
         )
         self.local_product_abspath = os.path.abspath(
             jp(TEST_RESOURCES_PATH, "products", self.local_filename)
