@@ -105,7 +105,7 @@ paths:
       - Data
       summary: List features in a given catalog
       description: |-
-          Fetch features in the given catalog provided with `catalogs`.
+          Fetch features in the given catalog provided with `catalogPath`.
       parameters:
         - $ref: '#/components/parameters/catalogPath'
         - $ref: '#/components/parameters/bbox'
@@ -128,7 +128,7 @@ paths:
       summary: fetch a single feature from a catalog
       description: |-
           Fetch the feature with id `featureId` in the given catalog provided.
-          with `catalogs`.
+          with `cataloPath`.
       parameters:
         - $ref: '#/components/parameters/catalogPath'
         - $ref: '#/components/parameters/featureId'
@@ -146,7 +146,7 @@ paths:
         summary: download a single feature from a catalog
         description: |-
             Download the feature with id `featureId` in the given catalog provided.
-            with `catalogs`.
+            with `catalogPath`.
         parameters:
           - $ref: '#/components/parameters/catalogPath'
           - $ref: '#/components/parameters/featureId'
@@ -200,7 +200,7 @@ paths:
       operationId: getQueryablesForCollection
       description: |-
           The Queryables mechanism allows a client to discover what terms are available
-          for use when writing filter expressions. These terms are defined per collection.\
+          for use when writing filter expressions. These terms are defined per collection.
 
           When used as a subresource of the collection resource,
           it returns queryables pertaining only to that single collection.
@@ -584,29 +584,39 @@ components:
         $ref: '#/components/schemas/collectionsArray'
       explode: false
   schemas:
+    queryProp:
+      description: Apply query operations to a specific property
+      anyOf:
+        - description: if the object doesn't contain any of the operators, it is equivalent to using the equals operator
+        - type: object
+          description: Match using an operator
+          properties:
+            lte:
+              description: |-
+                Find items with a property value less than or equal the specified value.
+                In EODAG, only `eo:cloud_cover` supports this operator.
+              oneOf:
+                - type: number
+            eq:
+              description: |-
+                Find items with a property that is equal to the specified value.
+                For strings, a case-insensitive comparison must be performed.
+                In EODAG, this operator is implemented for all parameters but `eo:cloud_cover`
+              nullable: true
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
     query:
       type: object
-      description: Define which properties to query and the operations to apply
+      description: Define which parameters are queryable and the operators associated with each
+      additionalProperties:
+        $ref: '#/components/schemas/queryProp'
       example:
-        eo:cloud_cover:
-          gt: 8
-          lt: 50
         platform:
-          eq: 'landsat-8'
-        datetime:
-          gte: '2018-02-12T00:00:00Z'
-          lte: '2018-03-18T12:31:12Z'
-        pl:item_type:
-          startsWith: PSScene
-        product:
-          in:
-            - foo
-            - bar
-            - baz
-        eo:gsd:
-          in:
-            - 10
-            - 20
+          eq: S2A
+        eo:cloud_cover:
+          lte: 80
     collection:
       type: object
       required:
@@ -1410,6 +1420,7 @@ components:
         - $ref: '#/components/schemas/collectionsFilter'
         - $ref: '#/components/schemas/idsFilter'
         - $ref: '#/components/schemas/limitFilter'
+        - $ref: '#/components/schemas/queryFilter'
     limit:
       type: integer
       minimum: 1
@@ -1456,10 +1467,10 @@ components:
       items:
         type: number
       example:
-        - -110
-        - 39.5
-        - -105
-        - 40.5
+        - -12
+        - 33
+        - -11
+        - 34
     bboxFilter:
       type: object
       description: Only return items that intersect the provided bounding box.
@@ -1473,6 +1484,8 @@ components:
         Only Items in one of the provided Collections will be searched.
       items:
         type: string
+      example:
+        - S2_MSI_L1C
     ids:
       type: array
       description: |-
@@ -1480,6 +1493,8 @@ components:
         restrict the number of search results are ignored
       items:
         type: string
+      example:
+        - S2A_MSIL1C_20150725T112046_N0204_R037_T29SKT_20150725T112540
     datetimeFilter:
       description: An object representing a date+time based filter.
       type: object
@@ -1510,6 +1525,12 @@ components:
       properties:
         collections:
           $ref: '#/components/schemas/collectionsArray'
+    queryFilter:
+      description: An object representing a query filter.
+      type: object
+      properties:
+        query:
+          $ref: '#/components/schemas/query'
     datetime:
       type: string
       description: |-
@@ -1529,7 +1550,7 @@ components:
         If a feature has multiple temporal properties, it is the decision of the
         server whether only a single temporal property is used to determine
         the extent or all relevant temporal properties.
-      example: '2018-02-12T00:00:00Z/2018-03-18T12:31:12Z'
+      example: '2015-07-25T00:00:00Z/2015-07-26T00:00:00Z'
     stac_version:
       title: STAC version
       type: string
@@ -1983,13 +2004,3 @@ tags:
     description: >-
       Extension to OGC API - Features to support STAC metadata model and search
       API
-  # - name: STAC API - Core
-  #   description: Part of STAC API v1.0.0 - Core definition
-  # - name: STAC API - Collections
-  #   description: Part of STAC API v1.0.0 - Collections definition
-  # - name: STAC API - Features
-  #   description: Part of STAC API v1.0.0 - Features definition
-  # - name: STAC API - Item Search
-  #   description: Part of STAC API v1.0.0 - Item Search definition
-  # - name: STAC API - Filter Extension
-  #   description: Part of STAC API v1.0.0 - Filter extension definition
