@@ -192,10 +192,13 @@ class DataRequestSearch(Search):
             num_products = kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE)
             page = kwargs.get("page", DEFAULT_PAGE)
 
-            if len(self.config.other_product_split_params):
+            if len(self.config.other_product_split_params) > 0:
+                constraint_values = deepcopy(keywords)
+                for p in self.config.other_product_split_params:
+                    constraint_values.pop(p, None)
                 # pagination will be handled later
                 slices, num_slices = request_splitter.get_time_slices(
-                    start_time, end_time, 1000000, 1, deepcopy(keywords)
+                    start_time, end_time, 1000000, 1, constraint_values
                 )
             else:
                 slices, num_slices = request_splitter.get_time_slices(
@@ -231,15 +234,17 @@ class DataRequestSearch(Search):
                         kwargs[key] = value
                         keywords[key] = value
 
+                param_variable = self.config.assets_split_parameter
+                selected_vars = keywords.pop(param_variable, None)
+
                 keywords_array = request_splitter.apply_additional_splitting(keywords)
                 num_params = len(keywords_array)
                 for kw in keywords_array:
                     counter += 1
                     if counter < (page - 1) * num_products:
                         continue
-                    param_variable = self.config.assets_split_parameter
+
                     if param_variable and not search_by_id:
-                        selected_vars = kw.pop(param_variable, None)
                         if (
                             not selected_vars
                             and "variable" in self.product_type_def_params

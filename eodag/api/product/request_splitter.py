@@ -41,7 +41,7 @@ def _check_constraint_params(params, constraint, variable_name, variables):
             else:
                 available_variables = constraint[variable_name]
         else:
-            available_variables = []
+            return []
     return available_variables
 
 
@@ -673,8 +673,8 @@ class RequestSplitter:
         for constraint in self.constraints:
             if "year" not in constraint:
                 continue
-            years_intsersect = set(years).intersection(set(constraint["year"]))
-            if len(years_intsersect) == len(years):
+            years_intersect = set(years).intersection(set(constraint["year"]))
+            if len(years_intersect) == len(years):
                 available_variables += _check_constraint_params(
                     params, constraint, variable_name, variables
                 )
@@ -780,6 +780,21 @@ class RequestSplitter:
                             row[param] = [value]
                         else:
                             row[param] = value
-                        splitted_request_params.append(copy.deepcopy(row))
+                        if self._matches_constraints(row):
+                            splitted_request_params.append(copy.deepcopy(row))
             request_params_list = copy.deepcopy(splitted_request_params)
         return splitted_request_params
+
+    def _matches_constraints(self, row):
+        for constraint in self.constraints:
+            matches_constraint = True
+            for key, value in row.items():
+                if not (
+                    key in constraint
+                    and _check_value_in_constraint(value, constraint[key])
+                ):
+                    if key in constraint:
+                        matches_constraint = False
+            if matches_constraint:
+                return True
+        return False

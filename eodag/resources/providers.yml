@@ -5422,6 +5422,17 @@
       variable: xco2
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         processing_level:
           - '{{ "multiStringSelectValues": [ {{"name": "processing_level", "value": {processing_level} }} ] }}'
@@ -5449,6 +5460,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SATELLITE_METHANE:
       productType: EO:ECMWF:DAT:SATELLITE_METHANE
@@ -5459,6 +5479,17 @@
       variable: xch4
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SATELLITE_METHANE"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         processing_level:
           - '{{ "multiStringSelectValues": [ {{"name": "processing_level", "value": {processing_level} }} ] }}'
@@ -5486,6 +5517,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_PL:
       productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
@@ -5515,6 +5555,18 @@
       originating_centre: ecmwf
       system: "5"
       format: grib
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_month
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5550,6 +5602,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_SL:
       productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
@@ -5565,6 +5623,18 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_month
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5597,6 +5667,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_SL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
@@ -5642,6 +5718,21 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5675,6 +5766,15 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_PL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
@@ -5714,6 +5814,21 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS"
+      constraints_param: constraints
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5747,6 +5862,15 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_MONTHLY_PL:
       productType: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS

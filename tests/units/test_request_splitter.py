@@ -514,34 +514,42 @@ class TestRequestSplitter(unittest.TestCase):
         )
         splitter = RequestSplitter(config, metadata)
         request_params = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["24", "48", "72"],
         }
         splitted_params = splitter.apply_additional_splitting(request_params)
         self.assertEqual(3, len(splitted_params))
         row_1 = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["24"],
         }
         row_2 = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["48"],
         }
         row_3 = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["72"],
         }
         self.assertDictEqual(row_1, splitted_params[0])
         self.assertDictEqual(row_2, splitted_params[1])
         self.assertDictEqual(row_3, splitted_params[2])
+        request_params = {
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
+            "leadtime_hour": ["96"],
+        }
+        splitted_params = splitter.apply_additional_splitting(request_params)
+        self.assertEqual(0, len(splitted_params))
         config = PluginConfig.from_mapping(
             {
                 "metadata_mapping": metadata,
@@ -560,34 +568,34 @@ class TestRequestSplitter(unittest.TestCase):
         )
         splitter = RequestSplitter(config, metadata)
         request_params = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["24", "48", "72"],
             "type": ["A", "B"],
         }
         splitted_params = splitter.apply_additional_splitting(request_params)
         self.assertEqual(6, len(splitted_params))
         row_1 = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["24"],
             "type": ["A"],
         }
         assert row_1 in splitted_params
         row_2 = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["24"],
             "type": ["B"],
         }
         assert row_2 in splitted_params
         row_3 = {
-            "year": ["2022"],
-            "month": ["1"],
-            "day": ["1", "2", "3"],
+            "year": ["2002"],
+            "month": ["01"],
+            "day": ["01", "10", "20"],
             "leadtime_hour": ["48"],
             "type": ["A"],
         }
