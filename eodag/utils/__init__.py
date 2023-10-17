@@ -20,6 +20,8 @@
 Everything that does not fit into one of the specialised categories of utilities in
 this package should go here
 """
+from __future__ import annotations
+
 import ast
 import datetime
 import errno
@@ -42,7 +44,7 @@ from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Generator, Iterator, List, Optional, Tuple, Type, Union
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -94,6 +96,10 @@ USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
 HTTP_REQ_TIMEOUT = 5  # in seconds
 DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
+
+# default wait times in minutes
+DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
+DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
 
 JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
@@ -445,7 +451,7 @@ def get_timestamp(date_time: str) -> float:
     return dt.timestamp()
 
 
-def datetime_range(start: dt, end: dt) -> Generator[dt, None, None]:
+def datetime_range(start: dt, end: dt) -> Iterator[dt]:
     """Generator function for all dates in-between start and end date."""
     delta = end - start
     for nday in range(delta.days + 1):
@@ -496,7 +502,7 @@ class ProgressCallback(tqdm):
 
         self.update(increment)
 
-    def copy(self, *args: Any, **kwargs: Any) -> "ProgressCallback":
+    def copy(self, *args: Any, **kwargs: Any) -> ProgressCallback:
         """Returns another progress callback using the same initial
         keyword-arguments.
 
@@ -1264,7 +1270,7 @@ def _mutable_cached_yaml_load_all(config_path: str):
         return list(yaml.load_all(fh, Loader=yaml.Loader))
 
 
-def cached_yaml_load_all(config_path: str):
+def cached_yaml_load_all(config_path: str) -> List[Any]:
     """Cached yaml.load_all
 
     Load all configurations stored in the configuration file as separated yaml documents

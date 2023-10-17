@@ -1,6 +1,7 @@
 import logging
 import time
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -11,6 +12,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import SearchResult
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
@@ -93,7 +95,14 @@ class DataRequestSearch(Search):
         super().clear()
         self.data_request_id = None
 
-    def query(self, *args, count=True, **kwargs):
+    def query(
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """
         performs the search for a provider where several steps are required to fetch the data
         """
@@ -102,7 +111,7 @@ class DataRequestSearch(Search):
         # for compatibility with DataRequestSearch method
         if kwargs.get("product_type"):
             kwargs["providerProductType"] = kwargs.pop("product_type", None)
-        provider_product_type = self._map_product_type(product_type)
+        provider_product_type = self._map_product_type(product_type or "")
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
         if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
@@ -208,10 +217,12 @@ class DataRequestSearch(Search):
                 result, self.config.products[product_type]["custom_filters"]
             )
         return self._convert_result_data(
-            result, data_request_id, product_type, **kwargs
+            result, data_request_id, product_type or "", **kwargs
         )
 
-    def _create_data_request(self, product_type, eodag_product_type, **kwargs):
+    def _create_data_request(
+        self, product_type: str, eodag_product_type: str, **kwargs: Any
+    ) -> str:
         headers = getattr(self.auth, "headers", USER_AGENT)
         try:
             url = self.config.data_request_url
@@ -233,7 +244,7 @@ class DataRequestSearch(Search):
             logger.info("search job for product_type %s created", product_type)
             return request_job.json()["jobId"]
 
-    def _cancel_request(self, data_request_id):
+    def _cancel_request(self, data_request_id: str) -> None:
         logger.info("deleting request job %s", data_request_id)
         delete_url = f"{self.config.data_request_url}/{data_request_id}"
         try:
@@ -244,7 +255,7 @@ class DataRequestSearch(Search):
         except requests.RequestException as e:
             raise RequestError(f"_cancel_request failed: {str(e)}")
 
-    def _check_request_status(self, data_request_id):
+    def _check_request_status(self, data_request_id: str) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
         try:
@@ -269,7 +280,9 @@ class DataRequestSearch(Search):
                 )
             return status_data["status"] == "completed"
 
-    def _get_result_data(self, data_request_id, items_per_page, page):
+    def _get_result_data(
+        self, data_request_id: str, items_per_page: int, page: int
+    ) -> Dict[str, Any]:
         page = page - 1 + self.config.pagination.get("start_page", 1)
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
@@ -280,17 +293,22 @@ class DataRequestSearch(Search):
             ).json()
         except requests.RequestException:
             logger.error(f"Result could not be retrieved for {url}")
+        return {}
 
     def _convert_result_data(
-        self, result_data, data_request_id, product_type, **kwargs
-    ):
+        self,
+        result_data: Dict[str, Any],
+        data_request_id: str,
+        product_type: str,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], int]:
         """Build EOProducts from provider results"""
         results_entry = self.config.results_entry
         results = result_data[results_entry]
         logger.debug(
             "Adapting %s plugin results to eodag product representation" % len(results)
         )
-        products = []
+        products: List[EOProduct] = []
         for result in results:
             product = EOProduct(
                 self.provider,
@@ -334,7 +352,7 @@ class DataRequestSearch(Search):
                 }
         return products, total_items_nb
 
-    def _check_uses_custom_filters(self, product_type):
+    def _check_uses_custom_filters(self, product_type: str) -> bool:
         if (
             product_type in self.config.products
             and "custom_filters" in self.config.products[product_type]
@@ -342,7 +360,9 @@ class DataRequestSearch(Search):
             return True
         return False
 
-    def _apply_additional_filters(self, result, custom_filters):
+    def _apply_additional_filters(
+        self, result: Dict[str, Any], custom_filters: Dict[str, str]
+    ) -> Dict[str, Any]:
         filtered_result = []
         results_entry = self.config.results_entry
         results = result[results_entry]
@@ -357,7 +377,7 @@ class DataRequestSearch(Search):
         result[results_entry] = filtered_result
         return result
 
-    def _map_product_type(self, product_type):
+    def _map_product_type(self, product_type: str) -> Optional[str]:
         """Map the eodag product type to the provider product type"""
         if product_type is None:
             return

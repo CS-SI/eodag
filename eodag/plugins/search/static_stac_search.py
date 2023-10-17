@@ -17,10 +17,14 @@
 # limitations under the License.
 
 import logging
+from typing import Any, Dict, List, Optional, Tuple
 
 import geojson
 
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
+from eodag.config import PluginConfig
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
@@ -55,12 +59,12 @@ class StaticStacSearch(StacSearch):
     :type config: str
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(StaticStacSearch, self).__init__(provider, config)
         self.config.__dict__.setdefault("max_connections", 100)
         self.config.__dict__.setdefault("timeout", HTTP_REQ_TIMEOUT)
 
-    def discover_product_types(self):
+    def discover_product_types(self) -> Dict[str, Any]:
         """Fetch product types is disabled for `StaticStacSearch`
 
         :returns: empty dict
@@ -68,7 +72,14 @@ class StaticStacSearch(StacSearch):
         """
         return {}
 
-    def query(self, items_per_page=None, page=None, count=True, **kwargs):
+    def query(
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a static STAC Catalog"""
 
         features = fetch_stac_items(
@@ -97,10 +108,8 @@ class StaticStacSearch(StacSearch):
         eo_products, _ = super(StaticStacSearch, self).query(
             items_per_page=nb_features, page=1, count=True, **kwargs
         )
-
         # filter using query params
         search_result = SearchResult(eo_products)
-
         # Filter by date
         if "startTimeFromAscendingNode" in kwargs:
             kwargs["start"] = kwargs.pop("startTimeFromAscendingNode")
@@ -142,4 +151,4 @@ class StaticStacSearch(StacSearch):
         # restore plugin._request
         self._request = stacapi_request
 
-        return search_result.data, len(search_result)
+        return search_result, len(search_result)

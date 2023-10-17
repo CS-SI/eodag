@@ -20,23 +20,24 @@ import hashlib
 import logging
 import os
 import os.path
+from typing import Any, Dict, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 import requests
 from requests import RequestException
 
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
-from eodag.plugins.download.base import (
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
-    Download,
-)
+from eodag.config import PluginConfig
+from eodag.plugins.download.base import Download
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
     ProgressCallback,
     get_bucket_name_and_prefix,
     path_to_uri,
@@ -80,19 +81,19 @@ class S3RestDownload(Download):
     :type config: :class:`~eodag.config.PluginConfig`
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig):
         super(S3RestDownload, self).__init__(provider, config)
         self.http_download_plugin = HTTPDownload(self.provider, self.config)
 
     def download(
         self,
-        product,
-        auth=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> Optional[str]:
         """Download method for S3 REST API.
 
         :param product: The EO product to download
@@ -130,11 +131,11 @@ class S3RestDownload(Download):
 
         @self._download_retry(product, wait, timeout)
         def download_request(
-            product,
-            auth,
-            progress_callback,
-            ordered_message,
-            **kwargs,
+            product: EOProduct,
+            auth: PluginConfig,
+            progress_callback: ProgressCallback,
+            ordered_message: str,
+            **kwargs: Any,
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):
@@ -178,7 +179,7 @@ class S3RestDownload(Download):
                 auth_errors = getattr(self.config, "auth_error_code", [None])
                 if not isinstance(auth_errors, list):
                     auth_errors = [auth_errors]
-                if err.response.status_code in auth_errors:
+                if err.response and err.response.status_code in auth_errors:
                     raise AuthenticationError(
                         "HTTP Error %s returned, %s\nPlease check your credentials for %s"
                         % (
@@ -194,8 +195,8 @@ class S3RestDownload(Download):
                 ):
                     msg = (
                         ordered_message
-                        if ordered_message and not err.response.text.strip()
-                        else err.response.text.strip()
+                        if ordered_message and err.response and not err.response.text.strip()
+                        else err.response and err.response.text.strip()
                     )
                     raise NotAvailableError(
                         "%s(initially %s) requested, returned: %s"

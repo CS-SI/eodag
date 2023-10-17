@@ -15,23 +15,38 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 import logging
 from operator import attrgetter
 from pathlib import Path
-from typing import Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import pkg_resources
 
-from eodag.config import load_config, merge_configs
-from eodag.plugins.apis.base import Api
+from eodag.api.product import EOProduct
+from eodag.config import PluginConfig, ProviderConfig, load_config, merge_configs
 from eodag.plugins.authentication.base import Authentication
-from eodag.plugins.base import EODAGPluginMount
-from eodag.plugins.crunch.base import Crunch
-from eodag.plugins.download.base import Download
-from eodag.plugins.search.base import Search
+from eodag.plugins.base import EODAGPluginMount, PluginTopic
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from eodag.utils.exceptions import UnsupportedProvider
 
+if TYPE_CHECKING:
+    from eodag.plugins.apis.base import Api
+    from eodag.plugins.crunch.base import Crunch
+    from eodag.plugins.download.base import Download
+    from eodag.plugins.search.base import Search
 logger = logging.getLogger("eodag.manager")
 
 
@@ -49,12 +64,12 @@ class PluginManager:
 
     :param providers_config: The configuration with all information about the providers
                              supported by ``eodag``
-    :type providers_config: dict
+    :type providers_config: dict[str, :class:`~eodag.config.ProviderConfig`]
     """
 
     supported_topics = {"search", "download", "crunch", "auth", "api"}
 
-    def __init__(self, providers_config):
+    def __init__(self, providers_config: Dict[str, ProviderConfig]) -> None:
         self.providers_config = providers_config
         # Load all the plugins. This will make all plugin classes of a particular
         # type to be available in the base plugin class's 'plugins' attribute.
@@ -80,10 +95,10 @@ class PluginManager:
                         "Check that the plugin module (%s) is importable",
                         entry_point.module_name,
                     )
-                if entry_point.dist.key != "eodag":
+                if entry_point.dist and entry_point.dist.key != "eodag":
                     # use plugin providers if any
                     plugin_providers_config_path = [
-                        x
+                        str(x)
                         for x in Path(
                             entry_point.dist.location,
                             pkg_resources.to_filename(entry_point.dist.key),
@@ -103,14 +118,14 @@ class PluginManager:
             self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
-        self._built_plugins_cache = {}
+        self._built_plugins_cache: Dict[Tuple[str, str], Any] = {}
 
-    def build_product_type_to_provider_config_map(self):
+    def build_product_type_to_provider_config_map(self) -> None:
         """Build mapping conf between product types and providers"""
-        self.product_type_to_provider_config_map = {}
+        self.product_type_to_provider_config_map: Dict[str, List[ProviderConfig]] = {}
         for provider in list(self.providers_config):
             provider_config = self.providers_config[provider]
-            if not hasattr(provider_config, "products"):
+            if not provider_config.products:
                 logger.info(
                     "%s: provider has no product configured and will be skipped"
                     % provider
@@ -131,7 +146,9 @@ class PluginManager:
                 product_type_providers.append(provider_config)
                 product_type_providers.sort(key=attrgetter("priority"), reverse=True)
 
-    def get_search_plugins(self, product_type=None, provider=None):
+    def get_search_plugins(
+        self, product_type: Optional[str] = None, provider: Optional[str] = None
+    ) -> Iterator[Union[Search, Api]]:
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority, or the search plugin of the given provider
 
@@ -142,20 +159,22 @@ class PluginManager:
         :type provider: str
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
-        :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`)
+        :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search` or :class:`~eodag.plugins.download.Api`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProductType`
         """
 
-        def get_plugin():
+        def get_plugin() -> Union[Search, Api]:
             try:
                 config.search.products = config.products
                 config.search.priority = config.priority
-                plugin = self._build_plugin(config.name, config.search, Search)
+                plugin = cast(
+                    Search, self._build_plugin(config.name, config.search, Search)
+                )
             except AttributeError:
                 config.api.products = config.products
                 config.api.priority = config.priority
-                plugin = self._build_plugin(config.name, config.api, Api)
+                plugin = cast(Api, self._build_plugin(config.name, config.api, Api))
             return plugin
 
         if provider is not None:
@@ -186,25 +205,28 @@ class PluginManager:
             ]:
                 yield get_plugin()
 
-    def get_download_plugin(self, product):
+    def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
         """Build and return the download plugin capable of downloading the given
         product.
 
         :param product: The product to get a download plugin for
         :type product: :class:`~eodag.api.product._product.EOProduct`
         :returns: The download plugin capable of downloading the product
-        :rtype: :class:`~eodag.plugins.download.Download`
+        :rtype: :class:`~eodag.plugins.download.Download` or :class:`~eodag.plugins.download.Api`
         """
         plugin_conf = self.providers_config[product.provider]
         try:
             plugin_conf.download.priority = plugin_conf.priority
-            plugin = self._build_plugin(
-                product.provider, plugin_conf.download, Download
+            plugin = cast(
+                Download,
+                self._build_plugin(product.provider, plugin_conf.download, Download),
             )
             return plugin
         except AttributeError:
             plugin_conf.api.priority = plugin_conf.priority
-            plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
+            plugin = cast(
+                Api, self._build_plugin(product.provider, plugin_conf.api, Api)
+            )
             return plugin
 
     def get_auth_plugin(self, provider: str) -> Optional[Authentication]:
@@ -219,7 +241,10 @@ class PluginManager:
         plugin_conf = self.providers_config[provider]
         try:
             plugin_conf.auth.priority = plugin_conf.priority
-            plugin = self._build_plugin(provider, plugin_conf.auth, Authentication)
+            plugin = cast(
+                Authentication,
+                self._build_plugin(provider, plugin_conf.auth, Authentication),
+            )
             return plugin
         except AttributeError:
             # We guess the plugin being built is of type Api, therefore no need
@@ -227,7 +252,7 @@ class PluginManager:
             return None
 
     @staticmethod
-    def get_crunch_plugin(name, **options):
+    def get_crunch_plugin(name: str, **options: Any) -> Crunch:
         """Instantiate a eodag Crunch plugin whom class name is `name`, and configure
         it with the `options`
 
@@ -241,12 +266,12 @@ class PluginManager:
         Klass = Crunch.get_plugin_by_class_name(name)
         return Klass(options)
 
-    def sort_providers(self):
+    def sort_providers(self) -> None:
         """Sort providers taking into account current priority order"""
         for provider_configs in self.product_type_to_provider_config_map.values():
             provider_configs.sort(key=attrgetter("priority"), reverse=True)
 
-    def set_priority(self, provider, priority):
+    def set_priority(self, provider: str, priority: int) -> None:
         """Set the priority of the given provider
 
         :param provider: The provider which is assigned the priority
@@ -257,7 +282,7 @@ class PluginManager:
         # Update the priority in the configurations so that it is taken into account
         # when a plugin of this provider is latterly built
         for (
-            product_type,
+            _,
             provider_configs,
         ) in self.product_type_to_provider_config_map.items():
             for config in provider_configs:
@@ -270,7 +295,12 @@ class PluginManager:
             if provider_name == provider:
                 self._built_plugins_cache[(provider, topic_class)].priority = priority
 
-    def _build_plugin(self, provider, plugin_conf, topic_class):
+    def _build_plugin(
+        self,
+        provider: str,
+        plugin_conf: PluginConfig,
+        topic_class: Type[PluginTopic],
+    ) -> Union[Api, Search, Download, Authentication, Crunch]:
         """Build the plugin of the given topic with the given plugin configuration and
         registered as the given provider
 
@@ -294,6 +324,8 @@ class PluginManager:
         plugin_class = EODAGPluginMount.get_plugin_by_class_name(
             topic_class, getattr(plugin_conf, "type")
         )
-        plugin = plugin_class(provider, plugin_conf)
+        plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
+            provider, plugin_conf
+        )
         self._built_plugins_cache[(provider, topic_class.__name__)] = plugin
         return plugin

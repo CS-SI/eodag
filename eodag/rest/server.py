@@ -22,7 +22,7 @@ import re
 import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
-from typing import List, Optional, Union
+from typing import Awaitable, Dict, List, Optional, Set, Union
 
 import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
@@ -30,9 +30,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, StreamingResponse
 from fastapi.types import Any, Callable, DecoratedCallable
 from pydantic import BaseModel
+from requests import Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
@@ -117,7 +118,7 @@ stac_api_config = load_stac_api_config()
 
 
 @router.get("/api", tags=["Capabilities"], include_in_schema=False)
-def eodag_openapi():
+def eodag_openapi() -> Dict[str, Any]:
     """Customized openapi"""
     logger.debug("URL: /api")
     if app.openapi_schema:
@@ -180,7 +181,9 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def forward_middleware(request: Request, call_next):
+async def forward_middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     """Middleware that handles forward headers and sets request.state.url*"""
 
     forwarded_host = request.headers.get("x-forwarded-host", None)
@@ -199,7 +202,9 @@ async def forward_middleware(request: Request, call_next):
 
 
 @app.exception_handler(StarletteHTTPException)
-async def default_exception_handler(request: Request, error):
+async def default_exception_handler(
+    request: Request, error: Exception
+) -> ORJSONResponse:
     """Default errors handle"""
     description = (
         getattr(error, "description", None)
@@ -216,7 +221,7 @@ async def default_exception_handler(request: Request, error):
 @app.exception_handler(UnsupportedProductType)
 @app.exception_handler(UnsupportedProvider)
 @app.exception_handler(ValidationError)
-async def handle_invalid_usage(request: Request, error):
+async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResponse:
     """Invalid usage [400] errors handle"""
     logger.warning(traceback.format_exc())
     return await default_exception_handler(
@@ -229,7 +234,7 @@ async def handle_invalid_usage(request: Request, error):
 
 
 @app.exception_handler(NotAvailableError)
-async def handle_resource_not_found(request: Request, error):
+async def handle_resource_not_found(request: Request, error: Exception):
     """Not found [404] errors handle"""
     return await default_exception_handler(
         request,
@@ -242,7 +247,7 @@ async def handle_resource_not_found(request: Request, error):
 
 @app.exception_handler(MisconfiguredError)
 @app.exception_handler(AuthenticationError)
-async def handle_auth_error(request: Request, error):
+async def handle_auth_error(request: Request, error: Exception) -> ORJSONResponse:
     """AuthenticationError should be sent as internal server error to the client"""
     logger.error(f"{type(error).__name__}: {str(error)}")
     return await default_exception_handler(
@@ -256,7 +261,7 @@ async def handle_auth_error(request: Request, error):
 
 @app.exception_handler(DownloadError)
 @app.exception_handler(RequestError)
-async def handle_server_error(request: Request, error):
+async def handle_server_error(request: Request, error: Exception) -> ORJSONResponse:
     """These errors should be sent as internal server error with details to the client"""
     logger.error(f"{type(error).__name__}: {str(error)}")
     return await default_exception_handler(
@@ -269,7 +274,7 @@ async def handle_server_error(request: Request, error):
 
 
 @router.get("/", tags=["Capabilities"])
-def catalogs_root(request: Request):
+def catalogs_root(request: Request) -> Any:
     """STAC catalogs root"""
     logger.debug(f"URL: {request.url}")
 
@@ -284,7 +289,7 @@ def catalogs_root(request: Request):
 
 
 @router.get("/conformance", tags=["Capabilities"])
-def conformance():
+def conformance() -> Any:
     """STAC conformance"""
     logger.debug("URL: /conformance")
     response = get_stac_conformance()
@@ -293,7 +298,7 @@ def conformance():
 
 
 @router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
-def stac_extension_oseo(request: Request):
+def stac_extension_oseo(request: Request) -> Any:
     """STAC OGC / OpenSearch extension for EO"""
     logger.debug(f"URL: {request.url}")
     response = get_stac_extension_oseo(url=request.state.url)
@@ -322,7 +327,7 @@ class SearchBody(BaseModel):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item_download(collection_id, item_id, request: Request):
+def stac_collections_item_download(collection_id: str, item_id: str, request: Request):
     """STAC collection item download"""
     logger.debug(f"URL: {request.url}")
 
@@ -358,7 +363,7 @@ def stac_collections_item_download_asset(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item(collection_id, item_id, request: Request):
+def stac_collections_item(collection_id: str, item_id: str, request: Request) -> Any:
     """STAC collection item by id"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -391,7 +396,7 @@ def stac_collections_item(collection_id, item_id, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_items(collection_id, request: Request):
+def stac_collections_items(collection_id: str, request: Request):
     """STAC collections items"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -439,7 +444,7 @@ def list_collection_queryables(
     queryables = Queryables(q_id=request.state.url, additional_properties=False)
     conf_args = [collection_id, provider] if provider else [collection_id]
 
-    provider_properties = set(fetch_collection_queryable_properties(*conf_args))
+    provider_properties: Set[str] = set(fetch_collection_queryable_properties(*conf_args))
 
     for prop in provider_properties:
         titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop).title()

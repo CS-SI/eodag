@@ -19,6 +19,7 @@ import csv
 import json
 import logging
 import os
+from typing import List
 
 import requests
 from lxml import html
@@ -47,10 +48,10 @@ OFFLINE_OPENSEARCH_JSON = os.path.join(
 
 
 def params_mapping_to_csv(
-    ogc_doc_url=OPENSEARCH_DOC_URL,
-    opensearch_csv_file_path=DEFAULT_OPENSEARCH_CSV_FILE_PATH,
-    extra_csv_file_path=DEFAULT_EXTRA_CSV_FILE_PATH,
-):
+    ogc_doc_url: str = OPENSEARCH_DOC_URL,
+    opensearch_csv_file_path: str = DEFAULT_OPENSEARCH_CSV_FILE_PATH,
+    extra_csv_file_path: str = DEFAULT_EXTRA_CSV_FILE_PATH,
+) -> None:
     """Get providers metadata mapping, with corresponding description from OGC
     documentation and writes it to csv files (for opensearch and extra params)
 
@@ -76,7 +77,7 @@ def params_mapping_to_csv(
             )
 
     # list of lists of all parameters per provider
-    params_list_of_lists = []
+    params_list_of_lists: List[List[str]] = []
     for p in dag.providers_config.keys():
         if hasattr(dag.providers_config[p], "search") and hasattr(
             dag.providers_config[p].search, "metadata_mapping"
@@ -86,7 +87,7 @@ def params_mapping_to_csv(
             )
 
     # union of params_list_of_lists
-    global_keys = sorted(list(set().union(*(params_list_of_lists))))
+    global_keys: List[str] = sorted(list(set().union(*(params_list_of_lists))))
 
     # csv fieldnames
     fieldnames = ["parameter"] + sorted(dag.providers_config.keys())

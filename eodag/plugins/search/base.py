@@ -18,10 +18,15 @@
 
 import logging
 
+from typing import Any, List, Optional, Tuple
+
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
 )
+from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
 from eodag.utils import GENERIC_PRODUCT_TYPE, format_dict_items
 
@@ -31,13 +36,13 @@ logger = logging.getLogger("eodag.search.base")
 class Search(PluginTopic):
     """Base Search Plugin.
 
-    :param provider: An eodag providers configuration dictionary
-    :type provider: dict
-    :param config: Path to the user configuration file
-    :type config: str
+    :param provider: An EODAG provider name
+    :type provider: str
+    :param config: An EODAG plugin configuration
+    :type config: :class:`~eodag.config.PluginConfig`
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig):
         super(Search, self).__init__(provider, config)
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
@@ -55,7 +60,14 @@ class Search(PluginTopic):
         """Method used to clear a search context between two searches."""
         pass
 
-    def query(self, *args, count=True, **kwargs):
+    def query(
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Implementation of how the products must be searched goes here.
 
         This method must return a tuple with (1) a list of EOProduct instances (see eodag.api.product module)

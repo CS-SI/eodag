@@ -15,12 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 import ast
 import json
 import logging
 import re
 from datetime import datetime, timedelta
 from string import Formatter
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import geojson
 import orjson
@@ -33,6 +35,7 @@ from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import transform
+from eodag.config import PluginConfig
 
 from eodag.utils import (
     DEFAULT_PROJ,
@@ -45,6 +48,8 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+if TYPE_CHECKING:
+    from ._product import EOProduct
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
 
@@ -62,7 +67,9 @@ WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
 
 
-def get_metadata_path(map_value):
+def get_metadata_path(
+    map_value: Union[str, List[str]]
+) -> Tuple[Union[List[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
 
@@ -112,12 +119,12 @@ def get_metadata_path(map_value):
     return None, path
 
 
-def get_metadata_path_value(map_value):
+def get_metadata_path_value(map_value: Union[str, List[str]]) -> str:
     """Get raw metadata path without converter"""
     return map_value[1] if isinstance(map_value, list) else map_value
 
 
-def get_search_param(map_value):
+def get_search_param(map_value: List[str]) -> str:
     """See :func:`~eodag.api.product.metadata_mapping.get_metadata_path`
 
     :param map_value: The value originating from the definition of `metadata_mapping`
@@ -130,7 +137,7 @@ def get_search_param(map_value):
     return map_value[0]
 
 
-def format_metadata(search_param, *args, **kwargs):
+def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
@@ -185,7 +192,7 @@ def format_metadata(search_param, *args, **kwargs):
             self.custom_converter = None
             self.custom_args = None
 
-        def get_field(self, field_name, args, kwargs):
+        def get_field(self, field_name: str, args, kwargs):
             conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
             # Register a custom converter if any for later use (see convert_field)
             # This is done because we don't have the value associated to field_name at
@@ -728,7 +735,9 @@ def format_metadata(search_param, *args, **kwargs):
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
-def properties_from_json(json, mapping, discovery_config=None):
+def properties_from_json(
+    json: Dict[str, Any], mapping: Dict[str, Any], discovery_config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """Extract properties from a provider json result.
 
     :param json: The representation of a provider result as a json object
@@ -744,7 +753,7 @@ def properties_from_json(json, mapping, discovery_config=None):
     :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
-    properties = {}
+    properties: Dict[str, Any] = {}
     templates = {}
     used_jsonpaths = []
     for metadata, value in mapping.items():
@@ -861,11 +870,11 @@ def properties_from_json(json, mapping, discovery_config=None):
 
 
 def properties_from_xml(
-    xml_as_text,
-    mapping,
-    empty_ns_prefix="ns",
-    discovery_config=None,
-):
+    xml_as_text: str,
+    mapping: Any,
+    empty_ns_prefix: str = "ns",
+    discovery_config: Optional[Dict[str, Any]]=None,
+) -> Dict[str, Any]:
     """Extract properties from a provider xml result.
 
     :param xml_as_text: The representation of a provider result as xml
@@ -1014,7 +1023,9 @@ def properties_from_xml(
     return properties
 
 
-def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="json"):
+def mtd_cfg_as_conversion_and_querypath(
+    src_dict: Dict[str, Any], dest_dict: Dict[str, Any] = {}, result_type: str = "json"
+) -> Dict[str, Any]:
     """Metadata configuration dictionary to querypath with conversion dictionnary
     Transform every src_dict value from jsonpath_str to tuple `(conversion, jsonpath_object)`
     or from xpath_str to tuple `(conversion, xpath_str)`
@@ -1064,7 +1075,7 @@ def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="jso
     return dest_dict
 
 
-def format_query_params(product_type, config, **kwargs):
+def format_query_params(product_type: str, config: PluginConfig, **kwargs: Any) -> Dict[str, Any]:
     """format the search parameters to query parameters"""
     if "raise_errors" in kwargs.keys():
         del kwargs["raise_errors"]
@@ -1076,7 +1087,7 @@ def format_query_params(product_type, config, **kwargs):
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
 
-    query_params = {}
+    query_params: Dict[str, Any] = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
     queryables = _get_queryables(kwargs, config, product_type_metadata_mapping)
@@ -1136,7 +1147,7 @@ def format_query_params(product_type, config, **kwargs):
     return query_params
 
 
-def _resolve_hashes(formatted_query_param):
+def _resolve_hashes(formatted_query_param: str) -> str:
     """
     resolves structures of the format {"a": "abc", "b": "cde"}["a"] given in the formatted_query_param
     the structure is replaced by the value corresponding to the given key in the hash
@@ -1165,9 +1176,9 @@ def _resolve_hashes(formatted_query_param):
     return formatted_query_param
 
 
-def _format_free_text_search(config, metadata_mapping, **kwargs):
+def _format_free_text_search(config: PluginConfig, metadata_mapping: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
     """Build the free text search parameter using the search parameters"""
-    query_params = {}
+    query_params: Dict[str, Any] = {}
     if not getattr(config, "free_text_search_operations", None):
         return query_params
     for param, operations_config in config.free_text_search_operations.items():
@@ -1205,10 +1216,12 @@ def _format_free_text_search(config, metadata_mapping, **kwargs):
     return query_params
 
 
-def _get_queryables(search_params, config, metadata_mapping):
+def _get_queryables(
+    search_params: Dict[str, Any], config: PluginConfig, metadata_mapping: Dict[str, Any]
+) -> Dict[str, Any]:
     """Retrieve the metadata mappings that are query-able"""
     logger.debug("Retrieving queryable metadata from metadata_mapping")
-    queryables = {}
+    queryables: Dict[str, Any] = {}
     for eodag_search_key, user_input in search_params.items():
         if user_input is not None:
             md_mapping = metadata_mapping.get(eodag_search_key, (None, NOT_MAPPED))

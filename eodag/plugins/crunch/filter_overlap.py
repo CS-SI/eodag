@@ -15,8 +15,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING, Any, List
 
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils import get_geometry_from_various
@@ -27,6 +29,8 @@ except ImportError:
     # shapely < 2.0 compatibility
     from shapely.errors import TopologicalError as GEOSException
 
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
 
 logger = logging.getLogger("eodag.crunch.overlap")
 
@@ -47,7 +51,9 @@ class FilterOverlap(Crunch):
     :type config: dict
     """
 
-    def proceed(self, products, **search_params):
+    def proceed(
+        self, products: List[EOProduct], **search_params: Any
+    ) -> List[EOProduct]:
         """Execute crunch: Filter products, retaining only those that are overlapping with the search_extent
 
         :param products: A list of products resulting from a search
@@ -58,7 +64,7 @@ class FilterOverlap(Crunch):
         :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Start filtering for overlapping products")
-        filtered = []
+        filtered: List[EOProduct] = []
         add_to_filtered = filtered.append
 
         search_geom = get_geometry_from_various(**search_params)

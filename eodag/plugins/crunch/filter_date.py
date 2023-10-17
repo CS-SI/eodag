@@ -15,13 +15,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import datetime
 import logging
 import time
+from typing import TYPE_CHECKING, Any, Dict, List
 
 import dateutil.parser
 from dateutil import tz
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
 
 from eodag.plugins.crunch.base import Crunch
 
@@ -38,9 +43,10 @@ class FilterDate(Crunch):
 
     :type config: dict
     """
+    config: Dict[str, str]
 
     @staticmethod
-    def sort_product_by_start_date(product):
+    def sort_product_by_start_date(product: EOProduct):
         """Get product start date"""
         start_date = product.properties.get("startTimeFromAscendingNode")
         if not start_date:
@@ -49,7 +55,9 @@ class FilterDate(Crunch):
             start_date = datetime.datetime(*epoch).isoformat()
         return dateutil.parser.parse(start_date)
 
-    def proceed(self, products, **search_params):
+    def proceed(
+        self, products: List[EOProduct], **search_params: Any
+    ) -> List[EOProduct]:
         """Execute crunch: Filter products between start and end dates.
 
         :param products: A list of products resulting from a search
@@ -82,7 +90,7 @@ class FilterDate(Crunch):
         if not filter_start and not filter_end:
             return products
 
-        filtered = []
+        filtered: List[EOProduct] = []
         for product in products:
 
             # product start date

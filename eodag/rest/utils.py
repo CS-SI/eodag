@@ -4,19 +4,32 @@
 
 import ast
 import datetime
+from io import BufferedReader
 import json
 import logging
 import os
 import re
 from collections import namedtuple
 from shutil import make_archive, rmtree
-from typing import Dict, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import dateutil.parser
 from dateutil import tz
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
+from shapely.geometry.base import BaseGeometry
 
 import eodag
 from eodag import EOProduct
@@ -45,7 +58,13 @@ from eodag.utils.exceptions import (
 logger = logging.getLogger("eodag.rest.utils")
 
 eodag_api = eodag.EODataAccessGateway()
-Cruncher = namedtuple("Cruncher", ["clazz", "config_params"])
+
+
+class Cruncher(NamedTuple):
+    clazz: Callable[..., Any]
+    config_params: List[str]
+
+
 crunchers = {
     "latestIntersect": Cruncher(FilterLatestIntersect, []),
     "latestByName": Cruncher(FilterLatestByName, ["name_pattern"]),
@@ -61,19 +80,21 @@ STAC_QUERY_PATTERN = "query.*.*"
     reason="Function internally used by get_home_page_content, also deprecated",
     version="2.6.1",
 )
-def format_product_types(product_types):
+def format_product_types(product_types: List[Dict[str, Any]]) -> str:
     """Format product_types
 
     :param product_types: A list of EODAG product types as returned by the core api
     :type product_types: list
     """
-    result = []
+    result: List[str] = []
     for pt in product_types:
         result.append("* *__{ID}__*: {abstract}".format(**pt))
     return "\n".join(sorted(result))
 
 
-def get_detailled_collections_list(provider=None, fetch_providers=True):
+def get_detailled_collections_list(
+    provider: Optional[str] = None, fetch_providers: bool = True
+) -> List[Dict[str, Any]]:
     """Returns detailled collections / product_types list for a given provider as a list of config dicts
 
     :param provider: (optional) Chosen provider
@@ -90,7 +111,7 @@ def get_detailled_collections_list(provider=None, fetch_providers=True):
 
 
 @_deprecated(reason="No more needed with STAC API + Swagger", version="2.6.1")
-def get_home_page_content(base_url, ipp=None):
+def get_home_page_content(base_url: str, ipp: Optional[int] = None) -> str:
     """Compute eodag service home page content
 
     :param base_url: The service root URL
@@ -110,12 +131,14 @@ def get_home_page_content(base_url, ipp=None):
     reason="Used to format output from deprecated function get_home_page_content",
     version="2.6.1",
 )
-def get_templates_path():
+def get_templates_path() -> str:
     """Returns Jinja templates path"""
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def get_product_types(provider=None, filters=None):
+def get_product_types(
+    provider: Optional[str] = None, filters: Optional[Dict[str, Any]] = None
+) -> list[Dict[str, Any]]:
     """Returns a list of supported product types
 
     :param provider: (optional) Provider name
@@ -148,43 +171,43 @@ def get_product_types(provider=None, filters=None):
     return product_types
 
 
-def search_bbox(request_bbox):
+def search_bbox(request_bbox: str) -> Optional[Dict[str, float]]:
     """Transform request bounding box as a bbox suitable for eodag search"""
 
     eodag_bbox = None
     search_bbox_keys = ["lonmin", "latmin", "lonmax", "latmax"]
 
-    if request_bbox:
-        try:
-            request_bbox_list = [float(coord) for coord in request_bbox.split(",")]
-        except ValueError as e:
-            raise ValidationError("invalid box coordinate type: %s" % e)
+    if not request_bbox:
+        return None
 
-        eodag_bbox = dict(zip(search_bbox_keys, request_bbox_list))
-        if len(eodag_bbox) != 4:
-            raise ValidationError("input box is invalid: %s" % request_bbox)
+    try:
+        request_bbox_list = [float(coord) for coord in request_bbox.split(",")]
+    except ValueError as e:
+        raise ValidationError("invalid box coordinate type: %s" % e)
 
-    return eodag_bbox
+    eodag_bbox = dict(zip(search_bbox_keys, request_bbox_list))
+    if len(eodag_bbox) != 4:
+        raise ValidationError("input box is invalid: %s" % request_bbox)
 
 
-def get_date(date):
+def get_date(date: Optional[str]) -> Optional[str]:
     """Check if the input date can be parsed as a date"""
 
-    if date:
-        try:
-            date = (
-                dateutil.parser.parse(date)
-                .replace(tzinfo=tz.UTC)
-                .isoformat()
-                .replace("+00:00", "")
-            )
-        except ValueError as e:
-            exc = ValidationError("invalid input date: %s" % e)
-            raise exc
-    return date
+    if not date:
+        return None
+    try:
+        return (
+            dateutil.parser.parse(date)
+            .replace(tzinfo=tz.UTC)
+            .isoformat()
+            .replace("+00:00", "")
+        )
+    except ValueError as e:
+        exc = ValidationError("invalid input date: %s" % e)
+        raise exc
 
 
-def get_int(val):
+def get_int(val: Any) -> Any:
     """Check if the input can be parsed as an integer"""
 
     if val:
@@ -195,7 +218,9 @@ def get_int(val):
     return val
 
 
-def filter_products(products, arguments, **kwargs):
+def filter_products(
+    products: SearchResult, arguments: Dict[str, Any], **kwargs: Any
+) -> SearchResult:
     """Apply an eodag cruncher to filter products"""
     filter_name = arguments.get("filter")
     if filter_name:
@@ -203,7 +228,7 @@ def filter_products(products, arguments, **kwargs):
         if not cruncher:
             raise ValidationError("unknown filter name")
 
-        cruncher_config = dict()
+        cruncher_config: Dict[str, Any] = dict()
         for config_param in cruncher.config_params:
             config_param_value = arguments.get(config_param)
             if not config_param_value:
@@ -216,12 +241,12 @@ def filter_products(products, arguments, **kwargs):
         try:
             products = products.crunch(cruncher.clazz(cruncher_config), **kwargs)
         except MisconfiguredError as e:
-            raise ValidationError(e)
+            raise ValidationError(str(e))
 
     return products
 
 
-def get_pagination_info(arguments):
+def get_pagination_info(arguments: Dict[str, Any]) -> Tuple[int, int]:
     """Get pagination arguments"""
     page = get_int(arguments.pop("page", DEFAULT_PAGE))
     # items_per_page can be specified using limit or itemsPerPage
@@ -237,7 +262,7 @@ def get_pagination_info(arguments):
     return page, items_per_page
 
 
-def get_geometry(arguments: dict):
+def get_geometry(arguments: Dict[str, Any]) -> Optional[BaseGeometry]:
     """Get geometry from arguments"""
     if arguments.get("intersects") and arguments.get("bbox"):
         raise ValidationError("Only one of bbox and intersects can be used at a time.")
@@ -290,7 +315,7 @@ def get_geometry(arguments: dict):
     return geom
 
 
-def get_datetime(arguments):
+def get_datetime(arguments: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
     """Get the datetime criterias from the search arguments
 
     :param arguments: Request args
@@ -320,7 +345,7 @@ def get_datetime(arguments):
         return get_date(dtstart), get_date(dtend)
 
 
-def get_metadata_query_paths(metadata_mapping):
+def get_metadata_query_paths(metadata_mapping: Dict[str, Any]) -> Dict[str, Any]:
     """Get dict of query paths and their names from metadata_mapping
 
     :param metadata_mapping: STAC metadata mapping (see 'resources/stac_provider.yml')
@@ -328,7 +353,7 @@ def get_metadata_query_paths(metadata_mapping):
     :returns: Mapping of query paths with their corresponding names
     :rtype: dict
     """
-    metadata_query_paths = {}
+    metadata_query_paths: Dict[str, Any] = {}
     for metadata_name, metadata_spec in metadata_mapping.items():
         # When metadata_spec have a length of 1 the query path is not specified
         if len(metadata_spec) == 2:
@@ -353,7 +378,7 @@ def get_metadata_query_paths(metadata_mapping):
     return metadata_query_paths
 
 
-def get_arguments_query_paths(arguments):
+def get_arguments_query_paths(arguments: Dict[str, Any]) -> Dict[str, Any]:
     """Get dict of query paths and their values from arguments
 
     Build a mapping of the query paths present in the arguments
@@ -371,7 +396,9 @@ def get_arguments_query_paths(arguments):
     )
 
 
-def get_criterias_from_metadata_mapping(metadata_mapping, arguments):
+def get_criterias_from_metadata_mapping(
+    metadata_mapping: Dict[str, Any], arguments: Dict[str, Any]
+) -> Dict[str, Any]:
     """Get criterias from the search arguments with the metadata mapping config
 
     :param metadata_mapping: STAC metadata mapping (see 'resources/stac_provider.yml')
@@ -381,7 +408,7 @@ def get_criterias_from_metadata_mapping(metadata_mapping, arguments):
     :returns: Mapping of criterias with their corresponding values
     :rtype: dict
     """
-    criterias = {}
+    criterias: Dict[str, Any] = {}
     metadata_query_paths = get_metadata_query_paths(metadata_mapping)
     arguments_query_paths = get_arguments_query_paths(arguments)
     for query_path in arguments_query_paths:
@@ -396,7 +423,9 @@ def get_criterias_from_metadata_mapping(metadata_mapping, arguments):
     return criterias
 
 
-def search_products(product_type, arguments, stac_formatted=True):
+def search_products(
+    product_type: str, arguments: Dict[str, Any], stac_formatted: bool = True
+) -> SearchResult:
     """Returns product search results
 
     :param product_type: The product type criteria
@@ -475,7 +504,9 @@ def search_products(product_type, arguments, stac_formatted=True):
     return response
 
 
-def search_product_by_id(uid, product_type=None, provider=None):
+def search_product_by_id(
+    uid: str, product_type: Optional[str] = None, provider: Optional[str] = None
+) -> SearchResult:
     """Search a product by its id
 
     :param uid: The uid of the EO product
@@ -490,7 +521,7 @@ def search_product_by_id(uid, product_type=None, provider=None):
     :raises: RuntimeError
     """
     try:
-        products, total = eodag_api.search(
+        products, _ = eodag_api.search(
             id=uid, productType=product_type, provider=provider
         )
         return products
@@ -503,7 +534,7 @@ def search_product_by_id(uid, product_type=None, provider=None):
 # STAC ------------------------------------------------------------------------
 
 
-def get_stac_conformance():
+def get_stac_conformance() -> Dict[str, str]:
     """Build STAC conformance
 
     :returns: conformance dictionnary
@@ -512,7 +543,7 @@ def get_stac_conformance():
     return stac_config["conformance"]
 
 
-def get_stac_api_version():
+def get_stac_api_version() -> str:
     """Get STAC API version
 
     :returns: STAC API version
@@ -521,7 +552,9 @@ def get_stac_api_version():
     return stac_config["stac_api_version"]
 
 
-def get_stac_collections(url, root, arguments, provider=None):
+def get_stac_collections(
+    url: str, root: str, arguments: Dict[str, Any], provider: Optional[str] = None
+):
     """Build STAC collections
 
     :param url: Requested URL
@@ -544,7 +577,9 @@ def get_stac_collections(url, root, arguments, provider=None):
     ).get_collections(arguments)
 
 
-def get_stac_collection_by_id(url, root, collection_id, provider=None):
+def get_stac_collection_by_id(
+    url: str, root: str, collection_id: str, provider: Optional[str] = None
+):
     """Build STAC collection by id
 
     :param url: Requested URL
@@ -567,7 +602,13 @@ def get_stac_collection_by_id(url, root, collection_id, provider=None):
     ).get_collection_by_id(collection_id)
 
 
-def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
+def get_stac_item_by_id(
+    url: str,
+    item_id: str,
+    catalogs: List[str],
+    root: str = "/",
+    provider: Optional[str] = None,
+):
     """Build STAC item by id
 
     :param url: Requested URL
@@ -597,7 +638,9 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id_stream(catalogs, item_id, provider=None, asset=None):
+def download_stac_item_by_id_stream(
+    catalogs: List[str], item_id: str, provider: Optional[str] = None, asset: Optional[str] = None
+):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -688,7 +731,9 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, asset=None
     return StreamingResponse(**download_stream_dict)
 
 
-def read_file_chunks_and_delete(opened_file, chunk_size=64 * 1024):
+def read_file_chunks_and_delete(
+    opened_file: BufferedReader, chunk_size: int = 64 * 1024
+) -> Iterator[bytes]:
     """Yield file chunks and delete file when finished."""
     while True:
         data = opened_file.read(chunk_size)
@@ -701,7 +746,13 @@ def read_file_chunks_and_delete(opened_file, chunk_size=64 * 1024):
     yield data
 
 
-def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers=True):
+def get_stac_catalogs(
+    url: str,
+    root: str = "/",
+    catalogs: List[str] = [],
+    provider: Optional[str] = None,
+    fetch_providers: bool = True,
+) -> Dict[str, Any]:
     """Build STAC catalog
 
     :param url: Requested URL
@@ -729,7 +780,13 @@ def get_stac_catalogs(url, root="/", catalogs=[], provider=None, fetch_providers
     ).get_stac_catalog()
 
 
-def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
+def search_stac_items(
+    url: str,
+    arguments: Dict[str, Any],
+    root: str = "/",
+    catalogs: List[str] = [],
+    provider: Optional[str] = None,
+) -> Dict[str, Any]:
     """Get items collection dict for given catalogs list
 
     :param url: Requested URL
@@ -887,7 +944,7 @@ def search_stac_items(url, arguments, root="/", catalogs=[], provider=None):
     )
 
 
-def get_stac_extension_oseo(url):
+def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     """Build STAC OGC / OpenSearch Extension for EO
 
     :param url: Requested URL
@@ -994,10 +1051,10 @@ class Queryables(BaseModel):
         """
         return self.properties
 
-    def __contains__(self, name: str):
+    def __contains__(self, name: str) -> bool:
         return name in self.properties
 
-    def __setitem__(self, name: str, qprop: QueryableProperty):
+    def __setitem__(self, name: str, qprop: QueryableProperty) -> None:
         self.properties[name] = qprop
 
 
@@ -1021,7 +1078,7 @@ def rename_to_stac_standard(key: str) -> str:
 
 def fetch_collection_queryable_properties(
     collection_id: str, provider: Optional[str] = None
-) -> set:
+) -> Set[str]:
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
@@ -1034,17 +1091,17 @@ def fetch_collection_queryable_properties(
     # Fetch the metadata mapping for collection-specific queryables
     args = [collection_id, provider] if provider else [collection_id]
     search_plugin = next(eodag_api._plugins_manager.get_search_plugins(*args))
-    mapping = dict(search_plugin.config.metadata_mapping)
-
+    search_plugin.config
+    mapping: Dict[str, Any] = dict(search_plugin.config.metadata_mapping)
     # list of all the STAC standardized collection-specific queryables
-    queryable_properties = set()
+    queryable_properties: Set[str] = set()
     for key, value in mapping.items():
         if isinstance(value, list) and "TimeFromAscendingNode" not in key:
             queryable_properties.add(rename_to_stac_standard(key))
     return queryable_properties
 
 
-def eodag_api_init():
+def eodag_api_init() -> None:
     """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
     eodag_api.fetch_product_types_list()
 

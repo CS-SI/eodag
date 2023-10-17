@@ -19,12 +19,14 @@ import logging
 import shutil
 import tarfile
 import zipfile
+from typing import Any, List, Optional, Tuple
 
 import requests
 from jsonpath_ng.ext import parse
 from requests import RequestException
 from usgs import USGSAuthExpiredError, USGSError, api
 
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
@@ -32,14 +34,12 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import (
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
-    Download,
-)
+from eodag.plugins.download.base import Download
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     USER_AGENT,
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
     ProgressCallback,
     format_dict_items,
     path_to_uri,
@@ -96,8 +96,13 @@ class UsgsApi(Download, Api):
                 ) from None
 
     def query(
-        self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
-    ):
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Search for data on USGS catalogues"""
         product_type = kwargs.get("productType")
         if product_type is None:
@@ -107,8 +112,8 @@ class UsgsApi(Download, Api):
 
         self.authenticate()
 
-        product_type_def_params = self.config.products.get(
-            product_type, self.config.products[GENERIC_PRODUCT_TYPE]
+        product_type_def_params = self.config.products.get(  # type: ignore
+            product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
         )
         usgs_dataset = format_dict_items(product_type_def_params, **kwargs)["dataset"]
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
@@ -125,7 +130,7 @@ class UsgsApi(Download, Api):
         else:
             footprint = geom
 
-        final = []
+        final: List[EOProduct] = []
         if footprint and len(footprint.keys()) == 4:  # a rectangle (or bbox)
             lower_left = {
                 "longitude": footprint["lonmin"],
@@ -208,7 +213,7 @@ class UsgsApi(Download, Api):
 
         if final:
             # parse total_results
-            path_parsed = parse(self.config.pagination["total_items_nb_key_path"])
+            path_parsed = parse(self.config.pagination["total_items_nb_key_path"])  # type: ignore
             total_results = path_parsed.find(results["data"])[0].value
         else:
             total_results = 0
@@ -232,8 +237,8 @@ class UsgsApi(Download, Api):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        outputs_extension = self.config.products.get(
-            product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]
+        outputs_extension = self.config.products.get(  # type: ignore
+            product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
         ).get("outputs_extension", ".tar.gz")
 
         fs_path, record_filename = self._prepare_download(
@@ -254,7 +259,7 @@ class UsgsApi(Download, Api):
                 f"No USGS products found for {product.properties['id']}"
             )
 
-        download_request = api.download_request(
+        download_request_results = api.download_request(
             product.properties["productType"],
             product.properties["entityId"],
             product.properties["productId"],
@@ -262,13 +267,19 @@ class UsgsApi(Download, Api):
 
         req_urls = []
         try:
-            if len(download_request["data"]["preparingDownloads"]) > 0:
+            if len(download_request_results["data"]["preparingDownloads"]) > 0:
                 req_urls.extend(
-                    [x["url"] for x in download_request["data"]["preparingDownloads"]]
+                    [
+                        x["url"]
+                        for x in download_request_results["data"]["preparingDownloads"]
+                    ]
                 )
             else:
                 req_urls.extend(
-                    [x["url"] for x in download_request["data"]["availableDownloads"]]
+                    [
+                        x["url"]
+                        for x in download_request_results["data"]["availableDownloads"]
+                    ]
                 )
         except KeyError as e:
             raise NotAvailableError(

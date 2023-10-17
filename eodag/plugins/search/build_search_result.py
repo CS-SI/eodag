@@ -18,6 +18,7 @@
 
 import hashlib
 import logging
+from typing import Any, List, Optional, Tuple
 
 import geojson
 import orjson
@@ -61,11 +62,19 @@ class BuildPostSearchResult(PostJsonSearch):
     :type config: str
     """
 
-    def count_hits(self, count_url=None, result_type=None):
+    def count_hits(
+        self, count_url: Optional[str] = None, result_type: Optional[str] = None
+    ) -> int:
         """Count method that will always return 1."""
         return 1
 
-    def collect_search_urls(self, page=None, items_per_page=None, count=True, **kwargs):
+    def collect_search_urls(
+        self,
+        page: Optional[int] = None,
+        items_per_page: Optional[int] = None,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[str], int]:
         """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
         urls, _ = super(BuildPostSearchResult, self).collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs

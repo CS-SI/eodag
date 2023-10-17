@@ -18,6 +18,7 @@
 
 import logging
 import re
+from typing import Any, List, Optional, Tuple
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
@@ -31,8 +32,10 @@ from owslib.fes import (
 from owslib.ows import ExceptionReport
 from shapely import geometry, wkt
 
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import properties_from_xml
+from eodag.api.search_result import SearchResult
 from eodag.plugins.search.base import Search
 from eodag.utils import DEFAULT_PROJ
 from eodag.utils.import_system import patch_owslib_requests
@@ -54,16 +57,24 @@ class CSWSearch(Search):
         super().clear()
         self.catalog = None
 
-    def query(self, product_type=None, auth=None, count=True, **kwargs):
+    def query(
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
-        if auth is not None:
+        auth = kwargs.get("auth")
+        if auth:
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
         else:
             self.__init_catalog()
-        results = []
+        results: List[EOProduct] = []
         if self.catalog:
             provider_product_type = self.config.products[product_type]["productType"]
             for product_type_def in self.config.search_definition["product_type_tags"]:

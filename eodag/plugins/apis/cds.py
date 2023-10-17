@@ -17,21 +17,28 @@
 # limitations under the License.
 import logging
 from datetime import datetime
+from typing import Any, List, Optional, Tuple
 
 import cdsapi
 import geojson
 import requests
 
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.api.search_result import SearchResult
+from eodag.api.product import EOProduct
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import (
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
-    Download,
-)
+from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.utils import datetime_range, get_geometry_from_various, path_to_uri, urlsplit
+from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    datetime_range,
+    get_geometry_from_various,
+    path_to_uri,
+    urlsplit
+)
 from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
 from eodag.utils.logging import get_logging_verbose
 
@@ -66,8 +73,13 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         return [{}]
 
     def query(
-        self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
-    ):
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
         # check productType, dates, geometry, use defaults if not specified
@@ -103,7 +115,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
         )
 
-    def _get_cds_client(self, **auth_dict):
+    def _get_cds_client(self, **auth_dict: Any):
         """Returns cdsapi client."""
         # eodag logging info
         eodag_verbosity = get_logging_verbose()

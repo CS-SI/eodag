@@ -52,7 +52,7 @@ except ImportError:  # pragma: no cover
     # for python < 3.8
     from importlib_metadata import metadata  # type: ignore
 
-from typing import Any, List, Mapping
+from typing import Any, Dict, List, Mapping, Set
 
 import click
 import uvicorn
@@ -322,8 +322,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
             else:
                 criteria[k] = v
     if locations_qs is not None:
-        locations = parse_qs(locations_qs)
-        locations = {key: val[0] for key, val in locations.items()}
+        locations = {key: val[0] for key, val in parse_qs(locations_qs).items()}
     else:
         locations = None
     criteria["locations"] = locations
@@ -339,9 +338,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         locs_file = click.format_filename(locs_file)
 
     # Process inputs for crunch
-    cruncher_names: set[Any] = set(kwargs.pop("cruncher") or [])
+    cruncher_names: Set[Any] = set(kwargs.pop("cruncher") or [])
     cruncher_args = kwargs.pop("cruncher_args")
-    cruncher_args_dict = {}
+    cruncher_args_dict: Dict[str, Dict[str, Any]] = {}
     if cruncher_args:
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)

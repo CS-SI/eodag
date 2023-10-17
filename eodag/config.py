@@ -15,10 +15,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
 import os
 import tempfile
-from typing import Any, Dict, ItemsView, Iterator, Optional, Tuple, Union, ValuesView
+from typing import (
+    Any,
+    Dict,
+    ItemsView,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    ValuesView,
+)
 
 import orjson
 import requests
@@ -106,12 +118,20 @@ class ProviderConfig(yaml.YAMLObject):
     :type kwargs: Any
     """
 
+    name: str
+    priority: int = 0  # Set default priority to 0
+    api: Optional[PluginConfig]
+    search: Optional[PluginConfig]
+    products: Optional[Dict[str, Any]]
+    download: Optional[PluginConfig]
+    auth: Optional[PluginConfig]
+
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
     yaml_tag = "!provider"
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> "ProviderConfig":
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> ProviderConfig:
         """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         for node_key, node_value in node.value:
@@ -121,7 +141,7 @@ class ProviderConfig(yaml.YAMLObject):
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping: Dict[str, Any]) -> "ProviderConfig":
+    def from_mapping(cls, mapping: Dict[str, Any]) -> ProviderConfig:
         """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
         cls.validate(mapping)
         for key in ("api", "search", "download", "auth"):
@@ -188,18 +208,22 @@ class PluginConfig(yaml.YAMLObject):
     :type free_params: dict
     """
 
+    name: str
+    metadata_mapping: Optional[Dict[str, Any]]
+    free_params: Optional[Dict[Any, Any]]
+
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
     yaml_tag = "!plugin"
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> "PluginConfig":
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> PluginConfig:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping: Dict[str, Any]) -> "PluginConfig":
+    def from_mapping(cls, mapping: Dict[str, Any]) -> PluginConfig:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         c = cls()
         c.__dict__.update(mapping)
@@ -226,7 +250,7 @@ class PluginConfig(yaml.YAMLObject):
         )
 
 
-def load_default_config() -> Dict[str, Any]:
+def load_default_config() -> Dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionnary.
 
     Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
@@ -241,7 +265,7 @@ def load_default_config() -> Dict[str, Any]:
     return load_config(eodag_providers_cfg_file)
 
 
-def load_config(config_path: str) -> Dict[str, Any]:
+def load_config(config_path: str) -> Dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionnary from a given file
 
     :param config_path: The path to the provider config file
@@ -250,11 +274,11 @@ def load_config(config_path: str) -> Dict[str, Any]:
     :rtype: dict
     """
     logger.debug(f"Loading configuration from {config_path}")
-    config: Dict[str, Any] = {}
+    config: Dict[str, ProviderConfig] = {}
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it
-        providers_configs = cached_yaml_load_all(config_path)
+        providers_configs: List[ProviderConfig] = cached_yaml_load_all(config_path)
     except yaml.parser.ParserError as e:
         logger.error("Unable to load configuration")
         raise e
@@ -286,14 +310,17 @@ def provider_config_init(
                 param_value.outputs_prefix = tempfile.gettempdir()
             if not getattr(param_value, "delete_archive", None):
                 param_value.delete_archive = True
-    # Set default priority to 0
-    provider_config.__dict__.setdefault("priority", 0)
 
     try:
-        if stac_search_default_conf is not None and provider_config.search.type in [
-            "StacSearch",
-            "StaticStacSearch",
-        ]:
+        if (
+            stac_search_default_conf is not None
+            and provider_config.search
+            and provider_config.search.type
+            in [
+                "StacSearch",
+                "StaticStacSearch",
+            ]
+        ):
             # search config set to stac defaults overriden with provider config
             per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
             provider_config.search.__dict__ = update_nested_dict(
