@@ -193,10 +193,10 @@ class TestRequestSplitter(unittest.TestCase):
         )
         splitter = RequestSplitter(config, metadata)
         result, num_items = splitter.get_time_slices("2000-01-01", "2001-06-30")
-        self.assertEqual(4, len(result))
+        self.assertEqual(5, len(result))
         expected_result_row_4 = {
             "year": ["2000"],
-            "month": ["01", "02"],
+            "month": ["03", "04"],
             "day": ["01", "10", "20", "25"],
             "time": ["01:00", "12:00", "18:00", "22:00"],
         }

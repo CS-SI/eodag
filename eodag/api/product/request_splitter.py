@@ -159,7 +159,9 @@ class RequestSplitter:
             start_year = int(start_date[:4])
             end_year = int(end_date[:4])
             if (end_year - start_year) < slice_duration:
-                return self._format_result(start_date, end_date)
+                return self._format_result(
+                    start_date, end_date, constraint_values=constraint_values
+                )
             return self._split_by_year(
                 start_year,
                 end_year,
@@ -174,7 +176,9 @@ class RequestSplitter:
             start_month = int(start_date[5:7])
             start_year = int(start_date[:4])
             if start_year == end_year and (end_month - start_month) < slice_duration:
-                return self._format_result(start_date, end_date)
+                return self._format_result(
+                    start_date, end_date, constraint_values=constraint_values
+                )
             return self._split_by_month(
                 start_year,
                 end_year,
@@ -186,7 +190,7 @@ class RequestSplitter:
                 constraint_values,
             )
 
-    def _format_result(self, start_date, end_date):
+    def _format_result(self, start_date, end_date, constraint_values=None):
         if "year" not in self.metadata:
             return [{"start_date": start_date, "end_date": end_date}]
         start_year = int(start_date[:4])
@@ -209,10 +213,15 @@ class RequestSplitter:
                     "{:0>2d}".format(d) for d in range(start_day, end_day + 1)
                 }
                 days = self._get_days_for_months_and_years(
-                    months, years, days=selected_days
+                    months,
+                    years,
+                    days=selected_days,
+                    constraint_values=constraint_values,
                 )
             else:
-                days = self._get_days_for_months_and_years(months, years)
+                days = self._get_days_for_months_and_years(
+                    months, years, constraint_values=constraint_values
+                )
             if "time" in self.metadata:
                 times = self._get_times_for_days_months_and_years(days, months, years)
             if "month" not in self.multi_select_values:
@@ -327,16 +336,18 @@ class RequestSplitter:
         for y in range(end_year, start_year - 1, -1):
             while (m >= 1 and y > start_year) or (m >= start_month and y == start_year):
                 months = self._get_months_for_years(
-                    [str(y)], constraint_values=constraint_values, months={str(m)}
+                    [str(y)],
+                    constraint_values=constraint_values,
+                    months={"{:0>2d}".format(m)},
                 )
                 if i < num_months:
-                    if str(m) in months:
+                    if "{:0>2d}".format(m) in months:
                         months_slice.append("{:0>2d}".format(m))
                     i += 1
                 else:
                     if len(months_slice) > 0:
                         months_years.append({"year": [str(y)], "month": months_slice})
-                    if str(m) in months:
+                    if "{:0>2d}".format(m) in months:
                         months_slice = ["{:0>2d}".format(m)]
                     else:
                         months_slice = []
@@ -795,6 +806,8 @@ class RequestSplitter:
         return splitted_request_params
 
     def _matches_constraints(self, row):
+        if not self.constraints:
+            return True
         for constraint in self.constraints:
             matches_constraint = True
             for key, value in row.items():
