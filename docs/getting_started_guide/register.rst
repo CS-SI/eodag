@@ -24,9 +24,6 @@ to each provider supported by ``eodag``:
 
 * ``onda``: create an account `here: <https://www.onda-dias.eu/cms/>`__
 
-* ``mundi``: create an account `here <https://mundiwebservices.com>`__ (click on "login" and then go in the "register" tab).
-  Then use as *apikey* the Web Token provided `here <https://mundiwebservices.com/account/profile>`__
-
 * ``ecmwf``: create an account `here <https://apps.ecmwf.int/registration/>`__.
   Then use *email* as *username* and *key* as *password* from `here <https://api.ecmwf.int/v1/key/>`__ in eodag credentials.
   EODAG can be used to request for public datasets as for operational archive. Please note that for public datasets you

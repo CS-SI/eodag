@@ -40,8 +40,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+--------------------------+----------------+
 | creodias           | ODataV4Search         | KeycloakOIDCPasswordAuth | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
-| mundi              | QueryStringSearch     | HTTPHeaderAuth           | S3RestDownload |
-+--------------------+-----------------------+--------------------------+----------------+
 | onda               | ODataV4Search         | GenericAuth              | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
 | astraea_eod        | StacSearch            | AwsAuth                  | AwsDownload    |
