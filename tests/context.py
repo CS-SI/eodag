@@ -41,6 +41,7 @@ from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.config import (
     load_default_config,
     merge_configs,
+    override_config_from_mapping,
     load_stac_provider_config,
     get_ext_product_types_conf,
     EXT_PRODUCT_TYPES_CONF_URI,

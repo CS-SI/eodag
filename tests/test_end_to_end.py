@@ -125,13 +125,6 @@ HYDROWBEB_NEXT_SEARCH_ARGS = [
     "2022-04-10",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-MUNDI_SEARCH_ARGS = [
-    "mundi",
-    "S2_MSI_L1C",
-    "2021-11-08",
-    "2021-11-16",
-    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
-]
 # As of 2021-01-14 the products previously required in 2020-08 were offline.
 # Trying here to retrieve the most recent products which are more likely to be online.
 today = datetime.date.today()
@@ -418,11 +411,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_mundi(self):
-        product = self.execute_search(*MUNDI_SEARCH_ARGS)
-        expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
-
     # @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_theia(self):
         product = self.execute_search(*THEIA_SEARCH_ARGS)
@@ -575,26 +563,25 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_search_by_tile(self):
         """Search by tileIdentifier should find results and correctly map found metadata"""
         # providers supporting search-by-tile
-        supported_providers = [
-            "peps",
-            "theia",
-            "mundi",
-            "onda",
-            "creodias",
-            "cop_dataspace",
-            "planetary_computer",
-            "earth_search",
+        supported_providers_product_types = [
+            ("peps", "S2_MSI_L1C"),
+            ("theia", "S2_MSI_L2A_MAJA"),
+            ("onda", "S2_MSI_L1C"),
+            ("creodias", "S2_MSI_L1C"),
+            ("cop_dataspace", "S2_MSI_L1C"),
+            ("planetary_computer", "S2_MSI_L1C"),
+            ("earth_search", "S2_MSI_L1C"),
         ]
 
-        tile_id = "53WPU"
+        tile_id = "31TCJ"
 
-        for provider in supported_providers:
-            self.eodag.set_preferred_provider(provider)
+        for provider, product_type in supported_providers_product_types:
             products, _ = self.eodag.search(
-                productType="S2_MSI_L1C",
+                productType=product_type,
                 start="2021-06-01",
                 end="2021-06-30",
                 tileIdentifier=tile_id,
+                provider=provider,
             )
             self.assertGreater(len(products), 0, msg=f"no result found for {provider}")
             self.assertEqual(
@@ -602,16 +589,6 @@ class TestEODagEndToEnd(EndToEndBase):
                 tile_id,
                 msg=f"tileIdentifier not mapped for {provider}",
             )
-
-    def test_end_to_end_search_all_mundi_default(self):
-        # 23/03/2021: Got 16 products for this search
-        results = self.execute_search_all(*MUNDI_SEARCH_ARGS)
-        self.assertGreater(len(results), 10)
-
-    def test_end_to_end_search_all_mundi_iterate(self):
-        # 23/03/2021: Got 16 products for this search
-        results = self.execute_search_all(*MUNDI_SEARCH_ARGS, items_per_page=10)
-        self.assertGreater(len(results), 10)
 
     def test_end_to_end_search_all_astraea_eod_iterate(self):
         # 23/03/2021: Got 39 products for this search
@@ -1052,11 +1029,6 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_cop_dataspace(self):
         product = self.execute_search(*COP_DATASPACE_SEARCH_ARGS)
-        with self.assertRaises(AuthenticationError):
-            self.eodag.download(product)
-
-    def test_end_to_end_wrong_credentials_mundi(self):
-        product = self.execute_search(*MUNDI_SEARCH_ARGS)
         with self.assertRaises(AuthenticationError):
             self.eodag.download(product)
 

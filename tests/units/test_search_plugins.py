@@ -24,6 +24,7 @@ from unittest import mock
 
 import dateutil
 import responses
+import yaml
 from requests import RequestException
 
 from tests.context import (
@@ -38,6 +39,7 @@ from tests.context import (
     cached_parse,
     get_geometry_from_various,
     load_default_config,
+    override_config_from_mapping,
 )
 
 
@@ -71,6 +73,81 @@ class BaseSearchPluginTest(unittest.TestCase):
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginQueryStringSearchXml, self).setUp()
+
+        # manually add conf as this provider is not supported any more
+        providers_config = self.plugins_manager.providers_config
+        mundi_config_yaml = """
+            mundi:
+                search:
+                    type: QueryStringSearch
+                    api_endpoint: 'https://{collection}.browse.catalog.mundiwebservices.com/opensearch'
+                    need_auth: false
+                    result_type: 'xml'
+                    results_entry: '//ns:entry'
+                    literal_search_params:
+                        format: atom
+                        relation: intersects
+                    pagination:
+                        next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
+                        total_items_nb_key_path: '//os:totalResults/text()'
+                        max_items_per_page: 50
+                    discover_metadata:
+                        auto_discovery: true
+                        metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
+                        search_param: '{metadata}={{{metadata}}}'
+                        metadata_path: '*'
+                    metadata_mapping:
+                        productType:
+                            - 'productType'
+                            - 'eo:productType/text()'
+                        processingLevel:
+                            - 'processingLevel'
+                            - 'eo:processingLevel/text()'
+                        title: 'ns:title/text()'
+                        startTimeFromAscendingNode:
+                            - 'timeStart={startTimeFromAscendingNode#to_iso_utc_datetime}'
+                            - 'DIAS:sensingStartDate/text()'
+                        completionTimeFromAscendingNode:
+                            - 'timeEnd={completionTimeFromAscendingNode#to_iso_utc_datetime}'
+                            - 'DIAS:sensingStopDate/text()'
+                        id:
+                            - 'uid={id#remove_extension}'
+                            - 'dc:identifier/text()'
+                        tileIdentifier:
+                            - 'tileIdentifier'
+                            - 'DIAS:tileIdentifier/text()'
+                        geometry:
+                            - 'geometry={geometry#to_rounded_wkt}'
+                            - '{georss:polygon|georss:where#from_georss}'
+                products:
+                    S1_SAR_GRD:
+                        productType: GRD
+                        collection: Sentinel1
+                        metadata_mapping:
+                            cloudCover: 'null/text()'
+                    S1_SAR_SLC:
+                        productType: SLC
+                        collection: Sentinel1
+                        metadata_mapping:
+                            cloudCover: 'null/text()'
+                    S2_MSI_L1C:
+                        productType: IMAGE
+                        processingLevel: L1C
+                        collection: Sentinel2
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+                        collection: '{collection}'
+                        instrument: '{instrument}'
+                        processingLevel: '{processingLevel}'
+                auth:
+                    type: HTTPHeaderAuth
+                    headers:
+                        Cookie: "seeedtoken={apikey}"
+        """
+        mundi_config_dict = yaml.safe_load(mundi_config_yaml)
+        override_config_from_mapping(providers_config, mundi_config_dict)
+        self.plugins_manager = PluginManager(providers_config)
+
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         provider = "mundi"
         self.mundi_search_plugin = self.get_search_plugin(self.product_type, provider)
