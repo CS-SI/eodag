@@ -79,11 +79,6 @@ class StaticStacSearch(StacSearch):
         )
         nb_features = len(features)
         feature_collection = geojson.FeatureCollection(features)
-        feature_collection["context"] = {
-            "limit": nb_features,
-            "matched": nb_features,
-            "returned": nb_features,
-        }
 
         # save StaticStacSearch._request and mock it to make return loaded static results
         stacapi_request = self._request

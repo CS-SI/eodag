@@ -1073,7 +1073,6 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
-            "context": {"matched": 1},
             "features": [
                 {
                     "id": "foo",
@@ -1117,7 +1116,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
             {
-                "context": {"page": 1, "limit": 2, "matched": 1, "returned": 2},
                 "features": [
                     {
                         "id": "foo",
@@ -1171,7 +1169,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
             {
-                "context": {"matched": 3},
                 "features": [
                     {
                         "id": "foo",
@@ -1204,7 +1201,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         """The metadata mapping for a stac provider should not mix specific product-types metadata-mapping"""
         mock__request.return_value = mock.Mock()
         result = {
-            "context": {"matched": 1},
             "features": [
                 {
                     "id": "foo",

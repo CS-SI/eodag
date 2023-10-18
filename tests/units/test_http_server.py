@@ -829,11 +829,6 @@ class RequestTestCase(unittest.TestCase):
         response = self._request_valid(f"search?collections={self.tested_product_type}")
         self.assertIn("numberMatched", response)
         self.assertIn("numberReturned", response)
-        self.assertIn("context", response)
-        self.assertEqual(1, response["context"]["page"])
-        self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response["context"]["limit"])
-        self.assertIn("matched", response["context"])
-        self.assertIn("returned", response["context"])
 
     def test_search_provider_in_downloadlink(self):
         """Search through eodag server and check that specified provider appears in downloadLink"""

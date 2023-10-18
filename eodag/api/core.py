@@ -1856,13 +1856,7 @@ class EODataAccessGateway:
             max_connections=max_connections,
             timeout=timeout,
         )
-        nb_features = len(features)
         feature_collection = geojson.FeatureCollection(features)
-        feature_collection["context"] = {
-            "limit": nb_features,
-            "matched": nb_features,
-            "returned": nb_features,
-        }
 
         plugin = next(
             self._plugins_manager.get_search_plugins(
