@@ -880,6 +880,7 @@
     type: QueryStringSearch
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
+    timeout: 20
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
