@@ -869,7 +869,25 @@ S3_OLCI_L2WRR:
   title: SENTINEL3 OLCI Level-2 Water Reduced Resolution
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_OLCI_L2LFR:
+S3_OLCI_L2WRR_REPROCESSED:
+  abstract: |
+    OLCI Level 2 Marine products provide spectral information on the colour of the oceans (water reflectances). These
+    radiometric products are used to estimate geophysical parameters e.g. estimates of phytoplankton biomass through
+    determining the Chlorophyll-a (Chl) concentration. In coastal areas, they also allow monitoring of the sediment
+    load via the Total Suspended Matter (TSM) product. Reduced resolution products are at a nominal 1km resolution.
+    This collection contains reprocessed data from baseline collection 003. Operational data can be found in the
+    corresponding collection.
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR,REPROCESSED
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Level-2 Water Reduced Resolution Reprocessed
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_OLCI_L2WFR:
   abstract: |
     The OLCI Level-2 Water Full Resolution (OL_2_WFR) products contain water and atmospheric geophysical products at Full
     resolution with a spatial sampling of approximately 300 m. The products are assumed to be computed in Near Real
@@ -886,22 +904,25 @@ S3_OLCI_L2LFR:
   title: SENTINEL3 OLCI Level-2 Water Full Resolution
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_OLCI_L2WFR:
+S3_OLCI_L2WFR_REPROCESSED:
   abstract: |
-    The OLCI Level-2 Water Full Resolution (OL_2_WFR) products contain water and atmospheric geophysical products
-    at Full resolution with a spatial sampling of approximately 1.2 km. The products are assumed to be computed
-    in Near Real Time (NRT) (i.e. delivered to users less than 3 hours after acquisition), in Non-Time Critical
-    (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
+    OLCI Level 2 Marine products provide spectral information on the colour of the oceans (water reflectances). These
+    radiometric products are used to estimate geophysical parameters e.g. estimates of phytoplankton biomass through
+    determining the Chlorophyll-a (Chl) concentration. In coastal areas, they also allow monitoring of the sediment
+    load via the Total Suspended Matter (TSM) product. Full resolution products are at a nominal 300m resolution. This
+    collection contains reprocessed data from baseline collection 003. Operational data can be found in the
+    corresponding collection.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-water
   instrument: OLCI
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR,REPROCESSED
   sensorType: OPTICAL
   license: proprietary
-  title: SENTINEL3 OLCI Level-2 Water Full Resolution
+  title: SENTINEL3 OLCI Level-2 Water Full Resolution Reprocessed
   missionStartDate: "2016-02-16T00:00:00Z"
+
 # S3 SLSTR
 S3_SLSTR_L1RBT:
   abstract: |
@@ -950,6 +971,22 @@ S3_SLSTR_L2WST:
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 WST
   missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L2WST_REPROCESSED:
+  abstract: |
+    The SLSTR SST has a spatial resolution of 1km at nadir. Skin Sea Surface Temperature following the
+    GHRSST L2P GDS2 format specification, see https://www.ghrsst.org/ . Sentinel-3 is part of a series of Sentinel
+    satellites, under the umbrella of the EU Copernicus programme. This collection contains reprocessed data from
+    baseline collection 003. Operational data can be found in the corresponding collection.
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST,REPROCESSED
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-2 WST Reprocessed
+  missionStartDate: "2016-04-18T00:00:00Z"
 
 S3_SLSTR_L2AOD:
   abstract: |
@@ -1060,6 +1097,63 @@ S3_SRA_BS:
   title: SENTINEL3 SRAL Level-1 SRA_BS
   missionStartDate: "2016-02-16T00:00:00Z"
 
+S3_SRA_1A_REPROCESSED:
+  abstract: |
+    SRAL Level 1A Unpacked L0 Complex Echoes (version BC004) - Sentinel-3 - Reprocessed
+    Fundamental science and engineering product development supporting operational users. This product is most
+    relevant to SAR processing specialists allowing fundamental studies on SAR processing such as Doppler beam
+    formation and for calibration studies using ground-based Transponders. Sentinel-3 is part of a series of Sentinel
+    satellites, under the umbrella of the EU Copernicus programme. This collection contains reprocessed data from
+    baseline collection 004. Operational data can be found in the corresponding collection.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1A
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1A,REPROCESSED
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1A Unpacked - Reprocessed
+  missionStartDate: "2016-03-01T00:00:00Z"
+
+S3_SRA_1B_REPROCESSED:
+  abstract: |
+    SRAL Level 1B (version BC004) - Sentinel-3 - Reprocessed
+    SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or
+    Synthetic Aperture Radar (SAR) mode both for C Band and Ku band. When the altimeter is in SAR mode, this product
+    also contains the so-called Pseudo LRM (PLRM) echoes. Sentinel-3 is part of a series of Sentinel satellites, under
+    the umbrella of the EU Copernicus programme. This collection contains reprocessed data from baseline collection 004.
+    Operational data can be found in the corresponding collection.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1B
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1B - Reprocessed
+  missionStartDate: "2016-03-01T00:00:00Z"
+
+S3_SRA_1B_SE_REPROCESSED:
+  abstract: |
+    SRAL Level 1B Stack Echoes (version BC004) - Sentinel-3 - Reprocessed
+    SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or Synthetic
+    Aperture Radar (SAR) mode both for C Band and Ku band. When the altimeter is in SAR mode, this product also
+    contains the so-called Pseudo LRM (PLRM) echoes. Complex (In-phase and Quadrature) echoes (I's and Q;s) after
+    slant/Doppler range correction. This product is most relevant to geophysical retrieval algorithm developers
+    (over ocean, land and ice surfaces), surface characterisations studies (e.g. impact of sea state bias, wave
+    directional effects etc) and Quality Control systems. Sentinel-3 is part of a series of Sentinel satellites, under
+    the umbrella of the EU Copernicus programme. This collection contains reprocessed data from baseline collection 004.
+    Operational data can be found in the corresponding collection.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1B
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-1B Stack Echoes - Reprocessed
+  missionStartDate: "2016-03-01T00:00:00Z"
+
 S3_WAT:
   abstract: |
     The products contain the typical altimetry measurements, like the altimeter range, the sea surface height, the wind
@@ -1083,6 +1177,27 @@ S3_WAT:
   license: proprietary
   title: SENTINEL3 SRAL Level-2 WAT
   missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_WAT_REPROCESSED:
+  abstract: |
+    The products contain the typical altimetry measurements, like the altimeter range, the sea surface height, the wind
+    speed, significant wave height and all required geophysical corrections and related flags. Also the sea Ice
+    freeboard measurement is included. The measurements in the standard data file provide the measurements in low
+    (1 Hz = approx. 7km) and high resolution (20 Hz = approx. 300 m), in LRM mode or in SAR mode, for both C-band and
+    Ku band. The SAR mode is the default mode. The reduced measurement data file contains 1 Hz measurements only. The
+    enhanced measurement data file contains also the waveforms and associated parameters and the pseudo LRM
+    measurements when in SAR mode. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU
+    Copernicus programme. This collection contains reprocessed data from baseline collection 004. Operational data can
+    be found in the corresponding collection.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT,REPROCESSED
+  sensorType: RADAR
+  license: proprietary
+  title: SRAL Level 2 Altimetry Global - Reprocessed
+  missionStartDate: "2016-03-01T00:00:00Z"
 
 S3_LAN:
   abstract: LAN or SR_2_LAN___ (peps)
