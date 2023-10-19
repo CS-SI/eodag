@@ -32,7 +32,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.8, "3.11"]
+        python-version: [3.8, "3.12"]
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout the repo
@@ -95,7 +95,7 @@ jobs:
       uses: 5monkeys/cobertura-action@master
       if: ${{ github.event_name == 'pull_request' }}
       with:
-        path: artifacts/unit-test-results-python3.11-ubuntu-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.12-ubuntu-latest/coverage.xml
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         pull_request_number: ${{ github.pull_request.number }}
         minimum_coverage: 70
@@ -107,7 +107,7 @@ jobs:
       uses: 5monkeys/cobertura-action@master
       if: ${{ github.event_name == 'pull_request' }}
       with:
-        path: artifacts/unit-test-results-python3.11-windows-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.12-windows-latest/coverage.xml
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         pull_request_number: ${{ github.pull_request.number }}
         minimum_coverage: 70
