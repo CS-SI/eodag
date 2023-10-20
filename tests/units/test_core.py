@@ -1847,8 +1847,7 @@ class TestCoreSearch(TestCoreBase):
         """search_iter_page must propagate errors"""
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = AttributeError()
-        prepare_seach.return_value = ([search_plugin], {})
-        page_iterator = self.dag.search_iter_page_plugin()
+        page_iterator = self.dag.search_iter_page_plugin(search_plugin=search_plugin)
         with self.assertRaises(AttributeError):
             next(page_iterator)
 
