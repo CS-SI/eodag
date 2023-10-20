@@ -923,6 +923,24 @@ S3_OLCI_L2WFR_REPROCESSED:
   title: SENTINEL3 OLCI Level-2 Water Full Resolution Reprocessed
   missionStartDate: "2016-02-16T00:00:00Z"
 
+S3_OLCI_L4BALTIC:
+  abstract: |
+    Baltic Sea Surface Ocean Colour Plankton from Sentinel-3 OLCI L4 monthly observations
+    For the Baltic Sea Ocean Satellite Observations, the Italian National Research Council (CNR – Rome, Italy), is
+    providing Bio-Geo_Chemical (BGC) regional datasets: * ''plankton'' with the phytoplankton chlorophyll
+    concentration (CHL) evaluated via region-specific neural network (Brando et al. 2021) Upstreams: OLCI-S3A & S3B
+    Temporal resolution: monthly Spatial resolution: 300 meters To find this product in the catalogue, use the search
+    keyword ""OCEANCOLOUR_BAL_BGC_L4_NRT"". DOI (product) : https://doi.org/10.48670/moi-00295
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L4
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L4,BGC,CHL,BALTIC
+  sensorType: OPTICAL
+  license: proprietary
+  title: SENTINEL3 OLCI Baltic Sea Surface Ocean Colour Plankton
+  missionStartDate: "2023-04-10T00:00:00Z"
+
 # S3 SLSTR
 S3_SLSTR_L1RBT:
   abstract: |
@@ -941,6 +959,26 @@ S3_SLSTR_L1RBT:
   license: proprietary
   title: SENTINEL3 SLSTR Level-1
   missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L1RBT_REPROCESSED:
+  abstract: |
+    SLSTR Level 1B Radiances and Brightness Temperatures (version BC004) - Sentinel 3 - Reprocessed
+    The SLSTR level 1 products contain: the radiances of the 6 visible (VIS), Near Infra-Red (NIR) and Short Wave
+    Infra-Red (SWIR) bands (on the A and B stripe grids); the Brightness Temperature (BT) for the 3 Thermal Infra-Red
+    (TIR) bands; the BT for the 2 Fire (FIR) bands. Resolution: 1km at nadir (TIR), 500m (VIS). All are provided for
+    both the oblique and nadir view. These measurements are accompanied with grid and time information, quality flags,
+    error estimates and meteorological auxiliary data. Sentinel-3 is part of a series of Sentinel satellites, under the
+    umbrella of the EU Copernicus programme. This collection contains reprocessed data from baseline collection 004.
+    Operational data can be found in the corresponding collection.
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT,VIS,NIR,SWIR,BT,TIR,FIR,Reprocessed
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: SENTINEL3 SLSTR Level-1 RBT - Reprocessed
+  missionStartDate: "2018-05-09T00:00:00Z"
 
 S3_SLSTR_L2LST:
   abstract: |

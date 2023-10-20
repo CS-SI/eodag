@@ -705,6 +705,18 @@ def format_metadata(search_param, *args, **kwargs):
                 MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
             ]
 
+        @staticmethod
+        def convert_get_dates_from_string(text: str, split_param="-"):
+            reg = "[0-9]{8}" + split_param + "[0-9]{8}"
+            dates_str = re.search(reg, text).group()
+            dates = dates_str.split(split_param)
+            start_date = datetime.strptime(dates[0], "%Y%m%d")
+            end_date = datetime.strptime(dates[1], "%Y%m%d")
+            return {
+                "startDate": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "endDate": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(
