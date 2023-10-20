@@ -40,9 +40,10 @@ class FilterLatestByName(Crunch):
 
     :type config: dict
     """
+
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any]) -> None:
         super(FilterLatestByName, self).__init__(config)
         name_pattern = config.pop("name_pattern")
         if not self.NAME_PATTERN_CONSTRAINT.search(name_pattern):
@@ -67,7 +68,10 @@ class FilterLatestByName(Crunch):
         processed: List[str] = []
         filtered: List[EOProduct] = []
         for product in products:
-            match = cast(Optional[Match[Any]], self.name_pattern.match(product.properties["title"]))
+            match = cast(
+                Optional[Match[Any]],
+                self.name_pattern.match(product.properties["title"]),
+            )
             if match:
                 tileid: str = match.group("tileid")
                 if tileid not in processed:

@@ -22,10 +22,10 @@ import re
 import shutil
 import zipfile
 from datetime import datetime
+from email.message import Message
 from itertools import chain
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 from urllib.parse import parse_qs, urlparse
-from email.message import Message
 
 import geojson
 import requests
@@ -34,7 +34,7 @@ from lxml import etree
 from requests import RequestException, Response
 from stream_zip import NO_COMPRESSION_64, stream_zip
 
-from eodag.api.product import DownloadedCallback, EOProduct
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -46,11 +46,12 @@ from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.download.base import Download
 from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
+    DownloadedCallback,
     ProgressCallback,
     flatten_top_directories,
     parse_header,

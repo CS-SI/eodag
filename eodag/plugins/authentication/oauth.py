@@ -16,20 +16,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict, Union
+
+from requests.auth import AuthBase
+
+from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 
 
 class OAuth(Authentication):
     """OAuth authentication plugin"""
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OAuth, self).__init__(provider, config)
         self.access_key = None
         self.secret_key = None
 
-    def authenticate(self):
+    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """Authenticate"""
         self.validate_config_credentials()
         self.access_key = self.config.credentials["aws_access_key_id"]
         self.secret_key = self.config.credentials["aws_secret_access_key"]
-        return self.access_key, self.secret_key
+        return {"access_key": self.access_key, "secret_key": self.secret_key}

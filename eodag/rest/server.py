@@ -22,7 +22,17 @@ import re
 import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
-from typing import Awaitable, Dict, List, Optional, Set, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Union,
+)
 
 import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
@@ -31,12 +41,11 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse, StreamingResponse
-from fastapi.types import Any, Callable, DecoratedCallable
+from fastapi.types import DecoratedCallable
 from pydantic import BaseModel
 from requests import Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
     QueryableProperty,
@@ -54,7 +63,7 @@ from eodag.rest.utils import (
     get_stac_item_by_id,
     search_stac_items,
 )
-from eodag.utils import parse_header, update_nested_dict
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -105,7 +114,7 @@ router = APIRouter()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """API init and tear-down"""
     eodag_api_init()
     yield
@@ -234,7 +243,9 @@ async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResp
 
 
 @app.exception_handler(NotAvailableError)
-async def handle_resource_not_found(request: Request, error: Exception):
+async def handle_resource_not_found(
+    request: Request, error: Exception
+) -> ORJSONResponse:
     """Not found [404] errors handle"""
     return await default_exception_handler(
         request,
@@ -311,15 +322,15 @@ class SearchBody(BaseModel):
     class which describes the body of a search request
     """
 
-    provider: Union[str, None] = None
+    provider: Optional[str] = None
     collections: Union[List[str], str]
-    datetime: Union[str, None] = None
-    bbox: Union[list, str, None] = None
-    intersects: Union[dict, None] = None
-    limit: Union[int, None] = DEFAULT_ITEMS_PER_PAGE
-    page: Union[int, None] = 1
-    query: Union[dict, None] = None
-    ids: Union[List[str], None] = None
+    datetime: Optional[str] = None
+    bbox: Optional[List[Union[int, float]]] = None
+    intersects: Optional[Dict[str, Any]] = None
+    limit: Optional[int] = DEFAULT_ITEMS_PER_PAGE
+    page: Optional[int] = 1
+    query: Optional[Dict[str, Any]] = None
+    ids: Optional[List[str]] = None
 
 
 @router.get(
@@ -444,7 +455,9 @@ def list_collection_queryables(
     queryables = Queryables(q_id=request.state.url, additional_properties=False)
     conf_args = [collection_id, provider] if provider else [collection_id]
 
-    provider_properties: Set[str] = set(fetch_collection_queryable_properties(*conf_args))
+    provider_properties: Set[str] = set(
+        fetch_collection_queryable_properties(*conf_args)
+    )
 
     for prop in provider_properties:
         titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop).title()

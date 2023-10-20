@@ -19,27 +19,31 @@ import logging
 import shutil
 import tarfile
 import zipfile
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import requests
 from jsonpath_ng.ext import parse
 from requests import RequestException
 from usgs import USGSAuthExpiredError, USGSError, api
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import SearchResult
+from eodag.config import PluginConfig
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import Download
 from eodag.utils import (
-    GENERIC_PRODUCT_TYPE,
-    USER_AGENT,
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+    GENERIC_PRODUCT_TYPE,
+    USER_AGENT,
+    DownloadedCallback,
     ProgressCallback,
     format_dict_items,
     path_to_uri,
@@ -57,7 +61,7 @@ logger = logging.getLogger("eodag.apis.usgs")
 class UsgsApi(Download, Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(UsgsApi, self).__init__(provider, config)
 
         # Same method as in base.py, Search.__init__()
@@ -73,7 +77,7 @@ class UsgsApi(Download, Api):
             result_type=getattr(self.config, "result_type", "json"),
         )
 
-    def authenticate(self):
+    def authenticate(self) -> None:
         """Login to usgs api
 
         :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
@@ -119,7 +123,7 @@ class UsgsApi(Download, Api):
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
         end_date = kwargs.pop("completionTimeFromAscendingNode", None)
         geom = kwargs.pop("geometry", None)
-        footprint = {}
+        footprint: Dict[str, str] = {}
         if hasattr(geom, "bounds"):
             (
                 footprint["lonmin"],
@@ -187,7 +191,6 @@ class UsgsApi(Download, Api):
             results["data"]["results"] = list(results_by_entity_id.values())
 
             for result in results["data"]["results"]:
-
                 result["productType"] = usgs_dataset
 
                 product_properties = properties_from_json(
@@ -222,13 +225,13 @@ class UsgsApi(Download, Api):
 
     def download(
         self,
-        product,
-        auth=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Any,
+    ) -> Optional[str]:
         """Download data from USGS catalogues"""
 
         if progress_callback is None:
@@ -237,9 +240,12 @@ class UsgsApi(Download, Api):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        outputs_extension = self.config.products.get(  # type: ignore
-            product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
-        ).get("outputs_extension", ".tar.gz")
+        outputs_extension = cast(
+            str,
+            self.config.products.get(  # type: ignore
+                product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+            ).get("outputs_extension", ".tar.gz"),
+        )
 
         fs_path, record_filename = self._prepare_download(
             product,
@@ -265,7 +271,7 @@ class UsgsApi(Download, Api):
             product.properties["productId"],
         )
 
-        req_urls = []
+        req_urls: List[str] = []
         try:
             if len(download_request_results["data"]["preparingDownloads"]) > 0:
                 req_urls.extend(
@@ -300,7 +306,12 @@ class UsgsApi(Download, Api):
         logger.debug(f"Downloading {req_url}")
 
         @self._download_retry(product, wait, timeout)
-        def download_request(product, fs_path, progress_callback, **kwargs):
+        def download_request(
+            product: EOProduct,
+            fs_path: str,
+            progress_callback: ProgressCallback,
+            **kwargs: Any,
+        ) -> None:
             try:
                 with requests.get(
                     req_url,
@@ -311,7 +322,7 @@ class UsgsApi(Download, Api):
                     try:
                         stream.raise_for_status()
                     except RequestException as e:
-                        if hasattr(e, "response") and hasattr(e.response, "content"):
+                        if e.response and e.response.content:
                             error_message = f"{e.response.content} - {e}"
                         else:
                             error_message = str(e)
@@ -325,7 +336,7 @@ class UsgsApi(Download, Api):
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
             except requests.exceptions.Timeout as e:
-                if hasattr(e, "response") and hasattr(e.response, "content"):
+                if e.response and e.response.content:
                     error_message = f"{e.response.content} - {e}"
                 else:
                     error_message = str(e)
@@ -378,14 +389,14 @@ class UsgsApi(Download, Api):
 
     def download_all(
         self,
-        products,
-        auth=None,
-        downloaded_callback=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
+        products: SearchResult,
+        auth: Optional[PluginConfig] = None,
+        downloaded_callback: Optional[DownloadedCallback] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Any,
+    ) -> List[str]:
         """
         Download all using parent (base plugin) method
         """

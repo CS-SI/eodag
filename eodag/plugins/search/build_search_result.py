@@ -18,7 +18,7 @@
 
 import hashlib
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import geojson
 import orjson
@@ -81,7 +81,7 @@ class BuildPostSearchResult(PostJsonSearch):
         )
         return urls, 1
 
-    def do_search(self, *args, **kwargs):
+    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Perform the actual search request, and return result in a single element."""
         search_url = self.search_urls[0]
         response = self._request(
@@ -92,7 +92,9 @@ class BuildPostSearchResult(PostJsonSearch):
         )
         return [response.json()]
 
-    def normalize_results(self, results, **kwargs):
+    def normalize_results(
+        self, results: List[Dict[str, Any]], **kwargs: Any
+    ) -> List[EOProduct]:
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
         :param results: Raw provider result as single dict in list

@@ -23,8 +23,7 @@ import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
-from eodag.api.product import EOProduct, DownloadedCallback
+from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.apis.base import Api
@@ -35,6 +34,9 @@ from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+    DownloadedCallback,
     ProgressCallback,
     get_geometry_from_various,
     path_to_uri,
@@ -64,7 +66,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     query build methods.
     """
 
-    def __init__(self, provider: str, config: PluginConfig):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         # init self.config.metadata_mapping using Search Base plugin
         Search.__init__(self, provider, config)
 
@@ -73,7 +75,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         # needed for compatibility
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
 
-    def do_search(self, *args, **kwargs):
+    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""
         return [{}]
 

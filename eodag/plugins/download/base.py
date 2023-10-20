@@ -26,16 +26,27 @@ import tempfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DownloadedCallback,
     ProgressCallback,
     sanitize,
-    uri_to_path
+    uri_to_path,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -45,7 +56,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.notebook import NotebookWidgets
 
 if TYPE_CHECKING:
-    from eodag.api.product import DownloadedCallback, EOProduct
+    from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
 
 logger = logging.getLogger("eodag.download.base")
@@ -89,7 +100,7 @@ class Download(PluginTopic):
     :type config: str
     """
 
-    def __init__(self, provider: str, config: PluginConfig):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Download, self).__init__(provider, config)
         self._authenticate = bool(getattr(self.config, "authenticate", False))
 

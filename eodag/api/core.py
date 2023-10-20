@@ -50,10 +50,14 @@ from eodag.config import (
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.utils import (
-    GENERIC_PRODUCT_TYPE,
-    HTTP_REQ_TIMEOUT,
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_MAX_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+    GENERIC_PRODUCT_TYPE,
+    HTTP_REQ_TIMEOUT,
+    DownloadedCallback,
     MockResponse,
     ProgressCallback,
     _deprecated,
@@ -75,19 +79,12 @@ from eodag.utils.exceptions import (
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
-    from eodag.api.product import DownloadedCallback, EOProduct
+    from eodag.api.product import EOProduct
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
 
 logger = logging.getLogger("eodag.core")
-
-# pagination defaults
-DEFAULT_PAGE = 1
-DEFAULT_ITEMS_PER_PAGE = 20
-# Default maximum number of items per page requested by search_all. 50 instead of 20
-# (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
-DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
 
 class EODataAccessGateway:
@@ -658,7 +655,9 @@ class EODataAccessGateway:
             # update eodag product types list with new conf
             self.update_product_types_list(provider_ext_product_types_conf)
 
-    def discover_product_types(self, provider: Optional[str] = None) -> Dict[str, Any]:
+    def discover_product_types(
+        self, provider: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         """Fetch providers for product types
 
         :param provider: (optional) The name of a provider to fetch. Defaults to all
@@ -667,7 +666,7 @@ class EODataAccessGateway:
         :returns: external product types configuration
         :rtype: dict
         """
-        ext_product_types_conf = {}
+        ext_product_types_conf: Dict[str, Any] = {}
         providers_to_fetch = [
             p
             for p in (
@@ -684,7 +683,7 @@ class EODataAccessGateway:
             elif hasattr(self.providers_config[provider], "api"):
                 search_plugin_config = self.providers_config[provider].api
             else:
-                return
+                return None
             if getattr(search_plugin_config, "discover_product_types", None):
                 search_plugin: Union[Search, Api] = next(
                     self._plugins_manager.get_search_plugins(provider=provider)
@@ -716,7 +715,7 @@ class EODataAccessGateway:
 
         return ext_product_types_conf
 
-    def update_product_types_list(self, ext_product_types_conf: Dict[str, Any]):
+    def update_product_types_list(self, ext_product_types_conf: Dict[str, Any]) -> None:
         """Update eodag product types list
 
         :param ext_product_types_conf: external product types configuration
@@ -1357,7 +1356,7 @@ class EODataAccessGateway:
         locations: Optional[Dict[str, str]] = None,
         provider: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[List[Any], Dict[Any, Any]]:
+    ) -> Tuple[List[Union[Search, Api]], Dict[str, Any]]:
         """Internal method to prepare the search kwargs and get the search plugins.
 
         Product query:

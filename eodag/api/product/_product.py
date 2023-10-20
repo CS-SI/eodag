@@ -36,10 +36,10 @@ from eodag.api.product.drivers.base import DatasetDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import (
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
-    USER_AGENT,
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    USER_AGENT,
     ProgressCallback,
     get_geometry_from_various,
 )
@@ -107,7 +107,9 @@ class EOProduct:
     geometry: BaseGeometry
     search_intersection: Optional[BaseGeometry]
 
-    def __init__(self, provider: str, properties: Dict[str, Any], **kwargs: Any) -> None:
+    def __init__(
+        self, provider: str, properties: Dict[str, Any], **kwargs: Any
+    ) -> None:
         self.provider = provider
         self.product_type = kwargs.get("productType")
         self.location = self.remote_location = properties.get("downloadLink", "")
@@ -179,8 +181,8 @@ class EOProduct:
                 )
                 self.search_intersection = None
         self.driver = self.get_driver()
-        self.downloader = None
-        self.downloader_auth = None
+        self.downloader: Optional[Union[Api, Download]] = None
+        self.downloader_auth: Optional[Authentication] = None
 
     def as_dict(self) -> Dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -214,7 +216,7 @@ class EOProduct:
         return geojson_repr
 
     @classmethod
-    def from_geojson(cls, feature: Dict[str, Any]):
+    def from_geojson(cls, feature: Dict[str, Any]) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
         representation as geojson
 
@@ -240,7 +242,7 @@ class EOProduct:
     # https://gist.github.com/sgillies/2217756)
     __geo_interface__ = property(as_dict)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         try:
             return "{}(id={}, provider={})".format(
                 self.__class__.__name__, self.properties["id"], self.provider
@@ -535,15 +537,3 @@ class EOProduct:
             )
             pass
         return NoDriver()
-
-
-class DownloadedCallback:
-    """Example class for callback after each download in :meth:`~eodag.api.core.EODataAccessGateway.download_all`"""
-
-    def __call__(self, product: EOProduct):
-        """Callback
-
-        :param product: The downloaded EO product
-        :type product: :class:`~eodag.api.product._product.EOProduct`
-        """
-        logger.debug("Download finished for the product %s", product)

@@ -6,16 +6,17 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from eodag import EOProduct
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import (
     format_query_params,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
-from eodag.api.search_result import SearchResult
+from eodag.config import PluginConfig
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -35,7 +36,7 @@ class DataRequestSearch(Search):
         - if finished - fetch the result of the job
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(DataRequestSearch, self).__init__(provider, config)
         self.config.__dict__.setdefault("result_type", "json")
         self.config.__dict__.setdefault("results_entry", "content")
@@ -82,15 +83,15 @@ class DataRequestSearch(Search):
         self.download_info = {}
         self.data_request_id = None
 
-    def discover_product_types(self):
+    def discover_product_types(self) -> Optional[Dict[str, Any]]:
         """Fetch product types is disabled for `DataRequestSearch`
 
         :returns: empty dict
-        :rtype: dict
+        :rtype: (optional) dict
         """
-        return {}
+        return None
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear search context"""
         super().clear()
         self.data_request_id = None
@@ -377,10 +378,10 @@ class DataRequestSearch(Search):
         result[results_entry] = filtered_result
         return result
 
-    def _map_product_type(self, product_type: str) -> Optional[str]:
+    def _map_product_type(self, product_type: Optional[str]) -> Optional[str]:
         """Map the eodag product type to the provider product type"""
         if product_type is None:
-            return
+            return None
         logger.debug("Mapping eodag product type to provider product type")
         return self.config.products.get(product_type, {}).get(
             "productType", GENERIC_PRODUCT_TYPE

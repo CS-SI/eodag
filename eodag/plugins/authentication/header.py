@@ -16,7 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import requests.auth
+from typing import Dict, Union
+
+from requests import PreparedRequest
+from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 
@@ -54,7 +57,7 @@ class HTTPHeaderAuth(Authentication):
     Expect an undefined behaviour if you use empty braces in header value strings.
     """
 
-    def authenticate(self):
+    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """Authenticate"""
         self.validate_config_credentials()
         headers = {
@@ -64,13 +67,13 @@ class HTTPHeaderAuth(Authentication):
         return HeaderAuth(headers)
 
 
-class HeaderAuth(requests.auth.AuthBase):
+class HeaderAuth(AuthBase):
     """HeaderAuth custom authentication class to be used with requests module"""
 
-    def __init__(self, authentication_headers):
+    def __init__(self, authentication_headers: Dict[str, str]) -> None:
         self.auth_headers = authentication_headers
 
-    def __call__(self, request):
+    def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
         request.headers.update(self.auth_headers)
         return request

@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import annotations
+
 import logging
 from operator import attrgetter
 from pathlib import Path
@@ -23,7 +24,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Generator,
     Iterator,
     List,
     Optional,
@@ -37,8 +37,12 @@ import pkg_resources
 
 from eodag.api.product import EOProduct
 from eodag.config import PluginConfig, ProviderConfig, load_config, merge_configs
+from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount, PluginTopic
+from eodag.plugins.crunch.base import Crunch
+from eodag.plugins.download.base import Download
+from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from eodag.utils.exceptions import UnsupportedProvider
 
@@ -47,7 +51,7 @@ if TYPE_CHECKING:
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.download.base import Download
     from eodag.plugins.search.base import Search
-logger = logging.getLogger("eodag.manager")
+logger = logging.getLogger("eodag.plugins.manager")
 
 
 class PluginManager:
@@ -125,7 +129,7 @@ class PluginManager:
         self.product_type_to_provider_config_map: Dict[str, List[ProviderConfig]] = {}
         for provider in list(self.providers_config):
             provider_config = self.providers_config[provider]
-            if not provider_config.products:
+            if not hasattr(provider_config, "products") or not provider_config.products:
                 logger.info(
                     "%s: provider has no product configured and will be skipped"
                     % provider
@@ -165,6 +169,7 @@ class PluginManager:
         """
 
         def get_plugin() -> Union[Search, Api]:
+            plugin: Union[Search, Api]
             try:
                 config.search.products = config.products
                 config.search.priority = config.priority

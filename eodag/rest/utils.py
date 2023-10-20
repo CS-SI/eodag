@@ -4,12 +4,11 @@
 
 import ast
 import datetime
-from io import BufferedReader
 import json
 import logging
 import os
 import re
-from collections import namedtuple
+from io import BufferedReader
 from shutil import make_archive, rmtree
 from typing import (
     Any,
@@ -33,7 +32,6 @@ from shapely.geometry.base import BaseGeometry
 
 import eodag
 from eodag import EOProduct
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config, load_stac_provider_config
@@ -42,6 +40,8 @@ from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.utils import (
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     _deprecated,
     dict_items_recursive_apply,
@@ -61,6 +61,8 @@ eodag_api = eodag.EODataAccessGateway()
 
 
 class Cruncher(NamedTuple):
+    """Type hinted Cruncher namedTuple"""
+
     clazz: Callable[..., Any]
     config_params: List[str]
 
@@ -189,6 +191,8 @@ def search_bbox(request_bbox: str) -> Optional[Dict[str, float]]:
     if len(eodag_bbox) != 4:
         raise ValidationError("input box is invalid: %s" % request_bbox)
 
+    return eodag_bbox
+
 
 def get_date(date: Optional[str]) -> Optional[str]:
     """Check if the input date can be parsed as a date"""
@@ -207,14 +211,16 @@ def get_date(date: Optional[str]) -> Optional[str]:
         raise exc
 
 
-def get_int(val: Any) -> Any:
+def get_int(input: Optional[Any]) -> Optional[int]:
     """Check if the input can be parsed as an integer"""
 
-    if val:
-        try:
-            val = int(val)
-        except ValueError as e:
-            raise ValidationError("invalid input integer value: %s" % e)
+    if input is None:
+        return None
+
+    try:
+        val = int(input)
+    except ValueError as e:
+        raise ValidationError("invalid input integer value: %s" % e)
     return val
 
 
@@ -246,7 +252,9 @@ def filter_products(
     return products
 
 
-def get_pagination_info(arguments: Dict[str, Any]) -> Tuple[int, int]:
+def get_pagination_info(
+    arguments: Dict[str, Any]
+) -> Tuple[Optional[int], Optional[int]]:
     """Get pagination arguments"""
     page = get_int(arguments.pop("page", DEFAULT_PAGE))
     # items_per_page can be specified using limit or itemsPerPage
@@ -425,7 +433,7 @@ def get_criterias_from_metadata_mapping(
 
 def search_products(
     product_type: str, arguments: Dict[str, Any], stac_formatted: bool = True
-) -> SearchResult:
+) -> Union[Dict[str, Any], SearchResult]:
     """Returns product search results
 
     :param product_type: The product type criteria
@@ -475,8 +483,9 @@ def search_products(
 
         products = filter_products(products, arguments, **criterias)
 
+        response: Union[Dict[str, Any], SearchResult]
         if not unserialized:
-            response = SearchResult(products).as_geojson_object()
+            response = products.as_geojson_object()
             response.update(
                 {
                     "properties": {
@@ -487,7 +496,7 @@ def search_products(
                 }
             )
         else:
-            response = SearchResult(products)
+            response = products
             response.properties = {
                 "page": page,
                 "itemsPerPage": items_per_page,
@@ -554,7 +563,7 @@ def get_stac_api_version() -> str:
 
 def get_stac_collections(
     url: str, root: str, arguments: Dict[str, Any], provider: Optional[str] = None
-):
+) -> Dict[str, Any]:
     """Build STAC collections
 
     :param url: Requested URL
@@ -579,7 +588,7 @@ def get_stac_collections(
 
 def get_stac_collection_by_id(
     url: str, root: str, collection_id: str, provider: Optional[str] = None
-):
+) -> Dict[str, Any]:
     """Build STAC collection by id
 
     :param url: Requested URL
@@ -608,7 +617,7 @@ def get_stac_item_by_id(
     catalogs: List[str],
     root: str = "/",
     provider: Optional[str] = None,
-):
+) -> Dict[str, Any]:
     """Build STAC item by id
 
     :param url: Requested URL
@@ -640,7 +649,7 @@ def get_stac_item_by_id(
 
 def download_stac_item_by_id_stream(
     catalogs: List[str], item_id: str, provider: Optional[str] = None, asset: Optional[str] = None
-):
+) -> StreamingResponse:
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -1068,7 +1077,7 @@ def rename_to_stac_standard(key: str) -> str:
     """
     # Load the stac config properties for renaming the properties
     # to their STAC standard
-    stac_config_properties = stac_config["item"]["properties"]
+    stac_config_properties: Dict[str, Any] = stac_config["item"]["properties"]
 
     for stac_property, value in stac_config_properties.items():
         if str(value).endswith(key):

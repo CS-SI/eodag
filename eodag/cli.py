@@ -58,8 +58,8 @@ import click
 import uvicorn
 from click import Context
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
-from eodag.utils import parse_qs
+from eodag.api.core import EODataAccessGateway
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -78,7 +78,7 @@ class MutuallyExclusiveOption(click.Option):
     from https://gist.github.com/jacobtolar/fb80d5552a9a9dfc32b12a829fa21c0c
     """
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
         help = kwargs.get("help", "")
         if self.mutually_exclusive:
@@ -110,7 +110,7 @@ class MutuallyExclusiveOption(click.Option):
     help="Control the verbosity of the logs. For maximum verbosity, type -vvv",
 )
 @click.pass_context
-def eodag(ctx: Context, verbose: int):
+def eodag(ctx: Context, verbose: int) -> None:
     """Earth Observation Data Access Gateway: work on EO products from any provider"""
     if ctx.obj is None:
         ctx.obj = {}
@@ -118,7 +118,7 @@ def eodag(ctx: Context, verbose: int):
 
 
 @eodag.command(name="version", help="Print eodag version and exit")
-def version():
+def version() -> None:
     """Print eodag version and exit"""
     click.echo(
         "{__title__} ({__description__}): version {__version__}".format(

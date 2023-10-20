@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime
 import logging
 import time
+from datetime import datetime as dt
 from typing import TYPE_CHECKING, Any, Dict, List
 
 import dateutil.parser
@@ -43,10 +44,11 @@ class FilterDate(Crunch):
 
     :type config: dict
     """
+
     config: Dict[str, str]
 
     @staticmethod
-    def sort_product_by_start_date(product: EOProduct):
+    def sort_product_by_start_date(product: EOProduct) -> dt:
         """Get product start date"""
         start_date = product.properties.get("startTimeFromAscendingNode")
         if not start_date:

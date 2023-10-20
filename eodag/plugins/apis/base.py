@@ -20,16 +20,21 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.search_result import SearchResult
 
 if TYPE_CHECKING:
-    from eodag.api.product import EOProduct, DownloadedCallback
+    from eodag.api.product import EOProduct
 
 from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
-from eodag.utils import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
-from eodag.utils import ProgressCallback
+from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+    DownloadedCallback,
+    ProgressCallback,
+)
 
 logger = logging.getLogger("eodag.apis.base")
 
@@ -66,7 +71,7 @@ class Api(PluginTopic):
       (it certainly indicates that the download didn't complete)
     """
 
-    def clear(self):
+    def clear(self) -> None:
         """Method used to clear a search context between two searches."""
         pass
 

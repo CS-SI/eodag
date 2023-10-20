@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import annotations
+
 import datetime
 import logging
 import os
@@ -27,14 +28,14 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import dateutil.parser
 import geojson
 import shapefile
-from shapely.geometry.base import BaseGeometry
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
 from shapely.geometry import shape
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
+
 from eodag.api.core import EODataAccessGateway
 from eodag.api.product import EOProduct
-
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     format_metadata,
@@ -84,8 +85,6 @@ class StacCommon:
         provider: Optional[str],
         eodag_api: EODataAccessGateway,
         root: str = "/",
-        *args: Any,
-        **kwargs: Any,
     ) -> None:
         self.url = url.rstrip("/") if len(url) > 1 else url
         self.stac_config = stac_config
@@ -93,7 +92,7 @@ class StacCommon:
         self.eodag_api = eodag_api
         self.root = root.rstrip("/") if len(root) > 1 else root
 
-        self.data = {}
+        self.data: Dict[str, Any] = {}
 
     def update_data(self, data: Dict[str, Any]) -> None:
         """Updates data using given input STAC dict data
@@ -185,8 +184,6 @@ class StacItem(StacCommon):
         provider: Optional[str],
         eodag_api: EODataAccessGateway,
         root: str = "/",
-        *args: Any,
-        **kwargs: Any,
     ) -> None:
         super(StacItem, self).__init__(
             url=url,
@@ -194,8 +191,6 @@ class StacItem(StacCommon):
             provider=provider,
             eodag_api=eodag_api,
             root=root,
-            *args,
-            **kwargs,
         )
 
     def __get_item_list(
@@ -581,8 +576,6 @@ class StacCollection(StacCommon):
         provider: Optional[str],
         eodag_api: EODataAccessGateway,
         root: str = "/",
-        *args: Any,
-        **kwargs: Any,
     ) -> None:
         super(StacCollection, self).__init__(
             url=url,
@@ -590,8 +583,6 @@ class StacCollection(StacCommon):
             provider=provider,
             eodag_api=eodag_api,
             root=root,
-            *args,
-            **kwargs,
         )
 
     def __get_product_types(
@@ -762,8 +753,6 @@ class StacCatalog(StacCommon):
         root: str = "/",
         catalogs: List[str] = [],
         fetch_providers: bool = True,
-        *args: Any,
-        **kwargs: Any,
     ) -> None:
         super(StacCatalog, self).__init__(
             url=url,
@@ -771,13 +760,11 @@ class StacCatalog(StacCommon):
             provider=provider,
             eodag_api=eodag_api,
             root=root,
-            *args,
-            **kwargs,
         )
+        self.data = {}
+
         self.shp_location_config = eodag_api.locations_config
         self.search_args: Dict[str, Any] = {}
-
-        self.data: Dict[str, Any] = {}
         self.children: List[Dict[str, Any]] = []
 
         self.catalog_config = deepcopy(stac_config["catalog"])
@@ -1079,7 +1066,9 @@ class StacCatalog(StacCommon):
         """
         return list(range(0, 101, 10))
 
-    def set_stac_cloud_cover_by_id(self, cloud_cover: str, **kwargs: Any) -> Dict[str, Any]:
+    def set_stac_cloud_cover_by_id(
+        self, cloud_cover: str, **kwargs: Any
+    ) -> Dict[str, Any]:
         """Updates and returns catalog with given max cloud_cover
 
         :param cloud_cover: Cloud_cover number
@@ -1138,7 +1127,9 @@ class StacCatalog(StacCommon):
 
         return countries_list
 
-    def set_stac_location_by_id(self, location: str, catalog_name: str) -> Dict[str, Any]:
+    def set_stac_location_by_id(
+        self, location: str, catalog_name: str
+    ) -> Dict[str, Any]:
         """Updates and returns catalog with given location
 
         :param location: Feature attribute value for shp filtering

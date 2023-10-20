@@ -33,11 +33,11 @@ from eodag.config import PluginConfig
 from eodag.plugins.download.base import Download
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
     ProgressCallback,
     get_bucket_name_and_prefix,
     path_to_uri,
@@ -81,7 +81,7 @@ class S3RestDownload(Download):
     :type config: :class:`~eodag.config.PluginConfig`
     """
 
-    def __init__(self, provider: str, config: PluginConfig):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(S3RestDownload, self).__init__(provider, config)
         self.http_download_plugin = HTTPDownload(self.provider, self.config)
 
@@ -195,7 +195,9 @@ class S3RestDownload(Download):
                 ):
                     msg = (
                         ordered_message
-                        if ordered_message and err.response and not err.response.text.strip()
+                        if ordered_message
+                        and err.response
+                        and not err.response.text.strip()
                         else err.response and err.response.text.strip()
                     )
                     raise NotAvailableError(

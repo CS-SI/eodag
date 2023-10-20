@@ -21,7 +21,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import geojson
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
@@ -29,7 +28,12 @@ from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.search.qssearch import StacSearch
-from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
+from eodag.utils import (
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+    HTTP_REQ_TIMEOUT,
+    MockResponse,
+)
 from eodag.utils.stac_reader import fetch_stac_items
 
 logger = logging.getLogger("eodag.search.static_stac_search")

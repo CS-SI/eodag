@@ -19,4 +19,4 @@
 try:
     from eodag_cube.api.product import EOProduct  # noqa
 except ImportError:
-    from ._product import DownloadedCallback, EOProduct  # noqa
+    from ._product import EOProduct  # noqa

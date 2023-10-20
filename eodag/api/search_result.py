@@ -43,6 +43,7 @@ class SearchResult(UserList[EOProduct]):
 
     def __init__(self, products: List[EOProduct]) -> None:
         super(SearchResult, self).__init__(products)
+        self.products = products
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -57,21 +58,25 @@ class SearchResult(UserList[EOProduct]):
         crunched_results = cruncher.proceed(self.products, **search_params)
         return SearchResult(crunched_results)
 
-    def filter_date(self, start: Optional[str] = None, end: Optional[str] = None) -> SearchResult:
+    def filter_date(
+        self, start: Optional[str] = None, end: Optional[str] = None
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_date.FilterDate` crunch,
         check its documentation to know more.
         """
         return self.crunch(FilterDate(dict(start=start, end=end)))
 
-    def filter_latest_intersect(self, geometry: Union[Dict[str, Any], BaseGeometry, Any]):
+    def filter_latest_intersect(
+        self, geometry: Union[Dict[str, Any], BaseGeometry, Any]
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect` crunch,
         check its documentation to know more.
         """
         return self.crunch(FilterLatestIntersect({}), geometry=geometry)
 
-    def filter_latest_by_name(self, name_pattern: str):
+    def filter_latest_by_name(self, name_pattern: str) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_latest_tpl_name.FilterLatestByName` crunch,
         check its documentation to know more.
@@ -80,12 +85,12 @@ class SearchResult(UserList[EOProduct]):
 
     def filter_overlap(
         self,
-        geometry,
-        minimum_overlap=0,
-        contains=False,
-        intersects=False,
-        within=False,
-    ):
+        geometry: Any,
+        minimum_overlap: int = 0,
+        contains: bool = False,
+        intersects: bool = False,
+        within: bool = False,
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_overlap.FilterOverlap` crunch,
         check its documentation to know more.
@@ -102,14 +107,16 @@ class SearchResult(UserList[EOProduct]):
             geometry=geometry,
         )
 
-    def filter_property(self, operator="eq", **search_property):
+    def filter_property(
+        self, operator: str = "eq", **search_property: Any
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch,
         check its documentation to know more.
         """
         return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
-    def filter_online(self):
+    def filter_online(self) -> SearchResult:
         """
         Use cruncher :class:`~eodag.plugins.crunch.filter_property.FilterProperty`,
         filter for online products.
@@ -126,8 +133,10 @@ class SearchResult(UserList[EOProduct]):
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         return SearchResult(
-            EOProduct.from_geojson(feature)
-            for feature in feature_collection["features"]
+            [
+                EOProduct.from_geojson(feature)
+                for feature in feature_collection["features"]
+            ]
         )
 
     def as_geojson_object(self) -> Dict[str, Any]:
@@ -137,7 +146,7 @@ class SearchResult(UserList[EOProduct]):
             "features": [product.as_dict() for product in self],
         }
 
-    def as_shapely_geometry_object(self):
+    def as_shapely_geometry_object(self) -> GeometryCollection:
         """:class:`shapely.geometry.GeometryCollection` representation of SearchResult"""
         return GeometryCollection(
             [
@@ -146,12 +155,12 @@ class SearchResult(UserList[EOProduct]):
             ]
         )
 
-    def as_wkt_object(self):
+    def as_wkt_object(self) -> str:
         """WKT representation of SearchResult"""
         return self.as_shapely_geometry_object().wkt
 
     @property
-    def __geo_interface__(self):
+    def __geo_interface__(self) -> Dict[str, Any]:
         """Implements the geo-interface protocol.
 
         See https://gist.github.com/sgillies/2217756

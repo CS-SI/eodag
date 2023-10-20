@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 class Crunch(PluginTopic):
     """Base cruncher"""
 
-    def __init__(self, config: Optional[Dict[str, Any]]):
+    def __init__(self, config: Optional[Dict[str, Any]]) -> None:
         self.config = config if config is not None else {}
 
     def proceed(

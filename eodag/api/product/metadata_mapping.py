@@ -16,13 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import annotations
+
 import ast
 import json
 import logging
 import re
 from datetime import datetime, timedelta
 from string import Formatter
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 import geojson
 import orjson
@@ -34,9 +35,10 @@ from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
-from eodag.config import PluginConfig
 
+from eodag.config import PluginConfig
 from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
@@ -48,8 +50,6 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
-if TYPE_CHECKING:
-    from ._product import EOProduct
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
 
@@ -188,11 +188,11 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             + r"(?P<converter>[^\d\W]\w*)(\((?P<args>.*)\))*$"
         )
 
-        def __init__(self):
+        def __init__(self) -> None:
             self.custom_converter = None
             self.custom_args = None
 
-        def get_field(self, field_name: str, args, kwargs):
+        def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
             conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
             # Register a custom converter if any for later use (see convert_field)
             # This is done because we don't have the value associated to field_name at
@@ -205,7 +205,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
 
             return super(MetadataFormatter, self).get_field(field_name, args, kwargs)
 
-        def convert_field(self, value, conversion):
+        def convert_field(self, value: Any, conversion: Any) -> Any:
             # Do custom conversion if any (see get_field)
             if self.custom_converter is not None:
                 if self.custom_args is not None and value is not None:
@@ -222,7 +222,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
-        def convert_datetime_to_timestamp_milliseconds(date_time):
+        def convert_datetime_to_timestamp_milliseconds(date_time: str) -> int:
             """Convert a date_time (str) to a Unix timestamp in milliseconds
 
             "2021-04-21T18:27:19.123Z" => "1619029639123"
@@ -232,7 +232,9 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return int(1e3 * get_timestamp(date_time))
 
         @staticmethod
-        def convert_to_iso_utc_datetime_from_milliseconds(timestamp):
+        def convert_to_iso_utc_datetime_from_milliseconds(
+            timestamp: int,
+        ) -> Union[str, int]:
             """Convert a timestamp in milliseconds (int) to its ISO8601 UTC format
 
             1619029639123 => "2021-04-21T18:27:19.123Z"
@@ -247,7 +249,9 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(date_time: str, timespec="milliseconds") -> str:
+        def convert_to_iso_utc_datetime(
+            date_time: str, timespec: str = "milliseconds"
+        ) -> str:
             """Convert a date_time (str) to its ISO 8601 representation in UTC
 
             "2021-04-21" => "2021-04-21T00:00:00.000Z"
@@ -268,7 +272,9 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
         @staticmethod
-        def convert_to_iso_date(datetime_string, time_delta_args_str="0,0,0,0,0,0,0"):
+        def convert_to_iso_date(
+            datetime_string: str, time_delta_args_str: str = "0,0,0,0,0,0,0"
+        ) -> str:
             """Convert an ISO8601 datetime (str) to its ISO8601 date format
 
             "2021-04-21T18:27:19.123Z" => "2021-04-21"
@@ -285,8 +291,10 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return dt.isoformat()[:10]
 
         @staticmethod
-        def convert_to_rounded_wkt(value):
-            wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
+        def convert_to_rounded_wkt(value: BaseGeometry) -> str:
+            wkt_value = cast(
+                str, wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
+            )
             # If needed, simplify WKT to prevent too long request failure
             tolerance = 0.1
             while len(wkt_value) > WKT_MAX_LEN and tolerance <= 1:
@@ -295,9 +303,12 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                     len(wkt_value),
                     tolerance,
                 )
-                wkt_value = wkt.dumps(
-                    value.simplify(tolerance),
-                    rounding_precision=COORDS_ROUNDING_PRECISION,
+                wkt_value = cast(
+                    str,
+                    wkt.dumps(
+                        value.simplify(tolerance),
+                        rounding_precision=COORDS_ROUNDING_PRECISION,
+                    ),
                 )
                 tolerance += 0.1
             if len(wkt_value) > WKT_MAX_LEN and tolerance > 1:
@@ -305,7 +316,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return wkt_value
 
         @staticmethod
-        def convert_to_bounds_lists(input_geom):
+        def convert_to_bounds_lists(input_geom: BaseGeometry) -> List[List[float]]:
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
                 # sort with larger one at first (stac-browser only plots first one)
@@ -315,7 +326,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return [list(input_geom.bounds[0:4])]
 
         @staticmethod
-        def convert_to_bounds(input_geom_unformatted):
+        def convert_to_bounds(input_geom_unformatted: Any) -> List[float]:
             input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
@@ -335,21 +346,23 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return list(input_geom.bounds[0:4])
 
         @staticmethod
-        def convert_to_nwse_bounds(input_geom):
+        def convert_to_nwse_bounds(input_geom: BaseGeometry) -> List[float]:
             return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
 
         @staticmethod
-        def convert_to_nwse_bounds_str(input_geom, separator=","):
+        def convert_to_nwse_bounds_str(
+            input_geom: BaseGeometry, separator: str = ","
+        ) -> str:
             return separator.join(
                 str(x) for x in MetadataFormatter.convert_to_nwse_bounds(input_geom)
             )
 
         @staticmethod
-        def convert_to_geojson(string):
+        def convert_to_geojson(string: str) -> str:
             return geojson.dumps(string)
 
         @staticmethod
-        def convert_from_ewkt(ewkt_string):
+        def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
             ewkt_regex = re.compile(r"^(?P<proj>[A-Za-z]+=[0-9]+);(?P<wkt>.*)$")
@@ -375,7 +388,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return ewkt_string
 
         @staticmethod
-        def convert_to_ewkt(input_geom):
+        def convert_to_ewkt(input_geom: BaseGeometry) -> str:
             """Convert shapely geometry to EWKT (Extended Well-Known text)"""
 
             proj = DEFAULT_PROJ.upper().replace("EPSG", "SRID").replace(":", "=")
@@ -384,7 +397,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return f"{proj};{wkt_geom}"
 
         @staticmethod
-        def convert_from_georss(georss):
+        def convert_from_georss(georss: Any) -> Union[BaseGeometry, Any]:
             """Convert GeoRSS to shapely geometry"""
 
             if "polygon" in georss.tag:
@@ -406,15 +419,14 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                     ).transform
 
                 # function to get deepest elements
-                def flatten_elements(nested):
-
+                def flatten_elements(nested) -> Iterator[Any]:
                     for e in nested:
                         if len(e) > 0:
                             yield from flatten_elements(e)
                         else:
                             yield e
 
-                polygons_list = []
+                polygons_list: List[Polygon] = []
                 for elem in flatten_elements(georss[0]):
                     coords_list = elem.text.split()
                     polygon_args = [
@@ -437,21 +449,21 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return georss
 
         @staticmethod
-        def convert_csv_list(values_list):
+        def convert_csv_list(values_list: Any) -> Any:
             if isinstance(values_list, list):
                 return ",".join([str(x) for x in values_list])
             else:
                 return values_list
 
         @staticmethod
-        def convert_remove_extension(string):
+        def convert_remove_extension(string: str) -> str:
             parts = string.split(".")
             if parts:
                 return parts[0]
             return ""
 
         @staticmethod
-        def convert_get_group_name(string, pattern):
+        def convert_get_group_name(string: str, pattern: str) -> str:
             try:
                 return re.search(pattern, str(string)).lastgroup
             except AttributeError:
@@ -461,12 +473,14 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
-        def convert_replace_str(string, args):
+        def convert_replace_str(string: str, args: str) -> str:
             old, new = ast.literal_eval(args)
             return re.sub(old, new, string)
 
         @staticmethod
-        def convert_recursive_sub_str(input_obj, args):
+        def convert_recursive_sub_str(
+            input_obj: Union[Dict[Any, Any], List[Any]], args: str
+        ) -> Union[Dict[Any, Any], List[Any]]:
             old, new = ast.literal_eval(args)
             return items_recursive_apply(
                 input_obj,
@@ -475,7 +489,9 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             )
 
         @staticmethod
-        def convert_dict_update(input_dict, args):
+        def convert_dict_update(
+            input_dict: Dict[Any, Any], args: str
+        ) -> Dict[Any, Any]:
             """Converts"""
             new_items_list = ast.literal_eval(args)
 
@@ -484,12 +500,12 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return dict(input_dict, **new_items_dict)
 
         @staticmethod
-        def convert_slice_str(string, args):
+        def convert_slice_str(string: str, args: str) -> str:
             cmin, cmax, cstep = [x.strip() for x in args.split(",")]
             return string[int(cmin) : int(cmax) : int(cstep)]
 
         @staticmethod
-        def convert_fake_l2a_title_from_l1c(string):
+        def convert_fake_l2a_title_from_l1c(string: str) -> str:
             id_regex = re.compile(
                 r"^(?P<id1>\w+)_(?P<id2>\w+)_(?P<id3>\w+)_(?P<id4>\w+)_(?P<id5>\w+)_(?P<id6>\w+)_(?P<id7>\w+)$"
             )
@@ -506,7 +522,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
-        def convert_s2msil2a_title_to_aws_productinfo(string):
+        def convert_s2msil2a_title_to_aws_productinfo(string: str) -> str:
             id_regex = re.compile(
                 r"^(?P<id1>\w+)_(?P<id2>\w+)_(?P<year>[0-9]{4})(?P<month>[0-9]{2})(?P<day>[0-9]{2})T[0-9]+_"
                 + r"(?P<id4>[A-Z0-9_]+)_(?P<id5>[A-Z0-9_]+)_T(?P<tile1>[0-9]{2})(?P<tile2>[A-Z])(?P<tile3>[A-Z]{2})_"
@@ -531,8 +547,8 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
-        def convert_split_id_into_s1_params(product_id):
-            parts = re.split(r"_(?!_)", product_id)
+        def convert_split_id_into_s1_params(product_id: str) -> Dict[str, str]:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
             if len(parts) < 9:
                 logger.error(
                     "id %s does not match expected Sentinel-1 id format", product_id
@@ -566,25 +582,25 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_get_processing_level_from_s1_id(product_id):
-            parts = re.split(r"_(?!_)", product_id)
+        def convert_get_processing_level_from_s1_id(product_id: str) -> str:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
             level = "LEVEL" + parts[3][0]
             return level
 
         @staticmethod
-        def convert_get_sensor_mode_from_s1_id(product_id):
-            parts = re.split(r"_(?!_)", product_id)
+        def convert_get_sensor_mode_from_s1_id(product_id: str) -> str:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
             return parts[1]
 
         @staticmethod
-        def convert_get_processing_level_from_s2_id(product_id):
-            parts = re.split(r"_(?!_)", product_id)
+        def convert_get_processing_level_from_s2_id(product_id: str) -> str:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
             processing_level = "S2" + parts[1]
             return processing_level
 
         @staticmethod
-        def convert_split_id_into_s3_params(product_id):
-            parts = re.split(r"_(?!_)", product_id)
+        def convert_split_id_into_s3_params(product_id: str) -> Dict[str, str]:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
             dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
             start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
@@ -600,8 +616,8 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_split_id_into_s5p_params(product_id):
-            parts = re.split(r"_(?!_)", product_id)
+        def convert_split_id_into_s5p_params(product_id: str) -> Dict[str, str]:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {
                 "productType": product_id[9:19],
                 "processingMode": parts[1],
@@ -618,13 +634,13 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_get_processing_level_from_s5p_id(product_id):
-            parts = re.split(r"_(?!_)", product_id)
+        def convert_get_processing_level_from_s5p_id(product_id: str) -> str:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
             processing_level = parts[2].replace("_", "")
             return processing_level
 
         @staticmethod
-        def convert_split_cop_dem_id(product_id):
+        def convert_split_cop_dem_id(product_id: str) -> List[int]:
             parts = product_id.split("_")
             lattitude = parts[3]
             longitude = parts[5]
@@ -640,7 +656,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return bbox
 
         @staticmethod
-        def convert_split_corine_id(product_id):
+        def convert_split_corine_id(product_id: str) -> str:
             if "clc" in product_id:
                 year = product_id.split("_")[1][3:]
                 product_type = "Corine Land Cover " + year
@@ -653,7 +669,7 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return product_type
 
         @staticmethod
-        def convert_to_datetime_dict(date: str, format: str) -> dict:
+        def convert_to_datetime_dict(date: str, format: str) -> Dict[str, List[str]]:
             """Convert a date (str) to a dictionary where values are in the format given in argument
 
             date == "2021-04-21T18:27:19.123Z" and format == "list" => {
@@ -703,14 +719,15 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 }
 
         @staticmethod
-        def convert_get_ecmwf_time(date: str) -> list:
+        def convert_get_ecmwf_time(date: str) -> List[str]:
             """Get the time of a date (str) in the ECMWF format (["HH:00"])
 
             "2021-04-21T18:27:19.123Z" => ["18:00"]
             "2021-04-21" => ["00:00"]
             """
             return [
-                MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
+                str(MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"])
+                + ":00"
             ]
 
         @staticmethod
@@ -736,7 +753,9 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
 
 
 def properties_from_json(
-    json: Dict[str, Any], mapping: Dict[str, Any], discovery_config: Optional[Dict[str, Any]] = None
+    json: Dict[str, Any],
+    mapping: Dict[str, Any],
+    discovery_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Extract properties from a provider json result.
 
@@ -873,7 +892,7 @@ def properties_from_xml(
     xml_as_text: str,
     mapping: Any,
     empty_ns_prefix: str = "ns",
-    discovery_config: Optional[Dict[str, Any]]=None,
+    discovery_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Extract properties from a provider xml result.
 
@@ -896,7 +915,7 @@ def properties_from_xml(
     :returns: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     :rtype: dict
     """
-    properties = {}
+    properties: Dict[str, Any] = {}
     templates = {}
     used_xpaths = []
     root = etree.XML(xml_as_text)
@@ -1024,7 +1043,9 @@ def properties_from_xml(
 
 
 def mtd_cfg_as_conversion_and_querypath(
-    src_dict: Dict[str, Any], dest_dict: Dict[str, Any] = {}, result_type: str = "json"
+    src_dict: Dict[str, Any],
+    dest_dict: Optional[Dict[str, Any]] = {},
+    result_type: str = "json",
 ) -> Dict[str, Any]:
     """Metadata configuration dictionary to querypath with conversion dictionnary
     Transform every src_dict value from jsonpath_str to tuple `(conversion, jsonpath_object)`
@@ -1075,7 +1096,9 @@ def mtd_cfg_as_conversion_and_querypath(
     return dest_dict
 
 
-def format_query_params(product_type: str, config: PluginConfig, **kwargs: Any) -> Dict[str, Any]:
+def format_query_params(
+    product_type: str, config: PluginConfig, **kwargs: Any
+) -> Dict[str, Any]:
     """format the search parameters to query parameters"""
     if "raise_errors" in kwargs.keys():
         del kwargs["raise_errors"]
@@ -1176,7 +1199,9 @@ def _resolve_hashes(formatted_query_param: str) -> str:
     return formatted_query_param
 
 
-def _format_free_text_search(config: PluginConfig, metadata_mapping: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+def _format_free_text_search(
+    config: PluginConfig, metadata_mapping: Dict[str, Any], **kwargs: Any
+) -> Dict[str, Any]:
     """Build the free text search parameter using the search parameters"""
     query_params: Dict[str, Any] = {}
     if not getattr(config, "free_text_search_operations", None):
@@ -1217,7 +1242,9 @@ def _format_free_text_search(config: PluginConfig, metadata_mapping: Dict[str, A
 
 
 def _get_queryables(
-    search_params: Dict[str, Any], config: PluginConfig, metadata_mapping: Dict[str, Any]
+    search_params: Dict[str, Any],
+    config: PluginConfig,
+    metadata_mapping: Dict[str, Any],
 ) -> Dict[str, Any]:
     """Retrieve the metadata mappings that are query-able"""
     logger.debug("Retrieving queryable metadata from metadata_mapping")

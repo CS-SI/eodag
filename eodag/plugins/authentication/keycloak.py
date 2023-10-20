@@ -17,10 +17,12 @@
 # limitations under the License.
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional, Union
 
 import requests
+from requests.auth import AuthBase
 
+from eodag.config import PluginConfig
 from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
@@ -73,14 +75,14 @@ class KeycloakOIDCPasswordAuth(Authentication):
     TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
     # already retrieved token store, to be used if authenticate() fails (OTP use-case)
-    retrieved_token: Optional[str] = None
-    token_info: Optional[dict] = {}
+    retrieved_token: str = ""
+    token_info: Dict[str, Union[str, datetime]] = {}
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
         self.session = requests.Session()
 
-    def validate_config_credentials(self):
+    def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         super(KeycloakOIDCPasswordAuth, self).validate_config_credentials()
 
@@ -91,7 +93,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                     f"{self.provider}: {param}",
                 )
 
-    def authenticate(self):
+    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """
         Makes authentication request
         """
@@ -104,7 +106,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
             key=getattr(self.config, "token_qs_key", None),
         )
 
-    def _get_access_token(self):
+    def _get_access_token(self) -> str:
         current_time = datetime.now()
         if (
             not self.token_info
@@ -141,7 +143,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
         logger.debug("using already retrieved access token")
         return self.retrieved_token
 
-    def _request_new_token(self):
+    def _request_new_token(self) -> Dict[str, str]:
         logger.debug("fetching new access token")
         req_data = {
             "client_id": self.config.client_id,
@@ -197,7 +199,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                 )
         return response.json()
 
-    def _get_token_with_refresh_token(self):
+    def _get_token_with_refresh_token(self) -> Dict[str, str]:
         logger.debug("fetching access token with refresh token")
         req_data = {
             "client_id": self.config.client_id,

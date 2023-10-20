@@ -15,7 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, List
+from __future__ import annotations
+
+from typing import Any, Dict, List, Tuple
 
 from eodag.config import PluginConfig
 from eodag.utils.exceptions import PluginNotFoundError
@@ -24,7 +26,9 @@ from eodag.utils.exceptions import PluginNotFoundError
 class EODAGPluginMount(type):
     """Plugin mount"""
 
-    def __init__(cls, name: str, bases, attrs):
+    def __init__(
+        cls, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]
+    ) -> None:
         if not hasattr(cls, "plugins"):
             # This branch only executes when processing the mount point itself.
             # So, since this is a new plugin type, not an implementation, this
@@ -37,11 +41,11 @@ class EODAGPluginMount(type):
             # track of it later.
             cls.plugins.append(cls)
 
-    def get_plugins(cls, *args: Any, **kwargs: Any):
+    def get_plugins(cls, *args: Any, **kwargs: Any) -> List[EODAGPluginMount]:
         """Get plugins"""
         return [plugin(*args, **kwargs) for plugin in cls.plugins]
 
-    def get_plugin_by_class_name(cls, name: str):
+    def get_plugin_by_class_name(cls, name: str) -> EODAGPluginMount:
         """Get plugin by class_name"""
         for plugin in cls.plugins:
             if name == plugin.__name__:
@@ -54,11 +58,11 @@ class EODAGPluginMount(type):
 class PluginTopic(metaclass=EODAGPluginMount):
     """Base of all plugin topics in eodag"""
 
-    def __init__(self, provider: str, config: PluginConfig):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         self.config = config
         self.provider = provider
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}(provider={}, priority={}, topic={})".format(
             self.__class__.__name__,
             self.provider,

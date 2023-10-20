@@ -44,7 +44,18 @@ from glob import glob
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Any, Callable, Dict, Generator, Iterator, List, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -56,7 +67,6 @@ from urllib.parse import (  # noqa; noqa
     urljoin,
     urlparse,
     urlsplit,
-    urlunparse,
 )
 from urllib.request import url2pathname
 
@@ -67,17 +77,18 @@ import shapely.wkt
 import yaml
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from jsonpath_ng import jsonpath
+from jsonpath_ng import JSONPath, jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
-from requests import PreparedRequest
-from requests.auth import AuthBase
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
 from eodag.utils.exceptions import MisconfiguredError
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
 
 try:
     from importlib.metadata import metadata  # type: ignore
@@ -105,8 +116,15 @@ JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
 ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
 
+# pagination defaults
+DEFAULT_PAGE = 1
+DEFAULT_ITEMS_PER_PAGE = 20
+# Default maximum number of items per page requested by search_all. 50 instead of 20
+# (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
+DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
-def _deprecated(reason: str = "", version: Optional[str] = None):
+
+def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
     """Simple decorator to mark functions/methods/classes as deprecated.
 
     Warning: Does not work with staticmethods!
@@ -141,45 +159,6 @@ def _deprecated(reason: str = "", version: Optional[str] = None):
         return wrapper
 
     return decorator
-
-
-class RequestsTokenAuth(AuthBase):
-    """A custom authentication class to be used with requests module"""
-
-    def __init__(
-        self,
-        token: str,
-        where: str,
-        qs_key: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> None:
-        self.token = token
-        self.where = where
-        self.qs_key = qs_key
-        self.headers = headers
-
-    def __call__(self, request: PreparedRequest) -> PreparedRequest:
-        """Perform the actual authentication"""
-        if self.headers and isinstance(self.headers, dict):
-            for k, v in self.headers.items():
-                request.headers[k] = v
-        if self.where == "qs":
-            parts = urlparse(str(request.url))
-            qs = parse_qs(parts.query)
-            qs[self.qs_key] = self.token  # type: ignore
-            request.url = urlunparse(
-                (
-                    parts.scheme,
-                    parts.netloc,
-                    parts.path,
-                    parts.params,
-                    urlencode(qs),
-                    parts.fragment,
-                )
-            )
-        elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
-        return request
 
 
 class FloatRange(click.types.FloatParamType):
@@ -425,7 +404,7 @@ def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
                 mapping1[key] = value
 
 
-def maybe_generator(obj: Any) -> Generator[Any, None, None]:
+def maybe_generator(obj: Any) -> Iterator[Any]:
     """Generator function that get an arbitrary object and generate values from it if
     the object is a generator."""
     if isinstance(obj, types.GeneratorType):
@@ -456,6 +435,18 @@ def datetime_range(start: dt, end: dt) -> Iterator[dt]:
     delta = end - start
     for nday in range(delta.days + 1):
         yield start + datetime.timedelta(days=nday)
+
+
+class DownloadedCallback:
+    """Example class for callback after each download in :meth:`~eodag.api.core.EODataAccessGateway.download_all`"""
+
+    def __call__(self, product: EOProduct) -> None:
+        """Callback
+
+        :param product: The downloaded EO product
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        """
+        logger.debug("Download finished for the product %s", product)
 
 
 class ProgressCallback(tqdm):
@@ -1178,17 +1169,17 @@ def get_geometry_from_various(
 class MockResponse:
     """Fake requests response"""
 
-    def __init__(self, json_data: Any, status_code: int):
+    def __init__(self, json_data: Any, status_code: int) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
 
-    def json(self):
+    def json(self) -> Any:
         """Return json data"""
         return self.json_data
 
 
-def md5sum(file_path: str):
+def md5sum(file_path: str) -> str:
     """Get file MD5 checksum
 
     >>> import os
@@ -1207,7 +1198,7 @@ def md5sum(file_path: str):
     return hash_md5.hexdigest()
 
 
-def obj_md5sum(data: Any):
+def obj_md5sum(data: Any) -> str:
     """Get MD5 checksum from JSON serializable object
 
     >>> obj_md5sum(None)
@@ -1222,7 +1213,7 @@ def obj_md5sum(data: Any):
 
 
 @functools.lru_cache()
-def cached_parse(str_to_parse: str) -> Any:
+def cached_parse(str_to_parse: str) -> JSONPath:
     """Cached jsonpath_ng.ext.parse
 
     >>> cached_parse.cache_clear()
@@ -1248,12 +1239,12 @@ def cached_parse(str_to_parse: str) -> Any:
 
 
 @functools.lru_cache()
-def _mutable_cached_yaml_load(config_path: str):
+def _mutable_cached_yaml_load(config_path: str) -> Any:
     with open(os.path.abspath(os.path.realpath(config_path)), "r") as fh:
         return yaml.load(fh, Loader=yaml.SafeLoader)
 
 
-def cached_yaml_load(config_path: str):
+def cached_yaml_load(config_path: str) -> Dict[str, Any]:
     """Cached yaml.load
 
     :param config_path: path to the yaml configuration file
@@ -1265,7 +1256,7 @@ def cached_yaml_load(config_path: str):
 
 
 @functools.lru_cache()
-def _mutable_cached_yaml_load_all(config_path: str):
+def _mutable_cached_yaml_load_all(config_path: str) -> List[Any]:
     with open(config_path, "r") as fh:
         return list(yaml.load_all(fh, Loader=yaml.Loader))
 
@@ -1317,7 +1308,7 @@ def get_bucket_name_and_prefix(
 
 def flatten_top_directories(
     nested_dir_root: str, common_subdirs_path: Optional[str] = None
-):
+) -> None:
     """Flatten directory structure, removing common empty sub-directories
 
     :param nested_dir_root: Absolute path of the directory structure to flatten
@@ -1381,7 +1372,7 @@ def deepcopy(sth: Any) -> Any:
         return cp(sth, _dispatcher)
 
 
-def parse_header(header: str):
+def parse_header(header: str) -> Message:
     """Parse HTTP header
 
     >>> parse_header(

@@ -152,7 +152,7 @@ class ProviderConfig(yaml.YAMLObject):
         return c
 
     @staticmethod
-    def validate(config_keys: Union[Tuple[str, ...], Dict[str, Any]]):
+    def validate(config_keys: Union[Tuple[str, ...], Dict[str, Any]]) -> None:
         """Validate a :class:`~eodag.config.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
@@ -170,7 +170,7 @@ class ProviderConfig(yaml.YAMLObject):
                 "type of plugin"
             )
 
-    def update(self, mapping: Optional[Dict[str, Any]]):
+    def update(self, mapping: Optional[Dict[str, Any]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
@@ -209,7 +209,7 @@ class PluginConfig(yaml.YAMLObject):
     """
 
     name: str
-    metadata_mapping: Optional[Dict[str, Any]]
+    metadata_mapping: Optional[Dict[str, str]]
     free_params: Optional[Dict[Any, Any]]
 
     yaml_loader = yaml.Loader
