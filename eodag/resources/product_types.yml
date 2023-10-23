@@ -591,6 +591,7 @@ S1_SAR_RAW:
 
 # Sentinel 2 ------------------------------------------------------------------
 S2_MSI_L1C:
+  alias: TESTING_OTHER_NAME
   abstract: |
     The Level-1C product is composed of 100x100 km2 tiles (ortho-images in UTM/WGS84 projection). It results from
     using a Digital Elevation Model (DEM) to project the image in cartographic geometry. Per-pixel radiometric

@@ -598,7 +598,10 @@ class StacCollection(StacCommon):
             ]
         else:
             product_types = self.eodag_api.list_product_types(provider=self.provider)
-        return product_types
+        return [
+            self.eodag_api.reference_product_type(product_type)
+            for product_type in product_types
+        ]
 
     def __get_collection_list(
         self, filters: Optional[Dict[str, Any]] = None

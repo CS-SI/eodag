@@ -500,6 +500,7 @@ class EODataAccessGateway:
                         continue
                     config = self.product_types_config[product_type_id]
                     if "alias" in config:
+                        config["_id"] = product_type_id
                         product_type_id = config["alias"]
                     product_type = dict(ID=product_type_id, **config)
                     if product_type_id not in product_types:
@@ -822,6 +823,41 @@ class EODataAccessGateway:
             )
         else:
             return sorted(tuple(self.providers_config.keys()))
+
+    def dereference_product_type(self, alias_or_internal_name: str):
+        """Return the internal name of a product type by either its internal name or alias
+        :param alias_or_internal_name: Alias of the product type. If the types internal name is given,
+        this method will directly return the given value.
+        :returns: Internal name of the product type.
+        """
+        product_types = self.list_product_types(fetch_providers=False)
+
+        for product_type in product_types:
+            if alias_or_internal_name == product_type["ID"]:
+                if "_id" in product_type:
+                    return product_type["_id"]
+                else:
+                    return alias_or_internal_name
+            if "_id" in product_type and product_type["_id"] == alias_or_internal_name:
+                return alias_or_internal_name
+
+        raise RuntimeError("product type " + alias_or_internal_name + " does not exist")
+
+    def reference_product_type(self, internal_name: str):
+        """Return the alias of a product type by its internal name. If no alias
+        was defined for the given product type, the internal name is returned instead.
+        :param internal_name: Internal name of the product type.
+        :returns: Alias of the product type or internal name if no alias has been defined for it.
+        """
+        product_types = self.list_product_types(fetch_providers=False)
+
+        for product_type in product_types:
+            if product_type["ID"] == internal_name:
+                return internal_name
+            if "_id" in product_type and product_type["_id"] == internal_name:
+                return product_type["ID"]
+
+        raise RuntimeError("product type " + internal_name + " does not exist")
 
     def guess_product_type(self, **kwargs: Any) -> List[str]:
         """Find the eodag product type code that best matches a set of search params
@@ -1225,7 +1261,7 @@ class EODataAccessGateway:
         # Get the search plugin and the maximized value
         # of items_per_page if defined for the provider used.
         try:
-            product_type = (
+            product_type = self.dereference_product_type(
                 kwargs.get("productType", None) or self.guess_product_type(**kwargs)[0]
             )
         except NoMatchingProductType:
@@ -1316,9 +1352,10 @@ class EODataAccessGateway:
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
         """
-        get_search_plugins_kwargs = dict(
-            provider=provider, product_type=kwargs.get("productType", None)
-        )
+        product_type = kwargs.get("productType", None)
+        if product_type is not None:
+            product_type = self.dereference_product_type(product_type)
+        get_search_plugins_kwargs = dict(provider=provider, product_type=product_type)
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
         )
@@ -1426,7 +1463,9 @@ class EODataAccessGateway:
                 else:
                     return [], kwargs
 
+        product_type = self.dereference_product_type(product_type)
         kwargs["productType"] = product_type
+
         if start is not None:
             kwargs["startTimeFromAscendingNode"] = start
         if end is not None:
@@ -1654,6 +1693,10 @@ class EODataAccessGateway:
                         pass
                     else:
                         eo_product.product_type = guesses[0]
+
+                eo_product.product_type = self.dereference_product_type(
+                    eo_product.product_type
+                )
 
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(
