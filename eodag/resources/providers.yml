@@ -2350,7 +2350,11 @@
       variable: ammonium_aerosol_optical_depth_550nm
       time: '00:00'
       leadtime_hour: '0'
-    CAMS_EUAQ_FORECAST:
+    CAMS_GFE_GFAS:
+      dataset: cams-global-fire-emissions-gfas
+      format: grib
+      variable: altitude_of_plume_bottom
+    CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: cams-europe-air-quality-forecasts
       model: ensemble
       format: grib
@@ -2358,10 +2362,13 @@
       type: forecast
       time: '00:00'
       leadtime_hour: '0'
-    CAMS_GFE_GFAS:
-      dataset: cams-global-fire-emissions-gfas
-      format: grib
-      variable: altitude_of_plume_bottom
+    CAMS_EU_AIR_QUALITY_RE:
+      dataset: cams-europe-air-quality-reanalyses
+      type: validated_reanalysis
+      format: zip
+      variable: carbon_monoxide
+      model: ensemble
+      level: '0'
     CAMS_GRF:
       dataset: cams-global-radiative-forcings
       format: zip
@@ -2377,36 +2384,36 @@
       sky_type: clear_sky
       version: '1.5'
       format: zip
-      variable: aerosol_radiation_effect 
+      variable: aerosol_radiation_effect
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
       sky_type: clear
       time_step: 1minute
       time_reference: true_solar_time
       format: csv
-    CAMS_GHG_EGG4_MONTHLY:
+    CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: cams-global-ghg-reanalysis-egg4-monthly
       format: grib
       variable: snow_albedo
       api_product_type: monthly_mean
-    CAMS_GHG_EGG4:
+    CAMS_GREENHOUSE_EGG4:
       dataset: cams-global-ghg-reanalysis-egg4
       format: grib
       variable: snow_albedo
       step: '0'
-    CAMS_GLOBAL_EMISSIONS:
-      dataset: cams-global-emission-inventories
-      version: latest
-      format: zip
-      variable: acids
-      source: anthropogenic
-    CAMS_GHG_INVERSION:
+    CAMS_GREENHOUSE_INVERSION:
       dataset: cams-global-greenhouse-gas-inversion
       version: latest
       variable: carbon_dioxide
       quantity: mean_column
       input_observations: surface
       time_aggregation: instantaneous
+    CAMS_GLOBAL_EMISSIONS:
+      dataset: cams-global-emission-inventories
+      version: latest
+      format: zip
+      variable: acids
+      source: anthropogenic
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
       format: grib
@@ -2417,13 +2424,7 @@
       format: grib
       variable: 2m_dewpoint_temperature
       api_product_type: monthly_mean
-    CAMS_EU_AIR_QUALITY:
-      dataset: cams-europe-air-quality-reanalyses
-      type: validated_reanalysis
-      format: zip
-      variable: carbon_monoxide
-      model: ensemble
-      level: '0'
+
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       format: grib
@@ -2541,7 +2542,7 @@
       grid:
         - grid
         - '$.grid'
-      hdate:   
+      hdate:
         - hdate
         - '$.hdate'
       horizontal_resolution:
@@ -2705,7 +2706,7 @@
         - '$.version'
       system_version:
         - system_version
-        - '$.system_version'  
+        - '$.system_version'
       year:
         - year
         - '$.year'
@@ -2809,7 +2810,7 @@
       api_product_type: control_forecast
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_level
-      time: '00.00'Carbon dioxide data from 2002 to present derived from satellite observations
+      time: '00.00'
       leadtime_hour: '72'
     EFAS_HISTORICAL:
       dataset: efas-historical
@@ -2911,11 +2912,6 @@
       rcm: cclm_8_17
       ensemble_member: r12i1p1
       period: '2011_2040'
-    GENERIC_PRODUCT_TYPE:
-      dataset: '{productType}'
-      time: '00:00'
-      format: netcdf
-  download: !plugin
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'
