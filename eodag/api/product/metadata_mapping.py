@@ -579,13 +579,14 @@ def format_metadata(search_param, *args, **kwargs):
         def convert_split_id_into_s3_params(product_id):
             parts = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
-            start_date = datetime.strptime(
-                product_id[16:31], "%Y%m%dT%H%M%S"
-            ) - timedelta(seconds=1)
+            dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
+            start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
+                seconds=1
+            )
             params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_date = datetime.strptime(
-                product_id[32:47], "%Y%m%dT%H%M%S"
-            ) + timedelta(seconds=1)
+            end_date = datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + timedelta(
+                seconds=1
+            )
             params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
             params["timeliness"] = parts[-2]
             params["sat"] = "Sentinel-" + parts[0][1:]

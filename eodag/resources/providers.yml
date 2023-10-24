@@ -4604,6 +4604,180 @@
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s5p_id}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingMode:
+          - '{{"stringChoiceValues": [{{"name": "processingMode", "value": "{processingMode}"}}]}}'
+          - '$.null'
+    S6_L1A_AHR:
+      productType: EO:EUM:DAT:0236
+      sat: Sentinel-6A
+      type: P4_1A_HR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1A_HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        type:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+          - '$.null'
+        sat:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relorbit:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+          - '$.null'
+        orbit:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+          - '$.null'
+        cycle:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+          - '$.null'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S6_L1B_ALR:
+      productType: EO:EUM:DAT:0237
+      sat: Sentinel-6A
+      type: P4_1B_LR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1B_LR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        type:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+          - '$.null'
+        sat:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relorbit:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+          - '$.null'
+        orbit:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+          - '$.null'
+        cycle:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+          - '$.null'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S6_L1B_AHR:
+      productType: EO:EUM:DAT:0238
+      sat: Sentinel-6A
+      type: P4_1B_HR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1B_HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        type:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+          - '$.null'
+        sat:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relorbit:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+          - '$.null'
+        orbit:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+          - '$.null'
+        cycle:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+          - '$.null'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S6_L2_ALR:
+      productType: EO:EUM:DAT:0239
+      sat: Sentinel-6A
+      type: P4_2__LR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_2__LR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        type:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+          - '$.null'
+        sat:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relorbit:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+          - '$.null'
+        orbit:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+          - '$.null'
+        cycle:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+          - '$.null'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S6_L2_AHR:
+      productType: EO:EUM:DAT:0240
+      sat: Sentinel-6A
+      type: P4_2__HR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_2__HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        type:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+          - '$.null'
+        sat:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relorbit:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+          - '$.null'
+        orbit:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+          - '$.null'
+        cycle:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+          - '$.null'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+    S6_L2_R:
+      productType: EO:EUM:DAT:0241
+      sat: Sentinel-6A
+      type: MW_2__AMR____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "MW_2__AMR____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        type:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+          - '$.null'
+        sat:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relorbit:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+          - '$.null'
+        orbit:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+          - '$.null'
+        cycle:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+          - '$.null'
+        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
     COP_DEM_GLO30_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
       metadata_mapping:

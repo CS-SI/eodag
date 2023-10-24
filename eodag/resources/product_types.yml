@@ -1842,6 +1842,133 @@ S5P_L2_SO2:
   title: Sentinel-5 Precursor Level 2 Sulphur Dioxide
   missionStartDate: "2017-10-13T00:00:00Z"
 
+# Sentinel 6
+S6_L1A_AHR:
+  abstract: |
+    This is a reprocessed dataset at baseline F06, which is continued by the NRT/NTC data stream from 29/April/2022
+    onwards. The Level-1A product contains Level 1 intermediate output of the HR processor (RAW and RMC). It
+    includes geo-located bursts of Ku echoes (at ~9 kHz) with all instrument calibrations applied. It includes the full
+    rate complex waveforms input to the delay/Doppler or SAR processor. This product is most relevant to altimetry
+    specialists, working on fundamental SAR processing techniques and calibration studies. Sentinel-6 is part of a
+    series of Sentinel satellites, under the umbrella of the EU Copernicus programme. It is a collaborative Copernicus
+    mission, implemented and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the
+    National Oceanic and Atmospheric Administration (NOAA).
+  instrument: Poseidon-4
+  platform: SENTINEL6-A
+  platformSerialIdentifier: S6A
+  processingLevel: L1A
+  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L1A,ALTIMETRIC,HR
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Sentinel 6 - Poseidon-4 Altimetry Level 1A High Resolution Reprocessed
+  missionStartDate: "2020-12-17T00:00:00Z"
+
+S6_L1B_ALR:
+  abstract: |
+    This is a reprocessed dataset at baseline F06, which is continued by the NRT/NTC data stream from 29/April/2022
+    onwards. The Level-1B LR product is output of the LR processor. It includes geo-located, and fully calibrated
+    pulse-limited low-resolution Ku-band and C-band waveforms. This product is most relevant to geophysical retrieval
+    algorithm developers (over ocean, land and ice surfaces), surface characterisations studies (e.g. impact of sea
+    state bias, wave directional effects etc) and Quality Control systems. Sentinel-6 is part of a series of Sentinel
+    satellites, under the umbrella of the EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and
+    Atmospheric Administration (NOAA).
+  instrument: Poseidon-4
+  platform: SENTINEL6-A
+  platformSerialIdentifier: S6A
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L1B,ALTIMETRIC,LR
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Sentinel 6 - Poseidon-4 Altimetry Level 1B Low Resolution Reprocessed
+  missionStartDate: "2020-12-17T00:00:00Z"
+
+S6_L1B_AHR:
+  abstract: |
+    This is a reprocessed dataset at baseline F06, which is continued by the NRT/NTC data stream from 29/April/2022
+    onwards. The Level-1B HR product is output of the HR processor. It includes geo-located, and fully calibrated
+    multi-looked high-resolution Ku-band waveforms. This product is most relevant to geophysical retrieval algorithm
+    developers (over ocean, land and ice surfaces), surface characterisations studies (e.g. impact of sea state bias,
+    wave directional effects etc.) and Quality Control systems. Sentinel-6 is part of a series of Sentinel satellites,
+    under the umbrella of the EU Copernicus programme. It is a collaborative Copernicus mission, implemented and
+    co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and
+    Atmospheric Administration (NOAA).
+  instrument: Poseidon-4
+  platform: SENTINEL6-A
+  platformSerialIdentifier: S6A
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L1B,ALTIMETRIC,HR
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Sentinel 6 - Poseidon-4 Altimetry Level 1B High Resolution Reprocessed
+  missionStartDate: "2020-12-17T00:00:00Z"
+
+S6_L2_ALR:
+  abstract: |
+    This is a reprocessed dataset at baseline F06, which is continued by the NRT/NTC data stream from 29/April/2022
+    onwards. The product contain the typical altimetry measurements, like the altimeter range, the sea surface height,
+    the wind speed, significant wave height and all required geophysical corrections and related flags derived from LR.
+    Two measurement data files are available (standard and reduced), each with a different number of variables. The
+    standard data file includes 1 Hz and 20 Hz measurements for the Ku- and C-bands as well as geophysical corrections
+    at 1 Hz and some at 20 Hz. The reduced data file contains only 1 Hz measurements for the Ku- and C-bands as well as
+    geophysical corrections at 1 Hz. These products are suitable for users seeking information on sea state and those
+    creating downstream added value products from multiple altimeters. Sentinel-6 is part of a series of Sentinel
+    satellites, under the umbrella of the EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and
+    Atmospheric Administration (NOAA).
+  instrument: Poseidon-4
+  platform: SENTINEL6-A
+  platformSerialIdentifier: S6A
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L2,ALTIMETRIC,LR
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Sentinel 6 - Poseidon-4 Altimetry Level 2 Low Resolution Reprocessed
+  missionStartDate: "2020-12-17T00:00:00Z"
+
+S6_L2_AHR:
+  abstract: |
+    This is a reprocessed dataset at baseline F06, which is continued by the NRT/NTC data stream from 29/April/2022
+    onwards. The level-2 high resolution products contain the typical altimetry measurements, like the altimeter range,
+    the sea surface height, the wind speed, significant wave height and all required geophysical corrections and related
+    flags derived either from RAW or RMC, or the combination of both. Two measurement data files are available
+    (standard and reduced), each with a different number of variables. The standard data file includes 1 Hz and 20 Hz
+    measurements for the Ku- band as well as geophysical corrections at 1 Hz and some at 20 Hz. The reduced data file
+    contains only 1 Hz measurements for the Ku- and C-bands as well as geophysical corrections at 1 Hz. Note that the
+    HR data products only contain Ku-band measurements. These products are suitable for users seeking information on
+    sea state and those creating downstream added value products from multiple altimeters. Particularly for those
+    seeking the highest resolution measurements. Sentinel-6 is part of a series of Sentinel satellites, under the
+    umbrella of the EU Copernicus programme. It is a collaborative Copernicus mission, implemented and co-funded by the
+    European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and Atmospheric
+    Administration (NOAA).
+  instrument: Poseidon-4
+  platform: SENTINEL6-A
+  platformSerialIdentifier: S6A
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L2,ALTIMETRIC,HR
+  sensorType: ALTIMETRIC
+  license: proprietary
+  title: Sentinel 6 - Poseidon-4 Altimetry Level 2 High Resolution Reprocessed
+  missionStartDate: "2020-12-17T00:00:00Z"
+
+S6_L2_R:
+  abstract: |
+    This is a reprocessed dataset at baseline F06, which is continued by the NRT/NTC data stream from 29/April/2022
+    onwards. AMR-C Level 2 Products as generated by the AMR-C CFI Processor. These products include antenna and
+    brightness temperatures, wet tropospheric correction, water vapour content, and a rain flag. Sentinel-6 is part of
+    a series of Sentinel satellites, under the umbrella of the EU Copernicus programme. It is a collaborative
+    Copernicus mission, implemented and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).
+  instrument: AMR-C
+  platform: SENTINEL6-A
+  platformSerialIdentifier: S6A
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L2,AMR-C,RADIOMETER,MICROWAVE
+  sensorType: RADIOMETER
+  license: proprietary
+  title: Sentinel 6 - Climate-quality Advanced Microwave Radiometer Level 2 Products Reprocessed
+  missionStartDate: "2020-11-28T00:00:00Z"
+
 # SPOT ------------------------------------------------------------------------
 SPOT_SWH:
   abstract: |
