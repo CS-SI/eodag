@@ -405,6 +405,7 @@ class StacItem(StacCommon):
                     provider=self.provider, fetch_providers=False
                 )
                 if pt["ID"] == product_type
+                or ("alias" in pt and pt["alias"] == product_type)
             ][0]
         except IndexError:
             raise NoMatchingProductType(
@@ -598,10 +599,7 @@ class StacCollection(StacCommon):
             ]
         else:
             product_types = self.eodag_api.list_product_types(provider=self.provider)
-        return [
-            self.eodag_api.reference_product_type(product_type)
-            for product_type in product_types
-        ]
+        return product_types
 
     def __get_collection_list(
         self, filters: Optional[Dict[str, Any]] = None
