@@ -41,6 +41,7 @@ class FilterProperty(Crunch):
 
     :type config: dict
     """
+
     config: Dict[str, Union[str, Optional[str]]]
 
     def proceed(

@@ -18,9 +18,9 @@
 from __future__ import annotations
 
 import datetime
-from datetime import datetime as dt
 import logging
 import time
+from datetime import datetime as dt
 from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 import dateutil.parser

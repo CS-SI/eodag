@@ -16,8 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG drivers package"""
-from typing import Callable, Dict, List, Union
-
 from eodag.api.product.drivers.base import DatasetDriver, NoDriver  # noqa
 
 try:

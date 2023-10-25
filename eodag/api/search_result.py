@@ -32,7 +32,7 @@ from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
 
 
-class SearchResult(UserList[EOProduct]):
+class SearchResult(UserList):
     """An object representing a collection of :class:`~eodag.api.product._product.EOProduct` resulting from a search.
 
     :param products: A list of products resulting from a search

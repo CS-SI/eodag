@@ -60,7 +60,9 @@ def product_types_info_to_csv(
     os.environ.update(eodag_env_backup)
 
     product_types = dag.list_product_types(fetch_providers=False)
-    product_types_names: List[str] = [product_type["ID"] for product_type in product_types]
+    product_types_names: List[str] = [
+        product_type["ID"] for product_type in product_types
+    ]
     metadata_params = list(k for k in product_types[0].keys() if k != "ID")
 
     # csv fieldnames
