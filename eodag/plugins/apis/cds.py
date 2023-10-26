@@ -90,7 +90,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 kwargs["productType"]
             ]["multi_select_values"]
         else:
-            self.config.constraints_file_path = ""
+            self.config.multi_select_values = ""
         if (
             kwargs["productType"] in getattr(self.config, "products", {})
             and "constraints_file_path"
@@ -109,7 +109,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             self.config.constraints_file_url = getattr(self.config, "products", {})[
                 kwargs["productType"]
             ]["constraints_file_url"]
-        else:
+        elif not getattr(self.config, "constraints_file_url", None):
             self.config.constraints_file_url = ""
         # start date
         if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
@@ -142,8 +142,15 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             and getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
+            product_data = getattr(self.config, "products", {})[kwargs["productType"]]
+            if "dataset" in product_data:
+                provider_product = product_data["dataset"]
+            else:
+                provider_product = ""
             request_splitter = RequestSplitter(
-                self.config, self.config.metadata_mapping
+                self.config,
+                self.config.metadata_mapping,
+                provider_product=provider_product,
             )
             slices, num_items = request_splitter.get_time_slices(
                 kwargs["startTimeFromAscendingNode"],
@@ -261,8 +268,15 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 date = date_value[0].replace('"', "").replace("'", "")
             start, end, *_ = date.split("/")
             if getattr(self.config, "products_split_timedelta", None):
+                product_data = getattr(self.config, "products", {})[
+                    product.product_type
+                ]
+                if "dataset" in product_data:
+                    provider_product = product_data["dataset"]
+                else:
+                    provider_product = ""
                 request_splitter = RequestSplitter(
-                    self.config, self.config.metadata_mapping
+                    self.config, self.config.metadata_mapping, provider_product
                 )
                 time_params = request_splitter.get_time_slices(start, end)[0]
                 download_request["year"] = time_params[0]["year"]

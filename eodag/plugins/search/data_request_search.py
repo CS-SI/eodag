@@ -174,7 +174,9 @@ class DataRequestSearch(Search):
             and "id" not in kwargs
         ):
             request_splitter = RequestSplitter(
-                self.config, self.get_metadata_mapping(product_type)
+                self.config,
+                self.get_metadata_mapping(product_type),
+                provider_product_type,
             )
             if "startTimeFromAscendingNode" in kwargs:
                 start_time = kwargs.pop("startTimeFromAscendingNode")
@@ -680,13 +682,13 @@ class DataRequestSearch(Search):
             self.config.constraints_file_url = self.product_type_def_params[
                 "constraints_file_url"
             ]
-        else:
+        elif not getattr(self.config, "constraints_file_url", None):
             self.config.constraints_file_url = ""
         if "constraints_param" in self.product_type_def_params:
             self.config.constraints_param = self.product_type_def_params[
                 "constraints_param"
             ]
-        else:
+        elif not getattr(self.config, "constraints_param", None):
             self.config.constraints_param = None
         if "constraint_mappings" in self.product_type_def_params:
             self.config.constraint_mappings = self.product_type_def_params[

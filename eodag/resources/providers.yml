@@ -2411,6 +2411,7 @@
       param: month  # currently month and year are available
       duration: 1
     assets_split_parameter: variable
+    constraints_file_url: "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2640,7 +2641,6 @@
       api_product_type: reanalysis
       time: '00:00'
       format: netcdf
-      constraints_file_url: "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/reanalysis-era5-single-levels/constraints.json"
       multi_select_values:
         - year
         - month
@@ -3392,6 +3392,8 @@
       total_items_nb_key_path: '$.totItems'
     discover_product_types:
       fetch_url: null
+    constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/{dataset}"
+    constraints_param: constraints
     metadata_mapping:
       productType:
         - '{{"datasetId": "{productType}"}}'
@@ -3929,8 +3931,6 @@
         - "975"
         - "1000"
       format: grib # netcdf format may fail
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4040,8 +4040,6 @@
         - "975"
         - "1000"
       format: grib # netcdf format may fail
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4119,8 +4117,6 @@
         - leaf_area_index_high_vegetation
         - leaf_area_index_low_vegetation
       format: grib # netcdf format may fail
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_LAND"
-      constraints_param: constraints
       multi_select_values:
         - day
         - time
@@ -4197,8 +4193,6 @@
         - leaf_area_index_high_vegetation
         - leaf_area_index_low_vegetation
       format: grib # netcdf format may fail
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4258,8 +4252,6 @@
         - surface_pressure
         - total_precipitation
       format: grib # netcdf format may fail
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4323,8 +4315,6 @@
         - surface_pressure
         - total_precipitation
       format: grib # netcdf format may fail
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4369,8 +4359,6 @@
       variable: total_cloud_cover
       origin: uerra_harmonie
       format: grib # netcdf format may fail
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4416,8 +4404,6 @@
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
       variable: all
       format: zip
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4523,8 +4509,6 @@
       format:
         - grib
       grid: "original_grid"
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4613,8 +4597,6 @@
       providerProductType:
         - control_forecast
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4679,8 +4661,6 @@
       providerProductType:
         - consolidated
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL"
-      constraints_param: constraints
       constraint_mappings:
         year: hyear
         month: hmonth
@@ -4793,8 +4773,6 @@
       hydrological_model:
         - lisflood
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST"
-      constraints_param: constraints
       constraint_mappings:
         year: hyear
         month: hmonth
@@ -4871,8 +4849,6 @@
         - "120"
         - "144"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -4932,8 +4908,6 @@
       leadtime_hour:
         - "24"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST"
-      constraints_param: constraints
       constraint_mappings:
         year: hyear
         month: hmonth
@@ -5058,8 +5032,6 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_FORECAST"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5127,8 +5099,6 @@
       system_version: version_4_0
       variable: volumetric_soil_moisture
       model_levels: soil_levels
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_HISTORICAL"
-      constraints_param: constraints
       constraint_mappings:
         year: hyear
         month: hmonth
@@ -5228,8 +5198,6 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_REFORECAST"
-      constraints_param: constraints
       constraint_mappings:
         year: hyear
         month: hmonth
@@ -5302,8 +5270,6 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_SEASONAL"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5364,8 +5330,6 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST"
-      constraints_param: constraints
       constraint_mappings:
         year: hyear
         month: hmonth
@@ -5422,8 +5386,6 @@
       variable: xco2
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5479,8 +5441,6 @@
       variable: xch4
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SATELLITE_METHANE"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5554,8 +5514,6 @@
       originating_centre: ecmwf
       system: "5"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5624,8 +5582,6 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5721,8 +5677,6 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5817,8 +5771,6 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5900,8 +5852,6 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month
@@ -5969,8 +5919,6 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
-      constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS"
-      constraints_param: constraints
       multi_select_values:
         - year
         - month

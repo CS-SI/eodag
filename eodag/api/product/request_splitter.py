@@ -50,7 +50,7 @@ class RequestSplitter:
     provides methods to split a request into several requests based on the given config and constraints
     """
 
-    def __init__(self, config, metadata_mapping):
+    def __init__(self, config, metadata_mapping, provider_product=""):
         self.config = config.__dict__
         if (
             "constraints_file_path" in self.config
@@ -62,11 +62,15 @@ class RequestSplitter:
             "constraints_file_url" in self.config
             and self.config["constraints_file_url"]
         ):
+            url = self.config["constraints_file_url"]
+            if "{" in url and provider_product:
+                url = url.format(dataset=provider_product)
+            print(url)
             if "auth" in self.config:
                 headers = getattr(self.config["auth"], "headers", "")
-                res = requests.get(self.config["constraints_file_url"], headers=headers)
+                res = requests.get(url, headers=headers)
             else:
-                res = requests.get(self.config["constraints_file_url"])
+                res = requests.get(url)
             self.constraints_data = res.json()
         else:
             self.constraints_data = {}
