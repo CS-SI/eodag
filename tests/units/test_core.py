@@ -397,6 +397,16 @@ class TestCore(TestCoreBase):
             self.assertListProductTypesRightStructure(product_type)
         # There should be no repeated product type in the output
         self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+        # add alias for product type - should still work
+        products = self.dag.product_types_config
+        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        product_types = self.dag.list_product_types(fetch_providers=False)
+        for product_type in product_types:
+            self.assertListProductTypesRightStructure(product_type)
+        # There should be no repeated product type in the output
+        self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+        # use alias as id
+        self.assertIn("S2_MSI_ALIAS", [pt["ID"] for pt in product_types])
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
@@ -1568,6 +1578,19 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
+    def test__prepare_search_peps_plugins_product_available_with_alias(self):
+        """_prepare_search must return the search plugins when productType is defined and alias is used"""
+        products = self.dag.product_types_config
+        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        try:
+            self.dag.set_preferred_provider("peps")
+            base = {"productType": "S2_MSI_ALIAS"}
+            search_plugins, _ = self.dag._prepare_search(**base)
+            self.assertEqual(search_plugins[0].provider, "peps")
+        finally:
+            self.dag.set_preferred_provider(prev_fav_provider)
+
     def test__prepare_search_no_plugins_when_search_by_id(self):
         """_prepare_search must not return the search and auth plugins for a search by id"""
         base = {"id": "some_id", "provider": "some_provider"}
@@ -2162,3 +2185,32 @@ class TestCoreDownload(TestCoreBase):
         with self.assertLogs(level="INFO") as cm:
             self.dag.download(product)
             self.assertIn("Local product detected. Download skipped", str(cm.output))
+
+
+class TestCoreProductAlias(TestCoreBase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreProductAlias, cls).setUpClass()
+        cls.dag = EODataAccessGateway()
+        products = cls.dag.product_types_config
+        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+
+    def test_reference_product_type(self):
+        # return product alias
+        self.assertEqual("S2_MSI_ALIAS", self.dag.reference_product_type("S2_MSI_L1C"))
+        # product type without alias
+        self.assertEqual("S1_SAR_GRD", self.dag.reference_product_type("S1_SAR_GRD"))
+        # not existing product type
+        with self.assertRaises(NoMatchingProductType):
+            self.dag.reference_product_type("JUST_A_TYPE")
+
+    def test_dereference_product_type(self):
+        # return product id
+        self.assertEqual(
+            "S2_MSI_L1C", self.dag.dereference_product_type("S2_MSI_ALIAS")
+        )
+        # product type without alias
+        self.assertEqual("S1_SAR_GRD", self.dag.dereference_product_type("S1_SAR_GRD"))
+        # not existing product type
+        with self.assertRaises(NoMatchingProductType):
+            self.dag.dereference_product_type("JUST_A_TYPE")
