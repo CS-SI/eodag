@@ -833,15 +833,20 @@ class EODataAccessGateway:
         product_types = self.list_product_types(fetch_providers=False)
 
         for product_type in product_types:
-            if alias_or_internal_name == product_type["ID"]:
+            if alias_or_internal_name.upper() == product_type["ID"]:
                 if "_id" in product_type:
                     return product_type["_id"]
                 else:
                     return alias_or_internal_name
-            if "_id" in product_type and product_type["_id"] == alias_or_internal_name:
+            if (
+                "_id" in product_type
+                and product_type["_id"] == alias_or_internal_name.upper()
+            ):
                 return alias_or_internal_name
 
-        raise RuntimeError("product type " + alias_or_internal_name + " does not exist")
+        raise NoMatchingProductType(
+            "product type " + alias_or_internal_name + " does not exist"
+        )
 
     def reference_product_type(self, internal_name: str):
         """Return the alias of a product type by its internal name. If no alias
@@ -857,7 +862,7 @@ class EODataAccessGateway:
             if "_id" in product_type and product_type["_id"] == internal_name:
                 return product_type["ID"]
 
-        raise RuntimeError("product type " + internal_name + " does not exist")
+        raise NoMatchingProductType("product type " + internal_name + " does not exist")
 
     def guess_product_type(self, **kwargs: Any) -> List[str]:
         """Find the eodag product type code that best matches a set of search params
@@ -1354,7 +1359,10 @@ class EODataAccessGateway:
         """
         product_type = kwargs.get("productType", None)
         if product_type is not None:
-            product_type = self.dereference_product_type(product_type)
+            try:
+                product_type = self.dereference_product_type(product_type)
+            except NoMatchingProductType:
+                logger.warning("product type %s not found", product_type)
         get_search_plugins_kwargs = dict(provider=provider, product_type=product_type)
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
@@ -1463,7 +1471,11 @@ class EODataAccessGateway:
                 else:
                     return [], kwargs
 
-        product_type = self.dereference_product_type(product_type)
+        if product_type is not None:
+            try:
+                product_type = self.dereference_product_type(product_type)
+            except NoMatchingProductType:
+                logger.warning("unknown product type " + product_type)
         kwargs["productType"] = product_type
 
         if start is not None:
@@ -1549,6 +1561,7 @@ class EODataAccessGateway:
                             search_plugin.provider, fetch_providers=False
                         )
                         if p["ID"] == product_type
+                        or ("_id" in p and p["_id"] == product_type)
                     ][0],
                     **{"productType": product_type},
                 )
@@ -1694,9 +1707,13 @@ class EODataAccessGateway:
                     else:
                         eo_product.product_type = guesses[0]
 
-                eo_product.product_type = self.dereference_product_type(
-                    eo_product.product_type
-                )
+                try:
+                    if eo_product.product_type is not None:
+                        eo_product.product_type = self.dereference_product_type(
+                            eo_product.product_type
+                        )
+                except NoMatchingProductType:
+                    logger.warning("product type %s not found", eo_product.product_type)
 
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(

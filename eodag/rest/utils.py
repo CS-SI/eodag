@@ -191,9 +191,7 @@ def get_product_types(
         ]
     else:
         product_types = eodag_api.list_product_types(provider=provider)
-    return [
-        eodag_api.reference_product_type(product_type) for product_type in product_types
-    ]
+    return product_types
 
 
 def search_bbox(request_bbox: str) -> Optional[Dict[str, float]]:
