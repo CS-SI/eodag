@@ -477,6 +477,7 @@ def collections(request: Request):
         arguments=arguments,
         provider=provider,
     )
+
     return jsonable_encoder(response)
 
 
