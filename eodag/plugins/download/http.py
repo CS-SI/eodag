@@ -18,6 +18,7 @@
 
 import logging
 import os
+import re
 import shutil
 import zipfile
 from datetime import datetime
@@ -657,6 +658,8 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
+        asset_filter = kwargs.get("asset", None)
+
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
@@ -666,6 +669,23 @@ class HTTPDownload(Download):
 
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
+
+        if asset_filter:
+            filter_regex = re.compile(asset_filter)
+            assets_values = list(
+                filter(
+                    lambda a: (
+                        filter_regex.match(a["href"]) or filter_regex.match(a["title"])
+                    ),
+                    assets_values,
+                )
+            )
+            if not assets_values:
+                logger.warning(
+                    "No asset available for product %s and filter %s",
+                    product,
+                    asset_filter,
+                )
 
         # get extra parameters to pass to the query
         params = kwargs.pop("dl_url_params", None) or getattr(
@@ -695,7 +715,8 @@ class HTTPDownload(Download):
             ]
             asset["rel_path"] = os.path.join(*asset_rel_path_parts_sanitized)
             asset_rel_paths_list.append(asset["rel_path"])
-        assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
+        if asset_rel_paths_list:
+            assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
 
         # product conf overrides provider conf for "flatten_top_dirs"
         product_conf = getattr(self.config, "products", {}).get(
