@@ -651,6 +651,41 @@ class StacCollection(StacCommon):
             product_types = self.eodag_api.list_product_types(provider=self.provider)
         return product_types
 
+    def __filter_collection_free_text_search(
+        self,
+        search_terms: List[str],
+        collection: Dict[str, Any],
+        keys: List[str] = ["title", "description", "keywords"],
+    ):
+        """Implements STAC Collection free-text search
+
+        :param search_terms: Terms to search in the collection
+        :type search_terms: list
+        :param collection: Collection to be filtered
+        :type collection: dict
+        :param keys List of keys of the collection to which the filter is applied
+        :type keys: list
+        :returns: True if the collection matches the filter criteria, False otherwise
+        :rtype: bool
+        """
+
+        def check_recursively(term: str, obj: Any) -> bool:
+            ret = False
+            if type(obj) is str:
+                if term in obj.lower():
+                    ret = True
+            elif type(obj) is list:
+                for i in obj:  # type: ignore
+                    ret = check_recursively(term, i)
+            return ret
+
+        search_terms = [t.strip().lower() for t in search_terms]
+        for term in search_terms:
+            for key in keys:
+                if check_recursively(term, collection[key]):
+                    return True
+        return False
+
     def __get_collection_list(
         self, filters: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
@@ -708,6 +743,15 @@ class StacCollection(StacCommon):
             )
 
             collection_list.append(product_type_collection)
+
+        if "q" in filters:
+            # STAC Collection free-text search
+            search_terms = filters["q"].split(",")
+            new_collection_list = []
+            for collection in collection_list:
+                if self.__filter_collection_free_text_search(search_terms, collection):
+                    new_collection_list.append(collection)
+            collection_list = new_collection_list
 
         return collection_list
 
