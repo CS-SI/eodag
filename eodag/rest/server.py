@@ -328,9 +328,10 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
+    asset_filter = arguments.pop("asset", None)
 
     return download_stac_item_by_id_stream(
-        catalogs=[collection_id], item_id=item_id, provider=provider
+        catalogs=[collection_id], item_id=item_id, provider=provider, asset=asset_filter
     )
 
 
