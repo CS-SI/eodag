@@ -677,6 +677,8 @@ class StacCollection(StacCommon):
             elif type(obj) is list:
                 for i in obj:  # type: ignore
                     ret = check_recursively(term, i)
+                    if ret:
+                        break
             return ret
 
         search_terms = [t.strip().lower() for t in search_terms]
