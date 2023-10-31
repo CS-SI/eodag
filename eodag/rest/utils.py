@@ -662,7 +662,7 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None, asset=None
         logger.warning(
             f"Download streaming not supported for {product.downloader}: downloading locally then delete"
         )
-        product_path = eodag_api.download(product, extract=False)
+        product_path = eodag_api.download(product, extract=False, asset=asset)
         if os.path.isdir(product_path):
             # do not zip if dir contains only one file
             all_filenames = next(os.walk(product_path), (None, None, []))[2]
