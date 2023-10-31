@@ -6715,6 +6715,7 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://wekeo-broker.prod.wekeo2.eu/databroker
+    archive_depth: 2
     flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: true
