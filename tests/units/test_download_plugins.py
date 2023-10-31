@@ -300,6 +300,41 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_asset_filter(
+        self, mock_requests_get, mock_requests_head
+    ):
+        """HTTPDownload.download() must create an outputfile"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets = {
+            "foo": {"href": "http://somewhere/something", "title": "foo"},
+            "boo": {"href": "http://elsewhere/anything", "title": "boo"},
+        }
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "content-disposition": '; filename = "somethingelse"'
+        }
+        mock_requests_head.return_value.headers = {"content-disposition": ""}
+
+        path = plugin.download(
+            self.product, outputs_prefix=self.output_dir, asset=".*else"
+        )
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(self.output_dir, "dummy_product", "somethingelse")
+            )
+        )
+        self.assertEqual(2, mock_requests_get.call_count)
+        self.product.location = self.product.remote_location = "http://elsewhere"
+        plugin.download(self.product, outputs_prefix=self.output_dir)
+        self.assertEqual(6, mock_requests_get.call_count)
+
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     def test_plugins_download_http_assets_filename_from_head(
         self, mock_requests_get, mock_requests_head
     ):
@@ -1021,6 +1056,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.assertEqual(mock_flatten_top_directories.call_count, 0)
 
         self.assertEqual(path, execpected_output)
+
+        # with filter for assets
+        self.product.properties["title"] = "newTitle"
+        setattr(self.product, "location", "file://path/to/file")
+        plugin.download(self.product, outputs_prefix=self.output_dir, asset=".*file")
+        # 2 additional calls
+        self.assertEqual(6, mock_get_chunk_dest_path.call_count)
 
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
