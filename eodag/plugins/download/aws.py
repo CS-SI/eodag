@@ -370,6 +370,12 @@ class AwsDownload(Download):
                 )
 
         unique_product_chunks = set(product_chunks)
+        asset_filter = kwargs.get("asset", None)
+        if asset_filter:
+            filter_regex = re.compile(asset_filter)
+            unique_product_chunks = set(
+                filter(lambda c: filter_regex.match(c.key), unique_product_chunks)
+            )
 
         total_size = sum([p.size for p in unique_product_chunks])
 
