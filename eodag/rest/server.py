@@ -51,6 +51,8 @@ from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
     QueryableProperty,
     Queryables,
+    add_provider_product_type_queryables,
+    add_provider_queryables,
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
@@ -476,6 +478,11 @@ def list_collection_queryables(
         titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop.split(":")[-1]).title()
         queryables[prop] = QueryableProperty(description=titled_name)
 
+    if provider:
+        queryables = add_provider_product_type_queryables(
+            provider, collection_id, queryables
+        )
+
     return queryables
 
 
@@ -665,10 +672,9 @@ def stac_catalogs(catalogs: str, request: Request) -> Any:
 @router.get(
     "/queryables",
     tags=["Capabilities"],
-    include_in_schema=False,
     response_model_exclude_none=True,
-)
-def list_queryables(request: Request) -> Queryables:
+    include_in_schema=False)
+def list_queryables(request: Request, provider: Optional[str] = None) -> Queryables:
     """Returns the list of terms available for use when writing filter expressions.
 
     This endpoint provides a list of terms that can be used as filters when querying
@@ -681,8 +687,11 @@ def list_queryables(request: Request) -> Queryables:
     :rtype: eodag.rest.utils.Queryables
     """
     logger.debug(f"URL: {request.url}")
+    queryables = Queryables(q_id=request.state.url)
+    if provider:
+        queryables = add_provider_queryables(provider, queryables)
 
-    return Queryables(q_id=request.state.url)
+    return queryables
 
 
 @router.get(
@@ -724,6 +733,7 @@ def stac_search(
         content=response, status_code=200, media_type="application/json"
     )
     return resp
+
 
 
 app.include_router(router)
