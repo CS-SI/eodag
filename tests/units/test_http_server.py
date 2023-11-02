@@ -1183,3 +1183,4 @@ class RequestTestCase(unittest.TestCase):
         # property updated with info from provider queryables
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
+
