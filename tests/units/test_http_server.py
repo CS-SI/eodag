@@ -28,6 +28,7 @@ import geojson
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
+from eodag.utils import USER_AGENT
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -1037,16 +1038,29 @@ class RequestTestCase(unittest.TestCase):
         """Request to /queryables should return a valid response."""
         self._request_valid("queryables", check_links=False)
 
+    @mock.patch("eodag.rest.utils.requests.get", autospec=True)
+    def test_queryables_with_provider(self, mock_requests_get):
+        self._request_valid("queryables?provider=planetary_computer", check_links=False)
+        mock_requests_get.assert_called_once_with(
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/queryables",
+            headers=USER_AGENT,
+        )
+
     def test_product_type_queryables(self):
         """Request to /collections/{collection_id}/queryables should return a valid response."""
         self._request_valid(
             f"collections/{self.tested_product_type}/queryables", check_links=False
         )
 
-    def test_product_type_queryables_with_provider(self):
+    @mock.patch("eodag.rest.utils.requests.get", autospec=True)
+    def test_product_type_queryables_with_provider(self, mock_requests_get):
         """Request a collection-specific list of queryables for a given provider."""
-
         self._request_valid(
-            f"collections/{self.tested_product_type}/queryables?provider=peps",
+            f"collections/{self.tested_product_type}/queryables?provider=planetary_computer",
             check_links=False,
+        )
+        mock_requests_get.assert_called_once_with(
+            url=f"https://planetarycomputer.microsoft.com/api/stac/v1/collections/"
+            f"{self.tested_product_type}/queryables",
+            headers=USER_AGENT,
         )
