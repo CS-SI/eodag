@@ -45,8 +45,9 @@ from shapely.geometry import Polygon, shape
 
 import eodag
 from eodag import EOProduct
-from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.queryables import BaseQueryableProperty
+from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.api.product.metadata_mapping import OFFLINE_STATUS, OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config, load_stac_provider_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
@@ -712,21 +713,28 @@ def download_stac_item_by_id_stream(
     provider_product_type_config = search_plugin.config.products.get(
         product_type, {}
     ) or search_plugin.config.products.get(GENERIC_PRODUCT_TYPE, {})
-    if provider_product_type_config.get("storeDownloadUrl", False):
-        if item_id not in search_plugin.download_info:
-            logger.error(f"data for item {item_id} not found")
-            raise NotAvailableError(
-                f"download url for product {item_id} could not be found, please redo "
-                f"the search request to fetch the required data"
-            )
-        product_data = search_plugin.download_info[item_id]
+    if "." in item_id:
+        id_without_ext = item_id.split(".")[0]
+    else:
+        id_without_ext = item_id
+    if id_without_ext in search_plugin.download_info:
+        product_data = search_plugin.download_info[id_without_ext]
         properties = {
-            "id": item_id,
-            "orderLink": product_data["orderLink"],
+            "id": id_without_ext,
             "downloadLink": product_data["downloadLink"],
             "geometry": "-180 -90 180 90",
+            "storageStatus": OFFLINE_STATUS,
+            "title": id_without_ext,
         }
+        if "orderLink" in product_data:
+            properties["orderLink"] = product_data["orderLink"]
         product = EOProduct(provider or product_data["provider"], properties)
+    elif provider_product_type_config.get("storeDownloadUrl", False):
+        logger.error(f"data for item {item_id} not found")
+        raise NotAvailableError(
+            f"download url for product {item_id} could not be found, please redo "
+            f"the search request to fetch the required data"
+        )
     else:
 
         search_results = search_product_by_id(

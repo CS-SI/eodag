@@ -276,6 +276,8 @@ class QueryStringSearch(Search):
                 ] = product_type_metadata_mapping
 
     def clear(self) -> None:
+        self.download_info = {}
+
         """Clear search context"""
         super().clear()
         self.search_urls.clear()
@@ -731,6 +733,15 @@ class QueryStringSearch(Search):
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
             products.append(product)
+            self.download_info[product.properties["id"]] = {
+                "downloadLink": product.properties["downloadLink"],
+                "provider": self.provider,
+            }
+            if "orderLink" in product.properties:
+                self.download_info[product.properties["id"]][
+                    "orderLink"
+                ] = product.properties["orderLink"]
+
         return products
 
     def count_hits(self, count_url: str, result_type: str = "json") -> int:
