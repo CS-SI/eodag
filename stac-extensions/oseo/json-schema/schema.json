@@ -1,0 +1,219 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://eodag.p3.csgroup.space/extensions/oseo/json-schema/schema.json#",
+    "title": "OpenSearch for Earth Observation",
+    "description": "OpenSearch-EO STAC extension to a STAC Item https://www.ogc.org/standards/opensearch-eo",
+    "allOf": [
+        {
+            "$ref": "#/definitions/oseo"
+        },
+        {
+            "$ref": "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json"
+        }
+    ],
+    "definitions": {
+        "oseo": {
+            "type": "object",
+            "required": [
+                "stac_extensions",
+                "properties"
+            ],
+            "properties": {
+                "stac_extensions": {
+                    "type": "array",
+                    "contains": {
+                        "enum": [
+                            "oseo",
+                            "https://eodag.p3.csgroup.space/extensions/oseo/json-schema/schema.json"
+                        ]
+                    }
+                },
+                "properties": {
+                    "type": "object",
+                    "properties": {
+                        "oseo:uid": {
+                            "type": "string",
+                            "title": "Uid"
+                        },
+                        "oseo:sensor_type": {
+                            "type": "string",
+                            "title": "Sensor Type"
+                        },
+                        "oseo:composite_type": {
+                            "type": "string",
+                            "title": "Composite Type"
+                        },
+                        "oseo:orbit_type": {
+                            "type": "string",
+                            "title": "Orbit Type"
+                        },
+                        "oseo:spectral_range": {
+                            "type": "string",
+                            "title": "Spectral Range"
+                        },
+                        "oseo:wavelengths": {
+                            "type": "string",
+                            "title": "Wavelengths"
+                        },
+                        "oseo:has_security_constraints": {
+                            "type": "string",
+                            "title": "Has Security Constraints"
+                        },
+                        "oseo:dissemination": {
+                            "type": "string",
+                            "title": "Dissemination"
+                        },
+                        "oseo:topic_category": {
+                            "type": "string",
+                            "title": "Topic Category"
+                        },
+                        "oseo:keyword": {
+                            "type": "string",
+                            "title": "Keyword"
+                        },
+                        "oseo:organisation_name": {
+                            "type": "string",
+                            "title": "Organisation Name"
+                        },
+                        "oseo:organisation_role": {
+                            "type": "string",
+                            "title": "Organisation Role"
+                        },
+                        "oseo:lineage": {
+                            "type": "string",
+                            "title": "Lineage"
+                        },
+                        "oseo:use_limitation": {
+                            "type": "string",
+                            "title": "Use Limitation"
+                        },
+                        "oseo:access_constraint": {
+                            "type": "string",
+                            "title": "Access Constraint"
+                        },
+                        "oseo:other_constraint": {
+                            "type": "string",
+                            "title": "Other Constraint"
+                        },
+                        "oseo:classification": {
+                            "type": "string",
+                            "title": "Classification"
+                        },
+                        "oseo:language": {
+                            "type": "string",
+                            "title": "Language"
+                        },
+                        "oseo:specification": {
+                            "type": "string",
+                            "title": "Specification"
+                        },
+                        "oseo:parent_identifier": {
+                            "type": "string",
+                            "title": "Parent Identifier"
+                        },
+                        "oseo:production_status": {
+                            "type": "string",
+                            "title": "Production Status"
+                        },
+                        "oseo:acquisition_type": {
+                            "type": "string",
+                            "title": "Acquisition Type"
+                        },
+                        "oseo:orbit_number": {
+                            "type": "string",
+                            "title": "Orbit Number"
+                        },
+                        "oseo:track": {
+                            "type": "string",
+                            "title": "Track"
+                        },
+                        "oseo:frame": {
+                            "type": "string",
+                            "title": "Frame"
+                        },
+                        "oseo:swath_identifier": {
+                            "type": "string",
+                            "title": "Swath Identifier"
+                        },
+                        "oseo:snow_cover": {
+                            "type": "string",
+                            "title": "Snow Cover"
+                        },
+                        "oseo:lowest_location": {
+                            "type": "string",
+                            "title": "Lowest Location"
+                        },
+                        "oseo:highest_location": {
+                            "type": "string",
+                            "title": "Highest Location"
+                        },
+                        "oseo:product_quality_status": {
+                            "type": "string",
+                            "title": "Product Quality Status"
+                        },
+                        "oseo:product_quality_degradation_tag": {
+                            "type": "string",
+                            "title": "Product Quality Degradation Tag"
+                        },
+                        "oseo:processor_name": {
+                            "type": "string",
+                            "title": "Processor Name"
+                        },
+                        "oseo:processing_center": {
+                            "type": "string",
+                            "title": "Processing Center"
+                        },
+                        "oseo:processing_date": {
+                            "type": "string",
+                            "title": "Processing Date"
+                        },
+                        "oseo:archiving_center": {
+                            "type": "string",
+                            "title": "Archiving Center"
+                        },
+                        "oseo:processing_mode": {
+                            "type": "string",
+                            "title": "Processing Mode"
+                        },
+                        "oseo:availability_time": {
+                            "type": "string",
+                            "title": "Availability Time"
+                        },
+                        "oseo:acquisition_station": {
+                            "type": "string",
+                            "title": "Acquisition Station"
+                        },
+                        "oseo:acquisition_sub_type": {
+                            "type": "string",
+                            "title": "Acquisition Sub Type"
+                        },
+                        "oseo:illumination_zenith_angle": {
+                            "type": "string",
+                            "title": "Illumination Zenith Angle"
+                        },
+                        "oseo:polarization_mode": {
+                            "type": "string",
+                            "title": "Polarization Mode"
+                        },
+                        "oseo:antenna_look_direction": {
+                            "type": "string",
+                            "title": "Antenna Look Direction"
+                        },
+                        "oseo:minimum_incidence_angle": {
+                            "type": "string",
+                            "title": "Minimum Incidence Angle"
+                        },
+                        "oseo:maximum_incidence_angle": {
+                            "type": "string",
+                            "title": "Maximum Incidence Angle"
+                        },
+                        "oseo:incidence_angle_variation": {
+                            "type": "string",
+                            "title": "Incidence Angle Variation"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

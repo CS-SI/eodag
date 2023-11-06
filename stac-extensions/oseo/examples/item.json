@@ -1,0 +1,63 @@
+{
+    "type": "Feature",
+    "stac_version": "1.0.0",
+    "stac_extensions": [
+        "https://raw.githubusercontent.com/CS-SI/eodag/master/stac-extensions/oseo/json-schema/schema.json"
+    ],
+    "bbox": [
+        67.694321,
+        -46.947174,
+        71.730194,
+        -44.263451
+    ],
+    "links": [
+        {
+          "href": "https://example.com/examples/item.json",
+          "rel": "self"
+        }
+    ],
+    "assets": {
+        "data": {
+          "href": "https://example.com/examples/file.xyz"
+        }
+    },
+    "id": "item",
+    "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+            [
+                [
+                    [
+                        68.57457,
+                        -46.947174
+                    ],
+                    [
+                        71.730194,
+                        -46.185322
+                    ],
+                    [
+                        70.754669,
+                        -44.263451
+                    ],
+                    [
+                        67.694321,
+                        -45.002003
+                    ],
+                    [
+                        68.57457,
+                        -46.947174
+                    ]
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "datetime": "2023-11-06T14:21:55.375Z",
+        "oseo:instrument": "SAR-C SAR",
+        "oseo:sensorType": "RADAR",
+        "oseo:organisationName": "ESA",
+        "oseo:orbitNumber": 51097,
+        "oseo:swathIdentifier": "IW",
+        "oseo:polarizationMode": "HH"
+    }
+}
