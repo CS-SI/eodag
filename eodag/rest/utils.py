@@ -717,15 +717,19 @@ def download_stac_item_by_id_stream(
         id_without_ext = item_id.split(".")[0]
     else:
         id_without_ext = item_id
-    if id_without_ext in search_plugin.download_info:
+    if (
+        getattr(search_plugin, "download_info", None)
+        and id_without_ext in search_plugin.download_info
+    ):
         product_data = search_plugin.download_info[id_without_ext]
         properties = {
             "id": id_without_ext,
-            "downloadLink": product_data["downloadLink"],
             "geometry": "-180 -90 180 90",
             "storageStatus": OFFLINE_STATUS,
             "title": id_without_ext,
         }
+        if "downloadLink" in product_data:
+            properties["downloadLink"] = product_data["downloadLink"]
         if "orderLink" in product_data:
             properties["orderLink"] = product_data["orderLink"]
         product = EOProduct(provider or product_data["provider"], properties)

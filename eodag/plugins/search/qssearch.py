@@ -734,9 +734,12 @@ class QueryStringSearch(Search):
             )
             products.append(product)
             self.download_info[product.properties["id"]] = {
-                "downloadLink": product.properties["downloadLink"],
                 "provider": self.provider,
             }
+            if "downloadLink" in product.properties:
+                self.download_info[product.properties["id"]][
+                    "downloadLink"
+                ] = product.properties["downloadLink"]
             if "orderLink" in product.properties:
                 self.download_info[product.properties["id"]][
                     "orderLink"

@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import copy
 import json
 import re
 import unittest
@@ -119,6 +120,13 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
                         geometry:
                             - 'geometry={geometry#to_rounded_wkt}'
                             - '{georss:polygon|georss:where#from_georss}'
+                        downloadLink: 'ns:link[@rel="enclosure"]/@href'
+                        # storageStatus: must be one of ONLINE, STAGING, OFFLINE
+                        storageStatus: '{DIAS:onlineStatus/text()#replace_str("Not Available","OFFLINE")}'
+                        # order link formated for POST request usage
+                        orderLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request?
+                        {{"productId":"{id}","collectionId":"{platform}"}}'
+                        searchLink: 'https://{platform}.browse.catalog.mundiwebservices.com/opensearch?uid={id}'
                 products:
                     S1_SAR_GRD:
                         productType: GRD
@@ -496,8 +504,8 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "totalResults": 1,
             "features": [
                 {
-                    "id": "foo",
                     "geometry": geojson_geometry,
+                    "properties": {"productIdentifier": "foo"},
                 },
             ],
         }
@@ -737,8 +745,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "meta": {"page": 1, "found": 1, "limit": 2},
             "results": [
                 {
-                    "id": "foo",
+                    "sceneID": "foo",
                     "dataGeometry": geojson_geometry,
+                    "productName": "foo",
                 },
             ],
         }
@@ -806,7 +815,13 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
 
         raw_results = [
-            {"Metadata": [{"id": "foo", "value": "bar"}], "footprint": "POINT (0 0)"}
+            {
+                "Metadata": [
+                    {"id": "foo", "value": "bar"},
+                    {"id": "filename", "value": "bar.zip"},
+                ],
+                "footprint": "POINT (0 0)",
+            }
         ]
         products = self.onda_search_plugin.normalize_results(raw_results)
 
@@ -1063,25 +1078,40 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         mock__request.assert_called()
         self.assertNotIn("cloudCoverPercentage", mock__request.call_args_list[-1][0][1])
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_odatav4search_distinct_product_type_mtd_mapping(
-        self, mock__request
+        self, mock__request, mock_requests_get
     ):
         """The metadata mapping for ODataV4Search should not mix specific product-types metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        per_product_metadata_query = (
+            self.onda_search_plugin.config.per_product_metadata_query
+        )
+        if per_product_metadata_query:
+            self.onda_search_plugin.config.per_product_metadata_query = False
+
         mock__request.return_value = mock.Mock()
         result = {
-            "features": [
+            "@odata.context": "$metadata#Products",
+            "value": [
                 {
                     "id": "foo",
-                    "geometry": geojson_geometry,
+                    "footprint": geojson_geometry,
+                    "Metadata": [
+                        {
+                            "id": "filename",
+                            "value": "S2B_MSIL1C_20200813T010309_N0209_R045_T55PBQ_20200813T021947.zip",
+                        }
+                    ],
                 },
             ],
         }
-        mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin("onda")
+        copy_res = copy.deepcopy(result)
+        mock__request.return_value.json.side_effect = [result, copy_res]
+        search_plugin = self.onda_search_plugin
 
         # update metadata_mapping only for S1_SAR_GRD
         search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
@@ -1090,7 +1120,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
         products, estimate = search_plugin.query(
             productType="S1_SAR_GRD",
-            auth=None,
+            auth=self.onda_auth_plugin,
         )
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
@@ -1101,7 +1131,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
         products, estimate = search_plugin.query(
             productType="S1_SAR_SLC",
-            auth=None,
+            auth=self.onda_auth_plugin,
         )
         self.assertNotIn("bar", products[0].properties)
 
