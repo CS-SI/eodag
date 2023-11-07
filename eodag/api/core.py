@@ -22,7 +22,7 @@ import os
 import re
 import shutil
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 import geojson
 import pkg_resources
@@ -1997,3 +1997,29 @@ class EODataAccessGateway:
         plugin_conf = {"name": name}
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
+
+    def get_queryables(
+        self, product_type: Optional[str] = None, provider: Optional[str] = None
+    ) -> Set[str]:
+        """Fetch the queryable properties for a given product type and/or provider.
+
+        :param product_type: (optional) The EODAG product type.
+        :type product_type: str
+        :param provider: (optional) The provider.
+        :type provider: str
+        :returns: A set containing the EODAG queryable properties.
+        :rtype: set
+        """
+        if provider is None and product_type is None:
+            return {"productType", "start", "end", "geom", "locations", "id"}
+
+        queryable_properties: Set[str] = set()
+        for search_plugin in self._plugins_manager.get_search_plugins(
+            product_type, provider
+        ):
+            mapping = dict(search_plugin.config.metadata_mapping)
+            # list of all provider-specific queryables
+            for key, value in mapping.items():
+                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                    queryable_properties.add(key)
+        return queryable_properties

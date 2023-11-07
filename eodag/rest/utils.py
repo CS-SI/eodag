@@ -1122,14 +1122,11 @@ def fetch_collection_queryable_properties(
     """
     # Fetch the metadata mapping for collection-specific queryables
     args = [collection_id, provider] if provider else [collection_id]
-    search_plugin = next(eodag_api._plugins_manager.get_search_plugins(*args))
-    search_plugin.config
-    mapping: Dict[str, Any] = dict(search_plugin.config.metadata_mapping)
+    eodag_queryable_properties = eodag_api.get_queryables(*args)
     # list of all the STAC standardized collection-specific queryables
     queryable_properties: Set[str] = set()
-    for key, value in mapping.items():
-        if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-            queryable_properties.add(rename_to_stac_standard(key))
+    for prop in eodag_queryable_properties:
+        queryable_properties.add(rename_to_stac_standard(prop))
     return queryable_properties
 
 
