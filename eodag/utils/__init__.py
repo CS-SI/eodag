@@ -1300,9 +1300,7 @@ def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
     if nested_dir_root != common_subdirs_path:
         logger.debug(f"Flatten {common_subdirs_path} to {nested_dir_root}")
         tmp_path = mkdtemp()
-        # need to delete tmp_path to prevent FileExistsError with copytree. Use dirs_exist_ok with py > 3.7
-        shutil.rmtree(tmp_path)
-        shutil.copytree(common_subdirs_path, tmp_path)
+        shutil.copytree(common_subdirs_path, tmp_path, dirs_exist_ok=True)
         shutil.rmtree(nested_dir_root)
         shutil.move(tmp_path, nested_dir_root)
 
