@@ -19,7 +19,7 @@ repos:
     -   id: check-merge-conflict
 
 -   repo: 'https://github.com/PyCQA/flake8'
-    rev: 5.0.4 # needed for py < 3.8.1
+    rev: 6.1.0 # needed for py < 3.8.1
     hooks:
     -   id: flake8
         additional_dependencies:
