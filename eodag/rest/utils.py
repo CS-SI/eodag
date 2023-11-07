@@ -1121,8 +1121,10 @@ def fetch_collection_queryable_properties(
     :rtype queryable_properties: set
     """
     # Fetch the metadata mapping for collection-specific queryables
-    args = [collection_id, provider] if provider else [collection_id]
-    eodag_queryable_properties = eodag_api.get_queryables(*args)
+    kwargs = {"product_type": collection_id}
+    if provider is not None:
+        kwargs["provider"] = provider
+    eodag_queryable_properties = eodag_api.get_queryables(**kwargs)
     # list of all the STAC standardized collection-specific queryables
     queryable_properties: Set[str] = set()
     for prop in eodag_queryable_properties:

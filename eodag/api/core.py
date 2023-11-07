@@ -1999,7 +1999,7 @@ class EODataAccessGateway:
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
     def get_queryables(
-        self, product_type: Optional[str] = None, provider: Optional[str] = None
+        self, provider: Optional[str] = None, product_type: Optional[str] = None
     ) -> Set[str]:
         """Fetch the queryable properties for a given product type and/or provider.
 
