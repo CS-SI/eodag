@@ -1008,6 +1008,37 @@ class RequestTestCase(unittest.TestCase):
             expected_file
         ), f"File {expected_file} should have been deleted"
 
+    @mock.patch(
+        "eodag.rest.utils.eodag_api._plugins_manager.get_search_plugins",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.generic.GenericAuth.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
+        autospec=True,
+    )
+    def test_download_without_search_by_id(self, mock_download, mock_auth, mock_plugin):
+        product_id = "a_nice_product"
+        download_info = {
+            product_id: {
+                "downloadLink": "https://bla.bli",
+                "orderLink": "https://bla.bli/blu",
+                "provider": "onda",
+            }
+        }
+        plugin_mock_value = mock.MagicMock(download_info=download_info)
+        mock_plugin.return_value = iter([plugin_mock_value])
+
+        mock_download.return_value = {"content": iter([""])}
+        # check that download request is working without attempt to execute search
+        self._request_valid_raw(
+            f"collections/some-collection/items/{product_id}/download?provider=onda",
+            search_call_count=0,
+        )
+
     def test_conformance(self):
         """Request to /conformance should return a valid response"""
         self._request_valid("conformance", check_links=False)
