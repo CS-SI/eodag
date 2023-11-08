@@ -980,9 +980,7 @@
       id:
         - 'productIdentifier=%{id#remove_extension}%'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier:
-        - 'tileid'
-        - '$.properties.mgrs'
+      tileIdentifier: '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -3061,9 +3059,7 @@
       id:
         - 'productIdentifier={id#remove_extension}'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier:
-        - 'tileid'
-        - '$.properties.mgrs'
+      tileIdentifier: '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -3073,11 +3069,6 @@
       downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '$.properties.status'
-      collection:
-        - null
-        - $.null
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      productIdentifier: '$.S3Path'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
