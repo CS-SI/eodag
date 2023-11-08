@@ -1220,7 +1220,8 @@ def add_provider_queryables(provider: str, queryables: dict):
         return queryables
     try:
         if hasattr(search_plugin, "auth"):
-            headers = getattr(search_plugin.auth, "headers", USER_AGENT)
+            headers = getattr(search_plugin.auth, "headers", {})
+            headers.update(USER_AGENT)
         else:
             headers = USER_AGENT
         res = requests.get(queryables_url, headers=headers)
@@ -1279,7 +1280,8 @@ def add_provider_product_type_queryables(
         return {}
     try:
         if hasattr(search_plugin, "auth"):
-            headers = getattr(search_plugin.auth, "headers", USER_AGENT)
+            headers = getattr(search_plugin.auth, "headers", {})
+            headers.update(USER_AGENT)
         else:
             headers = USER_AGENT
         res = requests.get(queryables_url, headers=headers)
