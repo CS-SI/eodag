@@ -1008,55 +1008,51 @@ class TestCore(TestCoreBase):
         self.assertSetEqual(queryables, expected_result)
 
         expected_result = {
+            "geometry",
+            "platformSerialIdentifier",
+            "title",
+            "awsPath",
+            "id",
+            "productType",
+            "doi",
+            "processingLevel",
             "platform",
+            "instrument",
             "resolution",
             "publicationDate",
-            "acquisitionStation",
-            "productType",
-            "availabilityTime",
-            "sensorMode",
+            "orbitNumber",
             "orbitDirection",
-            "dopplerFrequency",
             "cloudCover",
+            "sensorMode",
             "creationDate",
-            "tileIdentifier",
-            "id",
+            "modificationDate",
+            "productVersion",
+            "availabilityTime",
+            "acquisitionStation",
             "acquisitionSubType",
             "illuminationAzimuthAngle",
             "illuminationElevationAngle",
-            "platformSerialIdentifier",
-            "modificationDate",
             "polarizationChannels",
-            "orbitNumber",
-            "doi",
-            "productVersion",
-            "geometry",
-            "instrument",
-            "processingLevel",
+            "dopplerFrequency",
+            "tileIdentifier",
         }
-        queryables = self.dag.get_queryables(product_type="LANDSAT_C2L1")
+        queryables = self.dag.get_queryables(product_type="NAIP")
         self.assertSetEqual(queryables, expected_result)
 
         expected_result = {
-            "productType",
-            "platformSerialIdentifier",
-            "instrument",
-            "processingLevel",
-            "resolution",
-            "organisationName",
-            "parentIdentifier",
-            "orbitNumber",
-            "orbitDirection",
-            "swathIdentifier",
-            "cloudCover",
-            "snowCover",
-            "sensorMode",
-            "polarizationMode",
-            "id",
-            "tileIdentifier",
             "geometry",
+            "platformSerialIdentifier",
+            "title",
+            "cloudCover",
+            "illuminationAzimuthAngle",
+            "illuminationZenithAngle",
+            "awsPath",
+            "productPath",
+            "id",
         }
-        queryables = self.dag.get_queryables(provider="peps", product_type="S2_MSI_L1C")
+        queryables = self.dag.get_queryables(
+            provider="aws_eos", product_type="S2_MSI_L1C"
+        )
         self.assertSetEqual(queryables, expected_result)
 
 
