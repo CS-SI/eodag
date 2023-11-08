@@ -980,6 +980,85 @@ class TestCore(TestCoreBase):
         # run a 2nd time: check that it does not raise an error
         self.dag.update_providers_config(new_config)
 
+    def test_get_queryables(self):
+        expected_result = {"productType", "start", "end", "geom", "locations", "id"}
+        queryables = self.dag.get_queryables()
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {
+            "productType",
+            "platformSerialIdentifier",
+            "instrument",
+            "processingLevel",
+            "resolution",
+            "organisationName",
+            "parentIdentifier",
+            "orbitNumber",
+            "orbitDirection",
+            "swathIdentifier",
+            "cloudCover",
+            "snowCover",
+            "sensorMode",
+            "polarizationMode",
+            "id",
+            "tileIdentifier",
+            "geometry",
+        }
+        queryables = self.dag.get_queryables(provider="peps")
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {
+            "platform",
+            "resolution",
+            "publicationDate",
+            "acquisitionStation",
+            "productType",
+            "availabilityTime",
+            "sensorMode",
+            "orbitDirection",
+            "dopplerFrequency",
+            "cloudCover",
+            "creationDate",
+            "tileIdentifier",
+            "id",
+            "acquisitionSubType",
+            "illuminationAzimuthAngle",
+            "illuminationElevationAngle",
+            "platformSerialIdentifier",
+            "modificationDate",
+            "polarizationChannels",
+            "orbitNumber",
+            "doi",
+            "productVersion",
+            "geometry",
+            "instrument",
+            "processingLevel",
+        }
+        queryables = self.dag.get_queryables(product_type="LANDSAT_C2L1")
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {
+            "productType",
+            "platformSerialIdentifier",
+            "instrument",
+            "processingLevel",
+            "resolution",
+            "organisationName",
+            "parentIdentifier",
+            "orbitNumber",
+            "orbitDirection",
+            "swathIdentifier",
+            "cloudCover",
+            "snowCover",
+            "sensorMode",
+            "polarizationMode",
+            "id",
+            "tileIdentifier",
+            "geometry",
+        }
+        queryables = self.dag.get_queryables(provider="peps", product_type="S2_MSI_L1C")
+        self.assertSetEqual(queryables, expected_result)
+
 
 class TestCoreConfWithEnvVar(TestCoreBase):
     @classmethod
