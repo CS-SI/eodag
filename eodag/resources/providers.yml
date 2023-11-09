@@ -3523,7 +3523,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_AOD___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2FRP:
       productType: EO:EUM:DAT:SENTINEL-3:0417
       metadata_mapping:
@@ -3536,7 +3536,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_FRP___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_EFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
       metadata_mapping:
@@ -3552,7 +3552,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_EFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_ERR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       metadata_mapping:
@@ -3568,7 +3568,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
       metadata_mapping:
@@ -3581,7 +3581,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WRR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
       metadata_mapping:
@@ -3594,7 +3594,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
       metadata_mapping:
@@ -3607,7 +3607,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_A:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
       metadata_mapping:
@@ -3620,7 +3620,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_BS:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
       metadata_mapping:
@@ -3633,7 +3633,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_BS"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
@@ -3646,7 +3646,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_2_WAT___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L1RBT:
       productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
       metadata_mapping:
@@ -3659,7 +3659,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_1_RBT___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2WST:
       productType: EO:EUM:DAT:SENTINEL-3:SL_2_WST___
       metadata_mapping:
@@ -3672,7 +3672,7 @@
         completionTimeFromAscendingNode:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S5P_L1B2_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P:TROPOMI
       metadata_mapping:
@@ -3690,7 +3690,7 @@
           - '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode: '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     COP_DEM_GLO90_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-90-DGED__2022_1
       metadata_mapping:
@@ -3699,7 +3699,7 @@
           - '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode: '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     CLMS_CORINE:
       productType: EO:CLMS:DAT:CORINE
       providerProductType: "Corine Land Cover 2018"
@@ -3717,7 +3717,7 @@
         id:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}, {{"name": "product_type", "value": "{id#split_corine_id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_FCOVER_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_FCOVER300_V1_333M
       metadata_mapping:
@@ -3728,7 +3728,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_NDVI_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI300_V1_333M
       metadata_mapping:
@@ -3739,7 +3739,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_NDVI_1KM_LTS:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI_V2_1KM_LTS
       metadata_mapping:
@@ -3750,7 +3750,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_DMP_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_DMP300_V1_333M
       metadata_mapping:
@@ -3761,7 +3761,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_GDMP_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_GDMP300_V1_333M
       metadata_mapping:
@@ -3772,7 +3772,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_LAI_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_LAI300_V1_333M
       metadata_mapping:
@@ -3783,7 +3783,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_FAPAR_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_FAPAR300_V1_333M
       metadata_mapping:
@@ -3794,7 +3794,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     EEA_DAILY_SWI_1KM:
       productType: EO:EEA:DAT:VEGETATION:DAILY_SWI_1KM_EUROPE_V1
       metadata_mapping:
@@ -3805,7 +3805,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     EEA_DAILY_SSM_1KM:
       productType: EO:EEA:DAT:VEGETATION:DAILY_SSM_1KM_EUROPE_V1
       metadata_mapping:
@@ -3816,7 +3816,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     EEA_DAILY_VI:
       productType: EO:EEA:DAT:CLMS_HRVPP_VI
       metadata_mapping:
@@ -3848,7 +3848,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     ERA5_PL:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
       providerProductType:
@@ -3930,7 +3930,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_PL_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
@@ -4016,7 +4016,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_LAND:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
@@ -4068,7 +4068,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_LAND_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
@@ -4126,7 +4126,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_SL:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
@@ -4166,7 +4166,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_SL_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
@@ -4206,7 +4206,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     UERRA_EUROPE_SL:
       productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
@@ -4228,25 +4228,14 @@
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
           - '$.null'
-        geometry: '-180 -90 180 90'
-      metadata_mapping:
-        # the given start time is used to determine the other filter params
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productEndDate'
-        id: '$.productInfo.product'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
-          - '-180 -90 180 90'
+          - 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     SATELLITE_SEA_LEVEL_BLACK_SEA:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
       variable: all
       format: zip
-      variable: all
       metadata_mapping:
         id: '$.productInfo.product'
         variable:
@@ -4264,7 +4253,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
@@ -4287,7 +4276,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "file_version", "value": {file_version} }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -4308,7 +4297,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "version", "value": {version} }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -4428,7 +4417,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - $.extraInformation.footprint
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_HISTORICAL:
@@ -4470,7 +4459,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - $.extraInformation.footprint
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_REFORECAST:
@@ -4562,7 +4551,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - $.extraInformation.footprint
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_SEASONAL:
@@ -4608,7 +4597,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{"name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_SEASONAL_REFORECAST:
@@ -4649,7 +4638,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_FORECAST:
@@ -4756,7 +4745,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_HISTORICAL:
@@ -4792,7 +4781,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_REFORECAST:
@@ -4867,7 +4856,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL:
@@ -4910,7 +4899,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL_REFORECAST:
@@ -4953,7 +4942,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_CARBON_DIOXIDE:
@@ -4990,7 +4979,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_METHANE:
@@ -5027,7 +5016,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_PL:
@@ -5091,7 +5080,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_SL:
@@ -5138,7 +5127,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_SL:
@@ -5216,7 +5205,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_PL:
@@ -5288,7 +5277,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_MONTHLY_PL:
@@ -5349,7 +5338,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_MONTHLY_SL:
@@ -5395,7 +5384,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SIS_HYDRO_MET_PROJ:
@@ -5456,7 +5445,7 @@
           - $.null
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
 
