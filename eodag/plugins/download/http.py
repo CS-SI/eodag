@@ -1013,7 +1013,8 @@ class HTTPDownload(Download):
 
         # loop for assets download
         for asset in assets_values:
-            if asset["href"].startswith("file:"):
+
+            if not asset["href"] or asset["href"].startswith("file:"):
                 logger.info(
                     f"Local asset detected. Download skipped for {asset['href']}"
                 )
@@ -1223,7 +1224,8 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         # loop for assets size & filename
         for asset in assets_values:
-            if not asset["href"].startswith("file:"):
+            print(asset)
+            if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 asset_headers = requests.head(
                     asset["href"],
