@@ -5528,18 +5528,18 @@
   roles:
     - host
   description: DEDL STAC
-  url: https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/
+  url: https://hda.central.data.destination-earth.eu/stac/
   search: !plugin
     type: StacSearch
-    api_endpoint: https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/search
-    need_auth: false
+    api_endpoint: https://hda.central.data.destination-earth.eu/stac/search
+    need_auth: true
     metadata_mapping:
-      defaultGeometry: '-180 -90 180 90'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
     discover_product_types:
-      fetch_url: 'https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/collections'
+      fetch_url: 'https://hda.central.data.destination-earth.eu/stac/collections'
       result_type: json
       results_entry: '$.collections[*]'
       generic_product_type_id: '$.id'
@@ -5556,9 +5556,16 @@
       max_items_per_page: 100
   download: !plugin
     type: HTTPDownload
-    base_uri: 'https://dedl-central-hda.cyrus.apps.staging.cloudferro.com/stac/collections'
-    flatten_top_dirs: True
+    base_uri: 'https://hda.data.destination-earth.eu/stac'
     auth_error_code: 403
+  auth: !plugin
+    type: KeycloakOIDCPasswordAuth
+    auth_base_uri: 'https://auth.p3.csgroup.space'
+    realm: 'METIS'
+    client_id: 'dedl-portal'
+    client_secret:
+    token_provision: header
+    auth_error_code: 401
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'

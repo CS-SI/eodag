@@ -204,3 +204,7 @@ dedl:
     search:   # Search parameters configuration
     download:
         outputs_prefix:
+    auth:
+      credentials:
+        username:
+        password:
