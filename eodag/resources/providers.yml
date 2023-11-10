@@ -880,6 +880,7 @@
     type: QueryStringSearch
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
+    timeout: 20
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -979,9 +980,7 @@
       id:
         - 'productIdentifier=%{id#remove_extension}%'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier:
-        - 'tileid'
-        - '$.properties.mgrs'
+      tileIdentifier: '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -1216,345 +1215,6 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
----
-!provider
-  name: mundi
-  priority: 0
-  description: Atos DIAS
-  roles:
-    - host
-  url: https://mundiwebservices.com/
-  search: !plugin
-    type: QueryStringSearch
-    api_endpoint: 'https://{collection}.browse.catalog.mundiwebservices.com/opensearch'
-    need_auth: false
-    result_type: 'xml'
-    results_entry: '//ns:entry'
-    literal_search_params:
-      format: atom
-      relation: intersects
-    pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
-      total_items_nb_key_path: '//os:totalResults/text()'
-      # 2021/03/19: 50 is the max, no error if greater
-      max_items_per_page: 50
-    discover_metadata:
-      auto_discovery: true
-      metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
-      search_param: '{metadata}={{{metadata}}}'
-      metadata_path: '*'
-    metadata_mapping:
-      # Opensearch resource identifier within the search engine context (in our case
-      # within the context of the data provider)
-      uid: 'ns:id/text()'
-      # OpenSearch Parameters for Collection Search (Table 3)
-      productType:
-        - 'productType'
-        - 'eo:productType/text()'
-      doi: 'eo:doi/text()'
-      platform: 'eo:platform/text()'
-      platformSerialIdentifier: 'eo:platformSerialIdentifier/text()'
-      instrument:
-        - 'instrument'
-        - 'eo:instrument/text()'
-      sensorType: 'eo:sensorType/text()'
-      compositeType: 'eo:compositeType/text()'
-      processingLevel:
-        - 'processingLevel'
-        - 'eo:processingLevel/text()'
-      orbitType: 'eo:orbitType/text()'
-      spectralRange: 'eo:spectralRange/text()'
-      wavelengths: 'eo:wavelengths/text()'
-      hasSecurityConstraints: 'eo:hasSecurityConstraints/text()'
-      dissemination: 'eo:dissemination/text()'
-
-      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: 'ns:title/text()'
-      topicCategory: 'ns:category/text()'
-      keyword: 'eo:keyword/text()'
-      abstract: 'ns:summary/text()'
-      resolution: 'eo:resolution/text()'
-      organisationName: 'dc:creator/text()'
-      organisationRole: 'eo:organisationRole/text()'
-      publicationDate: 'ns:published/text()'
-      lineage: 'eo:lineage/text()'
-      useLimitation: 'eo:useLimitation/text()'
-      accessConstraint: 'eo:accessConstraint/text()'
-      otherConstraint: 'dc:rights/text()'
-      classification: 'DIAS:productConfidentialityLevel/text()'
-      language: 'eo:language/text()'
-      specification: 'eo:specification/text()'
-
-      # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier: 'eo:parentIdentifier/text()'
-      acquisitionType: 'eo:acquisitionType/text()'
-      orbitNumber: 'eo:orbitNumber/text()'
-      orbitDirection: 'eo:orbitDirection/text()'
-      track: 'eo:track/text()'
-      frame: 'eo:frame/text()'
-      swathIdentifier: 'eo:swathIdentifier/text()'
-      cloudCover:
-        - 'cloudCover=[0,{cloudCover}]'
-        - 'eo:cloudCover/text()'
-      snowCover: 'eo:snowCover/text()'
-      lowestLocation: 'eo:lowestLocation/text()'
-      highestLocation: 'eo:highestLocation/text()'
-      productVersion: 'DIAS:processingBaseline/text()'
-      productQualityStatus: 'eo:productQualityStatus/text()'
-      productQualityDegradationTag: 'eo:productQualityDegradationTag/text()'
-      processorName: 'eo:processorName/text()'
-      processingCenter: 'eo:processingCenter/text()'
-      creationDate: 'DIAS:onlineDate/text()'
-      modificationDate: 'ns:updated/text()'
-      processingDate: 'eo:processingDate/text()'
-      sensorMode: 'eo:sensorMode/text()'
-      archivingCenter: 'eo:archivingCenter/text()'
-      processingMode: 'eo:processingMode/text()'
-
-      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      availabilityTime: 'DIAS:onlineDate/text()'
-      acquisitionStation: 'eo:acquisitionStation/text()'
-      acquisitionSubType: 'eo:acquisitionSubType/text()'
-      startTimeFromAscendingNode:
-        - 'timeStart={startTimeFromAscendingNode#to_iso_utc_datetime}'
-        - 'DIAS:sensingStartDate/text()'
-      completionTimeFromAscendingNode:
-        - 'timeEnd={completionTimeFromAscendingNode#to_iso_utc_datetime}'
-        - 'DIAS:sensingStopDate/text()'
-      illuminationAzimuthAngle: 'eo:illuminationAzimuthAngle/text()'
-      illuminationZenithAngle: 'eo:illuminationZenithAngle/text()'
-      illuminationElevationAngle: 'eo:illuminationElevationAngle/text()'
-      polarizationMode: 'eo:polarizationMode/text()'
-      polarizationChannels: '{eo:polarisationChannels/text()#replace_str("/"," ")}'
-      antennaLookDirection: 'eo:antennaLookDirection/text()'
-      minimumIncidenceAngle: 'eo:minimumIncidenceAngle/text()'
-      maximumIncidenceAngle: 'eo:maximumIncidenceAngle/text()'
-      dopplerFrequency: 'eo:dopplerFrequency/text()'
-      incidenceAngleVariation: 'eo:incidenceAngleVariation/text()'
-
-      # Custom parameters (not defined in the base document referenced above)
-      id:
-        - 'uid={id#remove_extension}'
-        - 'dc:identifier/text()'
-      tileIdentifier:
-        - 'tileIdentifier'
-        - 'DIAS:tileIdentifier/text()'
-      # The geographic extent of the product
-      geometry:
-        - 'geometry={geometry#to_rounded_wkt}'
-        - '{georss:polygon|georss:where#from_georss}'
-      defaultGeometry: '-180 -90 180 90'
-      # The url of the quicklook
-      quicklook: 'media:group/media:content[media:category="QUICKLOOK"]/@url'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'ns:link[@rel="enclosure"]/@href'
-      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{DIAS:onlineStatus/text()#replace_str("Not Available","OFFLINE")}'
-      # order link formated for POST request usage
-      orderLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request?{{"productId":"{id}","collectionId":"{platform}"}}'
-      searchLink: 'https://{platform}.browse.catalog.mundiwebservices.com/opensearch?uid={id}'
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      thumbnail: 'media:group/media:content[media:category="THUMBNAIL"]/@url'
-  download: !plugin
-    type: S3RestDownload
-    base_uri: 'https://mundiwebservices.com/dp'
-    extract: true
-    auth_error_code: 401
-    bucket_path_level: 0
-    # order mechanism
-    order_enabled: true
-    order_method: 'POST'
-    order_headers:
-      accept: application/json
-      Content-Type: application/json
-    order_on_response:
-      metadata_mapping:
-        order_id: '{$.requestId#replace_str("Not Available","")}'
-        reorder_id: '{$.message.`sub(/.*requestId: ([a-z0-9]+)/, \\1)`#replace_str("Not Available","")}'
-        orderStatusLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request/{order_id}{reorder_id}'
-    order_status_method: 'GET'
-    order_status_percent: status
-    order_status_success:
-      status: Success
-    order_status_on_success:
-      need_search: true
-      result_type: 'xml'
-      results_entry: '//ns:entry'
-      metadata_mapping:
-        downloadLink: 'ns:link[@rel="enclosure"]/@href'
-        storageStatus: 'DIAS:onlineStatus/text()'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    headers:
-      Cookie: "seeedtoken={apikey}"
-  products:
-    # S1
-    S1_SAR_GRD:
-      productType: GRD
-      collection: Sentinel1
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    S1_SAR_SLC:
-      productType: SLC
-      collection: Sentinel1
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    S1_SAR_OCN:
-      productType: OCN
-      collection: Sentinel1
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    S1_SAR_RAW:
-      productType: RAW
-      collection: Sentinel1
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    # S2
-    S2_MSI_L1C:
-      productType: IMAGE
-      processingLevel: L1C
-      collection: Sentinel2
-    S2_MSI_L2A:
-      productType: IMAGE
-      processingLevel: L2A
-      collection: Sentinel2
-    # S3 SRAL
-    S3_SRA:
-      productType: SR_1_SRA___
-      collection: Sentinel3
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    S3_SRA_A:
-      productType: SR_1_SRA_A_
-      collection: Sentinel3
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    S3_SRA_BS:
-      productType: SR_1_SRA_BS
-      collection: Sentinel3
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    S3_LAN:
-      productType: SR_2_LAN___
-      collection: Sentinel3
-      metadata_mapping:
-        cloudCover: 'null/text()'
-    # S3 OLCI
-    S3_EFR:
-      productType: OL_1_EFR___
-      collection: Sentinel3
-    S3_ERR:
-      productType: OL_1_ERR___
-      collection: Sentinel3
-    S3_OLCI_L2LRR:
-      productType: OL_2_LRR___
-      collection: Sentinel3
-    S3_OLCI_L2LFR:
-      productType: OL_2_LFR___
-      collection: Sentinel3
-    # S3 SLSTR
-    S3_SLSTR_L1RBT:
-      productType: SL_1_RBT___
-      collection: Sentinel3
-    S3_SLSTR_L2LST:
-      productType: SL_2_LST___
-      collection: Sentinel3
-    S3_SLSTR_L2FRP:
-      productType: SL_2_FRP___
-      collection: Sentinel3
-    # S3 SY
-    S3_SY_SYN:
-      productType: SY_2_SYN___
-      collection: Sentinel3
-    S3_SY_V10:
-      productType: SY_2_V10___
-      collection: Sentinel3
-    S3_SY_VG1:
-      productType: SY_2_VG1___
-      collection: Sentinel3
-    S3_SY_VGP:
-      productType: SY_2_VGP___
-      collection: Sentinel3
-    # S5P L1
-    S5P_L1B_IR_SIR:
-      productType: L1B_IR_SIR
-      collection: Sentinel5p
-    S5P_L1B_IR_UVN:
-      productType: L1B_IR_UVN
-      collection: Sentinel5p
-    S5P_L1B_RA_BD1:
-      productType: L1B_RA_BD1
-      collection: Sentinel5p
-    S5P_L1B_RA_BD2:
-      productType: L1B_RA_BD2
-      collection: Sentinel5p
-    S5P_L1B_RA_BD3:
-      productType: L1B_RA_BD3
-      collection: Sentinel5p
-    S5P_L1B_RA_BD4:
-      productType: L1B_RA_BD4
-      collection: Sentinel5p
-    S5P_L1B_RA_BD5:
-      productType: L1B_RA_BD5
-      collection: Sentinel5p
-    S5P_L1B_RA_BD6:
-      productType: L1B_RA_BD6
-      collection: Sentinel5p
-    S5P_L1B_RA_BD7:
-      productType: L1B_RA_BD7
-      collection: Sentinel5p
-    S5P_L1B_RA_BD8:
-      productType: L1B_RA_BD8
-      collection: Sentinel5p
-    # S5P L2
-    S5P_L2_NO2:
-      productType: L2__NO2___
-      collection: Sentinel5p
-    S5P_L2_CLOUD:
-      productType: L2__CLOUD_
-      collection: Sentinel5p
-    S5P_L2_O3:
-      productType: L2__O3____
-      collection: Sentinel5p
-    S5P_L2_CO:
-      productType: L2__CO____
-      collection: Sentinel5p
-    S5P_L2_AER_AI:
-      productType: L2__AER_AI
-      collection: Sentinel5p
-    S5P_L2_O3_PR:
-      productType: L2__O3__PR
-      collection: Sentinel5p
-    S5P_L2_O3_TCL:
-      productType: L2__O3_TCL
-      collection: Sentinel5p
-    S5P_L2_AER_LH:
-      productType: L2__AER_LH
-      collection: Sentinel5p
-    S5P_L2_HCHO:
-      productType: L2__HCHO__
-      collection: Sentinel5p
-    S5P_L2_CH4:
-      productType: L2__CH4___
-      collection: Sentinel5p
-    S5P_L2_NP_BD3:
-      productType: L2__NP_BD3
-      collection: Sentinel5p
-    S5P_L2_NP_BD6:
-      productType: L2__NP_BD6
-      collection: Sentinel5p
-    S5P_L2_NP_BD7:
-      productType: L2__NP_BD7
-      collection: Sentinel5p
-    S5P_L2_SO2:
-      productType: L2__SO2___
-      collection: Sentinel5p
-    GENERIC_PRODUCT_TYPE:
-      productType: '{productType}'
-      collection: '{collection}'
-      instrument: '{instrument}'
-      processingLevel: '{processingLevel}'
 ---
 !provider
   name: onda
@@ -3331,135 +2991,84 @@
     - host
   url: https://dataspace.copernicus.eu/
   search: !plugin
-    type: ODataV4Search
-    api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
-    timeout: 60
+    type: QueryStringSearch
+    api_endpoint: 'http://catalogue.dataspace.copernicus.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
-    dont_quote:
-      - '['
-      - ']'
-      - '$'
-      - '='
-      - '&'
-      - ':'
+    timeout: 10
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
-      total_items_nb_key_path: '$."@odata.count"'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
-    results_entry: 'value'
-    free_text_search_operations:
-      $filter:
-        union: ' or '
-        wrapper: '{}'
-        operations:
-          and:
-            - "Collection/Name eq '{collection}'"
-            - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{orbitNumber}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection}')"
-            - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
-            - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
-      search_param:
-        free_text_search_operations:
-          $filter:
-            operations:
-              and:
-                -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
-      metadata_path: '$.Attributes.*'
-    per_product_metadata_query: false
-    metadata_pre_mapping:
-      metadata_path: '$.Attributes'
-      metadata_path_id: 'Name'
-      metadata_path_value: 'Value'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
-      # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
-      #   but `free_text_search_operations.$filter.operations.and` entries are then used instead.
-      uid: '$.Id'
+      uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
-        - null
-        - '$.Attributes.productType'
-      platform:
-        - null
-        - '$.Attributes.platformShortName'
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.collection'
       platformSerialIdentifier:
-        - null
-        - '$.Attributes.platformSerialIdentifier'
+        - platform
+        - '$.properties.platform'
       instrument:
-        - null
-        - '$.Attributes.instrumentShortName'
+        - instrument
+        - '$.properties.instrument'
       processingLevel:
-        - null
-        - '$.Attributes.processingLevel'
+        - processingLevel
+        - '$.properties.processingLevel'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.Name'
+      title: '{$.properties.title#remove_extension}'
       resolution:
-        - null
-        - '$.Attributes.spatialResolution'
+        - 'resolution'
+        - '$.properties.resolution'
       organisationName:
-        - null
-        - '$.Attributes.authority'
-      publicationDate: '$.PublicationDate'
+        - 'organisationName'
+        - '$.properties.organisationName'
+      publicationDate: '$.properties.published'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
-        - null
-        - '$.Attributes.orbitNumber'
+        - 'orbitNumber'
+        - '$.properties.orbitNumber'
       orbitDirection:
-        - null
-        - '$.Attributes.orbitDirection'
+        - 'orbitDirection'
+        - '$.properties.orbitDirection'
       cloudCover:
-        - null
-        - '$.Attributes.cloudCover'
-      modificationDate: '$.ModificationDate'
+        - 'cloudCover=[0,{cloudCover}]'
+        - '$.properties.cloudCover'
+      modificationDate: '$.properties.updated'
       sensorMode:
-        - null
-        - '$.Attributes.operationalMode'
+        - 'sensorMode'
+        - '$.properties.sensorMode'
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
-        - null
-        - '$.ContentDate.Start'
+        - startDate
+        - '$.properties.startDate'
       completionTimeFromAscendingNode:
-        - null
-        - '$.ContentDate.End'
+        - completionDate
+        - '$.properties.completionDate'
       polarizationChannels:
-        - null
-        - '$.Attributes.polarisationChannels'
+        - 'polarisation'
+        - '$.properties.polarisation'
       # Custom parameters (not defined in the base document referenced above)
       id:
-        - null
-        - '{$.Name#remove_extension}'
-      tileIdentifier:
-        - null
-        - '$.Attributes.tileId'
+        - 'productIdentifier={id#remove_extension}'
+        - '{$.properties.title#remove_extension}'
+      tileIdentifier: '$.null'
       # The geographic extent of the product
       geometry:
-        - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.]+).*/, \\1)`#from_ewkt}'
+        - 'geometry={geometry#to_rounded_wkt}'
+        - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
-      collection:
-        - null
-        - $.null
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      productIdentifier: '$.S3Path'
+      storageStatus: '$.properties.status'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
@@ -3478,174 +3087,183 @@
   products:
     # S2
     S2_MSI_L1C:
-      collection: SENTINEL-2
+      collection: Sentinel2
       productType: S2MSI1C
     S2_MSI_L2A:
-      collection: SENTINEL-2
+      collection: Sentinel2
       productType: S2MSI2A
     # S1
     S1_SAR_RAW:
       productType: RAW
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_GRD:
       productType: GRD
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_SLC:
       productType: SLC
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_OCN:
       productType: OCN
-      collection: SENTINEL-1
+      collection: Sentinel1
       metadata_mapping:
         cloudCover: '$.null'
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___
-      collection: SENTINEL-3
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_A:
       productType: SR_1_SRA_A_
-      collection: SENTINEL-3
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_BS:
       productType: SR_1_SRA_BS
-      collection: SENTINEL-3
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_LAN:
       productType: SR_2_LAN___
-      collection: SENTINEL-3
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     S3_WAT:
       productType: SR_2_WAT___
-      collection: SENTINEL-3
+      collection: Sentinel3
       metadata_mapping:
         cloudCover: '$.null'
     # S3 OLCI
     S3_EFR:
       productType: OL_1_EFR___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_ERR:
       productType: OL_1_ERR___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_OLCI_L2LRR:
       productType: OL_2_LRR___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_OLCI_L2LFR:
       productType: OL_2_LFR___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_OLCI_L2WRR:
       productType: OL_2_WRR___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_OLCI_L2WFR:
       productType: OL_2_WFR___
-      collection: SENTINEL-3
+      collection: Sentinel3
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       productType: SL_1_RBT___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SLSTR_L2LST:
       productType: SL_2_LST___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SLSTR_L2WST:
       productType: SL_2_WST___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SLSTR_L2AOD:
       productType: SL_2_AOD___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SLSTR_L2FRP:
       productType: SL_2_FRP___
-      collection: SENTINEL-3
+      collection: Sentinel3
     # S3 SY
     S3_SY_AOD:
       productType: SY_2_AOD___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_SYN:
       productType: SY_2_SYN___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_V10:
       productType: SY_2_V10___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_VG1:
       productType: SY_2_VG1___
-      collection: SENTINEL-3
+      collection: Sentinel3
     S3_SY_VGP:
       productType: SY_2_VGP___
-      collection: SENTINEL-3
+      collection: Sentinel3
     # S5P L1
+    S5P_L1B_IR_SIR:
+      productType: L1B_IR_SIR
+      collection: Sentinel5P
+    S5P_L1B_IR_UVN:
+      productType: L1B_IR_UVN
+      collection: Sentinel5P
     S5P_L1B_RA_BD1:
       productType: L1B_RA_BD1
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD2:
       productType: L1B_RA_BD2
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD3:
       productType: L1B_RA_BD3
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD4:
       productType: L1B_RA_BD4
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD5:
       productType: L1B_RA_BD5
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD6:
       productType: L1B_RA_BD6
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD7:
       productType: L1B_RA_BD7
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L1B_RA_BD8:
       productType: L1B_RA_BD8
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     # S5P L2
     S5P_L2_NO2:
       productType: L2__NO2___
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_CLOUD:
       productType: L2__CLOUD_
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_O3:
       productType: L2__O3____
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_CO:
       productType: L2__CO____
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_AER_AI:
       productType: L2__AER_AI
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_O3_PR:
       productType: L2__O3__PR
-      collection: SENTINEL-5P
+      collection: Sentinel5P
+    S5P_L2_O3_TCL:
+      productType: L2__O3_TCL
+      collection: Sentinel5P
     S5P_L2_AER_LH:
       productType: L2__AER_LH
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_HCHO:
       productType: L2__HCHO__
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_CH4:
       productType: L2__CH4___
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_NP_BD3:
       productType: L2__NP_BD3
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_NP_BD6:
       productType: L2__NP_BD6
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_NP_BD7:
       productType: L2__NP_BD7
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     S5P_L2_SO2:
       productType: L2__SO2___
-      collection: SENTINEL-5P
+      collection: Sentinel5P
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
@@ -4125,7 +3743,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2FRP:
       productType: EO:EUM:DAT:SENTINEL-3:0417
       type: SL_2_FRP___
@@ -4158,7 +3776,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_EFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
       type: OL_1_EFR___
@@ -4190,7 +3808,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_ERR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       type: OL_1_ERR___
@@ -4222,7 +3840,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
       type: OL_2_WFR___
@@ -4251,7 +3869,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WRR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
       type: OL_2_WRR___
@@ -4280,7 +3898,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WFR_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0556
       type: OL_2_WFR___
@@ -4307,7 +3925,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WRR_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0557
       type: OL_2_WRR___
@@ -4334,7 +3952,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
       type: SR_1_SRA___
@@ -4363,7 +3981,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_A:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
       type: SR_1_SRA_A_
@@ -4392,7 +4010,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_BS:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
       type: SR_1_SRA_BS
@@ -4421,7 +4039,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_1A_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0583
       type: SR_1_SRA_A_
@@ -4447,7 +4065,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_1B_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0584
       type: SR_1_SRA___
@@ -4473,7 +4091,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_BS_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0585
       type: SR_1_SRA_BS
@@ -4499,7 +4117,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       type: SR_2_WAT___
@@ -4528,7 +4146,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_WAT_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0586
       type: SR_2_WAT___
@@ -4555,7 +4173,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L1RBT:
       productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
       type: SL_1_RBT___
@@ -4584,7 +4202,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L1RBT_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0615
       type: SL_1_RBT___
@@ -4610,7 +4228,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2WST:
       productType: EO:EUM:DAT:SENTINEL-3:SL_2_WST___
       type: SL_2_WST___
@@ -4639,7 +4257,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2WST_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0582
       type: SL_2_WST___
@@ -4667,7 +4285,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L4BALTIC:
       productType: EO:MO:DAT:OCEANCOLOUR_BAL_BGC_L4_NRT_009_132:cmems_obs-oc_bal_bgc-plankton_nrt_l4-olci-300m_P1M_202207
       variable:
@@ -4690,7 +4308,7 @@
         variable:
           - '{{"multiStringSelectValues": [{{"name": "variables", "value": {variable}}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S5P_L1B2_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P:TROPOMI
       metadata_mapping:
@@ -4733,7 +4351,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L1B_ALR:
       productType: EO:EUM:DAT:0237
       sat: Sentinel-6A
@@ -4761,7 +4379,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L1B_AHR:
       productType: EO:EUM:DAT:0238
       sat: Sentinel-6A
@@ -4789,7 +4407,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_ALR:
       productType: EO:EUM:DAT:0239
       sat: Sentinel-6A
@@ -4817,7 +4435,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_AHR:
       productType: EO:EUM:DAT:0240
       sat: Sentinel-6A
@@ -4845,7 +4463,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_R:
       productType: EO:EUM:DAT:0241
       sat: Sentinel-6A
@@ -4873,7 +4491,7 @@
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
-        defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     COP_DEM_GLO30_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
       metadata_mapping:
@@ -4882,7 +4500,7 @@
           - '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode: '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     COP_DEM_GLO90_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-90-DGED__2022_1
       metadata_mapping:
@@ -4891,7 +4509,7 @@
           - '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode: '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     CLMS_CORINE:
       productType: EO:CLMS:DAT:CORINE
       providerProductType: "Corine Land Cover 2018"
@@ -4909,7 +4527,7 @@
         id:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}, {{"name": "product_type", "value": "{id#split_corine_id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_FCOVER_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_FCOVER300_V1_333M
       metadata_mapping:
@@ -4920,7 +4538,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_NDVI_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI300_V1_333M
       metadata_mapping:
@@ -4931,7 +4549,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_NDVI_1KM_LTS:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_NDVI_V2_1KM_LTS
       metadata_mapping:
@@ -4942,7 +4560,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_DMP_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_DMP300_V1_333M
       metadata_mapping:
@@ -4953,7 +4571,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_GDMP_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_GDMP300_V1_333M
       metadata_mapping:
@@ -4964,7 +4582,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_LAI_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_LAI300_V1_333M
       metadata_mapping:
@@ -4975,7 +4593,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     CLMS_GLO_FAPAR_333M:
       productType: EO:CLMS:DAT:CGLS_GLOBAL_FAPAR300_V1_333M
       metadata_mapping:
@@ -4986,7 +4604,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     EEA_DAILY_SWI_1KM:
       productType: EO:EEA:DAT:VEGETATION:DAILY_SWI_1KM_EUROPE_V1
       metadata_mapping:
@@ -4997,7 +4615,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     EEA_DAILY_SSM_1KM:
       productType: EO:EEA:DAT:VEGETATION:DAILY_SSM_1KM_EUROPE_V1
       metadata_mapping:
@@ -5008,7 +4626,7 @@
         completionTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "dtrange", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
-        geometry: '-180 -90 180 90' # geometry is not available for this product type
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     EEA_DAILY_VI:
       productType: EO:EEA:DAT:CLMS_HRVPP_VI
       metadata_mapping:
@@ -5040,7 +4658,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     ERA5_PL:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
       providerProductType:
@@ -5122,7 +4740,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_PL_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
@@ -5208,7 +4826,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_LAND:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
@@ -5260,7 +4878,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_LAND_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
@@ -5318,7 +4936,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_SL:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
@@ -5358,7 +4976,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     ERA5_SL_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
@@ -5398,7 +5016,7 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
-        defaultGeometry: '-180 -90 180 90'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     UERRA_EUROPE_SL:
       productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
@@ -5420,25 +5038,14 @@
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
           - '$.null'
-        geometry: '-180 -90 180 90'
-      metadata_mapping:
-        # the given start time is used to determine the other filter params
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["stringChoiceValues"], "multiStringSelectValues": {startTimeFromAscendingNode#get_ecmwf_era5pl_params}["multiStringSelectValues"]}}'
-          - '$.productInfo.productEndDate'
-        id: '$.productInfo.product'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
-          - '-180 -90 180 90'
+          - 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storeDownloadUrl: True
     SATELLITE_SEA_LEVEL_BLACK_SEA:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
       variable: all
       format: zip
-      variable: all
       metadata_mapping:
         id: '$.productInfo.product'
         variable:
@@ -5456,7 +5063,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
@@ -5479,7 +5086,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "file_version", "value": {file_version} }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -5500,7 +5107,7 @@
           - '{{ "multiStringSelectValues": [ {{"name": "version", "value": {version} }} ] }}'
           - $.null
         id: $.productInfo.product
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
@@ -5620,7 +5227,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - $.extraInformation.footprint
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_HISTORICAL:
@@ -5662,7 +5269,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - $.extraInformation.footprint
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_REFORECAST:
@@ -5754,7 +5361,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - $.extraInformation.footprint
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_SEASONAL:
@@ -5800,7 +5407,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{"name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     GLOFAS_SEASONAL_REFORECAST:
@@ -5841,7 +5448,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_FORECAST:
@@ -5948,7 +5555,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_HISTORICAL:
@@ -5984,7 +5591,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_REFORECAST:
@@ -6059,7 +5666,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL:
@@ -6102,7 +5709,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     EFAS_SEASONAL_REFORECAST:
@@ -6145,7 +5752,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_CARBON_DIOXIDE:
@@ -6182,7 +5789,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SATELLITE_METHANE:
@@ -6219,7 +5826,7 @@
             ] }}
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_PL:
@@ -6283,7 +5890,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_SL:
@@ -6330,7 +5937,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_SL:
@@ -6408,7 +6015,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_PL:
@@ -6480,7 +6087,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_MONTHLY_PL:
@@ -6541,7 +6148,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SEASONAL_MONTHLY_SL:
@@ -6587,7 +6194,7 @@
         geometry:
           - '{{ "boundingBoxValues": [ {{ "name": "area", "bbox": {geometry#to_bounds} }} ] }}'
           - '$.extraInformation.footprint'
-        defaultGeometry: -180 -90 180 90
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
     SIS_HYDRO_MET_PROJ:
@@ -6648,7 +6255,7 @@
           - $.null
         startTimeFromAscendingNode: $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
-        geometry: -180 -90 180 90
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
       storeDownloadUrl: True
 

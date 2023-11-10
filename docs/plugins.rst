@@ -38,9 +38,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+--------------------------+----------------+
 | peps               | QueryStringSearch     | GenericAuth              | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
-| creodias           | ODataV4Search         | KeycloakOIDCPasswordAuth | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| mundi              | QueryStringSearch     | HTTPHeaderAuth           | S3RestDownload |
+| creodias           | QueryStringSearch     | KeycloakOIDCPasswordAuth | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
 | onda               | ODataV4Search         | GenericAuth              | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
@@ -64,11 +62,13 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+--------------------------+----------------+
 | meteoblue          | BuildPostSearchResult | HttpQueryStringAuth      | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
-| cop_dataspace      | ODataV4Search         | KeycloakOIDCPasswordAuth | HTTPDownload   |
+| cop_dataspace      | QueryStringSearch     | KeycloakOIDCPasswordAuth | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
 | planetary_computer | StacSearch            | SASAuth                  | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
 | hydroweb_next      | StacSearch            | HTTPHeaderAuth           | HTTPDownload   |
++--------------------+-----------------------+--------------------------+----------------+
+| wekeo              | DataRequestSearch     | TokenAuth                | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
 
 .. _creating_plugins:
