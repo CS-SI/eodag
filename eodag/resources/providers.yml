@@ -3813,12 +3813,108 @@
         productIdentifier:
           - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{productIdentifier}"}}]}}'
           - '$.null'
+    S2_MSI_L2AP:
+      productType: EO:ESA:DAT:SENTINEL-2:MSI
+      processingLevel: S2MSI2AP
+      metadata_mapping:
+        id:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
+          - '$.extraInformation.cloudCover'
+        productIdentifier:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{productIdentifier}"}}]}}'
+          - '$.null'
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1:SAR
       providerProductType: "GRD"
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "productType", "value": "GRD"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
+          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
+    S1_SAR_RAW:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: "RAW"
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "RAW"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
+          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
+    S1_SAR_OCN:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: "OCN"
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "OCN"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
           - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
@@ -4185,7 +4281,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_OLCI_L2WFR_REPROCESSED:
+    S3_OLCI_L2WFR_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0556
       type: OL_2_WFR___
       timeliness: NT
@@ -4212,7 +4308,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_OLCI_L2WRR_REPROCESSED:
+    S3_OLCI_L2WRR_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0557
       type: OL_2_WRR___
       timeliness: NT
@@ -4326,7 +4422,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_SRA_1A_REPROCESSED:
+    S3_SRA_1A_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0583
       type: SR_1_SRA_A_
       metadata_mapping:
@@ -4352,7 +4448,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_SRA_1B_REPROCESSED:
+    S3_SRA_1B_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0584
       type: SR_1_SRA___
       metadata_mapping:
@@ -4378,7 +4474,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_SRA_1B_SE_REPROCESSED:
+    S3_SRA_BS_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0585
       type: SR_1_SRA_BS
       metadata_mapping:
@@ -4433,7 +4529,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_WAT_REPROCESSED:
+    S3_WAT_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0586
       type: SR_2_WAT___
       timeliness: NT
@@ -4489,7 +4585,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_SLSTR_L1RBT_REPROCESSED:
+    S3_SLSTR_L1RBT_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0615
       type: SL_1_RBT___
       metadata_mapping:
@@ -4544,7 +4640,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
           - '$.null'
         defaultGeometry: '-180 -90 180 90' # geometry is not available for this product type
-    S3_SLSTR_L2WST_REPROCESSED:
+    S3_SLSTR_L2WST_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0582
       type: SL_2_WST___
       timeliness: NT

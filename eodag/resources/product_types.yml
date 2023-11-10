@@ -869,7 +869,7 @@ S3_OLCI_L2WRR:
   title: SENTINEL3 OLCI Level-2 Water Reduced Resolution
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_OLCI_L2WRR_REPROCESSED:
+S3_OLCI_L2WRR_BC003:
   abstract: |
     OLCI Level 2 Marine products provide spectral information on the colour of the oceans (water reflectances). These
     radiometric products are used to estimate geophysical parameters e.g. estimates of phytoplankton biomass through
@@ -904,7 +904,7 @@ S3_OLCI_L2WFR:
   title: SENTINEL3 OLCI Level-2 Water Full Resolution
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_OLCI_L2WFR_REPROCESSED:
+S3_OLCI_L2WFR_BC003:
   abstract: |
     OLCI Level 2 Marine products provide spectral information on the colour of the oceans (water reflectances). These
     radiometric products are used to estimate geophysical parameters e.g. estimates of phytoplankton biomass through
@@ -960,7 +960,7 @@ S3_SLSTR_L1RBT:
   title: SENTINEL3 SLSTR Level-1
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_SLSTR_L1RBT_REPROCESSED:
+S3_SLSTR_L1RBT_BC004:
   abstract: |
     SLSTR Level 1B Radiances and Brightness Temperatures (version BC004) - Sentinel 3 - Reprocessed
     The SLSTR level 1 products contain: the radiances of the 6 visible (VIS), Near Infra-Red (NIR) and Short Wave
@@ -1010,7 +1010,7 @@ S3_SLSTR_L2WST:
   title: SENTINEL3 SLSTR Level-2 WST
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_SLSTR_L2WST_REPROCESSED:
+S3_SLSTR_L2WST_BC003:
   abstract: |
     The SLSTR SST has a spatial resolution of 1km at nadir. Skin Sea Surface Temperature following the
     GHRSST L2P GDS2 format specification, see https://www.ghrsst.org/ . Sentinel-3 is part of a series of Sentinel
@@ -1135,7 +1135,7 @@ S3_SRA_BS:
   title: SENTINEL3 SRAL Level-1 SRA_BS
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_SRA_1A_REPROCESSED:
+S3_SRA_1A_BC004:
   abstract: |
     SRAL Level 1A Unpacked L0 Complex Echoes (version BC004) - Sentinel-3 - Reprocessed
     Fundamental science and engineering product development supporting operational users. This product is most
@@ -1153,7 +1153,7 @@ S3_SRA_1A_REPROCESSED:
   title: SENTINEL3 SRAL Level-1A Unpacked - Reprocessed
   missionStartDate: "2016-03-01T00:00:00Z"
 
-S3_SRA_1B_REPROCESSED:
+S3_SRA_1B_BC004:
   abstract: |
     SRAL Level 1B (version BC004) - Sentinel-3 - Reprocessed
     SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or
@@ -1171,7 +1171,7 @@ S3_SRA_1B_REPROCESSED:
   title: SENTINEL3 SRAL Level-1B - Reprocessed
   missionStartDate: "2016-03-01T00:00:00Z"
 
-S3_SRA_1B_SE_REPROCESSED:
+S3_SRA_BS_BC004:
   abstract: |
     SRAL Level 1B Stack Echoes (version BC004) - Sentinel-3 - Reprocessed
     SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or Synthetic
@@ -1216,7 +1216,7 @@ S3_WAT:
   title: SENTINEL3 SRAL Level-2 WAT
   missionStartDate: "2016-02-16T00:00:00Z"
 
-S3_WAT_REPROCESSED:
+S3_WAT_BC004:
   abstract: |
     The products contain the typical altimetry measurements, like the altimeter range, the sea surface height, the wind
     speed, significant wave height and all required geophysical corrections and related flags. Also the sea Ice
