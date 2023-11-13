@@ -658,7 +658,7 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     )
     try:
         download_stream_dict = product.downloader._stream_download_dict(
-            product, auth=auth
+            product, auth=auth, wait=-1, timeout=-1
         )
     except NotImplementedError:
         logger.warning(
@@ -686,7 +686,11 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
                 "content-disposition": f"attachment; filename={os.path.basename(filepath_to_stream)}",
             },
         )
-
+    except NotAvailableError:
+        download_stream_dict = dict(
+            content=(i for i in range(0)),
+            status_code=202,
+        )
     return StreamingResponse(**download_stream_dict)
 
 
