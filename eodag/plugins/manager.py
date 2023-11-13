@@ -95,6 +95,12 @@ class PluginManager:
                         )
                         merge_configs(plugin_providers_config, self.providers_config)
                         self.providers_config = plugin_providers_config
+        self.rebuild()
+
+    def rebuild(self, providers_config=None):
+        """(Re)Build plugin manager mapping and cache"""
+        if providers_config is not None:
+            self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
         self._built_plugins_cache = {}

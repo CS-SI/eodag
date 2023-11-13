@@ -129,10 +129,8 @@ class EODataAccessGateway:
         for provider in self.providers_config.keys():
             provider_config_init(self.providers_config[provider], stac_provider_config)
 
-        # re-create _plugins_manager using up-to-date providers_config
-        self._plugins_manager = PluginManager(self.providers_config)
-        # use updated and checked providers_config
-        self.providers_config = self._plugins_manager.providers_config
+        # re-build _plugins_manager using up-to-date providers_config
+        self._plugins_manager.rebuild(self.providers_config)
 
         # store pruned providers configs
         self._pruned_providers_config = {}
@@ -420,7 +418,7 @@ class EODataAccessGateway:
 
         if update_needed:
             # rebuild _plugins_manager with updated providers list
-            self._plugins_manager = PluginManager(self.providers_config)
+            self._plugins_manager.rebuild(self.providers_config)
 
     def set_locations_conf(self, locations_conf_path):
         """Set locations configuration.
