@@ -870,7 +870,6 @@ class HTTPDownload(Download):
 
         # loop for assets size & filename
         for asset in assets_values:
-            print(asset)
             if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 asset_headers = requests.head(
