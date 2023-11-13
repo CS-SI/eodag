@@ -36,7 +36,7 @@ from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import TimeOutError
+from eodag.utils.exceptions import NotAvailableError, TimeOutError
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -435,6 +435,86 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(404, response.status_code)
         self.assertIn("description", response_content)
         self.assertIn("NotAvailableError", response_content["description"])
+
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.search",
+        autospec=True,
+        return_value=(
+            SearchResult.from_geojson(
+                {
+                    "features": [
+                        {
+                            "properties": {
+                                "snowCover": None,
+                                "resolution": None,
+                                "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
+                                ".035Z",
+                                "keyword": {},
+                                "productType": "OCN",
+                                "downloadLink": (
+                                    "https://peps.cnes.fr/resto/collections/S1/"
+                                    "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
+                                ),
+                                "eodag_provider": "peps",
+                                "eodag_product_type": "S1_SAR_OCN",
+                                "platformSerialIdentifier": "S1A",
+                                "cloudCover": 0,
+                                "title": "S1A_WV_OCN__2SSV_20180215T235323_"
+                                "20180216T001213_020624_023501_0FD3",
+                                "orbitNumber": 20624,
+                                "instrument": "SAR-C SAR",
+                                "abstract": None,
+                                "eodag_search_intersection": {
+                                    "coordinates": [
+                                        [
+                                            [89.590721, 2.614019],
+                                            [89.771805, 2.575546],
+                                            [89.809341, 2.756323],
+                                            [89.628258, 2.794767],
+                                            [89.590721, 2.614019],
+                                        ]
+                                    ],
+                                    "type": "Polygon",
+                                },
+                                "organisationName": None,
+                                "startTimeFromAscendingNode": "2018-02-15T23:53:22"
+                                ".871Z",
+                                "platform": None,
+                                "sensorType": None,
+                                "processingLevel": None,
+                                "orbitType": None,
+                                "topicCategory": None,
+                                "orbitDirection": None,
+                                "parentIdentifier": None,
+                                "sensorMode": None,
+                                "quicklook": None,
+                            },
+                            "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
+                            "type": "Feature",
+                            "geometry": {
+                                "coordinates": [
+                                    [
+                                        [89.590721, 2.614019],
+                                        [89.771805, 2.575546],
+                                        [89.809341, 2.756323],
+                                        [89.628258, 2.794767],
+                                        [89.590721, 2.614019],
+                                    ]
+                                ],
+                                "type": "Polygon",
+                            },
+                        },
+                    ],
+                    "type": "FeatureCollection",
+                }
+            ),
+            1,
+        ),
+    )
+    def _request_accepted(self, url, mock_search):
+        response = self.app.get(url, follow_redirects=True)
+        self.assertEqual(202, response.status_code)
+        self.assertEquals(response.content, b"")
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -1072,6 +1152,23 @@ class RequestTestCase(unittest.TestCase):
         assert not os.path.exists(
             expected_file
         ), f"File {expected_file} should have been deleted"
+
+    @mock.patch(
+        "eodag.plugins.authentication.generic.GenericAuth.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._stream_download",
+        autospec=True,
+        side_effect=NotAvailableError(),
+    )
+    def test_download_offline_item_from_catalog(self, mock_download, mock_auth):
+        """Download an offline item through eodag server catalog should return a
+        response with HTTP Status 202"""
+        self._request_accepted(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        mock_download.assert_called_once()
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""
