@@ -248,7 +248,11 @@ def download_stac_item(
         download_stream = cast(
             StreamResponse,
             product.downloader._stream_download_dict(
-                product, auth=product.downloader_auth.authenticate(), asset=asset
+                product,
+                auth=product.downloader_auth.authenticate(),
+                asset=asset,
+                wait=-1,
+                timeout=-1,
             ),
         )
     except NotImplementedError:
@@ -259,11 +263,15 @@ def download_stac_item(
         download_stream = file_to_stream(
             eodag_api.download(product, extract=False, asset=asset)
         )
+    except NotAvailableError:
+        download_stream.content = (i for i in range(0))
+        download_stream.status_code = 202
 
     return StreamingResponse(
         content=download_stream.content,
         headers=download_stream.headers,
         media_type=download_stream.media_type,
+        status_code=getattr(download_stream, "status_code", 200),
     )
 
 
