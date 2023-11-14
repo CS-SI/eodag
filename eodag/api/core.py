@@ -2013,10 +2013,10 @@ class EODataAccessGateway:
         if provider is None and product_type is None:
             return {"productType", "start", "end", "geom", "locations", "id"}
 
-        if provider in self._plugins_manager.providers_config:
-            providers = [self._plugins_manager.providers_config[provider]]
+        if provider in self.providers_config:
+            providers = [self.providers_config[provider]]
         else:
-            providers = self._plugins_manager.providers_config.values()
+            providers = self.providers_config.values()
         queryable_properties: Set[str] = set()
         for provider_config in providers:
             # if a product_type is given then search all the providers providing it,
@@ -2028,8 +2028,10 @@ class EODataAccessGateway:
                 continue
             if hasattr(provider_config, "search"):
                 plugin_config = provider_config.search
-            else:
+            elif hasattr(provider_config, "api"):
                 plugin_config = provider_config.api
+            else:
+                continue
             # list of all provider-specific queryables
             mapping = dict(plugin_config.metadata_mapping)
             for key, value in mapping.items():
