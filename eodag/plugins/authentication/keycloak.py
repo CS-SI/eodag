@@ -161,11 +161,13 @@ class KeycloakOIDCPasswordAuth(Authentication):
         except requests.RequestException as e:
             if self.retrieved_token:
                 # try using already retrieved token if authenticate() fails (OTP use-case)
-                return CodeAuthorizedAuth(
-                    self.retrieved_token,
-                    self.config.token_provision,
-                    key=getattr(self.config, "token_qs_key", None),
-                )
+                if "access_token_expiration" in self.token_info:
+                    return {
+                        "access_token": self.retrieved_token,
+                        "expires_in": self.token_info["access_token_expiration"],
+                    }
+                else:
+                    return {"access_token": self.retrieved_token, "expires_in": 0}
             response_text = getattr(e.response, "text", "").strip()
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])

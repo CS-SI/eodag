@@ -472,7 +472,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 responses.POST,
                 url,
                 status=200,
-                json={"access_token": "obtained-token"},
+                json={"access_token": "obtained-token", "expires_in": 0},
                 match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
             )
 
@@ -521,7 +521,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 responses.POST,
                 url,
                 status=200,
-                json={"access_token": "obtained-token"},
+                json={"access_token": "obtained-token", "expires_in": 0},
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -555,7 +555,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 responses.POST,
                 url,
                 status=200,
-                json={"access_token": "obtained-token"},
+                json={"access_token": "obtained-token", "expires_in": 0},
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -578,3 +578,70 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             )
 
         auth_plugin.config.token_provision = token_provision_qs
+
+    def test_plugins_auth_keycloak_authenticate_use_refresh_token(self):
+        """KeycloakOIDCPasswordAuth.authenticate must query and store the token as expected"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {"username": "john"}
+
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            req_kwargs = {
+                "client_id": "baz",
+                "client_secret": "1234",
+                "grant_type": "password",
+                "username": "john",
+            }
+            rsps.add(
+                responses.POST,
+                url,
+                status=200,
+                json={
+                    "access_token": "obtained-token",
+                    "expires_in": 0,
+                    "refresh_expires_in": 1000,
+                    "refresh_token": "abc",
+                },
+                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
+            )
+
+            # check if returned auth object is an instance of requests.AuthBase
+            auth = auth_plugin.authenticate()
+            assert isinstance(auth, AuthBase)
+            self.assertEqual(auth.key, "totoken")
+            self.assertEqual(auth.token, "obtained-token")
+            self.assertEqual(auth.where, "qs")
+
+        # check that token and refresh token have been stored
+        self.assertEqual(auth_plugin.retrieved_token, "obtained-token")
+        assert auth_plugin.token_info
+        self.assertEqual("abc", auth_plugin.token_info["refresh_token"])
+
+        # check that stored token is used if new auth request fails
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            req_kwargs = {
+                "client_id": "baz",
+                "client_secret": "1234",
+                "grant_type": "refresh_token",
+                "refresh_token": "abc",
+            }
+            rsps.add(
+                responses.POST,
+                url,
+                status=200,
+                json={
+                    "access_token": "new-token",
+                    "expires_in": 0,
+                    "refresh_expires_in": 1000,
+                    "refresh_token": "abcd",
+                },
+                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
+            )
+
+            # check if returned auth object is an instance of requests.AuthBase
+            auth = auth_plugin.authenticate()
+            assert isinstance(auth, AuthBase)
+            self.assertEqual(auth.key, "totoken")
+            self.assertEqual(auth.token, "new-token")
+            self.assertEqual(auth.where, "qs")
