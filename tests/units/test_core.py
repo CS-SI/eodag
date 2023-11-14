@@ -43,6 +43,7 @@ from tests.context import (
     ProviderConfig,
     RequestError,
     SearchResult,
+    UnsupportedProductType,
     UnsupportedProvider,
     get_geometry_from_various,
     load_default_config,
@@ -981,6 +982,12 @@ class TestCore(TestCoreBase):
         self.dag.update_providers_config(new_config)
 
     def test_get_queryables(self):
+        with self.assertRaises(UnsupportedProvider):
+            self.dag.get_queryables(provider="not_existing_provider")
+
+        with self.assertRaises(UnsupportedProductType):
+            self.dag.get_queryables(product_type="not_existing_product_type")
+
         expected_result = {"productType", "start", "end", "geom", "locations", "id"}
         queryables = self.dag.get_queryables()
         self.assertSetEqual(queryables, expected_result)
@@ -1011,32 +1018,17 @@ class TestCore(TestCoreBase):
             "geometry",
             "platformSerialIdentifier",
             "title",
-            "awsPath",
-            "id",
-            "productType",
-            "doi",
-            "processingLevel",
-            "platform",
-            "instrument",
-            "resolution",
-            "publicationDate",
-            "orbitNumber",
-            "orbitDirection",
             "cloudCover",
-            "sensorMode",
-            "creationDate",
-            "modificationDate",
-            "productVersion",
-            "availabilityTime",
-            "acquisitionStation",
-            "acquisitionSubType",
             "illuminationAzimuthAngle",
-            "illuminationElevationAngle",
-            "polarizationChannels",
-            "dopplerFrequency",
-            "tileIdentifier",
+            "illuminationZenithAngle",
+            "awsPath",
+            "productPath",
+            "id",
         }
-        queryables = self.dag.get_queryables(product_type="NAIP")
+        preferred_provider, _ = self.dag.get_preferred_provider()
+        self.dag.set_preferred_provider("aws_eos")
+        queryables = self.dag.get_queryables(product_type="S2_MSI_L1C")
+        self.dag.set_preferred_provider(preferred_provider)
         self.assertSetEqual(queryables, expected_result)
 
         expected_result = {

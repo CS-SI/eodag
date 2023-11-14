@@ -71,6 +71,7 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
     RequestError,
+    UnsupportedProductType,
     UnsupportedProvider,
 )
 from eodag.utils.stac_reader import fetch_stac_items
@@ -2013,37 +2014,40 @@ class EODataAccessGateway:
         if provider is None and product_type is None:
             return {"productType", "start", "end", "geom", "locations", "id"}
 
-        if provider in self.providers_config:
-            providers = [self.providers_config[provider]]
+        if provider is None:
+            selected_provider_name, _ = self.get_preferred_provider()
+            selected_provider = self.providers_config[selected_provider_name]
+        elif provider in self.providers_config:
+            selected_provider = self.providers_config[provider]
         else:
-            providers = self.providers_config.values()
-        queryable_properties: Set[str] = set()
-        for provider_config in providers:
-            # if a product_type is given then search all the providers providing it,
-            # otherwise loop over all the providers
-            if (
-                product_type is not None
-                and product_type not in provider_config.products
-            ):
-                continue
-            if hasattr(provider_config, "search"):
-                plugin_config = provider_config.search
-            elif hasattr(provider_config, "api"):
-                plugin_config = provider_config.api
-            else:
-                continue
-            # list of all provider-specific queryables
-            mapping = dict(plugin_config.metadata_mapping)
-            for key, value in mapping.items():
-                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-                    queryable_properties.add(key)
-            # list of all product_type-specific queryables
-            mapping = dict(
-                provider_config.products.get(product_type, {}).get(
-                    "metadata_mapping", {}
-                )
+            raise UnsupportedProvider(
+                f"This provider is not recognised by eodag: {provider}"
             )
-            for key, value in mapping.items():
-                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-                    queryable_properties.add(key)
+
+        if product_type is not None and product_type not in selected_provider.products:
+            raise UnsupportedProductType(product_type)
+
+        if hasattr(selected_provider, "search"):
+            plugin_config = selected_provider.search
+        elif hasattr(selected_provider, "api"):
+            plugin_config = selected_provider.api
+        else:
+            raise MisconfiguredError(
+                f"This provider doesn't have a search or api plugin: {provider}"
+            )
+
+        queryable_properties = set()
+        # list of all provider-specific queryables
+        mapping = dict(plugin_config.metadata_mapping)
+        for key, value in mapping.items():
+            if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                queryable_properties.add(key)
+        # list of all product_type-specific queryables
+        mapping = dict(
+            selected_provider.products.get(product_type, {}).get("metadata_mapping", {})
+        )
+        for key, value in mapping.items():
+            if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                queryable_properties.add(key)
+
         return queryable_properties
