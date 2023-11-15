@@ -1,0 +1,19 @@
+[Catalogue]
+URL = https://globalland.vito.be/catalogue/
+
+[Auth]
+ClientId = terracatalogueclient
+ClientSecret =
+TokenEndpoint =
+AuthorizationEndpoint =
+InteractiveSupported = True
+NonInteractiveSupported = True
+
+[HTTP]
+ChunkSize = 8192
+
+# S3 is not supported by the Terrascope catalogue, so configuration is empty
+[S3]
+AccessKey =
+SecretKey =
+EndpointUrl =

@@ -7050,3 +7050,31 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
+
+---
+!provider
+  name: cop_land
+  priority: 0
+  description: Copernicus Land Monitoring Service (CLMS)
+  roles:
+    - host
+  url: https://land.copernicus.eu/
+  api: !plugin
+    type: GlobalLandApi
+    api_endpoint: https://api.ecmwf.int/v1
+    extract: false
+    metadata_mapping:
+      productType: '$.productType'
+      title: '$.properties.title'
+      startTimeFromAscendingNode:
+        - 'start={startTimeFromAscendingNode#to_iso_date}'
+        - '$.acquisitionInformation.acquisitionParameters.beginningDateTime'
+      completionTimeFromAscendingNode:
+        - 'end={completionTimeFromAscendingNode#to_iso_date}'
+        - '$.acquisitionInformation.acquisitionParameters.endingDateTime'
+      id: '$.id'
+      # The geographic extent of the product
+      geometry: '$.geojson.geometry'
+  products:
+    CLMS_GLO_FCOVER_333M:
+      productType: clms_global_fcover_300m_v1_10daily_netcdf
