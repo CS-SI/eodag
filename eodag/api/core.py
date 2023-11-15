@@ -2011,43 +2011,57 @@ class EODataAccessGateway:
         :returns: A set containing the EODAG queryable properties.
         :rtype: set
         """
+        default_queryables = {"productType", "start", "end", "geom", "locations", "id"}
         if provider is None and product_type is None:
-            return {"productType", "start", "end", "geom", "locations", "id"}
+            return default_queryables
 
         if provider is None:
-            selected_provider_name, _ = self.get_preferred_provider()
-            selected_provider = self.providers_config[selected_provider_name]
+            providers = self.providers_config.values()
         elif provider in self.providers_config:
-            selected_provider = self.providers_config[provider]
+            providers = [self.providers_config[provider]]
         else:
             raise UnsupportedProvider(
                 f"This provider is not recognised by eodag: {provider}"
             )
 
-        if product_type is not None and product_type not in selected_provider.products:
+        # dictionary of the queryable properties of the providers supporting the given product type
+        all_queryable_properties = dict()
+        for provider_config in providers:
+            if hasattr(provider_config, "search"):
+                plugin_config = provider_config.search
+            elif hasattr(provider_config, "api"):
+                plugin_config = provider_config.api
+            else:
+                continue
+
+            provider_queryables = set(default_queryables)
+            # list of all provider-specific queryables
+            mapping = dict(plugin_config.metadata_mapping)
+            for key, value in mapping.items():
+                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                    provider_queryables.add(key)
+            # list of all product_type-specific queryables
+            mapping = dict(
+                provider_config.products.get(product_type, {}).get(
+                    "metadata_mapping", {}
+                )
+            )
+            for key, value in mapping.items():
+                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                    provider_queryables.add(key)
+
+            # add only the providers that support the given product type
+            if product_type is None:
+                all_queryable_properties[provider_config.name] = provider_queryables
+            elif product_type in provider_config.products:
+                all_queryable_properties[provider_config.name] = provider_queryables
+
+        if product_type is not None and len(all_queryable_properties) == 0:
+            # a product_type was given, but it was not found in any provider
             raise UnsupportedProductType(product_type)
 
-        if hasattr(selected_provider, "search"):
-            plugin_config = selected_provider.search
-        elif hasattr(selected_provider, "api"):
-            plugin_config = selected_provider.api
+        if provider is None:
+            # intersection of the queryables among the providers
+            return set.intersection(*all_queryable_properties.values())
         else:
-            raise MisconfiguredError(
-                f"This provider doesn't have a search or api plugin: {provider}"
-            )
-
-        queryable_properties = set()
-        # list of all provider-specific queryables
-        mapping = dict(plugin_config.metadata_mapping)
-        for key, value in mapping.items():
-            if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-                queryable_properties.add(key)
-        # list of all product_type-specific queryables
-        mapping = dict(
-            selected_provider.products.get(product_type, {}).get("metadata_mapping", {})
-        )
-        for key, value in mapping.items():
-            if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-                queryable_properties.add(key)
-
-        return queryable_properties
+            return all_queryable_properties[provider]

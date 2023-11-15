@@ -993,6 +993,10 @@ class TestCore(TestCoreBase):
         self.assertSetEqual(queryables, expected_result)
 
         expected_result = {
+            "start",
+            "end",
+            "geom",
+            "locations",
             "productType",
             "platformSerialIdentifier",
             "instrument",
@@ -1014,24 +1018,16 @@ class TestCore(TestCoreBase):
         queryables = self.dag.get_queryables(provider="peps")
         self.assertSetEqual(queryables, expected_result)
 
-        expected_result = {
-            "geometry",
-            "platformSerialIdentifier",
-            "title",
-            "cloudCover",
-            "illuminationAzimuthAngle",
-            "illuminationZenithAngle",
-            "awsPath",
-            "productPath",
-            "id",
-        }
-        preferred_provider, _ = self.dag.get_preferred_provider()
-        self.dag.set_preferred_provider("aws_eos")
+        expected_result = {"productType", "start", "end", "geom", "locations", "id"}
         queryables = self.dag.get_queryables(product_type="S2_MSI_L1C")
-        self.dag.set_preferred_provider(preferred_provider)
         self.assertSetEqual(queryables, expected_result)
 
         expected_result = {
+            "productType",
+            "start",
+            "end",
+            "geom",
+            "locations",
             "geometry",
             "platformSerialIdentifier",
             "title",
