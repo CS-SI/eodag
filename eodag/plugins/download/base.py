@@ -401,26 +401,32 @@ class Download(PluginTopic):
                             path=extraction_dir,
                         )
                         progress_callback(1)
-                shutil.move(self._resolve_archive_depth(extraction_dir), outputs_dir)
+                # in some cases, only a lone file is extracted without being in a directory
+                # then, we create a directory in which we place this file
+                product_extraction_path = self._resolve_archive_depth(extraction_dir)
+                if os.path.isfile(product_extraction_path) and not os.path.isdir(
+                    outputs_dir
+                ):
+                    os.makedirs(outputs_dir)
+                shutil.move(product_extraction_path, outputs_dir)
 
             elif fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
                     progress_callback(1)
-                shutil.move(self._resolve_archive_depth(extraction_dir), outputs_dir)
+                # in some cases, only a lone file is extracted without being in a directory
+                # then, we create a directory in which we place this file
+                product_extraction_path = self._resolve_archive_depth(extraction_dir)
+                if os.path.isfile(product_extraction_path) and not os.path.isdir(
+                    outputs_dir
+                ):
+                    os.makedirs(outputs_dir)
+                shutil.move(product_extraction_path, outputs_dir)
             else:
                 progress_callback(1, total=1)
 
             tmp_dir.cleanup()
-
-            # in some cases, only a file is extracted without being in a directory
-            # we create a directory in which we place this file
-            if os.path.isfile(outputs_dir):
-                product_path = os.path.splitext(product_path)[0]
-                if not os.path.isdir(product_path):
-                    os.makedirs(product_path)
-                shutil.move(outputs_dir, product_path)
 
             if delete_archive:
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
