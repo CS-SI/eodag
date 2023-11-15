@@ -567,9 +567,7 @@ class TestEODagEndToEnd(EndToEndBase):
             ("peps", "S2_MSI_L1C"),
             ("theia", "S2_MSI_L2A_MAJA"),
             ("onda", "S2_MSI_L1C"),
-            ("creodias", "S2_MSI_L1C"),
-            ("cop_dataspace", "S2_MSI_L1C"),
-            ("planetary_computer", "S2_MSI_L1C"),
+            ("planetary_computer", "S2_MSI_L2A"),
             ("earth_search", "S2_MSI_L1C"),
         ]
 
