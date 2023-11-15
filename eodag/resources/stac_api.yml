@@ -127,7 +127,7 @@ paths:
       - Data
       summary: fetch a single feature from a catalog
       description: |-
-          Fetch the feature with id `featureId` in the given catalog provided.
+          Fetch the feature with id `featureId` in the given catalog provided
           with `cataloPath`.
       parameters:
         - $ref: '#/components/parameters/catalogPath'
@@ -145,7 +145,7 @@ paths:
         - Data
         summary: download a single feature from a catalog
         description: |-
-            Download the feature with id `featureId` in the given catalog provided.
+            Download the feature with id `featureId` in the given catalog provided
             with `catalogPath`.
         parameters:
           - $ref: '#/components/parameters/catalogPath'
