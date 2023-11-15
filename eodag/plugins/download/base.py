@@ -373,7 +373,6 @@ class Download(PluginTopic):
                 f"Extraction cancelled, destination directory already exists and is not empty: {product_path}"
             )
             progress_callback(1, total=1)
-            product_path = self._resolve_archive_depth(product_path)
             return product_path
         outputs_prefix = (
             kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
