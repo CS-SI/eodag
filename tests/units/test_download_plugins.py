@@ -20,6 +20,7 @@ import os
 import shutil
 import stat
 import tarfile
+from typing import Any, Callable, Dict
 import unittest
 import zipfile
 from pathlib import Path
@@ -159,71 +160,73 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
+    def _download_response_archive(self, local_product_as_archive_path: str):
+        class Response(object):
+            """Emulation of a response to eodag.plugins.download.http.requests.get method for a zipped product"""
+
+            def __init__(self):
+                # Using a zipped product file
+                with open(local_product_as_archive_path, "rb") as fh:
+                    self.__zip_buffer = io.BytesIO(fh.read())
+                cl = self.__zip_buffer.getbuffer().nbytes
+                self.headers = {"content-length": cl}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args: Any):
+                pass
+
+            def iter_content(self, **kwargs: Any):
+                with self.__zip_buffer as fh:
+                    while True:
+                        chunk = fh.read(kwargs["chunk_size"])
+                        if not chunk:
+                            break
+                        yield chunk
+
+            def raise_for_status(self):
+                pass
+
+        return Response()
+
+    def _set_download_simulation(self, mock_requests_session: Callable[[], None], local_product_as_archive_path: str):
+        mock_requests_session.return_value = self._download_response_archive(
+            local_product_as_archive_path
+        )
+
+    def _dummy_product(self, provider: str, properties: Dict[str, Any], productType: str):
+        return EOProduct(
+            provider,
+            properties,
+            kwargs={"productType": productType},
+        )
+
+    def _dummy_downloadable_product(
+        self,
+        mock_requests_session: Callable[[], None],
+        local_product_as_archive_path: str,
+        provider: str,
+        properties: Dict[str, Any],
+        productType: str,
+    ):
+        self._set_download_simulation(mock_requests_session, local_product_as_archive_path)
+        dl_config = config.PluginConfig.from_mapping(
+            {
+                "base_uri": "fake_base_uri",
+                "outputs_prefix": self.output_dir,
+                "extract": False,
+                "delete_archive": False,
+            }
+        )
+        downloader = HTTPDownload(provider=provider, config=dl_config)
+        product = self._dummy_product(provider, properties, productType)
+        product.register_downloader(downloader, None)
+        return product
+
     @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
     def test_plugins_download_http_zip_file_ok(self, mock_requests_session):
         """HTTPDownload.download() must keep the output as it is when it is a zip file"""
-
-        def _download_response_archive(local_product_as_archive_path):
-            class Response(object):
-                """Emulation of a response to eodag.plugins.download.http.requests.get method for a zipped product"""
-
-                def __init__(response):
-                    # Using a zipped product file
-                    with open(local_product_as_archive_path, "rb") as fh:
-                        response.__zip_buffer = io.BytesIO(fh.read())
-                    cl = response.__zip_buffer.getbuffer().nbytes
-                    response.headers = {"content-length": cl}
-
-                def __enter__(response):
-                    return response
-
-                def __exit__(response, *args):
-                    pass
-
-                def iter_content(response, **kwargs):
-                    with response.__zip_buffer as fh:
-                        while True:
-                            chunk = fh.read(kwargs["chunk_size"])
-                            if not chunk:
-                                break
-                            yield chunk
-
-                def raise_for_status(response):
-                    pass
-
-            return Response()
-
-        def _set_download_simulation(local_product_as_archive_path):
-            mock_requests_session.return_value = _download_response_archive(
-                local_product_as_archive_path
-            )
-
-        def _dummy_product(provider, properties, productType):
-            return EOProduct(
-                provider,
-                properties,
-                kwargs={"productType": productType},
-            )
-
-        def _dummy_downloadable_product(
-            local_product_as_archive_path,
-            provider,
-            properties,
-            productType,
-        ):
-            _set_download_simulation(local_product_as_archive_path)
-            dl_config = config.PluginConfig.from_mapping(
-                {
-                    "base_uri": "fake_base_uri",
-                    "outputs_prefix": self.output_dir,
-                    "extract": False,
-                    "delete_archive": False,
-                }
-            )
-            downloader = HTTPDownload(provider=provider, config=dl_config)
-            product = _dummy_product(provider, properties, productType)
-            product.register_downloader(downloader, None)
-            return product
 
         provider = "creodias"
         download_url = (
@@ -269,8 +272,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             {key: "" for key in DEFAULT_METADATA_MAPPING if key not in eoproduct_props}
         )
 
-        product = _dummy_downloadable_product(
-            local_product_as_archive_path, provider, eoproduct_props, product_type
+        product = self._dummy_downloadable_product(#self._dummy_downloadable_product(
+            mock_requests_session,
+            local_product_as_archive_path,
+            provider,
+            eoproduct_props,
+            product_type
         )
         outputs_extension = getattr(
             product.downloader.config, "outputs_extension", ".zip"
@@ -282,6 +289,89 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             and os.path.isfile(path)
             and outputs_extension == ".zip"
             and zipfile.is_zipfile(path)
+        )
+
+        # check if the hidden directory ".downloaded" have been created with the product zip file
+        self.assertEqual(len(os.listdir(self.output_dir)), 2)
+
+        mock_requests_session.assert_called_once_with(
+            mock.ANY,
+            "get",
+            product.remote_location,
+            stream=True,
+            auth=None,
+            params={},
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+        )
+
+    @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
+    def test_plugins_download_http_tar_file_with_zip_extension_ok(self, mock_requests_session):
+        """HTTPDownload.download() must change the outputs extension from '.zip' to '.tar' and keep the content
+        of the output as it is when it is a tar file and outputs extension is set to '.zip'"""
+
+        provider = "wekeo"
+        download_url = (
+            "https://prism-dem-open.copernicus.eu/pd-desk-open-access/prismDownload/"
+            "COP-DEM_GLO-30-DGED__2022_1/Copernicus_DSM_10_S90_00_W141_00.tar"
+        )
+        local_filename = "Copernicus_DSM_10_S90_00_W141_00"
+        local_product_as_archive_path = os.path.abspath(
+            os.path.join(
+                TEST_RESOURCES_PATH,
+                "products",
+                "as_archive",
+                "{}.tar".format(local_filename),
+            )
+        )
+        product_type = "COP_DEM_GLO30_DGED"
+        platform = None
+        instrument = None
+
+        eoproduct_props = {
+            "id": "Copernicus_DSM_10_S90_00_W141_00",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [-142, -89],
+                        [-142, -87],
+                        [-140, -87],
+                        [-140, -89],
+                        [-142, -89],
+                    ]
+                ],
+            },
+            "productType": product_type,
+            "platform": "TerraSAR",
+            "platformSerialIdentifier": platform,
+            "instrument": instrument,
+            "title": local_filename,
+            "downloadLink": download_url,
+        }
+
+        # Put an empty string as value of properties which are not relevant for the test
+        eoproduct_props.update(
+            {key: "" for key in DEFAULT_METADATA_MAPPING if key not in eoproduct_props}
+        )
+
+        product = self._dummy_downloadable_product(
+            mock_requests_session,
+            local_product_as_archive_path,
+            provider,
+            eoproduct_props,
+            product_type
+        )
+        outputs_extension = getattr(
+            product.downloader.config, "outputs_extension", ".zip"
+        )
+        path = product.download()
+
+        self.assertTrue(
+            path == os.path.join(self.output_dir, product.properties["title"] + ".tar")
+            and os.path.isfile(path)
+            and outputs_extension == ".zip"
+            and tarfile.is_tarfile(path)
         )
 
         # check if the hidden directory ".downloaded" have been created with the product zip file

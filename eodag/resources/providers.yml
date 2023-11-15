@@ -6729,6 +6729,11 @@
     order_status_success:
       status: completed
       message: "Done!"
+    products:
+      COP_DEM_GLO30_DGED:
+        outputs_extension: .tar
+      COP_DEM_GLO90_DGED:
+        outputs_extension: .tar
 
 ---
 !provider

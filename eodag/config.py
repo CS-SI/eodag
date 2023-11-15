@@ -273,6 +273,7 @@ class PluginConfig(yaml.YAMLObject):
     base_uri: str
     outputs_prefix: str
     extract: bool
+    outputs_extension: str
     order_enabled: bool  # HTTPDownload
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload

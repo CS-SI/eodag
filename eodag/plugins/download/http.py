@@ -392,8 +392,18 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
+        kwargs.pop("outputs_extension", "parameter not available in kwargs")
+        outputs_extension = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        ).get("outputs_extension", None) or getattr(
+            self.config, "outputs_extension", ".zip"
+        )
+
         fs_path, record_filename = self._prepare_download(
-            product, progress_callback=progress_callback, **kwargs
+            product,
+            progress_callback=progress_callback,
+            outputs_extension=outputs_extension,
+            **kwargs,
         )
         if not fs_path or not record_filename:
             if fs_path:
@@ -444,14 +454,14 @@ class HTTPDownload(Download):
         logger.debug("Download recorded in %s", record_filename)
 
         # Check that the downloaded file is really a zip file
-        outputs_extension = kwargs.get("outputs_extension", None) or getattr(
-            self.config, "outputs_extension", ".zip"
-        )
         if not zipfile.is_zipfile(fs_path) and outputs_extension == ".zip":
             logger.warning(
                 "Downloaded product is not a Zip File. Please check its file type before using it"
             )
-            new_fs_path = fs_path[: fs_path.index(".zip")]
+            new_fs_path = os.path.join(
+                os.path.dirname(fs_path),
+                sanitize(product.properties["title"]),
+            )
             if os.path.isfile(fs_path) and not tarfile.is_tarfile(fs_path):
                 if not os.path.isdir(new_fs_path):
                     os.makedirs(new_fs_path)
@@ -460,6 +470,20 @@ class HTTPDownload(Download):
                 file_path = os.path.join(new_fs_path, os.listdir(new_fs_path)[0])
                 new_file_path = file_path[: file_path.index(".zip")]
                 shutil.move(file_path, new_file_path)
+            # in the case where the outputs extension has not been set
+            # to ".tar" in the product type nor provider configuration
+            elif tarfile.is_tarfile(fs_path):
+                if not new_fs_path.endswith(".tar"):
+                    new_fs_path += ".tar"
+                shutil.move(fs_path, new_fs_path)
+                product_path = self._finalize(
+                    new_fs_path,
+                    progress_callback=progress_callback,
+                    outputs_extension=".tar",
+                    **kwargs,
+                )
+                product.location = path_to_uri(product_path)
+                return product_path
             else:
                 shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
@@ -478,7 +502,10 @@ class HTTPDownload(Download):
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
         product_path = self._finalize(
-            fs_path, progress_callback=progress_callback, **kwargs
+            fs_path,
+            progress_callback=progress_callback,
+            outputs_extension=outputs_extension,
+            **kwargs,
         )
         product.location = path_to_uri(product_path)
         return product_path
