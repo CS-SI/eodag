@@ -1541,7 +1541,7 @@
       resolution: '$.properties.gsd'
       publicationDate: '$.properties.published'
       # OpenSearch Parameters for Product Search (Table 5)
-      orbitNumber: '$.properties."platform:relative_orbit"'
+      orbitNumber: '$.properties."sat:relative_orbit"'
       orbitDirection: '$.properties."sat:orbit_state"'
       cloudCover: '$.properties."eo:cloud_cover"'
       sensorMode: '$.properties."sar:instrument_mode"'
@@ -3737,8 +3737,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3770,8 +3770,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3802,8 +3802,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3834,8 +3834,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3863,8 +3863,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3892,8 +3892,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3919,8 +3919,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3946,8 +3946,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -3975,8 +3975,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4004,8 +4004,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4033,8 +4033,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4059,8 +4059,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4085,8 +4085,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4111,8 +4111,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4140,8 +4140,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4167,8 +4167,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4196,8 +4196,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4222,8 +4222,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4251,8 +4251,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4279,8 +4279,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4345,8 +4345,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4373,8 +4373,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4401,8 +4401,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4429,8 +4429,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4457,8 +4457,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
@@ -4485,8 +4485,8 @@
         relativeOrbitNumber:
           - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
-        orbit:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
         cycle:
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
