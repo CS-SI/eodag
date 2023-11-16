@@ -339,6 +339,7 @@ class TestCore(TestCoreBase):
         "planetary_computer",
         "hydroweb_next",
         "wekeo",
+        "dedl",
     ]
 
     def setUp(self):
