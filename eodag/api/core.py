@@ -137,12 +137,12 @@ class EODataAccessGateway:
             makedirs(self.conf_dir)
         except OSError as e:
             logger.debug(e)
-            tmp_conf_dir = tempfile.TemporaryDirectory()
+            tmp_conf_dir = os.path.join(tempfile.gettempdir(), ".config", "eodag")
             logger.warning(
                 f"Cannot create configuration directory {self.conf_dir}. "
-                + f"Falling back to temporary directory {tmp_conf_dir.name}."
+                + f"Falling back to temporary directory {tmp_conf_dir}."
             )
-            self.conf_dir = tmp_conf_dir.name
+            self.conf_dir = tmp_conf_dir
             makedirs(self.conf_dir)
 
         self._plugins_manager = PluginManager(self.providers_config)
