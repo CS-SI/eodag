@@ -881,7 +881,7 @@ S3_OLCI_L2WRR_BC003:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR,REPROCESSED
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR,REPROCESSED,BC003
   sensorType: OPTICAL
   license: proprietary
   title: SENTINEL3 OLCI Level-2 Water Reduced Resolution Reprocessed
@@ -917,7 +917,7 @@ S3_OLCI_L2WFR_BC003:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR,REPROCESSED
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR,REPROCESSED,BC003
   sensorType: OPTICAL
   license: proprietary
   title: SENTINEL3 OLCI Level-2 Water Full Resolution Reprocessed
@@ -974,7 +974,7 @@ S3_SLSTR_L1RBT_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT,VIS,NIR,SWIR,BT,TIR,FIR,Reprocessed
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT,VIS,NIR,SWIR,BT,TIR,FIR,Reprocessed,BC004
   sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-1 RBT - Reprocessed
@@ -1020,7 +1020,7 @@ S3_SLSTR_L2WST_BC003:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST,REPROCESSED
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST,REPROCESSED,BC003
   sensorType: ATMOSPHERIC
   license: proprietary
   title: SENTINEL3 SLSTR Level-2 WST Reprocessed
@@ -1147,7 +1147,7 @@ S3_SRA_1A_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1A
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1A,REPROCESSED
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1A,REPROCESSED,BC004
   sensorType: RADAR
   license: proprietary
   title: SENTINEL3 SRAL Level-1A Unpacked - Reprocessed
@@ -1165,7 +1165,7 @@ S3_SRA_1B_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1B
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,BC004
   sensorType: RADAR
   license: proprietary
   title: SENTINEL3 SRAL Level-1B - Reprocessed
@@ -1186,7 +1186,7 @@ S3_SRA_BS_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1B
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES,BC004
   sensorType: RADAR
   license: proprietary
   title: SENTINEL3 SRAL Level-1B Stack Echoes - Reprocessed
@@ -1231,7 +1231,7 @@ S3_WAT_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT,REPROCESSED
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT,REPROCESSED,BC004
   sensorType: RADAR
   license: proprietary
   title: SRAL Level 2 Altimetry Global - Reprocessed

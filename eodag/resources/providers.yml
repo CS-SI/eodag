@@ -1541,7 +1541,7 @@
       resolution: '$.properties.gsd'
       publicationDate: '$.properties.published'
       # OpenSearch Parameters for Product Search (Table 5)
-      orbitNumber: '$.properties."sat:relative_orbit"'
+      orbitNumber: '$.properties."platform:relative_orbit"'
       orbitDirection: '$.properties."sat:orbit_state"'
       cloudCover: '$.properties."eo:cloud_cover"'
       sensorMode: '$.properties."sar:instrument_mode"'
@@ -3725,8 +3725,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -3734,8 +3734,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3755,8 +3755,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -3767,8 +3767,8 @@
         fire:
           - '{{"stringChoiceValues": [{{"name": "fire", "value": "{fire}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3790,8 +3790,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -3799,8 +3799,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3822,8 +3822,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -3831,8 +3831,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3851,8 +3851,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -3860,8 +3860,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3880,8 +3880,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -3889,8 +3889,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3910,14 +3910,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3937,14 +3937,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3963,8 +3963,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -3972,8 +3972,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -3992,8 +3992,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -4001,8 +4001,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4021,8 +4021,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -4030,8 +4030,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4050,14 +4050,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4076,14 +4076,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4102,14 +4102,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4128,8 +4128,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -4137,8 +4137,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4158,14 +4158,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4184,8 +4184,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -4193,8 +4193,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4213,14 +4213,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4239,8 +4239,8 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
@@ -4248,8 +4248,8 @@
         orbitDirection:
           - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4262,7 +4262,7 @@
       productType: EO:EUM:DAT:SENTINEL-3:0582
       type: SL_2_WST___
       timeliness: NT
-      sat: Sentinel-3A
+      platform: Sentinel-3A
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
@@ -4270,14 +4270,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4326,7 +4326,7 @@
           - '$.null'
     S6_L1A_AHR:
       productType: EO:EUM:DAT:0236
-      sat: Sentinel-6A
+      platform: Sentinel-6A
       type: P4_1A_HR_____
       timeliness: NT
       metadata_mapping:
@@ -4336,14 +4336,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4354,7 +4354,7 @@
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L1B_ALR:
       productType: EO:EUM:DAT:0237
-      sat: Sentinel-6A
+      platform: Sentinel-6A
       type: P4_1B_LR_____
       timeliness: NT
       metadata_mapping:
@@ -4364,14 +4364,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4382,7 +4382,7 @@
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L1B_AHR:
       productType: EO:EUM:DAT:0238
-      sat: Sentinel-6A
+      platform: Sentinel-6A
       type: P4_1B_HR_____
       timeliness: NT
       metadata_mapping:
@@ -4392,14 +4392,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4410,7 +4410,7 @@
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_ALR:
       productType: EO:EUM:DAT:0239
-      sat: Sentinel-6A
+      platform: Sentinel-6A
       type: P4_2__LR_____
       timeliness: NT
       metadata_mapping:
@@ -4420,14 +4420,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4438,7 +4438,7 @@
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_AHR:
       productType: EO:EUM:DAT:0240
-      sat: Sentinel-6A
+      platform: Sentinel-6A
       type: P4_2__HR_____
       timeliness: NT
       metadata_mapping:
@@ -4448,14 +4448,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
@@ -4466,7 +4466,7 @@
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_R:
       productType: EO:EUM:DAT:0241
-      sat: Sentinel-6A
+      platform: Sentinel-6A
       type: MW_2__AMR____
       timeliness: NT
       metadata_mapping:
@@ -4476,14 +4476,14 @@
         type:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
           - '$.null'
-        sat:
-          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{sat}"}}]}}'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
           - '$.null'
         timeliness:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
           - '$.null'
-        relorbit:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relorbit}"}}]}}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
           - '$.null'
         orbit:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbit}"}}]}}'
