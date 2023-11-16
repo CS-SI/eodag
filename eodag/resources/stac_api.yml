@@ -272,7 +272,7 @@ paths:
       description: |-
         Download the feature with id `featureId` in the feature collection
         with id `collectionId`.
-      operationId: getFeature
+      operationId: downloadFeature
       responses:
         '200':
           description: Successful `application/zip` response
@@ -308,7 +308,7 @@ paths:
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/intersects'
       - $ref: '#/components/parameters/ids'
-      - $ref: '#/components/parameters/query'
+      - $ref: '#/components/parameters/collectionsArray'
       responses:
         '200':
           description: A feature collection.
@@ -329,24 +329,26 @@ paths:
               schema:
                 type: string
     post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              anyOf:
-                - $ref: '#/components/schemas/searchBody'
-      tags:
-        - STAC
       summary: Search STAC items with full-featured filtering.
       description: |-
-        retrieve items matching filters. Intended as the standard, full-featured
+        Retrieve items matching filters. Intended as the standard, full-featured
         query API.
 
         This method is mandatory to implement if `GET /search` is implemented.
         If this endpoint is implemented on a server, it is required to add a
         link referring to this endpoint with `rel` set to `search` and `method`
         set to `POST` to the `links` array in `GET /`.
+      tags:
+        - STAC
       operationId: postSearchSTAC
+      requestBody:
+        description: |
+          The `POST /search` JSON body specification is detailed in the [STAC specification](https://api.stacspec.org/v1.0.0/item-search/)
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/searchBody'
       responses:
         '200':
           description: A feature collection.
@@ -580,7 +582,7 @@ components:
       description: |
         Array of Collection IDs to include in the search for items.
         Only Items in one of the provided Collections will be searched
-      required: false
+      required: true
       schema:
         $ref: '#/components/schemas/collectionsArray'
       explode: false
@@ -1412,16 +1414,32 @@ components:
             type: string
             format: url
     searchBody:
+      required:
+        - collections
       description: The search criteria
       type: object
       allOf:
+        - $ref: '#/components/schemas/collectionsFilter'
         - $ref: '#/components/schemas/bboxFilter'
         - $ref: '#/components/schemas/datetimeFilter'
         - $ref: '#/components/schemas/intersectsFilter'
-        - $ref: '#/components/schemas/collectionsFilter'
         - $ref: '#/components/schemas/idsFilter'
         - $ref: '#/components/schemas/limitFilter'
         - $ref: '#/components/schemas/queryFilter'
+      example:
+        datetime: 2023-11-03T00:00:00Z/2023-11-04T12:31:12Z
+        bbox:
+          - -12
+          - 33
+          - -11
+          - 34
+        collections: 
+          - S2_MSI_L1C
+        platform:
+          eq: S2A
+        eo:cloud_cover:
+          lte: 80
+        limit: 10
     limit:
       type: integer
       minimum: 1
@@ -1495,6 +1513,8 @@ components:
         restrict the number of search results are ignored.
       items:
         type: string
+      example:
+        - S2A_MSIL1C_20231110T064451_N0509_R034_T39KXU_20231110T075552
     datetimeFilter:
       description: An object representing a date+time based filter.
       type: object

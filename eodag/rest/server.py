@@ -480,7 +480,7 @@ def collections(request: Request):
 
 
 @router.get(
-    "/catalogs/{catalogs}/items/{item_id}/download",
+    "/catalogs/{catalogs:path}/items/{item_id}/download",
     tags=["Data"],
     include_in_schema=False,
 )
