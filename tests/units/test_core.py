@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 import unittest
 import uuid
 from pathlib import Path
@@ -1234,14 +1235,7 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
         """The core object must create a locations config file and a shp dir in standard user config location on instantiation"""  # noqa
         self.execution_involving_conf_dir(inspect=["locations.yml", "shp"])
 
-    @mock.patch("eodag.utils.makedirs")
-    def test_read_only_home_dir(self, mock_makedirs):
-        def mock_makedirs_side_effect(dirpath: str):
-            if dirpath.startswith("~") or dirpath.startswith("/home"):
-                raise OSError("Mock makedirs error")
-            else:
-                return unittest.mock.DEFAULT
-
+    def test_read_only_home_dir(self):
         # standard directory
         home_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
         self.execution_involving_conf_dir(inspect="eodag.yml", conf_dir=home_dir)
@@ -1254,10 +1248,21 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
         del os.environ["EODAG_CFG_DIR"]
 
         # fallback temporary folder
-        mock_makedirs.side_effect = mock_makedirs_side_effect
-        dag = EODataAccessGateway()
-        self.assertTrue(os.path.exists(os.path.join(dag.conf_dir, "eodag.yml")))
-        shutil.rmtree(dag.conf_dir)
+        with mock.patch(
+            "eodag.api.core.makedirs",
+            side_effect=[OSError("Mock makedirs error"), None, None],
+        ) as mock_makedirs:
+            # The temporary directory is not actually created, raising in a second
+            # moment an exception during the initialization of EODataAccessGateway.
+            # It's enough to verify that eodag.api.core.makedirs() was called again
+            # with temporary path as argument.
+            try:
+                EODataAccessGateway()
+            except FileNotFoundError:
+                pass
+            temp_dir = os.path.join(tempfile.gettempdir(), ".config", "eodag")
+            expected = [unittest.mock.call(home_dir), unittest.mock.call(temp_dir)]
+            mock_makedirs.assert_has_calls(expected)
 
 
 class TestCoreGeometry(TestCoreBase):
