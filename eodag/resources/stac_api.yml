@@ -472,7 +472,7 @@ components:
     collectionId:
       name: collectionId
       in: path
-      description: local identifier of a collection
+      description: local identifier of a collection (for example `S2_MSI_L1C`)
       required: true
       schema:
         type: string
@@ -482,7 +482,7 @@ components:
       required: true
       description: |-
               The catalog's path.
-              For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
+              For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2023`)
       schema:
         type: string
     query:
@@ -510,11 +510,11 @@ components:
         Examples:
 
 
-        * A date-time: "2018-02-12T23:20:50Z"
+        * A date-time: `2023-10-12T23:20:50Z`
 
-        * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+        * A closed interval: `2023-10-12T00:00:00Z/2023-11-10T12:31:12Z`
 
-        * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+        * Open intervals: `2023-10-12T00:00:00Z/..` or `../2023-11-10T12:31:12Z`
 
 
         Only features that have a temporal property that intersects the value of
@@ -535,7 +535,7 @@ components:
     featureId:
       name: featureId
       in: path
-      description: local identifier of a feature
+      description: local identifier of a feature (for example `S2B_MSIL1C_20231030T110109_N0509_R094_T31TCJ_20231030T115103`)
       required: true
       schema:
         type: string
@@ -554,21 +554,22 @@ components:
         be counted.
 
 
-        Minimum = 1. Maximum = 10000. Default = 10.
+        Minimum = 1. Maximum = 10000. Default = 20.
       required: false
       schema:
         type: integer
         minimum: 1
         maximum: 10000
-        default: 10
       style: form
       explode: false
     ids:
       name: ids
       in: query
       description: |-
-        Array of Item ids to return. All other filter parameters that further
-        restrict the number of search results are ignored
+        Array of Item ids to return (for example
+        `["S2B_MSIL1C_20231030T110109_N0509_R094_T31TCJ_20231030T115103",
+        "S2A_MSIL1C_20231029T104141_N0509_R008_T31TCJ_20231029T141106"]`). All other filter parameters that further
+        restrict the number of search results are ignored.
       required: false
       schema:
         $ref: '#/components/schemas/ids'
@@ -1425,7 +1426,6 @@ components:
       type: integer
       minimum: 1
       example: 10
-      default: 10
       maximum: 10000
       description: The maximum number of results to return (page size). Defaults to 10
     bbox:
@@ -1489,12 +1489,12 @@ components:
     ids:
       type: array
       description: |-
-        Array of Item ids to return. All other filter parameters that further
-        restrict the number of search results are ignored
+        Array of Item ids to return (for example
+        `["S2B_MSIL1C_20231030T110109_N0509_R094_T31TCJ_20231030T115103",
+        "S2A_MSIL1C_20231029T104141_N0509_R008_T31TCJ_20231029T141106"]`). All other filter parameters that further
+        restrict the number of search results are ignored.
       items:
         type: string
-      example:
-        - S2A_MSIL1C_20150725T112046_N0204_R037_T29SKT_20150725T112540
     datetimeFilter:
       description: An object representing a date+time based filter.
       type: object
@@ -1540,9 +1540,9 @@ components:
 
         Examples:
 
-        * A date-time: "2018-02-12T23:20:50Z"
-        * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
-        * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+        * A date-time: `2023-10-12T23:20:50Z`
+        * A closed interval: `2023-10-12T00:00:00Z/2023-11-10T12:31:12Z`
+        * Open intervals: `2023-10-12T00:00:00Z/..` or `../2023-11-10T12:31:12Z`
 
         Only features that have a temporal property that intersects the value of
         `datetime` are selected.
@@ -1550,7 +1550,7 @@ components:
         If a feature has multiple temporal properties, it is the decision of the
         server whether only a single temporal property is used to determine
         the extent or all relevant temporal properties.
-      example: '2015-07-25T00:00:00Z/2015-07-26T00:00:00Z'
+      example: '2023-10-12T00:00:00Z/2023-11-10T12:31:12Z'
     stac_version:
       title: STAC version
       type: string
