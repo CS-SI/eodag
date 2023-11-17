@@ -130,9 +130,11 @@ class EODataAccessGateway:
         self.product_types_config_md5 = obj_md5sum(self.product_types_config.source)
         self.providers_config = load_default_config()
 
-        self.conf_dir = os.getenv("EODAG_CFG_DIR")
-        if self.conf_dir is None:
-            self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+        env_var_cfg_dir = "EODAG_CFG_DIR"
+        self.conf_dir = os.getenv(
+            env_var_cfg_dir,
+            default=os.path.join(os.path.expanduser("~"), ".config", "eodag"),
+        )
         try:
             makedirs(self.conf_dir)
         except OSError as e:
@@ -142,6 +144,11 @@ class EODataAccessGateway:
                 f"Cannot create configuration directory {self.conf_dir}. "
                 + f"Falling back to temporary directory {tmp_conf_dir}."
             )
+            if os.getenv(env_var_cfg_dir) is None:
+                logger.warning(
+                    "You can set the path of the configuration directory "
+                    + f"with the environment variable {env_var_cfg_dir}"
+                )
             self.conf_dir = tmp_conf_dir
             makedirs(self.conf_dir)
 
