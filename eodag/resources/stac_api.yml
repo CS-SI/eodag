@@ -570,8 +570,9 @@ components:
       description: |-
         Array of Item ids to return (for example
         `["S2B_MSIL1C_20231030T110109_N0509_R094_T31TCJ_20231030T115103",
-        "S2A_MSIL1C_20231029T104141_N0509_R008_T31TCJ_20231029T141106"]`). All other filter parameters that further
-        restrict the number of search results are ignored.
+        "S2A_MSIL1C_20231029T104141_N0509_R008_T31TCJ_20231029T141106"]`).
+
+        **All other filter parameters that further restrict the number of search results are ignored.**
       required: false
       schema:
         $ref: '#/components/schemas/ids'
@@ -1433,7 +1434,7 @@ components:
           - 33
           - -11
           - 34
-        collections: 
+        collections:
           - S2_MSI_L1C
         platform:
           eq: S2A
@@ -1513,8 +1514,6 @@ components:
         restrict the number of search results are ignored.
       items:
         type: string
-      example:
-        - S2A_MSIL1C_20231110T064451_N0509_R034_T39KXU_20231110T075552
     datetimeFilter:
       description: An object representing a date+time based filter.
       type: object
