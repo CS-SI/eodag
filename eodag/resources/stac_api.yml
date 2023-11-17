@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: The SpatioTemporal Asset Catalog API
-  version: 0.9.0
+  version: 1.0.0
   license:
     name: Apache License 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0'
@@ -15,21 +15,12 @@ info:
   contact:
     name: STAC Specification
     url: 'http://stacspec.org'
-tags:
-  - name: Capabilities
-    description: essential characteristics of this API
-  - name: Data
-    description: access to data (features)
-  - name: STAC
-    description: >-
-      Extension to OGC API - Features to support STAC metadata model and search
-      API
 paths:
   /:
     get:
       tags:
         - Capabilities
-      summary: landing page
+      summary: STAC API landing page
       description: |-
         Returns the root STAC Catalog or STAC Collection that is the entry point
         for users to browse with STAC Browser or for search engines to crawl.
@@ -44,6 +35,20 @@ paths:
           $ref: '#/components/responses/LandingPage'
         '500':
           $ref: '#/components/responses/ServerError'
+  /api:
+    get:
+      tags:
+        - Capabilities
+      summary: Eodag Openapi
+      description: Customized openapi
+      operationId: eodag_openapi_api_get
+      responses:
+          '200':
+              description: Successful response
+              content:
+                  application/json:
+                      schema:
+                          type: object
   /conformance:
     get:
       tags:
@@ -58,25 +63,126 @@ paths:
           $ref: '#/components/responses/ConformanceDeclaration'
         '500':
           $ref: '#/components/responses/ServerError'
-  /collections:
+  /queryables:
     get:
       tags:
         - Capabilities
-      summary: the feature collections in the dataset
+      responses:
+        '200':
+          $ref: '#/components/responses/Queryables'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      summary: Get the JSON Schema queryables that apply to all collections.
+      operationId: getQueryables
+      description: |-
+          The Queryables mechanism allows a client to discover what terms are available
+          for use when writing filter expressions. These terms are defined over the entire catalog.
+
+          The decision as to which queryables to define for the entire catalog is at the discretion
+          of the implementer, and can be anywhere between none and the union of all queryables
+          cross all collections.
+  /catalogs/{catalogPath}:
+    get:
+      tags:
+      - Capabilities
+      summary: Provide details about a given catalog
+      description: |-
+          Detail the contents in the given catalog provided with `catalogPath`.
+      parameters:
+      - $ref: '#/components/parameters/catalogPath'
+      responses:
+          '200':
+              description: The catalog's description
+              content:
+                  application/json:
+                      schema:
+                          $ref: '#/components/schemas/collection'
+          '500':
+              $ref: '#/components/responses/ServerError'
+  /catalogs/{catalogPath}/items:
+    get:
+      tags:
+      - Data
+      summary: List features in a given catalog
+      description: |-
+          Fetch features in the given catalog provided with `catalogPath`.
+      parameters:
+        - $ref: '#/components/parameters/catalogPath'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/limit'
+      responses:
+          '200':
+              description: The list of items found for the given catalog.
+              type: array
+              content:
+                  application/json:
+                      schema:
+                          $ref: '#/components/schemas/itemCollection'
+          '500':
+              $ref: '#/components/responses/ServerError'
+  /catalogs/{catalogPath}/items/{featureId}:
+    get:
+      tags:
+      - Data
+      summary: fetch a single feature from a catalog
+      description: |-
+          Fetch the feature with id `featureId` in the given catalog provided
+          with `cataloPath`.
+      parameters:
+        - $ref: '#/components/parameters/catalogPath'
+        - $ref: '#/components/parameters/featureId'
+      responses:
+          '200':
+            $ref: '#/components/responses/Feature'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/ServerError'
+  /catalogs/{catalogPath}/items/{featureId}/download:
+      get:
+        tags:
+        - Data
+        summary: download a single feature from a catalog
+        description: |-
+            Download the feature with id `featureId` in the given catalog provided
+            with `catalogPath`.
+        parameters:
+          - $ref: '#/components/parameters/catalogPath'
+          - $ref: '#/components/parameters/featureId'
+        responses:
+          '200':
+            description: Successful `application/zip` response
+            content:
+              application/octet-stream:
+                schema:
+                  type: string
+                  format: binary
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/ServerError'
+  /collections:
+   get:
+      tags:
+        - Capabilities
+      summary: The feature collections in the dataset.
+      description: A body of Feature Collections that belong or are used together with additional links. Request may not return the full set of metadata per Feature Collection.
       operationId: getCollections
       responses:
         '200':
           $ref: '#/components/responses/Collections'
         '500':
           $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}':
+  /collections/{collectionId}:
     get:
       tags:
         - Capabilities
-      summary: describe the feature collection with id `collectionId`
-      operationId: describeCollection
       parameters:
         - $ref: '#/components/parameters/collectionId'
+      summary: Describe the feature Collection for the given `collectionId`.
+      description: A single Feature Colletion for the given `collectionId`. Request this endpoint to get a full list of metadata for the Feature Collection.
+      operationId: describeCollection
       responses:
         '200':
           $ref: '#/components/responses/Collection'
@@ -84,11 +190,37 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/items':
+  /collections/{collectionId}/queryables:
+    get:
+      tags:
+        - Capabilities
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      summary: Get the JSON Schema queryables that apply to a given collection.
+      operationId: getQueryablesForCollection
+      description: |-
+          The Queryables mechanism allows a client to discover what terms are available
+          for use when writing filter expressions. These terms are defined per collection.
+
+          When used as a subresource of the collection resource,
+          it returns queryables pertaining only to that single collection.
+      responses:
+        '200':
+          $ref: '#/components/responses/Queryables'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /collections/{collectionId}/items:
     get:
       tags:
         - Data
-      summary: fetch features
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/ids'
       description: |-
         Fetch features of the feature collection with id `collectionId`.
 
@@ -97,12 +229,8 @@ paths:
         collection of features of a similar type, based on a common schema.
 
         Use content negotiation to request HTML or GeoJSON.
+      summary: List of items available in a given collection
       operationId: getFeatures
-      parameters:
-        - $ref: '#/components/parameters/collectionId'
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
       responses:
         '200':
           $ref: '#/components/responses/Features'
@@ -112,10 +240,13 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/items/{featureId}':
+  /collections/{collectionId}/items/{featureId}:
     get:
       tags:
         - Data
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/featureId'
       summary: fetch a single feature
       description: |-
         Fetch the feature with id `featureId` in the feature collection
@@ -123,12 +254,33 @@ paths:
 
         Use content negotiation to request HTML or GeoJSON.
       operationId: getFeature
-      parameters:
-        - $ref: '#/components/parameters/collectionId'
-        - $ref: '#/components/parameters/featureId'
       responses:
         '200':
           $ref: '#/components/responses/Feature'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /collections/{collectionId}/items/{featureId}/download:
+    get:
+      tags:
+        - Data
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/featureId'
+      summary: download a single feature assets archive
+      description: |-
+        Download the feature with id `featureId` in the feature collection
+        with id `collectionId`.
+      operationId: downloadFeature
+      responses:
+        '200':
+          description: Successful `application/zip` response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -151,11 +303,12 @@ paths:
       tags:
         - STAC
       parameters:
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/ids'
-        - $ref: '#/components/parameters/collectionsArray'
+      - $ref: '#/components/parameters/bbox'
+      - $ref: '#/components/parameters/datetime'
+      - $ref: '#/components/parameters/limit'
+      - $ref: '#/components/parameters/intersects'
+      - $ref: '#/components/parameters/ids'
+      - $ref: '#/components/parameters/collectionsArray'
       responses:
         '200':
           description: A feature collection.
@@ -178,17 +331,20 @@ paths:
     post:
       summary: Search STAC items with full-featured filtering.
       description: |-
-        retrieve items matching filters. Intended as the standard, full-featured
+        Retrieve items matching filters. Intended as the standard, full-featured
         query API.
 
         This method is mandatory to implement if `GET /search` is implemented.
         If this endpoint is implemented on a server, it is required to add a
         link referring to this endpoint with `rel` set to `search` and `method`
         set to `POST` to the `links` array in `GET /`.
-      operationId: postSearchSTAC
       tags:
         - STAC
+      operationId: postSearchSTAC
       requestBody:
+        description: |
+          The `POST /search` JSON body specification is detailed in the [STAC specification](https://api.stacspec.org/v1.0.0/item-search/)
+        required: true
         content:
           application/json:
             schema:
@@ -214,6 +370,32 @@ paths:
                 type: string
 components:
   parameters:
+    q:
+      name: q
+      in: query
+      description: |-
+        The optional q parameter supports keyword searching.  Only records
+        whose text fields contain one or more of the specified search terms
+        are selected.  The specific set of text keys/fields/properties of a
+        record to which the q operator is applied is up to the description
+        of the server.   Implementations should, however, apply the q
+        operator to the title, description and keywords keys/fields/properties.
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+    intersects:
+      name: intersects
+      in: query
+      description: Searches items by performing intersection between their geometry and provided GeoJSON geometry. All GeoJSON geometry types must be supported.
+      required: false
+      schema:
+        $ref: '#/components/schemas/geometryGeoJSON'
+      style: form
+      explode: false
     bbox:
       name: bbox
       in: query
@@ -292,8 +474,29 @@ components:
     collectionId:
       name: collectionId
       in: path
-      description: local identifier of a collection
+      description: local identifier of a collection (for example `S2_MSI_L1C`)
       required: true
+      schema:
+        type: string
+    catalogPath:
+      name: catalogPath
+      in: path
+      required: true
+      description: |-
+              The catalog's path.
+              For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2023`)
+      schema:
+        type: string
+    query:
+      name: query
+      x-stac-api-fragment: query
+      in: query
+      description: |-
+        **Extension:** Query
+
+        Query for properties in items.
+        Use the JSON form of the query used in POST.
+      required: false
       schema:
         type: string
     datetime:
@@ -309,11 +512,11 @@ components:
         Examples:
 
 
-        * A date-time: "2018-02-12T23:20:50Z"
+        * A date-time: `2023-10-12T23:20:50Z`
 
-        * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+        * A closed interval: `2023-10-12T00:00:00Z/2023-11-10T12:31:12Z`
 
-        * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+        * Open intervals: `2023-10-12T00:00:00Z/..` or `../2023-11-10T12:31:12Z`
 
 
         Only features that have a temporal property that intersects the value of
@@ -334,7 +537,7 @@ components:
     featureId:
       name: featureId
       in: path
-      description: local identifier of a feature
+      description: local identifier of a feature (for example `S2B_MSIL1C_20231030T110109_N0509_R094_T31TCJ_20231030T115103`)
       required: true
       schema:
         type: string
@@ -353,21 +556,23 @@ components:
         be counted.
 
 
-        Minimum = 1. Maximum = 10000. Default = 10.
+        Minimum = 1. Maximum = 10000. Default = 20.
       required: false
       schema:
         type: integer
         minimum: 1
         maximum: 10000
-        default: 10
       style: form
       explode: false
     ids:
       name: ids
       in: query
       description: |-
-        Array of Item ids to return. All other filter parameters that further
-        restrict the number of search results are ignored
+        Array of Item ids to return (for example
+        `["S2B_MSIL1C_20231030T110109_N0509_R094_T31TCJ_20231030T115103",
+        "S2A_MSIL1C_20231029T104141_N0509_R008_T31TCJ_20231029T141106"]`).
+
+        **All other filter parameters that further restrict the number of search results are ignored.**
       required: false
       schema:
         $ref: '#/components/schemas/ids'
@@ -378,11 +583,44 @@ components:
       description: |
         Array of Collection IDs to include in the search for items.
         Only Items in one of the provided Collections will be searched
-      required: false
+      required: true
       schema:
         $ref: '#/components/schemas/collectionsArray'
       explode: false
   schemas:
+    queryProp:
+      description: Apply query operations to a specific property
+      anyOf:
+        - description: if the object doesn't contain any of the operators, it is equivalent to using the equals operator
+        - type: object
+          description: Match using an operator
+          properties:
+            lte:
+              description: |-
+                Find items with a property value less than or equal the specified value.
+                In EODAG, only `eo:cloud_cover` supports this operator.
+              oneOf:
+                - type: number
+            eq:
+              description: |-
+                Find items with a property that is equal to the specified value.
+                For strings, a case-insensitive comparison must be performed.
+                In EODAG, this operator is implemented for all parameters but `eo:cloud_cover`
+              nullable: true
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+    query:
+      type: object
+      description: Define which parameters are queryable and the operators associated with each
+      additionalProperties:
+        $ref: '#/components/schemas/queryProp'
+      example:
+        platform:
+          eq: S2A
+        eo:cloud_cover:
+          lte: 80
     collection:
       type: object
       required:
@@ -621,8 +859,6 @@ components:
       required:
         - code
       properties:
-        code:
-          type: string
         description:
           type: string
     extent:
@@ -1179,20 +1415,36 @@ components:
             type: string
             format: url
     searchBody:
+      required:
+        - collections
       description: The search criteria
       type: object
       allOf:
+        - $ref: '#/components/schemas/collectionsFilter'
         - $ref: '#/components/schemas/bboxFilter'
         - $ref: '#/components/schemas/datetimeFilter'
         - $ref: '#/components/schemas/intersectsFilter'
-        - $ref: '#/components/schemas/collectionsFilter'
         - $ref: '#/components/schemas/idsFilter'
         - $ref: '#/components/schemas/limitFilter'
+        - $ref: '#/components/schemas/queryFilter'
+      example:
+        datetime: 2023-11-03T00:00:00Z/2023-11-04T12:31:12Z
+        bbox:
+          - -12
+          - 33
+          - -11
+          - 34
+        collections:
+          - S2_MSI_L1C
+        platform:
+          eq: S2A
+        eo:cloud_cover:
+          lte: 80
+        limit: 10
     limit:
       type: integer
       minimum: 1
       example: 10
-      default: 10
       maximum: 10000
       description: The maximum number of results to return (page size). Defaults to 10
     bbox:
@@ -1234,10 +1486,10 @@ components:
       items:
         type: number
       example:
-        - -110
-        - 39.5
-        - -105
-        - 40.5
+        - -12
+        - 33
+        - -11
+        - 34
     bboxFilter:
       type: object
       description: Only return items that intersect the provided bounding box.
@@ -1251,11 +1503,15 @@ components:
         Only Items in one of the provided Collections will be searched.
       items:
         type: string
+      example:
+        - S2_MSI_L1C
     ids:
       type: array
       description: |-
-        Array of Item ids to return. All other filter parameters that further
-        restrict the number of search results are ignored
+        Array of Item ids to return (for example
+        `["S2B_MSIL1C_20231030T110109_N0509_R094_T31TCJ_20231030T115103",
+        "S2A_MSIL1C_20231029T104141_N0509_R008_T31TCJ_20231029T141106"]`). All other filter parameters that further
+        restrict the number of search results are ignored.
       items:
         type: string
     datetimeFilter:
@@ -1288,6 +1544,12 @@ components:
       properties:
         collections:
           $ref: '#/components/schemas/collectionsArray'
+    queryFilter:
+      description: An object representing a query filter.
+      type: object
+      properties:
+        query:
+          $ref: '#/components/schemas/query'
     datetime:
       type: string
       description: |-
@@ -1297,9 +1559,9 @@ components:
 
         Examples:
 
-        * A date-time: "2018-02-12T23:20:50Z"
-        * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
-        * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+        * A date-time: `2023-10-12T23:20:50Z`
+        * A closed interval: `2023-10-12T00:00:00Z/2023-11-10T12:31:12Z`
+        * Open intervals: `2023-10-12T00:00:00Z/..` or `../2023-11-10T12:31:12Z`
 
         Only features that have a temporal property that intersects the value of
         `datetime` are selected.
@@ -1307,7 +1569,7 @@ components:
         If a feature has multiple temporal properties, it is the decision of the
         server whether only a single temporal property is used to determine
         the extent or all relevant temporal properties.
-      example: '2018-02-12T00:00:00Z/2018-03-18T12:31:12Z'
+      example: '2023-10-12T00:00:00Z/2023-11-10T12:31:12Z'
     stac_version:
       title: STAC version
       type: string
@@ -1728,6 +1990,16 @@ components:
             type: string
     NotFound:
       description: The requested URI was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+    Queryables:
+      description: A JSON Schema defining the Queryables allowed in filter expressions
+      content:
+        application/schema+json:
+          schema:
+            type: object
     ServerError:
       description: A server error occurred.
       content:
@@ -1742,3 +2014,12 @@ servers:
     description: Development server
   - url: 'http://www.cool-sat.com'
     description: Production server
+tags:
+  - name: Capabilities
+    description: essential characteristics of this API
+  - name: Data
+    description: access to data (features)
+  - name: STAC
+    description: >-
+      Extension to OGC API - Features to support STAC metadata model and search
+      API

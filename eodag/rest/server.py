@@ -116,7 +116,7 @@ app = FastAPI(lifespan=lifespan, title="EODAG", docs_url="/api.html")
 stac_api_config = load_stac_api_config()
 
 
-@router.get("/api", tags=["Capabilities"])
+@router.get("/api", tags=["Capabilities"], include_in_schema=False)
 def eodag_openapi():
     """Customized openapi"""
     logger.debug("URL: /api")
@@ -140,7 +140,10 @@ def eodag_openapi():
 
     # stac_api_config
     update_nested_dict(openapi_schema["paths"], stac_api_config["paths"])
-    update_nested_dict(openapi_schema["components"], stac_api_config["components"])
+    try:
+        update_nested_dict(openapi_schema["components"], stac_api_config["components"])
+    except KeyError:
+        openapi_schema["components"] = stac_api_config["components"]
     openapi_schema["tags"] = stac_api_config["tags"]
 
     detailled_collections_list = get_detailled_collections_list(fetch_providers=False)
@@ -314,96 +317,28 @@ class SearchBody(BaseModel):
     ids: Union[List[str], None] = None
 
 
-@router.get("/search", tags=["STAC"])
-@router.post("/search", tags=["STAC"])
-def stac_search(request: Request, search_body: Optional[SearchBody] = None):
-    """STAC collections items"""
+@router.get(
+    "/collections/{collection_id}/items/{item_id}/download",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_collections_item_download(collection_id, item_id, request: Request):
+    """STAC collection item local download"""
     logger.debug(f"URL: {request.url}")
-    logger.debug(f"Body: {search_body}")
-
-    url = request.state.url
-    url_root = request.state.url_root
-
-    if search_body is None:
-        body = {}
-    else:
-        body = vars(search_body)
-
-    arguments = dict(request.query_params, **body)
-    provider = arguments.pop("provider", None)
-
-    response = search_stac_items(
-        url=url, arguments=arguments, root=url_root, provider=provider
-    )
-    resp = ORJSONResponse(
-        content=response, status_code=200, media_type="application/json"
-    )
-    return resp
-
-
-@router.get("/collections", tags=["Capabilities"])
-def collections(request: Request):
-    """STAC collections
-
-    Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
-    """
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    response = get_stac_collections(
-        url=url,
-        root=url_root,
-        arguments=arguments,
-        provider=provider,
-    )
-    return jsonable_encoder(response)
-
-
-@router.get("/collections/{collection_id}/items", tags=["Data"])
-def stac_collections_items(collection_id, request: Request):
-    """STAC collections items"""
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    response = search_stac_items(
-        url=url,
-        arguments=arguments,
-        root=url_root,
-        provider=provider,
-        catalogs=[collection_id],
-    )
-    return jsonable_encoder(response)
-
-
-@router.get("/collections/{collection_id}", tags=["Capabilities"])
-def collection_by_id(collection_id, request: Request):
-    """STAC collection by id"""
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url_root + "/collections"
-    url_root = request.state.url_root
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    response = get_stac_collection_by_id(
-        url=url,
-        root=url_root,
-        collection_id=collection_id,
-        provider=provider,
+    return download_stac_item_by_id_stream(
+        catalogs=[collection_id], item_id=item_id, provider=provider
     )
 
-    return jsonable_encoder(response)
 
-
-@router.get("/collections/{collection_id}/items/{item_id}", tags=["Data"])
+@router.get(
+    "/collections/{collection_id}/items/{item_id}",
+    tags=["Data"],
+    include_in_schema=False,
+)
 def stac_collections_item(collection_id, item_id, request: Request):
     """STAC collection item by id"""
     logger.debug(f"URL: {request.url}")
@@ -432,211 +367,34 @@ def stac_collections_item(collection_id, item_id, request: Request):
         )
 
 
-@router.get("/collections/{collection_id}/items/{item_id}/download", tags=["Data"])
-def stac_collections_item_download(collection_id, item_id, request: Request):
-    """STAC collection item local download"""
-    logger.debug(f"URL: {request.url}")
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    return download_stac_item_by_id_stream(
-        catalogs=[collection_id], item_id=item_id, provider=provider
-    )
-
-
-@router.get("/catalogs/{catalogs:path}/items", tags=["Data"])
-def stac_catalogs_items(catalogs, request: Request):
-    """Fetch catalog's features
-    ---
-    tags:
-      - Data
-    description: |-
-        Fetch features in the given catalog provided with `catalogs`.
-    parameters:
-      - name: catalogs
-        in: path
-        required: true
-        description: |-
-            The path to the catalog that contains the requested features.
-
-            For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
-        schema:
-            type: string
-      - $ref: '#/components/parameters/bbox'
-      - $ref: '#/components/parameters/datetime'
-      - $ref: '#/components/parameters/limit'
-    responses:
-        200:
-            description: The list of items found for the given catalog.
-            type: array
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/itemCollection'
-        '500':
-            $ref: '#/components/responses/ServerError
-    '"""
+@router.get(
+    "/collections/{collection_id}/items",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_collections_items(collection_id, request: Request):
+    """STAC collections items"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
     url_root = request.state.url_root
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
-
-    catalogs = catalogs.strip("/").split("/")
 
     response = search_stac_items(
         url=url,
         arguments=arguments,
         root=url_root,
-        catalogs=catalogs,
         provider=provider,
+        catalogs=[collection_id],
     )
     return jsonable_encoder(response)
-
-
-@router.get("/catalogs/{catalogs:path}/items/{item_id}", tags=["Data"])
-def stac_catalogs_item(catalogs, item_id, request: Request):
-    """Fetch catalog's single features
-    ---
-    tags:
-      - Data
-    description: |-
-        Fetch the feature with id `featureId` in the given catalog provided.
-        with `catalogs`.
-    parameters:
-        - name: catalogs
-          in: path
-          required: true
-          description: |-
-                The path to the catalog that contains the requested feature.
-
-
-                For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
-          schema:
-                type: string
-        - name: item_id
-          in: path
-          description: |-
-            local identifier of a feature (for example `S2A_MSIL1C_20200805T104031_N0209_R008_T31TCJ_20200805T110310`)
-          required: true
-          schema:
-              type: string
-    responses:
-        '200':
-          $ref: '#/components/responses/Feature'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    """
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    catalogs = catalogs.strip("/").split("/")
-    response = get_stac_item_by_id(
-        url=url,
-        item_id=item_id,
-        root=url_root,
-        catalogs=catalogs,
-        provider=provider,
-    )
-
-    if response:
-        return jsonable_encoder(response)
-    else:
-        raise HTTPException(
-            status_code=404,
-            detail="No item found matching `{}` id in catalog `{}`".format(
-                item_id, catalogs
-            ),
-        )
-
-
-@router.get("/catalogs/{catalogs:path}/items/{item_id}/download", tags=["Data"])
-def stac_catalogs_item_download(catalogs, item_id, request: Request):
-    """STAC item local download"""
-    logger.debug(f"URL: {request.url}")
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    catalogs = catalogs.strip("/").split("/")
-
-    return download_stac_item_by_id_stream(
-        catalogs=catalogs, item_id=item_id, provider=provider
-    )
-
-
-@router.get("/catalogs/{catalogs:path}", tags=["Capabilities"])
-def stac_catalogs(catalogs, request: Request):
-    """Describe the given catalog and list available sub-catalogs
-    ---
-    tags:
-      - Capabilities
-    parameters:
-      - name: catalogs
-        in: path
-        required: true
-        description: |-
-            The catalog's path.
-
-            For a nested catalog, provide the root-related path to the catalog (for example `S2_MSI_L1C/year/2020`)
-        schema:
-            type: string
-    responses:
-        200:
-            description: The catalog's description
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/collection'
-        '500':
-            $ref: '#/components/responses/ServerError'
-    """
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    catalogs = catalogs.strip("/").split("/")
-    response = get_stac_catalogs(
-        url=url,
-        root=url_root,
-        catalogs=catalogs,
-        provider=provider,
-    )
-    return jsonable_encoder(response)
-
-
-@router.get("/queryables", tags=["Capabilities"], response_model_exclude_none=True)
-def list_queryables(request: Request) -> Queryables:
-    """Returns the list of terms available for use when writing filter expressions.
-
-    This endpoint provides a list of terms that can be used as filters when querying
-    the data. These terms correspond to properties that can be filtered using comparison
-    operators.
-
-    :param request: The incoming request object.
-    :type request: fastapi.Request
-    :returns: An object containing the list of available queryable terms.
-    :rtype: eodag.rest.utils.Queryables
-    """
-    logger.debug(f"URL: {request.url}")
-
-    return Queryables(q_id=request.state.url)
 
 
 @router.get(
     "/collections/{collection_id}/queryables",
     tags=["Capabilities"],
+    include_in_schema=False,
     response_model_exclude_none=True,
 )
 def list_collection_queryables(
@@ -669,6 +427,218 @@ def list_collection_queryables(
         queryables[prop] = QueryableProperty(description=titled_name)
 
     return queryables
+
+
+@router.get(
+    "/collections/{collection_id}",
+    tags=["Capabilities"],
+    include_in_schema=False,
+)
+def collection_by_id(collection_id, request: Request):
+    """STAC collection by id"""
+    logger.debug(f"URL: {request.url}")
+    url = request.state.url_root + "/collections"
+    url_root = request.state.url_root
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    response = get_stac_collection_by_id(
+        url=url,
+        root=url_root,
+        collection_id=collection_id,
+        provider=provider,
+    )
+
+    return jsonable_encoder(response)
+
+
+@router.get(
+    "/collections",
+    tags=["Capabilities"],
+    include_in_schema=False,
+)
+def collections(request: Request):
+    """STAC collections
+
+    Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
+    """
+    logger.debug(f"URL: {request.url}")
+    url = request.state.url
+    url_root = request.state.url_root
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    response = get_stac_collections(
+        url=url,
+        root=url_root,
+        arguments=arguments,
+        provider=provider,
+    )
+    return jsonable_encoder(response)
+
+
+@router.get(
+    "/catalogs/{catalogs:path}/items/{item_id}/download",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_catalogs_item_download(catalogs, item_id, request: Request):
+    """STAC item local download"""
+    logger.debug(f"URL: {request.url}")
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    catalogs = catalogs.strip("/").split("/")
+
+    return download_stac_item_by_id_stream(
+        catalogs=catalogs, item_id=item_id, provider=provider
+    )
+
+
+@router.get(
+    "/catalogs/{catalogs:path}/items/{item_id}",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_catalogs_item(catalogs, item_id, request: Request):
+    """Fetch catalog's single features."""
+    logger.debug(f"URL: {request.url}")
+    url = request.state.url
+    url_root = request.state.url_root
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    catalogs = catalogs.strip("/").split("/")
+    response = get_stac_item_by_id(
+        url=url,
+        item_id=item_id,
+        root=url_root,
+        catalogs=catalogs,
+        provider=provider,
+    )
+
+    if response:
+        return jsonable_encoder(response)
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail="No item found matching `{}` id in catalog `{}`".format(
+                item_id, catalogs
+            ),
+        )
+
+
+@router.get(
+    "/catalogs/{catalogs:path}/items",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_catalogs_items(catalogs, request: Request):
+    """Fetch catalog's features
+    '"""
+    logger.debug(f"URL: {request.url}")
+    url = request.state.url
+    url_root = request.state.url_root
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    catalogs = catalogs.strip("/").split("/")
+
+    response = search_stac_items(
+        url=url,
+        arguments=arguments,
+        root=url_root,
+        catalogs=catalogs,
+        provider=provider,
+    )
+    return jsonable_encoder(response)
+
+
+@router.get(
+    "/catalogs/{catalogs:path}",
+    tags=["Capabilities"],
+    include_in_schema=False,
+)
+def stac_catalogs(catalogs, request: Request):
+    """Describe the given catalog and list available sub-catalogs"""
+    logger.debug(f"URL: {request.url}")
+    url = request.state.url
+    url_root = request.state.url_root
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    catalogs = catalogs.strip("/").split("/")
+    response = get_stac_catalogs(
+        url=url,
+        root=url_root,
+        catalogs=catalogs,
+        provider=provider,
+    )
+    return jsonable_encoder(response)
+
+
+@router.get(
+    "/queryables",
+    tags=["Capabilities"],
+    include_in_schema=False,
+    response_model_exclude_none=True,
+)
+def list_queryables(request: Request) -> Queryables:
+    """Returns the list of terms available for use when writing filter expressions.
+
+    This endpoint provides a list of terms that can be used as filters when querying
+    the data. These terms correspond to properties that can be filtered using comparison
+    operators.
+
+    :param request: The incoming request object.
+    :type request: fastapi.Request
+    :returns: An object containing the list of available queryable terms.
+    :rtype: eodag.rest.utils.Queryables
+    """
+    logger.debug(f"URL: {request.url}")
+
+    return Queryables(q_id=request.state.url)
+
+
+@router.get(
+    "/search",
+    tags=["STAC"],
+    include_in_schema=False,
+)
+@router.post(
+    "/search",
+    tags=["STAC"],
+    include_in_schema=False,
+)
+def stac_search(request: Request, search_body: Optional[SearchBody] = None):
+    """STAC collections items"""
+    logger.debug(f"URL: {request.url}")
+    logger.debug(f"Body: {search_body}")
+
+    url = request.state.url
+    url_root = request.state.url_root
+
+    if search_body is None:
+        body = {}
+    else:
+        body = vars(search_body)
+
+    arguments = dict(request.query_params, **body)
+    provider = arguments.pop("provider", None)
+
+    response = search_stac_items(
+        url=url, arguments=arguments, root=url_root, provider=provider
+    )
+    resp = ORJSONResponse(
+        content=response, status_code=200, media_type="application/json"
+    )
+    return resp
 
 
 app.include_router(router)
