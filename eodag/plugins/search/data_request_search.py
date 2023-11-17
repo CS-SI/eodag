@@ -1,4 +1,3 @@
-import datetime
 import logging
 import re
 import time
@@ -15,8 +14,8 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.search.base import Search
-from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.plugins.search.build_search_result import get_product_id
+from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
@@ -451,9 +450,7 @@ class DataRequestSearch(Search):
                 year = keywords["year"]
             else:
                 year = min(keywords["year"])
-            start_date = datetime(int(year), 1, 1).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            start_date = datetime(int(year), 1, 1).strftime("%Y-%m-%dT%H:%M:%SZ")
         if keywords.get("completionTimeFromAscendingNode"):
             end_date = keywords.get("completionTimeFromAscendingNode")
         elif time_split_var == "month":
@@ -466,17 +463,15 @@ class DataRequestSearch(Search):
             else:
                 month = max(keywords["month"])
             m = min(int(month) + 1, 12)
-            end_date = (
-                datetime(int(year), m, 1) - timedelta(days=1)
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_date = (datetime(int(year), m, 1) - timedelta(days=1)).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
         else:
             if isinstance(keywords["year"], str):
                 year = keywords["year"]
             else:
                 year = max(keywords["year"])
-            end_date = datetime(int(year), 12, 31).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            end_date = datetime(int(year), 12, 31).strftime("%Y-%m-%dT%H:%M:%SZ")
         return {"start_date": start_date, "end_date": end_date}
 
     def _create_data_request(self, product_type, eodag_product_type, **kwargs):
