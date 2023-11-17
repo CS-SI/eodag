@@ -3716,14 +3716,14 @@
           - '$.null'
     S3_SLSTR_L2AOD:
       productType: EO:EUM:DAT:SENTINEL-3:0416
-      type: SL_2_AOD___
+      providerProductType: SL_2_AOD___
       timeliness: NR
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_AOD___"}}, {{"name": "timeliness", "value": "NR"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3740,20 +3740,20 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2FRP:
       productType: EO:EUM:DAT:SENTINEL-3:0417
-      type: SL_2_FRP___
+      providerProductType: SL_2_FRP___
       timeliness: NR
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_FRP___"}}, {{"name": "timeliness", "value": "NR"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3773,13 +3773,13 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_EFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
-      type: OL_1_EFR___
+      providerProductType: OL_1_EFR___
       metadata_mapping:
         productType:
           - '{{"datasetId": "EO:EUM:DAT:SENTINEL-3:0577"}}'
@@ -3787,8 +3787,8 @@
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_EFR___"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3805,13 +3805,13 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_ERR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
-      type: OL_1_ERR___
+      providerProductType: OL_1_ERR___
       metadata_mapping:
         productType:
           - '{{"datasetId": "EO:EUM:DAT:SENTINEL-3:0578"}}'
@@ -3819,8 +3819,8 @@
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3837,19 +3837,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
-      type: OL_2_WFR___
+      providerProductType: OL_2_WFR___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3866,19 +3866,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WRR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
-      type: OL_2_WRR___
+      providerProductType: OL_2_WRR___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3895,20 +3895,20 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WFR_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0556
-      type: OL_2_WFR___
+      providerProductType: OL_2_WFR___
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3922,20 +3922,20 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WRR_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0557
-      type: OL_2_WRR___
+      providerProductType: OL_2_WRR___
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3949,19 +3949,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
-      type: SR_1_SRA___
+      providerProductType: SR_1_SRA___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -3978,19 +3978,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_A:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
-      type: SR_1_SRA_A_
+      providerProductType: SR_1_SRA_A_
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4007,19 +4007,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_BS:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
-      type: SR_1_SRA_BS
+      providerProductType: SR_1_SRA_BS
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_BS"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4036,19 +4036,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_1A_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0583
-      type: SR_1_SRA_A_
+      providerProductType: SR_1_SRA_A_
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4062,19 +4062,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_1B_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0584
-      type: SR_1_SRA___
+      providerProductType: SR_1_SRA___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4088,19 +4088,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_BS_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0585
-      type: SR_1_SRA_BS
+      providerProductType: SR_1_SRA_BS
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_BS"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4114,19 +4114,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
-      type: SR_2_WAT___
+      providerProductType: SR_2_WAT___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_2_WAT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4143,20 +4143,20 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_WAT_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0586
-      type: SR_2_WAT___
+      providerProductType: SR_2_WAT___
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_2_WAT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4170,19 +4170,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L1RBT:
       productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
-      type: SL_1_RBT___
+      providerProductType: SL_1_RBT___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_1_RBT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4199,19 +4199,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L1RBT_BC004:
       productType: EO:EUM:DAT:SENTINEL-3:0615
-      type: SL_1_RBT___
+      providerProductType: SL_1_RBT___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_1_RBT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4225,19 +4225,19 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2WST:
       productType: EO:EUM:DAT:SENTINEL-3:SL_2_WST___
-      type: SL_2_WST___
+      providerProductType: SL_2_WST___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4254,21 +4254,21 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2WST_BC003:
       productType: EO:EUM:DAT:SENTINEL-3:0582
-      type: SL_2_WST___
+      providerProductType: SL_2_WST___
       timeliness: NT
       platform: Sentinel-3A
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4282,8 +4282,8 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L4BALTIC:
@@ -4327,14 +4327,14 @@
     S6_L1A_AHR:
       productType: EO:EUM:DAT:0236
       platform: Sentinel-6A
-      type: P4_1A_HR_____
+      providerProductType: P4_1A_HR_____
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1A_HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4348,21 +4348,21 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L1B_ALR:
       productType: EO:EUM:DAT:0237
       platform: Sentinel-6A
-      type: P4_1B_LR_____
+      providerProductType: P4_1B_LR_____
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1B_LR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4376,21 +4376,21 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L1B_AHR:
       productType: EO:EUM:DAT:0238
       platform: Sentinel-6A
-      type: P4_1B_HR_____
+      providerProductType: P4_1B_HR_____
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1B_HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4404,21 +4404,21 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_ALR:
       productType: EO:EUM:DAT:0239
       platform: Sentinel-6A
-      type: P4_2__LR_____
+      providerProductType: P4_2__LR_____
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_2__LR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4432,21 +4432,21 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_AHR:
       productType: EO:EUM:DAT:0240
       platform: Sentinel-6A
-      type: P4_2__HR_____
+      providerProductType: P4_2__HR_____
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_2__HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4460,21 +4460,21 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S6_L2_R:
       productType: EO:EUM:DAT:0241
       platform: Sentinel-6A
-      type: MW_2__AMR____
+      providerProductType: MW_2__AMR____
       timeliness: NT
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "MW_2__AMR____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        type:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "{type}"}}]}}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
           - '$.null'
         platform:
           - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
@@ -4488,8 +4488,8 @@
         orbitNumber:
           - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
           - '$.null'
-        cycle:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycle}"}}]}}'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     COP_DEM_GLO30_DGED:
