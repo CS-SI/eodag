@@ -348,9 +348,7 @@ class DataRequestSearch(Search):
         properties = dict(getattr(self.config, "product_type_config", {}), **properties)
         return EOProduct(self.provider, properties, productType=product_type)
 
-    def _get_products(
-        self, product_type, provider_product_type, keywords, split_result, **kwargs
-    ):
+    def _get_products(self, product_type, provider_product_type, keywords, **kwargs):
         # ask for data_request_id if not set (it must exist when iterating over pages)
         if not self.data_request_id:
             data_request_id = self._create_data_request(
