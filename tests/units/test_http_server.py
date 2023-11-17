@@ -514,7 +514,7 @@ class RequestTestCase(unittest.TestCase):
     def _request_accepted(self, url, mock_search):
         response = self.app.get(url, follow_redirects=True)
         self.assertEqual(202, response.status_code)
-        self.assertEquals(response.content, b"")
+        self.assertEqual(response.content, b"")
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
