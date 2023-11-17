@@ -4324,7 +4324,7 @@
         processingMode:
           - '{{"stringChoiceValues": [{{"name": "processingMode", "value": "{processingMode}"}}]}}'
           - '$.null'
-    S6_L1A_AHR:
+    S6_P4_L1AHR_F06:
       productType: EO:EUM:DAT:0236
       platform: Sentinel-6A
       providerProductType: P4_1A_HR_____
@@ -4352,7 +4352,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
-    S6_L1B_ALR:
+    S6_P4_L1BLR_F06:
       productType: EO:EUM:DAT:0237
       platform: Sentinel-6A
       providerProductType: P4_1B_LR_____
@@ -4380,7 +4380,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
-    S6_L1B_AHR:
+    S6_P4_L1BAHR_F06:
       productType: EO:EUM:DAT:0238
       platform: Sentinel-6A
       providerProductType: P4_1B_HR_____
@@ -4408,7 +4408,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
-    S6_L2_ALR:
+    S6_P4_L2LR_F06:
       productType: EO:EUM:DAT:0239
       platform: Sentinel-6A
       providerProductType: P4_2__LR_____
@@ -4436,7 +4436,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
-    S6_L2_AHR:
+    S6_P4_L2HR_F06:
       productType: EO:EUM:DAT:0240
       platform: Sentinel-6A
       providerProductType: P4_2__HR_____
@@ -4464,7 +4464,7 @@
           - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
-    S6_L2_R:
+    S6_AMR_L2_F06:
       productType: EO:EUM:DAT:0241
       platform: Sentinel-6A
       providerProductType: MW_2__AMR____
