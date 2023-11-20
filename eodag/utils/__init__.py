@@ -72,6 +72,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
+from eodag.utils.exceptions import MisconfiguredError
 
 try:
     from importlib.metadata import metadata  # type: ignore
@@ -79,14 +80,17 @@ except ImportError:  # pragma: no cover
     # for python < 3.8
     from importlib_metadata import metadata  # type: ignore
 
-DEFAULT_PROJ = "EPSG:4326"
-
 logger = py_logging.getLogger("eodag.utils")
+
+DEFAULT_PROJ = "EPSG:4326"
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 
 eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
+
+HTTP_REQ_TIMEOUT = 5  # in seconds
+DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
@@ -350,7 +354,7 @@ def merge_mappings(mapping1, mapping2):
             # Even for "scalar" values (a.k.a not nested structures), first check if
             # the key from mapping1 is not the lowercase version of a key in mapping2.
             # Otherwise, create the key in mapping1. This is the meaning of
-            # m1_keys_lowercase.get(key, key)
+            # `m1_keys_lowercase.get(key, key)`
             current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
             if current_value is not None:
                 current_value_type = type(current_value)
@@ -680,9 +684,9 @@ def update_nested_dict(
                 and isinstance(v, list)
                 and (
                     # no common elements
-                    set(v).isdisjoint(old_dict[k])
+                    not any([x for x in v if x in old_dict[k]])
                     # common elements
-                    or not set(v).isdisjoint(old_dict[k])
+                    or any([x for x in v if x in old_dict[k]])
                     and allow_extend_duplicates
                 )
             ):
@@ -692,7 +696,7 @@ def update_nested_dict(
                 and isinstance(old_dict[k], list)
                 and isinstance(v, list)
                 # common elements
-                and not set(v).isdisjoint(old_dict[k])
+                and any([x for x in v if x in old_dict[k]])
                 and not allow_extend_duplicates
             ):
                 old_dict[k].extend([x for x in v if x not in old_dict[k]])
@@ -995,9 +999,10 @@ def format_string(key, str_to_format, **format_variables):
             # defaultdict usage will return "" for missing keys in format_args
             try:
                 result = str_to_format.format_map(defaultdict(str, **format_variables))
-            except TypeError:
-                logger.error("Unable to format str=%s" % str_to_format)
-                raise
+            except TypeError as e:
+                raise MisconfiguredError(
+                    f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
+                )
 
         # try to convert string to python object
         try:
@@ -1139,7 +1144,7 @@ def get_geometry_from_various(locations_config=[], **query_args):
     return geom
 
 
-class MockResponse(object):
+class MockResponse:
     """Fake requests response"""
 
     def __init__(self, json_data, status_code):
@@ -1295,9 +1300,7 @@ def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
     if nested_dir_root != common_subdirs_path:
         logger.debug(f"Flatten {common_subdirs_path} to {nested_dir_root}")
         tmp_path = mkdtemp()
-        # need to delete tmp_path to prevent FileExistsError with copytree. Use dirs_exist_ok with py > 3.7
-        shutil.rmtree(tmp_path)
-        shutil.copytree(common_subdirs_path, tmp_path)
+        shutil.copytree(common_subdirs_path, tmp_path, dirs_exist_ok=True)
         shutil.rmtree(nested_dir_root)
         shutil.move(tmp_path, nested_dir_root)
 

@@ -24,6 +24,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from unittest import mock
 
 import responses
+import yaml
 
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -35,6 +36,7 @@ from tests.context import (
     NotAvailableError,
     PluginManager,
     load_default_config,
+    override_config_from_mapping,
     path_to_uri,
     uri_to_path,
 )
@@ -468,6 +470,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             url=self.product.properties["orderLink"],
             auth=auth,
             headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
@@ -489,6 +492,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             url=self.product.properties["orderLink"],
             auth=auth,
             headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
         )
         # orderLink with query query args
         mock_request.reset_mock()
@@ -499,6 +503,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             url="http://somewhere/order",
             auth=auth,
             headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
             json={"foo": ["bar"]},
         )
 
@@ -527,8 +532,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 plugin.orderDownloadStatus(self.product, auth=auth)
                 self.assertEqual(
                     [
-                        f"INFO:eodag.plugins.download.http:{self.product.properties['title']} order status: 50%",
-                        'WARNING:eodag.plugins.download.http:{"progress_percentage": 50, "that": "failed"}',
+                        f"INFO:eodag.download.http:{self.product.properties['title']} order status: 50%",
+                        'WARNING:eodag.download.http:{"progress_percentage": 50, "that": "failed"}',
                     ],
                     cm.output,
                 )
@@ -1021,6 +1026,49 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
     def setUp(self):
         super(TestDownloadPluginS3Rest, self).setUp()
+
+        # manually add conf as this provider is not supported any more
+        providers_config = self.plugins_manager.providers_config
+        mundi_config_yaml = """
+            mundi:
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+                        collection: '{collection}'
+                        instrument: '{instrument}'
+                        processingLevel: '{processingLevel}'
+                download:
+                    type: S3RestDownload
+                    base_uri: 'https://mundiwebservices.com/dp'
+                    extract: true
+                    auth_error_code: 401
+                    bucket_path_level: 0
+                    # order mechanism
+                    order_enabled: true
+                    order_method: 'POST'
+                    order_headers:
+                    accept: application/json
+                    Content-Type: application/json
+                    order_on_response:
+                    metadata_mapping:
+                        order_id: '{$.requestId#replace_str("Not Available","")}'
+                        reorder_id: '{$.message.`sub(/.*requestId: ([a-z0-9]+)/, \\1)`#replace_str("Not Available","")}'
+                        orderStatusLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request/{order_id}{reorder_id}'
+                    order_status_method: 'GET'
+                    order_status_percent: status
+                    order_status_success:
+                    status: Success
+                    order_status_on_success:
+                    need_search: true
+                    result_type: 'xml'
+                    results_entry: '//ns:entry'
+                    metadata_mapping:
+                        downloadLink: 'ns:link[@rel="enclosure"]/@href'
+                        storageStatus: 'DIAS:onlineStatus/text()'
+        """
+        mundi_config_dict = yaml.safe_load(mundi_config_yaml)
+        override_config_from_mapping(providers_config, mundi_config_dict)
+        self.plugins_manager = PluginManager(providers_config)
 
         self.product = EOProduct(
             "mundi",

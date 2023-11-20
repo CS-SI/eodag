@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import json
 import logging
 import re
 from datetime import datetime, timedelta
@@ -37,6 +38,7 @@ from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
     dict_items_recursive_apply,
+    get_geometry_from_various,
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
@@ -44,7 +46,7 @@ from eodag.utils import (
     update_nested_dict,
 )
 
-logger = logging.getLogger("eodag.api.product.metadata_mapping")
+logger = logging.getLogger("eodag.product.metadata_mapping")
 
 SEP = r"#"
 INGEST_CONVERSION_REGEX = re.compile(
@@ -157,6 +159,10 @@ def format_metadata(search_param, *args, **kwargs):
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
+        - ``split_cop_dem_id``: get the bbox by splitting the product id
+        - ``split_corine_id``: get the product type by splitting the product id
+        - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
+        - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
 
     :param search_param: The string to be formatted
     :type search_param: str
@@ -234,7 +240,7 @@ def format_metadata(search_param, *args, **kwargs):
                 return timestamp
 
         @staticmethod
-        def convert_to_iso_utc_datetime(date_time, timespec="milliseconds"):
+        def convert_to_iso_utc_datetime(date_time: str, timespec="milliseconds") -> str:
             """Convert a date_time (str) to its ISO 8601 representation in UTC
 
             "2021-04-21" => "2021-04-21T00:00:00.000Z"
@@ -300,6 +306,26 @@ def format_metadata(search_param, *args, **kwargs):
                 return [list(x.bounds[0:4]) for x in geoms]
             else:
                 return [list(input_geom.bounds[0:4])]
+
+        @staticmethod
+        def convert_to_bounds(input_geom_unformatted):
+            input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
+            if isinstance(input_geom, MultiPolygon):
+                geoms = [geom for geom in input_geom.geoms]
+                # sort with larger one at first (stac-browser only plots first one)
+                geoms.sort(key=lambda x: x.area, reverse=True)
+                min_lon = 180
+                min_lat = 90
+                max_lon = -180
+                max_lat = -90
+                for geom in geoms:
+                    min_lon = min(min_lon, geom.bound[0])
+                    min_lat = min(min_lat, geom.bound[1])
+                    max_lon = max(max_lon, geom.bound[2])
+                    max_lat = max(max_lat, geom.bound[3])
+                return [min_lon, min_lat, max_lon, max_lat]
+            else:
+                return list(input_geom.bounds[0:4])
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom):
@@ -533,16 +559,34 @@ def format_metadata(search_param, *args, **kwargs):
             return params
 
         @staticmethod
+        def convert_get_processing_level_from_s1_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            level = "LEVEL" + parts[3][0]
+            return level
+
+        @staticmethod
+        def convert_get_sensor_mode_from_s1_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            return parts[1]
+
+        @staticmethod
+        def convert_get_processing_level_from_s2_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            processing_level = "S2" + parts[1]
+            return processing_level
+
+        @staticmethod
         def convert_split_id_into_s3_params(product_id):
             parts = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
-            start_date = datetime.strptime(
-                product_id[16:31], "%Y%m%dT%H%M%S"
-            ) - timedelta(seconds=1)
+            dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
+            start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
+                seconds=1
+            )
             params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_date = datetime.strptime(
-                product_id[32:47], "%Y%m%dT%H%M%S"
-            ) + timedelta(seconds=1)
+            end_date = datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + timedelta(
+                seconds=1
+            )
             params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
             params["timeliness"] = parts[-2]
             params["sat"] = "Sentinel-" + parts[0][1:]
@@ -567,6 +611,12 @@ def format_metadata(search_param, *args, **kwargs):
             return params
 
         @staticmethod
+        def convert_get_processing_level_from_s5p_id(product_id):
+            parts = re.split(r"_(?!_)", product_id)
+            processing_level = parts[2].replace("_", "")
+            return processing_level
+
+        @staticmethod
         def convert_split_cop_dem_id(product_id):
             parts = product_id.split("_")
             lattitude = parts[3]
@@ -582,31 +632,91 @@ def format_metadata(search_param, *args, **kwargs):
             bbox = [long_num - 1, lat_num - 1, long_num + 1, lat_num + 1]
             return bbox
 
-        # @staticmethod
-        # def convert_get_corine_product_type(start_date, end_date):
-        #     start_year = start_date[:4]
-        #     end_year = end_date[:4]
-        #     print(start_year, end_year)
-        #     years = [1990, 2000, 2006, 2012, 2018]
-        #     if start_year == end_year and int(start_year) in years:
-        #         product_type = "Corine Land Cover " + start_year
-        #     else:
-        #         max_interception = 0
-        #         sel_years = [1990, 2000]
-        #         for i, year in enumerate(years[:-1]):
-        #             if int(end_year) < years[i+1] and i == 0:
-        #                 sel_years = [year, years[i+1]]
-        #                 break
-        #             elif int(start_year) > years[i+1]:
-        #                 continue
-        #             else:
-        #                 interception = min(years[i+1], int(end_year)) - max(year, int(start_year))
-        #                 if interception > max_interception:
-        #                     max_interception = interception
-        #                     sel_years = [year, years[i+1]]
-        #         product_type = "Corine Land Change " + str(sel_years[0]) + " " + str(sel_years[1])
-        #
-        #     return product_type
+        @staticmethod
+        def convert_split_corine_id(product_id):
+            if "clc" in product_id:
+                year = product_id.split("_")[1][3:]
+                product_type = "Corine Land Cover " + year
+            else:
+                years = [1990, 2000, 2006, 2012, 2018]
+                end_year = product_id[1:5]
+                i = years.index(int(end_year))
+                start_year = str(years[i - 1])
+                product_type = "Corine Land Change " + start_year + " " + end_year
+            return product_type
+
+        @staticmethod
+        def convert_to_datetime_dict(date: str, format: str) -> dict:
+            """Convert a date (str) to a dictionary where values are in the format given in argument
+
+            date == "2021-04-21T18:27:19.123Z" and format == "list" => {
+                "year": ["2021"],
+                "month": ["04"],
+                "day": ["21"],
+                "hour": ["18"],
+                "minute": ["27"],
+                "second": ["19"],
+            }
+            date == "2021-04-21T18:27:19.123Z" and format == "string" => {
+                "year": "2021",
+                "month": "04",
+                "day": "21",
+                "hour": "18",
+                "minute": "27",
+                "second": "19",
+            }
+            date == "2021-04-21" and format == "list" => {
+                "year": ["2021"],
+                "month": ["04"],
+                "day": ["21"],
+                "hour": ["00"],
+                "minute": ["00"],
+                "second": ["00"],
+            }
+            """
+            utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
+            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            if format == "list":
+                return {
+                    "year": [date_object.strftime("%Y")],
+                    "month": [date_object.strftime("%m")],
+                    "day": [date_object.strftime("%d")],
+                    "hour": [date_object.strftime("%H")],
+                    "minute": [date_object.strftime("%M")],
+                    "second": [date_object.strftime("%S")],
+                }
+            else:
+                return {
+                    "year": date_object.strftime("%Y"),
+                    "month": date_object.strftime("%m"),
+                    "day": date_object.strftime("%d"),
+                    "hour": date_object.strftime("%H"),
+                    "minute": date_object.strftime("%M"),
+                    "second": date_object.strftime("%S"),
+                }
+
+        @staticmethod
+        def convert_get_ecmwf_time(date: str) -> list:
+            """Get the time of a date (str) in the ECMWF format (["HH:00"])
+
+            "2021-04-21T18:27:19.123Z" => ["18:00"]
+            "2021-04-21" => ["00:00"]
+            """
+            return [
+                MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"] + ":00"
+            ]
+
+        @staticmethod
+        def convert_get_dates_from_string(text: str, split_param="-"):
+            reg = "[0-9]{8}" + split_param + "[0-9]{8}"
+            dates_str = re.search(reg, text).group()
+            dates = dates_str.split(split_param)
+            start_date = datetime.strptime(dates[0], "%Y%m%d")
+            end_date = datetime.strptime(dates[1], "%Y%m%d")
+            return {
+                "startDate": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "endDate": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
@@ -614,8 +724,7 @@ def format_metadata(search_param, *args, **kwargs):
             r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
-    # if re.search(r"\([a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*", search_param):
-    #     search_param = search_param.replace(":", "_COLON_")
+
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
@@ -889,7 +998,6 @@ def properties_from_xml(
     discovery_pattern = discovery_config.get("metadata_pattern", None)
     discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
-        # discovered_properties = discovery_path.find(json)
         discovered_properties = root.xpath(
             discovery_path,
             namespaces={k or empty_ns_prefix: v for k, v in root.nsmap.items()},
@@ -918,6 +1026,17 @@ def mtd_cfg_as_conversion_and_querypath(src_dict, dest_dict={}, result_type="jso
     :returns: dest_dict
     :rtype: dict
     """
+    # check if the configuration has already been converted
+    some_configured_value = (
+        next(iter(dest_dict.values())) if dest_dict else next(iter(src_dict.values()))
+    )
+    if (
+        isinstance(some_configured_value, list)
+        and isinstance(some_configured_value[1], tuple)
+        or isinstance(some_configured_value, tuple)
+    ):
+        return dest_dict or src_dict
+
     if not dest_dict:
         dest_dict = deepcopy(src_dict)
     for metadata in src_dict:
@@ -952,10 +1071,15 @@ def format_query_params(product_type, config, **kwargs):
     # . not allowed in eodag_search_key, replaced with %2E
     kwargs = {k.replace(".", "%2E"): v for k, v in kwargs.items()}
 
+    product_type_metadata_mapping = dict(
+        config.metadata_mapping,
+        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+    )
+
     query_params = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
-    queryables = _get_queryables(kwargs, config)
+    queryables = _get_queryables(kwargs, config, product_type_metadata_mapping)
 
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = kwargs[eodag_search_key]
@@ -966,15 +1090,17 @@ def format_query_params(product_type, config, **kwargs):
                 formatted_query_param = format_metadata(
                     provider_search_key, product_type, **kwargs
                 )
+                formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_key:
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
-                        formatted_query_param = _resolve_hashes(
-                            formatted_query_param.replace("'", '"')
-                        )
+                        formatted_query_param = _resolve_hashes(formatted_query_param)
                     # json query string (for POST request)
                     update_nested_dict(
-                        query_params, orjson.loads(formatted_query_param)
+                        query_params,
+                        orjson.loads(formatted_query_param),
+                        extend_list_values=True,
+                        allow_extend_duplicates=False,
                     )
                 else:
                     query_params[eodag_search_key] = formatted_query_param
@@ -995,7 +1121,13 @@ def format_query_params(product_type, config, **kwargs):
     # Now add formatted free text search parameters (this is for cases where a
     # complex query through a free text search parameter is available for the
     # provider and needed for the consumer)
-    literal_search_params.update(_format_free_text_search(config, **kwargs))
+    product_type_metadata_mapping = dict(
+        config.metadata_mapping,
+        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+    )
+    literal_search_params.update(
+        _format_free_text_search(config, product_type_metadata_mapping, **kwargs)
+    )
     for provider_search_key, provider_value in literal_search_params.items():
         if isinstance(provider_value, list):
             query_params.setdefault(provider_search_key, []).extend(provider_value)
@@ -1005,20 +1137,35 @@ def format_query_params(product_type, config, **kwargs):
 
 
 def _resolve_hashes(formatted_query_param):
-    while '["' in formatted_query_param:
-        ind_open = formatted_query_param.find('["')
-        ind_close = formatted_query_param.find('"]')
-        hash_start = formatted_query_param[:ind_open].rfind("{")
-        h = orjson.loads(formatted_query_param[hash_start:ind_open])
-        key = formatted_query_param[ind_open + 2 : ind_close]
+    """
+    resolves structures of the format {"a": "abc", "b": "cde"}["a"] given in the formatted_query_param
+    the structure is replaced by the value corresponding to the given key in the hash
+    (in this case "abc")
+    """
+    # check if there is still a hash to be resolved
+    while '}["' in formatted_query_param:
+        # find and parse code between {}
+        ind_open = formatted_query_param.find('}["')
+        ind_close = formatted_query_param.find('"]', ind_open)
+        hash_start = formatted_query_param[:ind_open].rfind(": {") + 2
+        h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
+        # find key and get value
+        ind_key_start = formatted_query_param.find('"', ind_open) + 1
+        key = formatted_query_param[ind_key_start:ind_close]
         value = h[key]
-        formatted_query_param = formatted_query_param.replace(
-            formatted_query_param[hash_start : ind_close + 2], '"' + value + '"'
-        )
+        # replace hash with value
+        if isinstance(value, str):
+            formatted_query_param = formatted_query_param.replace(
+                formatted_query_param[hash_start : ind_close + 2], '"' + value + '"'
+            )
+        else:
+            formatted_query_param = formatted_query_param.replace(
+                formatted_query_param[hash_start : ind_close + 2], json.dumps(value)
+            )
     return formatted_query_param
 
 
-def _format_free_text_search(config, **kwargs):
+def _format_free_text_search(config, metadata_mapping, **kwargs):
     """Build the free text search parameter using the search parameters"""
     query_params = {}
     if not getattr(config, "free_text_search_operations", None):
@@ -1038,7 +1185,7 @@ def _format_free_text_search(config, **kwargs):
                 if any(
                     re.search(rf"{{{kw}[}}#]", operand)
                     and val is not None
-                    and isinstance(config.metadata_mapping.get(kw, []), list)
+                    and isinstance(metadata_mapping.get(kw, []), list)
                     for kw, val in kwargs.items()
                 )
             )
@@ -1058,15 +1205,13 @@ def _format_free_text_search(config, **kwargs):
     return query_params
 
 
-def _get_queryables(search_params, config):
+def _get_queryables(search_params, config, metadata_mapping):
     """Retrieve the metadata mappings that are query-able"""
     logger.debug("Retrieving queryable metadata from metadata_mapping")
     queryables = {}
     for eodag_search_key, user_input in search_params.items():
         if user_input is not None:
-            md_mapping = config.metadata_mapping.get(
-                eodag_search_key, (None, NOT_MAPPED)
-            )
+            md_mapping = metadata_mapping.get(eodag_search_key, (None, NOT_MAPPED))
             _, md_value = md_mapping
             # query param from defined metadata_mapping
             if md_mapping is not None and isinstance(md_mapping, list):

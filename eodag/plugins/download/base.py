@@ -35,12 +35,11 @@ from eodag.utils.exceptions import (
 )
 from eodag.utils.notebook import NotebookWidgets
 
-logger = logging.getLogger("eodag.plugins.download.base")
+logger = logging.getLogger("eodag.download.base")
 
 # default wait times in minutes
 DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
 DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
-DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 
 class Download(PluginTopic):
@@ -373,7 +372,7 @@ class Download(PluginTopic):
                 shutil.move(extraction_dir, outputs_dir)
 
             elif fs_path.endswith(".tar.gz"):
-                with tarfile.open(fs_path, "r:gz") as zfile:
+                with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
                     progress_callback(1)

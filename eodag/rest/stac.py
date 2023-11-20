@@ -45,7 +45,6 @@ from eodag.utils import (
     urljoin,
 )
 from eodag.utils.exceptions import (
-    MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
     ValidationError,
@@ -57,7 +56,7 @@ DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
 STAC_CATALOGS_PREFIX = "catalogs"
 
 
-class StacCommon(object):
+class StacCommon:
     """Stac common object
 
     :param url: Requested URL
@@ -82,9 +81,6 @@ class StacCommon(object):
         self.root = root.rstrip("/") if len(root) > 1 else root
 
         self.data = {}
-
-        if self.provider and self.eodag_api.get_preferred_provider() != self.provider:
-            self.eodag_api.set_preferred_provider(self.provider)
 
     def update_data(self, data):
         """Updates data using given input STAC dict data
@@ -198,6 +194,7 @@ class StacItem(StacCommon):
         item_model = self.__filter_item_model_properties(
             self.stac_config["item"], search_results[0].product_type
         )
+        provider_model = deepcopy(self.stac_config["provider"])
 
         # check if some items need to be converted
         need_conversion = {}
@@ -216,8 +213,21 @@ class StacItem(StacCommon):
         item_list = []
         for product in search_results:
             # parse jsonpath
+            provider_dict = jsonpath_parse_dict_items(
+                provider_model,
+                {
+                    "provider": self.eodag_api.providers_config[
+                        product.provider
+                    ].__dict__
+                },
+            )
+
             product_item = jsonpath_parse_dict_items(
-                item_model, {"product": product.__dict__}
+                item_model,
+                {
+                    "product": product.__dict__,
+                    "providers": [provider_dict],
+                },
             )
             # add origin assets to product assets
             origin_assets = product_item["assets"].pop("origin_assets")
@@ -364,7 +374,7 @@ class StacItem(StacCommon):
                 if pt["ID"] == product_type
             ][0]
         except IndexError:
-            raise MisconfiguredError(
+            raise NoMatchingProductType(
                 "Product type {} not available for {}".format(
                     product_type, self.provider
                 )
@@ -452,6 +462,12 @@ class StacItem(StacCommon):
         item_model = self.__filter_item_model_properties(
             self.stac_config["item"], product_type
         )
+        provider_model = deepcopy(self.stac_config["provider"])
+
+        provider_dict = jsonpath_parse_dict_items(
+            provider_model,
+            {"provider": self.eodag_api.providers_config[product.provider].__dict__},
+        )
 
         catalog = StacCatalog(
             url=self.url.split("/items")[0],
@@ -464,11 +480,14 @@ class StacItem(StacCommon):
 
         # parse jsonpath
         product_item = jsonpath_parse_dict_items(
-            item_model, {"product": product.__dict__}
+            item_model,
+            {
+                "product": product.__dict__,
+                "providers": provider_dict,
+            },
         )
         # parse f-strings
         format_args = deepcopy(self.stac_config)
-        # format_args["collection"] = dict(catalog.as_dict(), **{"url": catalog.url})
         format_args["catalog"] = dict(
             catalog.as_dict(), **{"url": catalog.url, "root": catalog.root}
         )
@@ -522,13 +541,7 @@ class StacCollection(StacCommon):
         if filters is None:
             filters = {}
         try:
-            guessed_product_types = self.eodag_api.guess_product_type(
-                instrument=filters.get("instrument"),
-                platform=filters.get("platform"),
-                platformSerialIdentifier=filters.get("platformSerialIdentifier"),
-                sensorType=filters.get("sensorType"),
-                processingLevel=filters.get("processingLevel"),
-            )
+            guessed_product_types = self.eodag_api.guess_product_type(**filters)
         except NoMatchingProductType:
             guessed_product_types = []
         if guessed_product_types:
@@ -550,39 +563,43 @@ class StacCollection(StacCommon):
         :rtype: list
         """
         collection_model = deepcopy(self.stac_config["collection"])
+        provider_model = deepcopy(self.stac_config["provider"])
 
         product_types = self.__get_product_types(filters)
 
         collection_list = []
         for product_type in product_types:
-            # get default provider for each product_type
-            product_type_provider = (
-                self.provider
-                or next(
-                    self.eodag_api._plugins_manager.get_search_plugins(
+            if self.provider:
+                providers = [self.provider]
+            else:
+                # get available providers for each product_type
+                providers = [
+                    plugin.provider
+                    for plugin in self.eodag_api._plugins_manager.get_search_plugins(
                         product_type=product_type["ID"]
                     )
-                ).provider
-            )
-            #
-            # if provider not in self.eodag_api.available_providers():
-            #     for p in self.eodag_api._plugins_manager.get_search_plugins(product_type=product_type["ID"]):
-            #         print(p.provider)
+                ]
+            providers_models = []
+            for provider in providers:
+                provider_m = jsonpath_parse_dict_items(
+                    provider_model,
+                    {"provider": self.eodag_api.providers_config[provider].__dict__},
+                )
+                providers_models.append(provider_m)
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(
                 collection_model,
                 {
                     "product_type": product_type,
-                    "provider": self.eodag_api.providers_config[
-                        product_type_provider
-                    ].__dict__,
+                    "providers": providers_models,
                 },
             )
             # parse f-strings
             format_args = deepcopy(self.stac_config)
             format_args["collection"] = dict(
-                product_type_collection, **{"url": self.url, "root": self.root}
+                product_type_collection,
+                **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
             )
             product_type_collection = format_dict_items(
                 product_type_collection, **format_args
@@ -603,6 +620,14 @@ class StacCollection(StacCommon):
         collections = deepcopy(self.stac_config["collections"])
         collections["collections"] = self.__get_collection_list(filters)
 
+        # # parse f-strings
+        format_args = deepcopy(self.stac_config)
+        format_args["collections"].update({"url": self.url, "root": self.root})
+
+        collections["links"] = [
+            format_dict_items(link, **format_args) for link in collections["links"]
+        ]
+
         collections["links"] += [
             {
                 "rel": "child",
@@ -622,13 +647,15 @@ class StacCollection(StacCommon):
 
         :param collection_id: Product type as collection ID
         :type collection_id: str
-        :returns: Collection dictionnary
+        :returns: Collection dictionary
         :rtype: dict
         """
-        collection_list = self.__get_collection_list()
+        collection_list = self.__get_collection_list(
+            filters={"productType": collection_id}
+        )
 
         try:
-            collection = [c for c in collection_list if c["id"] == collection_id][0]
+            collection = collection_list[0]
         except IndexError:
             raise NotAvailableError("%s collection not found" % collection_id)
 

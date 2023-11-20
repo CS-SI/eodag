@@ -20,10 +20,10 @@ jobs:
       run: |
         git fetch --prune --unshallow
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-    - name: Set up Python 3.7
+    - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
-        python-version: "3.7"
+        python-version: "3.8"
     - name: Run pre-commit action
       uses: pre-commit/action@v3.0.0
 
@@ -32,7 +32,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.7, "3.11"]
+        python-version: [3.8, "3.12"]
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout the repo
@@ -95,7 +95,7 @@ jobs:
       uses: 5monkeys/cobertura-action@master
       if: ${{ github.event_name == 'pull_request' }}
       with:
-        path: artifacts/unit-test-results-python3.11-ubuntu-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.12-ubuntu-latest/coverage.xml
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         pull_request_number: ${{ github.pull_request.number }}
         minimum_coverage: 70
@@ -107,7 +107,7 @@ jobs:
       uses: 5monkeys/cobertura-action@master
       if: ${{ github.event_name == 'pull_request' }}
       with:
-        path: artifacts/unit-test-results-python3.11-windows-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.12-windows-latest/coverage.xml
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         pull_request_number: ${{ github.pull_request.number }}
         minimum_coverage: 70
@@ -125,10 +125,10 @@ jobs:
       run: |
         git fetch --prune --unshallow
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-    - name: Set up Python 3.7
+    - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
-        python-version: "3.7"
+        python-version: "3.8"
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Get pip cache dir
@@ -164,10 +164,10 @@ jobs:
       run: |
         git fetch --prune --unshallow
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-    - name: Set up Python 3.7
+    - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
-        python-version: "3.7"
+        python-version: "3.8"
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Get pip cache dir

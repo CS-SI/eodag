@@ -31,13 +31,14 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_,
       `usgs <https://earthexplorer.usgs.gov/>`_, `theia <https://theia.cnes.fr/atdistrib/rocket/>`_,
       `peps <https://peps.cnes.fr/rocket/#/home>`_, `aws_eos <https://eos.com/>`_, `creodias <https://creodias.eu/>`_,
-      `mundi <https://mundiwebservices.com/>`_, `onda <https://www.onda-dias.eu/cms/>`_, `ecmwf <https://www.ecmwf.int/>`_,
+      `onda <https://www.onda-dias.eu/cms/>`_, `ecmwf <https://www.ecmwf.int/>`_,
       `cop_ads <https://ads.atmosphere.copernicus.eu>`_, `cop_cds <https://cds.climate.copernicus.eu>`_,
       `sara <https://copernicus.nci.org.au>`_,
       `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_,
       `cop_dataspace <https://dataspace.copernicus.eu/>`_,
       `planetary_computer <https://planetarycomputer.microsoft.com/>`_,
-      `hydroweb_next <https://hydroweb.next.theia-land.fr>`_
+      `hydroweb_next <https://hydroweb.next.theia-land.fr>`_,
+      `wekeo <https://www.wekeo.eu/>`_
 
 EODAG has the following primary features:
 

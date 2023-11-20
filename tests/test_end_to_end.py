@@ -120,16 +120,9 @@ PLANETARY_COMPUTER_SEARCH_ARGS = [
 ]
 HYDROWBEB_NEXT_SEARCH_ARGS = [
     "hydroweb_next",
-    "SWOT_L2_HR_LAKESP_PRIOR_SAMPLE_V1_2",
+    "SWOT_PRIOR_RIVER_DATABASE",
     "2022-04-01",
     "2022-04-10",
-    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
-]
-MUNDI_SEARCH_ARGS = [
-    "mundi",
-    "S2_MSI_L1C",
-    "2021-11-08",
-    "2021-11-16",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
 # As of 2021-01-14 the products previously required in 2020-08 were offline.
@@ -207,6 +200,14 @@ METEOBLUE_SEARCH_ARGS = [
     (today + day_span).isoformat(),
     (today + 2 * day_span).isoformat(),
     [0.2, 43.2, 0.5, 43.5],
+]
+WEKEO_SEARCH_ARGS = [
+    "wekeo",
+    "CLMS_CORINE",
+    # the following arguments will be ignored in the search
+    "2023-01-01",
+    "2023-01-01",
+    [-180, -90, 180, 90],
 ]
 
 
@@ -410,11 +411,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_mundi(self):
-        product = self.execute_search(*MUNDI_SEARCH_ARGS)
-        expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
-
     # @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_theia(self):
         product = self.execute_search(*THEIA_SEARCH_ARGS)
@@ -528,6 +524,11 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.nc".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    def test_end_to_end_search_download_wekeo(self):
+        product = self.execute_search(*WEKEO_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename, timeout_sec=40)
+
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
         product = self.execute_search(
@@ -562,26 +563,23 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_search_by_tile(self):
         """Search by tileIdentifier should find results and correctly map found metadata"""
         # providers supporting search-by-tile
-        supported_providers = [
-            "peps",
-            "theia",
-            "mundi",
-            "onda",
-            "creodias",
-            "cop_dataspace",
-            "planetary_computer",
-            "earth_search",
+        supported_providers_product_types = [
+            ("peps", "S2_MSI_L1C"),
+            ("theia", "S2_MSI_L2A_MAJA"),
+            ("onda", "S2_MSI_L1C"),
+            ("planetary_computer", "S2_MSI_L2A"),
+            ("earth_search", "S2_MSI_L1C"),
         ]
 
-        tile_id = "53WPU"
+        tile_id = "31TCJ"
 
-        for provider in supported_providers:
-            self.eodag.set_preferred_provider(provider)
+        for provider, product_type in supported_providers_product_types:
             products, _ = self.eodag.search(
-                productType="S2_MSI_L1C",
+                productType=product_type,
                 start="2021-06-01",
                 end="2021-06-30",
                 tileIdentifier=tile_id,
+                provider=provider,
             )
             self.assertGreater(len(products), 0, msg=f"no result found for {provider}")
             self.assertEqual(
@@ -589,16 +587,6 @@ class TestEODagEndToEnd(EndToEndBase):
                 tile_id,
                 msg=f"tileIdentifier not mapped for {provider}",
             )
-
-    def test_end_to_end_search_all_mundi_default(self):
-        # 23/03/2021: Got 16 products for this search
-        results = self.execute_search_all(*MUNDI_SEARCH_ARGS)
-        self.assertGreater(len(results), 10)
-
-    def test_end_to_end_search_all_mundi_iterate(self):
-        # 23/03/2021: Got 16 products for this search
-        results = self.execute_search_all(*MUNDI_SEARCH_ARGS, items_per_page=10)
-        self.assertGreater(len(results), 10)
 
     def test_end_to_end_search_all_astraea_eod_iterate(self):
         # 23/03/2021: Got 39 products for this search
@@ -749,7 +737,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
 
 # @unittest.skip("skip auto run")
-class TestEODagEndToEndComplete(unittest.TestCase):
+class TestEODagEndToEndComplete(EndToEndBase):
     """Make real and complete test cases that search for products, download them and
     extract them. There should be just a tiny number of these tests which can be quite
     long to run.
@@ -799,13 +787,13 @@ class TestEODagEndToEndComplete(unittest.TestCase):
         # Search for products that are ONLINE and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
-        self.eodag.set_preferred_provider("peps")
         search_results, _ = self.eodag.search(
             productType="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
             geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
             items_per_page=100,
+            provider="peps",
         )
         prods_sorted_by_size = SearchResult(
             sorted(search_results, key=lambda p: p.properties["resourceSize"])
@@ -1042,11 +1030,6 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         with self.assertRaises(AuthenticationError):
             self.eodag.download(product)
 
-    def test_end_to_end_wrong_credentials_mundi(self):
-        product = self.execute_search(*MUNDI_SEARCH_ARGS)
-        with self.assertRaises(AuthenticationError):
-            self.eodag.download(product)
-
     def test_end_to_end_wrong_credentials_onda(self):
         product = self.execute_search(*ONDA_SEARCH_ARGS)
         with self.assertRaises(AuthenticationError):
@@ -1090,6 +1073,20 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["productType", "start", "end", "geom"],
                         HYDROWBEB_NEXT_SEARCH_ARGS[1:],
+                    )
+                ),
+            )
+
+    def test_end_to_end_wrong_credentials_search_wekeo(self):
+        # It should already fail while searching for the products.
+        self.eodag.set_preferred_provider(WEKEO_SEARCH_ARGS[0])
+        with self.assertRaises(AuthenticationError):
+            results, _ = self.eodag.search(
+                raise_errors=True,
+                **dict(
+                    zip(
+                        ["productType", "start", "end", "geom"],
+                        WEKEO_SEARCH_ARGS[1:],
                     )
                 ),
             )

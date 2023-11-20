@@ -20,9 +20,9 @@ import logging
 import re
 
 from eodag.plugins.crunch.base import Crunch
-from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils.exceptions import ValidationError
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_latest_tpl_name")
+logger = logging.getLogger("eodag.crunch.latest_tpl_name")
 
 
 class FilterLatestByName(Crunch):
@@ -43,7 +43,7 @@ class FilterLatestByName(Crunch):
         super(FilterLatestByName, self).__init__(config)
         name_pattern = config.pop("name_pattern")
         if not self.NAME_PATTERN_CONSTRAINT.search(name_pattern):
-            raise MisconfiguredError(
+            raise ValidationError(
                 "Name pattern should respect the regex: {}".format(
                     self.NAME_PATTERN_CONSTRAINT.pattern
                 )

@@ -29,7 +29,7 @@ landing_page:
   links:
     - rel: self
       type: "application/json"
-      href: "{catalog[root]}"
+      href: "{catalog[root]}/"
     - rel: service-desc
       type: "application/vnd.oai.openapi+json;version=3.0"
       href: "{catalog[root]}/api"
@@ -66,11 +66,11 @@ collections:
   links:
     - rel: self
       title: collections
-      href: /collections
+      href: "{collections[url]}"
     - rel: root
-      href: /
+      href: "{collections[root]}/"
     - rel: parent
-      href: /
+      href: "{collections[root]}/"
   collections:
     - "{collection}"
   stac_version: "{stac_version}"
@@ -84,12 +84,12 @@ collection:
   links:
     - rel: self
       title: "{collection[id]}"
-      href: "{collection[root]}/collections/{collection[id]}"
+      href: "{collection[url]}"
     - rel: root
-      href: "{collection[root]}"
+      href: "{collection[root]}/"
     - rel: items
       title: "items"
-      href: "{collection[root]}/collections/{collection[id]}/items"
+      href: "{collection[url]}/items"
   extent:
     spatial:
       bbox:
@@ -111,12 +111,7 @@ collection:
     - '$.product_type.processingLevel'
     - '$.product_type.sensorType'
   license: '$.product_type.license'
-  providers:
-    - name: '$.provider.name'
-      description: '$.provider.description'
-      # one or more of "producer" "licensor" "processor" "host"
-      roles: '$.provider.roles'
-      url: '$.provider.url'
+  providers: '$.providers'
   summaries:
     constellation:
       - '$.product_type.platform'
@@ -125,6 +120,14 @@ collection:
     intruments:
       - '$.product_type.instrument'
     processing:level: '$.product_type.processingLevel'
+
+provider:
+  name: '$.provider.name'
+  description: '$.provider.description'
+  # one or more of "producer" "licensor" "processor" "host"
+  roles: '$.provider.roles'
+  url: '$.provider.url'
+  priority: '$.provider.priority'
 
 # Data ------------------------------------------------------------------------
 
@@ -140,7 +143,7 @@ items:
       title: "items"
       href: "{catalog[url]}/items"
     - rel: root
-      href: /
+      href: "{catalog[root]}/"
     - rel: parent
       title: "{catalog[id]}"
       href: "{catalog[url]}"
@@ -178,6 +181,7 @@ item:
   type: "Feature"
   collection: '$.product.product_type'
   properties:
+    providers: '$.providers'
     datetime: '$.product.properties.startTimeFromAscendingNode'
     start_datetime: '$.product.properties.startTimeFromAscendingNode'
     end_datetime: '$.product.properties.completionTimeFromAscendingNode'
@@ -208,13 +212,13 @@ item:
       title: "{item[id]}"
       href: "{catalog[url]}/items/{item[id]}"
     - rel: root
-      href: /
+      href: "{catalog[root]}/"
     - rel: parent
       title: "{catalog[id]}"
       href: "{catalog[url]}"
     - rel: collection
       title: "{item[collection]}"
-      href: "/collections/{item[collection]}"
+      href: "{catalog[url]}"
   assets:
     downloadLink:
         title: 'Download link'
@@ -303,13 +307,7 @@ catalogs:
         - "{collection[keywords][4]}"
       license: "{collection[license]}"
       properties: "{collection[properties]}"
-      providers:
-        - name: "{collection[providers][0][name]}"
-          description: "{collection[providers][0][description]}"
-          # one or more of "producer" "licensor" "processor" "host"
-          roles:
-            - "{collection[providers][0][roles][0]}"
-          url: "{collection[providers][0][url]}"
+      providers: "{collection[providers]}"
       summaries: "{collection[summaries]}"
 
   years_list:

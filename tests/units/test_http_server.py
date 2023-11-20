@@ -85,20 +85,62 @@ class RequestTestCase(unittest.TestCase):
         self.app = TestClient(self.eodag_http_server.app)
 
     def test_route(self):
-        self._request_valid("/")
+        result = self._request_valid("/", check_links=False)
+
+        # check links (root specfic)
+        self.assertIsInstance(result, dict)
+        self.assertIn("links", result, f"links not found in {str(result)}")
+        self.assertIsInstance(result["links"], list)
+        links = result["links"]
+
+        known_rel = [
+            "self",
+            "root",
+            "parent",
+            "child",
+            "items",
+            "service-desc",
+            "service-doc",
+            "conformance",
+            "search",
+            "data",
+        ]
+        required_links_rel = ["self"]
+
+        for link in links:
+            # known relations
+            self.assertIn(link["rel"], known_rel)
+            # must start with app base-url
+            assert link["href"].startswith(str(self.app.base_url))
+            if link["rel"] != "search":
+                # must be valid
+                self._request_valid_raw(link["href"])
+            else:
+                # missing collection
+                self._request_not_valid(link["href"])
+
+            if link["rel"] in required_links_rel:
+                required_links_rel.remove(link["rel"])
+
+        # required relations
+        self.assertEqual(
+            len(required_links_rel),
+            0,
+            f"missing {required_links_rel} relation(s) in {links}",
+        )
 
     def test_forward(self):
         response = self.app.get("/", follow_redirects=True)
         self.assertEqual(200, response.status_code)
         resp_json = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(resp_json["links"][0]["href"], "http://testserver")
+        self.assertEqual(resp_json["links"][0]["href"], "http://testserver/")
 
         response = self.app.get(
             "/", follow_redirects=True, headers={"Forwarded": "host=foo;proto=https"}
         )
         self.assertEqual(200, response.status_code)
         resp_json = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(resp_json["links"][0]["href"], "https://foo")
+        self.assertEqual(resp_json["links"][0]["href"], "https://foo/")
 
         response = self.app.get(
             "/",
@@ -107,7 +149,7 @@ class RequestTestCase(unittest.TestCase):
         )
         self.assertEqual(200, response.status_code)
         resp_json = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(resp_json["links"][0]["href"], "httpz://bar")
+        self.assertEqual(resp_json["links"][0]["href"], "httpz://bar/")
 
     @mock.patch(
         "eodag.rest.utils.eodag_api.search",
@@ -252,6 +294,7 @@ class RequestTestCase(unittest.TestCase):
         expected_search_kwargs=None,
         protocol="GET",
         post_data=None,
+        search_call_count=None,
     ):
         if protocol == "GET":
             response = self.app.get(url, follow_redirects=True)
@@ -262,7 +305,22 @@ class RequestTestCase(unittest.TestCase):
                 follow_redirects=True,
             )
 
-        if expected_search_kwargs is not None:
+        if search_call_count is not None:
+            self.assertEqual(mock_search.call_count, search_call_count)
+
+        if (
+            expected_search_kwargs is not None
+            and search_call_count is not None
+            and search_call_count > 1
+        ):
+            self.assertIsInstance(
+                expected_search_kwargs,
+                list,
+                "expected_search_kwargs must be a list if search_call_count > 1",
+            )
+            for single_search_kwargs in expected_search_kwargs:
+                mock_search.assert_any_call(**single_search_kwargs)
+        elif expected_search_kwargs is not None:
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
         self.assertEqual(200, response.status_code, response.text)
@@ -275,16 +333,64 @@ class RequestTestCase(unittest.TestCase):
         expected_search_kwargs=None,
         protocol="GET",
         post_data=None,
+        search_call_count=None,
+        check_links=True,
     ):
         response = self._request_valid_raw(
             url,
             expected_search_kwargs=expected_search_kwargs,
             protocol=protocol,
             post_data=post_data,
+            search_call_count=search_call_count,
         )
 
         # Assert response format is GeoJSON
-        return geojson.loads(response.content.decode("utf-8"))
+        result = geojson.loads(response.content.decode("utf-8"))
+
+        if check_links:
+            self.assert_links_valid(result)
+
+        return result
+
+    def assert_links_valid(self, element):
+        """Checks that element links are valid"""
+        self.assertIsInstance(element, dict)
+        self.assertIn("links", element, f"links not found in {str(element)}")
+        self.assertIsInstance(element["links"], list)
+        links = element["links"]
+
+        known_rel = [
+            "self",
+            "root",
+            "parent",
+            "child",
+            "items",
+            "service-desc",
+            "service-doc",
+            "conformance",
+            "search",
+            "data",
+            "collection",
+        ]
+        required_links_rel = ["self", "root"]
+
+        for link in links:
+            # known relations
+            self.assertIn(link["rel"], known_rel)
+            # must start with app base-url
+            assert link["href"].startswith(str(self.app.base_url))
+            # must be valid
+            self._request_valid_raw(link["href"])
+
+            if link["rel"] in required_links_rel:
+                required_links_rel.remove(link["rel"])
+
+        # required relations
+        self.assertEqual(
+            len(required_links_rel),
+            0,
+            f"missing {required_links_rel} relation(s) in {links}",
+        )
 
     def _request_not_valid(self, url):
         response = self.app.get(url, follow_redirects=True)
@@ -292,7 +398,7 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertIn("description", response_content)
-        self.assertIn("invalid", response_content["description"])
+        self.assertIn("invalid", response_content["description"].lower())
 
     def _request_not_found(self, url):
         response = self.app.get(url, follow_redirects=True)
@@ -320,7 +426,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
             ),
         )
         self._request_valid(
@@ -329,7 +434,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -344,16 +448,19 @@ class RequestTestCase(unittest.TestCase):
         side_effect=AuthenticationError("you are no authorized"),
     )
     def test_auth_error(self, mock_search):
-        """A request to eodag server raising a Authentication error must return a 401 HTTP error code"""
-        response = self.app.get(
-            f"search?collections={self.tested_product_type}", follow_redirects=True
-        )
-        response_content = json.loads(response.content.decode("utf-8"))
+        """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
 
-        self.assertEqual(401, response.status_code)
-        self.assertIn("description", response_content)
-        self.assertIn("AuthenticationError", response_content["description"])
-        self.assertIn("you are no authorized", response_content["description"])
+        with self.assertLogs(level="ERROR") as cm_logs:
+            response = self.app.get(
+                f"search?collections={self.tested_product_type}", follow_redirects=True
+            )
+            response_content = json.loads(response.content.decode("utf-8"))
+
+            self.assertIn("description", response_content)
+            self.assertIn("AuthenticationError", str(cm_logs.output))
+            self.assertIn("you are no authorized", str(cm_logs.output))
+
+        self.assertEqual(500, response.status_code)
 
     def test_filter(self):
         """latestIntersect filter should only keep the latest products once search area is fully covered"""
@@ -363,7 +470,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
             ),
         )
@@ -374,7 +480,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
             ),
         )
@@ -389,9 +494,39 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20/..",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=../2018-01-25",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                end="2018-01-25T00:00:00",
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-01-20T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -404,7 +539,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -414,7 +548,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -429,7 +562,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-01T00:00:00",
                 end="2018-02-01T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -444,7 +576,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -459,7 +590,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 start="2018-01-20T00:00:00",
                 end="2018-02-01T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
@@ -483,12 +613,71 @@ class RequestTestCase(unittest.TestCase):
             [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
         )
 
+    def test_catalog_browse_date_search(self):
+        """Browsing catalogs with date filtering through eodag server should return a valid response"""
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-01T00:00:00",
+                end="2018-02-01T00:00:00",
+            ),
+        )
+        # args & catalog intersection
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/2018-02-15",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-02-01T00:00:00",
+            ),
+        )
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/..",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-02-01T00:00:00",
+            ),
+        )
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2018-01-05",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-01T00:00:00",
+                end="2018-01-05T00:00:00",
+            ),
+        )
+        self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-05",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-05T00:00:00",
+                end="2018-01-05T00:00:00",
+            ),
+        )
+        result = self._request_valid(
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2017-08-01",
+        )
+        self.assertEqual(len(result["features"]), 0)
+
     def test_search_item_id_from_catalog(self):
         """Search by id through eodag server /catalog endpoint should return a valid response"""
         self._request_valid(
             f"catalogs/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
+                "provider": None,
                 "productType": self.tested_product_type,
             },
         )
@@ -499,6 +688,7 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
+                "provider": None,
                 "productType": self.tested_product_type,
             },
         )
@@ -524,9 +714,89 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                raise_errors=True,
                 cloudCover=10,
                 geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+
+    def test_intersects_post_search(self):
+        """POST search with intersects filtering through eodag server should return a valid response"""
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "intersects": {
+                    "type": "Polygon",
+                    "coordinates": [[[0, 43], [0, 44], [1, 44], [1, 43], [0, 43]]],
+                },
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+
+    def test_date_post_search(self):
+        """POST search with datetime filtering through eodag server should return a valid response"""
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "2018-01-20/2018-01-25",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-01-25T00:00:00",
+            ),
+        )
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "2018-01-20/..",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+            ),
+        )
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "../2018-01-25",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                end="2018-01-25T00:00:00",
+            ),
+        )
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "datetime": "2018-01-20",
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                start="2018-01-20T00:00:00",
+                end="2018-01-20T00:00:00",
             ),
         )
 
@@ -539,6 +809,19 @@ class RequestTestCase(unittest.TestCase):
                 "collections": [self.tested_product_type],
                 "ids": ["foo", "bar"],
             },
+            search_call_count=2,
+            expected_search_kwargs=[
+                {
+                    "provider": None,
+                    "id": "foo",
+                    "productType": self.tested_product_type,
+                },
+                {
+                    "provider": None,
+                    "id": "bar",
+                    "productType": self.tested_product_type,
+                },
+            ],
         )
 
     def test_search_response_contains_pagination_info(self):
@@ -723,16 +1006,16 @@ class RequestTestCase(unittest.TestCase):
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""
-        self._request_valid("conformance")
+        self._request_valid("conformance", check_links=False)
 
     def test_service_desc(self):
         """Request to service_desc should return a valid response"""
-        service_desc = self._request_valid("api")
+        service_desc = self._request_valid("api", check_links=False)
         self.assertIn("openapi", service_desc.keys())
         self.assertIn("eodag", service_desc["info"]["title"].lower())
         self.assertGreater(len(service_desc["paths"].keys()), 0)
         # test a 2nd call (ending slash must be ignored)
-        self._request_valid("api/")
+        self._request_valid("api/", check_links=False)
 
     def test_service_doc(self):
         """Request to service_doc should return a valid response"""
@@ -741,6 +1024,26 @@ class RequestTestCase(unittest.TestCase):
 
     def test_stac_extension_oseo(self):
         """Request to oseo extension should return a valid response"""
-        response = self._request_valid("/extensions/oseo/json-schema/schema.json")
+        response = self._request_valid(
+            "/extensions/oseo/json-schema/schema.json", check_links=False
+        )
         self.assertEqual(response["title"], "OpenSearch for Earth Observation")
         self.assertEqual(response["allOf"][0]["$ref"], "#/definitions/oseo")
+
+    def test_queryables(self):
+        """Request to /queryables should return a valid response."""
+        self._request_valid("queryables", check_links=False)
+
+    def test_product_type_queryables(self):
+        """Request to /collections/{collection_id}/queryables should return a valid response."""
+        self._request_valid(
+            f"collections/{self.tested_product_type}/queryables", check_links=False
+        )
+
+    def test_product_type_queryables_with_provider(self):
+        """Request a collection-specific list of queryables for a given provider."""
+
+        self._request_valid(
+            f"collections/{self.tested_product_type}/queryables?provider=peps",
+            check_links=False,
+        )

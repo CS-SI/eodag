@@ -18,6 +18,7 @@
 import logging
 from operator import attrgetter
 from pathlib import Path
+from typing import Optional
 
 import pkg_resources
 
@@ -31,10 +32,10 @@ from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from eodag.utils.exceptions import UnsupportedProvider
 
-logger = logging.getLogger("eodag.plugins.manager")
+logger = logging.getLogger("eodag.manager")
 
 
-class PluginManager(object):
+class PluginManager:
     """A manager for the plugins.
 
     The role of instances of this class (normally only one instance exists,
@@ -94,6 +95,12 @@ class PluginManager(object):
                         )
                         merge_configs(plugin_providers_config, self.providers_config)
                         self.providers_config = plugin_providers_config
+        self.rebuild()
+
+    def rebuild(self, providers_config=None):
+        """(Re)Build plugin manager mapping and cache"""
+        if providers_config is not None:
+            self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
         self._built_plugins_cache = {}
@@ -200,7 +207,7 @@ class PluginManager(object):
             plugin = self._build_plugin(product.provider, plugin_conf.api, Api)
             return plugin
 
-    def get_auth_plugin(self, provider):
+    def get_auth_plugin(self, provider: str) -> Optional[Authentication]:
         """Build and return the authentication plugin for the given product_type and
         provider
 

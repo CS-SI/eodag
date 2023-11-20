@@ -17,6 +17,9 @@
 # limitations under the License.
 
 
+from typing import Any
+
+
 def check_ipython():
     """Check if called from ipython"""
     try:
@@ -40,13 +43,13 @@ def check_notebook():
         return False  # Probably standard Python interpreter
 
 
-class NotebookWidgets(object):
+class NotebookWidgets:
     """Display / handle ipython widgets"""
 
     is_notebook = False
-    html_box = None
+    html_box: Any = None
     html_box_shown = False
-    display = None
+    display: Any = None
 
     def __init__(self):
         self.is_notebook = check_notebook()

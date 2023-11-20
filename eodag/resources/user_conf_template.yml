@@ -70,15 +70,6 @@ creodias:
             username:
             password:
             totp: # set totp dynamically, see https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html#authenticate-using-an-otp-one-time-password-two-factor-authentication
-mundi:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        outputs_prefix:
-    auth:
-        credentials:
-            apikey:
 onda:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -200,9 +191,11 @@ hydroweb_next:
     download:
         outputs_prefix:
 wekeo:
-  priority: # Lower value means lower priority (Default: 0)
-  api:
-    outputs_prefix:
-    credentials:
-      username:
-      password:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+    download:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:

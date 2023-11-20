@@ -21,7 +21,7 @@ import operator
 
 from eodag.plugins.crunch.base import Crunch
 
-logger = logging.getLogger("eodag.plugins.crunch.filter_property")
+logger = logging.getLogger("eodag.crunch.property")
 
 
 class FilterProperty(Crunch):

@@ -18,6 +18,8 @@
 
 import os
 import unittest
+from tempfile import TemporaryDirectory
+from unittest import mock
 
 from pkg_resources import resource_filename
 
@@ -33,11 +35,31 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
     # Given a GeoJSON Search Result it can however download the products.
 
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
+        super(TestEODagDownloadCredentialsNotSet, cls).setUpClass()
+        # Mock home and eodag conf directory to tmp dir
+        cls.tmp_home_dir = TemporaryDirectory()
+        expanduser_mock_side_effect = (
+            lambda *x: x[0]
+            .replace("~user", cls.tmp_home_dir.name)
+            .replace("~", cls.tmp_home_dir.name)
+        )
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
+        )
+        cls.expanduser_mock.start()
+
         default_conf_file = resource_filename(
             "eodag", os.path.join("resources", "user_conf_template.yml")
         )
-        self.eodag = EODataAccessGateway(user_conf_file_path=default_conf_file)
+        cls.eodag = EODataAccessGateway(user_conf_file_path=default_conf_file)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestEODagDownloadCredentialsNotSet, cls).tearDownClass()
+        # stop Mock and remove tmp config dir
+        cls.expanduser_mock.stop()
+        cls.tmp_home_dir.cleanup()
 
     def test_eodag_download_missing_credentials_theia(self):
         search_resuls = os.path.join(
@@ -62,16 +84,6 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
     def test_eodag_download_missing_credentials_creodias(self):
         search_resuls = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_creodias.geojson"
-        )
-        products = self.eodag.deserialize_and_register(search_resuls)
-        with self.assertRaises(MisconfiguredError):
-            self.eodag.download(products[0])
-        with self.assertRaises(MisconfiguredError):
-            self.eodag.download_all(products)
-
-    def test_eodag_download_missing_credentials_mundi(self):
-        search_resuls = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_mundi.geojson"
         )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):

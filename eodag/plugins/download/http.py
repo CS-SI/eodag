@@ -41,10 +41,11 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     Download,
 )
 from eodag.utils import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
@@ -59,9 +60,8 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NotAvailableError,
 )
-from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
-logger = logging.getLogger("eodag.plugins.download.http")
+logger = logging.getLogger("eodag.download.http")
 
 
 class HTTPDownload(Download):
@@ -146,6 +146,7 @@ class HTTPDownload(Download):
             method=order_method,
             url=order_url,
             auth=auth,
+            timeout=HTTP_REQ_TIMEOUT,
             headers=dict(getattr(self.config, "order_headers", {}), **USER_AGENT),
             **order_kwargs,
         ) as response:
@@ -226,6 +227,7 @@ class HTTPDownload(Download):
             method=status_method,
             url=status_url,
             auth=auth,
+            timeout=HTTP_REQ_TIMEOUT,
             headers=dict(
                 getattr(self.config, "order_status_headers", {}), **USER_AGENT
             ),
@@ -278,7 +280,11 @@ class HTTPDownload(Download):
                         f"Search for new location: {product.properties['searchLink']}"
                     )
                     # search again
-                    response = requests.get(product.properties["searchLink"])
+                    response = requests.get(
+                        product.properties["searchLink"],
+                        timeout=HTTP_REQ_TIMEOUT,
+                        headers=USER_AGENT,
+                    )
                     response.raise_for_status()
                     if (
                         self.config.order_status_on_success.get("result_type", "json")
@@ -387,7 +393,6 @@ class HTTPDownload(Download):
                     progress_callback,
                     **kwargs,
                 )
-                # product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError:
                 pass
@@ -636,7 +641,6 @@ class HTTPDownload(Download):
                 stream_size = self._check_stream_size(product)
                 product.headers = self.stream.headers
                 progress_callback.reset(total=stream_size)
-                logger.debug(f"stream_zip: {stream_size}")
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
                         progress_callback(len(chunk))
@@ -954,7 +958,6 @@ class HTTPDownload(Download):
                     self._handle_asset_exception(e, asset)
                 else:
                     asset_rel_path = urlparse(asset["href"]).path.strip("/")
-                    # asset_rel_dir = os.path.dirname(asset_rel_path)
 
                     if not asset.get("filename", None):
                         # try getting filename in GET header if was not found in HEAD result
