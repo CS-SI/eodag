@@ -338,7 +338,9 @@ class SearchBody(BaseModel):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item_download(collection_id: str, item_id: str, request: Request):
+def stac_collections_item_download(
+    collection_id: str, item_id: str, request: Request
+) -> StreamingResponse:
     """STAC collection item download"""
     logger.debug(f"URL: {request.url}")
 
@@ -407,7 +409,7 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_items(collection_id: str, request: Request):
+def stac_collections_items(collection_id: str, request: Request) -> Any:
     """STAC collections items"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -471,7 +473,7 @@ def list_collection_queryables(
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def collection_by_id(collection_id, request: Request):
+def collection_by_id(collection_id: str, request: Request) -> Any:
     """STAC collection by id"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url_root + "/collections"
@@ -495,7 +497,7 @@ def collection_by_id(collection_id, request: Request):
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def collections(request: Request):
+def collections(request: Request) -> Any:
     """STAC collections
 
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
@@ -522,17 +524,19 @@ def collections(request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item_download(catalogs, item_id, request: Request):
+def stac_catalogs_item_download(
+    catalogs: str, item_id: str, request: Request
+) -> StreamingResponse:
     """STAC Catalog item download"""
     logger.debug(f"URL: {request.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
 
     return download_stac_item_by_id_stream(
-        catalogs=catalogs, item_id=item_id, provider=provider
+        catalogs=list_catalog, item_id=item_id, provider=provider
     )
 
 
@@ -562,7 +566,7 @@ def stac_catalogs_item_download_asset(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item(catalogs, item_id, request: Request):
+def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     """Fetch catalog's single features."""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -571,12 +575,12 @@ def stac_catalogs_item(catalogs, item_id, request: Request):
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
     response = get_stac_item_by_id(
         url=url,
         item_id=item_id,
         root=url_root,
-        catalogs=catalogs,
+        catalogs=list_catalog,
         provider=provider,
     )
 
@@ -596,7 +600,7 @@ def stac_catalogs_item(catalogs, item_id, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_items(catalogs, request: Request):
+def stac_catalogs_items(catalogs: str, request: Request) -> Any:
     """Fetch catalog's features
     '"""
     logger.debug(f"URL: {request.url}")
@@ -606,13 +610,13 @@ def stac_catalogs_items(catalogs, request: Request):
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
 
     response = search_stac_items(
         url=url,
         arguments=arguments,
         root=url_root,
-        catalogs=catalogs,
+        catalogs=list_catalog,
         provider=provider,
     )
     return jsonable_encoder(response)
@@ -623,7 +627,7 @@ def stac_catalogs_items(catalogs, request: Request):
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def stac_catalogs(catalogs, request: Request):
+def stac_catalogs(catalogs: str, request: Request) -> Any:
     """Describe the given catalog and list available sub-catalogs"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -632,11 +636,11 @@ def stac_catalogs(catalogs, request: Request):
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
     response = get_stac_catalogs(
         url=url,
         root=url_root,
-        catalogs=catalogs,
+        catalogs=list_catalog,
         provider=provider,
     )
     return jsonable_encoder(response)
@@ -675,7 +679,9 @@ def list_queryables(request: Request) -> Queryables:
     tags=["STAC"],
     include_in_schema=False,
 )
-def stac_search(request: Request, search_body: Optional[SearchBody] = None):
+def stac_search(
+    request: Request, search_body: Optional[SearchBody] = None
+) -> ORJSONResponse:
     """STAC collections items"""
     logger.debug(f"URL: {request.url}")
     logger.debug(f"Body: {search_body}")

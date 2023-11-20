@@ -17,7 +17,7 @@
 # limitations under the License.
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 import requests
 from requests.auth import AuthBase
