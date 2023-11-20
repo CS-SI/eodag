@@ -9,7 +9,6 @@ import logging
 import os
 import re
 from collections import namedtuple
-from json import JSONDecodeError
 from shutil import make_archive, rmtree
 from typing import Dict, Optional
 
@@ -366,12 +365,6 @@ def get_arguments_query_paths(arguments):
     :returns: Mapping of query paths with their corresponding values
     :rtype: dict
     """
-    for a, value in arguments.items():
-        if isinstance(value, str):
-            try:
-                arguments[a] = json.loads(value)
-            except JSONDecodeError:
-                logger.warning("argument is not a dict")
     return dict(
         (str(match.full_path), match.value)
         for match in string_to_jsonpath(STAC_QUERY_PATTERN, force=True).find(arguments)
