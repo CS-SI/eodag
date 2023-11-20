@@ -880,9 +880,9 @@
     type: QueryStringSearch
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
-    timeout: 20
+    timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     discover_metadata:
@@ -2994,9 +2994,9 @@
     type: QueryStringSearch
     api_endpoint: 'http://catalogue.dataspace.copernicus.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
-    timeout: 10
+    timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     discover_metadata:
