@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+from datetime import datetime
 from typing import Optional
 
 import requests
@@ -73,6 +74,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
     # already retrieved token store, to be used if authenticate() fails (OTP use-case)
     retrieved_token: Optional[str] = None
+    token_info: Optional[dict] = {}
 
     def __init__(self, provider, config):
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
@@ -94,6 +96,53 @@ class KeycloakOIDCPasswordAuth(Authentication):
         Makes authentication request
         """
         self.validate_config_credentials()
+        access_token = self._get_access_token()
+        self.retrieved_token = access_token
+        return CodeAuthorizedAuth(
+            self.retrieved_token,
+            self.config.token_provision,
+            key=getattr(self.config, "token_qs_key", None),
+        )
+
+    def _get_access_token(self):
+        current_time = datetime.now()
+        if (
+            not self.token_info
+            or (
+                "refresh_token" in self.token_info
+                and (current_time - self.token_info["token_time"]).seconds
+                >= self.token_info["refresh_token_expiration"]
+            )
+            or (
+                "refresh_token" not in self.token_info
+                and (current_time - self.token_info["token_time"]).seconds
+                >= self.token_info["access_token_expiration"]
+            )
+        ):
+            # Request new TOKEN on first attempt or if token expired
+            res = self._request_new_token()
+            self.token_info["token_time"] = current_time
+            self.token_info["access_token_expiration"] = res["expires_in"]
+            if "refresh_token" in res:
+                self.token_info["refresh_time"] = current_time
+                self.token_info["refresh_token_expiration"] = res["refresh_expires_in"]
+                self.token_info["refresh_token"] = res["refresh_token"]
+            return res["access_token"]
+        elif (
+            "refresh_token" in self.token_info
+            and (current_time - self.token_info["refresh_time"]).seconds
+            >= self.token_info["access_token_expiration"]
+        ):
+            # Use refresh token
+            res = self._get_token_with_refresh_token()
+            self.token_info["refresh_token"] = res["refresh_token"]
+            self.token_info["refresh_time"] = current_time
+            return res["access_token"]
+        logger.debug("using already retrieved access token")
+        return self.retrieved_token
+
+    def _request_new_token(self):
+        logger.debug("fetching new access token")
         req_data = {
             "client_id": self.config.client_id,
             "client_secret": self.config.client_secret,
@@ -114,11 +163,13 @@ class KeycloakOIDCPasswordAuth(Authentication):
         except requests.RequestException as e:
             if self.retrieved_token:
                 # try using already retrieved token if authenticate() fails (OTP use-case)
-                return CodeAuthorizedAuth(
-                    self.retrieved_token,
-                    self.config.token_provision,
-                    key=getattr(self.config, "token_qs_key", None),
-                )
+                if "access_token_expiration" in self.token_info:
+                    return {
+                        "access_token": self.retrieved_token,
+                        "expires_in": self.token_info["access_token_expiration"],
+                    }
+                else:
+                    return {"access_token": self.retrieved_token, "expires_in": 0}
             response_text = getattr(e.response, "text", "").strip()
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
@@ -144,10 +195,31 @@ class KeycloakOIDCPasswordAuth(Authentication):
                         tb.format_exc()
                     )
                 )
+        return response.json()
 
-        self.retrieved_token = response.json()["access_token"]
-        return CodeAuthorizedAuth(
-            self.retrieved_token,
-            self.config.token_provision,
-            key=getattr(self.config, "token_qs_key", None),
-        )
+    def _get_token_with_refresh_token(self):
+        logger.debug("fetching access token with refresh token")
+        req_data = {
+            "client_id": self.config.client_id,
+            "client_secret": self.config.client_secret,
+            "grant_type": "refresh_token",
+            "refresh_token": self.token_info["refresh_token"],
+        }
+        try:
+            response = self.session.post(
+                self.TOKEN_URL_TEMPLATE.format(
+                    auth_base_uri=self.config.auth_base_uri.rstrip("/"),
+                    realm=self.config.realm,
+                ),
+                data=req_data,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+            )
+            response.raise_for_status()
+        except requests.RequestException as e:
+            logger.error(
+                "could not fetch access token with refresh token, executing new token request, error: %s",
+                getattr(e.response, "text", ""),
+            )
+            return self._request_new_token()
+        return response.json()
