@@ -119,6 +119,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                 >= self.token_info["access_token_expiration"]
             )
         ):
+            # Request new TOKEN on first attempt or if token expired
             res = self._request_new_token()
             self.token_info["token_time"] = current_time
             self.token_info["access_token_expiration"] = res["expires_in"]
@@ -132,6 +133,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
             and (current_time - self.token_info["refresh_time"]).seconds
             >= self.token_info["access_token_expiration"]
         ):
+            # Use refresh token
             res = self._get_token_with_refresh_token()
             self.token_info["refresh_token"] = res["refresh_token"]
             self.token_info["refresh_time"] = current_time
