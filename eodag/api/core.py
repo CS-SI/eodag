@@ -289,7 +289,7 @@ class EODataAccessGateway:
             product_types_schema = Schema(
                 ID=fields.STORED,
                 alias=fields.ID,
-                abstract=fields.STORED,
+                abstract=fields.TEXT,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
                 platformSerialIdentifier=fields.IDLIST,
@@ -297,7 +297,7 @@ class EODataAccessGateway:
                 sensorType=fields.ID,
                 md5=fields.ID,
                 license=fields.ID,
-                title=fields.ID,
+                title=fields.TEXT,
                 missionStartDate=fields.ID,
                 missionEndDate=fields.ID,
                 keywords=fields.KEYWORD(analyzer=kw_analyzer),
@@ -515,7 +515,7 @@ class EODataAccessGateway:
             self.locations_config = []
 
     def list_product_types(
-        self, provider: Optional[str] = None, fetch_providers: bool = True
+        self, provider: Optional[str] = None, fetch_providers: bool = True, filter: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Lists supported product types.
 
@@ -525,6 +525,8 @@ class EODataAccessGateway:
         :param fetch_providers: (optional) Whether to fetch providers for new product
                                 types or not
         :type fetch_providers: bool
+        :param filter: (optional) Comma separated list of free text search terms.
+        :type filter: str
         :returns: The list of the product types that can be accessed using eodag.
         :rtype: list(dict)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
@@ -547,10 +549,17 @@ class EODataAccessGateway:
                     product_type = dict(ID=product_type_id, **config)
                     if product_type_id not in product_types:
                         product_types.append(product_type)
-                return sorted(product_types, key=itemgetter("ID"))
-            raise UnsupportedProvider(
-                f"invalid requested provider: {provider} is not (yet) supported"
-            )
+            else:
+                raise UnsupportedProvider(
+                    f"invalid requested provider: {provider} is not (yet) supported"
+                )
+
+            if filter:
+                product_types = self.__apply_product_type_free_text_search_filter(
+                    product_types, filter=filter
+                )
+            return sorted(product_types, key=itemgetter("ID"))
+
         # Only get the product types supported by the available providers
         for provider in self.available_providers():
             current_product_type_ids = [pt["ID"] for pt in product_types]
@@ -558,13 +567,60 @@ class EODataAccessGateway:
                 [
                     pt
                     for pt in self.list_product_types(
-                        provider=provider, fetch_providers=False
+                        provider=provider, fetch_providers=False, filter=filter
                     )
                     if pt["ID"] not in current_product_type_ids
                 ]
             )
+
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
+
+    def __apply_product_type_free_text_search_filter(
+        self, product_types: List[str], filter: str
+    ) -> List[str]:
+        """Apply the free text search filter to the given list of product types
+
+        :param product_types: The list of product types
+        :type product_types: list
+        :param filter: Comma separated list of search terms (ex. "EO,Earth Observation")
+        :type filter: str
+        :returns: The new list of product types
+        :rtype: list
+
+        """
+        # Apply the free text search
+        if not filter:
+            # no filter was given -> return the original list
+            return product_types
+        fts_terms = filter.split(",")
+        fts_supported_params = {"title", "abstract", "keywords"}
+        with self._product_types_index.searcher() as searcher:
+            results = None
+            # For each search key, do a guess and then upgrade the result (i.e. when
+            # merging results, if a hit appears in both results, its position is raised
+            # to the top. This way, the top most result will be the hit that best
+            # matches the given queries. Put another way, this best guess is the one
+            # that crosses the highest number of search params from the given queries
+            for term in fts_terms:
+                for search_key in fts_supported_params:
+                    query = QueryParser(
+                        search_key, self._product_types_index.schema
+                    ).parse(term)
+                    partial_result = searcher.search(query, limit=None)
+                    if results is None:
+                        results = partial_result
+                    else:
+                        results.upgrade_and_extend(partial_result)
+            if results is None:
+                # no result found -> intersection is empty set
+                return []
+            else:
+                result_ids = {r["ID"] for r in results or []}
+                filtered_product_types = [
+                    p for p in product_types if p["ID"] in result_ids
+                ]
+                return filtered_product_types
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed
