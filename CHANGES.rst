@@ -1,6 +1,27 @@
 Release history
 ---------------
 
+2.11.0 (2023-11-20)
++++++++++++++++++++
+
+* Fallback mechanism for search (:pull:`753`)(:pull:`807`)
+* `creodias` and `cop_dataspace` configuration update (from `OData` to `OpenSearch`) (:pull:`866`)(:pull:`883`)(:pull:`894`)(:pull:`915`)(:pull:`929`)
+* Removes `mundi` provider (:pull:`890`)
+* Copernicus DEM product types available through creodias (:pull:`882`)
+* `wekeo` driver update and new product types (:pull:`798`)(:pull:`840`)(:pull:`856`)(:pull:`902`)
+* Allows `provider` search parameter to directly search on it (:pull:`790`)
+* Refresh token usage in `KeycloakOIDCPasswordAuth` (`creodias` and `cop_dataspace`) (:pull:`921`)
+* Per-provider search timeout (:pull:`841`)
+* New `EODAG_PROVIDERS_CFG_FILE` environment variable for custom provider configuration setting (:pull:`836`)
+* Many server-mode updates and fixes: `queryables` endpoints (:pull:`795`), built-in Swagger doc update (:pull:`846`), exceptions handling (:pull:`794`)(:pull:`806`)(:pull:`812`)(:pull:`829`),
+  provider setting (:pull:`808`) and returned information (:pull:`884`)(:pull:`879`), multithreaded requests (:pull:`843`),
+  opened time intervals fixes (:pull:`837`), search-by-ids fix (:pull:`822`), intersects parameter fixes (:pull:`796`)(:pull:`797`)
+* Adds support for Python 3.12 (:pull:`892`) and removes support for Python 3.7 (:pull:`903`)
+* Fixes plugin manager rebuild (solves preferred provider issues) (:pull:`919`)
+* Reformatted logs (:pull:`842`)(:pull:`885`)
+* Adds static type information (:pull:`863`)
+* Various minor fixes and improvements (:pull:`759`)(:pull:`788`)(:pull:`791`)(:pull:`793`)(:pull:`802`)(:pull:`804`)(:pull:`805`)(:pull:`813`)(:pull:`818`)(:pull:`819`)(:pull:`821`)(:pull:`824`)(:pull:`825`)(:pull:`828`)(:pull:`830`)(:pull:`832`)(:pull:`835`)(:pull:`838`)(:pull:`844`)(:pull:`867`)(:pull:`868`)(:pull:`872`)(:pull:`877`)(:pull:`878`)(:pull:`881`)(:pull:`893`)(:pull:`899`)(:pull:`913`)(:pull:`920`)(:pull:`925`)(:pull:`926`)
+
 2.11.0b1 (2023-07-28)
 +++++++++++++++++++++
 

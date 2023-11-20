@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: 2.11.0b1
+appVersion: 2.11.0
 dependencies:
 - name: common
   repository:  oci://registry-1.docker.io/bitnamicharts
@@ -15,4 +15,4 @@ name: eodag-server
 sources:
 - https://github.com/CS-SI/eodag
 type: application
-version: 2.11.0b1
+version: 2.11.0
