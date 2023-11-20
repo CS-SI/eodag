@@ -140,7 +140,7 @@ def get_templates_path() -> str:
 
 def get_product_types(
     provider: Optional[str] = None, filters: Optional[Dict[str, Any]] = None
-) -> list[Dict[str, Any]]:
+) -> List[Dict[str, Any]]:
     """Returns a list of supported product types
 
     :param provider: (optional) Provider name

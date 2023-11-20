@@ -155,4 +155,4 @@ class StaticStacSearch(StacSearch):
         # restore plugin._request
         self._request = stacapi_request
 
-        return search_result, len(search_result)
+        return search_result.data, len(search_result)

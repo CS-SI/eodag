@@ -100,7 +100,7 @@ def fetch_stac_items(
     recursive: bool = False,
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
-) -> List[Dict[Any, Any]]:
+) -> List[Dict[str, Any]]:
     """Fetch STAC item from a single item file or items from a catalog.
 
     :param stac_path: A STAC object filepath
