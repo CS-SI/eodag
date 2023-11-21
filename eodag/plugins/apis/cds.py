@@ -256,6 +256,14 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         # separate url & parameters
         query_str = "".join(urlsplit(product.location).fragment.split("?", 1)[1:])
         download_request = geojson.loads(query_str)
+        # remove string quotes within values
+        for param, param_value in download_request.items():
+            if isinstance(param_value, str):
+                download_request[param] = param_value.replace('"', "").replace("'", "")
+            elif isinstance(param_value, list):
+                for i, value in enumerate(param_value):
+                    if isinstance(value, str):
+                        param_value[i] = value.replace('"', "").replace("'", "")
 
         date_range = download_request.pop("date_range", False)
         if date_range:

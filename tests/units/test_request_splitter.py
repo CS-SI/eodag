@@ -338,6 +338,7 @@ class TestRequestSplitter(unittest.TestCase):
                 "products_split_timedelta": split_time_values,
             }
         )
+
         splitter = RequestSplitter(config, metadata)
         result, num_items = splitter.get_time_slices("1999-02-01", "2001-06-30")
         self.assertEqual(9, len(result))

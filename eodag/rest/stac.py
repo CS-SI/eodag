@@ -183,6 +183,7 @@ class StacItem(StacCommon):
         query_dict = parse_qs(parts.query)
         if self.provider:
             query_dict.update(provider=self.provider)
+
         if variable:
             query_dict.update(variable=variable)
         without_arg_url = (

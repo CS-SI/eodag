@@ -1110,6 +1110,7 @@ def format_query_params(product_type, config, **kwargs):
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
                         formatted_query_param = _resolve_hashes(formatted_query_param)
+
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
