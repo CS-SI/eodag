@@ -6210,3 +6210,81 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
+---
+!provider
+  name: polytope
+  priority: 0
+  roles:
+    - host
+  description: Polytope API
+  url: https://polytope.ecmwf.int/openapi
+  search: !plugin
+    type: DataRequestBuildSearchResult
+    api_endpoint: https://polytope.ecmwf.int/api/v1/
+    data_request_url: https://polytope.apps.lumi.ewctest.link/api/v1/requests/{collection}
+    results_entry: message
+    request_params_entry: user_request
+    need_auth: true
+    pagination:
+      max_items_per_page: 1000
+    metadata_mapping:
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      completionTimeFromAscendingNode:
+        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}"}}'
+        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      productType: '$.productType'
+      downloadLink: 'https://polytope.ecmwf.int/api/v1/downloads/request_id'
+      expver:
+        - expver
+        - '$.expver'
+      class:
+        - class
+        - '$.class'
+      stream:
+        - stream
+        - '$.stream'
+      time:
+        - time
+        - '$.time'
+      domain:
+        - domain
+        - '$.domain'
+      type:
+        - type
+        - '$.type'
+      levtype:
+        - levtype
+        - '$.levtype'
+      anoffset:
+        - anoffset
+        - '$.anoffset'
+      step:
+        - step
+        - '$.step'
+      param:
+        - param
+        - '$.param'
+  products:
+    POLYTOPE_TEST:
+      productType: destination-earth
+      class: rd
+      expver: i4vo
+      stream: lwda
+      time: 0000
+      domain: g
+      type: fc
+      levtype: sfc
+      anoffset: 9
+      step: 3
+      param: 31
+  download: !plugin
+    type: HTTPDownload
+    base_uri: https://polytope.ecmwf.int/api/v1/
+    flatten_top_dirs: true
+    auth_error_code: 401
+
+  auth: !plugin
+    type: HTTPHeaderAuth
+    headers:
+      Authorization: "EmailKey {username}:{password}"
