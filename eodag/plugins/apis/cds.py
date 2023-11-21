@@ -72,7 +72,6 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         items_per_page=None,
         page=None,
         count=True,
-        split_result=False,
         **kwargs,
     ):
         """Build ready-to-download SearchResult"""
@@ -138,12 +137,13 @@ class CdsApi(Download, Api, BuildPostSearchResult):
 
         products = []
         if (
-            split_result
-            and getattr(self.config, "products_split_timedelta", None)
+            getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
-            product_data = getattr(self.config, "products", {})[kwargs["productType"]]
-            if "dataset" in product_data:
+            product_data = getattr(self.config, "products", {}).get(
+                kwargs["productType"], None
+            )
+            if product_data and "dataset" in product_data:
                 provider_product = product_data["dataset"]
             else:
                 provider_product = ""
@@ -181,7 +181,6 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                     items_per_page=items_per_page,
                     page=page,
                     count=count,
-                    split_result=True,
                     **kwargs,
                 )
                 products += result[0]

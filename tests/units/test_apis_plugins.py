@@ -271,7 +271,6 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_fetch_product_types_list,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
-
         dag = EODataAccessGateway()
         dag.set_preferred_provider("ecmwf")
         output_data_path = os.path.join(os.path.expanduser("~"), "data")
@@ -388,7 +387,6 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             startTimeFromAscendingNode="2020-01-01",
             completionTimeFromAscendingNode="2020-04-02",
             param="59/134",
-            split_result=True,
         )
         self.assertEqual(4, len(results))
         eoproduct = results[0]
@@ -1053,7 +1051,6 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             startTimeFromAscendingNode="2020-01-01",
             completionTimeFromAscendingNode="2020-04-02",
             variable=["geopotential", "surface_pressure"],
-            split_result=True,
         )
         self.assertEqual(3, len(results))
         eoproduct = results[2]

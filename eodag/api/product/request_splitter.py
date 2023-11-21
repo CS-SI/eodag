@@ -196,7 +196,7 @@ class RequestSplitter:
 
     def _format_result(self, start_date, end_date, constraint_values=None):
         if "year" not in self.metadata:
-            return [{"start_date": start_date, "end_date": end_date}]
+            return [{"start_date": start_date, "end_date": end_date}], 1
         start_year = int(start_date[:4])
         end_year = int(end_date[:4])
         years = [str(y) for y in range(start_year, end_year + 1)]

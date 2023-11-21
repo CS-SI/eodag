@@ -857,7 +857,6 @@ class EODataAccessGateway:
         geom=None,
         locations=None,
         provider=None,
-        split_result=False,
         **kwargs,
     ):
         """Look for products matching criteria on known providers.
@@ -946,7 +945,6 @@ class EODataAccessGateway:
                 search_plugin,
                 count=True,
                 raise_errors=raise_errors,
-                split_result=split_result,
                 **search_kwargs,
             )
             if len(search_results) == 0 and i < len(search_plugins) - 1:
@@ -1503,7 +1501,6 @@ class EODataAccessGateway:
         search_plugin,
         count=True,
         raise_errors=False,
-        split_result=False,
         **kwargs,
     ):
         """Internal method that performs a search on a given provider.
@@ -1552,9 +1549,7 @@ class EODataAccessGateway:
                     search_plugin.config, "assets_split_parameter", "variable"
                 )
                 kwargs[split_param] = variable
-            res, nb_res = search_plugin.query(
-                count=count, auth=auth_plugin, split_result=split_result, **kwargs
-            )
+            res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
             # Only do the pagination computations when it makes sense. For example,
             # for a search by id, we can reasonably guess that the provider will return

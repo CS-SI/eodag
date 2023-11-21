@@ -381,8 +381,6 @@ def stac_collections_items(collection_id, request: Request):
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
-    split_result_str = arguments.pop("split_result", "False")
-    split_result = split_result_str.lower() == "true"
 
     response = search_stac_items(
         url=url,
@@ -390,7 +388,6 @@ def stac_collections_items(collection_id, request: Request):
         root=url_root,
         provider=provider,
         catalogs=[collection_id],
-        split_result=split_result,
     )
     return jsonable_encoder(response)
 
@@ -551,8 +548,6 @@ def stac_catalogs_items(catalogs, request: Request):
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
-    split_result_str = arguments.pop("split_result", "False")
-    split_result = split_result_str.lower() == "true"
 
     catalogs = catalogs.strip("/").split("/")
 
@@ -562,7 +557,6 @@ def stac_catalogs_items(catalogs, request: Request):
         root=url_root,
         catalogs=catalogs,
         provider=provider,
-        split_result=split_result,
     )
     return jsonable_encoder(response)
 
@@ -639,15 +633,12 @@ def stac_search(request: Request, search_body: Optional[SearchBody] = None):
 
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
-    split_result_str = arguments.pop("split_result", "False")
-    split_result = split_result_str.lower() == "true"
 
     response = search_stac_items(
         url=url,
         arguments=arguments,
         root=url_root,
         provider=provider,
-        split_result=split_result,
     )
     resp = ORJSONResponse(
         content=response, status_code=200, media_type="application/json"

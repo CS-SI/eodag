@@ -105,7 +105,6 @@ class DataRequestSearch(Search):
         # replace id of atmospheric product by params it was created from
         if "id" in kwargs and kwargs["id"][:3] == "ATM":
             search_by_id = True
-            kwargs["split_result"] = True
             self._get_params_from_id(kwargs)
         # replace "product_type" to "providerProductType" in search args if exists
         # for compatibility with DataRequestSearch method
@@ -168,8 +167,7 @@ class DataRequestSearch(Search):
         self._add_constraints_info_to_config()
         products = []
         if (
-            kwargs.get("split_result", False)
-            and getattr(self.config, "products_split_timedelta", None)
+            getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
             request_splitter = RequestSplitter(

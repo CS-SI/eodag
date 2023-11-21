@@ -426,7 +426,6 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -436,7 +435,6 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
 
@@ -473,7 +471,6 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
-                split_result=False,
             ),
         )
         self.assertEqual(len(result1.features), 2)
@@ -484,7 +481,6 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
-                split_result=False,
             ),
         )
         # only one product is returned with filter=latestIntersect
@@ -501,7 +497,6 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -512,7 +507,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -523,7 +517,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -535,7 +528,6 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00",
                 end="2018-01-20T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
 
@@ -548,7 +540,6 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -560,7 +551,6 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
 
@@ -575,7 +565,6 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-01T00:00:00",
                 end="2018-02-01T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -590,7 +579,6 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -605,7 +593,6 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00",
                 end="2018-02-01T00:00:00",
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -636,7 +623,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-01T00:00:00",
                 end="2018-02-01T00:00:00",
-                split_result=False,
             ),
         )
         # args & catalog intersection
@@ -648,7 +634,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-02-01T00:00:00",
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -659,7 +644,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-02-01T00:00:00",
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -670,7 +654,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-01T00:00:00",
                 end="2018-01-05T00:00:00",
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -681,7 +664,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-05T00:00:00",
                 end="2018-01-05T00:00:00",
-                split_result=False,
             ),
         )
         result = self._request_valid(
@@ -736,7 +718,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 cloudCover=10,
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
 
@@ -757,7 +738,6 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
-                split_result=False,
             ),
         )
 
@@ -776,7 +756,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-01-25T00:00:00",
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -791,7 +770,6 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -806,7 +784,6 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 end="2018-01-25T00:00:00",
-                split_result=False,
             ),
         )
         self._request_valid(
@@ -822,7 +799,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00",
                 end="2018-01-20T00:00:00",
-                split_result=False,
             ),
         )
 

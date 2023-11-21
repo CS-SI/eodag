@@ -76,7 +76,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         items_per_page=None,
         page=None,
         count=True,
-        split_result=False,
         **kwargs,
     ):
         """Build ready-to-download SearchResult"""
@@ -137,8 +136,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
         products = []
         if (
-            split_result
-            and getattr(self.config, "products_split_timedelta", None)
+            getattr(self.config, "products_split_timedelta", None)
             and "id" not in kwargs
         ):
             request_splitter = RequestSplitter(
@@ -166,7 +164,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                     items_per_page=items_per_page,
                     page=page,
                     count=count,
-                    split_result=True,
                     **kwargs,
                 )
                 products += result[0]
