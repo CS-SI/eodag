@@ -2261,17 +2261,18 @@ CAMS_GRF:
   abstract: |
     This dataset provides geographical distributions of the radiative forcing (RF) by key atmospheric constituents.
     The radiative forcing estimates are based on the CAMS reanalysis and additional model simulations and are provided separately for CO2 CH4, O3 (tropospheric and stratospheric), interactions between anthropogenic aerosols and radiation and interactions between anthropogenic aerosols and clouds.
-    Radiative forcing measures the imbalance in the Earth’s energy budget caused by a perturbation of the climate system, such as changes in atmospheric composition caused by human activities.
+    Radiative forcing measures the imbalance in the Earth's energy budget caused by a perturbation of the climate system, such as changes in atmospheric composition caused by human activities.
     RF is a useful predictor of globally-averaged temperature change, especially when rapid adjustments of atmospheric temperature and moisture profiles are taken into account.
     RF has therefore become a quantitative metric to compare the potential climate response to different perturbations.
     Increases in greenhouse gas concentrations over the industrial era exerted a positive RF, causing a gain of energy in the climate system.
     In contrast, concurrent changes in atmospheric aerosol concentrations are thought to exert a negative RF leading to a loss of energy.
-    Products are quantified both in “all-sky” conditions, meaning that the radiative effects of clouds are included in the radiative transfer calculations, and in “clear-sky” conditions, which are computed by excluding clouds in the radiative transfer calculations.
+    Products are quantified both in "all-sky" conditions, meaning that the radiative effects of clouds are included in the radiative transfer calculations, and in "clear-sky" conditions, which are computed by excluding clouds in the radiative transfer calculations.
     The upgrade from version 1.5 to 2 consists of an extension of the period by 2017-2018, the addition of an "effective radiative forcing" product and new ways to calculate the pre-industrial reference state for aerosols and cloud condensation nuclei.
     More details are given in the documentation section.
     New versions may be released in future as scientific methods develop, and existing versions may be extended with later years if data for the period is available from the CAMS reanalysis.
     Newer versions supercede old versions so it is always recommended to use the latest one.
     CAMS also produces distributions of aerosol optical depths, distinguishing natural from anthropogenic aerosols, which are a separate dataset. See "Related Data".
+
   instrument:
   platform: CAMS
   platformSerialIdentifier: CAMS

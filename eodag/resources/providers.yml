@@ -2737,11 +2737,6 @@
       api_product_type: reanalysis
       time: '00:00'
       format: grib
-    ERA5_SL:
-      dataset: reanalysis-era5-single-levels
-      api_product_type: reanalysis
-      time: '00:00'
-      format: grib
     ERA5_SL_MONTHLY:
       dataset: reanalysis-era5-single-levels-monthly-means
       api_product_type: reanalysis
