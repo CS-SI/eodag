@@ -3741,6 +3741,19 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   missionStartDate: "1984-01-01T00:00:00Z"
 
+POLYTOPE_TEST:
+  abstract: |
+    polytope test product
+  instrument:
+  platform: NEMSAUTO
+  platformSerialIdentifier: NEMSAUTO
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: polytope test product
+  missionStartDate: "1984-01-01T00:00:00Z"
+
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

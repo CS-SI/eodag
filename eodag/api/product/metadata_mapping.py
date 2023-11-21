@@ -303,6 +303,10 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             dt += timedelta(*time_delta_args)
             return dt.isoformat()[:10]
 
+        def convert_to_non_separated_date(datetime_string):
+            iso_date = MetadataFormatter.convert_to_iso_date(datetime_string)
+            return iso_date.replace("-", "")
+
         @staticmethod
         def convert_to_rounded_wkt(value: BaseGeometry) -> str:
             wkt_value = cast(

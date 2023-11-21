@@ -106,6 +106,7 @@ class BuildPostSearchResult(PostJsonSearch):
 
         result = results[0]
 
+
         # datacube query string got from previous search
         _dc_qs = kwargs.pop("_dc_qs", None)
         if _dc_qs is not None:
@@ -115,27 +116,42 @@ class BuildPostSearchResult(PostJsonSearch):
             )
         else:
             # update result with query parameters without pagination (or search-only params)
-            if isinstance(
-                self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(self, "query_params_unpaginated"):
+            if (
+                "next_page_query_obj" in self.config.pagination
+                and isinstance(self.config.pagination["next_page_query_obj"], str)
+                and hasattr(self, "query_params_unpaginated")
+            ):
                 unpaginated_query_params = self.query_params_unpaginated
-            elif isinstance(self.config.pagination["next_page_query_obj"], str):
+            elif "next_page_query_obj" in self.config.pagination and isinstance(
+                self.config.pagination["next_page_query_obj"], str
+            ):
                 next_page_query_obj = orjson.loads(
                     self.config.pagination["next_page_query_obj"].format()
-                )
-                unpaginated_query_params = {
-                    k: v[0] if (isinstance(v, list) and len(v) == 1) else v
-                    for k, v in self.query_params.items()
-                    if (k, v) not in next_page_query_obj.items()
-                }
-            else:
-                unpaginated_query_params = self.query_params
 
-            # query hash, will be used to build a product id
-            sorted_unpaginated_query_params = dict_items_recursive_sort(
-                unpaginated_query_params
-            )
-            qs = geojson.dumps(sorted_unpaginated_query_params)
+                )
+            else:
+                # update result with query parameters without pagination (or search-only params)
+                if isinstance(
+                    self.config.pagination["next_page_query_obj"], str
+                ) and hasattr(self, "query_params_unpaginated"):
+                    unpaginated_query_params = self.query_params_unpaginated
+                elif isinstance(self.config.pagination["next_page_query_obj"], str):
+                    next_page_query_obj = orjson.loads(
+                        self.config.pagination["next_page_query_obj"].format()
+                    )
+                    unpaginated_query_params = {
+                        k: v[0] if (isinstance(v, list) and len(v) == 1) else v
+                        for k, v in self.query_params.items()
+                        if (k, v) not in next_page_query_obj.items()
+                    }
+                else:
+                    unpaginated_query_params = self.query_params
+
+                # query hash, will be used to build a product id
+                sorted_unpaginated_query_params = dict_items_recursive_sort(
+                    unpaginated_query_params
+                )
+                qs = geojson.dumps(sorted_unpaginated_query_params)
 
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 

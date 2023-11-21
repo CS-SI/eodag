@@ -199,3 +199,13 @@ wekeo:
         credentials:
             username:
             password:
+
+polytope:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+    download:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:

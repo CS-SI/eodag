@@ -1209,7 +1209,9 @@ class PostJsonSearch(QueryStringSearch):
                             total_results = _total_results or 0
                         else:
                             total_results += _total_results or 0
-                if isinstance(self.config.pagination["next_page_query_obj"], str):
+                if "next_page_query_obj" in self.config.pagination and isinstance(
+                    self.config.pagination["next_page_query_obj"], str
+                ):
                     # next_page_query_obj needs to be parsed
                     next_page_query_obj = self.config.pagination[
                         "next_page_query_obj"
