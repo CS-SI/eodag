@@ -516,3 +516,19 @@ class TestMetadataFormatter(unittest.TestCase):
                 }
             ),
         )
+
+    def test_convert_get_dates_from_string(self):
+        to_format = "{text#get_dates_from_string}"
+        self.assertEqual(
+            format_metadata(to_format, text="20231019-20231020"),
+            str(
+                {"startDate": "2023-10-19T00:00:00Z", "endDate": "2023-10-20T00:00:00Z"}
+            ),
+        )
+        to_format = "{text#get_dates_from_string(_)}"
+        self.assertEqual(
+            format_metadata(to_format, text="20231019_20231020"),
+            str(
+                {"startDate": "2023-10-19T00:00:00Z", "endDate": "2023-10-20T00:00:00Z"}
+            ),
+        )

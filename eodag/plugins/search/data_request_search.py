@@ -155,7 +155,7 @@ class DataRequestSearch(Search):
         )
 
         # update dates if needed
-        if getattr(self.config, "dates_required", True):
+        if getattr(self.config, "dates_required", True) and "id" not in keywords:
             if not keywords.get("startTimeFromAscendingNode", None):
                 keywords["startTimeFromAscendingNode"] = getattr(
                     self.config, "product_type_config", {}

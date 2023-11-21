@@ -880,9 +880,9 @@
     type: QueryStringSearch
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
-    timeout: 20
+    timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     discover_metadata:
@@ -2894,9 +2894,9 @@
     type: QueryStringSearch
     api_endpoint: 'http://catalogue.dataspace.copernicus.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
-    timeout: 10
+    timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     discover_metadata:
@@ -3314,6 +3314,9 @@
         cloudCover:
           - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
           - '$.extraInformation.cloudCover'
+        productIdentifier:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{productIdentifier}"}}]}}'
+          - '$.null'
     S2_MSI_L2A:
       productType: EO:ESA:DAT:SENTINEL-2:MSI
       processingLevel: S2MSI2A
@@ -3327,63 +3330,247 @@
         cloudCover:
           - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
           - '$.extraInformation.cloudCover'
-    S1_SAR_GRD:
-      productType: EO:ESA:DAT:SENTINEL-1:SAR
+        productIdentifier:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{productIdentifier}"}}]}}'
+          - '$.null'
+    S2_MSI_L2AP:
+      productType: EO:ESA:DAT:SENTINEL-2:MSI
+      processingLevel: S2MSI2AP
       metadata_mapping:
         id:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": {id#split_id_into_s1_params}["productType"]}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
           - '{$.productInfo.product#remove_extension}'
         processingLevel:
-          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}, {{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
-          - '{$.productInfo.product#get_processing_level_from_s1_id}'
-        sensorMode:
-          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}, {{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
-          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
-    S1_SAR_SLC:
-      productType: EO:ESA:DAT:EODC-SENTINEL-1:L1_SLC
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
+          - '$.extraInformation.cloudCover'
+        productIdentifier:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{productIdentifier}"}}]}}'
+          - '$.null'
+    S1_SAR_GRD:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: "GRD"
       metadata_mapping:
         id:
-          - '{{"stringChoiceValues": [{{"name": "mode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "polarisation", "value": {id#split_id_into_s1_params}["polarisation"]}}], "dateRangeSelectValues": [{{"name": "time", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}], "boundingBoxValues": [{{"name": "bbox", "bbox": [-90, -180, 90, 180]}}]}}'
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "GRD"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
-          - '{{"dateRangeSelectValues": [{{"name": "time", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode:
-          - '{{"dateRangeSelectValues": [{{"name": "time", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s1_id}'
         sensorMode:
           - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
           - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
+    S1_SAR_RAW:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: "RAW"
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "RAW"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
+          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
+    S1_SAR_OCN:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: "OCN"
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "OCN"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
+          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
+    S1_SAR_SLC:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: SLC
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "SLC"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
+          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
     S3_OLCI_L2LRR:
       productType: EO:ESA:DAT:SENTINEL-3:OL_2_LRR___
+      providerProductType: LRR
+      processingLevel: 2
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "productType", "value": "LRR"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "LRR"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "LRR"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '2'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
     S3_OLCI_L2LFR:
       productType: EO:ESA:DAT:SENTINEL-3:OL_2_LFR___
+      providerProductType: OL_2_LFR___
+      processingLevel: 2
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "productType", "value": "OL_2_LFR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "OL_2_LFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "OL_2_LFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '2'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
     S3_SY_SYN:
       productType: EO:ESA:DAT:SENTINEL-3:SYNERGY
+      processingLevel: 2
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "productType", "value": {id#split_id_into_s3_params}["productType"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '2'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        cloudCover:
+          - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
+          - '$.extraInformation.cloudCover'
       # additional filtering to only return the desired product types (defining datasetId EO:ESA:DAT:SENTINEL-3:SYNERGY is not enough for that)
       custom_filters:
         filter_attribute: "$.productInfo.product"
@@ -3391,56 +3578,110 @@
         filter_clause: "in ['SY_2_AOD___', 'SY_2_V10___', 'SY_2_VGP___', 'SY_2_SYN___', 'SY_2_VG1___']"
     S3_LAN:
       productType: EO:ESA:DAT:SENTINEL-3:SR_2_LAN___
+      providerProductType: SR_2_LAN___
+      processingLevel: 2
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "productType", "value": "SR_2_LAN___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "SR_2_LAN___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "SR_2_LAN___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '2'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
     S3_SLSTR_L2:
       productType: EO:ESA:DAT:SENTINEL-3:SL_2_LST___
+      providerProductType: SL_2_LST___
+      processingLevel: 2
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "productType", "value": "SL_2_LST___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "SL_2_LST___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "productType", "value": "SL_2_LST___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '2'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
     S3_SLSTR_L2AOD:
       productType: EO:EUM:DAT:SENTINEL-3:0416
+      providerProductType: SL_2_AOD___
+      timeliness: NR
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_AOD___"}}, {{"name": "timeliness", "value": "NR"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_AOD___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_AOD___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2FRP:
       productType: EO:EUM:DAT:SENTINEL-3:0417
+      providerProductType: SL_2_FRP___
+      timeliness: NR
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_FRP___"}}, {{"name": "timeliness", "value": "NR"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_FRP___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_FRP___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        fire:
+          - '{{"stringChoiceValues": [{{"name": "fire", "value": "{fire}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_EFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
+      providerProductType: OL_1_EFR___
       metadata_mapping:
         productType:
           - '{{"datasetId": "EO:EUM:DAT:SENTINEL-3:0577"}}'
@@ -3448,15 +3689,31 @@
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_EFR___"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_EFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_EFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_ERR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
+      providerProductType: OL_1_ERR___
       metadata_mapping:
         productType:
           - '{{"datasetId": "EO:EUM:DAT:SENTINEL-3:0578"}}'
@@ -3464,116 +3721,495 @@
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_1_ERR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
+      providerProductType: OL_2_WFR___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_OLCI_L2WRR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
+      providerProductType: OL_2_WRR___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_OLCI_L2WFR_BC003:
+      productType: EO:EUM:DAT:SENTINEL-3:0556
+      providerProductType: OL_2_WFR___
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WFR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_OLCI_L2WRR_BC003:
+      productType: EO:EUM:DAT:SENTINEL-3:0557
+      providerProductType: OL_2_WRR___
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "OL_2_WRR___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
+      providerProductType: SR_1_SRA___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_A:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
+      providerProductType: SR_1_SRA_A_
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SRA_BS:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
+      providerProductType: SR_1_SRA_BS
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_BS"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_BS"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_BS"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_SRA_1A_BC004:
+      productType: EO:EUM:DAT:SENTINEL-3:0583
+      providerProductType: SR_1_SRA_A_
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_A_"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_SRA_1B_BC004:
+      productType: EO:EUM:DAT:SENTINEL-3:0584
+      providerProductType: SR_1_SRA___
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_SRA_BS_BC004:
+      productType: EO:EUM:DAT:SENTINEL-3:0585
+      providerProductType: SR_1_SRA_BS
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_1_SRA_BS"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
+      providerProductType: SR_2_WAT___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_2_WAT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_2_WAT___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_2_WAT___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_WAT_BC004:
+      productType: EO:EUM:DAT:SENTINEL-3:0586
+      providerProductType: SR_2_WAT___
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SR_2_WAT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L1RBT:
       productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
+      providerProductType: SL_1_RBT___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_1_RBT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_1_RBT___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productStartDate'
-        completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_1_RBT___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
-          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_SLSTR_L1RBT_BC004:
+      productType: EO:EUM:DAT:SENTINEL-3:0615
+      providerProductType: SL_1_RBT___
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_1_RBT___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S3_SLSTR_L2WST:
       productType: EO:EUM:DAT:SENTINEL-3:SL_2_WST___
+      providerProductType: SL_2_WST___
       metadata_mapping:
         id:
           - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
           - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitdir", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_SLSTR_L2WST_BC003:
+      productType: EO:EUM:DAT:SENTINEL-3:0582
+      providerProductType: SL_2_WST___
+      timeliness: NT
+      platform: Sentinel-3A
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}, {{"name": "timeliness", "value": {id#split_id_into_s3_params}["timeliness"]}}, {{"name": "sat", "value": {id#split_id_into_s3_params}["sat"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S3_OLCI_L4BALTIC:
+      productType: EO:MO:DAT:OCEANCOLOUR_BAL_BGC_L4_NRT_009_132:cmems_obs-oc_bal_bgc-plankton_nrt_l4-olci-300m_P1M_202207
+      variable:
+        - lat
+        - CHL
+        - lon
+        - CHL_count
+        - time
+        - CHL_error
+      metadata_mapping:
+        id:
+          - '{{"dateRangeSelectValues": [{{"name": "time", "start": {id#get_dates_from_string}["startDate"], "end": {id#get_dates_from_string}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
         startTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '{{"dateRangeSelectValues": [{{"name": "time", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productStartDate'
         completionTimeFromAscendingNode:
-          - '{{"stringChoiceValues": [{{"name": "type", "value": "SL_2_WST___"}}], "dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '{{"dateRangeSelectValues": [{{"name": "time", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
           - '$.productInfo.productEndDate'
+        variable:
+          - '{{"multiStringSelectValues": [{{"name": "variables", "value": {variable}}}]}}'
+          - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     S5P_L1B2_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P:TROPOMI
@@ -3584,6 +4220,180 @@
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
           - '{$.productInfo.product#get_processing_level_from_s5p_id}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingMode:
+          - '{{"stringChoiceValues": [{{"name": "processingMode", "value": "{processingMode}"}}]}}'
+          - '$.null'
+    S6_P4_L1AHR_F06:
+      productType: EO:EUM:DAT:0236
+      platform: Sentinel-6A
+      providerProductType: P4_1A_HR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1A_HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S6_P4_L1BLR_F06:
+      productType: EO:EUM:DAT:0237
+      platform: Sentinel-6A
+      providerProductType: P4_1B_LR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1B_LR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S6_P4_L1BAHR_F06:
+      productType: EO:EUM:DAT:0238
+      platform: Sentinel-6A
+      providerProductType: P4_1B_HR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_1B_HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S6_P4_L2LR_F06:
+      productType: EO:EUM:DAT:0239
+      platform: Sentinel-6A
+      providerProductType: P4_2__LR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_2__LR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S6_P4_L2HR_F06:
+      productType: EO:EUM:DAT:0240
+      platform: Sentinel-6A
+      providerProductType: P4_2__HR_____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "P4_2__HR_____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
+    S6_AMR_L2_F06:
+      productType: EO:EUM:DAT:0241
+      platform: Sentinel-6A
+      providerProductType: MW_2__AMR____
+      timeliness: NT
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "MW_2__AMR____"}}, {{"name": "timeliness", "value": "NT"}}, {{"name": "sat", "value": "Sentinel-6A"}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s3_params}["startDate"], "end": {id#split_id_into_s3_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        platform:
+          - '{{"stringChoiceValues": [{{"name": "sat", "value": "{platform}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type
     COP_DEM_GLO30_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
       metadata_mapping:
