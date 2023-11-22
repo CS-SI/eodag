@@ -517,6 +517,69 @@ class TestCore(TestCoreBase):
         self.dag.list_product_types(provider="peps", fetch_providers=True)
         mock_fetch_product_types_list.assert_called_once_with(self.dag, provider="peps")
 
+    def test_list_product_types_with_free_text_filter_ok(self):
+        """Core api must correctly return the list of supported product types"""
+
+        product_types = self.dag.list_product_types(
+            fetch_providers=False, filter="ABSTRACTFOO"
+        )
+        self.assertIsInstance(product_types, list)
+        for product_type in product_types:
+            self.assertListProductTypesRightStructure(product_type)
+        # There should be no repeated product type in the output
+        self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+
+    def test_list_product_types_with_free_text_filter(self):
+        """Testing the search terms"""
+
+        with open(
+            os.path.join(TEST_RESOURCES_PATH, "ext_product_types_free_text_search.json")
+        ) as f:
+            ext_product_types_conf = json.load(f)
+        self.dag.update_product_types_list(ext_product_types_conf)
+
+        # match in the abstract
+        product_types = self.dag.list_product_types(
+            fetch_providers=False, filter="ABSTRACTFOO"
+        )
+        product_types_ids = [r["ID"] for r in product_types or []]
+        self.assertListEqual(product_types_ids, ["foo"])
+
+        # passing the provider
+        product_types = self.dag.list_product_types(
+            provider="astraea_eod", fetch_providers=False, filter="ABSTRACTFOO"
+        )
+        product_types_ids = [r["ID"] for r in product_types or []]
+        self.assertListEqual(product_types_ids, ["foo"])
+
+        # match in the abstract
+        product_types = self.dag.list_product_types(
+            fetch_providers=False, filter=" FOO  THIS  IS "
+        )
+        product_types_ids = [r["ID"] for r in product_types or []]
+        self.assertListEqual(product_types_ids, ["foo"])
+
+        # match in the keywords
+        product_types = self.dag.list_product_types(
+            fetch_providers=False, filter="LECTUS_BAR_KEY"
+        )
+        product_types_ids = [r["ID"] for r in product_types or []]
+        self.assertListEqual(product_types_ids, ["bar"])
+
+        # match in the title
+        product_types = self.dag.list_product_types(
+            fetch_providers=False, filter="COLLECTION FOOBAR"
+        )
+        product_types_ids = [r["ID"] for r in product_types or []]
+        self.assertListEqual(product_types_ids, ["foobar"])
+
+        # multiple terms
+        product_types = self.dag.list_product_types(
+            fetch_providers=False, filter="FOOANDBAR,FOOBAR"
+        )
+        product_types_ids = [r["ID"] for r in product_types or []]
+        self.assertListEqual(product_types_ids, ["bar", "foo", "foobar"])
+
     def test_update_product_types_list(self):
         """Core api.update_product_types_list must update eodag product types list"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:

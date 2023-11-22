@@ -1378,104 +1378,11 @@ class RequestTestCase(unittest.TestCase):
             },
         )
 
-    @mock.patch(
-        "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]
-    )
-    @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
-        autospec=True,
-        return_value=[
-            {
-                "ID": "S2_MSI_L1C",
-                "abstract": "The Level-1C product is composed of 100x100 km2 tiles "
-                "(ortho-images in UTM/WGS84 projection). [...]",
-                "instrument": "MSI",
-                "platform": "SENTINEL2",
-                "platformSerialIdentifier": ["S2A", "S2B"],
-                "processingLevel": "L1",
-                "sensorType": "OPTICAL",
-                "title": "SENTINEL2 Level - 1C",
-            },
-            {
-                "ID": "S2_MSI_L2A",
-                "abstract": "The Level-2A product provides Bottom Of Atmosphere (BOA) "
-                "reflectance images derived from the associated Level-1C "
-                "products. [...]",
-                "instrument": "MSI",
-                "platform": "SENTINEL2",
-                "platformSerialIdentifier": ["S2A", "S2B"],
-                "processingLevel": "L2",
-                "sensorType": "OPTICAL",
-                "title": "SENTINEL2 Level-2A",
-            },
-            {
-                "ID": "L57_REFLECTANCE",
-                "abstract": "Landsat 5,7,8 L2A data (old format) distributed by Theia "
-                "(2014 to 2017-03-20) using MUSCATE prototype, Lamber 93 "
-                "projection.",
-                "instrument": ["OLI", "TIRS"],
-                "platform": "LANDSAT",
-                "platformSerialIdentifier": ["L5", "L7", "L8"],
-                "processingLevel": "L2A",
-                "sensorType": "OPTICAL",
-                "title": "Landsat 5,7,8 Level-2A",
-            },
-        ],
-    )
-    def test_collection_free_text_search(self, list_pt: Mock, guess_pt: Mock):
+    @mock.patch("eodag.rest.utils.eodag_api.list_product_types", autospec=True)
+    def test_collection_free_text_search(self, list_pt: Mock):
         """Test STAC Collection free-text search"""
 
-        url = "/collections?q=NOT FOUND"
+        url = "/collections?q=TERM1,TERM2"
         r = self.app.get(url)
-        self.assertTrue(guess_pt.called)
-        self.assertTrue(list_pt.called)
+        list_pt.assert_called_once_with(provider=None, filter="TERM1,TERM2")
         self.assertEqual(200, r.status_code)
-        self.assertFalse(
-            [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
-            ],
-        )
-
-        url = "/collections?q= LEVEL - 1C  "
-        r = self.app.get(url)
-        self.assertTrue(guess_pt.called)
-        self.assertTrue(list_pt.called)
-        self.assertEqual(200, r.status_code)
-        self.assertListEqual(
-            ["S2_MSI_L1C"],
-            [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
-            ],
-        )
-
-        url = "/collections?q=projection,atmosphere"
-        r = self.app.get(url)
-        self.assertTrue(guess_pt.called)
-        self.assertTrue(list_pt.called)
-        self.assertEqual(200, r.status_code)
-        self.assertListEqual(
-            ["S2_MSI_L1C", "S2_MSI_L2A", "L57_REFLECTANCE"],
-            [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
-            ],
-        )
-
-        url = "/collections?q=l7"
-        r = self.app.get(url)
-        self.assertTrue(guess_pt.called)
-        self.assertTrue(list_pt.called)
-        self.assertEqual(200, r.status_code)
-        self.assertListEqual(
-            ["L57_REFLECTANCE"],
-            [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
-            ],
-        )
