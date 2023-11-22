@@ -231,8 +231,8 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # update downloadLink
         split_param = getattr(self.config, "assets_split_parameter", None)
-        if split_param:
-            product_data = getattr(self.config, "products", {})[product_type]
+        product_data = getattr(self.config, "products", {}).get(product_type, {})
+        if split_param and product_data:
             if "dataset" in product_data:
                 provider_product = product_data["dataset"]
             else:
