@@ -448,7 +448,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         path = plugin.download(self.product, outputs_prefix=self.output_dir)
 
         # assets common path
-        self.assertEqual(path, os.path.abspath(os.path.join(os.sep, "somewhere")))
+        self.assertEqual(
+            os.path.normcase(path),
+            os.path.normcase(os.path.abspath(os.path.join(os.sep, "somewhere"))),
+        )
         # empty product download directory should have been removed
         self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
 
