@@ -607,11 +607,10 @@ class EODataAccessGateway:
                     query = QueryParser(
                         search_key, self._product_types_index.schema
                     ).parse(term)
-                    partial_result = searcher.search(query, limit=None)
                     if results is None:
-                        results = partial_result
+                        results = searcher.search(query, limit=None)
                     else:
-                        results.upgrade_and_extend(partial_result)
+                        results.upgrade_and_extend(searcher.search(query, limit=None))
             if results is None:
                 # no result found -> intersection is empty set
                 return []
