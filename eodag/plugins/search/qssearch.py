@@ -1162,6 +1162,6 @@ class StacSearch(PostJsonSearch):
 
         # move assets from properties to product's attr
         for product in products:
-            product.assets = product.properties.pop("assets", [])
+            product.assets = product.properties.pop("assets", {})
 
         return products
