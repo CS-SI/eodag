@@ -692,6 +692,10 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         client = self.api_plugin._get_cds_client(**auth_dict)
         self.assertEqual(client.logger.level, logging.DEBUG)
 
+        logger = logging.getLogger("eodag")
+        logger.handlers = []
+        logger.level = 0
+
     def test_plugins_apis_cds_query_dates_missing(self):
         """CdsApi.query must use default dates if missing"""
         # given start & stop
