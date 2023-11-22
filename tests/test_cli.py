@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import random
 import re
@@ -40,7 +41,6 @@ from tests.context import (
     download,
     eodag,
     search_crunch,
-    setup_logging,
 )
 from tests.units import test_core
 from tests.utils import mock, no_blanks, write_eodag_conf_with_fake_credentials
@@ -80,11 +80,13 @@ class TestEodagCli(unittest.TestCase):
 
     def tearDown(self):
         super(TestEodagCli, self).tearDown()
-        # Default logging: no logging but still displays progress bars
-        setup_logging(1)
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
+        # reset logging
+        logger = logging.getLogger("eodag")
+        logger.handlers = []
+        logger.level = 0
 
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""

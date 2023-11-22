@@ -19,6 +19,7 @@
 import copy
 import glob
 import json
+import logging
 import os
 import shutil
 import unittest
@@ -76,6 +77,10 @@ class TestCoreBase(unittest.TestCase):
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
+        # reset logging
+        logger = logging.getLogger("eodag")
+        logger.handlers = []
+        logger.level = 0
 
 
 class TestCore(TestCoreBase):
@@ -1512,6 +1517,9 @@ class TestCoreSearch(TestCoreBase):
 
         found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
 
+        from eodag.utils.logging import get_logging_verbose
+
+        _ = get_logging_verbose()
         # get_search_plugins
         mock_get_search_plugins.assert_called_once_with(
             self.dag._plugins_manager, product_type="bar", provider="baz"

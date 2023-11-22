@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import copy
+import logging
 import os
 import sys
 import unittest
@@ -41,6 +42,17 @@ from tests.context import (
 
 
 class TestUtils(unittest.TestCase):
+    def setUp(self) -> None:
+        super(TestUtils, self).setUp()
+        setup_logging(verbose=1)
+
+    def tearDown(self) -> None:
+        super(TestUtils, self).tearDown()
+        # reset logging
+        logger = logging.getLogger("eodag")
+        logger.handlers = []
+        logger.level = 0
+
     def test_utils_get_timestamp(self):
         """get_timestamp must return a UNIX timestamp"""
         # Date to timestamp to date, this assumes the date is in UTC
