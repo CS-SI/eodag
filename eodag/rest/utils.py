@@ -426,6 +426,7 @@ def search_products(product_type, arguments, stac_formatted=True):
             "end": dtend,
             "geom": geom,
             "provider": provider,
+            "server_mode": True,
         }
 
         if stac_formatted:
@@ -491,10 +492,13 @@ def search_product_by_id(uid, product_type=None, provider=None, variable=None):
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     :raises: RuntimeError
     """
-    print("utils", variable)
     try:
         products, total = eodag_api.search(
-            id=uid, productType=product_type, provider=provider, variable=variable
+            id=uid,
+            productType=product_type,
+            provider=provider,
+            variable=variable,
+            server_mode=True,
         )
         return products
     except ValidationError:

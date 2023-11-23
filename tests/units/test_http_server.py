@@ -318,9 +318,19 @@ class RequestTestCase(unittest.TestCase):
                 list,
                 "expected_search_kwargs must be a list if search_call_count > 1",
             )
+            if isinstance(expected_search_kwargs, dict):
+                expected_search_kwargs["server_mode"] = True
+            elif isinstance(expected_search_kwargs, list):
+                for row in expected_search_kwargs:
+                    row["server_mode"] = True
             for single_search_kwargs in expected_search_kwargs:
                 mock_search.assert_any_call(**single_search_kwargs)
         elif expected_search_kwargs is not None:
+            if isinstance(expected_search_kwargs, dict):
+                expected_search_kwargs["server_mode"] = True
+            elif isinstance(expected_search_kwargs, list):
+                for row in expected_search_kwargs:
+                    row["server_mode"] = True
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
         self.assertEqual(200, response.status_code, response.text)

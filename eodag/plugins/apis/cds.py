@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
 from datetime import datetime
 
 import cdsapi
@@ -190,6 +191,28 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             )
         return products, num_items
 
+    def normalize_results(self, results, **kwargs):
+        """Build EOProducts from provider results"""
+
+        products = super(CdsApi, self).normalize_results(results, **kwargs)
+
+        # move assets from properties to product's attr
+        for product in products:
+            assets = {}
+            if "downloadLinks" in product.properties and (
+                "server_mode" not in kwargs or not kwargs["server_mode"]
+            ):
+                for param, link in product.properties["downloadLinks"].items():
+                    asset = {
+                        "title": "Download " + param,
+                        "href": link,
+                        "roles": ["data"],
+                    }
+                    assets[param] = asset
+                product.assets = assets
+
+        return products
+
     def _get_cds_client(self, **auth_dict):
         """Returns cdsapi client."""
         # eodag logging info
@@ -252,6 +275,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         """Download data from providers using CDS API"""
 
         product_extension = CDS_KNOWN_FORMATS[product.properties.get("format", "grib")]
+        auth_dict = self.authenticate()
 
         # Prepare download
         fs_path, record_filename = self._prepare_download(
@@ -266,9 +290,51 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 product.location = path_to_uri(fs_path)
             return fs_path
 
-        # get download request dict from product.location/downloadLink url query string
-        # separate url & parameters
-        query_str = "".join(urlsplit(product.location).fragment.split("?", 1)[1:])
+        assets = getattr(product, "assets", {})
+        if assets and "downloadLink" not in assets:
+            self._download_assets(product, fs_path, record_filename, auth_dict)
+        else:
+            # get download request dict from product.location/downloadLink url query string
+            # separate url & parameters
+            query_str = "".join(urlsplit(product.location).fragment.split("?", 1)[1:])
+            download_request = self._create_download_request(
+                query_str, product.product_type
+            )
+
+            dataset_name = download_request.pop("dataset")
+
+            # Send download request to CDS web API
+            logger.info(
+                "Request download on CDS API: dataset=%s, request=%s",
+                dataset_name,
+                download_request,
+            )
+            try:
+                client = self._get_cds_client(**auth_dict)
+                client.retrieve(
+                    name=dataset_name, request=download_request, target=fs_path
+                )
+            except Exception as e:
+                logger.error(e)
+                raise DownloadError(e)
+
+            with open(record_filename, "w") as fh:
+                fh.write(product.properties["downloadLink"])
+            logger.debug("Download recorded in %s", record_filename)
+
+        # do not try to extract or delete grib/netcdf
+        kwargs["extract"] = False
+
+        product_path = self._finalize(
+            fs_path,
+            progress_callback=progress_callback,
+            outputs_extension=f".{product_extension}",
+            **kwargs,
+        )
+        product.location = path_to_uri(product_path)
+        return product_path
+
+    def _create_download_request(self, query_str, product_type):
         download_request = geojson.loads(query_str)
         # remove string quotes within values
         for param, param_value in download_request.items():
@@ -290,9 +356,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 date = date_value[0].replace('"', "").replace("'", "")
             start, end, *_ = date.split("/")
             if getattr(self.config, "products_split_timedelta", None):
-                product_data = getattr(self.config, "products", {})[
-                    product.product_type
-                ]
+                product_data = getattr(self.config, "products", {})[product_type]
                 if "dataset" in product_data:
                     provider_product = product_data["dataset"]
                 else:
@@ -311,38 +375,42 @@ class CdsApi(Download, Api, BuildPostSearchResult):
                 download_request["year"] = [*{str(d.year) for d in d_range}]
                 download_request["month"] = [*{str(d.month) for d in d_range}]
                 download_request["day"] = [*{str(d.day) for d in d_range}]
+        return download_request
 
-        auth_dict = self.authenticate()
-        dataset_name = download_request.pop("dataset")
+    def _download_assets(self, product, fs_path, record_filename, auth_dict):
+        for key, asset in product.assets.items():
+            query_str = "".join(urlsplit(asset["href"]).fragment.split("?", 1)[1:])
+            download_request = self._create_download_request(
+                query_str, product.product_type
+            )
+            if not os.path.isdir(fs_path):
+                os.mkdir(fs_path)
+            asset_path = fs_path + "/" + key
 
-        # Send download request to CDS web API
-        logger.info(
-            "Request download on CDS API: dataset=%s, request=%s",
-            dataset_name,
-            download_request,
-        )
-        try:
-            client = self._get_cds_client(**auth_dict)
-            client.retrieve(name=dataset_name, request=download_request, target=fs_path)
-        except Exception as e:
-            logger.error(e)
-            raise DownloadError(e)
+            asset_file_name = record_filename + "/" + key
+            dataset_name = download_request.pop("dataset")
 
-        with open(record_filename, "w") as fh:
-            fh.write(product.properties["downloadLink"])
-        logger.debug("Download recorded in %s", record_filename)
+            # Send download request to CDS web API
+            logger.info(
+                "Request download on CDS API: dataset=%s, request=%s, asset=%s",
+                dataset_name,
+                download_request,
+                key,
+            )
+            try:
+                client = self._get_cds_client(**auth_dict)
+                client.retrieve(
+                    name=dataset_name, request=download_request, target=asset_path
+                )
+            except Exception as e:
+                logger.error(e)
+                raise DownloadError(e)
 
-        # do not try to extract or delete grib/netcdf
-        kwargs["extract"] = False
-
-        product_path = self._finalize(
-            fs_path,
-            progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
-            **kwargs,
-        )
-        product.location = path_to_uri(product_path)
-        return product_path
+            if not os.path.isdir(record_filename):
+                os.mkdir(record_filename)
+            with open(asset_file_name, "w") as fh:
+                fh.write(product.properties["downloadLink"])
+            logger.debug("Download recorded in %s", asset_file_name)
 
     def download_all(
         self,
