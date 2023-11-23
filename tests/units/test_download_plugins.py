@@ -309,8 +309,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets = {
-            "foo": {"href": "http://somewhere/something", "title": "foo"},
-            "boo": {"href": "http://elsewhere/anything", "title": "boo"},
+            "somewhere": {"href": "http://somewhere/something", "title": "foo"},
+            "elsewhere": {"href": "http://elsewhere/anything", "title": "boo"},
         }
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": '; filename = "somethingelse"'
