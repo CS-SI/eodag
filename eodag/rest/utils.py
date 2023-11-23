@@ -14,7 +14,7 @@ from typing import Dict, Optional
 
 import dateutil.parser
 from dateutil import tz
-from fastapi.responses import StreamingResponse
+from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
 
@@ -686,10 +686,10 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
                 "content-disposition": f"attachment; filename={os.path.basename(filepath_to_stream)}",
             },
         )
-    except NotAvailableError:
-        download_stream_dict = dict(
-            content=(i for i in range(0)),
+    except NotAvailableError as e:
+        return ORJSONResponse(
             status_code=202,
+            content={"description": str(e)},
         )
     return StreamingResponse(**download_stream_dict)
 
