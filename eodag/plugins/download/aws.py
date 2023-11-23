@@ -239,7 +239,14 @@ class AwsDownload(Download):
             product.product_type, {}
         )
 
-        build_safe = product_conf.get("build_safe", False)
+        # do not try to build SAFE if asset filter is used
+        asset_filter = kwargs.get("asset", None)
+        if asset_filter:
+            build_safe = False
+        else:
+            build_safe = product_conf.get("build_safe", False)
+
+        ignore_assets = getattr(self.config, "ignore_assets", False)
 
         # product conf overrides provider conf for "flatten_top_dirs"
         flatten_top_dirs = product_conf.get(
@@ -268,11 +275,25 @@ class AwsDownload(Download):
                     "SAFE metadata fetch format %s not implemented" % fetch_format
                 )
         # if assets are defined, use them instead of scanning product.location
-        if hasattr(product, "assets") and not getattr(
-            self.config, "ignore_assets", False
-        ):
+        if hasattr(product, "assets") and not ignore_assets:
+            if asset_filter:
+                filter_regex = re.compile(asset_filter)
+                assets_keys = getattr(product, "assets", {}).keys()
+                assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+                filtered_assets = {
+                    a_key: getattr(product, "assets", {})[a_key]
+                    for a_key in assets_keys
+                }
+                assets_values = [a for a in filtered_assets.values() if "href" in a]
+                if not assets_values:
+                    raise NotAvailableError(
+                        rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
+                    )
+            else:
+                assets_values = getattr(product, "assets", {}).values()
+
             bucket_names_and_prefixes = []
-            for complementary_url in getattr(product, "assets", {}).values():
+            for complementary_url in assets_values:
                 bucket_names_and_prefixes.append(
                     self.get_product_bucket_name_and_prefix(
                         product, complementary_url.get("href", "")
@@ -370,12 +391,20 @@ class AwsDownload(Download):
                 )
 
         unique_product_chunks = set(product_chunks)
-        asset_filter = kwargs.get("asset", None)
-        if asset_filter:
+
+        # if asset_filter is used with ignore_assets, apply filtering on listed prefixes
+        if asset_filter and ignore_assets:
             filter_regex = re.compile(asset_filter)
             unique_product_chunks = set(
-                filter(lambda c: filter_regex.match(c.key), unique_product_chunks)
+                filter(
+                    lambda c: filter_regex.fullmatch(os.path.basename(c.key)),
+                    unique_product_chunks,
+                )
             )
+            if not unique_product_chunks:
+                raise NotAvailableError(
+                    rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in {product.remote_location}"
+                )
 
         total_size = sum([p.size for p in unique_product_chunks])
 
@@ -438,12 +467,14 @@ class AwsDownload(Download):
         if build_safe:
             self.check_manifest_file_list(product_local_path)
 
-        # save hash/record file
-        with open(record_filename, "w") as fh:
-            fh.write(product.remote_location)
-        logger.debug("Download recorded in %s", record_filename)
+        if asset_filter is None:
+            # save hash/record file
+            with open(record_filename, "w") as fh:
+                fh.write(product.remote_location)
+            logger.debug("Download recorded in %s", record_filename)
 
-        product.location = path_to_uri(product_local_path)
+            product.location = path_to_uri(product_local_path)
+
         return product_local_path
 
     def get_rio_env(self, bucket_name, prefix, auth_dict):
