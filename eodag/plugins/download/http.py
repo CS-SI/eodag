@@ -672,14 +672,12 @@ class HTTPDownload(Download):
 
         if asset_filter:
             filter_regex = re.compile(asset_filter)
-            assets_values = list(
-                filter(
-                    lambda a: (
-                        filter_regex.match(a["href"]) or filter_regex.match(a["title"])
-                    ),
-                    assets_values,
-                )
-            )
+            assets_keys = getattr(product, "assets", {}).keys()
+            assets_keys = list(filter(filter_regex.match, assets_keys))
+            filtered_assets = {
+                a_key: getattr(product, "assets", {})[a_key] for a_key in assets_keys
+            }
+            assets_values = [a for a in filtered_assets.values() if "href" in a]
             if not assets_values:
                 logger.warning(
                     "No asset available for product %s and filter %s",
