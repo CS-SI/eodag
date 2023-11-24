@@ -6742,7 +6742,7 @@
     metadata_mapping:
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
       completionTimeFromAscendingNode:
-        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}"}}'
+        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       productType: '$.productType'
