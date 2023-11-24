@@ -58,6 +58,7 @@ from urllib.request import url2pathname
 
 import click
 import orjson
+import requests
 import shapefile
 import shapely.wkt
 import yaml
@@ -1250,6 +1251,71 @@ def cached_yaml_load_all(config_path):
     :rtype: list
     """
     return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
+
+
+class HashableDict(dict):
+    """Hashable dict to use with lru_cache"""
+
+    def __hash__(self):
+        return hash(frozenset(self.items()))
+
+
+@functools.lru_cache()
+def cached_request(
+    method,
+    url,
+    params=None,
+    data=None,
+    headers=None,
+    auth=None,
+    timeout=None,
+    allow_redirects=True,
+    stream=None,
+    verify=None,
+    cert=None,
+):
+    """Cached requests.request
+
+    Sends a request.
+
+    :param method: request method
+    :type method: str
+    :param url: URL for the request
+    :type url: str
+    :param params: (optional) query string parameters for the request
+    :type params: eodag.utils.HashableDict
+    :param data: (optional) body of the request
+    :type data: eodag.utils.HashableDict
+    :param headers: (optional) HTTP Headers to send with the request
+    :type headers: eodag.utils.HashableDict
+    :param auth: (optional) Auth callable
+    :type auth: requests.auth.AuthBase
+    :param timeout: (optional) wait time for the server to send data before giving up
+    :type timeout: float
+    :param allow_redirects: (optional) Set to True by default.
+    :type allow_redirects: bool
+    :param stream: (optional) whether to immediately download the response content
+    :type stream: bool
+    :param verify: (optional) controls whether we verify the server's TLS certificate
+    :type verify: bool
+    :param cert: (optional) path to ssl client cert file
+    :type cert: str
+    :returns: a Response object.
+    :rtype: requests.Response
+    """
+    return requests.request(
+        method=method,
+        url=url,
+        params=params,
+        data=data,
+        headers=headers,
+        auth=auth,
+        timeout=timeout,
+        allow_redirects=allow_redirects,
+        stream=stream,
+        verify=verify,
+        cert=cert,
+    )
 
 
 def get_bucket_name_and_prefix(url=None, bucket_path_level=None):

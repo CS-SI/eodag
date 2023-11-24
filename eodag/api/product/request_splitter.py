@@ -7,7 +7,7 @@ import re
 import requests
 
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.utils import USER_AGENT
+from eodag.utils import USER_AGENT, HashableDict, cached_request
 from eodag.utils.exceptions import MisconfiguredError
 
 logger = logging.getLogger("eodag.api.product.request_splitter")
@@ -81,7 +81,7 @@ class RequestSplitter:
                 auth_headers = getattr(self.config["auth"], "headers", "")
                 headers.update(auth_headers)
             try:
-                res = requests.get(url, headers=headers)
+                res = cached_request("GET", url, headers=HashableDict(**headers))
                 res.raise_for_status()
             except requests.RequestException as e:
                 logger.error("error at fetching constraints: %s", str(e))
