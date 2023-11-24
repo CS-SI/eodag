@@ -40,6 +40,8 @@ def _check_value_in_constraint(value, constraint_value):
 def _check_constraint_params(params, constraint, variable_name, variables):
     available_variables = []
     for key, value in params.items():
+        if key == variable_name:
+            continue
         if key not in constraint or _check_value_in_constraint(value, constraint[key]):
             if variables:
                 variables_str = [str(v) for v in variables]
