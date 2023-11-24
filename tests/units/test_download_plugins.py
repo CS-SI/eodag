@@ -318,7 +318,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.return_value.headers = {"content-disposition": ""}
 
         path = plugin.download(
-            self.product, outputs_prefix=self.output_dir, asset=".*else"
+            self.product, outputs_prefix=self.output_dir, asset="else.*"
         )
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
@@ -1060,9 +1060,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # with filter for assets
         self.product.properties["title"] = "newTitle"
         setattr(self.product, "location", "file://path/to/file")
-        plugin.download(self.product, outputs_prefix=self.output_dir, asset=".*file")
-        # 2 additional calls
-        self.assertEqual(6, mock_get_chunk_dest_path.call_count)
+        plugin.download(self.product, outputs_prefix=self.output_dir, asset="file1")
+        # 3 additional calls
+        self.assertEqual(7, mock_get_chunk_dest_path.call_count)
 
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
