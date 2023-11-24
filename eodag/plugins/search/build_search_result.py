@@ -192,9 +192,12 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # build product id
         id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s" % (
+        product_id = "%s_%s_%s_%s" % (
             id_prefix,
             parsed_properties["startTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            parsed_properties["completionTimeFromAscendingNode"]
             .split("T")[0]
             .replace("-", ""),
             query_hash,
