@@ -1,12 +1,16 @@
 import copy
 import datetime
 import json
+import logging
 import re
 
 import requests
 
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.utils import USER_AGENT
 from eodag.utils.exceptions import MisconfiguredError
+
+logger = logging.getLogger("eodag.api.product.request_splitter")
 
 
 def _hour_from_time(time):
@@ -59,6 +63,9 @@ class RequestSplitter:
             "constraints_file_path" in self.config
             and self.config["constraints_file_path"]
         ):
+            logger.info(
+                "loading constraints from %s", self.config["constraints_file_path"]
+            )
             with open(self.config["constraints_file_path"]) as f:
                 self.constraints_data = json.load(f)
         elif (
@@ -68,13 +75,19 @@ class RequestSplitter:
             url = self.config["constraints_file_url"]
             if "{" in url and provider_product:
                 url = url.format(dataset=provider_product)
-            print(url)
+            logger.info("fetching constraints from %s", url)
+            headers = USER_AGENT
             if "auth" in self.config:
-                headers = getattr(self.config["auth"], "headers", "")
+                auth_headers = getattr(self.config["auth"], "headers", "")
+                headers.update(auth_headers)
+            try:
                 res = requests.get(url, headers=headers)
+                res.raise_for_status()
+            except requests.RequestException as e:
+                logger.error("error at fetching constraints: %s", str(e))
+                self.constraints_data = {}
             else:
-                res = requests.get(url)
-            self.constraints_data = res.json()
+                self.constraints_data = res.json()
         else:
             self.constraints_data = {}
         if (
