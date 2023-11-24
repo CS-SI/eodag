@@ -174,9 +174,12 @@ paths:
       operationId: getCollections
       parameters:
         - $ref: '#/components/parameters/provider'
+        - $ref: '#/components/parameters/q'
       responses:
         '200':
           $ref: '#/components/responses/Collections'
+        '202':
+          $ref: '#/components/responses/Accepted'
         '500':
           $ref: '#/components/responses/ServerError'
   /collections/{collectionId}:
@@ -1913,6 +1916,12 @@ components:
         text/html:
           schema:
             type: string
+    Accepted:
+      description: The request has been accepted, but the data is not yet ready. Please wait a few minutes before trying again.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
     Collections:
       description: >-
         The feature collections shared by this API.
