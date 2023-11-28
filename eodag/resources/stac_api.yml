@@ -309,6 +309,7 @@ paths:
       - $ref: '#/components/parameters/intersects'
       - $ref: '#/components/parameters/ids'
       - $ref: '#/components/parameters/collectionsArray'
+      - $ref: '#/components/parameters/sortby'
       responses:
         '200':
           description: A feature collection.
@@ -586,6 +587,21 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/collectionsArray'
+      explode: false
+    sortby:
+      name: sortby
+      x-stac-api-fragment: sort
+      in: query
+      description: |-
+        **Optional Extension:** Sort
+
+        An array of property names, prefixed by either "+" for ascending or
+        "-" for descending. If no prefix is provided, "+" is assumed.
+      required: false
+      schema:
+        type: string
+        example: '+id,-properties.eo:cloud_cover'
+      style: form
       explode: false
   schemas:
     queryProp:

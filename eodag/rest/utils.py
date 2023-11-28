@@ -346,6 +346,113 @@ def get_geometry(arguments: Dict[str, Any]) -> Optional[BaseGeometry]:
     return geom
 
 
+def get_sort_by(
+    arguments: Union[dict, None], provider: Union[str, None]
+) -> Optional[List[Tuple[str, str]]]:
+    """Get sortby criteria from search arguments
+
+    :param arguments: Request args
+    :type arguments: dict
+    :returns: Sorting parameters and their sorting order from sortby arguments
+    :rtype: Optional[List[Tuple[str, str]]]
+    """
+    sort_by_params_tmp = arguments.pop("sortby", None)
+    if sort_by_params_tmp is not None:
+        sorting_supported_by_provider = False
+        if provider is not None:
+            search_plugin = next(
+                eodag_api._plugins_manager.get_search_plugins(provider=provider)
+            )
+            if not hasattr(search_plugin.config, "sort"):
+                raise ValidationError(
+                    "{} does not support sorting feature".format(provider)
+                )
+            else:
+                sorting_supported_by_provider = True
+        if not sort_by_params_tmp:
+            raise ValidationError("sortby argument is empty, please fill in it")
+        sort_by_params = []
+        if isinstance(sort_by_params_tmp, str):
+            sort_by_params_tmp = sort_by_params_tmp.split(",")
+            for sort_by_param in sort_by_params_tmp:
+                # Remove leading space due to "+" character url encoding if exists
+                sort_by_param = str(sort_by_param.lstrip())
+                if sort_by_param[0] in ["+", "-"]:
+                    sort_param = sort_by_param[1:]
+                else:
+                    sort_param = sort_by_param
+                if sort_param not in stac_config["item"]["properties"].keys():
+                    raise ValidationError(
+                        "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
+                            sort_param
+                        )
+                    )
+                eodag_sort_param = rename_from_stac_to_eodag_standard(sort_param)
+                if eodag_sort_param == "startTimeFromAscendingNode":
+                    eodag_sort_param = "start"
+                if eodag_sort_param == "completionTimeFromAscendingNode":
+                    eodag_sort_param = "end"
+                if (
+                    sorting_supported_by_provider
+                    and eodag_sort_param
+                    not in search_plugin.config.sort["sort_by_mapping"].keys()
+                ):
+                    raise ValidationError(
+                        "'{}' parameter is not sortable with {}. "
+                        "Here is the list of sortable parameters with {}: `{}`".format(
+                            eodag_sort_param,
+                            provider,
+                            provider,
+                            ", ".join(
+                                k
+                                for k in search_plugin.config.sort[
+                                    "sort_by_mapping"
+                                ].keys()
+                            ),
+                        ),
+                        search_plugin.config.sort["sort_by_mapping"].keys(),
+                    )
+                sort_order = "DESC" if sort_by_param[:1] == "-" else "ASC"
+
+                # handle cases with a parameter called several times to sort
+                add_sort_param_to_request = True
+                for sort_by_param in sort_by_params:
+                    # if two sorting parameters are equal, we can not add both:
+                    # either their sorting order is also equal, then it would be a duplication in the request,
+                    # or their sorting order is different, then there would be a contradiction that would raise an error
+                    if sort_by_param[0] == eodag_sort_param:
+                        add_sort_param_to_request = False
+                        if sort_by_param[1] != sort_order:
+                            raise ValidationError(
+                                "`{}` parameter is called several times to sort results with different sorting orders. "
+                                "Please set it to only one ('ASC' or 'DESC')".format(
+                                    eodag_sort_param
+                                ),
+                                [eodag_sort_param],
+                            )
+                if add_sort_param_to_request:
+                    sort_by_params.append((eodag_sort_param, sort_order))
+                    if (
+                        sorting_supported_by_provider
+                        and search_plugin.config.sort.get("max_sort_params", None)
+                        and len(sort_by_params)
+                        > search_plugin.config.sort["max_sort_params"]
+                    ):
+                        raise ValidationError(
+                            "Search results can be sorted by only "
+                            "{} parameter(s) with {}".format(
+                                search_plugin.config.sort["max_sort_params"], provider
+                            )
+                        )
+        else:
+            raise ValidationError(
+                "sortby argument type should be str with GET search method and dict with POST search method"
+            )
+    else:
+        sort_by_params = None
+    return sort_by_params
+
+
 def get_datetime(arguments: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
     """Get the datetime criterias from the search arguments
 
@@ -477,6 +584,7 @@ def search_products(
         page, items_per_page = get_pagination_info(arguments)
         dtstart, dtend = get_datetime(arguments)
         geom = get_geometry(arguments)
+        sort_by = get_sort_by(arguments, provider)
 
         criterias = {
             "productType": product_type if product_type else arg_product_type,
@@ -486,6 +594,7 @@ def search_products(
             "end": dtend,
             "geom": geom,
             "provider": provider,
+            "sortBy": sort_by,
         }
 
         if stac_formatted:
