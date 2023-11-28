@@ -20,8 +20,9 @@
 class ValidationError(Exception):
     """Error validating data"""
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, parameters: list = []) -> None:
         self.message = message
+        self.parameters = parameters
 
 
 class PluginNotFoundError(Exception):

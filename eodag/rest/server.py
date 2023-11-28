@@ -62,6 +62,7 @@ from eodag.rest.utils import (
     get_stac_conformance,
     get_stac_extension_oseo,
     get_stac_item_by_id,
+    rename_to_stac_standard,
     search_stac_items,
 )
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
@@ -229,6 +230,36 @@ async def default_exception_handler(
     return ORJSONResponse(
         status_code=error.status_code,
         content={"description": description},
+    )
+
+
+@app.exception_handler(ValidationError)
+async def handle_invalid_usage_with_validation_error(request: Request, error):
+    """Invalid usage [400] errors handle with ValidationError"""
+    if error.parameters:
+        # convert specific lists like "dict_keys" to "list"
+        error.parameters = list(error.parameters)
+        start_index = error.message.index("`")
+        end_index = error.message.index("`", start_index + 1)
+        providers_old_message = error.message[start_index + 1 : end_index]
+        for i, provider_config_key in enumerate(error.parameters):
+            if provider_config_key == "start":
+                error.parameters[i] = "startTimeFromAscendingNode"
+            if provider_config_key == "end":
+                error.parameters[i] = "completionTimeFromAscendingNode"
+        providers_new_message = ", ".join(
+            rename_to_stac_standard(eodag_param) for eodag_param in error.parameters
+        )
+        error.message = error.message.replace(
+            providers_old_message, providers_new_message
+        )
+    logger.warning(traceback.format_exc())
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=400,
+            detail=f"{type(error).__name__}: {str(error.message)}",
+        ),
     )
 
 
