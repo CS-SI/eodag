@@ -26,6 +26,7 @@ from requests import RequestException
 from shapely import geometry, wkb, wkt
 from shapely.errors import ShapelyError
 
+from eodag.api.product._assets import AssetsDict
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
@@ -90,6 +91,7 @@ class EOProduct:
         self.provider = provider
         self.product_type = kwargs.get("productType")
         self.location = self.remote_location = properties.get("downloadLink", "")
+        self.assets = AssetsDict(self)
         self.properties = {
             key: value
             for key, value in properties.items()
@@ -175,6 +177,7 @@ class EOProduct:
             "type": "Feature",
             "geometry": geometry.mapping(self.geometry),
             "id": self.properties["id"],
+            "assets": self.assets.as_dict(),
             "properties": {
                 "eodag_product_type": self.product_type,
                 "eodag_provider": self.provider,
@@ -210,6 +213,7 @@ class EOProduct:
         obj.search_intersection = geometry.shape(
             feature["properties"]["eodag_search_intersection"]
         )
+        obj.assets = AssetsDict(obj, feature.get("assets", {}))
         return obj
 
     # Implementation of geo-interface protocol (See
