@@ -386,10 +386,6 @@ def get_sort_by(
                         )
                     )
                 eodag_sort_param = rename_from_stac_to_eodag_standard(sort_param)
-                if eodag_sort_param == "startTimeFromAscendingNode":
-                    eodag_sort_param = "start"
-                if eodag_sort_param == "completionTimeFromAscendingNode":
-                    eodag_sort_param = "end"
                 if (
                     sorting_supported_by_provider
                     and eodag_sort_param
@@ -1290,10 +1286,6 @@ def rename_from_stac_to_eodag_standard(key: str) -> str:
             if isinstance(value, list):
                 value = value[0]
             eodag_property = str(value).split(".")[-1]
-            if eodag_property == "startTimeFromAscendingNode":
-                return "start"
-            if eodag_property == "completionTimeFromAscendingNode":
-                return "end"
             return eodag_property
     return key
 
