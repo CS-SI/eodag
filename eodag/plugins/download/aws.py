@@ -461,6 +461,7 @@ class AwsDownload(Download):
                     os.makedirs(chunk_abs_path_dir)
 
                 if not os.path.isfile(chunk_abs_path):
+                    # TODO how to do it here?
                     product_chunk.Bucket().download_file(
                         product_chunk.key,
                         chunk_abs_path,

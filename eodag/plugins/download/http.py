@@ -691,6 +691,11 @@ class HTTPDownload(Download):
                 progress_callback.reset(total=stream_size)
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
+                        # metrics
+                        self._downloaded_data_bytes.add(
+                            len(chunk),
+                            {"eodag.download.base.provider": self.provider},
+                        )
                         progress_callback(len(chunk))
                         yield chunk
 

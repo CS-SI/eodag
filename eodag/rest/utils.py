@@ -29,6 +29,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     NamedTuple,
@@ -42,6 +43,12 @@ from urllib.parse import urlencode
 import dateutil.parser
 from dateutil import tz
 from fastapi.responses import StreamingResponse
+from opentelemetry import metrics
+from opentelemetry.exporter.prometheus import PrometheusMetricReader
+from opentelemetry.metrics import CallbackOptions, Observation
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from prometheus_client import start_http_server
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
 
@@ -97,6 +104,8 @@ stac_config = load_stac_config()
 stac_provider_config = load_stac_provider_config()
 
 STAC_QUERY_PATTERN = "query.*.*"
+
+telemetry = {}
 
 
 @_deprecated(
@@ -903,6 +912,12 @@ def search_stac_items(
     else:
         raise NoMatchingProductType("Invalid request, collections argument is missing")
 
+    # metrics
+    product_type = catalogs[0] if catalogs else collections[0] if collections else None
+    telemetry["search_product_type_total"].add(
+        1, {"eodag.search.product_type.total": product_type}
+    )
+
     # get products by ids
     ids = arguments.get("ids", None)
     if isinstance(ids, str):
@@ -1197,3 +1212,50 @@ def eodag_api_init() -> None:
     # pre-build search plugins
     for provider in eodag_api.available_providers():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
+
+
+def _available_providers_callback(options: CallbackOptions) -> Iterable[Observation]:
+    return [
+        Observation(
+            len(eodag_api.available_providers()),
+            {"eodag.core.gauge.label": "Available Providers"},
+        )
+    ]
+
+
+def _available_product_types_callback(
+    options: CallbackOptions,
+) -> Iterable[Observation]:
+    return [
+        Observation(
+            len(eodag_api.list_product_types()),
+            {"eodag.core.gauge.label": "Available Product Types"},
+        )
+    ]
+
+
+def telemetry_init():
+    """Init telemetry"""
+
+    # Start Prometheus client
+    resource = Resource(attributes={SERVICE_NAME: "eodag-serve-rest"})
+    start_http_server(port=8000, addr="localhost")
+    reader = PrometheusMetricReader()
+    provider = MeterProvider(resource=resource, metric_readers=[reader])
+    metrics.set_meter_provider(provider)
+
+    meter = metrics.get_meter("eodag.core.meter")
+    telemetry["search_product_type_total"] = meter.create_counter(
+        "eodag.core.search_product_type_total",
+        description="The number of searches by product type",
+    )
+    telemetry["available_providers_total"] = meter.create_observable_gauge(
+        "eodag.core.available_providers_total",
+        callbacks=[_available_providers_callback],
+        description="The number available providers",
+    )
+    telemetry["available_product_types_total"] = meter.create_observable_gauge(
+        "eodag.core.available_product_types_total",
+        callbacks=[_available_product_types_callback],
+        description="The number available product types",
+    )
