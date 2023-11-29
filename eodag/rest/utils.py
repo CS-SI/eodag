@@ -379,7 +379,14 @@ def get_sort_by(
                     sort_param = sort_by_param[1:]
                 else:
                     sort_param = sort_by_param
-                if sort_param not in stac_config["item"]["properties"].keys():
+                # remove "properties." prefix
+                prefix = "properties."
+                if sort_param.startswith(prefix):
+                    sort_param = sort_param[len(prefix) :]
+                if (
+                    sort_param not in stac_config["item"]["properties"]
+                    and sort_param != "id"
+                ):
                     raise ValidationError(
                         "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
                             sort_param
