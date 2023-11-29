@@ -34,6 +34,7 @@ from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.product.validation import OSEOQueryParams
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
@@ -1395,6 +1396,7 @@ class EODataAccessGateway:
         :returns: Search plugins list and the prepared kwargs to make a query.
         :rtype: tuple(list, dict)
         """
+        query_params = OSEOQueryParams(**kwargs)
         product_type = kwargs.get("productType", None)
         if product_type is None:
             try:
