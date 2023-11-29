@@ -316,6 +316,11 @@ class S3RestDownload(Download):
                         with open(local_filename, "wb") as fhandle:
                             for chunk in stream.iter_content(chunk_size=64 * 1024):
                                 if chunk:
+                                    # metrics
+                                    self._downloaded_data_bytes.add(
+                                        len(chunk),
+                                        {"eodag.download.base.provider": self.provider},
+                                    )
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
 
