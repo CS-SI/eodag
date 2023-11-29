@@ -239,11 +239,6 @@ async def handle_invalid_usage_with_validation_error(request: Request, error):
         start_index = error.message.index("`")
         end_index = error.message.index("`", start_index + 1)
         providers_old_message = error.message[start_index + 1 : end_index]
-        for i, provider_config_key in enumerate(error.parameters):
-            if provider_config_key == "start":
-                error.parameters[i] = "startTimeFromAscendingNode"
-            if provider_config_key == "end":
-                error.parameters[i] = "completionTimeFromAscendingNode"
         providers_new_message = ", ".join(
             rename_to_stac_standard(eodag_param) for eodag_param in error.parameters
         )

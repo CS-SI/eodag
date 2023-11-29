@@ -885,8 +885,8 @@
     sort:
       sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
       sort_by_mapping:
-        start: startDate
-        end: completionDate
+        startTimeFromAscendingNode: startDate
+        completionTimeFromAscendingNode: completionDate
         publicationDate: published
       max_sort_params: 1
     discover_metadata:
