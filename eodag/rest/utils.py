@@ -1237,7 +1237,9 @@ def telemetry_init():
 
     # Start Prometheus client
     resource = Resource(attributes={SERVICE_NAME: "eodag-serve-rest"})
-    start_http_server(port=8000, addr="localhost")
+    exporter_host = os.getenv("EODAG_EXPORTER_PROMETHEUS_HOST", "0.0.0.0")
+    exporter_port = os.getenv("EODAG_EXPORTER_PROMETHEUS_PORT", "8000")
+    start_http_server(port=int(exporter_port), addr=exporter_host)
     reader = PrometheusMetricReader()
     provider = MeterProvider(resource=resource, metric_readers=[reader])
     metrics.set_meter_provider(provider)
