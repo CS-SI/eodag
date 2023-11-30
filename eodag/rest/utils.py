@@ -914,7 +914,7 @@ def search_stac_items(
 
     # metrics
     product_type = catalogs[0] if catalogs else collections[0] if collections else None
-    record_searched_productType(product_type)
+    record_searched_product_type(product_type)
 
     # get products by ids
     ids = arguments.get("ids", None)
@@ -1278,7 +1278,7 @@ def record_downloaded_data(provider: str, byte_count: int):
         )
 
 
-def record_searched_productType(product_type: str):
+def record_searched_product_type(product_type: str):
     """Measure the number of times a product type is searcher.
 
     :param product_type: The product type.
