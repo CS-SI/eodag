@@ -323,12 +323,30 @@ class SearchBody(BaseModel):
     include_in_schema=False,
 )
 def stac_collections_item_download(collection_id, item_id, request: Request):
-    """STAC collection item local download"""
+    """STAC collection item download"""
     logger.debug(f"URL: {request.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
-    asset_filter = arguments.pop("asset", None)
+
+    return download_stac_item_by_id_stream(
+        catalogs=[collection_id], item_id=item_id, provider=provider
+    )
+
+
+@router.get(
+    "/collections/{collection_id}/items/{item_id}/download/{asset_filter}",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_collections_item_download_asset(
+    collection_id, item_id, asset_filter, request: Request
+):
+    """STAC collection item asset download"""
+    logger.debug(f"URL: {request.url}")
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
 
     return download_stac_item_by_id_stream(
         catalogs=[collection_id], item_id=item_id, provider=provider, asset=asset_filter
@@ -487,7 +505,7 @@ def collections(request: Request):
     include_in_schema=False,
 )
 def stac_catalogs_item_download(catalogs, item_id, request: Request):
-    """STAC item local download"""
+    """STAC Catalog item download"""
     logger.debug(f"URL: {request.url}")
 
     arguments = dict(request.query_params)
@@ -497,6 +515,27 @@ def stac_catalogs_item_download(catalogs, item_id, request: Request):
 
     return download_stac_item_by_id_stream(
         catalogs=catalogs, item_id=item_id, provider=provider
+    )
+
+
+@router.get(
+    "/catalogs/{catalogs:path}/items/{item_id}/download/{asset_filter}",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_catalogs_item_download_asset(
+    catalogs, item_id, asset_filter, request: Request
+):
+    """STAC Catalog item asset download"""
+    logger.debug(f"URL: {request.url}")
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    catalogs = catalogs.strip("/").split("/")
+
+    return download_stac_item_by_id_stream(
+        catalogs=catalogs, item_id=item_id, provider=provider, asset=asset_filter
     )
 
 
