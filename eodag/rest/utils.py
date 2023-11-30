@@ -378,20 +378,23 @@ def get_sort_by(
         # Remove leading and trailing whitespace(s) if exist
         sort_by_param = str(sort_by_param.strip())
         if sort_by_param[0] in ["+", "-"]:
-            sort_param = sort_by_param[1:]
+            stac_sort_param = sort_by_param[1:]
         else:
-            sort_param = sort_by_param
+            stac_sort_param = sort_by_param
         # remove "properties." prefix
         prefix = "properties."
-        if sort_param.startswith(prefix):
-            sort_param = sort_param[len(prefix) :]
-        if sort_param not in stac_config["item"]["properties"] and sort_param != "id":
+        if stac_sort_param.startswith(prefix):
+            stac_sort_param = stac_sort_param[len(prefix) :]
+        if (
+            stac_sort_param not in stac_config["item"]["properties"]
+            and stac_sort_param != "id"
+        ):
             raise ValidationError(
                 "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
-                    sort_param
+                    stac_sort_param
                 )
             )
-        eodag_sort_param = rename_from_stac_to_eodag_standard(sort_param)
+        eodag_sort_param = rename_from_stac_to_eodag_standard(stac_sort_param)
         if (
             sorting_supported_by_provider
             and eodag_sort_param
@@ -400,7 +403,7 @@ def get_sort_by(
             raise ValidationError(
                 "'{}' parameter is not sortable with {}. "
                 "Here is the list of sortable parameters with {}: `{}`".format(
-                    sort_param,
+                    stac_sort_param,
                     provider,
                     provider,
                     ", ".join(
@@ -422,7 +425,7 @@ def get_sort_by(
                 if sort_by_param[1] != sort_order:
                     raise ValidationError(
                         "`{}` parameter is called several times to sort results with different sorting orders. "
-                        "Please set it to only one ('ASC' or 'DESC')".format(
+                        "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
                             eodag_sort_param
                         ),
                         [eodag_sort_param],
