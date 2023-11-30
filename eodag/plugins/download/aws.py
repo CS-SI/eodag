@@ -275,7 +275,7 @@ class AwsDownload(Download):
                     "SAFE metadata fetch format %s not implemented" % fetch_format
                 )
         # if assets are defined, use them instead of scanning product.location
-        if hasattr(product, "assets") and not ignore_assets:
+        if len(product.assets) > 0 and not ignore_assets:
             if asset_filter:
                 filter_regex = re.compile(asset_filter)
                 assets_keys = getattr(product, "assets", {}).keys()

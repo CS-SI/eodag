@@ -382,9 +382,7 @@ class HTTPDownload(Download):
             return fs_path
 
         # download assets if exist instead of remote_location
-        if hasattr(product, "assets") and not getattr(
-            self.config, "ignore_assets", False
-        ):
+        if len(product.assets) > 0 and not getattr(self.config, "ignore_assets", False):
             try:
                 fs_path = self._download_assets(
                     product,
@@ -487,9 +485,7 @@ class HTTPDownload(Download):
         :rtype: dict
         """
         # download assets if exist instead of remote_location
-        if hasattr(product, "assets") and not getattr(
-            self.config, "ignore_assets", False
-        ):
+        if len(product.assets) > 0 and not getattr(self.config, "ignore_assets", False):
             try:
                 assets_values = self._get_assets_values(product, **kwargs)
 
