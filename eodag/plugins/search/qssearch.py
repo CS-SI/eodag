@@ -559,7 +559,7 @@ class QueryStringSearch(Search):
         # remove duplicates
         self.sort_by_params = list(set(self.sort_by_params))
         sort_by_params_qs = ""
-        sort_params_tmp = []
+        sort_by_params_tmp = []
         for sort_by_param in self.sort_by_params:
             if not isinstance(sort_by_param, tuple):
                 raise ValidationError(
@@ -584,6 +584,8 @@ class QueryStringSearch(Search):
                         sort_by_param, type(sort_by_param[0]), type(sort_by_param[1])
                     )
                 )
+            # Remove leading and trailing whitespace(s) if exist
+            sort_by_param = (sort_by_param[0].strip(), sort_by_param[1].strip())
             eodag_sort_param = sort_by_param[0]
             try:
                 provider_sort_param = self.config.sort["sort_by_mapping"][
@@ -617,14 +619,14 @@ class QueryStringSearch(Search):
                 )
 
             # handle cases with a parameter called several times to sort
-            add_sort_param_to_request = True
-            for sort_param_tmp in sort_params_tmp:
+            ignore_param = False
+            for sort_by_param_tmp in sort_by_params_tmp:
                 # if two sorting parameters are equal, we can not add both:
                 # either their sorting order is also equal, then it would be a duplication in the request,
                 # or their sorting order is different, then there would be a contradiction that would raise an error
-                if sort_by_param[0] == sort_param_tmp[0]:
-                    add_sort_param_to_request = False
-                    if sort_by_param[1] != sort_param_tmp[1]:
+                if sort_by_param[0] == sort_by_param_tmp[0]:
+                    ignore_param = True
+                    if sort_by_param[1] != sort_by_param_tmp[1]:
                         raise ValidationError(
                             "`{}` parameter is called several times to sort results with different sorting orders. "
                             "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
@@ -632,22 +634,24 @@ class QueryStringSearch(Search):
                             ),
                             [eodag_sort_param],
                         )
-            if add_sort_param_to_request:
-                sort_params_tmp.append(sort_by_param)
-                # after adding a tuple to the list, check if the provider allows to sort with another sorting parameter
-                if (
-                    self.config.sort.get("max_sort_params", None)
-                    and len(sort_params_tmp) > self.config.sort["max_sort_params"]
-                ):
-                    raise ValidationError(
-                        "Search results can be sorted by only "
-                        "{} parameter(s) with {}".format(
-                            self.config.sort["max_sort_params"], self.provider
-                        )
+            if ignore_param:
+                continue
+
+            sort_by_params_tmp.append(sort_by_param)
+            # after adding a tuple to the list, check if the provider allows to sort with another sorting parameter
+            if (
+                self.config.sort.get("max_sort_params", None)
+                and len(sort_by_params_tmp) > self.config.sort["max_sort_params"]
+            ):
+                raise ValidationError(
+                    "Search results can be sorted by only "
+                    "{} parameter(s) with {}".format(
+                        self.config.sort["max_sort_params"], self.provider
                     )
-                sort_by_params_qs += self.config.sort["sort_url_tpl"].format(
-                    sort_param=sort_by_param[0], sort_order=sort_by_param[1]
                 )
+            sort_by_params_qs += self.config.sort["sort_url_tpl"].format(
+                sort_param=sort_by_param[0], sort_order=sort_by_param[1]
+            )
         self.sort_by_params = sort_by_params_qs
 
     def collect_search_urls(
