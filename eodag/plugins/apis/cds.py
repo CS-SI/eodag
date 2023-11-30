@@ -27,7 +27,8 @@ import geojson
 import requests
 
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import Download
+from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
+from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
@@ -55,7 +56,7 @@ logger = logging.getLogger("eodag.apis.cds")
 CDS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 
 
-class CdsApi(Download, Api, BuildPostSearchResult):
+class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
     """A plugin that enables to build download-request and download data on CDS API.
 
     Builds a single ready-to-download :class:`~eodag.api.product._product.EOProduct`
@@ -251,25 +252,19 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         try:
             client = self._get_cds_client(**auth_dict)
             client.retrieve(name=dataset_name, request=download_request, target=fs_path)
+            result = client._api(
+                "%s/resources/%s" % (client.url, dataset_name), download_request, "POST"
+            )
+
+            product.location = result.location
+            return super(CdsApi, self).download(
+                product,
+                progress_callback=progress_callback,
+                **kwargs,
+            )
         except Exception as e:
             logger.error(e)
             raise DownloadError(e)
-
-        with open(record_filename, "w") as fh:
-            fh.write(product.properties["downloadLink"])
-        logger.debug("Download recorded in %s", record_filename)
-
-        # do not try to extract or delete grib/netcdf
-        kwargs["extract"] = False
-
-        product_path = self._finalize(
-            fs_path,
-            progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
-            **kwargs,
-        )
-        product.location = path_to_uri(product_path)
-        return product_path
 
     def download_all(
         self,
