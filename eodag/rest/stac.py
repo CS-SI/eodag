@@ -222,10 +222,13 @@ class StacItem(StacCommon):
                 },
             )
 
+            product_dict = deepcopy(product.__dict__)
+            product_dict["assets"] = product.assets.as_dict()
+
             product_item = jsonpath_parse_dict_items(
                 item_model,
                 {
-                    "product": product.__dict__,
+                    "product": product_dict,
                     "providers": [provider_dict],
                 },
             )
@@ -478,11 +481,14 @@ class StacItem(StacCommon):
             catalogs=[product_type],
         )
 
+        product_dict = deepcopy(product.__dict__)
+        product_dict["assets"] = product.assets.as_dict()
+
         # parse jsonpath
         product_item = jsonpath_parse_dict_items(
             item_model,
             {
-                "product": product.__dict__,
+                "product": product_dict,
                 "providers": provider_dict,
             },
         )
