@@ -38,8 +38,6 @@ from typing import (
     Union,
 )
 
-from opentelemetry import metrics
-
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -106,13 +104,6 @@ class Download(PluginTopic):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Download, self).__init__(provider, config)
         self._authenticate = bool(getattr(self.config, "authenticate", False))
-        # telemetry
-        # FIXME NICOLA global provider in rest.utils.telemetry_init() but what it's not server mode?
-        meter = metrics.get_meter("eodag.download.base.meter")
-        self._downloaded_data_bytes = meter.create_counter(
-            "eodag.download.base.downloaded_data_bytes",
-            description="Measure data downloaded from each provider",
-        )
 
     def download(
         self,
