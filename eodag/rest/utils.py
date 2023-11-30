@@ -357,102 +357,91 @@ def get_sort_by(
     :rtype: Optional[List[Tuple[str, str]]]
     """
     sort_by_params_tmp = arguments.pop("sortby", None)
-    if sort_by_params_tmp is not None:
-        sorting_supported_by_provider = False
-        if provider is not None:
-            search_plugin = next(
-                eodag_api._plugins_manager.get_search_plugins(provider=provider)
-            )
-            if not hasattr(search_plugin.config, "sort"):
-                raise ValidationError(
-                    "{} does not support sorting feature".format(provider)
-                )
-            else:
-                sorting_supported_by_provider = True
-        if not sort_by_params_tmp:
-            raise ValidationError("sortby argument is empty, please fill in it")
-        sort_by_params = []
-        if isinstance(sort_by_params_tmp, str):
-            sort_by_params_tmp = sort_by_params_tmp.split(",")
-            for sort_by_param in sort_by_params_tmp:
-                # Remove leading space due to "+" character url encoding if exists
-                sort_by_param = str(sort_by_param.lstrip())
-                if sort_by_param[0] in ["+", "-"]:
-                    sort_param = sort_by_param[1:]
-                else:
-                    sort_param = sort_by_param
-                # remove "properties." prefix
-                prefix = "properties."
-                if sort_param.startswith(prefix):
-                    sort_param = sort_param[len(prefix) :]
-                if (
-                    sort_param not in stac_config["item"]["properties"]
-                    and sort_param != "id"
-                ):
-                    raise ValidationError(
-                        "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
-                            sort_param
-                        )
-                    )
-                eodag_sort_param = rename_from_stac_to_eodag_standard(sort_param)
-                if (
-                    sorting_supported_by_provider
-                    and eodag_sort_param
-                    not in search_plugin.config.sort["sort_by_mapping"].keys()
-                ):
-                    raise ValidationError(
-                        "'{}' parameter is not sortable with {}. "
-                        "Here is the list of sortable parameters with {}: `{}`".format(
-                            eodag_sort_param,
-                            provider,
-                            provider,
-                            ", ".join(
-                                k
-                                for k in search_plugin.config.sort[
-                                    "sort_by_mapping"
-                                ].keys()
-                            ),
-                        ),
-                        search_plugin.config.sort["sort_by_mapping"].keys(),
-                    )
-                sort_order = "DESC" if sort_by_param[:1] == "-" else "ASC"
+    if sort_by_params_tmp is None:
+        return None
 
-                # handle cases with a parameter called several times to sort
-                add_sort_param_to_request = True
-                for sort_by_param in sort_by_params:
-                    # if two sorting parameters are equal, we can not add both:
-                    # either their sorting order is also equal, then it would be a duplication in the request,
-                    # or their sorting order is different, then there would be a contradiction that would raise an error
-                    if sort_by_param[0] == eodag_sort_param:
-                        add_sort_param_to_request = False
-                        if sort_by_param[1] != sort_order:
-                            raise ValidationError(
-                                "`{}` parameter is called several times to sort results with different sorting orders. "
-                                "Please set it to only one ('ASC' or 'DESC')".format(
-                                    eodag_sort_param
-                                ),
-                                [eodag_sort_param],
-                            )
-                if add_sort_param_to_request:
-                    sort_by_params.append((eodag_sort_param, sort_order))
-                    if (
-                        sorting_supported_by_provider
-                        and search_plugin.config.sort.get("max_sort_params", None)
-                        and len(sort_by_params)
-                        > search_plugin.config.sort["max_sort_params"]
-                    ):
-                        raise ValidationError(
-                            "Search results can be sorted by only "
-                            "{} parameter(s) with {}".format(
-                                search_plugin.config.sort["max_sort_params"], provider
-                            )
-                        )
-        else:
+    sorting_supported_by_provider = False
+    if provider is not None:
+        search_plugin = next(
+            eodag_api._plugins_manager.get_search_plugins(provider=provider)
+        )
+        if not hasattr(search_plugin.config, "sort"):
             raise ValidationError(
-                "sortby argument type should be str with GET search method and dict with POST search method"
+                "{} does not support sorting feature".format(provider)
             )
-    else:
-        sort_by_params = None
+        else:
+            sorting_supported_by_provider = True
+    if not sort_by_params_tmp:
+        raise ValidationError("sortby argument is empty, please fill in it")
+    sort_by_params = []
+    for sort_by_param in sort_by_params_tmp.split(","):
+        # Remove leading and trailing whitespace(s) if exist
+        sort_by_param = str(sort_by_param.strip())
+        if sort_by_param[0] in ["+", "-"]:
+            sort_param = sort_by_param[1:]
+        else:
+            sort_param = sort_by_param
+        # remove "properties." prefix
+        prefix = "properties."
+        if sort_param.startswith(prefix):
+            sort_param = sort_param[len(prefix) :]
+        if sort_param not in stac_config["item"]["properties"] and sort_param != "id":
+            raise ValidationError(
+                "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
+                    sort_param
+                )
+            )
+        eodag_sort_param = rename_from_stac_to_eodag_standard(sort_param)
+        if (
+            sorting_supported_by_provider
+            and eodag_sort_param
+            not in search_plugin.config.sort["sort_by_mapping"].keys()
+        ):
+            raise ValidationError(
+                "'{}' parameter is not sortable with {}. "
+                "Here is the list of sortable parameters with {}: `{}`".format(
+                    sort_param,
+                    provider,
+                    provider,
+                    ", ".join(
+                        k for k in search_plugin.config.sort["sort_by_mapping"].keys()
+                    ),
+                ),
+                search_plugin.config.sort["sort_by_mapping"].keys(),
+            )
+        sort_order = "DESC" if sort_by_param[:1] == "-" else "ASC"
+
+        # handle cases with a parameter called several times to sort
+        ignore_param = False
+        for sort_by_param in sort_by_params:
+            # if two sorting parameters are equal, we can not add both:
+            # either their sorting order is also equal, then it would be a duplication in the request,
+            # or their sorting order is different, then there would be a contradiction that would raise an error
+            if sort_by_param[0] == eodag_sort_param:
+                ignore_param = True
+                if sort_by_param[1] != sort_order:
+                    raise ValidationError(
+                        "`{}` parameter is called several times to sort results with different sorting orders. "
+                        "Please set it to only one ('ASC' or 'DESC')".format(
+                            eodag_sort_param
+                        ),
+                        [eodag_sort_param],
+                    )
+        if ignore_param:
+            continue
+
+        sort_by_params.append((eodag_sort_param, sort_order))
+        if (
+            sorting_supported_by_provider
+            and search_plugin.config.sort.get("max_sort_params", None)
+            and len(sort_by_params) > search_plugin.config.sort["max_sort_params"]
+        ):
+            raise ValidationError(
+                "Search results can be sorted by only "
+                "{} parameter(s) with {}".format(
+                    search_plugin.config.sort["max_sort_params"], provider
+                )
+            )
     return sort_by_params
 
 
