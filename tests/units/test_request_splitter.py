@@ -342,20 +342,20 @@ class TestRequestSplitter(unittest.TestCase):
         splitter = RequestSplitter(config, metadata)
         result, num_items = splitter.get_time_slices("1999-02-01", "2001-06-30")
         self.assertEqual(9, len(result))
-        expected_result_row_1 = {
-            "start_date": datetime.datetime(2000, 2, 1),
-            "end_date": datetime.datetime(2000, 3, 31),
-        }
-        expected_result_row_6 = {
-            "start_date": datetime.datetime(2000, 12, 1),
-            "end_date": datetime.datetime(2001, 1, 31),
-        }
         expected_result_row_9 = {
-            "start_date": datetime.datetime(2001, 6, 1),
+            "start_date": datetime.datetime(2000, 2, 1),
+            "end_date": datetime.datetime(2000, 2, 29),
+        }
+        expected_result_row_3 = {
+            "start_date": datetime.datetime(2001, 1, 1),
+            "end_date": datetime.datetime(2001, 2, 28),
+        }
+        expected_result_row_1 = {
+            "start_date": datetime.datetime(2001, 5, 1),
             "end_date": datetime.datetime(2001, 6, 30),
         }
         self.assertDictEqual(expected_result_row_1, result[0])
-        self.assertDictEqual(expected_result_row_6, result[5])
+        self.assertDictEqual(expected_result_row_3, result[2])
         self.assertDictEqual(expected_result_row_9, result[8])
 
     def test_dont_split_short_timespan(self):

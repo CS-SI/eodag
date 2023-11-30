@@ -1,3 +1,4 @@
+import calendar
 import copy
 import datetime
 import json
@@ -182,6 +183,7 @@ class RequestSplitter:
             )
         if constraint_values and "assets_split_parameter" in self.config:
             constraint_values.pop(self.config["assets_split_parameter"], None)
+
         if split_param == "year":
             start_year = int(start_date[:4])
             end_year = int(end_date[:4])
@@ -575,37 +577,41 @@ class RequestSplitter:
         min_max_dates = self._get_min_max_dates()
         start_date = datetime.datetime(start_year, start_month, 1)
         start_date = max(start_date, min_max_dates["min_date"])
-        start_year = start_date.year
         if end_month == 12:
             final_date = datetime.datetime(end_year, end_month, 31)
         else:
-            final_date = datetime.datetime(
-                end_year, end_month + 1, 1
-            ) - datetime.timedelta(days=1)
+            res = calendar.monthrange(end_year, end_month)
+            day = res[1]
+            final_date = datetime.datetime(end_year, end_month, day)
         final_date = min(final_date, min_max_dates["max_date"])
-        end_date = start_date
-        current_year = start_year
+        end_date = final_date
+        current_start_month = final_date.month - slice_duration + 1
+        current_start_year = final_date.year
+        if current_start_month < 1:
+            current_start_year -= 1
+            current_start_month = 12 - current_start_month
+        current_start_date = datetime.datetime(
+            current_start_year, current_start_month, 1
+        )
         i = 0
-        while end_date < final_date:
-            new_month = start_date.month + slice_duration
-            if new_month <= 12:
-                end_date = datetime.datetime(
-                    current_year, new_month, 1
-                ) - datetime.timedelta(days=1)
-            else:
-                new_month = new_month - 12
-                current_year += 1
-                end_date = datetime.datetime(
-                    current_year, new_month, 1
-                ) - datetime.timedelta(days=1)
-            if end_date > final_date:
-                end_date = final_date
+        while current_start_date >= start_date:
+            slices.append({"start_date": current_start_date, "end_date": end_date})
+            end_date = current_start_date - datetime.timedelta(days=1)
+            if end_date < start_date:
+                break
+            current_start_month = current_start_date.month - slice_duration
+            if current_start_month < 1:
+                current_start_year -= 1
+                current_start_month = 12 - abs(current_start_month)
+            current_start_date = datetime.datetime(
+                current_start_year, current_start_month, 1
+            )
+            current_start_date = max(current_start_date, start_date)
             if i < offset or i >= (num_results + offset):
                 i += 1
                 continue
             i += 1
-            slices.append({"start_date": start_date, "end_date": end_date})
-            start_date = end_date + datetime.timedelta(days=1)
+
         return slices, i
 
     def _get_date_var(self):
