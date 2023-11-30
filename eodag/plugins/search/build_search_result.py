@@ -234,13 +234,13 @@ class BuildPostSearchResult(PostJsonSearch):
         product_data = getattr(self.config, "products", {}).get(product_type, {})
         if split_param and product_data:
             if "dataset" in product_data:
-                provider_product = product_data["dataset"]
+                provider_product_type = product_data["dataset"]
             else:
-                provider_product = ""
+                provider_product_type = ""
             request_splitter = RequestSplitter(
                 self.config,
                 self.config.metadata_mapping,
-                provider_product=provider_product,
+                provider_product_type=provider_product_type,
             )
             product_available_properties["downloadLinks"] = {}
             param_values = parsed_properties[split_param]

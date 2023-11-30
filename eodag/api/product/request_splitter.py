@@ -7,7 +7,7 @@ import re
 import requests
 
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.utils import USER_AGENT, HashableDict, cached_request
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, HashableDict, cached_request
 from eodag.utils.exceptions import MisconfiguredError
 
 logger = logging.getLogger("eodag.api.product.request_splitter")
@@ -59,7 +59,7 @@ class RequestSplitter:
     provides methods to split a request into several requests based on the given config and constraints
     """
 
-    def __init__(self, config, metadata_mapping, provider_product=""):
+    def __init__(self, config, metadata_mapping, provider_product_type=""):
         self.config = config.__dict__
         if (
             "constraints_file_path" in self.config
@@ -75,15 +75,20 @@ class RequestSplitter:
             and self.config["constraints_file_url"]
         ):
             url = self.config["constraints_file_url"]
-            if "{" in url and provider_product:
-                url = url.format(dataset=provider_product)
+            if "{" in url and provider_product_type:
+                url = url.format(dataset=provider_product_type)
             logger.info("fetching constraints from %s", url)
             headers = USER_AGENT
             if "auth" in self.config:
                 auth_headers = getattr(self.config["auth"], "headers", "")
                 headers.update(auth_headers)
             try:
-                res = cached_request("GET", url, headers=HashableDict(**headers))
+                res = cached_request(
+                    "GET",
+                    url,
+                    headers=HashableDict(**headers),
+                    timeout=HTTP_REQ_TIMEOUT,
+                )
                 res.raise_for_status()
             except requests.RequestException as e:
                 logger.error("error at fetching constraints: %s", str(e))
@@ -93,11 +98,11 @@ class RequestSplitter:
         else:
             self.constraints_data = {}
         if (
-            "constraints_param" in self.config
-            and self.config["constraints_param"]
-            and self.config["constraints_param"] in self.constraints_data
+            "constraints_entry" in self.config
+            and self.config["constraints_entry"]
+            and self.config["constraints_entry"] in self.constraints_data
         ):
-            self.constraints = self.constraints_data[self.config["constraints_param"]]
+            self.constraints = self.constraints_data[self.config["constraints_entry"]]
         else:
             self.constraints = self.constraints_data
         if "constraint_mappings" in self.config:
