@@ -914,9 +914,7 @@ def search_stac_items(
 
     # metrics
     product_type = catalogs[0] if catalogs else collections[0] if collections else None
-    telemetry["search_product_type_total"].add(
-        1, {"eodag.search.product_type.total": product_type}
-    )
+    record_searched_productType(product_type)
 
     # get products by ids
     ids = arguments.get("ids", None)
@@ -1249,6 +1247,10 @@ def telemetry_init():
         "eodag.core.search_product_type_total",
         description="The number of searches by product type",
     )
+    telemetry["downloaded_data_bytes_total"] = meter.create_counter(
+        "eodag.download.downloaded_data_bytes_total",
+        description="Measure data downloaded from each provider",
+    )
     telemetry["available_providers_total"] = meter.create_observable_gauge(
         "eodag.core.available_providers_total",
         callbacks=[_available_providers_callback],
@@ -1259,3 +1261,30 @@ def telemetry_init():
         callbacks=[_available_product_types_callback],
         description="The number available product types",
     )
+
+
+def record_downloaded_data(provider: str, byte_count: int):
+    """Measure the downloaded bytes for a given provider.
+
+    :param provider: The provider from which the data is downloaded.
+    :type provider: str
+    :param byte_count: Number of bytes downloaded.
+    :type byte_count: int
+    """
+    if telemetry:
+        telemetry["downloaded_data_bytes_total"].add(
+            byte_count,
+            {"eodag.download.provider": provider},
+        )
+
+
+def record_searched_productType(product_type: str):
+    """Measure the number of times a product type is searcher.
+
+    :param product_type: The product type.
+    :type product_type: str
+    """
+    if telemetry:
+        telemetry["search_product_type_total"].add(
+            1, {"eodag.search.product_type": product_type}
+        )

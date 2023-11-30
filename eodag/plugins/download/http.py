@@ -35,6 +35,7 @@ from lxml import etree
 from requests import RequestException
 from stream_zip import NO_COMPRESSION_64, stream_zip
 
+from eodag import rest
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -692,10 +693,7 @@ class HTTPDownload(Download):
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
                         # metrics
-                        self._downloaded_data_bytes.add(
-                            len(chunk),
-                            {"eodag.download.base.provider": self.provider},
-                        )
+                        rest.utils.record_downloaded_data(self.provider, len(chunk))
                         progress_callback(len(chunk))
                         yield chunk
 

@@ -123,8 +123,8 @@ router = APIRouter()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """API init and tear-down"""
-    telemetry_init()
     eodag_api_init()
+    telemetry_init()
     yield
 
 
