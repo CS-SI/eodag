@@ -38,6 +38,7 @@ from typing import (
     Union,
 )
 
+from eodag import rest
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -697,3 +698,26 @@ class Download(PluginTopic):
             return download_and_retry
 
         return decorator
+
+    def _record_downloaded_data(self, progress_callback):
+        """
+        Record downloaded data wrapper.
+
+        Record the downloaded data metric by wrapping the callback.
+
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :returns: wrapper
+        :rtype: :class:`typing.Any`
+        """
+
+        def wrapper(*args, **kwargs):
+            # metrics
+            rest.utils.record_downloaded_data(self.provider, args[0])
+            progress_callback(*args, **kwargs)
+
+        return wrapper
