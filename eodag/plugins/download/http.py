@@ -395,8 +395,11 @@ class HTTPDownload(Download):
                     **kwargs,
                 )
                 return fs_path
-            except NotAvailableError:
-                pass
+            except NotAvailableError as e:
+                if kwargs.get("asset", None) is not None:
+                    raise NotAvailableError(e).with_traceback(e.__traceback__)
+                else:
+                    pass
 
         url = product.remote_location
 
@@ -488,24 +491,52 @@ class HTTPDownload(Download):
             self.config, "ignore_assets", False
         ):
             try:
+                assets_values = self._get_assets_values(product, **kwargs)
+
                 chunks_tuples = self._stream_download_assets(
-                    product, auth, progress_callback, **kwargs
+                    product,
+                    auth,
+                    progress_callback,
+                    assets_values=assets_values,
+                    **kwargs,
                 )
 
-                outputs_filename = (
-                    sanitize(product.properties["title"])
-                    if "title" in product.properties
-                    else sanitize(product.properties.get("id", "download"))
-                )
-                return dict(
-                    content=stream_zip(chunks_tuples),
-                    media_type="application/zip",
-                    headers={
-                        "content-disposition": f"attachment; filename={outputs_filename}.zip",
-                    },
-                )
-            except NotAvailableError:
-                pass
+                if len(assets_values) == 1:
+                    # start reading chunks to set asset.headers
+                    first_chunks_tuple = next(chunks_tuples)
+
+                    # update headers
+                    assets_values[0].headers[
+                        "content-disposition"
+                    ] = f"attachment; filename={assets_values[0].filename}"
+                    if assets_values[0].get("type", None):
+                        assets_values[0].headers["content-type"] = assets_values[0][
+                            "type"
+                        ]
+
+                    return dict(
+                        content=chain(iter([first_chunks_tuple]), chunks_tuples),
+                        headers=assets_values[0].headers,
+                    )
+
+                else:
+                    outputs_filename = (
+                        sanitize(product.properties["title"])
+                        if "title" in product.properties
+                        else sanitize(product.properties.get("id", "download"))
+                    )
+                    return dict(
+                        content=stream_zip(chunks_tuples),
+                        media_type="application/zip",
+                        headers={
+                            "content-disposition": f"attachment; filename={outputs_filename}.zip",
+                        },
+                    )
+            except NotAvailableError as e:
+                if kwargs.get("asset", None) is not None:
+                    raise NotAvailableError(e).with_traceback(e.__traceback__)
+                else:
+                    pass
 
         chunks = self._stream_download(
             product, auth, progress_callback, wait, timeout, **kwargs
@@ -647,6 +678,33 @@ class HTTPDownload(Download):
                         progress_callback(len(chunk))
                         yield chunk
 
+    def _get_assets_values(
+        self,
+        product,
+        **kwargs,
+    ):
+        asset_filter = kwargs.get("asset", None)
+        if asset_filter:
+            filter_regex = re.compile(asset_filter)
+            assets_keys = getattr(product, "assets", {}).keys()
+            assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+            filtered_assets = {
+                a_key: getattr(product, "assets", {})[a_key] for a_key in assets_keys
+            }
+            assets_values = [a for a in filtered_assets.values() if "href" in a]
+            if not assets_values:
+                logger.error(
+                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
+                )
+                raise NotAvailableError(
+                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
+                )
+            else:
+                logger.error(f"FOUND {assets_values}")
+                return assets_values
+        else:
+            return [a for a in getattr(product, "assets", {}).values() if "href" in a]
+
     def _stream_download_assets(
         self,
         product,
@@ -658,30 +716,14 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
-        asset_filter = kwargs.get("asset", None)
-
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
-        ]
-        assets_values = [
-            a for a in getattr(product, "assets", {}).values() if "href" in a
         ]
 
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        if asset_filter:
-            filter_regex = re.compile(asset_filter)
-            assets_keys = getattr(product, "assets", {}).keys()
-            assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
-            filtered_assets = {
-                a_key: getattr(product, "assets", {})[a_key] for a_key in assets_keys
-            }
-            assets_values = [a for a in filtered_assets.values() if "href" in a]
-            if not assets_values:
-                raise NotAvailableError(
-                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
-                )
+        assets_values = kwargs.get("assets_values", [])
 
         # get extra parameters to pass to the query
         params = kwargs.pop("dl_url_params", None) or getattr(
@@ -709,8 +751,8 @@ class HTTPDownload(Download):
             asset_rel_path_parts_sanitized = [
                 sanitize(part) for part in asset_rel_path_parts
             ]
-            asset["rel_path"] = os.path.join(*asset_rel_path_parts_sanitized)
-            asset_rel_paths_list.append(asset["rel_path"])
+            asset.rel_path = os.path.join(*asset_rel_path_parts_sanitized)
+            asset_rel_paths_list.append(asset.rel_path)
         if asset_rel_paths_list:
             assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
 
@@ -742,38 +784,45 @@ class HTTPDownload(Download):
                 try:
                     stream.raise_for_status()
                 except RequestException as e:
-                    self._handle_asset_exception(e, asset)
+                    raise_errors = True if len(assets_values) == 1 else False
+                    self._handle_asset_exception(e, asset, raise_errors=raise_errors)
                 else:
                     asset_rel_path = (
-                        asset["rel_path"]
-                        .replace(assets_common_subdir, "")
-                        .strip(os.sep)
+                        asset.rel_path.replace(assets_common_subdir, "").strip(os.sep)
                         if flatten_top_dirs
-                        else asset["rel_path"]
+                        else asset.rel_path
                     )
                     asset_rel_dir = os.path.dirname(asset_rel_path)
 
-                    if not asset.get("filename", None):
+                    if not getattr(asset, "filename", None):
                         # try getting filename in GET header if was not found in HEAD result
                         asset_content_disposition = stream.headers.get(
                             "content-disposition", None
                         )
                         if asset_content_disposition:
-                            asset["filename"] = parse_header(
+                            asset.filename = parse_header(
                                 asset_content_disposition
                             ).get_param("filename", None)
 
-                    if not asset.get("filename", None):
+                    if not getattr(asset, "filename", None):
                         # default filename extracted from path
-                        asset["filename"] = os.path.basename(asset["rel_path"])
+                        asset.filename = os.path.basename(asset.rel_path)
 
-                    yield (
-                        os.path.join(asset_rel_dir, asset["filename"]),
-                        modified_at,
-                        perms,
-                        NO_COMPRESSION_64,
-                        get_chunks(stream),
-                    )
+                    asset.rel_path = os.path.join(asset_rel_dir, asset.filename)
+
+                    if len(assets_values) == 1:
+                        # apply headers to asset
+                        product.assets[assets_values[0].key].headers = stream.headers
+                        yield from get_chunks(stream)
+                    else:
+                        # several assets to zip
+                        yield (
+                            asset.rel_path,
+                            modified_at,
+                            perms,
+                            NO_COMPRESSION_64,
+                            get_chunks(stream),
+                        )
 
     def _download_assets(
         self,
@@ -788,15 +837,13 @@ class HTTPDownload(Download):
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
-        assets_values = [
-            a for a in getattr(product, "assets", {}).values() if "href" in a
-        ]
-
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
+        assets_values = self._get_assets_values(product, **kwargs)
+
         chunks_tuples = self._stream_download_assets(
-            product, auth, progress_callback, **kwargs
+            product, auth, progress_callback, assets_values=assets_values, **kwargs
         )
 
         # remove existing incomplete file
@@ -820,6 +867,12 @@ class HTTPDownload(Download):
             if asset["href"].startswith("file:"):
                 local_assets_count += 1
                 continue
+
+        if len(assets_values) == 1 and local_assets_count == 0:
+            # start reading chunks to set asset.rel_path
+            first_chunks_tuple = next(chunks_tuples)
+            chunks = chain(iter([first_chunks_tuple]), chunks_tuples)
+            chunks_tuples = [(assets_values[0].rel_path, None, None, None, chunks)]
 
         for chunk_tuple in chunks_tuples:
             asset_path = chunk_tuple[0]
@@ -865,7 +918,7 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-    def _handle_asset_exception(self, e, asset):
+    def _handle_asset_exception(self, e, asset, raise_errors=False):
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
@@ -879,6 +932,8 @@ class HTTPDownload(Download):
                     self.provider,
                 )
             )
+        elif raise_errors:
+            raise DownloadError(e)
         else:
             logger.warning("Unexpected error: %s" % e)
             logger.warning("Skipping %s" % asset["href"])
@@ -897,25 +952,25 @@ class HTTPDownload(Download):
                     timeout=HTTP_REQ_TIMEOUT,
                 ).headers
 
-                if not asset.get("size", 0):
+                if not getattr(asset, "size", 0):
                     # size from HEAD header / Content-length
-                    asset["size"] = int(asset_headers.get("Content-length", 0))
+                    asset.size = int(asset_headers.get("Content-length", 0))
 
-                if not asset.get("size", 0) or not asset.get("filename", 0):
+                if not getattr(asset, "size", 0) or not getattr(asset, "filename", 0):
                     # header content-disposition
                     header_content_disposition = parse_header(
                         asset_headers.get("content-disposition", "")
                     )
-                if not asset.get("size", 0):
+                if not getattr(asset, "size", 0):
                     # size from HEAD header / content-disposition / size
-                    asset["size"] = int(header_content_disposition.get_param("size", 0))
-                if not asset.get("filename", 0):
+                    asset.size = int(header_content_disposition.get_param("size", 0))
+                if not getattr(asset, "filename", 0):
                     # filename from HEAD header / content-disposition / size
-                    asset["filename"] = header_content_disposition.get_param(
+                    asset.filename = header_content_disposition.get_param(
                         "filename", None
                     )
 
-                if not asset.get("size", 0):
+                if not getattr(asset, "size", 0):
                     # GET request for size
                     with requests.get(
                         asset["href"],
@@ -926,78 +981,17 @@ class HTTPDownload(Download):
                         timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
                     ) as stream:
                         # size from GET header / Content-length
-                        asset["size"] = int(stream.headers.get("Content-length", 0))
-                        if not asset.get("size", 0):
+                        asset.size = int(stream.headers.get("Content-length", 0))
+                        if not getattr(asset, "size", 0):
                             # size from GET header / content-disposition / size
-                            asset["size"] = int(
+                            asset.size = int(
                                 parse_header(
                                     stream.headers.get("content-disposition", "")
                                 ).get_param("size", 0)
                             )
 
-                total_size += asset["size"]
+                total_size += asset.size
         return total_size
-
-    def _stream_assets(self, product, auth=None, progress_callback=None, **kwargs):
-        assets_values = [
-            a for a in getattr(product, "assets", {}).values() if "href" in a
-        ]
-
-        # get extra parameters to pass to the query
-        params = kwargs.pop("dl_url_params", None) or getattr(
-            self.config, "dl_url_params", {}
-        )
-
-        total_size = self._get_asset_sizes(assets_values, auth, params)
-        progress_callback.reset(total_size)
-
-        # zipped files properties
-        modified_at = datetime.now()
-        perms = 0o600
-
-        def get_chunks(stream):
-            for chunk in stream.iter_content(chunk_size=64 * 1024):
-                if chunk:
-                    progress_callback(len(chunk))
-                    yield chunk
-
-        for asset in assets_values:
-            with requests.get(
-                asset["href"],
-                stream=True,
-                auth=auth,
-                params=params,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            ) as stream:
-                try:
-                    stream.raise_for_status()
-                except RequestException as e:
-                    self._handle_asset_exception(e, asset)
-                else:
-                    asset_rel_path = urlparse(asset["href"]).path.strip("/")
-
-                    if not asset.get("filename", None):
-                        # try getting filename in GET header if was not found in HEAD result
-                        asset_content_disposition = stream.headers.get(
-                            "content-disposition", None
-                        )
-                        if asset_content_disposition:
-                            asset["filename"] = parse_header(
-                                asset_content_disposition
-                            ).get_param("filename", None)
-
-                    if not asset.get("filename", None):
-                        # default filename extracted from path
-                        asset["filename"] = os.path.basename(asset_rel_path)
-
-                    yield (
-                        asset["filename"],
-                        modified_at,
-                        perms,
-                        NO_COMPRESSION_64,
-                        get_chunks(stream),
-                    )
 
     def download_all(
         self,
