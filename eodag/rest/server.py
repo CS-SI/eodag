@@ -673,7 +673,8 @@ def stac_catalogs(catalogs: str, request: Request) -> Any:
     "/queryables",
     tags=["Capabilities"],
     response_model_exclude_none=True,
-    include_in_schema=False)
+    include_in_schema=False,
+)
 def list_queryables(request: Request, provider: Optional[str] = None) -> Queryables:
     """Returns the list of terms available for use when writing filter expressions.
 
@@ -733,7 +734,6 @@ def stac_search(
         content=response, status_code=200, media_type="application/json"
     )
     return resp
-
 
 
 app.include_router(router)
