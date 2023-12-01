@@ -912,10 +912,6 @@ def search_stac_items(
     else:
         raise NoMatchingProductType("Invalid request, collections argument is missing")
 
-    # metrics
-    product_type = catalogs[0] if catalogs else collections[0] if collections else None
-    record_searched_product_type(product_type)
-
     # get products by ids
     ids = arguments.get("ids", None)
     if isinstance(ids, str):
@@ -1212,26 +1208,6 @@ def eodag_api_init() -> None:
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
 
 
-def _available_providers_callback(options: CallbackOptions) -> Iterable[Observation]:
-    return [
-        Observation(
-            len(eodag_api.available_providers()),
-            {"eodag.core.gauge.label": "Available Providers"},
-        )
-    ]
-
-
-def _available_product_types_callback(
-    options: CallbackOptions,
-) -> Iterable[Observation]:
-    return [
-        Observation(
-            len(eodag_api.list_product_types()),
-            {"eodag.core.gauge.label": "Available Product Types"},
-        )
-    ]
-
-
 def telemetry_init():
     """Init telemetry"""
 
@@ -1241,8 +1217,8 @@ def telemetry_init():
     exporter_port = os.getenv("EODAG_EXPORTER_PROMETHEUS_PORT", "8000")
     start_http_server(port=int(exporter_port), addr=exporter_host)
     reader = PrometheusMetricReader()
-    provider = MeterProvider(resource=resource, metric_readers=[reader])
-    metrics.set_meter_provider(provider)
+    meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
+    metrics.set_meter_provider(meter_provider)
 
     meter = metrics.get_meter("eodag.core.meter")
     telemetry["search_product_type_total"] = meter.create_counter(
@@ -1263,6 +1239,26 @@ def telemetry_init():
         callbacks=[_available_product_types_callback],
         description="The number available product types",
     )
+
+
+def _available_providers_callback(options: CallbackOptions) -> Iterable[Observation]:
+    return [
+        Observation(
+            len(eodag_api.available_providers()),
+            {"eodag.core.gauge.label": "Available Providers"},
+        )
+    ]
+
+
+def _available_product_types_callback(
+    options: CallbackOptions,
+) -> Iterable[Observation]:
+    return [
+        Observation(
+            len(eodag_api.list_product_types()),
+            {"eodag.core.gauge.label": "Available Product Types"},
+        )
+    ]
 
 
 def record_downloaded_data(provider: str, byte_count: int):
