@@ -1068,7 +1068,6 @@ class Queryables(BaseModel):
                 description="Datetime",
                 ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
             ),
-            "ids": QueryableProperty(description="IDs"),
         }
     )
     additional_properties: bool = Field(
@@ -1103,8 +1102,14 @@ def rename_to_stac_standard(key: str) -> str:
     stac_config_properties: Dict[str, Any] = stac_config["item"]["properties"]
 
     for stac_property, value in stac_config_properties.items():
+        if isinstance(value, list):
+            value = value[0]
         if str(value).endswith(key):
             return stac_property
+
+    if key in OSEO_METADATA_MAPPING:
+        return "oseo:" + key
+
     return key
 
 
@@ -1125,10 +1130,13 @@ def fetch_collection_queryable_properties(
     if provider is not None:
         kwargs["provider"] = provider
     eodag_queryable_properties = eodag_api.get_queryables(**kwargs)
+
     # list of all the STAC standardized collection-specific queryables
     queryable_properties: Set[str] = set()
     for prop in eodag_queryable_properties:
-        queryable_properties.add(rename_to_stac_standard(prop))
+        # remove pure eodag properties
+        if prop not in ["start", "end", "geom", "locations", "id"]:
+            queryable_properties.add(rename_to_stac_standard(prop))
     return queryable_properties
 
 

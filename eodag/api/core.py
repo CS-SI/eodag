@@ -2014,7 +2014,7 @@ class EODataAccessGateway:
         default_queryables = {"productType", "start", "end", "geom", "locations", "id"}
         if provider is None and product_type is None:
             return default_queryables
-        
+
         plugins = self._plugins_manager.get_search_plugins(product_type, provider)
 
         # dictionary of the queryable properties of the providers supporting the given product type
@@ -2022,7 +2022,6 @@ class EODataAccessGateway:
         for plugin in plugins:
             if product_type and product_type not in plugin.config.products.keys():
                 raise UnsupportedProductType(product_type)
-            
 
             provider_queryables = set(default_queryables)
 
