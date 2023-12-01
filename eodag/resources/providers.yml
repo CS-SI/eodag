@@ -1862,6 +1862,10 @@
     type: EcmwfApi
     api_endpoint: https://api.ecmwf.int/v1
     extract: false
+    products_split_timedelta:
+      param: month  # currently month and year are available
+      duration: 1
+    assets_split_parameter: param
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -1869,7 +1873,9 @@
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/to/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
-      id: '$.id'
+      id:
+        - 'date={id#download_id_to_dates}["start_date"]/to/{id#download_id_to_dates}["end_date"]'
+        - '$.id'
       # The geographic extent of the product
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
@@ -2070,6 +2076,7 @@
       param: 59/134/136/146/147/151/165/166/167/168/172/176/177/179/189/235/228001/228002/228039/228139/228141/228144/228164/228228
       step: 0
       time: 00:00
+      constraints_file_url: ""
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 ---
@@ -2084,6 +2091,10 @@
     type: CdsApi
     api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
     extract: false
+    products_split_timedelta:
+      param: month  # currently month and year are available
+      duration: 1
+    assets_split_parameter: variable
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2091,7 +2102,9 @@
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
-      id: '$.id'
+      id:
+        - 'date={id#download_id_to_dates}["start_date"]/{id#download_id_to_dates}["end_date"]'
+        - '$.id'
       # The geographic extent of the product
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
@@ -2100,141 +2113,51 @@
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://ads.atmosphere.copernicus.eu/cdsapp#!/dataset/{dataset}'
       # Copernicus ADS specific parameters
-      accuracy:
-        - accuracy
-        - '$.accuracy'
-      anoffset:
-        - anoffset
-        - '$.anoffset'
       api_product_type:
         - product_type
         - '$.api_product_type'
-      bitmap:
-        - bitmap
-        - '$.bitmap'
-      block:
-        - block
-        - '$.block'
-      channel:
-        - channel
-        - '$.channel'
-      class:
-        - class
-        - '$.class'
-      database:
-        - database
-        - '$.database'
       dataset:
         - dataset
         - '$.dataset'
       date_range:
         - date_range
         - '$.date_range'
-      day:
-        - day
-        - '$.day'
-      diagnostic:
-        - diagnostic
-        - '$.diagnostic'
-      direction:
-        - direction
-        - '$.direction'
-      domain:
-        - domain
-        - '$.domain'
-      duplicates:
-        - duplicates
-        - '$.duplicates'
       expect:
         - expect
         - '$.expect'
-      expver:
-        - expver
-        - '$.expver'
-      fcmonth:
-        - fcmonth
-        - '$.fcmonth'
-      fcperiod:
-        - fcperiod
-        - '$.fcperiod'
-      fieldset:
-        - fieldset
-        - '$.fieldset'
       filter:
         - filter
         - '$.filter'
       format:
         - format
         - '$.format'
-      frame:
-        - frame
-        - '$.frame'
       frequency:
         - frequency
         - '$.frequency'
-      grid:
-        - grid
-        - '$.grid'
-      hdate:
-        - hdate
-        - '$.hdate'
-      ident:
-        - ident
-        - '$.ident'
-      interpolation:
-        - interpolation
-        - '$.interpolation'
-      intgrid:
-        - intgrid
-        - '$.intgrid'
-      iteration:
-        - iteration
-        - '$.iteration'
       latitude:
         - latitude
         - '$.latitude'
-      levelist:
-        - levelist
-        - '$.levelist'
       leadtime_hour:
         - leadtime_hour
         - '$.leadtime_hour'
-      levtype:
-        - levtype
-        - '$.levtype'
+      level:
+        - level
+        - '$.level'
       longitude:
         - longitude
         - '$.longitude'
-      lsm:
-        - lsm
-        - '$.lsm'
       method:
         - method
         - '$.method'
       model_level:
         - model_level
         - '$.model_level'
-      month:
-        - month
-        - '$.month'
       number:
         - number
         - '$.number'
-      obsgroup:
-        - obsgroup
-        - '$.obsgroup'
-      obstype:
-        - obstype
-        - '$.obstype'
       origin:
         - origin
         - '$.origin'
-      packing:
-        - packing
-        - '$.packing'
-      padding:
-        - padding
-        - '$.padding'
       param:
         - param
         - '$.param'
@@ -2259,27 +2182,12 @@
       reportype:
         - reportype
         - '$.reportype'
-      repres:
-        - repres
-        - '$.repres'
-      resol:
-        - resol
-        - '$.resol'
-      rotation:
-        - rotation
-        - '$.rotation'
-      section:
-        - section
-        - '$.section'
       source:
         - source
         - '$.source'
       step:
         - step
         - '$.step'
-      stream:
-        - stream
-        - '$.stream'
       system:
         - system
         - '$.system'
@@ -2289,30 +2197,16 @@
       time:
         - time
         - '$.time'
-      truncation:
-        - truncation
-        - '$.truncation'
       type:
         - type
         - '$.type'
-      use:
-        - use
-        - '$.use'
       variable:
         - variable
         - '$.variable'
-      year:
-        - year
-        - '$.year'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GACF_AOT:
       dataset: cams-global-atmospheric-composition-forecasts
-      stream: oper
-      class: mc
-      expver: '0001'
-      step: 0
-      levtype: SFC
       variable:
         - sea_salt_aerosol_optical_depth_550nm
         - dust_aerosol_optical_depth_550nm
@@ -2323,24 +2217,18 @@
       leadtime_hour: 0
       type: forecast
       format: netcdf
+      constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/cams-global-atmospheric-composition-forecasts/constraints.json"
     CAMS_GACF_RH:
       dataset: cams-global-atmospheric-composition-forecasts
-      stream: oper
-      class: mc
-      expver: '0001'
-      step: 0
       variable: 'relative_humidity'
       pressure_level: ['1', '2', '3', '5', '7', '10', '20', '30', '50', '70', '100', '150', '200', '250', '300', '400', '500', '600', '700', '850', '925', '1000']
       time: '00:00'
       leadtime_hour: 0
       type: forecast
       format: netcdf
+      constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/cams-global-atmospheric-composition-forecasts/constraints.json"
     CAMS_GACF_MR:
       dataset: cams-global-atmospheric-composition-forecasts
-      stream: oper
-      class: mc
-      expver: '0001'
-      step: 0
       variable:
         - sea_salt_aerosol_0.03-0.5um_mixing_ratio
         - sea_salt_aerosol_0.5-5um_mixing_ratio
@@ -2358,11 +2246,9 @@
       leadtime_hour: 0
       type: forecast
       format: netcdf
+      constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/cams-global-atmospheric-composition-forecasts/constraints.json"
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
-      stream: oper
-      class: mc
-      expver: '0001'
       variable:
         - dust_aerosol_0.03-0.55um_mixing_ratio
         - dust_aerosol_0.55-0.9um_mixing_ratio
@@ -2380,6 +2266,7 @@
       model_level: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59', '60']
       time: '00:00'
       format: netcdf
+      constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/cams-global-reanalysis-eac4/constraints.json"
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       stream: oper
@@ -2400,6 +2287,11 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
+    products_split_timedelta:
+      param: month  # currently month and year are available
+      duration: 1
+    assets_split_parameter: variable
+    constraints_file_url: "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2407,7 +2299,9 @@
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
-      id: '$.id'
+      id:
+        - 'date_range={id#download_id_to_dates}["start_date"]/{id#download_id_to_dates}["end_date"]'
+        - '$.id'
       # The geographic extent of the product
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
@@ -2627,6 +2521,12 @@
       api_product_type: reanalysis
       time: '00:00'
       format: netcdf
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+        - variable
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'
@@ -3372,6 +3272,8 @@
       total_items_nb_key_path: '$.totItems'
     discover_product_types:
       fetch_url: null
+    constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/{dataset}"
+    constraints_entry: constraints
     metadata_mapping:
       productType:
         - '{{"datasetId": "{productType}"}}'
@@ -4719,6 +4621,17 @@
         - "975"
         - "1000"
       format: grib # netcdf format may fail
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4741,6 +4654,18 @@
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     ERA5_PL_MONTHLY:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
@@ -4805,6 +4730,16 @@
         - "975"
         - "1000"
       format: grib # netcdf format may fail
+      multi_select_values:
+        - year
+        - month
+        - time
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4827,6 +4762,15 @@
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     ERA5_LAND:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
@@ -4863,6 +4807,15 @@
         - leaf_area_index_high_vegetation
         - leaf_area_index_low_vegetation
       format: grib # netcdf format may fail
+      multi_select_values:
+        - day
+        - time
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4874,6 +4827,18 @@
           - '$.null'
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        year:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}, {{"name": "year", "value": "{year}"}}, {{"name": "month", "value": "{month}"}}]}}'
+          - '$.null'
+        month:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}, {{"name": "year", "value": "{year}"}}, {{"name": "month", "value": "{month}"}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
@@ -4918,6 +4883,16 @@
         - leaf_area_index_high_vegetation
         - leaf_area_index_low_vegetation
       format: grib # netcdf format may fail
+      multi_select_values:
+        - year
+        - month
+        - time
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4932,6 +4907,15 @@
           - '$.null'
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
@@ -4958,6 +4942,17 @@
         - surface_pressure
         - total_precipitation
       format: grib # netcdf format may fail
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -4972,6 +4967,18 @@
           - '$.null'
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
           - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
@@ -4998,6 +5005,16 @@
         - surface_pressure
         - total_precipitation
       format: grib # netcdf format may fail
+      multi_select_values:
+        - year
+        - month
+        - time
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -5013,6 +5030,15 @@
         format:
           - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
           - '$.null'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - '$.extraInformation.footprint'
@@ -5023,6 +5049,16 @@
       variable: total_cloud_cover
       origin: uerra_harmonie
       format: grib # netcdf format may fail
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         id: '$.productInfo.product'
         startTimeFromAscendingNode:
@@ -5041,11 +5077,30 @@
         geometry:
           - '{{"boundingBoxValues": [{{"name": "area", "bbox": {geometry#to_bounds}}}]}}'
           - 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SATELLITE_SEA_LEVEL_BLACK_SEA:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
       variable: all
       format: zip
+      multi_select_values:
+        - year
+        - month
+        - day
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
       metadata_mapping:
         id: '$.productInfo.product'
         variable:
@@ -5064,6 +5119,16 @@
           - $.productInfo.productStartDate
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+      storeDownloadUrl: True
     GLACIERS_ELEVATION_AND_MASS_CHANGE:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_ELEVATION_MASS
       variable: all
@@ -5112,11 +5177,9 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
       storeDownloadUrl: True
     FIRE_HISTORICAL:
-      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL
-      providerProductType:
-        - reanalysis
-      dataset:
-        - Consolidated dataset
+      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
+      providerProductType: reanalysis
+      dataset_type: consolidated_dataset
       variable:
         - fire_danger_index
         - build_up_index
@@ -5131,20 +5194,36 @@
         - burning_index
         - energy_release_component
         - ignition_component
-      version:
-        - "4.0"
+      system_version:
+        - "4_1"
+      format:
+        - grib
+      grid: "original_grid"
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
-          - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
+          - '{{ "stringChoiceValues": [ {{"name": "product_type", "value": "{providerProductType}" }} ] }}'
           - $.null
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
           - $.null
-        dataset:
-          - '{{ "multiStringSelectValues": [ {{"name": "dataset", "value": {dataset} }} ] }}'
+        dataset_type:
+          - '{{ "stringChoiceValues": [ {{"name": "dataset_type", "value": "{dataset_type}" }} ] }}'
           - $.null
         version:
-          - '{{ "multiStringSelectValues": [ {{"name": "version", "value": {version} }} ] }}'
+          - '{{ "multiStringSelectValues": [ {{"name": "system_version", "value": {version} }} ] }}'
+          - $.null
+        grid:
+          - '{{ "stringChoiceValues": [ {{"name": "grid", "value": "{grid}" }} ] }}'
           - $.null
         startTimeFromAscendingNode:
           - |
@@ -5157,6 +5236,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
     GLOFAS_FORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST
       variable:
@@ -5199,6 +5287,19 @@
       providerProductType:
         - control_forecast
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5229,6 +5330,15 @@
           - $.extraInformation.footprint
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     GLOFAS_HISTORICAL:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL
@@ -5241,6 +5351,20 @@
       providerProductType:
         - consolidated
       format: grib
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5271,6 +5395,15 @@
           - $.extraInformation.footprint
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "hday", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     GLOFAS_REFORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST
@@ -5326,10 +5459,27 @@
         - "1080"
         - "1104"
       system_version:
-        - version_3_1
+        - version_4_0
       hydrological_model:
         - lisflood
       format: grib
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5363,6 +5513,15 @@
           - $.extraInformation.footprint
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "hday", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     GLOFAS_SEASONAL:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL
@@ -5380,6 +5539,18 @@
         - "120"
         - "144"
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5409,6 +5580,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     GLOFAS_SEASONAL_REFORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST
@@ -5421,6 +5598,22 @@
       leadtime_hour:
         - "24"
       format: grib
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -5450,6 +5643,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_FORECAST:
       productType: EO:ECMWF:DAT:EFAS_FORECAST
@@ -5523,6 +5722,19 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5557,6 +5769,18 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_HISTORICAL:
       productType: EO:ECMWF:DAT:EFAS_HISTORICAL
@@ -5565,6 +5789,20 @@
       system_version: version_4_0
       variable: volumetric_soil_moisture
       model_levels: soil_levels
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - day
+        - time
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         soil_level:
           - '{{ "multiStringSelectValues": [ {{"name": "soil_level", "value": {soil_level} }} ] }}'
@@ -5593,6 +5831,18 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "hday", "value": {day}}}]}}'
+          - '$.null'
+        time:
+          - '{{"multiStringSelectValues": [{{"name": "time", "value": {time}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_REFORECAST:
       productType: EO:ECMWF:DAT:EFAS_REFORECAST
@@ -5638,6 +5888,22 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+        day: hday
+      multi_select_values:
+        - year
+        - month
+        - day
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5668,6 +5934,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "hday", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_SEASONAL:
       productType: EO:ECMWF:DAT:EFAS_SEASONAL
@@ -5685,6 +5960,17 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      multi_select_values:
+        - year
+        - month
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         soil_level:
           - '{{ "multiStringSelectValues": [ {{"name": "soil_level", "value": {soil_level} }} ] }}'
@@ -5711,6 +5997,12 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     EFAS_SEASONAL_REFORECAST:
       productType: EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST
@@ -5728,6 +6020,20 @@
       variable: volumetric_soil_moisture
       model_levels: soil_levels
       format: grib.zip
+      constraint_mappings:
+        year: hyear
+        month: hmonth
+      multi_select_values:
+        - year
+        - month
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         soil_level:
           - '{{ "multiStringSelectValues": [ {{"name": "soil_level", "value": {soil_level} }} ] }}'
@@ -5754,6 +6060,12 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "hyear", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "hmonth", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SATELLITE_CARBON_DIOXIDE:
       productType: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
@@ -5764,6 +6076,15 @@
       variable: xco2
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
+      multi_select_values:
+        - year
+        - month
+        - day
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         processing_level:
           - '{{ "multiStringSelectValues": [ {{"name": "processing_level", "value": {processing_level} }} ] }}'
@@ -5791,6 +6112,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SATELLITE_METHANE:
       productType: EO:ECMWF:DAT:SATELLITE_METHANE
@@ -5801,6 +6131,15 @@
       variable: xch4
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
+      multi_select_values:
+        - year
+        - month
+        - day
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         processing_level:
           - '{{ "multiStringSelectValues": [ {{"name": "processing_level", "value": {processing_level} }} ] }}'
@@ -5828,6 +6167,15 @@
         completionTimeFromAscendingNode: $.productInfo.productEndDate
         geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_PL:
       productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
@@ -5851,12 +6199,23 @@
         - "700"
         - "850"
         - "925"
-        - "1000"
       leadtime_month:
         - "1"
       originating_centre: ecmwf
       system: "5"
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_month
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_month
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5892,6 +6251,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_POSTPROCESSED_SL:
       productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
@@ -5907,6 +6272,18 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_month
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_month
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -5939,6 +6316,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_SL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
@@ -5984,6 +6367,19 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         providerProductType:
           - '{{ "multiStringSelectValues": [ {{"name": "product_type", "value": {providerProductType} }} ] }}'
@@ -6017,6 +6413,15 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_ORIGINAL_PL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
@@ -6056,6 +6461,19 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - day
+        - variable
+        - leadtime_hour
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_hour
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -6089,6 +6507,15 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
+        day:
+          - '{{"multiStringSelectValues": [{{"name": "day", "value": {day}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_MONTHLY_PL:
       productType: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS
@@ -6115,6 +6542,18 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_month
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_month
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -6150,6 +6589,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SEASONAL_MONTHLY_SL:
       productType: EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS
@@ -6164,6 +6609,18 @@
       originating_centre: ecmwf
       system: "51"
       format: grib
+      multi_select_values:
+        - year
+        - month
+        - variable
+        - leadtime_month
+      products_split_timedelta:
+        param: month  # currently month and year are available
+        duration: 1
+      other_product_split_params:
+        - leadtime_month
+      assets_split_parameter: variable
+      downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
       metadata_mapping:
         variable:
           - '{{ "multiStringSelectValues": [ {{"name": "variable", "value": {variable} }} ] }}'
@@ -6196,6 +6653,12 @@
           - '$.extraInformation.footprint'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         id: $.productInfo.product
+        year:
+          - '{{"multiStringSelectValues": [{{"name": "year", "value": {year}}}]}}'
+          - '$.null'
+        month:
+          - '{{"multiStringSelectValues": [{{"name": "month", "value": {month}}}]}}'
+          - '$.null'
       storeDownloadUrl: True
     SIS_HYDRO_MET_PROJ:
       productType: EO:ECMWF:DAT:SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS

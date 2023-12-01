@@ -22,6 +22,7 @@ import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
+from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -70,7 +71,12 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         return [{}]
 
     def query(
-        self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
+        self,
+        product_type=None,
+        items_per_page=None,
+        page=None,
+        count=True,
+        **kwargs,
     ):
         """Build ready-to-download SearchResult"""
 
@@ -82,8 +88,30 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 kwargs.get("type", ""),
                 kwargs.get("levtype", ""),
             )
+
+        if (
+            product_type in getattr(self.config, "products", {})
+            and "constraints_file_path"
+            in getattr(self.config, "products", {})[product_type]
+        ):
+            self.config.constraints_file_path = getattr(self.config, "products", {})[
+                product_type
+            ]["constraints_file_path"]
+        else:
+            self.config.constraints_file_path = ""
+        if (
+            product_type in getattr(self.config, "products", {})
+            and "constraints_file_url"
+            in getattr(self.config, "products", {})[product_type]
+        ):
+            self.config.constraints_file_url = getattr(self.config, "products", {})[
+                product_type
+            ]["constraints_file_url"]
+        else:
+            self.config.constraints_file_url = ""
+
         # start date
-        if "startTimeFromAscendingNode" not in kwargs:
+        if "startTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
                 getattr(self.config, "product_type_config", {}).get(
                     "missionStartDate", None
@@ -91,7 +119,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 or DEFAULT_MISSION_START_DATE
             )
         # end date
-        if "completionTimeFromAscendingNode" not in kwargs:
+        if "completionTimeFromAscendingNode" not in kwargs and "id" not in kwargs:
             kwargs["completionTimeFromAscendingNode"] = getattr(
                 self.config, "product_type_config", {}
             ).get("missionEndDate", None) or datetime.utcnow().isoformat(
@@ -106,10 +134,49 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 90,
             ]
         kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
+        products = []
+        if (
+            getattr(self.config, "products_split_timedelta", None)
+            and "id" not in kwargs
+        ):
+            request_splitter = RequestSplitter(
+                self.config, self.config.metadata_mapping
+            )
+            slices, num_items = request_splitter.get_time_slices(
+                kwargs["startTimeFromAscendingNode"],
+                kwargs["completionTimeFromAscendingNode"],
+            )
+            for time_slice in slices:
+                if isinstance(time_slice["start_date"], str):
+                    kwargs["startTimeFromAscendingNode"] = time_slice["start_date"]
+                else:
+                    kwargs["startTimeFromAscendingNode"] = time_slice[
+                        "start_date"
+                    ].strftime("%Y-%m-%dT%H:%M:%SZ")
+                if isinstance(time_slice["end_date"], str):
+                    kwargs["completionTimeFromAscendingNode"] = time_slice["end_date"]
+                else:
+                    kwargs["completionTimeFromAscendingNode"] = time_slice[
+                        "end_date"
+                    ].strftime("%Y-%m-%dT%H:%M:%SZ")
+                result = BuildPostSearchResult.query(
+                    self,
+                    items_per_page=items_per_page,
+                    page=page,
+                    count=count,
+                    **kwargs,
+                )
+                products += result[0]
+        else:
+            products, num_items = BuildPostSearchResult.query(
+                self,
+                items_per_page=items_per_page,
+                page=page,
+                count=count,
+                **kwargs,
+            )
 
-        return BuildPostSearchResult.query(
-            self, items_per_page=items_per_page, page=page, count=count, **kwargs
-        )
+        return products, num_items
 
     def authenticate(self):
         """Check credentials and returns information needed for auth
@@ -122,6 +189,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         email = getattr(self.config, "credentials", {}).get("username", None)
         key = getattr(self.config, "credentials", {}).get("password", None)
         url = getattr(self.config, "api_endpoint", None)
+
         if not all([email, key, url]):
             key, url, email = get_apikey_values()
 
@@ -143,9 +211,12 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     def download(self, product, auth=None, progress_callback=None, **kwargs):
         """Download data from ECMWF MARS"""
 
-        product_extension = ECMWF_MARS_KNOWN_FORMATS[
-            product.properties.get("format", "grib")
-        ]
+        if "format" in product.properties and product.properties["format"] is not None:
+            product_extension = ECMWF_MARS_KNOWN_FORMATS[
+                product.properties.get("format")
+            ]
+        else:
+            product_extension = ECMWF_MARS_KNOWN_FORMATS["grib"]
 
         # Prepare download
         fs_path, record_filename = self._prepare_download(
@@ -163,6 +234,14 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
         download_request = geojson.loads(urlsplit(product.location).query)
+        # remove string quotes within values
+        for param, param_value in download_request.items():
+            if isinstance(param_value, str):
+                download_request[param] = param_value.replace('"', "").replace("'", "")
+            elif isinstance(param_value, list):
+                for i, value in enumerate(param_value):
+                    if isinstance(value, str):
+                        param_value[i] = value.replace('"', "").replace("'", "")
 
         # Set verbosity
         eodag_verbosity = get_logging_verbose()

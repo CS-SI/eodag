@@ -15,9 +15,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import calendar
 import hashlib
 import logging
+from datetime import datetime
 
 import geojson
 import orjson
@@ -29,10 +30,89 @@ from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     properties_from_json,
 )
+from eodag.api.product.request_splitter import RequestSplitter
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.utils import dict_items_recursive_sort
 
 logger = logging.getLogger("eodag.search.build_search_result")
+
+
+def get_product_id(
+    id_prefix, parsed_properties, query_hash, update_start_end_time=True
+):
+    """
+    creates a product id based on the the given prefix, the time parameters in the properties and an additional string
+    :param id_prefix: first part of the id
+    :type id_prefix: str
+    :param parsed_properties: properties of the product
+    :type parsed_properties: dict
+    :param query_hash: string to be added at the end of the id
+    :type query_hash: str
+    :param update_start_end_time: (optional) if the start and end time in the properties
+                                  should be updated based on other time parameters (year, month, day)
+    :type update_start_end_time: bool
+    """
+    if (
+        "startTimeFromAscendingNode" in parsed_properties
+        and parsed_properties["startTimeFromAscendingNode"]
+        and parsed_properties["startTimeFromAscendingNode"] != NOT_AVAILABLE
+        and "completionTimeFromAscendingNode" in parsed_properties
+        and parsed_properties["completionTimeFromAscendingNode"]
+        and parsed_properties["completionTimeFromAscendingNode"] != NOT_AVAILABLE
+    ):
+        product_id = "%s_%s_%s_%s" % (
+            id_prefix,
+            parsed_properties["startTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            parsed_properties["completionTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            query_hash,
+        )
+    elif "year" in parsed_properties and parsed_properties["year"] != NOT_AVAILABLE:
+        if isinstance(parsed_properties["year"], str):
+            start_year = parsed_properties["year"]
+            end_year = parsed_properties["year"]
+        else:
+            years = [int(y) for y in parsed_properties["year"]]
+            start_year = str(min(years))
+            end_year = str(max(years))
+        if "month" in parsed_properties and parsed_properties["month"] != NOT_AVAILABLE:
+            if isinstance(parsed_properties["month"], str):
+                start_month = parsed_properties["month"]
+                end_month = parsed_properties["month"]
+            else:
+                months = [int(m) for m in parsed_properties["month"]]
+                start_month = "{:0>2d}".format(min(months))
+                end_month = "{:0>2d}".format(max(months))
+        else:
+            start_month = "01"
+            end_month = "12"
+        if "day" in parsed_properties and parsed_properties["day"] != NOT_AVAILABLE:
+            days = [int(d) for d in parsed_properties["day"]]
+            start_day = "{:0>2d}".format(min(days))
+            end_day = "{:0>2d}".format(max(days))
+        else:
+            start_day = "01"
+            end_day = str(calendar.monthrange(int(end_year), int(end_month))[1])
+
+        product_id = "%s_%s_%s_%s" % (
+            id_prefix,
+            start_year + start_month + start_day,
+            end_year + end_month + end_day,
+            query_hash,
+        )
+        if update_start_end_time:
+            parsed_properties["startTimeFromAscendingNode"] = datetime(
+                int(start_year), int(start_month), int(start_day)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            parsed_properties["completionTimeFromAscendingNode"] = datetime(
+                int(end_year), int(end_month), int(end_day)
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        product_id = parsed_properties["id"]
+    return product_id
 
 
 class BuildPostSearchResult(PostJsonSearch):
@@ -129,13 +209,6 @@ class BuildPostSearchResult(PostJsonSearch):
         if not product_type:
             product_type = parsed_properties.get("productType", None)
 
-        # filter available mapped properties
-        product_available_properties = {
-            k: v
-            for (k, v) in parsed_properties.items()
-            if v not in (NOT_AVAILABLE, NOT_MAPPED)
-        }
-
         # query hash, will be used to build a product id
         sorted_unpaginated_query_params = dict_items_recursive_sort(
             unpaginated_query_params
@@ -145,19 +218,64 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # build product id
         id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s" % (
-            id_prefix,
-            parsed_properties["startTimeFromAscendingNode"]
-            .split("T")[0]
-            .replace("-", ""),
-            query_hash,
-        )
+        product_id = get_product_id(id_prefix, parsed_properties, query_hash)
+        product_available_properties = {
+            k: v
+            for (k, v) in parsed_properties.items()
+            if v not in (NOT_AVAILABLE, NOT_MAPPED)
+        }
+
         product_available_properties["id"] = product_available_properties[
             "title"
         ] = product_id
 
         # update downloadLink
-        product_available_properties["downloadLink"] += f"?{qs}"
+        split_param = getattr(self.config, "assets_split_parameter", None)
+        product_data = getattr(self.config, "products", {}).get(product_type, {})
+        if split_param and product_data:
+            if "dataset" in product_data:
+                provider_product_type = product_data["dataset"]
+            else:
+                provider_product_type = ""
+            request_splitter = RequestSplitter(
+                self.config,
+                self.config.metadata_mapping,
+                provider_product_type=provider_product_type,
+            )
+            product_available_properties["downloadLinks"] = {}
+            param_values = parsed_properties[split_param]
+            if isinstance(param_values, str):
+                if "/" in param_values:
+                    param_values = param_values.split("/")
+                else:
+                    param_values = param_values.split(",")
+            elif not isinstance(param_values, list):
+                param_values = [param_values]
+
+            if len(param_values) == 1 and param_values[0] == NOT_AVAILABLE:
+                param_values = None
+
+            constraint_param_values = request_splitter.get_variables_for_product(
+                product_id[len(id_prefix) + 1 : len(id_prefix) + 18],
+                product_available_properties,
+                param_values,
+            )
+
+            for param_value in constraint_param_values:
+                sorted_unpaginated_query_params[split_param] = param_value
+                params_str = geojson.dumps(sorted_unpaginated_query_params)
+                link = product_available_properties["downloadLink"] + f"?{params_str}"
+                product_available_properties["downloadLinks"][param_value] = link
+        else:
+            product_available_properties["downloadLink"] += f"?{qs}"
+
+        if (
+            "downloadLinks" in product_available_properties
+            and len(product_available_properties["downloadLinks"]) == 1
+        ):
+            product_available_properties["downloadLink"] = list(
+                product_available_properties["downloadLinks"].values()
+            )[0]
 
         # parse metadata needing downloadLink
         for param, mapping in self.config.metadata_mapping.items():

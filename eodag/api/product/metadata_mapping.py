@@ -268,6 +268,7 @@ def format_metadata(search_param, *args, **kwargs):
             "2021-04-21" => "2021-04-21"
             "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
+            datetime_string = datetime_string.replace('"', "")
             dt = isoparse(datetime_string)
             if not dt.tzinfo:
                 dt = dt.replace(tzinfo=UTC)
@@ -707,6 +708,31 @@ def format_metadata(search_param, *args, **kwargs):
             ]
 
         @staticmethod
+        def convert_download_id_to_dates(product_id):
+            dates_str = re.search("[0-9]{8}_[0-9]{8}", product_id).group()
+            if not dates_str:
+                dates_str = re.search("[0-9]{6}_[0-9]{6}", product_id).group()
+            dates = dates_str.split("_")
+            if len(dates[0]) == 8:
+                start_date = datetime(
+                    int(dates[0][:4]), int(dates[0][4:6]), int(dates[0][6:8])
+                )
+            else:
+                start_date = datetime(int(dates[0][:4]), int(dates[0][4:6]), 1)
+            if len(dates[0]) == 8:
+                end_date = datetime(
+                    int(dates[1][:4]), int(dates[1][4:6]), int(dates[1][6:8])
+                )
+            else:
+                end_date = datetime(
+                    int(dates[1][:4]), int(dates[1][4:6]) + 1, 1
+                ) - timedelta(days=1)
+            return {
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": end_date.strftime("%Y-%m-%d"),
+            }
+
+        @staticmethod
         def convert_get_dates_from_string(text: str, split_param="-"):
             reg = "[0-9]{8}" + split_param + "[0-9]{8}"
             dates_str = re.search(reg, text).group()
@@ -767,6 +793,8 @@ def properties_from_json(json, mapping, discovery_config=None):
                 extracted_value = NOT_AVAILABLE
             if extracted_value is None:
                 properties[metadata] = None
+            elif extracted_value == NOT_AVAILABLE:
+                properties[metadata] = NOT_AVAILABLE
             else:
                 if conversion_or_none is None:
                     properties[metadata] = extracted_value
@@ -1095,6 +1123,7 @@ def format_query_params(product_type, config, **kwargs):
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
                         formatted_query_param = _resolve_hashes(formatted_query_param)
+
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
@@ -1106,9 +1135,20 @@ def format_query_params(product_type, config, **kwargs):
                     query_params[eodag_search_key] = formatted_query_param
             else:
                 provider_search_key, provider_value = parts
-                query_params.setdefault(provider_search_key, []).append(
-                    format_metadata(provider_value, product_type, **kwargs)
+                formatted_query_param = format_metadata(
+                    provider_value, product_type, **kwargs
                 )
+                if "}[" in formatted_query_param:
+                    formatted_query_param = _resolve_hashes(
+                        formatted_query_param.replace("'", '"')
+                    )
+                    query_params.setdefault(provider_search_key, []).append(
+                        formatted_query_param
+                    )
+                else:
+                    query_params.setdefault(provider_search_key, []).append(
+                        format_metadata(provider_value, product_type, **kwargs)
+                    )
         else:
             query_params[provider_search_key] = user_input
     # Now get all the literal search params (i.e params to be passed "as is"
@@ -1148,6 +1188,8 @@ def _resolve_hashes(formatted_query_param):
         ind_open = formatted_query_param.find('}["')
         ind_close = formatted_query_param.find('"]', ind_open)
         hash_start = formatted_query_param[:ind_open].rfind(": {") + 2
+        if hash_start < 2:
+            hash_start = formatted_query_param[:ind_open].rfind("{")
         h = orjson.loads(formatted_query_param[hash_start : ind_open + 1])
         # find key and get value
         ind_key_start = formatted_query_param.find('"', ind_open) + 1

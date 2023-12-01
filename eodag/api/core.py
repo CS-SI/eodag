@@ -1496,7 +1496,13 @@ class EODataAccessGateway:
 
         return search_plugins, kwargs
 
-    def _do_search(self, search_plugin, count=True, raise_errors=False, **kwargs):
+    def _do_search(
+        self,
+        search_plugin,
+        count=True,
+        raise_errors=False,
+        **kwargs,
+    ):
         """Internal method that performs a search on a given provider.
 
         :param search_plugin: A search plugin
@@ -1537,6 +1543,12 @@ class EODataAccessGateway:
             if need_auth and auth_plugin and can_authenticate:
                 search_plugin.auth = auth_plugin.authenticate()
 
+            variable = kwargs.pop("variable", None)
+            if variable:
+                split_param = getattr(
+                    search_plugin.config, "assets_split_parameter", "variable"
+                )
+                kwargs[split_param] = variable
             res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
             # Only do the pagination computations when it makes sense. For example,

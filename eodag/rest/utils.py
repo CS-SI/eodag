@@ -426,6 +426,7 @@ def search_products(product_type, arguments, stac_formatted=True):
             "end": dtend,
             "geom": geom,
             "provider": provider,
+            "server_mode": True,
         }
 
         if stac_formatted:
@@ -475,7 +476,7 @@ def search_products(product_type, arguments, stac_formatted=True):
     return response
 
 
-def search_product_by_id(uid, product_type=None, provider=None):
+def search_product_by_id(uid, product_type=None, provider=None, variable=None):
     """Search a product by its id
 
     :param uid: The uid of the EO product
@@ -484,6 +485,8 @@ def search_product_by_id(uid, product_type=None, provider=None):
     :type product_type: str
     :param provider: (optional) The provider to be used
     :type provider: str
+    :param variable: value of the variable that should be queried for the product
+    :type variable: str
     :returns: A search result
     :rtype: :class:`~eodag.api.search_result.SearchResult`
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
@@ -491,7 +494,11 @@ def search_product_by_id(uid, product_type=None, provider=None):
     """
     try:
         products, total = eodag_api.search(
-            id=uid, productType=product_type, provider=provider
+            id=uid,
+            productType=product_type,
+            provider=provider,
+            variable=variable,
+            server_mode=True,
         )
         return products
     except ValidationError:
@@ -597,7 +604,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
+def download_stac_item_by_id_stream(catalogs, item_id, provider=None, variable=None):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -606,8 +613,8 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     :type item_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :param zip: if the downloaded filed should be zipped
-    :type zip: str
+    :param variable: value of the variable that should be queried
+    :type variable: str
     :returns: a stream of the downloaded data (either as a zip or the individual assets)
     :rtype: StreamingResponse
     """
@@ -618,7 +625,10 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     provider_product_type_config = search_plugin.config.products.get(
         product_type, {}
     ) or search_plugin.config.products.get(GENERIC_PRODUCT_TYPE, {})
-    if provider_product_type_config.get("storeDownloadUrl", False):
+    if (
+        provider_product_type_config.get("storeDownloadUrl", False)
+        and item_id[:3] != "ATM"
+    ):
         if item_id not in search_plugin.download_info:
             logger.error(f"data for item {item_id} not found")
             raise NotAvailableError(
@@ -626,16 +636,26 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
                 f"the search request to fetch the required data"
             )
         product_data = search_plugin.download_info[item_id]
+        if (
+            "orderLinks" in product_data
+            and "downloadLinks" in product_data
+            and variable
+        ):
+            order_link = product_data["orderLinks"][variable]
+            download_link = product_data["downloadLinks"][variable]
+        else:
+            order_link = product_data["orderLink"]
+            download_link = product_data["downloadLink"]
         properties = {
             "id": item_id,
-            "orderLink": product_data["orderLink"],
-            "downloadLink": product_data["downloadLink"],
+            "orderLink": order_link,
+            "downloadLink": download_link,
             "geometry": "-180 -90 180 90",
         }
         product = EOProduct(provider or product_data["provider"], properties)
     else:
         search_results = search_product_by_id(
-            item_id, product_type=product_type, provider=provider
+            item_id, product_type=product_type, provider=provider, variable=variable
         )
         if len(search_results) > 0:
             product = search_results[0]

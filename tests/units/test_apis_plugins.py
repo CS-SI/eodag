@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import json
 import logging
 import os
 import unittest
@@ -121,6 +122,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def test_plugins_apis_ecmwf_query_dates_missing(self):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_path"] = ""
         results, _ = self.api_plugin.query(
             productType=self.product_type,
             startTimeFromAscendingNode="2020-01-01",
@@ -135,6 +138,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
 
         # missing start & stop
+        setattr(self.api_plugin.config, "products_split_timedelta", {})
         results, _ = self.api_plugin.query(
             productType=self.product_type,
         )
@@ -267,7 +271,6 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_fetch_product_types_list,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
-
         dag = EODataAccessGateway()
         dag.set_preferred_provider("ecmwf")
         output_data_path = os.path.join(os.path.expanduser("~"), "data")
@@ -372,6 +375,34 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         assert mock_ecmwfdataserver_retrieve.call_count == 2
         assert len(paths) == 2
+
+    def test_plugins_apis_ecmwf_split_products(self):
+        """Ecmwf.query must split products by month"""
+        split_config = {"param": "month", "duration": 1}
+        setattr(self.api_plugin.config, "products_split_timedelta", split_config)
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_path"] = ""
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-04-02",
+            param="59/134",
+        )
+        self.assertEqual(4, len(results))
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-04-01"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-04-30"
+        )
+        eoproduct = results[1]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-03-01"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-03-31"
+        )
 
 
 class TestApisPluginUsgsApi(BaseApisPluginTest):
@@ -637,9 +668,6 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         self.product_dataset = "cams-global-reanalysis-eac4"
         self.product_type_params = {
             "dataset": self.product_dataset,
-            "stream": "oper",
-            "class": "mc",
-            "expver": "0001",
             "variable": [
                 "dust_aerosol_0.03-0.55um_mixing_ratio",
                 "dust_aerosol_0.55-0.9um_mixing_ratio",
@@ -699,6 +727,8 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
     def test_plugins_apis_cds_query_dates_missing(self):
         """CdsApi.query must use default dates if missing"""
         # given start & stop
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_url"] = ""
         results, _ = self.api_plugin.query(
             productType=self.product_type,
             startTimeFromAscendingNode="2020-01-01",
@@ -713,6 +743,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
 
         # missing start & stop
+        setattr(self.api_plugin.config, "products_split_timedelta", {})
         results, _ = self.api_plugin.query(
             productType=self.product_type,
         )
@@ -771,6 +802,8 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
 
     def test_plugins_apis_cds_query_with_producttype(self):
         """CdsApi.query must build a EOProduct from input parameters with predefined product type"""
+        products = getattr(self.api_plugin.config, "products")
+        products[self.product_type]["constraints_file_url"] = ""
         results, _ = self.api_plugin.query(
             **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
         )
@@ -912,3 +945,140 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         assert mock_cds_download.call_count == len(eoproducts)
         assert len(paths) == len(eoproducts)
+
+    def test_plugins_apis_cds_split_products(self):
+        """cds.query must split products by month"""
+        api_plugin = self.get_search_plugin(provider="cop_cds")
+        split_config = {"param": "month", "duration": 1}
+        setattr(api_plugin.config, "products_split_timedelta", split_config)
+        products = getattr(api_plugin.config, "products")
+        constraints = [
+            {
+                "day": [
+                    "01",
+                    "02",
+                    "03",
+                    "04",
+                    "05",
+                    "06",
+                    "07",
+                    "08",
+                    "09",
+                    "10",
+                    "11",
+                    "12",
+                    "13",
+                    "14",
+                    "15",
+                    "16",
+                    "17",
+                    "18",
+                    "19",
+                    "20",
+                    "21",
+                    "22",
+                    "23",
+                    "24",
+                    "25",
+                    "26",
+                    "27",
+                    "28",
+                    "29",
+                ],
+                "month": ["02", "03", "04"],
+                "product_type": ["reanalysis"],
+                "time": [
+                    "00:00",
+                    "01:00",
+                    "02:00",
+                    "03:00",
+                    "04:00",
+                    "05:00",
+                    "06:00",
+                    "07:00",
+                    "08:00",
+                    "09:00",
+                    "10:00",
+                    "11:00",
+                    "12:00",
+                    "13:00",
+                    "14:00",
+                    "15:00",
+                    "16:00",
+                    "17:00",
+                    "18:00",
+                    "19:00",
+                    "20:00",
+                    "21:00",
+                    "22:00",
+                    "23:00",
+                ],
+                "variable": [
+                    "geopotential",
+                    "surface_pressure",
+                    "total_column_water",
+                    "total_column_water_vapour",
+                    "soil_temperature_level_1",
+                    "significant_wave_height_of_first_swell_partition",
+                    "mean_wave_direction_of_first_swell_partition",
+                ],
+                "year": [
+                    "1940",
+                    "1944",
+                    "1948",
+                    "1952",
+                    "1956",
+                    "1960",
+                    "1964",
+                    "1968",
+                    "1972",
+                    "1976",
+                    "1980",
+                    "1984",
+                    "1988",
+                    "1992",
+                    "1996",
+                    "2000",
+                    "2004",
+                    "2008",
+                    "2012",
+                    "2016",
+                    "2020",
+                ],
+            }
+        ]
+        with open("constraints.json", "w") as f:
+            f.write(json.dumps(constraints))
+        products["ERA5_SL"]["constraints_file_path"] = "constraints.json"
+        results, _ = api_plugin.query(
+            productType="ERA5_SL",
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-04-02",
+            variable=["geopotential", "surface_pressure"],
+        )
+        self.assertEqual(3, len(results))
+        eoproduct = results[2]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-02-01T00:00:00Z"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-02-29T00:00:00Z",
+        )
+        eoproduct = results[1]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-03-01T00:00:00Z"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-03-29T00:00:00Z",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-04-01T00:00:00Z"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-04-29T00:00:00Z",
+        )
+        os.remove("constraints.json")

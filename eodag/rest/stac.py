@@ -178,6 +178,21 @@ class StacItem(StacCommon):
             **kwargs,
         )
 
+    def __add_provider_and_variable_to_url(self, url, variable=None):
+        parts = urlparse(url)
+        query_dict = parse_qs(parts.query)
+        if self.provider:
+            query_dict.update(provider=self.provider)
+
+        if variable:
+            query_dict.update(variable=variable)
+        without_arg_url = (
+            f"{parts.scheme}://{parts.netloc}{parts.path}"
+            if parts.scheme
+            else f"{parts.netloc}{parts.path}"
+        )
+        return f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+
     def __get_item_list(self, search_results, catalog):
         """Build STAC items list from EODAG search results
 
@@ -212,6 +227,15 @@ class StacItem(StacCommon):
 
         item_list = []
         for product in search_results:
+            download_assets = {}
+            if "downloadLinks" in product.properties:
+                for key, link in product.properties["downloadLinks"].items():
+                    asset = {
+                        "href": item_model["assets"]["downloadLink"]["href"],
+                        "title": "Download " + key,
+                    }
+                    download_assets[key] = asset
+
             # parse jsonpath
             provider_dict = jsonpath_parse_dict_items(
                 provider_model,
@@ -229,23 +253,30 @@ class StacItem(StacCommon):
                     "providers": [provider_dict],
                 },
             )
+            # if several assets are available for download
+            # -> replace asset with key download link with available assets
+            if len(download_assets) > 0:
+                product_item["assets"].pop("downloadLink")
+                product_item["assets"].update(download_assets)
+
             # add origin assets to product assets
             origin_assets = product_item["assets"].pop("origin_assets")
             if getattr(product, "assets", False):
                 product_item["assets"] = dict(product_item["assets"], **origin_assets)
             # append provider query-arg to download link if specified
-            if self.provider:
-                parts = urlparse(product_item["assets"]["downloadLink"]["href"])
-                query_dict = parse_qs(parts.query)
-                query_dict.update(provider=self.provider)
-                without_arg_url = (
-                    f"{parts.scheme}://{parts.netloc}{parts.path}"
-                    if parts.scheme
-                    else f"{parts.netloc}{parts.path}"
-                )
-                product_item["assets"]["downloadLink"][
-                    "href"
-                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+            if self.provider or "downloadLinks" in product.properties:
+                if "downloadLink" in product_item["assets"]:
+                    product_item["assets"]["downloadLink"][
+                        "href"
+                    ] = self.__add_provider_and_variable_to_url(
+                        product_item["assets"]["downloadLink"]["href"]
+                    )
+                else:
+                    for key, asset in product_item["assets"].items():
+                        if "Download" in asset["title"]:
+                            asset["href"] = self.__add_provider_and_variable_to_url(
+                                asset["href"], key
+                            )
 
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
@@ -284,11 +315,10 @@ class StacItem(StacCommon):
         :type search_results: :class:`~eodag.api.search_result.SearchResult`
         :param catalog: STAC catalog dict used for parsing item metadata
         :type catalog: dict
-        :returns: Items dictionnary
+        :returns: Items dictionary
         :rtype: dict
         """
         items_model = deepcopy(self.stac_config["items"])
-
         search_results.numberMatched = search_results.properties["totalResults"]
         search_results.numberReturned = len(search_results)
 
