@@ -1186,7 +1186,7 @@ def add_provider_product_type_queryables(
         ).format(product_type=provider_product_type)
 
     if not queryables_url:
-        logger.warning("no url for queryables found for provider %s", provider)
+        logger.info("no url was found for %s on %s provider-specific queryables", product_type, provider)
         return {}
     try:
         if hasattr(search_plugin, "auth"):
