@@ -28,13 +28,10 @@ import requests
 from requests import RequestException
 from shapely import geometry, wkb, wkt
 from shapely.errors import ShapelyError
-from shapely.geometry.base import BaseGeometry
 
 from eodag.api.product._assets import AssetsDict
 from eodag.api.product.drivers import DRIVERS, NoDriver
-from eodag.api.product.drivers.base import DatasetDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
-from eodag.plugins.authentication.base import Authentication
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -46,7 +43,11 @@ from eodag.utils import (
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
 
 if TYPE_CHECKING:
+    from shapely.geometry.base import BaseGeometry
+
+    from eodag.api.product.drivers.base import DatasetDriver
     from eodag.plugins.apis.base import Api
+    from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
 
 try:
