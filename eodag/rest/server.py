@@ -59,6 +59,7 @@ from eodag.rest.utils import (
     get_stac_conformance,
     get_stac_extension_oseo,
     get_stac_item_by_id,
+    record_searched_product_type,
     search_stac_items,
     telemetry_init,
 )
@@ -712,6 +713,11 @@ def stac_search(
 
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
+
+    # metrics
+    collections = arguments.get("collections", None)
+    product_type = collections.split(",")[0] if collections else None
+    record_searched_product_type(product_type)
 
     response = search_stac_items(
         url=url,
