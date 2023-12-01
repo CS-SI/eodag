@@ -391,17 +391,17 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         self.assertEqual(4, len(results))
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-04-01"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-31"
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-04-30"
         )
         eoproduct = results[1]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "2020-02-01"
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-03-01"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2020-02-29"
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-03-31"
         )
 
 
