@@ -1216,7 +1216,7 @@ def add_provider_queryables(provider: str, queryables: dict):
     else:
         queryables_url = getattr(search_plugin.config, "queryables_endpoint", "")
     if not queryables_url:
-        logger.warning("no url for queryables found for provider %s", provider)
+        logger.info("no url was found for %s provider-specific queryables", provider)
         return queryables
     try:
         if hasattr(search_plugin, "auth"):
