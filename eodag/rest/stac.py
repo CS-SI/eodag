@@ -222,18 +222,18 @@ class StacItem(StacCommon):
                 },
             )
 
+            product_dict = deepcopy(product.__dict__)
+            product_dict["assets"] = product.assets.as_dict()
+
             product_item = jsonpath_parse_dict_items(
                 item_model,
                 {
-                    "product": product.__dict__,
+                    "product": product_dict,
                     "providers": [provider_dict],
                 },
             )
-            # add origin assets to product assets
-            origin_assets = product_item["assets"].pop("origin_assets")
-            if getattr(product, "assets", False):
-                product_item["assets"] = dict(product_item["assets"], **origin_assets)
-            # append provider query-arg to download link if specified
+
+            # append provider query-arg to download link
             if self.provider:
                 parts = urlparse(product_item["assets"]["downloadLink"]["href"])
                 query_dict = parse_qs(parts.query)
@@ -246,6 +246,30 @@ class StacItem(StacCommon):
                 product_item["assets"]["downloadLink"][
                     "href"
                 ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+
+            # add origin assets to product assets
+            origin_assets = product_item["assets"].pop("origin_assets")
+            if getattr(product, "assets", False):
+                # replace origin asset urls with eodag-server ones
+                for asset_key, asset_value in origin_assets.items():
+
+                    parts = urlparse(product_item["assets"]["downloadLink"]["href"])
+                    if parts.query:
+                        query_dict = parse_qs(parts.query)
+                        without_arg_url = (
+                            f"{parts.scheme}://{parts.netloc}{parts.path}"
+                            if parts.scheme
+                            else f"{parts.netloc}{parts.path}"
+                        ) + f"/{asset_key}"
+                        origin_assets[asset_key][
+                            "href"
+                        ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                    else:
+                        origin_assets[asset_key][
+                            "href"
+                        ] = f"{product_item['assets']['downloadLink']['href']}/{asset_key}"
+
+                product_item["assets"] = dict(product_item["assets"], **origin_assets)
 
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
@@ -478,11 +502,14 @@ class StacItem(StacCommon):
             catalogs=[product_type],
         )
 
+        product_dict = deepcopy(product.__dict__)
+        product_dict["assets"] = product.assets.as_dict()
+
         # parse jsonpath
         product_item = jsonpath_parse_dict_items(
             item_model,
             {
-                "product": product.__dict__,
+                "product": product_dict,
                 "providers": provider_dict,
             },
         )

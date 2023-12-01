@@ -597,7 +597,7 @@ def get_stac_item_by_id(url, item_id, catalogs, root="/", provider=None):
         return None
 
 
-def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
+def download_stac_item_by_id_stream(catalogs, item_id, provider=None, asset=None):
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -606,9 +606,7 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     :type item_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
-    :param zip: if the downloaded filed should be zipped
-    :type zip: str
-    :returns: a stream of the downloaded data (either as a zip or the individual assets)
+    :returns: a stream of the downloaded data (zip file)
     :rtype: StreamingResponse
     """
     product_type = catalogs[0]
@@ -658,13 +656,13 @@ def download_stac_item_by_id_stream(catalogs, item_id, provider=None):
     )
     try:
         download_stream_dict = product.downloader._stream_download_dict(
-            product, auth=auth
+            product, auth=auth, asset=asset
         )
     except NotImplementedError:
         logger.warning(
             f"Download streaming not supported for {product.downloader}: downloading locally then delete"
         )
-        product_path = eodag_api.download(product, extract=False)
+        product_path = eodag_api.download(product, extract=False, asset=asset)
         if os.path.isdir(product_path):
             # do not zip if dir contains only one file
             all_filenames = next(os.walk(product_path), (None, None, []))[2]
