@@ -433,9 +433,9 @@ class TestStacUtils(unittest.TestCase):
 
         response = self.rest_utils.search_stac_items(
             url="http://foo/search",
-            arguments={},
+            arguments={"collections": "S2_MSI_L2A"},
             root="http://foo",
-            catalogs=["S2_MSI_L2A"],
+            catalogs=[],
             provider="earth_search",
         )
 
@@ -445,11 +445,18 @@ class TestStacUtils(unittest.TestCase):
         self.assertTrue(
             "downloadLink", "thumbnail" in response["features"][0]["assets"].keys()
         )
-        # check that assets from the provider response search are also in the response
+        # check that assets from the provider response search are reformatted in the response
+        product_id = self.earth_search_resp_search_json["features"][0]["properties"][
+            "sentinel:product_id"
+        ]
         for (k, v) in self.earth_search_resp_search_json["features"][0][
             "assets"
         ].items():
-            self.assertIn((k, v), response["features"][0]["assets"].items())
+            self.assertIn(k, response["features"][0]["assets"].keys())
+            self.assertEqual(
+                response["features"][0]["assets"][k]["href"],
+                f"http://foo/collections/S2_MSI_L2A/items/{product_id}/download/{k}?provider=earth_search",
+            )
         # preferred provider should not be changed
         self.assertEqual("peps", self.rest_utils.eodag_api.get_preferred_provider()[0])
 
