@@ -2014,51 +2014,34 @@ class EODataAccessGateway:
         default_queryables = {"productType", "start", "end", "geom", "locations", "id"}
         if provider is None and product_type is None:
             return default_queryables
-
-        if provider is None:
-            providers = self.providers_config.values()
-        elif provider in self.providers_config:
-            providers = [self.providers_config[provider]]
-        else:
-            raise UnsupportedProvider(
-                f"This provider is not recognised by eodag: {provider}"
-            )
+        
+        plugins = self._plugins_manager.get_search_plugins(product_type, provider)
 
         # dictionary of the queryable properties of the providers supporting the given product type
         all_queryable_properties = dict()
-        for provider_config in providers:
-            if hasattr(provider_config, "search"):
-                plugin_config = provider_config.search
-            elif hasattr(provider_config, "api"):
-                plugin_config = provider_config.api
-            else:
-                continue
+        for plugin in plugins:
+            if product_type and product_type not in plugin.config.products.keys():
+                raise UnsupportedProductType(product_type)
+            
 
             provider_queryables = set(default_queryables)
-            # list of all provider-specific queryables
-            mapping = dict(plugin_config.metadata_mapping)
-            for key, value in mapping.items():
-                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-                    provider_queryables.add(key)
-            # list of all product_type-specific queryables
-            mapping = dict(
-                provider_config.products.get(product_type, {}).get(
-                    "metadata_mapping", {}
+
+            if product_type:
+                # list of all product_type-specific queryables
+                mapping = dict(
+                    plugin.config.products.get(product_type, {}).get(
+                        "metadata_mapping", {}
+                    )
                 )
-            )
+            else:
+                # list of all provider-specific queryables
+                mapping = dict(plugin.config.metadata_mapping)
+
             for key, value in mapping.items():
                 if isinstance(value, list) and "TimeFromAscendingNode" not in key:
                     provider_queryables.add(key)
 
-            # add only the providers that support the given product type
-            if product_type is None:
-                all_queryable_properties[provider_config.name] = provider_queryables
-            elif product_type in provider_config.products:
-                all_queryable_properties[provider_config.name] = provider_queryables
-
-        if product_type is not None and len(all_queryable_properties) == 0:
-            # a product_type was given, but it was not found in any provider
-            raise UnsupportedProductType(product_type)
+            all_queryable_properties[plugin.provider] = provider_queryables
 
         if provider is None:
             # intersection of the queryables among the providers
