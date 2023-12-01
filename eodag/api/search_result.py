@@ -18,18 +18,21 @@
 from __future__ import annotations
 
 from collections import UserList
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from shapely.geometry import GeometryCollection, shape
-from shapely.geometry.base import BaseGeometry
 
 from eodag.api.product import EOProduct
-from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
+
+if TYPE_CHECKING:
+    from shapely.geometry.base import BaseGeometry
+
+    from eodag.plugins.crunch.base import Crunch
 
 
 class SearchResult(UserList):
@@ -39,11 +42,10 @@ class SearchResult(UserList):
     :type products: list(:class:`~eodag.api.product._product.EOProduct`)
     """
 
-    products: List[EOProduct]
+    data: List[EOProduct]
 
     def __init__(self, products: List[EOProduct]) -> None:
         super(SearchResult, self).__init__(products)
-        self.products = products
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -55,7 +57,7 @@ class SearchResult(UserList):
         :returns: The result of the application of the crunching method to the EO products
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
-        crunched_results = cruncher.proceed(self.products, **search_params)
+        crunched_results = cruncher.proceed(self.data, **search_params)
         return SearchResult(crunched_results)
 
     def filter_date(
