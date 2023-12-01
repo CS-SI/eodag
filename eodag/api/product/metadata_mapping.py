@@ -23,7 +23,17 @@ import logging
 import re
 from datetime import datetime, timedelta
 from string import Formatter
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import geojson
 import orjson
@@ -35,10 +45,8 @@ from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
-from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
-from eodag.config import PluginConfig
 from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
@@ -50,6 +58,11 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+
+if TYPE_CHECKING:
+    from shapely.geometry.base import BaseGeometry
+
+    from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
 
