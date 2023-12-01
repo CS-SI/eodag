@@ -1214,7 +1214,7 @@ def add_provider_queryables(provider: str, queryables: dict):
             "/search", "/queryables"
         )
     else:
-        queryables_url = getattr(search_plugin.config, "queryables_endpoint", "")
+        queryables_url = ""
     if not queryables_url:
         logger.info("no url was found for %s provider-specific queryables", provider)
         return queryables
@@ -1271,12 +1271,14 @@ def add_provider_product_type_queryables(
             api_url + "collections/" + provider_product_type + "/queryables"
         )
     else:
-        queryables_url = getattr(
-            search_plugin.config, "queryables_endpoint", ""
-        ).format(product_type=provider_product_type)
+        queryables_url = ""
 
     if not queryables_url:
-        logger.info("no url was found for %s on %s provider-specific queryables", product_type, provider)
+        logger.info(
+            "no url was found for %s on %s provider-specific queryables",
+            product_type,
+            provider,
+        )
         return {}
     try:
         if hasattr(search_plugin, "auth"):
