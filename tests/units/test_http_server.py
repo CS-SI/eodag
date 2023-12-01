@@ -30,7 +30,9 @@ from shapely.geometry import box
 
 from eodag.utils import USER_AGENT, MockResponse
 from eodag.utils.exceptions import TimeOutError
+
 from tests import mock
+
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     HTTP_REQ_TIMEOUT,
@@ -1121,8 +1123,8 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.return_value = MockResponse(
             provider_queryables, status_code=200
         )
-
         # no provider specified (only 1 available for the moment) : queryables intresection returned
+
         res_no_provider = self._request_valid(
             "collections/S1_SAR_GRD/queryables",
             check_links=False,
