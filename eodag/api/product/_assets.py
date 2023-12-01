@@ -81,4 +81,4 @@ class Asset(UserDict):
         :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
         :type kwargs: Any
         """
-        self.product.download(asset=self.key, **kwargs)
+        return self.product.download(asset=self.key, **kwargs)

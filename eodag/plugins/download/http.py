@@ -689,14 +689,10 @@ class HTTPDownload(Download):
             }
             assets_values = [a for a in filtered_assets.values() if "href" in a]
             if not assets_values:
-                logger.error(
-                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
-                )
                 raise NotAvailableError(
                     rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
                 )
             else:
-                logger.error(f"FOUND {assets_values}")
                 return assets_values
         else:
             return [a for a in getattr(product, "assets", {}).values() if "href" in a]
