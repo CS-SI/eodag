@@ -400,9 +400,11 @@ def get_sort_by(
             and eodag_sort_param
             not in search_plugin.config.sort["sort_by_mapping"].keys()
         ):
+            params = set(search_plugin.config.sort["sort_by_mapping"].keys())
+            params.add(stac_sort_param)
             raise ValidationError(
                 "'{}' parameter is not sortable with {}. "
-                "Here is the list of sortable parameters with {}: `{}`".format(
+                "Here is the list of sortable parameters with {}: {}".format(
                     stac_sort_param,
                     provider,
                     provider,
@@ -410,7 +412,7 @@ def get_sort_by(
                         k for k in search_plugin.config.sort["sort_by_mapping"].keys()
                     ),
                 ),
-                search_plugin.config.sort["sort_by_mapping"].keys(),
+                params,
             )
         sort_order = "DESC" if sort_by_param[:1] == "-" else "ASC"
 
@@ -424,11 +426,11 @@ def get_sort_by(
                 ignore_param = True
                 if sort_by_param[1] != sort_order:
                     raise ValidationError(
-                        "`{}` parameter is called several times to sort results with different sorting orders. "
+                        "'{}' parameter is called several times to sort results with different sorting orders. "
                         "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
                             eodag_sort_param
                         ),
-                        [eodag_sort_param],
+                        set(eodag_sort_param),
                     )
         if ignore_param:
             continue

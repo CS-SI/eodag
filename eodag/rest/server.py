@@ -87,6 +87,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.rest.server")
 CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")
+ERRORS_WITH_500_STATUS_CODE = {
+    "MisconfiguredError",
+    "AuthenticationError",
+    "DownloadError",
+    "RequestError",
+}
 
 
 class APIRouter(FastAPIRouter):
@@ -238,18 +244,23 @@ async def default_exception_handler(
 @app.exception_handler(ValidationError)
 async def handle_invalid_usage_with_validation_error(request: Request, error):
     """Invalid usage [400] errors handle with ValidationError"""
+    if error.errors_to_raise:
+        error.parameters = set()
+        error.message = (
+            "No result could be obtained from any available provider "
+            "and the following error(s) was (were) raised:"
+        )
+        for e in error.errors_to_raise:
+            if e.__class__.__name__ not in ERRORS_WITH_500_STATUS_CODE:
+                error.message += f"\n- {e.provider}: {e.args[0]}"
+                if getattr(e, "parameters", set()):
+                    error.parameters.update(e.parameters)
+            else:
+                error.message += f"\n- {e.provider}: a internal error appeared"
     if error.parameters:
-        # convert specific lists like "dict_keys" to "list"
-        error.parameters = list(error.parameters)
-        start_index = error.message.index("`")
-        end_index = error.message.index("`", start_index + 1)
-        providers_old_message = error.message[start_index + 1 : end_index]
-        providers_new_message = ", ".join(
-            rename_to_stac_standard(eodag_param) for eodag_param in error.parameters
-        )
-        error.message = error.message.replace(
-            providers_old_message, providers_new_message
-        )
+        for error_param in error.parameters:
+            stac_param = rename_to_stac_standard(error_param)
+            error.message = error.message.replace(error_param, stac_param)
     logger.warning(traceback.format_exc())
     return await default_exception_handler(
         request,
