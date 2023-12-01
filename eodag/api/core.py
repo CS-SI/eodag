@@ -28,10 +28,9 @@ import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from shapely.geometry.base import BaseGeometry
 from whoosh import analysis, fields
 from whoosh.fields import Schema
-from whoosh.index import Index, create_in, exists_in, open_dir
+from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
@@ -57,9 +56,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
-    DownloadedCallback,
     MockResponse,
-    ProgressCallback,
     _deprecated,
     deepcopy,
     get_geometry_from_various,
@@ -79,10 +76,14 @@ from eodag.utils.exceptions import (
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
+    from shapely.geometry.base import BaseGeometry
+    from whoosh.index import Index
+
     from eodag.api.product import EOProduct
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
+    from eodag.utils import DownloadedCallback, ProgressCallback
 
 logger = logging.getLogger("eodag.core")
 
