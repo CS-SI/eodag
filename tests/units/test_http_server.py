@@ -28,8 +28,8 @@ import geojson
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
-from eodag.utils import USER_AGENT
-from tests import mock
+from eodag.utils import USER_AGENT, MockResponse
+from tests import TEST_RESOURCES_PATH, mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     TEST_RESOURCES_PATH,
@@ -1055,7 +1055,14 @@ class RequestTestCase(unittest.TestCase):
     @mock.patch("eodag.rest.utils.requests.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):
         """Request a collection-specific list of queryables for a given provider."""
-        self._request_valid(
+        queryables_path = os.path.join(TEST_RESOURCES_PATH, "stac/queryables.json")
+        with open(queryables_path) as f:
+            provider_queryables = json.load(f)
+        mock_requests_get.return_value = MockResponse(
+            provider_queryables, status_code=200
+        )
+
+        res = self._request_valid(
             f"collections/{self.tested_product_type}/queryables?provider=planetary_computer",
             check_links=False,
         )
@@ -1064,3 +1071,9 @@ class RequestTestCase(unittest.TestCase):
             f"{self.tested_product_type}/queryables",
             headers=USER_AGENT,
         )
+        self.assertEqual(30, len(res["properties"]))
+        # property added from provider queryables
+        self.assertIn("s1:processing_level", res["properties"])
+        # property updated with info from provider queryables
+        self.assertIn("platform", res["properties"])
+        self.assertEqual("string", res["properties"]["platform"]["type"][0])

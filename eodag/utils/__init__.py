@@ -80,6 +80,7 @@ from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
+from requests import HTTPError
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
@@ -1179,6 +1180,11 @@ class MockResponse:
     def json(self) -> Any:
         """Return json data"""
         return self.json_data
+
+    def raise_for_status(self):
+        """raises an exception when the status is not ok"""
+        if self.status_code != 200:
+            raise HTTPError()
 
 
 def md5sum(file_path: str) -> str:

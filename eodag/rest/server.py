@@ -483,7 +483,7 @@ def list_collection_queryables(
             provider, collection_id, queryables
         )
 
-    return queryables
+    return jsonable_encoder(queryables)
 
 
 @router.get(
@@ -692,7 +692,7 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Queryab
     if provider:
         queryables = add_provider_queryables(provider, queryables)
 
-    return queryables
+    return jsonable_encoder(queryables)
 
 
 @router.get(
