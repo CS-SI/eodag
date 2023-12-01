@@ -926,7 +926,9 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-    def _handle_asset_exception(self, e: RequestException, asset: Dict[str, Any], raise_errors: bool = False) -> None:
+    def _handle_asset_exception(
+        self, e: RequestException, asset: Dict[str, Any], raise_errors: bool = False
+    ) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):

@@ -648,7 +648,10 @@ def get_stac_item_by_id(
 
 
 def download_stac_item_by_id_stream(
-    catalogs: List[str], item_id: str, provider: Optional[str] = None, asset: Optional[str] = None
+    catalogs: List[str],
+    item_id: str,
+    provider: Optional[str] = None,
+    asset: Optional[str] = None,
 ) -> StreamingResponse:
     """Download item
 
