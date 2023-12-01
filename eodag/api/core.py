@@ -1805,6 +1805,9 @@ class EODataAccessGateway:
             if not raise_errors:
                 log_msg += " Raise verbosity of log messages for details"
             logger.info(log_msg)
+            # keep only the message from exception args
+            if len(e.args) > 1:
+                e.args = (e.args[0],)
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next

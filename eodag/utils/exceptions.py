@@ -23,10 +23,13 @@ if TYPE_CHECKING:
     from typing import Optional, Set, Tuple
 
 
+from typing import Set
+
+
 class ValidationError(Exception):
     """Error validating data"""
 
-    def __init__(self, message: str, parameters: list = []) -> None:
+    def __init__(self, message: str, parameters: Set[str] = set()) -> None:
         self.message = message
         self.parameters = parameters
 
@@ -80,12 +83,13 @@ class RequestError(Exception):
     """An error indicating that a request has failed. Usually eodag functions
     and methods should catch and skip this"""
 
-    history: Set[Tuple[Exception, str]] = set()
+    history: Set[Tuple[str, Exception]] = set()
+    parameters: Set[str] = set()
 
     def __str__(self):
         repr = super().__str__()
         for err_tuple in self.history:
-            repr += f"\n- {str(err_tuple)}"
+            repr += f"- {str(err_tuple)}"
         return repr
 
 

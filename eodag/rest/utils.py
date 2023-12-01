@@ -350,7 +350,7 @@ def get_geometry(arguments: Dict[str, Any]) -> Optional[BaseGeometry]:
 
 
 def get_sort_by(
-    arguments: Union[dict, None], provider: Union[str, None]
+    arguments: Dict[str, Any], provider: Optional[str]
 ) -> Optional[List[Tuple[str, str]]]:
     """Get sortby criteria from search arguments
 
@@ -363,17 +363,6 @@ def get_sort_by(
     if sort_by_params_tmp is None:
         return None
 
-    sorting_supported_by_provider = False
-    if provider is not None:
-        search_plugin = next(
-            eodag_api._plugins_manager.get_search_plugins(provider=provider)
-        )
-        if not hasattr(search_plugin.config, "sort"):
-            raise ValidationError(
-                "{} does not support sorting feature".format(provider)
-            )
-        else:
-            sorting_supported_by_provider = True
     if not sort_by_params_tmp:
         raise ValidationError("sortby argument is empty, please fill in it")
     sort_by_params = []
@@ -388,66 +377,9 @@ def get_sort_by(
         prefix = "properties."
         if stac_sort_param.startswith(prefix):
             stac_sort_param = stac_sort_param[len(prefix) :]
-        if (
-            stac_sort_param not in stac_config["item"]["properties"]
-            and stac_sort_param != "id"
-        ):
-            raise ValidationError(
-                "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
-                    stac_sort_param
-                )
-            )
-        eodag_sort_param = rename_from_stac_to_eodag_standard(stac_sort_param)
-        if (
-            sorting_supported_by_provider
-            and eodag_sort_param
-            not in search_plugin.config.sort["sort_by_mapping"].keys()
-        ):
-            raise ValidationError(
-                "'{}' parameter is not sortable with {}. "
-                "Here is the list of sortable parameters with {}: `{}`".format(
-                    stac_sort_param,
-                    provider,
-                    provider,
-                    ", ".join(
-                        k for k in search_plugin.config.sort["sort_by_mapping"].keys()
-                    ),
-                ),
-                search_plugin.config.sort["sort_by_mapping"].keys(),
-            )
+        eodag_sort_param = EODAGSearch.to_eodag(stac_sort_param)
         sort_order = "DESC" if sort_by_param[:1] == "-" else "ASC"
-
-        # handle cases with a parameter called several times to sort
-        ignore_param = False
-        for sort_by_param in sort_by_params:
-            # if two sorting parameters are equal, we can not add both:
-            # either their sorting order is also equal, then it would be a duplication in the request,
-            # or their sorting order is different, then there would be a contradiction that would raise an error
-            if sort_by_param[0] == eodag_sort_param:
-                ignore_param = True
-                if sort_by_param[1] != sort_order:
-                    raise ValidationError(
-                        "`{}` parameter is called several times to sort results with different sorting orders. "
-                        "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
-                            eodag_sort_param
-                        ),
-                        [eodag_sort_param],
-                    )
-        if ignore_param:
-            continue
-
         sort_by_params.append((eodag_sort_param, sort_order))
-        if (
-            sorting_supported_by_provider
-            and search_plugin.config.sort.get("max_sort_params", None)
-            and len(sort_by_params) > search_plugin.config.sort["max_sort_params"]
-        ):
-            raise ValidationError(
-                "Search results can be sorted by only "
-                "{} parameter(s) with {}".format(
-                    search_plugin.config.sort["max_sort_params"], provider
-                )
-            )
     return sort_by_params
 
 
@@ -617,9 +549,12 @@ def search_products(
         if not products and eodag_api.search_errors:
             search_error = RequestError(
                 "No result could be obtained from any available provider and following "
-                "error(s) appeared while searching:"
+                "error(s) occured while searching:"
             )
             search_error.history = eodag_api.search_errors
+            for one_search_error in eodag_api.search_errors:
+                if getattr(one_search_error[1], "parameters", None) and one_search_error[1].parameters:
+                    search_error.parameters.update(one_search_error[1].parameters)
             raise search_error
 
         products = filter_products(products, arguments, **criterias)
