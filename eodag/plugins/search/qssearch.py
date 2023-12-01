@@ -65,6 +65,7 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
     TimeOutError,
+    ValidationError,
 )
 
 if TYPE_CHECKING:
@@ -619,9 +620,11 @@ class QueryStringSearch(Search):
                     eodag_sort_param
                 ]
             except KeyError:
+                params = set(self.config.sort["sort_by_mapping"].keys())
+                params.add(eodag_sort_param)
                 raise ValidationError(
                     "'{}' parameter is not sortable with {}. "
-                    "Here is the list of sortable parameters with {}: `{}`".format(
+                    "Here is the list of sortable parameters with {}: {}".format(
                         eodag_sort_param,
                         self.provider,
                         self.provider,
@@ -629,7 +632,7 @@ class QueryStringSearch(Search):
                             k for k in self.config.sort["sort_by_mapping"].keys()
                         ),
                     ),
-                    self.config.sort["sort_by_mapping"].keys(),
+                    params,
                 )
             sort_order = sort_by_param[1]
             if sort_order[:3].upper() == "ASC":
@@ -638,11 +641,11 @@ class QueryStringSearch(Search):
                 sort_by_param = (provider_sort_param, "descending")
             else:
                 raise ValidationError(
-                    "Sorting order of `{}` is not correct: it must be set to 'ASC' (ASCENDING) or "
+                    "Sorting order of '{}' is not correct: it must be set to 'ASC' (ASCENDING) or "
                     "'DESC' (DESCENDING), got '{}' instead".format(
                         eodag_sort_param, sort_order
                     ),
-                    [eodag_sort_param],
+                    set([eodag_sort_param]),
                 )
 
             # handle cases with a parameter called several times to sort
@@ -655,11 +658,11 @@ class QueryStringSearch(Search):
                     ignore_param = True
                     if sort_by_param[1] != sort_by_param_tmp[1]:
                         raise ValidationError(
-                            "`{}` parameter is called several times to sort results with different sorting orders. "
+                            "'{}' parameter is called several times to sort results with different sorting orders. "
                             "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
                                 eodag_sort_param
                             ),
-                            [eodag_sort_param],
+                            set([eodag_sort_param]),
                         )
             if ignore_param:
                 continue

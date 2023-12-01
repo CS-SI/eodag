@@ -46,6 +46,7 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
+from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.utils import (
     PostSearchSortbyParam,
@@ -61,7 +62,6 @@ from eodag.rest.utils import (
     get_stac_conformance,
     get_stac_extension_oseo,
     get_stac_item_by_id,
-    rename_to_stac_standard,
     search_stac_items,
 )
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
@@ -84,6 +84,12 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("eodag.rest.server")
+ERRORS_WITH_500_STATUS_CODE = {
+    "MisconfiguredError",
+    "AuthenticationError",
+    "DownloadError",
+    "RequestError",
+}
 
 
 class APIRouter(FastAPIRouter):
@@ -233,20 +239,12 @@ async def default_exception_handler(
 
 
 @app.exception_handler(ValidationError)
-async def handle_invalid_usage_with_validation_error(request: Request, error):
-    """Invalid usage [400] errors handle with ValidationError"""
+async def handle_invalid_usage_with_validation_error(request: Request, error: ValidationError) -> ORJSONResponse:
+    """Invalid usage [400] ValidationError handle"""
     if error.parameters:
-        # convert specific lists like "dict_keys" to "list"
-        error.parameters = list(error.parameters)
-        start_index = error.message.index("`")
-        end_index = error.message.index("`", start_index + 1)
-        providers_old_message = error.message[start_index + 1 : end_index]
-        providers_new_message = ", ".join(
-            rename_to_stac_standard(eodag_param) for eodag_param in error.parameters
-        )
-        error.message = error.message.replace(
-            providers_old_message, providers_new_message
-        )
+        for error_param in error.parameters:
+            stac_param = EODAGSearch.to_stac(error_param)
+            error.message = error.message.replace(error_param, stac_param)
     logger.warning(traceback.format_exc())
     return await default_exception_handler(
         request,
@@ -260,7 +258,6 @@ async def handle_invalid_usage_with_validation_error(request: Request, error):
 @app.exception_handler(NoMatchingProductType)
 @app.exception_handler(UnsupportedProductType)
 @app.exception_handler(UnsupportedProvider)
-@app.exception_handler(ValidationError)
 async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResponse:
     """Invalid usage [400] errors handle"""
     logger.warning(traceback.format_exc())
@@ -290,7 +287,7 @@ async def handle_resource_not_found(
 @app.exception_handler(MisconfiguredError)
 @app.exception_handler(AuthenticationError)
 async def handle_auth_error(request: Request, error: Exception) -> ORJSONResponse:
-    """AuthenticationError should be sent as internal server error to the client"""
+    """These errors should be sent as internal server error to the client"""
     logger.error(f"{type(error).__name__}: {str(error)}")
     return await default_exception_handler(
         request,
@@ -302,9 +299,34 @@ async def handle_auth_error(request: Request, error: Exception) -> ORJSONRespons
 
 
 @app.exception_handler(DownloadError)
+async def handle_download_error(request: Request, error: Exception) -> ORJSONResponse:
+    """DownloadError should be sent as internal server error with details to the client"""
+    logger.error(f"{type(error).__name__}: {str(error)}")
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=500,
+            detail=f"{type(error).__name__}: {str(error)}",
+        ),
+    )
+
+
 @app.exception_handler(RequestError)
-async def handle_server_error(request: Request, error: Exception) -> ORJSONResponse:
-    """These errors should be sent as internal server error with details to the client"""
+async def handle_request_error(request: Request, error: RequestError) -> ORJSONResponse:
+    """RequestError should be sent as internal server error with details to the client"""
+    if getattr(error, "history", None) and error.history:
+        error_history_tmp = list(error.history)
+        for i, search_error in enumerate(error_history_tmp):
+            if search_error[1].__class__.__name__ in ERRORS_WITH_500_STATUS_CODE:
+                search_error[1].args = ("an internal error occured",)
+                error_history_tmp[i] = search_error
+                continue
+            if getattr(error, "parameters", None) and error.parameters:
+                for error_param in error.parameters:
+                    stac_param = EODAGSearch.to_stac(error_param)
+                    search_error[1].args = (search_error[1].args[0].replace(error_param, stac_param),)
+                    error_history_tmp[i] = search_error
+        error.history = set(error_history_tmp)
     logger.error(f"{type(error).__name__}: {str(error)}")
     return await default_exception_handler(
         request,
@@ -376,6 +398,7 @@ class SearchBody(BaseModel):
     query: Optional[Dict[str, Any]] = None
     ids: Optional[List[str]] = None
     sortby: Optional[List[PostSearchSortbyParam]] = None
+
 
 @router.get(
     "/collections/{collection_id}/items/{item_id}/download",
