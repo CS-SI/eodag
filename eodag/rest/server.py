@@ -125,7 +125,6 @@ router = APIRouter()
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """API init and tear-down"""
     eodag_api_init()
-    telemetry_init()
     yield
 
 
@@ -735,3 +734,4 @@ def stac_search(
 
 
 app.include_router(router)
+telemetry_init(app)

@@ -42,9 +42,11 @@ from urllib.parse import urlencode
 
 import dateutil.parser
 from dateutil import tz
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from opentelemetry import metrics
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.metrics import CallbackOptions, Observation
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -1208,8 +1210,11 @@ def eodag_api_init() -> None:
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
 
 
-def telemetry_init():
-    """Init telemetry"""
+def telemetry_init(app: FastAPI):
+    """Init telemetry
+
+    :param app: FastAPI to automatically instrument.
+    :type app: FastAPI"""
 
     # Start Prometheus client
     resource = Resource(attributes={SERVICE_NAME: "eodag-serve-rest"})
@@ -1220,6 +1225,10 @@ def telemetry_init():
     meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
     metrics.set_meter_provider(meter_provider)
 
+    # FastAPI instrumentation
+    FastAPIInstrumentor.instrument_app(app, meter_provider=meter_provider)
+
+    # Manual instrumentation
     meter = metrics.get_meter("eodag.core.meter")
     telemetry["search_product_type_total"] = meter.create_counter(
         "eodag.core.search_product_type_total",
