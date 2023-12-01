@@ -46,6 +46,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from eodag.config import load_stac_api_config
 from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.utils import (
+    PostSearchSortbyParam,
+    convert_sortby_to_get_format,
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
@@ -365,7 +367,7 @@ class SearchBody(BaseModel):
     page: Optional[int] = 1
     query: Optional[Dict[str, Any]] = None
     ids: Optional[List[str]] = None
-
+    sortby: Optional[List[PostSearchSortbyParam]] = None
 
 @router.get(
     "/collections/{collection_id}/items/{item_id}/download",
@@ -746,6 +748,8 @@ def stac_search(
         body = {}
     else:
         body = vars(search_body)
+        if body["sortby"] is not None:
+            body["sortby"] = convert_sortby_to_get_format(body["sortby"])
 
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)

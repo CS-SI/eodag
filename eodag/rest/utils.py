@@ -32,6 +32,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     NamedTuple,
     Optional,
     Tuple,
@@ -42,7 +43,9 @@ from urllib.parse import urlencode
 import dateutil.parser
 from dateutil import tz
 from fastapi.responses import StreamingResponse
+from pydantic import ConfigDict
 from shapely.geometry import Polygon, shape
+from typing_extensions import TypedDict
 
 import eodag
 from eodag import EOProduct
@@ -1235,3 +1238,31 @@ def eodag_api_init() -> None:
     # pre-build search plugins
     for provider in eodag_api.available_providers():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
+
+
+class PostSearchSortbyParam(TypedDict):
+    """A class representing a parameter with which we want to sort results and its sorting order in a POST search
+
+    :param field: The name of the parameter with which we want to sort results
+    :type field: str
+    :param direction: The sorting order of the parameter
+    :type direction: str
+    """
+
+    __pydantic_config__ = ConfigDict(extra="forbid")
+
+    field: str
+    direction: Literal["asc", "desc"]
+
+
+def convert_sortby_to_get_format(
+    sortby_post_params: List[PostSearchSortbyParam],
+) -> str:
+    """
+    Convert sortby filter parameter POST syntax to GET syntax
+    """
+    get_format = ""
+    for sortby_post_param in sortby_post_params:
+        prefix = "+" if sortby_post_param["direction"] == "asc" else "-"
+        get_format += prefix + sortby_post_param["field"] + ","
+    return get_format.rstrip(",")
