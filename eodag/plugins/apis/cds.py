@@ -251,7 +251,6 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         )
         try:
             client = self._get_cds_client(**auth_dict)
-            client.retrieve(name=dataset_name, request=download_request, target=fs_path)
             result = client._api(
                 "%s/resources/%s" % (client.url, dataset_name), download_request, "POST"
             )
