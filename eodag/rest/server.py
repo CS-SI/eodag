@@ -15,6 +15,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import io
 import logging
 import os
@@ -23,6 +25,7 @@ import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Awaitable,
@@ -41,9 +44,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse, StreamingResponse
-from fastapi.types import DecoratedCallable
 from pydantic import BaseModel
-from requests import Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
@@ -75,6 +76,11 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
 )
+
+if TYPE_CHECKING:
+    from fastapi.types import DecoratedCallable
+    from requests import Response
+
 
 logger = logging.getLogger("eodag.rest.server")
 CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")

@@ -22,7 +22,7 @@ import logging
 import os
 import re
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import dateutil.parser
@@ -34,14 +34,11 @@ from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from eodag.api.core import EODataAccessGateway
-from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     format_metadata,
     get_metadata_path,
 )
-from eodag.api.search_result import SearchResult
 from eodag.utils import (
     deepcopy,
     dict_items_recursive_apply,
@@ -56,6 +53,12 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     ValidationError,
 )
+
+if TYPE_CHECKING:
+    from eodag.api.core import EODataAccessGateway
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+
 
 logger = logging.getLogger("eodag.rest.stac")
 
