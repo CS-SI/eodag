@@ -6220,7 +6220,7 @@
   url: https://polytope.ecmwf.int/openapi
   search: !plugin
     type: DataRequestBuildSearchResult
-    api_endpoint: https://polytope.ecmwf.int/api/v1/
+    api_endpoint: https://polytope.apps.lumi.ewctest.link/api/v1/
     data_request_url: https://polytope.apps.lumi.ewctest.link/api/v1/requests/{collection}
     results_entry: message
     request_params_entry: user_request
@@ -6234,7 +6234,7 @@
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       productType: '$.productType'
-      downloadLink: 'https://polytope.ecmwf.int/api/v1/downloads/request_id'
+      downloadLink: 'https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id'
       expver:
         - expver
         - '$.expver'
@@ -6280,7 +6280,7 @@
       param: 31
   download: !plugin
     type: HTTPDownload
-    base_uri: https://polytope.ecmwf.int/api/v1/
+    base_uri: https://polytope.apps.lumi.ewctest.link/api/v1/
     flatten_top_dirs: true
     auth_error_code: 401
 
