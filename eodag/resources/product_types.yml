@@ -3741,6 +3741,7 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   missionStartDate: "1984-01-01T00:00:00Z"
 
+# test product type for polytope, should be replaced later
 POLYTOPE_TEST:
   abstract: |
     polytope test product

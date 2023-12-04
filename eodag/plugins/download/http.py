@@ -560,7 +560,12 @@ class HTTPDownload(Download):
 
         chunks = self._stream_download(product, auth, progress_callback, **kwargs)
         # start reading chunks to set product.headers
-        first_chunk = next(chunks)
+        try:
+            first_chunk = next(chunks)
+        except StopIteration:
+            # product is empty file
+            logger.warning("product %s is empty", product.properties["id"])
+            return {"content": chain(iter([]))}
 
         return dict(
             content=chain(iter([first_chunk]), chunks),
