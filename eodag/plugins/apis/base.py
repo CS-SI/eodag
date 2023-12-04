@@ -24,16 +24,15 @@ from eodag.api.search_result import SearchResult
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback, ProgressCallback
 
-from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
-    DownloadedCallback,
-    ProgressCallback,
 )
 
 logger = logging.getLogger("eodag.apis.base")

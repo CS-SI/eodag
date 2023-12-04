@@ -17,15 +17,12 @@
 # limitations under the License.
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
-from eodag.api.product import EOProduct
-from eodag.api.search_result import SearchResult
-from eodag.config import PluginConfig
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
@@ -36,14 +33,18 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
-    DownloadedCallback,
-    ProgressCallback,
     get_geometry_from_various,
     path_to_uri,
     urlsplit,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback, ProgressCallback
 
 logger = logging.getLogger("eodag.apis.ecmwf")
 

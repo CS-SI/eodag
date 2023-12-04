@@ -40,6 +40,8 @@ Commands:
 
   noqa: D103
 """
+from __future__ import annotations
+
 import json
 import os
 import shutil
@@ -52,16 +54,18 @@ except ImportError:  # pragma: no cover
     # for python < 3.8
     from importlib_metadata import metadata  # type: ignore
 
-from typing import Any, Dict, List, Mapping, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
 
 import click
 import uvicorn
-from click import Context
 
 from eodag.api.core import EODataAccessGateway
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
+
+if TYPE_CHECKING:
+    from click import Context
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
