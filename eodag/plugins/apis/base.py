@@ -20,10 +20,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
-from eodag.api.search_result import SearchResult
-
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.utils import DownloadedCallback, ProgressCallback
 
