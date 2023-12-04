@@ -50,7 +50,6 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.metrics import CallbackOptions, Observation
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from prometheus_client import start_http_server
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
 
@@ -1218,9 +1217,6 @@ def telemetry_init(app: FastAPI):
 
     # Start Prometheus client
     resource = Resource(attributes={SERVICE_NAME: "eodag-serve-rest"})
-    exporter_host = os.getenv("EODAG_EXPORTER_PROMETHEUS_HOST", "0.0.0.0")
-    exporter_port = os.getenv("EODAG_EXPORTER_PROMETHEUS_PORT", "8000")
-    start_http_server(port=int(exporter_port), addr=exporter_host)
     reader = PrometheusMetricReader()
     meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
     metrics.set_meter_provider(meter_provider)
