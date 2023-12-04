@@ -15,13 +15,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import importlib
 import pkgutil
 from contextlib import contextmanager
 from functools import partial
-from types import ModuleType
-from typing import Any, Generator, Tuple
+from typing import TYPE_CHECKING, Any, Generator, Tuple
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 def import_all_modules(

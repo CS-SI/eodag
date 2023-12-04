@@ -77,7 +77,7 @@ import shapely.wkt
 import yaml
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from jsonpath_ng import JSONPath, jsonpath
+from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from shapely.geometry import Polygon, shape
@@ -88,6 +88,8 @@ from eodag.utils import logging as eodag_logging
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
+    from jsonpath_ng import JSONPath
+
     from eodag.api.product import EOProduct
 
 try:
