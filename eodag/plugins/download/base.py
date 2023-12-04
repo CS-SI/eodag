@@ -38,12 +38,10 @@ from typing import (
     Union,
 )
 
-from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DownloadedCallback,
     ProgressCallback,
     sanitize,
     uri_to_path,
@@ -58,6 +56,9 @@ from eodag.utils.notebook import NotebookWidgets
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback
+
 
 logger = logging.getLogger("eodag.download.base")
 

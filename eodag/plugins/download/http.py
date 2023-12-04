@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
 import os
@@ -24,17 +25,16 @@ import zipfile
 from datetime import datetime
 from email.message import Message
 from itertools import chain
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
 from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
 import requests_ftp
 from lxml import etree
-from requests import RequestException, Response
+from requests import RequestException
 from stream_zip import NO_COMPRESSION_64, stream_zip
 
-from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -42,8 +42,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.api.search_result import SearchResult
-from eodag.config import PluginConfig
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -51,7 +49,6 @@ from eodag.utils import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    DownloadedCallback,
     ProgressCallback,
     flatten_top_directories,
     parse_header,
@@ -65,6 +62,14 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NotAvailableError,
 )
+
+if TYPE_CHECKING:
+    from requests import Response
+
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback
 
 logger = logging.getLogger("eodag.download.http")
 

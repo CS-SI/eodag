@@ -15,35 +15,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Match, Optional, Set, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Match,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import boto3
 import requests
-from boto3.resources.collection import ResourceCollection
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
 
-from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
     properties_from_xml,
 )
-from eodag.api.search_result import SearchResult
-from eodag.config import PluginConfig
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    DownloadedCallback,
     ProgressCallback,
     flatten_top_directories,
     get_bucket_name_and_prefix,
@@ -51,6 +59,15 @@ from eodag.utils import (
     rename_subfolder,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError, NotAvailableError
+
+if TYPE_CHECKING:
+    from boto3.resources.collection import ResourceCollection
+
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback
+
 
 logger = logging.getLogger("eodag.download.aws")
 

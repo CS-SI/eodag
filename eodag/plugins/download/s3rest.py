@@ -15,21 +15,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import hashlib
 import logging
 import os
 import os.path
-from typing import Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 import requests
 from requests import RequestException
 
-from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
-from eodag.config import PluginConfig
 from eodag.plugins.download.base import Download
 from eodag.plugins.download.http import HTTPDownload
 from eodag.utils import (
@@ -50,6 +49,10 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     RequestError,
 )
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.download.s3rest")
 
