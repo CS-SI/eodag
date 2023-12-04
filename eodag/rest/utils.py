@@ -486,6 +486,7 @@ def search_products(
             "end": dtend,
             "geom": geom,
             "provider": provider,
+            "server_mode": True,
         }
 
         if stac_formatted:
