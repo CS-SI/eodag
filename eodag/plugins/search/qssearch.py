@@ -15,10 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, cast
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -37,7 +38,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.config import PluginConfig
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -55,6 +55,9 @@ from eodag.utils import (
     urlencode,
 )
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+
+if TYPE_CHECKING:
+    from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.qssearch")
 

@@ -15,15 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import geojson
 
-from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
-from eodag.config import PluginConfig
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
@@ -35,6 +34,11 @@ from eodag.utils import (
     MockResponse,
 )
 from eodag.utils.stac_reader import fetch_stac_items
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.config import PluginConfig
+
 
 logger = logging.getLogger("eodag.search.static_stac_search")
 

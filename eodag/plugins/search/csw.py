@@ -15,16 +15,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
 from owslib.fes import (
     BBox,
-    OgcExpression,
     PropertyIsEqualTo,
     PropertyIsGreaterThanOrEqualTo,
     PropertyIsLessThanOrEqualTo,
@@ -35,10 +35,15 @@ from shapely import geometry, wkt
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import properties_from_xml
-from eodag.config import PluginConfig
 from eodag.plugins.search.base import Search
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, DEFAULT_PROJ
 from eodag.utils.import_system import patch_owslib_requests
+
+if TYPE_CHECKING:
+    from owslib.fes import OgcExpression
+
+    from eodag.config import PluginConfig
+
 
 logger = logging.getLogger("eodag.search.csw")
 

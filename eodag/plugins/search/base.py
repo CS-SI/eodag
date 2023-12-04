@@ -15,15 +15,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
-from typing import Any, Dict, List, Optional, Tuple
+from __future__ import annotations
 
-from eodag.api.product import EOProduct
+import logging
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -31,6 +31,11 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     format_dict_items,
 )
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.config import PluginConfig
+
 
 logger = logging.getLogger("eodag.search.base")
 
