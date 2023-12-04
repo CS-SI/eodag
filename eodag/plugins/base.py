@@ -17,10 +17,12 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from eodag.config import PluginConfig
 from eodag.utils.exceptions import PluginNotFoundError
+
+if TYPE_CHECKING:
+    from eodag.config import PluginConfig
 
 
 class EODAGPluginMount(type):

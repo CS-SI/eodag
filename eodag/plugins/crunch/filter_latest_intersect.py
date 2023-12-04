@@ -20,7 +20,6 @@ from __future__ import annotations
 import datetime
 import logging
 import time
-from datetime import datetime as dt
 from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 import dateutil.parser
@@ -30,7 +29,10 @@ from shapely.geometry.base import BaseGeometry
 from eodag.plugins.crunch.base import Crunch
 
 if TYPE_CHECKING:
+    from datetime import datetime as dt
+
     from eodag.api.product import EOProduct
+
 logger = logging.getLogger("eodag.crunch.latest_intersect")
 
 

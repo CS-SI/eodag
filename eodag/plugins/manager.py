@@ -20,20 +20,36 @@ from __future__ import annotations
 import logging
 from operator import attrgetter
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import pkg_resources
 
-from eodag.api.product import EOProduct
-from eodag.config import PluginConfig, ProviderConfig, load_config, merge_configs
+from eodag.config import load_config, merge_configs
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
-from eodag.plugins.base import EODAGPluginMount, PluginTopic
+from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from eodag.utils.exceptions import UnsupportedProvider
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.config import PluginConfig, ProviderConfig
+    from eodag.plugins.base import PluginTopic
+
 
 logger = logging.getLogger("eodag.plugins.manager")
 
