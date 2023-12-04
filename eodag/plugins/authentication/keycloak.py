@@ -15,18 +15,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
 from datetime import datetime
-from typing import Dict, Union
+from typing import TYPE_CHECKING, Dict, Union
 
 import requests
-from requests.auth import AuthBase
 
-from eodag.config import PluginConfig
 from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+
+if TYPE_CHECKING:
+    from requests.auth import AuthBase
+
+    from eodag.config import PluginConfig
+
 
 logger = logging.getLogger("eodag.auth.keycloak")
 

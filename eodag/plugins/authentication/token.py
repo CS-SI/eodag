@@ -15,20 +15,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
-from requests import PreparedRequest, RequestException
+from requests import RequestException
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
 from urllib3 import Retry
 
-from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+
+if TYPE_CHECKING:
+    from requests import PreparedRequest
+
+    from eodag.config import PluginConfig
+
 
 logger = logging.getLogger("eodag.authentication.token")
 

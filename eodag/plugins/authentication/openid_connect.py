@@ -15,21 +15,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import re
 import string
 from random import SystemRandom
-from typing import Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import requests
 from lxml import etree
-from requests import PreparedRequest, Response
 from requests.auth import AuthBase
 
-from eodag.config import PluginConfig
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+
+if TYPE_CHECKING:
+    from requests import PreparedRequest, Response
+
+    from eodag.config import PluginConfig
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):
@@ -262,7 +266,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             self.config.token_uri,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            **post_request_kwargs
+            **post_request_kwargs,
         )
         return r.json()[self.config.token_key]
 

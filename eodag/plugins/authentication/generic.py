@@ -15,13 +15,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
-from typing import Dict, Union
+from typing import TYPE_CHECKING, Dict, Union
 
-from requests.auth import AuthBase, HTTPBasicAuth, HTTPDigestAuth
+from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils.exceptions import MisconfiguredError
+
+if TYPE_CHECKING:
+    from requests.auth import AuthBase
 
 
 class GenericAuth(Authentication):

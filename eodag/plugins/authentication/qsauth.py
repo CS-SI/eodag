@@ -15,18 +15,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 from urllib.parse import parse_qs, urlparse
 
 import requests
-from requests import PreparedRequest
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError
+
+if TYPE_CHECKING:
+    from requests import PreparedRequest
 
 
 class HttpQueryStringAuth(Authentication):
