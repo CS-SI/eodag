@@ -19,7 +19,7 @@ import logging
 import shutil
 import tarfile
 import zipfile
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -32,8 +32,6 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
-from eodag.api.search_result import SearchResult
-from eodag.config import PluginConfig
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import Download
 from eodag.utils import (
@@ -43,7 +41,6 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     USER_AGENT,
-    DownloadedCallback,
     ProgressCallback,
     format_dict_items,
     path_to_uri,
@@ -54,6 +51,11 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     RequestError,
 )
+
+if TYPE_CHECKING:
+    from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback
 
 logger = logging.getLogger("eodag.apis.usgs")
 
@@ -322,7 +324,7 @@ class UsgsApi(Download, Api):
                     try:
                         stream.raise_for_status()
                     except RequestException as e:
-                        if e.response and e.response.content:
+                        if e.response and hasattr(e.response, "content"):
                             error_message = f"{e.response.content} - {e}"
                         else:
                             error_message = str(e)
@@ -336,7 +338,7 @@ class UsgsApi(Download, Api):
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
             except requests.exceptions.Timeout as e:
-                if e.response and e.response.content:
+                if e.response and hasattr(e.response, "content"):
                     error_message = f"{e.response.content} - {e}"
                 else:
                     error_message = str(e)
