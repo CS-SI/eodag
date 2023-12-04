@@ -28,7 +28,9 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
 
     def do_search(self, *args, **kwargs):
         """Should perform the actual search request."""
-        if "id" in kwargs:
+        if "id" in kwargs or "server_mode" not in kwargs or not kwargs["server_mode"]:
+            # in server mode only send request when search by id is done (before download)
+            # to avoid creating unnecessary requests
             product_type = kwargs.pop("productType", None)
             keywords = {
                 k: v for k, v in kwargs.items() if k != "auth" and v is not None
@@ -94,7 +96,7 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
         """create a formatted result"""
         kwargs["params_in_download_link"] = False
         products = BuildPostSearchResult.normalize_results(self, results, **kwargs)
-        if "id" in kwargs:
+        if "id" in kwargs or "server_mode" not in kwargs or not kwargs["server_mode"]:
             request_header = USER_AGENT
             request = requests.Request(
                 method="GET", url=self.request_url, headers=request_header

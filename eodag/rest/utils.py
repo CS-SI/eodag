@@ -597,6 +597,7 @@ def search_products(
             "geom": geom,
             "provider": provider,
             "sortBy": sort_by,
+            "server_mode": True,
         }
 
         if stac_formatted:
