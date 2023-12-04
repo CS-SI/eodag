@@ -106,7 +106,6 @@ class BuildPostSearchResult(PostJsonSearch):
 
         result = results[0]
 
-
         # datacube query string got from previous search
         _dc_qs = kwargs.pop("_dc_qs", None)
         if _dc_qs is not None:
@@ -186,15 +185,17 @@ class BuildPostSearchResult(PostJsonSearch):
         parsed_properties["id"] = parsed_properties["title"] = product_id
 
         # update downloadLink
-        parsed_properties["downloadLink"] += f"?{qs}"
-        parsed_properties["_dc_qs"] = quote_plus(qs)
+        add_params_to_download_link = kwargs.get("params_in_download_link", True)
+        if add_params_to_download_link:
+            parsed_properties["downloadLink"] += f"?{qs}"
+            parsed_properties["_dc_qs"] = quote_plus(qs)
 
-        # parse metadata needing downloadLink
-        for param, mapping in self.config.metadata_mapping.items():
-            if Fields("downloadLink") in mapping:
-                parsed_properties.update(
-                    properties_from_json(parsed_properties, {param: mapping})
-                )
+            # parse metadata needing downloadLink
+            for param, mapping in self.config.metadata_mapping.items():
+                if Fields("downloadLink") in mapping:
+                    parsed_properties.update(
+                        properties_from_json(parsed_properties, {param: mapping})
+                    )
 
         # use product_type_config as default properties
         parsed_properties = dict(

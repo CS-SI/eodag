@@ -92,6 +92,7 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
 
     def normalize_results(self, results, **kwargs):
         """create a formatted result"""
+        kwargs["params_in_download_link"] = False
         products = BuildPostSearchResult.normalize_results(self, results, **kwargs)
         if "id" in kwargs:
             request_header = USER_AGENT
@@ -101,15 +102,24 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
             s = Session()
             prep = request.prepare()
             self.auth(prep)
-            collection_requests = s.send(prep).json()
-            results_entry = getattr(self.config, "results_entry", None)
-            if results_entry:
-                collection_requests = collection_requests[results_entry]
-            params_entry = getattr(self.config, "request_params_entry")
+            request_finished = False
             request_id = ""
-            for req in collection_requests:
-                if req[params_entry] == str(self.request_params):
-                    request_id = req["id"]
+            while not request_finished:
+                collection_requests = s.send(prep).json()
+                results_entry = getattr(self.config, "results_entry", None)
+                if results_entry:
+                    collection_requests = collection_requests[results_entry]
+                params_entry = getattr(self.config, "request_params_entry")
+                for req in collection_requests:
+                    if (
+                        request_id
+                        and req["id"] == request_id
+                        and req["status"] == "processed"
+                    ):
+                        request_finished = True
+                    elif not request_id:
+                        if req[params_entry] == str(self.request_params):
+                            request_id = req["id"]
             if not request_id:
                 raise NotAvailableError(
                     "request with parameters %s not found", str(self.request_params)
@@ -118,6 +128,7 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
                 p.properties["downloadLink"] = p.properties["downloadLink"].replace(
                     "request_id", str(request_id)
                 )
+                p.location = p.remote_location = p.properties["downloadLink"]
         return products
 
     def clear(self):
