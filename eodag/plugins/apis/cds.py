@@ -27,7 +27,6 @@ import geojson
 import requests
 
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
@@ -255,7 +254,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 "%s/resources/%s" % (client.url, dataset_name), download_request, "POST"
             )
 
-            product.location = result.location
+            product.location = product.remote_location = result.location
             return super(CdsApi, self).download(
                 product,
                 progress_callback=progress_callback,
