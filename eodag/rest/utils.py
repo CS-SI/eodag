@@ -1104,7 +1104,7 @@ def fetch_collection_queryable_properties(
     return stac_queryables
 
 
-def add_provider_queryables(provider: str, queryables: dict):
+def add_provider_queryables(provider: str, queryables: dict) -> Dict[str, Any]:
     """Add the queryables fetched from the given provider to the default queryables.
     If the queryables endpoint is not supported by the provider, the original queryables are returned
     :param provider: The provider.
