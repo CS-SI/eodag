@@ -1149,7 +1149,7 @@ def add_provider_queryables(provider: str, queryables: dict) -> Dict[str, Any]:
 
 def add_provider_product_type_queryables(
     provider: str, product_type: str, queryables: dict
-):
+) -> Dict[str, Any]:
     """Add the queryables fetched from the given provider for the given product type
     to the default queryables derived from the metadata mapping.
     If the queryables endpoint is not supported by the provider, the original queryables are returned.
