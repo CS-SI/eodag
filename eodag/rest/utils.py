@@ -573,7 +573,11 @@ def search_product_by_id(
         kwargs["raise_errors"] = True
     try:
         products, _ = eodag_api.search(
-            id=uid, productType=product_type, provider=provider, **kwargs
+            id=uid,
+            productType=product_type,
+            provider=provider,
+            server_mode=True,
+            **kwargs,
         )
         return products
     except ValidationError:
