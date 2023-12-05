@@ -2033,6 +2033,11 @@ class EODataAccessGateway:
 
             provider_queryables = set(default_queryables)
 
+            # add provider queryables
+            for key, value in getattr(plugin.config, "metadata_mapping", {}).items():
+                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                    provider_queryables.add(key)
+
             if product_type:
                 # list of all product_type-specific queryables
                 mapping = dict(
