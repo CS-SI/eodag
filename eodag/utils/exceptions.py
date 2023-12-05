@@ -20,7 +20,7 @@
 class ValidationError(Exception):
     """Error validating data"""
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.message = message
 
 
@@ -47,7 +47,7 @@ class UnsupportedProvider(Exception):
 class UnsupportedProductType(Exception):
     """An error indicating that eodag does not support a product type"""
 
-    def __init__(self, product_type):
+    def __init__(self, product_type: str) -> None:
         self.product_type = product_type
 
 

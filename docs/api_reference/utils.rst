@@ -13,7 +13,7 @@ Logging
 Callbacks
 -----------------
 
-.. autofunction:: eodag.utils.DownloadedCallback
+.. autofunction::eodag.api.product.DownloadedCallback
 .. autofunction:: eodag.utils.ProgressCallback
 
 Notebook

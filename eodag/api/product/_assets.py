@@ -15,7 +15,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 from collections import UserDict
+from typing import TYPE_CHECKING, Any, Dict
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
 
 
 class AssetsDict(UserDict):
@@ -30,14 +36,16 @@ class AssetsDict(UserDict):
     :type kwargs: Any
     """
 
-    def __init__(self, product, *args, **kwargs):
+    product: EOProduct
+
+    def __init__(self, product: EOProduct, *args: Any, **kwargs: Any) -> None:
         self.product = product
         super(AssetsDict, self).__init__(*args, **kwargs)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Dict[str, Any]) -> None:
         super().__setitem__(key, Asset(self.product, key, value))
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         """Builds a representation of AssetsDict to enable its serialization
 
         :returns: The representation of a :class:`~eodag.api.product._assets.AssetsDict`
@@ -61,12 +69,14 @@ class Asset(UserDict):
     :type kwargs: Any
     """
 
-    def __init__(self, product, key, *args, **kwargs):
+    product: EOProduct
+
+    def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:
         self.product = product
         self.key = key
         super(Asset, self).__init__(*args, **kwargs)
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         """Builds a representation of Asset to enable its serialization
 
         :returns: The representation of a :class:`~eodag.api.product._assets.Asset` as a
@@ -75,10 +85,12 @@ class Asset(UserDict):
         """
         return self.data
 
-    def download(self, **kwargs):
+    def download(self, **kwargs: Any) -> str:
         """Downloads a single asset
 
         :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
         :type kwargs: Any
+        :returns: The absolute path to the downloaded product on the local filesystem
+        :rtype: str
         """
         return self.product.download(asset=self.key, **kwargs)

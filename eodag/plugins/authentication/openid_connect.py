@@ -15,10 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import re
 import string
 from random import SystemRandom
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import requests
 from lxml import etree
@@ -27,6 +29,11 @@ from requests.auth import AuthBase
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+
+if TYPE_CHECKING:
+    from requests import PreparedRequest, Response
+
+    from eodag.config import PluginConfig
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):
@@ -122,7 +129,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
     RESPONSE_TYPE = "code"
     CONFIG_XPATH_REGEX = re.compile(r"^xpath\((?P<xpath_value>.+)\)$")
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
         if getattr(self.config, "token_provision", None) not in ("qs", "header"):
             raise MisconfiguredError(
@@ -137,7 +144,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         self.session = requests.Session()
 
-    def authenticate(self):
+    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """Authenticate"""
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
@@ -161,7 +168,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             key=getattr(self.config, "token_qs_key", None),
         )
 
-    def authenticate_user(self, state):
+    def authenticate_user(self, state: str) -> Response:
         """Authenticate user"""
         self.validate_config_credentials()
         params = {
@@ -201,7 +208,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             auth_uri, data=login_data, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
         )
 
-    def grant_user_consent(self, authentication_response):
+    def grant_user_consent(self, authentication_response: Response) -> Response:
         """Grant user consent"""
         user_consent_document = etree.HTML(authentication_response.text)
         user_consent_form = user_consent_document.xpath(
@@ -219,7 +226,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             timeout=HTTP_REQ_TIMEOUT,
         )
 
-    def exchange_code_for_token(self, authorized_url, state):
+    def exchange_code_for_token(self, authorized_url: str, state: str) -> str:
         """Get exchange code for token"""
         qs = parse_qs(urlparse(authorized_url).query)
         if qs["state"][0] != state:
@@ -259,11 +266,13 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             self.config.token_uri,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            **post_request_kwargs
+            **post_request_kwargs,
         )
         return r.json()[self.config.token_key]
 
-    def _constant_or_xpath_extracted(self, value, form_element):
+    def _constant_or_xpath_extracted(
+        self, value: str, form_element: Any
+    ) -> Optional[str]:
         match = self.CONFIG_XPATH_REGEX.match(value)
         if not match:
             return value
@@ -272,9 +281,10 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         )
         if len(value_from_xpath) == 1:
             return value_from_xpath[0]
+        return None
 
     @staticmethod
-    def compute_state():
+    def compute_state() -> str:
         """Compute state"""
         rand = SystemRandom()
         return "".join(
@@ -289,12 +299,12 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 class CodeAuthorizedAuth(AuthBase):
     """CodeAuthorizedAuth custom authentication class to be used with requests module"""
 
-    def __init__(self, token, where, key=None):
+    def __init__(self, token: str, where: str, key: Optional[str] = None) -> None:
         self.token = token
         self.where = where
         self.key = key
 
-    def __call__(self, request):
+    def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
         if self.where == "qs":
             parts = urlparse(request.url)

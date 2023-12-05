@@ -15,10 +15,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback, ProgressCallback
 
 from eodag.plugins.base import PluginTopic
-from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
+from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+)
 
 logger = logging.getLogger("eodag.apis.base")
 
@@ -55,11 +69,18 @@ class Api(PluginTopic):
       (it certainly indicates that the download didn't complete)
     """
 
-    def clear(self):
+    def clear(self) -> None:
         """Method used to clear a search context between two searches."""
         pass
 
-    def query(self, *args, count=True, **kwargs):
+    def query(
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Implementation of how the products must be searched goes here.
 
         This method must return a tuple with (1) a list of EOProduct instances (see eodag.api.product module)
@@ -70,14 +91,14 @@ class Api(PluginTopic):
 
     def download(
         self,
-        product,
-        auth=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
-        r"""
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Any,
+    ) -> Optional[str]:
+        """
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
@@ -107,14 +128,14 @@ class Api(PluginTopic):
 
     def download_all(
         self,
-        products,
-        auth=None,
-        downloaded_callback=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
+        products: SearchResult,
+        auth: Optional[PluginConfig] = None,
+        downloaded_callback: Optional[DownloadedCallback] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Any,
+    ) -> List[str]:
         """
         Base download_all method.
 
@@ -124,7 +145,7 @@ class Api(PluginTopic):
         :type auth: :class:`~eodag.config.PluginConfig`
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
-                                    :class:`~eodag.utils.DownloadedCallback` and override
+                                    :class:`~eodag.api.product.DownloadedCallback` and override
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]

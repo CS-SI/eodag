@@ -15,12 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
+from typing import Any, Optional
 
 
-from typing import Any
-
-
-def check_ipython():
+def check_ipython() -> bool:
     """Check if called from ipython"""
     try:
         __IPYTHON__
@@ -29,7 +29,7 @@ def check_ipython():
         return False
 
 
-def check_notebook():
+def check_notebook() -> bool:
     """Check if called from a notebook"""
     try:
         shell = get_ipython().__class__.__name__
@@ -46,12 +46,12 @@ def check_notebook():
 class NotebookWidgets:
     """Display / handle ipython widgets"""
 
-    is_notebook = False
-    html_box: Any = None
-    html_box_shown = False
+    is_notebook: bool = False
+    html_box: Optional[Any] = None
+    html_box_shown: bool = False
     display: Any = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.is_notebook = check_notebook()
 
         if self.is_notebook:
@@ -63,23 +63,25 @@ class NotebookWidgets:
         else:
             pass
 
-    def display_html(self, html_value):
+    def display_html(self, html_value: str) -> None:
         """Display HTML message"""
 
-        if self.is_notebook:
-            self.html_box.data = html_value
+        if not self.is_notebook:
+            return None
 
-            if not self.html_box_shown:
-                self._html_handle = self.display(self.html_box, display_id=True)
-                self.html_box_shown = True
-            else:
-                self._update_display(
-                    self.html_box, display_id=self._html_handle.display_id
-                )
+        self.html_box.data = html_value
 
-    def clear_html(self):
+        if not self.html_box_shown:
+            self._html_handle = self.display(self.html_box, display_id=True)
+            self.html_box_shown = True
+        else:
+            self._update_display(self.html_box, display_id=self._html_handle.display_id)
+
+    def clear_html(self) -> None:
         """Clear HTML message"""
 
-        if self.is_notebook:
-            self.html_box.data = ""
-            self._update_display(self.html_box, display_id=self._html_handle.display_id)
+        if not self.is_notebook:
+            return None
+
+        self.html_box.data = ""
+        self._update_display(self.html_box, display_id=self._html_handle.display_id)

@@ -15,9 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
 import re
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
@@ -34,8 +36,14 @@ from shapely import geometry, wkt
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import properties_from_xml
 from eodag.plugins.search.base import Search
-from eodag.utils import DEFAULT_PROJ
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, DEFAULT_PROJ
 from eodag.utils.import_system import patch_owslib_requests
+
+if TYPE_CHECKING:
+    from owslib.fes import OgcExpression
+
+    from eodag.config import PluginConfig
+
 
 logger = logging.getLogger("eodag.search.csw")
 
@@ -45,25 +53,33 @@ SUPPORTED_REFERENCE_SCHEMES = ["WWW:DOWNLOAD-1.0-http--download"]
 class CSWSearch(Search):
     """A plugin for implementing search based on OGC CSW"""
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(CSWSearch, self).__init__(provider, config)
         self.catalog = None
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear search context"""
         super().clear()
         self.catalog = None
 
-    def query(self, product_type=None, auth=None, count=True, **kwargs):
+    def query(
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:
             return [], 0
-        if auth is not None:
+        auth = kwargs.get("auth")
+        if auth:
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
         else:
             self.__init_catalog()
-        results = []
+        results: List[EOProduct] = []
         if self.catalog:
             provider_product_type = self.config.products[product_type]["productType"]
             for product_type_def in self.config.search_definition["product_type_tags"]:
@@ -105,7 +121,9 @@ class CSWSearch(Search):
         total_results = len(results) if count else None
         return results, total_results
 
-    def __init_catalog(self, username=None, password=None):
+    def __init_catalog(
+        self, username: Optional[str] = None, password: Optional[str] = None
+    ) -> None:
         """Initializes a catalogue by performing a GetCapabilities request on the url"""
         if not self.catalog:
             api_endpoint = self.config.api_endpoint
@@ -126,7 +144,7 @@ class CSWSearch(Search):
                         e,
                     )
 
-    def __build_product(self, rec, product_type, **kwargs):
+    def __build_product(self, rec: Any, product_type: str, **kwargs: Any) -> EOProduct:
         """Enable search results to be handled by http download plugin"""
         download_url = ""
         resource_filter = re.compile(
@@ -171,9 +189,14 @@ class CSWSearch(Search):
             searched_bbox=kwargs.get("footprints"),
         )
 
-    def __convert_query_params(self, product_type_def, product_type, params):
+    def __convert_query_params(
+        self,
+        product_type_def: Dict[str, Any],
+        product_type: str,
+        params: Dict[str, Any],
+    ) -> Union[List[OgcExpression], List[List[OgcExpression]]]:
         """Translates eodag search to CSW constraints using owslib constraint classes"""
-        constraints = []
+        constraints: List[OgcExpression] = []
         # How the match should be performed (fuzzy, prefix, postfix or exact).
         # defaults to fuzzy
         pt_tag, matching = (
@@ -213,4 +236,5 @@ class CSWSearch(Search):
                     self.config.search_definition["date_tags"]["end"], end
                 )
             )
+        # [[a, b]] is interpreted as a && b while [a, b] is interpreted as a || b
         return [constraints] if len(constraints) > 1 else constraints

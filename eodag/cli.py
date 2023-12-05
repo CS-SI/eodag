@@ -40,6 +40,8 @@ Commands:
 
   noqa: D103
 """
+from __future__ import annotations
+
 import json
 import os
 import shutil
@@ -52,13 +54,18 @@ except ImportError:  # pragma: no cover
     # for python < 3.8
     from importlib_metadata import metadata  # type: ignore
 
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
+
 import click
 import uvicorn
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, EODataAccessGateway
-from eodag.utils import parse_qs
+from eodag.api.core import EODataAccessGateway
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
+
+if TYPE_CHECKING:
+    from click import Context
 
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
@@ -75,7 +82,7 @@ class MutuallyExclusiveOption(click.Option):
     from https://gist.github.com/jacobtolar/fb80d5552a9a9dfc32b12a829fa21c0c
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
         help = kwargs.get("help", "")
         if self.mutually_exclusive:
@@ -86,7 +93,9 @@ class MutuallyExclusiveOption(click.Option):
             )
         super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
 
-    def handle_parse_result(self, ctx, opts, args):
+    def handle_parse_result(
+        self, ctx: Context, opts: Mapping[str, Any], args: List[str]
+    ):
         """Raise error or use parent handle_parse_result()"""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise click.UsageError(
@@ -105,7 +114,7 @@ class MutuallyExclusiveOption(click.Option):
     help="Control the verbosity of the logs. For maximum verbosity, type -vvv",
 )
 @click.pass_context
-def eodag(ctx, verbose):
+def eodag(ctx: Context, verbose: int) -> None:
     """Earth Observation Data Access Gateway: work on EO products from any provider"""
     if ctx.obj is None:
         ctx.obj = {}
@@ -113,7 +122,7 @@ def eodag(ctx, verbose):
 
 
 @eodag.command(name="version", help="Print eodag version and exit")
-def version():
+def version() -> None:
     """Print eodag version and exit"""
     click.echo(
         "{__title__} ({__description__}): version {__version__}".format(
@@ -253,7 +262,7 @@ def version():
     help="Custom query-string argument(s). Format :'key1=value1&key2=value2'",
 )
 @click.pass_context
-def search_crunch(ctx, **kwargs):
+def search_crunch(ctx: Context, **kwargs: Any) -> None:
     """Search product types and optionnaly apply crunchers to search results"""
     # Process inputs for search
     product_type = kwargs.pop("producttype")
@@ -317,8 +326,7 @@ def search_crunch(ctx, **kwargs):
             else:
                 criteria[k] = v
     if locations_qs is not None:
-        locations = parse_qs(locations_qs)
-        locations = {key: val[0] for key, val in locations.items()}
+        locations = {key: val[0] for key, val in parse_qs(locations_qs).items()}
     else:
         locations = None
     criteria["locations"] = locations
@@ -334,9 +342,9 @@ def search_crunch(ctx, **kwargs):
         locs_file = click.format_filename(locs_file)
 
     # Process inputs for crunch
-    cruncher_names = set(kwargs.pop("cruncher") or [])
+    cruncher_names: Set[Any] = set(kwargs.pop("cruncher") or [])
     cruncher_args = kwargs.pop("cruncher_args")
-    cruncher_args_dict = {}
+    cruncher_args_dict: Dict[str, Dict[str, Any]] = {}
     if cruncher_args:
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
@@ -402,7 +410,7 @@ def search_crunch(ctx, **kwargs):
     "--no-fetch", is_flag=True, help="Do not fetch providers for new product types"
 )
 @click.pass_context
-def list_pt(ctx, **kwargs):
+def list_pt(ctx: Context, **kwargs: Any) -> None:
     """Print the list of supported product types"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
@@ -480,7 +488,7 @@ def list_pt(ctx, **kwargs):
     "DEFAULT: ext_product_types.json",
 )
 @click.pass_context
-def discover_pt(ctx, **kwargs):
+def discover_pt(ctx: Context, **kwargs: Any) -> None:
     """Fetch external product types configuration and save result"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
@@ -519,7 +527,7 @@ def discover_pt(ctx, **kwargs):
     help="Download only quicklooks of products instead full set of files",
 )
 @click.pass_context
-def download(ctx, **kwargs):
+def download(ctx: Context, **kwargs: Any) -> None:
     """Download a bunch of products from a serialized search result"""
     search_result_path = kwargs.pop("search_results")
     if not search_result_path:
@@ -607,7 +615,7 @@ def download(ctx, **kwargs):
     help="File path to the user configuration file with its credentials",
 )
 @click.pass_context
-def serve_rpc(ctx, host, port, conf):
+def serve_rpc(ctx: Context, host: str, port: int, conf: str) -> None:
     """Serve EODAG functionalities through a RPC interface"""
     setup_logging(verbose=ctx.obj["verbosity"])
     try:
@@ -667,7 +675,15 @@ def serve_rpc(ctx, host, port, conf):
     help="Run in debug mode (for development purpose)",
 )
 @click.pass_context
-def serve_rest(ctx, daemon, world, port, config, locs, debug):
+def serve_rest(
+    ctx: Context,
+    daemon: bool,
+    world: bool,
+    port: int,
+    config: str,
+    locs: str,
+    debug: bool,
+) -> None:
     """Serve EODAG functionalities through a WEB interface"""
     setup_logging(verbose=ctx.obj["verbosity"])
     # Set the settings of the app
@@ -797,18 +813,18 @@ def serve_rest(ctx, daemon, world, port, config, locs, debug):
 )
 @click.pass_context
 def deploy_wsgi_app(
-    ctx,
-    root,
-    config,
-    webserver,
-    threads,
-    user,
-    group,
-    server_name,
-    wsgi_process_group,
-    wsgi_daemon_process,
-    name,
-):
+    ctx: Context,
+    root: str,
+    config: str,
+    webserver: str,
+    threads: int,
+    user: str,
+    group: str,
+    server_name: str,
+    wsgi_process_group: str,
+    wsgi_daemon_process: str,
+    name: str,
+) -> None:
     """Deploy the WEB interface of eodag behind a web server"""
     setup_logging(verbose=ctx.obj["verbosity"])
     import eodag as eodag_package

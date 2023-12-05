@@ -15,11 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import datetime
 import logging
 import os
 import re
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import dateutil.parser
@@ -28,6 +31,7 @@ import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
 from shapely.geometry import shape
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import (
@@ -50,6 +54,12 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 
+if TYPE_CHECKING:
+    from eodag.api.core import EODataAccessGateway
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+
+
 logger = logging.getLogger("eodag.rest.stac")
 
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
@@ -63,7 +73,7 @@ class StacCommon:
     :type url: str
     :param stac_config: STAC configuration from stac.yml conf file
     :type stac_config: dict
-    :param provider: Chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
     :param eodag_api: EODAG python API instance
     :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
@@ -72,17 +82,22 @@ class StacCommon:
     """
 
     def __init__(
-        self, url, stac_config, provider, eodag_api, root="/", *args, **kwargs
-    ):
+        self,
+        url: str,
+        stac_config: Dict[str, Any],
+        provider: Optional[str],
+        eodag_api: EODataAccessGateway,
+        root: str = "/",
+    ) -> None:
         self.url = url.rstrip("/") if len(url) > 1 else url
         self.stac_config = stac_config
         self.provider = provider
         self.eodag_api = eodag_api
         self.root = root.rstrip("/") if len(root) > 1 else root
 
-        self.data = {}
+        self.data: Dict[str, Any] = {}
 
-    def update_data(self, data):
+    def update_data(self, data: Dict[str, Any]) -> None:
         """Updates data using given input STAC dict data
 
         :param data: Catalog data (parsed STAC dict)
@@ -113,7 +128,9 @@ class StacCommon:
             self.data["stac_extensions"] = []
 
     @staticmethod
-    def get_stac_extension(url, stac_config, extension, **kwargs):
+    def get_stac_extension(
+        url: str, stac_config: Dict[str, Any], extension: str, **kwargs: Any
+    ) -> Dict[str, str]:
         """Parse STAC extension from config and return as dict
 
         :param url: Requested URL
@@ -135,11 +152,9 @@ class StacCommon:
             "url": url,
             "properties": kwargs.get("properties", {}),
         }
-        extension = format_dict_items(extension_model, **format_args)
+        return format_dict_items(extension_model, **format_args)
 
-        return extension
-
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         """Returns object data as dictionnary
 
         :returns: STAC data dictionnary
@@ -157,7 +172,7 @@ class StacItem(StacCommon):
     :type url: str
     :param stac_config: STAC configuration from stac.yml conf file
     :type stac_config: dict
-    :param provider: Chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
     :param eodag_api: EODAG python API instance
     :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
@@ -166,19 +181,24 @@ class StacItem(StacCommon):
     """
 
     def __init__(
-        self, url, stac_config, provider, eodag_api, root="/", *args, **kwargs
-    ):
+        self,
+        url: str,
+        stac_config: Dict[str, Any],
+        provider: Optional[str],
+        eodag_api: EODataAccessGateway,
+        root: str = "/",
+    ) -> None:
         super(StacItem, self).__init__(
             url=url,
             stac_config=stac_config,
             provider=provider,
             eodag_api=eodag_api,
             root=root,
-            *args,
-            **kwargs,
         )
 
-    def __get_item_list(self, search_results, catalog):
+    def __get_item_list(
+        self, search_results: SearchResult, catalog: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Build STAC items list from EODAG search results
 
         :param search_results: EODAG search results
@@ -192,12 +212,12 @@ class StacItem(StacCommon):
             return []
 
         item_model = self.__filter_item_model_properties(
-            self.stac_config["item"], search_results[0].product_type
+            self.stac_config["item"], str(search_results[0].product_type)
         )
         provider_model = deepcopy(self.stac_config["provider"])
 
         # check if some items need to be converted
-        need_conversion = {}
+        need_conversion: Dict[str, Any] = {}
         for k, v in item_model["properties"].items():
             if isinstance(v, str):
                 conversion, item_model["properties"][k] = get_metadata_path(
@@ -210,7 +230,7 @@ class StacItem(StacCommon):
                         k, item_model["properties"][k]
                     )
 
-        item_list = []
+        item_list: List[Dict[str, Any]] = []
         for product in search_results:
             # parse jsonpath
             provider_dict = jsonpath_parse_dict_items(
@@ -235,9 +255,9 @@ class StacItem(StacCommon):
 
             # append provider query-arg to download link
             if self.provider:
-                parts = urlparse(product_item["assets"]["downloadLink"]["href"])
+                parts = urlparse(str(product_item["assets"]["downloadLink"]["href"]))
                 query_dict = parse_qs(parts.query)
-                query_dict.update(provider=self.provider)
+                query_dict.update(provider=[self.provider])
                 without_arg_url = (
                     f"{parts.scheme}://{parts.netloc}{parts.path}"
                     if parts.scheme
@@ -291,7 +311,9 @@ class StacItem(StacCommon):
             format_args = deepcopy(self.stac_config)
             format_args["catalog"] = catalog
             format_args["item"] = product_item
-            product_item = format_dict_items(product_item, **format_args)
+            product_item: Dict[str, Any] = format_dict_items(
+                product_item, **format_args
+            )
             product_item["bbox"] = [float(i) for i in product_item["bbox"]]
 
             # remove empty properties
@@ -301,7 +323,9 @@ class StacItem(StacCommon):
 
         return item_list
 
-    def get_stac_items(self, search_results, catalog):
+    def get_stac_items(
+        self, search_results: SearchResult, catalog: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Build STAC items from EODAG search results
 
         :param search_results: EODAG search results
@@ -377,7 +401,9 @@ class StacItem(StacCommon):
         self.update_data(items)
         return geojson.loads(geojson.dumps(self.data))
 
-    def __filter_item_model_properties(self, item_model, product_type):
+    def __filter_item_model_properties(
+        self, item_model: Dict[str, Any], product_type: str
+    ) -> Dict[str, Any]:
         """Filter item model depending on product type metadata and its extensions.
         Removes not needed parameters, and adds supplementary ones as
         part of oseo extension.
@@ -442,7 +468,7 @@ class StacItem(StacCommon):
 
         return result_item_model
 
-    def __filter_item_properties_values(self, item):
+    def __filter_item_properties_values(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """Removes empty properties, unused extensions, and add missing extensions
 
         :param item: STAC item data
@@ -450,7 +476,9 @@ class StacItem(StacCommon):
         :returns: Filtered item model
         :rtype: dict
         """
-        all_extensions_dict = deepcopy(self.stac_config["stac_extensions"])
+        all_extensions_dict: Dict[str, str] = deepcopy(
+            self.stac_config["stac_extensions"]
+        )
         # parse f-strings with root
         all_extensions_dict = format_dict_items(
             all_extensions_dict, **{"catalog": {"root": self.root}}
@@ -459,7 +487,7 @@ class StacItem(StacCommon):
         item["stac_extensions"] = []
         # dict to list of keys to permit pop() while iterating
         for k in list(item["properties"]):
-            extension_prefix = k.split(":")[0]
+            extension_prefix: str = k.split(":")[0]
 
             if item["properties"][k] is None:
                 item["properties"].pop(k, None)
@@ -473,7 +501,7 @@ class StacItem(StacCommon):
 
         return item
 
-    def get_stac_item_from_product(self, product):
+    def get_stac_item_from_product(self, product: EOProduct) -> Dict[str, Any]:
         """Build STAC item from EODAG product
 
         :param product: EODAG product
@@ -481,7 +509,7 @@ class StacItem(StacCommon):
         :returns: STAC item
         :rtype: list
         """
-        product_type = product.product_type
+        product_type = str(product.product_type)
 
         item_model = self.__filter_item_model_properties(
             self.stac_config["item"], product_type
@@ -536,7 +564,7 @@ class StacCollection(StacCommon):
     :type url: str
     :param stac_config: STAC configuration from stac.yml conf file
     :type stac_config: dict
-    :param provider: Chosen provider
+    :param provider: (optional) Chosen provider
     :type provider: str
     :param eodag_api: EODAG python API instance
     :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
@@ -545,19 +573,24 @@ class StacCollection(StacCommon):
     """
 
     def __init__(
-        self, url, stac_config, provider, eodag_api, root="/", *args, **kwargs
-    ):
+        self,
+        url: str,
+        stac_config: Dict[str, Any],
+        provider: Optional[str],
+        eodag_api: EODataAccessGateway,
+        root: str = "/",
+    ) -> None:
         super(StacCollection, self).__init__(
             url=url,
             stac_config=stac_config,
             provider=provider,
             eodag_api=eodag_api,
             root=root,
-            *args,
-            **kwargs,
         )
 
-    def __get_product_types(self, filters=None):
+    def __get_product_types(
+        self, filters: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Returns a list of supported product types
 
         :param filters: (optional) Additional filters for product types search
@@ -581,7 +614,9 @@ class StacCollection(StacCommon):
             product_types = self.eodag_api.list_product_types(provider=self.provider)
         return product_types
 
-    def __get_collection_list(self, filters=None):
+    def __get_collection_list(
+        self, filters: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Build STAC collections list
 
         :param filters: (optional) Additional filters for collections search
@@ -594,7 +629,7 @@ class StacCollection(StacCommon):
 
         product_types = self.__get_product_types(filters)
 
-        collection_list = []
+        collection_list: List[Dict[str, Any]] = []
         for product_type in product_types:
             if self.provider:
                 providers = [self.provider]
@@ -606,7 +641,7 @@ class StacCollection(StacCommon):
                         product_type=product_type["ID"]
                     )
                 ]
-            providers_models = []
+            providers_models: List[Dict[str, Any]] = []
             for provider in providers:
                 provider_m = jsonpath_parse_dict_items(
                     provider_model,
@@ -636,7 +671,9 @@ class StacCollection(StacCommon):
 
         return collection_list
 
-    def get_collections(self, filters=None):
+    def get_collections(
+        self, filters: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Build STAC collections
 
         :param filters: (optional) Additional filters for collections search
@@ -669,7 +706,7 @@ class StacCollection(StacCommon):
         self.update_data(collections)
         return self.as_dict()
 
-    def get_collection_by_id(self, collection_id):
+    def get_collection_by_id(self, collection_id: str) -> Dict[str, Any]:
         """Build STAC collection by its id
 
         :param collection_id: Product type as collection ID
@@ -698,7 +735,7 @@ class StacCatalog(StacCommon):
     :param stac_config: STAC configuration from stac.yml conf file
     :type stac_config: dict
     :param provider: Chosen provider
-    :type provider: str
+    :type provider: (optional) str
     :param eodag_api: EODAG python API instance
     :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: (optional) API root
@@ -712,30 +749,26 @@ class StacCatalog(StacCommon):
 
     def __init__(
         self,
-        url,
-        stac_config,
-        provider,
-        eodag_api,
-        root="/",
-        catalogs=[],
-        fetch_providers=True,
-        *args,
-        **kwargs,
-    ):
+        url: str,
+        stac_config: Dict[str, Any],
+        provider: Optional[str],
+        eodag_api: EODataAccessGateway,
+        root: str = "/",
+        catalogs: List[str] = [],
+        fetch_providers: bool = True,
+    ) -> None:
         super(StacCatalog, self).__init__(
             url=url,
             stac_config=stac_config,
             provider=provider,
             eodag_api=eodag_api,
             root=root,
-            *args,
-            **kwargs,
         )
-        self.shp_location_config = eodag_api.locations_config
-        self.search_args = {}
-
         self.data = {}
-        self.children = []
+
+        self.shp_location_config = eodag_api.locations_config
+        self.search_args: Dict[str, Any] = {}
+        self.children: List[Dict[str, Any]] = []
 
         self.catalog_config = deepcopy(stac_config["catalog"])
 
@@ -751,7 +784,7 @@ class StacCatalog(StacCommon):
         # build catalog
         self.__build_stac_catalog(catalogs, fetch_providers=fetch_providers)
 
-    def __update_data_from_catalog_config(self, catalog_config):
+    def __update_data_from_catalog_config(self, catalog_config: Dict[str, Any]) -> bool:
         """Updates configuration and data using given input catalog config
 
         :param catalog_config: Catalog config, from yml stac_config[catalogs]
@@ -775,7 +808,7 @@ class StacCatalog(StacCommon):
 
         return True
 
-    def set_children(self, children=[]):
+    def set_children(self, children: List[Dict[str, Any]] = []) -> bool:
         """Set catalog children / links
 
         :param children: (optional) Children list
@@ -788,7 +821,9 @@ class StacCatalog(StacCommon):
         self.data["links"] += children
         return True
 
-    def set_stac_product_type_by_id(self, product_type, **kwargs):
+    def set_stac_product_type_by_id(
+        self, product_type: str, **kwargs: Any
+    ) -> Dict[str, Any]:
         """Updates catalog with given product_type
 
         :param product_type: Product type
@@ -808,7 +843,7 @@ class StacCatalog(StacCommon):
         format_args["catalog"] = defaultdict(str, **self.data)
         format_args["collection"] = collection
         try:
-            parsed_dict = format_dict_items(cat_model, **format_args)
+            parsed_dict: Dict[str, Any] = format_dict_items(cat_model, **format_args)
         except Exception:
             logger.error("Could not format product_type catalog")
             raise
@@ -822,7 +857,7 @@ class StacCatalog(StacCommon):
 
     # get / set dates filters -------------------------------------------------
 
-    def get_stac_years_list(self, **kwargs):
+    def get_stac_years_list(self, **kwargs: Any) -> List[int]:
         """Get catalog available years list
 
         :returns: Years list
@@ -832,7 +867,7 @@ class StacCatalog(StacCommon):
 
         return list(range(extent_date_min.year, extent_date_max.year + 1))
 
-    def get_stac_months_list(self, **kwargs):
+    def get_stac_months_list(self, **kwargs: Any) -> List[int]:
         """Get catalog available months list
 
         :returns: Months list
@@ -847,7 +882,7 @@ class StacCatalog(StacCommon):
             )
         )
 
-    def get_stac_days_list(self, **kwargs):
+    def get_stac_days_list(self, **kwargs: Any) -> List[int]:
         """Get catalog available days list
 
         :returns: Days list
@@ -861,7 +896,7 @@ class StacCatalog(StacCommon):
             )
         )
 
-    def set_stac_year_by_id(self, year, **kwargs):
+    def set_stac_year_by_id(self, year: str, **kwargs: Any) -> Dict[str, Any]:
         """Updates and returns catalog with given year
 
         :param year: Year number
@@ -888,7 +923,7 @@ class StacCatalog(StacCommon):
 
         return parsed_dict
 
-    def set_stac_month_by_id(self, month, **kwargs):
+    def set_stac_month_by_id(self, month: str, **kwargs: Any) -> Dict[str, Any]:
         """Updates and returns catalog with given month
 
         :param month: Month number
@@ -919,7 +954,7 @@ class StacCatalog(StacCommon):
 
         return parsed_dict
 
-    def set_stac_day_by_id(self, day, **kwargs):
+    def set_stac_day_by_id(self, day: str, **kwargs: Any) -> Dict[str, Any]:
         """Updates and returns catalog with given day
 
         :param day: Day number
@@ -951,7 +986,7 @@ class StacCatalog(StacCommon):
 
         return parsed_dict
 
-    def get_datetime_extent(self):
+    def get_datetime_extent(self) -> Tuple[datetime.datetime, datetime.datetime]:
         """Returns catalog temporal extent as datetime objs
 
         :returns: Start & stop dates
@@ -981,7 +1016,12 @@ class StacCatalog(StacCommon):
             extent_date_max.replace(tzinfo=tz.UTC),
         )
 
-    def set_stac_date(self, datetime_min, datetime_max, catalog_model):
+    def set_stac_date(
+        self,
+        datetime_min: datetime.datetime,
+        datetime_max: datetime.datetime,
+        catalog_model: Dict[str, Any],
+    ):
         """Updates catalog data using given dates
 
         :param datetime_min: Date min of interval
@@ -1006,7 +1046,7 @@ class StacCatalog(StacCommon):
                 "max": datetime_max.isoformat().replace("+00:00", "") + "Z",
             },
         )
-        parsed_dict = format_dict_items(catalog_model, **format_args)
+        parsed_dict: Dict[str, Any] = format_dict_items(catalog_model, **format_args)
 
         self.update_data(parsed_dict)
 
@@ -1021,7 +1061,7 @@ class StacCatalog(StacCommon):
 
     # get / set cloud_cover filter --------------------------------------------
 
-    def get_stac_cloud_covers_list(self, **kwargs):
+    def get_stac_cloud_covers_list(self, **kwargs: Any) -> List[int]:
         """Get cloud_cover list
 
         :returns: cloud_cover list
@@ -1029,7 +1069,9 @@ class StacCatalog(StacCommon):
         """
         return list(range(0, 101, 10))
 
-    def set_stac_cloud_cover_by_id(self, cloud_cover, **kwargs):
+    def set_stac_cloud_cover_by_id(
+        self, cloud_cover: str, **kwargs: Any
+    ) -> Dict[str, Any]:
         """Updates and returns catalog with given max cloud_cover
 
         :param cloud_cover: Cloud_cover number
@@ -1042,7 +1084,7 @@ class StacCatalog(StacCommon):
         format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
         format_args["cloud_cover"] = cloud_cover
-        parsed_dict = format_dict_items(cat_model, **format_args)
+        parsed_dict: Dict[str, Any] = format_dict_items(cat_model, **format_args)
 
         self.update_data(parsed_dict)
 
@@ -1053,7 +1095,7 @@ class StacCatalog(StacCommon):
 
     # get / set locations filter ----------------------------------------------
 
-    def get_stac_location_list(self, catalog_name):
+    def get_stac_location_list(self, catalog_name: str) -> List[str]:
         """Get locations list using stac_conf & locations_config
 
         :param catalog_name: Catalog/location name
@@ -1079,7 +1121,7 @@ class StacCatalog(StacCommon):
         attr = location_config["attr"]
 
         with shapefile.Reader(path) as shp:
-            countries_list = [rec[attr] for rec in shp.records()]
+            countries_list: List[str] = [rec[attr] for rec in shp.records()]
 
         # remove duplicates
         countries_list = list(set(countries_list))
@@ -1088,7 +1130,9 @@ class StacCatalog(StacCommon):
 
         return countries_list
 
-    def set_stac_location_by_id(self, location, catalog_name):
+    def set_stac_location_by_id(
+        self, location: str, catalog_name: str
+    ) -> Dict[str, Any]:
         """Updates and returns catalog with given location
 
         :param location: Feature attribute value for shp filtering
@@ -1131,14 +1175,14 @@ class StacCatalog(StacCommon):
             )
             return {}
 
-        geom = unary_union(geom_hits)
+        geom = cast(BaseGeometry, unary_union(geom_hits))
 
         cat_model = deepcopy(self.stac_config["catalogs"]["country"]["model"])
         # parse f-strings
         format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
         format_args["feature"] = defaultdict(str, {"geometry": geom, "id": location})
-        parsed_dict = format_dict_items(cat_model, **format_args)
+        parsed_dict: Dict[str, Any] = format_dict_items(cat_model, **format_args)
 
         self.update_data(parsed_dict)
 
@@ -1147,7 +1191,7 @@ class StacCatalog(StacCommon):
 
         return parsed_dict
 
-    def build_locations_config(self):
+    def build_locations_config(self) -> Dict[str, str]:
         """Build locations config from stac_conf[locations_catalogs] & eodag_api.locations_config
 
         :returns: Locations configuration dict
@@ -1157,7 +1201,7 @@ class StacCatalog(StacCommon):
 
         locations_config_model = deepcopy(self.stac_config["locations_catalogs"])
 
-        locations_config = {}
+        locations_config: Dict[str, str] = {}
         for loc in user_config_locations_list:
             # parse jsonpath
             parsed = jsonpath_parse_dict_items(
@@ -1172,7 +1216,9 @@ class StacCatalog(StacCommon):
 
         return locations_config
 
-    def __build_stac_catalog(self, catalogs=[], fetch_providers=True):
+    def __build_stac_catalog(
+        self, catalogs: List[str] = [], fetch_providers: bool = True
+    ) -> StacCatalog:
         """Build nested catalog from catalag list
 
         :param catalogs: (optional) Catalogs list
@@ -1336,7 +1382,7 @@ class StacCatalog(StacCommon):
 
         return self
 
-    def get_stac_catalog(self):
+    def get_stac_catalog(self) -> Dict[str, Any]:
         """Get nested STAC catalog as data dict
 
         :returns: Catalog dictionnary

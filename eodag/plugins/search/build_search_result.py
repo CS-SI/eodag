@@ -15,9 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import hashlib
 import logging
+from typing import Any, Dict, List, Optional, Tuple
 
 import geojson
 import orjson
@@ -61,18 +63,26 @@ class BuildPostSearchResult(PostJsonSearch):
     :type config: str
     """
 
-    def count_hits(self, count_url=None, result_type=None):
+    def count_hits(
+        self, count_url: Optional[str] = None, result_type: Optional[str] = None
+    ) -> int:
         """Count method that will always return 1."""
         return 1
 
-    def collect_search_urls(self, page=None, items_per_page=None, count=True, **kwargs):
+    def collect_search_urls(
+        self,
+        page: Optional[int] = None,
+        items_per_page: Optional[int] = None,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[str], int]:
         """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
         urls, _ = super(BuildPostSearchResult, self).collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
         return urls, 1
 
-    def do_search(self, *args, **kwargs):
+    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Perform the actual search request, and return result in a single element."""
         search_url = self.search_urls[0]
         response = self._request(
@@ -83,7 +93,9 @@ class BuildPostSearchResult(PostJsonSearch):
         )
         return [response.json()]
 
-    def normalize_results(self, results, **kwargs):
+    def normalize_results(
+        self, results: List[Dict[str, Any]], **kwargs: Any
+    ) -> List[EOProduct]:
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
         :param results: Raw provider result as single dict in list

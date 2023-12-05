@@ -15,8 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 import requests
 from requests.auth import AuthBase
@@ -25,19 +28,25 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, format_dict_items
 from eodag.utils.exceptions import AuthenticationError
 
+if TYPE_CHECKING:
+    from requests import PreparedRequest
+
+
 logger = logging.getLogger("eodag.auth.sas_auth")
 
 
 class RequestsSASAuth(AuthBase):
     """A custom authentication class to be used with requests module"""
 
-    def __init__(self, auth_uri, signed_url_key, headers=None):
+    def __init__(
+        self, auth_uri: str, signed_url_key: str, headers: Optional[str] = None
+    ) -> None:
         self.auth_uri = auth_uri
         self.signed_url_key = signed_url_key
         self.headers = headers
-        self.signed_urls = {}
+        self.signed_urls: Dict[str, str] = {}
 
-    def __call__(self, request):
+    def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
 
         # update headers
@@ -68,12 +77,12 @@ class RequestsSASAuth(AuthBase):
 class SASAuth(Authentication):
     """SASAuth authentication plugin"""
 
-    def validate_config_credentials(self):
+    def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         # credentials are optionnal
         pass
 
-    def authenticate(self):
+    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """Authenticate"""
         self.validate_config_credentials()
 

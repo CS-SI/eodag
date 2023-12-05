@@ -15,25 +15,39 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import cdsapi
 import geojson
 import requests
 
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import (
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
-    Download,
-)
+from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.utils import datetime_range, get_geometry_from_various, path_to_uri, urlsplit
+from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+    datetime_range,
+    get_geometry_from_various,
+    path_to_uri,
+    urlsplit,
+)
 from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
 from eodag.utils.logging import get_logging_verbose
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback, ProgressCallback
 
 logger = logging.getLogger("eodag.apis.cds")
 
@@ -52,7 +66,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
     query build methods.
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         # init self.config.metadata_mapping using Search Base plugin
         Search.__init__(self, provider, config)
 
@@ -61,13 +75,18 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         # needed for compatibility
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
 
-    def do_search(self, *args, **kwargs):
+    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""
         return [{}]
 
     def query(
-        self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
-    ):
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
         # check productType, dates, geometry, use defaults if not specified
@@ -103,7 +122,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
         )
 
-    def _get_cds_client(self, **auth_dict):
+    def _get_cds_client(self, **auth_dict: Any) -> cdsapi.Client:
         """Returns cdsapi client."""
         # eodag logging info
         eodag_verbosity = get_logging_verbose()
@@ -131,7 +150,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
 
         return client
 
-    def authenticate(self):
+    def authenticate(self) -> Dict[str, str]:
         """Returns information needed for auth
 
         :returns: {key, url} dictionary
@@ -146,7 +165,7 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         if not all([uid, api_key, url]):
             raise AuthenticationError("Missing authentication informations")
 
-        auth_dict = {"key": f"{uid}:{api_key}", "url": url}
+        auth_dict: Dict[str, str] = {"key": f"{uid}:{api_key}", "url": url}
 
         client = self._get_cds_client(**auth_dict)
         try:
@@ -161,7 +180,15 @@ class CdsApi(Download, Api, BuildPostSearchResult):
 
         return auth_dict
 
-    def download(self, product, auth=None, progress_callback=None, **kwargs):
+    def download(
+        self,
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Any,
+    ) -> Optional[str]:
         """Download data from providers using CDS API"""
 
         product_extension = CDS_KNOWN_FORMATS[product.properties.get("format", "grib")]
@@ -229,13 +256,13 @@ class CdsApi(Download, Api, BuildPostSearchResult):
 
     def download_all(
         self,
-        products,
-        auth=None,
-        downloaded_callback=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
+        products: SearchResult,
+        auth: Optional[PluginConfig] = None,
+        downloaded_callback: Optional[DownloadedCallback] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Any,
     ):
         """
         Download all using parent (base plugin) method

@@ -15,15 +15,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, Dict, Union
 from urllib.parse import parse_qs, urlparse
 
-import requests.auth
+import requests
+from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError
+
+if TYPE_CHECKING:
+    from requests import PreparedRequest
 
 
 class HttpQueryStringAuth(Authentication):
@@ -54,7 +60,7 @@ class HttpQueryStringAuth(Authentication):
     :meth:`~eodag.plugins.authentication.query_string.HttpQueryStringAuth.authenticate`
     """
 
-    def authenticate(self):
+    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """Authenticate"""
         self.validate_config_credentials()
 
@@ -76,18 +82,18 @@ class HttpQueryStringAuth(Authentication):
         return auth
 
 
-class QueryStringAuth(requests.auth.AuthBase):
+class QueryStringAuth(AuthBase):
     """ "QueryStringAuth custom authentication class to be used with requests module"""
 
-    def __init__(self, **parse_args):
+    def __init__(self, **parse_args: Any) -> None:
         self.parse_args = parse_args
 
-    def __call__(self, request):
+    def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
-        parts = urlparse(request.url)
+        parts = urlparse(str(request.url))
         query_dict = parse_qs(parts.query)
         query_dict.update(self.parse_args)
-        url_without_args = parts._replace(query=None).geturl()
+        url_without_args = parts._replace(query="").geturl()
 
         request.prepare_url(url_without_args, query_dict)
         return request

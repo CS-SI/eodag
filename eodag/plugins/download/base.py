@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import hashlib
 import logging
@@ -25,9 +26,26 @@ import tempfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from eodag.plugins.base import PluginTopic
-from eodag.utils import ProgressCallback, sanitize, uri_to_path
+from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    ProgressCallback,
+    sanitize,
+    uri_to_path,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -35,11 +53,16 @@ from eodag.utils.exceptions import (
 )
 from eodag.utils.notebook import NotebookWidgets
 
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
+    from eodag.utils import DownloadedCallback
+
+
 logger = logging.getLogger("eodag.download.base")
 
-# default wait times in minutes
-DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
-DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
+T = TypeVar("T")
 
 
 class Download(PluginTopic):
@@ -78,19 +101,19 @@ class Download(PluginTopic):
     :type config: str
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Download, self).__init__(provider, config)
         self._authenticate = bool(getattr(self.config, "authenticate", False))
 
     def download(
         self,
-        product,
-        auth=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> Optional[str]:
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
@@ -121,13 +144,13 @@ class Download(PluginTopic):
 
     def _stream_download_dict(
         self,
-        product,
-        auth=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> Dict[str, Any]:
         r"""
         Base _stream_download_dict method. Not available, it must be defined for each plugin.
 
@@ -154,7 +177,12 @@ class Download(PluginTopic):
             "Download streaming must be implemented using a method named _stream_download_dict"
         )
 
-    def _prepare_download(self, product, progress_callback=None, **kwargs):
+    def _prepare_download(
+        self,
+        product: EOProduct,
+        progress_callback: Optional[ProgressCallback] = None,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> Tuple[Optional[str], Optional[str]]:
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
@@ -162,7 +190,7 @@ class Download(PluginTopic):
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: fs_path, record_filename
-        :rtype: tuple
+        :rtype: Tuple[Optional[str], Optional[str]]
         """
         if product.location != product.remote_location:
             fs_path = uri_to_path(product.location)
@@ -250,7 +278,7 @@ class Download(PluginTopic):
 
         return fs_path, record_filename
 
-    def _resolve_archive_depth(self, product_path):
+    def _resolve_archive_depth(self, product_path: str) -> str:
         """Update product_path using archive_depth from provider configuration.
 
         Handle depth levels in the product archive. For example, if the downloaded archive was
@@ -270,7 +298,12 @@ class Download(PluginTopic):
             count += 1
         return product_path
 
-    def _finalize(self, fs_path, progress_callback=None, **kwargs):
+    def _finalize(
+        self,
+        fs_path: str,
+        progress_callback: Optional[ProgressCallback] = None,
+        **kwargs: Any,
+    ) -> str:
         """Finalize the download process.
 
         :param fs_path: The path to the local zip archive downloaded or already present
@@ -402,14 +435,14 @@ class Download(PluginTopic):
 
     def download_all(
         self,
-        products,
-        auth=None,
-        downloaded_callback=None,
-        progress_callback=None,
-        wait=DEFAULT_DOWNLOAD_WAIT,
-        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs,
-    ):
+        products: SearchResult,
+        auth: Optional[PluginConfig] = None,
+        downloaded_callback: Optional[DownloadedCallback] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> List[str]:
         """
         Base download_all method.
 
@@ -422,7 +455,7 @@ class Download(PluginTopic):
         :type auth: :class:`~eodag.config.PluginConfig`
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
-                                    :class:`~eodag.utils.DownloadedCallback` and override
+                                    :class:`~eodag.api.product.DownloadedCallback` and override
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
@@ -447,7 +480,7 @@ class Download(PluginTopic):
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]
-        paths = []
+        paths: List[str] = []
         # initiate retry loop
         start_time = datetime.now()
         stop_time = start_time + timedelta(minutes=timeout)
@@ -556,7 +589,9 @@ class Download(PluginTopic):
 
         return paths
 
-    def _download_retry(self, product, wait, timeout):
+    def _download_retry(
+        self, product: EOProduct, wait: int, timeout: int
+    ) -> Callable[[Callable[..., T]], Callable[..., T]]:
         """
         Download retry decorator.
 
@@ -571,11 +606,11 @@ class Download(PluginTopic):
                         to download
         :type timeout: int
         :returns: decorator
-        :rtype: :class:`typing.Any`
+        :rtype: Callable[[Callable[..., T]], Callable[..., T]]
         """
 
-        def decorator(download):
-            def download_and_retry(*args, **kwargs):
+        def decorator(download: Callable[..., T]) -> Callable[..., T]:
+            def download_and_retry(*args: Any, **kwargs: Any) -> T:
                 # initiate retry loop
                 start_time = datetime.now()
                 stop_time = start_time + timedelta(minutes=timeout)
@@ -586,7 +621,6 @@ class Download(PluginTopic):
                 nb_info = NotebookWidgets()
 
                 while "Loop until products download succeeds or timeout is reached":
-
                     datetime_now = datetime.now()
 
                     if datetime_now >= product.next_try:

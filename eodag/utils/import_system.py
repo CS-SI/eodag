@@ -15,14 +15,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import importlib
 import pkgutil
 from contextlib import contextmanager
 from functools import partial
+from typing import TYPE_CHECKING, Any, Generator, Tuple
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
-def import_all_modules(base_package, depth=1, exclude=()):
+def import_all_modules(
+    base_package: ModuleType, depth: int = 1, exclude: Tuple[str, ...] = ()
+) -> None:
     """Import all modules in base_package, including modules in the sub-packages up to `depth` and excluding modules in
     `exclude`.
 
@@ -75,7 +82,7 @@ def import_all_modules(base_package, depth=1, exclude=()):
 
 
 @contextmanager
-def patch_owslib_requests(verify=True):
+def patch_owslib_requests(verify: bool = True) -> Generator[None, Any, None]:
     """Overrides call to the :func:`requests.request` and :func:`requests.post` functions by
     :func:`owslib.util.openURL` and :func:`owslib.util.http_post` functions, providing some control over how to use
     these functions in `owslib <https://geopython.github.io/OWSLib/>`_.

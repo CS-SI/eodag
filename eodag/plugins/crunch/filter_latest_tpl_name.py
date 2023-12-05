@@ -15,13 +15,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging
 import re
+from typing import TYPE_CHECKING, Any, Dict, List, Match, Optional, cast
 
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import ValidationError
 
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
 logger = logging.getLogger("eodag.crunch.latest_tpl_name")
 
 
@@ -39,7 +43,7 @@ class FilterLatestByName(Crunch):
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")
 
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]) -> None:
         super(FilterLatestByName, self).__init__(config)
         name_pattern = config.pop("name_pattern")
         if not self.NAME_PATTERN_CONSTRAINT.search(name_pattern):
@@ -50,7 +54,9 @@ class FilterLatestByName(Crunch):
             )
         self.name_pattern = re.compile(name_pattern)
 
-    def proceed(self, product_list, **search_params):
+    def proceed(
+        self, products: List[EOProduct], **search_params: Any
+    ) -> List[EOProduct]:
         """Execute crunch: Filter Search results to get only the latest product, based on the name of the product
 
         :param products: A list of products resulting from a search
@@ -59,12 +65,15 @@ class FilterLatestByName(Crunch):
         :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Starting products filtering")
-        processed = []
-        filtered = []
-        for product in product_list:
-            match = self.name_pattern.match(product.properties["title"])
+        processed: List[str] = []
+        filtered: List[EOProduct] = []
+        for product in products:
+            match = cast(
+                Optional[Match[Any]],
+                self.name_pattern.match(product.properties["title"]),
+            )
             if match:
-                tileid = match.group("tileid")
+                tileid: str = match.group("tileid")
                 if tileid not in processed:
                     logger.debug(
                         "Latest product found for tileid=%s: date=%s",
