@@ -842,11 +842,13 @@ def search_stac_items(
 
     catalog_url = url.replace("/items", "")
 
-    query_args = {
+    next_page_kwargs = {
         key: value for key, value in arguments.copy().items() if value is not None
     }
-    next_page_id = int(query_args["page"]) + 1 if "page" in query_args else 2
-    query_args["page"] = next_page_id
+    next_page_id = (
+        int(next_page_kwargs["page"]) + 1 if "page" in next_page_kwargs else 2
+    )
+    next_page_kwargs["page"] = next_page_id
 
     # use catalogs from path or if it is empty, collections from args
     if catalogs:
@@ -976,10 +978,10 @@ def search_stac_items(
     search_results.method = method
     if method == "POST":
         search_results.next = f"{url}"
-        search_results.body = query_args
+        search_results.body = next_page_kwargs
 
     elif method == "GET":
-        next_query_string = urlencode(query_args)
+        next_query_string = urlencode(next_page_kwargs)
         search_results.next = f"{url}?{next_query_string}"
 
     items = StacItem(
