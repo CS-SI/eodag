@@ -1921,3 +1921,143 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         self.assertEqual("a", queryable.__metadata__[0].get_default())
         queryable = queryables.get("month")
         self.assertTrue(queryable.__metadata__[0].is_required())
+class TestSearchPluginDataRequestBuildSearchResult(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginDataRequestBuildSearchResult, self).setUp()
+        provider = "polytope"
+        self.product_type = "POLYTOPE_TEST"
+        self.search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin.config.credentials = {"username": "tony", "password": "pass"}
+        self.search_plugin.auth = self.auth_plugin.authenticate()
+
+    def test_build_search_result_server_mode(self):
+        params = {
+            "startTimeFromAscendingNode": "2022-11-22T00:00:00Z",
+            "completionTimeFromAscendingNode": "2022-11-23T00:00:00Z",
+            "server_mode": True,
+        }
+        result, num_products = self.search_plugin.query(
+            productType="POLYTOPE_TEST", **params
+        )
+        self.assertEqual(1, num_products)
+        self.assertEqual(1, len(result))
+        product = result[0]
+        self.assertIn("POLYTOPE_TEST_20221122_20221123", product.properties["id"])
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_build_search_result.requests.sessions.Session.send",
+        autospec=True,
+    )
+    def test_search_client_mode(self, mock_session_send):
+        params = {
+            "startTimeFromAscendingNode": "2022-11-22T00:00:00Z",
+            "completionTimeFromAscendingNode": "2022-11-23T00:00:00Z",
+        }
+
+        request_data = {
+            "request": {
+                "date": "20221122/to/20221123",
+                "class": "rd",
+                "expver": "i4vo",
+                "stream": "lwda",
+                "time": 0,
+                "domain": "g",
+                "type": "fc",
+                "levtype": "sfc",
+                "anoffset": 9,
+                "step": 3,
+                "param": 31,
+            },
+            "verb": "retrieve",
+        }
+        mock_session_send.return_value = mock.Mock()
+        mock_session_send.return_value.json.side_effect = [
+            {
+                "message": [
+                    {
+                        "id": "abc123",
+                        "status": "processing",
+                        "user_request": str(request_data["request"]),
+                    }
+                ]
+            },
+            {
+                "message": [
+                    {
+                        "id": "abc123",
+                        "status": "processed",
+                        "user_request": str(request_data["request"]),
+                    }
+                ]
+            },
+        ]
+        result, num_products = self.search_plugin.query(
+            productType="POLYTOPE_TEST", **params
+        )
+        self.assertEqual(1, num_products)
+        self.assertEqual(1, len(result))
+
+        self.assertEqual(3, mock_session_send.call_count)
+        product = result[0]
+        self.assertIn("POLYTOPE_TEST_20221122_20221123", product.properties["id"])
+        self.assertEqual(
+            "https://polytope.apps.lumi.ewctest.link/api/v1/downloads/abc123",
+            product.remote_location,
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_build_search_result.requests.sessions.Session.send",
+        autospec=True,
+    )
+    def test_search_by_id(self, mock_session_send):
+        params = {"id": "POLYTOPE_TEST_20221122_20221123_vnhqoinvoq"}
+        request_data = {
+            "request": {
+                "date": "20221122/to/20221123",
+                "class": "rd",
+                "expver": "i4vo",
+                "stream": "lwda",
+                "time": 0,
+                "domain": "g",
+                "type": "fc",
+                "levtype": "sfc",
+                "anoffset": 9,
+                "step": 3,
+                "param": 31,
+            },
+            "verb": "retrieve",
+        }
+        mock_session_send.return_value = mock.Mock()
+        mock_session_send.return_value.json.side_effect = [
+            {
+                "message": [
+                    {
+                        "id": "abc123",
+                        "status": "processing",
+                        "user_request": str(request_data["request"]),
+                    }
+                ]
+            },
+            {
+                "message": [
+                    {
+                        "id": "abc123",
+                        "status": "processed",
+                        "user_request": str(request_data["request"]),
+                    }
+                ]
+            },
+        ]
+        result, num_products = self.search_plugin.query(
+            productType="POLYTOPE_TEST", **params
+        )
+        self.assertEqual(1, num_products)
+        self.assertEqual(1, len(result))
+
+        self.assertEqual(3, mock_session_send.call_count)
+        product = result[0]
+        self.assertEqual(
+            "https://polytope.apps.lumi.ewctest.link/api/v1/downloads/abc123",
+            product.remote_location,
+        )
