@@ -1181,7 +1181,7 @@ class MockResponse:
         """Return json data"""
         return self.json_data
 
-    def raise_for_status(self):
+    def raise_for_status(self) -> None:
         """raises an exception when the status is not ok"""
         if self.status_code != 200:
             raise HTTPError()
