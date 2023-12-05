@@ -107,6 +107,7 @@ class EOProduct:
     search_kwargs: Any
     geometry: BaseGeometry
     search_intersection: Optional[BaseGeometry]
+    assets: AssetsDict
 
     def __init__(
         self, provider: str, properties: Dict[str, Any], **kwargs: Any
