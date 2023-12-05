@@ -1129,12 +1129,11 @@ def add_provider_queryables(provider: str, queryables: dict) -> Dict[str, Any]:
         logger.info("no url was found for %s provider-specific queryables", provider)
         return queryables
     try:
+        headers = USER_AGENT
         if hasattr(search_plugin, "auth"):
-            headers = getattr(search_plugin.auth, "headers", {})
-            headers.update(USER_AGENT)
+            res = requests.get(queryables_url, headers=headers, auth=search_plugin.auth)
         else:
-            headers = USER_AGENT
-        res = requests.get(queryables_url, headers=headers)
+            res = requests.get(queryables_url, headers=headers)
         res.raise_for_status()
     except requests.exceptions.HTTPError as err:
         if err.response.status_code == 404:
@@ -1191,12 +1190,11 @@ def add_provider_product_type_queryables(
         )
         return {}
     try:
+        headers = USER_AGENT
         if hasattr(search_plugin, "auth"):
-            headers = getattr(search_plugin.auth, "headers", {})
-            headers.update(USER_AGENT)
+            res = requests.get(queryables_url, headers=headers, auth=search_plugin.auth)
         else:
-            headers = USER_AGENT
-        res = requests.get(queryables_url, headers=headers)
+            res = requests.get(queryables_url, headers=headers)
         res.raise_for_status()
     except requests.exceptions.HTTPError as err:
         if err.response.status_code == 404:
@@ -1212,7 +1210,9 @@ def add_provider_product_type_queryables(
             return {}
 
 
-def _format_provider_queryables(provider_queryables: dict, queryables: dict) -> Dict[str, Any]:
+def _format_provider_queryables(
+    provider_queryables: dict, queryables: dict
+) -> Dict[str, Any]:
     for queryable, data in provider_queryables.items():
         attributes = {"description": queryable}
         if "type" in data:
