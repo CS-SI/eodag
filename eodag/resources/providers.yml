@@ -2125,9 +2125,6 @@
       class:
         - class
         - '$.class'
-      date:
-        - date
-        - '$.date'
       database:
         - database
         - '$.database'
