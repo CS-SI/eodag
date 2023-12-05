@@ -449,7 +449,7 @@ def stac_collections_items(collection_id: str, request: Request) -> Any:
 )
 def list_collection_queryables(
     request: Request, collection_id: str, provider: Optional[str] = None
-) -> Queryables:
+) -> Any:
     """Returns the list of queryable properties for a specific collection.
 
     This endpoint provides a list of properties that can be used as filters when querying
@@ -462,8 +462,8 @@ def list_collection_queryables(
     :type collection_id: str
     :param provider: (optional) The provider for which to retrieve additional properties.
     :type provider: str
-    :returns: An object containing the list of available queryable properties for the specified collection.
-    :rtype: eodag.rest.utils.Queryables
+    :returns: A json object containing the list of available queryable properties for the specified collection.
+    :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
 
@@ -675,7 +675,7 @@ def stac_catalogs(catalogs: str, request: Request) -> Any:
     response_model_exclude_none=True,
     include_in_schema=False,
 )
-def list_queryables(request: Request, provider: Optional[str] = None) -> Queryables:
+def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     """Returns the list of terms available for use when writing filter expressions.
 
     This endpoint provides a list of terms that can be used as filters when querying
@@ -684,8 +684,8 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Queryab
 
     :param request: The incoming request object.
     :type request: fastapi.Request
-    :returns: An object containing the list of available queryable terms.
-    :rtype: eodag.rest.utils.Queryables
+    :returns: A json object containing the list of available queryable terms.
+    :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
     queryables = Queryables(q_id=request.state.url)
