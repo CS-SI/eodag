@@ -46,7 +46,6 @@ from shapely.geometry import Polygon, shape
 import eodag
 from eodag import EOProduct
 from eodag.api.queryables import BaseQueryableProperty
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config, load_stac_provider_config

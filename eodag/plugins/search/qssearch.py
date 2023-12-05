@@ -276,9 +276,8 @@ class QueryStringSearch(Search):
                 ] = product_type_metadata_mapping
 
     def clear(self) -> None:
-        self.download_info = {}
-
         """Clear search context"""
+        self.download_info = {}
         super().clear()
         self.search_urls.clear()
         self.query_params.clear()
