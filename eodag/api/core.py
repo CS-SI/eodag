@@ -2020,8 +2020,16 @@ class EODataAccessGateway:
         # dictionary of the queryable properties of the providers supporting the given product type
         all_queryable_properties = dict()
         for plugin in plugins:
-            if product_type and product_type not in plugin.config.products.keys():
+            if (
+                product_type
+                and product_type not in plugin.config.products.keys()
+                and provider is None
+            ):
                 raise UnsupportedProductType(product_type)
+            elif product_type and product_type not in plugin.config.products.keys():
+                raise UnsupportedProductType(
+                    f"{product_type} is not available for provider {provider}"
+                )
 
             provider_queryables = set(default_queryables)
 
