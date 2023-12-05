@@ -1212,7 +1212,7 @@ def add_provider_product_type_queryables(
             return {}
 
 
-def _format_provider_queryables(provider_queryables: dict, queryables: dict):
+def _format_provider_queryables(provider_queryables: dict, queryables: dict) -> Dict[str, Any]:
     for queryable, data in provider_queryables.items():
         attributes = {"description": queryable}
         if "type" in data:
