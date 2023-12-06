@@ -5528,10 +5528,10 @@
   roles:
     - host
   description: DEDL STAC
-  url: https://hda.central.data.destination-earth.eu/stac/
+  url: https://hda.data.destination-earth.eu/stac/
   search: !plugin
     type: StacSearch
-    api_endpoint: https://hda.central.data.destination-earth.eu/stac/search
+    api_endpoint: https://hda.data.destination-earth.eu/stac/search
     need_auth: true
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
@@ -5539,7 +5539,7 @@
         - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
     discover_product_types:
-      fetch_url: 'https://hda.central.data.destination-earth.eu/stac/collections'
+      fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
       result_type: json
       results_entry: '$.collections[*]'
       generic_product_type_id: '$.id'
@@ -5556,13 +5556,13 @@
       max_items_per_page: 100
   download: !plugin
     type: HTTPDownload
-    base_uri: 'https://hda.data.destination-earth.eu/stac'
+    base_uri: https://hda.data.destination-earth.eu/stac
     auth_error_code: 403
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
-    auth_base_uri: 'https://auth.p3.csgroup.space'
-    realm: 'METIS'
-    client_id: 'dedl-portal'
+    auth_base_uri: https://identity.data.destination-earth.eu/auth
+    realm: dedl
+    client_id: hda-public
     client_secret:
     token_provision: header
     auth_error_code: 401
