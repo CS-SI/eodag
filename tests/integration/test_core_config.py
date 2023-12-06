@@ -57,9 +57,6 @@ class TestCoreProvidersConfig(TestCase):
         mock__request.return_value = mock.Mock()
         mock__request_side_effect = [
             {
-                "context": {
-                    "matched": 1,
-                },
                 "features": [
                     {
                         "id": "foo",

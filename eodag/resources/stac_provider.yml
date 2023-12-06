@@ -20,7 +20,7 @@ search:
   results_entry: features
   pagination:
     next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
-    total_items_nb_key_path: '$.context.matched'
+    total_items_nb_key_path: '$.numberMatched'
     next_page_url_key_path: '$.links[?(@.rel="next")].href'
     next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'
     next_page_merge_key_path: '$.links[?(@.rel="next")].merge'
