@@ -43,6 +43,7 @@ from tests.context import (
     ProviderConfig,
     RequestError,
     SearchResult,
+    UnsupportedProductType,
     UnsupportedProvider,
     get_geometry_from_various,
     load_default_config,
@@ -979,6 +980,94 @@ class TestCore(TestCoreBase):
 
         # run a 2nd time: check that it does not raise an error
         self.dag.update_providers_config(new_config)
+
+    def test_get_queryables(self):
+        """get_queryables must return queryables list adapted to provider and product-type"""
+        with self.assertRaises(UnsupportedProvider):
+            self.dag.get_queryables(provider="not_existing_provider")
+
+        with self.assertRaises(UnsupportedProductType):
+            self.dag.get_queryables(product_type="not_existing_product_type")
+
+        expected_result = {"productType", "start", "end", "geom", "locations", "id"}
+        queryables = self.dag.get_queryables()
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {
+            "start",
+            "end",
+            "geom",
+            "locations",
+            "productType",
+            "platformSerialIdentifier",
+            "instrument",
+            "processingLevel",
+            "resolution",
+            "organisationName",
+            "parentIdentifier",
+            "orbitNumber",
+            "orbitDirection",
+            "swathIdentifier",
+            "cloudCover",
+            "snowCover",
+            "sensorMode",
+            "polarizationMode",
+            "id",
+            "tileIdentifier",
+            "geometry",
+        }
+        queryables = self.dag.get_queryables(provider="peps")
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {
+            "start",
+            "end",
+            "geom",
+            "locations",
+            "productType",
+            "platformSerialIdentifier",
+            "instrument",
+            "processingLevel",
+            "resolution",
+            "organisationName",
+            "parentIdentifier",
+            "orbitNumber",
+            "orbitDirection",
+            "swathIdentifier",
+            "snowCover",
+            "sensorMode",
+            "polarizationMode",
+            "id",
+            "tileIdentifier",
+            "geometry",
+        }
+        queryables = self.dag.get_queryables(provider="peps", product_type="S1_SAR_GRD")
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {"productType", "start", "end", "geom", "locations", "id"}
+        queryables = self.dag.get_queryables(product_type="S2_MSI_L1C")
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {
+            "productType",
+            "start",
+            "end",
+            "geom",
+            "locations",
+            "geometry",
+            "platformSerialIdentifier",
+            "title",
+            "cloudCover",
+            "illuminationAzimuthAngle",
+            "illuminationZenithAngle",
+            "awsPath",
+            "productPath",
+            "id",
+        }
+        queryables = self.dag.get_queryables(
+            provider="aws_eos", product_type="S2_MSI_L1C"
+        )
+        self.assertSetEqual(queryables, expected_result)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
