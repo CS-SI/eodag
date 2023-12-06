@@ -2,12 +2,6 @@
     "type": "FeatureCollection",
     "stac_version": "1.0.0-beta.2",
     "stac_extensions": [],
-    "context": {
-        "page": 1,
-        "limit": 1,
-        "matched": 21830128,
-        "returned": 1
-    },
     "numberMatched": 21830128,
     "numberReturned": 1,
     "features": [

@@ -160,12 +160,6 @@ items:
   numberMatched: '$.search_results.numberMatched'
   # len(features)
   numberReturned: '$.search_results.numberReturned'
-  # 0.7.0 stac-browser compatibility
-  context:
-    page: '$.search_results.properties.page'
-    limit: '$.search_results.properties.itemsPerPage'
-    matched: '$.search_results.properties.totalResults'
-    returned: '$.search_results.numberReturned'
 
 # https://stacspec.org/STAC-api.html#operation/getFeature
 item:

@@ -144,12 +144,12 @@ Example
 
     # search for items
     $ curl "http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25" \
-    | jq ".context.matched"
+    | jq ".numberMatched"
     6
 
     # browse for items
     $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
-    | jq ".context.matched"
+    | jq ".numberMatched"
     9
 
     # get download link
