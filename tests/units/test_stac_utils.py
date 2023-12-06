@@ -326,9 +326,12 @@ class TestStacUtils(unittest.TestCase):
         self.rest_utils.get_stac_extension_oseo(url="")
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.do_search", autospec=True
     )
-    def test_get_stac_item_by_id(self, mock_do_search):
+    def test_get_stac_item_by_id(self, mock_do_search, mock_count_hits):
         """get_stac_item_by_id returns None if no StacItem was found"""
         mock_do_search.return_value = [
             {
@@ -342,6 +345,7 @@ class TestStacUtils(unittest.TestCase):
             )
         )
         mock_do_search.return_value = []
+        mock_count_hits.return_value = 0
         self.assertIsNone(
             self.rest_utils.get_stac_item_by_id(
                 url="", item_id="", catalogs=["S3_MSI_L1C"]

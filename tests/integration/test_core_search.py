@@ -29,6 +29,7 @@ from tests.context import (
     NoMatchingProductType,
     RequestError,
     USGSError,
+    ValidationError,
 )
 from tests.utils import mock
 
@@ -203,24 +204,55 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Request",
+        "eodag.plugins.search.data_request_search.DataRequestSearch.query",
         autospec=True,
-        side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
-        side_effect=RequestException,
     )
-    @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
-        autospec=True,
-        side_effect=RequestException,
-    )
-    def test_core_search_fallback_find_nothing(
-        self, mock_get, mock_post, mock_request, mock_auth
+    def test_core_search_fallback_find_nothing_without_error(
+        self, mock_qssearch_query, mock_data_request_search_query, mock_auth
     ):
-        """Core search must loop over providers until finding a non empty result"""
+        """Core search must loop over providers until finding a non empty result
+        and does not raise an error if no error appeared while looping
+        """
+        product_type = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(product_type)
+        self.assertListEqual(
+            available_providers,
+            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+        )
+        mock_qssearch_query.return_value = ([], 0)
+        mock_data_request_search_query.return_value = ([], 0)
+
+        products, count = self.dag.search(productType="S1_SAR_SLC")
+        self.assertEqual(len(products), 0)
+        self.assertEqual(count, 0)
+        self.assertEqual(
+            mock_qssearch_query.call_count + mock_data_request_search_query.call_count,
+            len(available_providers),
+            "all available providers must have been requested",
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.DataRequestSearch.query",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+    )
+    def test_core_search_fallback_find_nothing_with_error(
+        self, mock_qssearch_query, mock_data_request_search_query, mock_auth
+    ):
+        """Core search must loop over providers until finding a non empty result and
+        raise an error if at least one error appeared while looping
+        """
         product_type = "S1_SAR_SLC"
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
@@ -228,13 +260,25 @@ class TestCoreSearch(unittest.TestCase):
             ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
         )
 
-        products, count = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), 0)
-        self.assertEqual(count, 0)
+        mock_qssearch_query.return_value = ([], 0)
+        mock_data_request_search_query.side_effect = RequestError
+        with self.assertRaises(ValidationError) as context:
+            products, count = self.dag.search(productType="S1_SAR_SLC")
+            self.assertEqual(len(products), 0)
+            self.assertEqual(count, 0)
+            self.assertEqual(
+                mock_qssearch_query.call_count
+                + mock_data_request_search_query.call_count,
+                len(available_providers),
+                "all available providers must have been requested",
+            )
+        # check that one error appeared while looping
+        self.assertEqual(len(context.exception.errors_to_raise), 1)
+        # check that an error has been raised after looping
         self.assertEqual(
-            mock_get.call_count + mock_post.call_count + mock_request.call_count,
-            len(available_providers),
-            "all available providers must have been requested",
+            "No result could be obtained from any available provider and error(s)"
+            " appeared while searching. You may change your search parameters.",
+            str(context.exception),
         )
 
     @mock.patch(
