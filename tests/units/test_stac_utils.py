@@ -532,7 +532,7 @@ class TestStacUtils(unittest.TestCase):
 
         response = self.rest_utils.search_stac_items(
             url="http://foo/search",
-            arguments={"collections": ["S2_MSI_L1C"]},
+            arguments={"collections": ["S2_MSI_L1C"], "page": 2},
             root="http://foo/",
             method="POST",
         )
@@ -549,6 +549,6 @@ class TestStacUtils(unittest.TestCase):
                 "href": "http://foo/search",
                 "title": "Next page",
                 "type": "application/geo+json",
-                "body": {"collections": ["S2_MSI_L1C"], "page": 2},
+                "body": {"collections": ["S2_MSI_L1C"], "page": 3},
             },
         )
