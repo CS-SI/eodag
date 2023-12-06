@@ -982,6 +982,7 @@ class TestCore(TestCoreBase):
         self.dag.update_providers_config(new_config)
 
     def test_get_queryables(self):
+        """get_queryables must return queryables list adapted to provider and product-type"""
         with self.assertRaises(UnsupportedProvider):
             self.dag.get_queryables(provider="not_existing_provider")
 
@@ -1016,6 +1017,31 @@ class TestCore(TestCoreBase):
             "geometry",
         }
         queryables = self.dag.get_queryables(provider="peps")
+        self.assertSetEqual(queryables, expected_result)
+
+        expected_result = {
+            "start",
+            "end",
+            "geom",
+            "locations",
+            "productType",
+            "platformSerialIdentifier",
+            "instrument",
+            "processingLevel",
+            "resolution",
+            "organisationName",
+            "parentIdentifier",
+            "orbitNumber",
+            "orbitDirection",
+            "swathIdentifier",
+            "snowCover",
+            "sensorMode",
+            "polarizationMode",
+            "id",
+            "tileIdentifier",
+            "geometry",
+        }
+        queryables = self.dag.get_queryables(provider="peps", product_type="S1_SAR_GRD")
         self.assertSetEqual(queryables, expected_result)
 
         expected_result = {"productType", "start", "end", "geom", "locations", "id"}
