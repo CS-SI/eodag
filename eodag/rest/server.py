@@ -704,7 +704,11 @@ def stac_search(
     provider = arguments.pop("provider", None)
 
     response = search_stac_items(
-        url=url, arguments=arguments, root=url_root, provider=provider
+        url=url,
+        arguments=arguments,
+        root=url_root,
+        provider=provider,
+        method=request.method,
     )
     resp = ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
