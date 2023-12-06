@@ -2195,22 +2195,28 @@ class TestCoreProductAlias(TestCoreBase):
         products = cls.dag.product_types_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
 
-    def test_reference_product_type(self):
+    def test_get_alias_from_product_type(self):
         # return product alias
-        self.assertEqual("S2_MSI_ALIAS", self.dag.reference_product_type("S2_MSI_L1C"))
-        # product type without alias
-        self.assertEqual("S1_SAR_GRD", self.dag.reference_product_type("S1_SAR_GRD"))
-        # not existing product type
-        with self.assertRaises(NoMatchingProductType):
-            self.dag.reference_product_type("JUST_A_TYPE")
-
-    def test_dereference_product_type(self):
-        # return product id
         self.assertEqual(
-            "S2_MSI_L1C", self.dag.dereference_product_type("S2_MSI_ALIAS")
+            "S2_MSI_ALIAS", self.dag.get_alias_from_product_type("S2_MSI_L1C")
         )
         # product type without alias
-        self.assertEqual("S1_SAR_GRD", self.dag.dereference_product_type("S1_SAR_GRD"))
+        self.assertEqual(
+            "S1_SAR_GRD", self.dag.get_alias_from_product_type("S1_SAR_GRD")
+        )
         # not existing product type
         with self.assertRaises(NoMatchingProductType):
-            self.dag.dereference_product_type("JUST_A_TYPE")
+            self.dag.get_alias_from_product_type("JUST_A_TYPE")
+
+    def test_get_product_type_from_alias(self):
+        # return product id
+        self.assertEqual(
+            "S2_MSI_L1C", self.dag.get_product_type_from_alias("S2_MSI_ALIAS")
+        )
+        # product type without alias
+        self.assertEqual(
+            "S1_SAR_GRD", self.dag.get_product_type_from_alias("S1_SAR_GRD")
+        )
+        # not existing product type
+        with self.assertRaises(NoMatchingProductType):
+            self.dag.get_product_type_from_alias("JUST_A_TYPE")

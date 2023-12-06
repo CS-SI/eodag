@@ -245,7 +245,7 @@ class EODataAccessGateway:
 
             product_types_schema = Schema(
                 ID=fields.STORED,
-                alias=fields.STORED,
+                alias=fields.ID,
                 abstract=fields.STORED,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
@@ -824,48 +824,52 @@ class EODataAccessGateway:
         else:
             return sorted(tuple(self.providers_config.keys()))
 
-    def dereference_product_type(self, alias_or_internal_name: str):
-        """Return the internal name of a product type by either its internal name or alias
-        :param alias_or_internal_name: Alias of the product type. If the types internal name is given,
-        this method will directly return the given value.
+    def get_product_type_from_alias(self, alias_or_id: str) -> str:
+        """Return the ID of a product type by either its ID or alias
+
+        :param alias_or_id: Alias of the product type. If an existing ID is given, this
+                            method will directly return the given value.
+        :type alias_or_id: str
         :returns: Internal name of the product type.
+        :rtype: str
         """
-        product_types = self.list_product_types(fetch_providers=False)
+        product_types = [
+            k
+            for k, v in self.product_types_config.items()
+            if v.get("alias", None) == alias_or_id
+        ]
 
-        for product_type in product_types:
-            if alias_or_internal_name.upper() == product_type["ID"]:
-                if "_id" in product_type:
-                    return product_type["_id"]
-                else:
-                    return alias_or_internal_name
-            if (
-                "_id" in product_type
-                and product_type["_id"] == alias_or_internal_name.upper()
-            ):
-                return alias_or_internal_name
+        if len(product_types) > 1:
+            raise NoMatchingProductType(
+                f"Too many matching product types for alias {alias_or_id}: {product_types}"
+            )
 
-        raise NoMatchingProductType(
-            "product type " + alias_or_internal_name + " does not exist"
-        )
+        if len(product_types) == 0:
+            if alias_or_id in self.product_types_config:
+                return alias_or_id
+            else:
+                raise NoMatchingProductType(
+                    f"Could not find product type from alias or ID {alias_or_id}"
+                )
 
-    def reference_product_type(self, internal_name: str):
-        """Return the alias of a product type by its internal name. If no alias
-        was defined for the given product type, the internal name is returned instead.
-        :param internal_name: Internal name of the product type.
-        :returns: Alias of the product type or internal name if no alias has been defined for it.
+        return product_types[0]
+
+    def get_alias_from_product_type(self, product_type: str) -> str:
+        """Return the alias of a product type by its ID. If no alias was defined for the
+        given product type, its ID is returned instead.
+
+        :param product_type: product type ID
+        :type product_type: str
+        :returns: Alias of the product type or its ID if no alias has been defined for it.
+        :rtype: str
         """
-        product_types = self.list_product_types(fetch_providers=False)
+        if product_type not in self.product_types_config:
+            raise NoMatchingProductType(product_type)
 
-        for product_type in product_types:
-            if product_type["ID"] == internal_name:
-                return internal_name
-            if "_id" in product_type and product_type["_id"] == internal_name:
-                return product_type["ID"]
-
-        raise NoMatchingProductType("product type " + internal_name + " does not exist")
+        return self.product_types_config[product_type].get("alias", product_type)
 
     def guess_product_type(self, **kwargs: Any) -> List[str]:
-        """Find the eodag product type code that best matches a set of search params
+        """Find eodag product types codes that best match a set of search params
 
         :param kwargs: A set of search parameters as keywords arguments
         :returns: The best match for the given parameters
@@ -1266,7 +1270,7 @@ class EODataAccessGateway:
         # Get the search plugin and the maximized value
         # of items_per_page if defined for the provider used.
         try:
-            product_type = self.dereference_product_type(
+            product_type = self.get_product_type_from_alias(
                 kwargs.get("productType", None) or self.guess_product_type(**kwargs)[0]
             )
         except NoMatchingProductType:
@@ -1360,7 +1364,7 @@ class EODataAccessGateway:
         product_type = kwargs.get("productType", None)
         if product_type is not None:
             try:
-                product_type = self.dereference_product_type(product_type)
+                product_type = self.get_product_type_from_alias(product_type)
             except NoMatchingProductType:
                 logger.warning("product type %s not found", product_type)
         get_search_plugins_kwargs = dict(provider=provider, product_type=product_type)
@@ -1473,7 +1477,7 @@ class EODataAccessGateway:
 
         if product_type is not None:
             try:
-                product_type = self.dereference_product_type(product_type)
+                product_type = self.get_product_type_from_alias(product_type)
             except NoMatchingProductType:
                 logger.warning("unknown product type " + product_type)
         kwargs["productType"] = product_type
@@ -1709,7 +1713,7 @@ class EODataAccessGateway:
 
                 try:
                     if eo_product.product_type is not None:
-                        eo_product.product_type = self.dereference_product_type(
+                        eo_product.product_type = self.get_product_type_from_alias(
                             eo_product.product_type
                         )
                 except NoMatchingProductType:

@@ -658,7 +658,7 @@ def get_stac_item_by_id(
     found_products = search_product_by_id(item_id, product_type=product_type)
 
     if len(found_products) > 0:
-        found_products[0].product_type = eodag_api.reference_product_type(
+        found_products[0].product_type = eodag_api.get_alias_from_product_type(
             found_products[0].product_type
         )
         return StacItem(
