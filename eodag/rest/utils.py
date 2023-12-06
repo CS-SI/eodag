@@ -1068,7 +1068,6 @@ class Queryables(BaseModel):
                 description="Datetime",
                 ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
             ),
-            "ids": QueryableProperty(description="IDs"),
         }
     )
     additional_properties: bool = Field(
@@ -1103,8 +1102,14 @@ def rename_to_stac_standard(key: str) -> str:
     stac_config_properties: Dict[str, Any] = stac_config["item"]["properties"]
 
     for stac_property, value in stac_config_properties.items():
+        if isinstance(value, list):
+            value = value[0]
         if str(value).endswith(key):
             return stac_property
+
+    if key in OSEO_METADATA_MAPPING:
+        return "oseo:" + key
+
     return key
 
 
@@ -1121,15 +1126,17 @@ def fetch_collection_queryable_properties(
     :rtype queryable_properties: set
     """
     # Fetch the metadata mapping for collection-specific queryables
-    args = [collection_id, provider] if provider else [collection_id]
-    search_plugin = next(eodag_api._plugins_manager.get_search_plugins(*args))
-    search_plugin.config
-    mapping: Dict[str, Any] = dict(search_plugin.config.metadata_mapping)
+    kwargs = {"product_type": collection_id}
+    if provider is not None:
+        kwargs["provider"] = provider
+    eodag_queryable_properties = eodag_api.get_queryables(**kwargs)
+
     # list of all the STAC standardized collection-specific queryables
     queryable_properties: Set[str] = set()
-    for key, value in mapping.items():
-        if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-            queryable_properties.add(rename_to_stac_standard(key))
+    for prop in eodag_queryable_properties:
+        # remove pure eodag properties
+        if prop not in ["start", "end", "geom", "locations", "id"]:
+            queryable_properties.add(rename_to_stac_standard(prop))
     return queryable_properties
 
 

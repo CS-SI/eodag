@@ -467,8 +467,8 @@ def list_collection_queryables(
         fetch_collection_queryable_properties(*conf_args)
     )
 
-    for prop in provider_properties:
-        titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop).title()
+    for prop in sorted(provider_properties):
+        titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop.split(":")[-1]).title()
         queryables[prop] = QueryableProperty(description=titled_name)
 
     return queryables

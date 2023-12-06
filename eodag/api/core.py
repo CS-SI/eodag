@@ -22,7 +22,7 @@ import os
 import re
 import shutil
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 import geojson
 import pkg_resources
@@ -71,6 +71,7 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
     RequestError,
+    UnsupportedProductType,
     UnsupportedProvider,
 )
 from eodag.utils.stac_reader import fetch_stac_items
@@ -1997,3 +1998,58 @@ class EODataAccessGateway:
         plugin_conf = {"name": name}
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
+
+    def get_queryables(
+        self, provider: Optional[str] = None, product_type: Optional[str] = None
+    ) -> Set[str]:
+        """Fetch the queryable properties for a given product type and/or provider.
+
+        :param product_type: (optional) The EODAG product type.
+        :type product_type: str
+        :param provider: (optional) The provider.
+        :type provider: str
+        :returns: A set containing the EODAG queryable properties.
+        :rtype: set
+        """
+        default_queryables = {"productType", "start", "end", "geom", "locations", "id"}
+        if provider is None and product_type is None:
+            return default_queryables
+
+        plugins = self._plugins_manager.get_search_plugins(product_type, provider)
+
+        # dictionary of the queryable properties of the providers supporting the given product type
+        all_queryable_properties = dict()
+        for plugin in plugins:
+            if (
+                product_type
+                and product_type not in plugin.config.products.keys()
+                and provider is None
+            ):
+                raise UnsupportedProductType(product_type)
+            elif product_type and product_type not in plugin.config.products.keys():
+                raise UnsupportedProductType(
+                    f"{product_type} is not available for provider {provider}"
+                )
+
+            provider_queryables = set(default_queryables)
+
+            metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
+
+            # product_type-specific metadata-mapping
+            metadata_mapping.update(
+                getattr(plugin.config, "products", {})
+                .get(product_type, {})
+                .get("metadata_mapping", {})
+            )
+
+            for key, value in metadata_mapping.items():
+                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                    provider_queryables.add(key)
+
+            all_queryable_properties[plugin.provider] = provider_queryables
+
+        if provider is None:
+            # intersection of the queryables among the providers
+            return set.intersection(*all_queryable_properties.values())
+        else:
+            return all_queryable_properties[provider]

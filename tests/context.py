@@ -97,6 +97,7 @@ from eodag.utils.exceptions import (
     PluginImplementationError,
     RequestError,
     UnsupportedDatasetAddressScheme,
+    UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
     STACOpenerError,
