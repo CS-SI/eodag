@@ -1110,7 +1110,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             ],
         }
         copy_res = copy.deepcopy(result)
-        mock__request.return_value.json.side_effect = [result, copy_res]
+        mock__request.return_value.json.side_effect = [3, result, 3, copy_res]
         search_plugin = self.onda_search_plugin
 
         # update metadata_mapping only for S1_SAR_GRD

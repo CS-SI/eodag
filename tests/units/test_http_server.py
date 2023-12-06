@@ -29,6 +29,8 @@ from fastapi.testclient import TestClient
 from shapely.geometry import box
 
 from eodag.utils import USER_AGENT, MockResponse
+from eodag import EOProduct
+
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -1009,7 +1011,7 @@ class RequestTestCase(unittest.TestCase):
         ), f"File {expected_file} should have been deleted"
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api._plugins_manager.get_search_plugins",
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
     )
     @mock.patch(
@@ -1022,20 +1024,25 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_download_without_search_by_id(self, mock_download, mock_auth, mock_plugin):
         product_id = "a_nice_product"
-        download_info = {
-            product_id: {
-                "downloadLink": "https://bla.bli",
-                "orderLink": "https://bla.bli/blu",
-                "provider": "onda",
-            }
+        properties = {
+            "id": product_id,
+            "downloadLink": "https://bla.bli",
+            "orderLink": "https://bla.bli/blu",
+            "geometry": "-180 -90 180 90",
+            "title": product_id,
         }
-        plugin_mock_value = mock.MagicMock(download_info=download_info)
-        mock_plugin.return_value = iter([plugin_mock_value])
+        product = EOProduct("onda", properties, productType=self.tested_product_type)
+        mock_plugin.return_value = [product], 1
+        # search products
+        self.app.get(
+            f"search?collections={self.tested_product_type}&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
+            follow_redirects=True,
+        )
 
         mock_download.return_value = {"content": iter([""])}
-        # check that download request is working without attempt to execute search
+        # check that download of returned product is working without attempt to execute search
         self._request_valid_raw(
-            f"collections/some-collection/items/{product_id}/download?provider=onda",
+            f"collections/{self.tested_product_type}/items/a_nice_product/download?provider=peps",
             search_call_count=0,
         )
 
