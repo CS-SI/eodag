@@ -446,6 +446,9 @@ class StacItem(StacCommon):
             if (
                 v not in result_item_model["properties"].values()
                 and k not in self.stac_config["metadata_ignore"]
+                and not any(
+                    k in str(prop) for prop in result_item_model["properties"].values()
+                )
             ):
                 result_item_model["properties"]["oseo:" + k] = string_to_jsonpath(k, v)
 

@@ -191,14 +191,16 @@ item:
     license: '{catalog[license]}'
     constellation: '$.product.properties.platform'
     platform: '$.product.properties.platformSerialIdentifier'
-    intruments:
+    instruments:
       - '$.product.properties.instrument'
     gsd: '$.product.properties.resolution'
     published: '$.product.properties.publicationDate'
     eo:cloud_cover: '$.product.properties.cloudCover'
+    eo:snow_cover: '$.product.properties.snowCover'
     processing:level: '$.product.properties.processingLevel'
     sat:orbit_state: '$.product.properties.orbitDirection'
     sat:relative_orbit: '$.product.properties.relativeOrbitNumber'
+    sat:absolute_orbit : '$.product.properties.orbitNumber'
     sar:product_type: '$.product.properties.productType'
     sar:instrument_mode: '$.product.properties.sensorMode'
     sar:polarizations: '$.product.properties.polarizationChannels'
