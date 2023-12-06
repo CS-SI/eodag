@@ -37,6 +37,7 @@ from typing import (
     Tuple,
     Union,
 )
+from urllib.parse import urlencode
 
 import dateutil.parser
 from dateutil import tz
@@ -818,6 +819,7 @@ def search_stac_items(
     root: str = "/",
     catalogs: List[str] = [],
     provider: Optional[str] = None,
+    method: Optional[str] = "GET",
 ) -> Dict[str, Any]:
     """Get items collection dict for given catalogs list
 
@@ -831,12 +833,22 @@ def search_stac_items(
     :type catalogs: list
     :param provider: (optional) Chosen provider
     :type provider: str
+    :param method: (optional) search request HTTP method ('GET' or 'POST')
+    :type method: str
     :returns: Catalog dictionnary
     :rtype: dict
     """
     collections = arguments.get("collections", None)
 
     catalog_url = url.replace("/items", "")
+
+    next_page_kwargs = {
+        key: value for key, value in arguments.copy().items() if value is not None
+    }
+    next_page_id = (
+        int(next_page_kwargs["page"]) + 1 if "page" in next_page_kwargs else 2
+    )
+    next_page_kwargs["page"] = next_page_id
 
     # use catalogs from path or if it is empty, collections from args
     if catalogs:
@@ -860,7 +872,8 @@ def search_stac_items(
             root=root,
             provider=provider,
             eodag_api=eodag_api,
-            # handle only one collection per request (STAC allows multiple)
+            # handle only one collection
+            # per request (STAC allows multiple)
             catalogs=collections[0:1],
             url=catalog_url.replace("/search", f"/collections/{collections[0]}"),
         )
@@ -956,12 +969,22 @@ def search_stac_items(
                         **{"url": result_catalog.url, "root": result_catalog.root},
                     ),
                 )
+
         search_results = search_products(
             product_type=result_catalog.search_args["product_type"],
             arguments=search_products_arguments,
         )
 
-    return StacItem(
+    search_results.method = method
+    if method == "POST":
+        search_results.next = f"{url}"
+        search_results.body = next_page_kwargs
+
+    elif method == "GET":
+        next_query_string = urlencode(next_page_kwargs)
+        search_results.next = f"{url}?{next_query_string}"
+
+    items = StacItem(
         url=url,
         stac_config=stac_config,
         provider=provider,
@@ -974,6 +997,8 @@ def search_stac_items(
             **{"url": result_catalog.url, "root": result_catalog.root},
         ),
     )
+
+    return items
 
 
 def get_stac_extension_oseo(url: str) -> Dict[str, str]:

@@ -153,7 +153,8 @@ items:
       href: '$.search_results.next'
       title: Next page
       type: application/geo+json
-      method: GET
+      method: '$.search_results.method'
+      body: '$.search_results.body'
   # time and date when the response was generated
   timeStamp: '$.search_results.timeStamp'
   # count request result

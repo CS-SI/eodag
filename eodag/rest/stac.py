@@ -20,7 +20,6 @@ from __future__ import annotations
 import datetime
 import logging
 import os
-import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -346,22 +345,6 @@ class StacItem(StacCommon):
             for i, _ in enumerate(items_model["links"]):
                 if items_model["links"][i]["rel"] == "self":
                     items_model["links"][i]["href"] = catalog["url"]
-            if "page=" not in self.url:
-                search_results.next = "%s&page=%s" % (
-                    self.url,
-                    search_results.properties["page"] + 1,
-                )
-            else:
-                search_results.next = re.sub(
-                    r"^(.*)(page=[0-9]+)(.*)$",
-                    r"\1page=%s\3" % (search_results.properties["page"] + 1),
-                    self.url,
-                )
-        else:
-            search_results.next = "%s?page=%s" % (
-                self.url,
-                search_results.properties["page"] + 1,
-            )
 
         search_results.timeStamp = (
             datetime.datetime.now(datetime.timezone.utc)
