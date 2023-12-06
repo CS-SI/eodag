@@ -486,3 +486,69 @@ class TestStacUtils(unittest.TestCase):
         )
         # check that no other asset have also been added to the response
         self.assertEqual(len(response["features"][0]["assets"]), 2)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request",
+        autospec=True,
+    )
+    def test_search_stac_items_get(self, mock__request):
+        """search_stac_items runs with GET method"""
+        # mock the QueryStringSearch request with the S2_MSI_L1C peps response search dictionary
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = self.peps_resp_search_json
+
+        response = self.rest_utils.search_stac_items(
+            url="http://foo/search",
+            arguments={"collections": "S2_MSI_L1C"},
+            root="http://foo/",
+            method="GET",
+        )
+
+        mock__request.assert_called()
+
+        next_link = [link for link in response["links"] if link["rel"] == "next"][0]
+
+        self.assertEqual(
+            next_link,
+            {
+                "method": "GET",
+                "body": None,
+                "rel": "next",
+                "href": "http://foo/search?collections=S2_MSI_L1C&page=2",
+                "title": "Next page",
+                "type": "application/geo+json",
+            },
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request",
+        autospec=True,
+    )
+    def test_search_stac_items_post(self, mock__request):
+        """search_stac_items runs with GET method"""
+        # mock the QueryStringSearch request with the S2_MSI_L1C peps response search dictionary
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = self.peps_resp_search_json
+
+        response = self.rest_utils.search_stac_items(
+            url="http://foo/search",
+            arguments={"collections": ["S2_MSI_L1C"]},
+            root="http://foo/",
+            method="POST",
+        )
+
+        mock__request.assert_called()
+
+        next_link = [link for link in response["links"] if link["rel"] == "next"][0]
+
+        self.assertEqual(
+            next_link,
+            {
+                "method": "POST",
+                "rel": "next",
+                "href": "http://foo/search",
+                "title": "Next page",
+                "type": "application/geo+json",
+                "body": {"collections": ["S2_MSI_L1C"], "page": 2},
+            },
+        )
