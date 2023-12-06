@@ -732,17 +732,6 @@ class QueryStringSearch(Search):
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
             products.append(product)
-            self.download_info[product.properties["id"]] = {
-                "provider": self.provider,
-            }
-            if "downloadLink" in product.properties:
-                self.download_info[product.properties["id"]][
-                    "downloadLink"
-                ] = product.properties["downloadLink"]
-            if "orderLink" in product.properties:
-                self.download_info[product.properties["id"]][
-                    "orderLink"
-                ] = product.properties["orderLink"]
 
         return products
 

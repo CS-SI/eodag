@@ -194,6 +194,7 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
+        self.download_info = {}
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -1740,6 +1741,17 @@ class EODataAccessGateway:
                         eo_product
                     )
                     eo_product.register_downloader(download_plugin, auth_plugin)
+
+                product_key = f"{eo_product.product_type}_{search_plugin.provider}_{eo_product.properties['id']}"
+                self.download_info[product_key] = {}
+                if "orderLink" in eo_product.properties:
+                    self.download_info[product_key][
+                        "orderLink"
+                    ] = eo_product.properties["orderLink"]
+                if "downloadLink" in eo_product.properties:
+                    self.download_info[product_key][
+                        "downloadLink"
+                    ] = eo_product.properties["downloadLink"]
 
             results.extend(res)
             total_results = None if nb_res is None else total_results + nb_res

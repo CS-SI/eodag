@@ -712,15 +712,14 @@ def download_stac_item_by_id_stream(
     provider_product_type_config = search_plugin.config.products.get(
         product_type, {}
     ) or search_plugin.config.products.get(GENERIC_PRODUCT_TYPE, {})
+
     if "." in item_id:
         id_without_ext = item_id.split(".")[0]
     else:
         id_without_ext = item_id
-    if (
-        getattr(search_plugin, "download_info", None)
-        and id_without_ext in search_plugin.download_info
-    ):
-        product_data = search_plugin.download_info[id_without_ext]
+    product_key = f"{product_type}_{provider}_{id_without_ext}"
+    if product_key in eodag_api.download_info:
+        product_data = eodag_api.download_info[product_key]
         properties = {
             "id": id_without_ext,
             "geometry": "-180 -90 180 90",

@@ -260,7 +260,7 @@ class DataRequestSearch(Search):
             request_job.raise_for_status()
         except requests.RequestException as e:
             raise RequestError(
-                f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
+                f"search job for product_type {product_type} could not be created: {str(e)}"
             )
         else:
             logger.info("search job for product_type %s created", product_type)
@@ -363,13 +363,7 @@ class DataRequestSearch(Search):
             p.properties["orderLink"] = p.properties["orderLink"].replace(
                 "requestJobId", str(data_request_id)
             )
-            # store download information to retrieve it later to avoid search_by_id
-            self.download_info[p.properties["id"]] = {
-                "requestJobId": data_request_id,
-                "orderLink": p.properties["orderLink"],
-                "downloadLink": p.properties["downloadLink"],
-                "provider": self.provider,
-            }
+
         return products, total_items_nb
 
     def _check_uses_custom_filters(self, product_type: str) -> bool:
