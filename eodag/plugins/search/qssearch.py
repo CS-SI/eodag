@@ -277,7 +277,6 @@ class QueryStringSearch(Search):
 
     def clear(self) -> None:
         """Clear search context"""
-        self.download_info = {}
         super().clear()
         self.search_urls.clear()
         self.query_params.clear()

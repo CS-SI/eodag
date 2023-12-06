@@ -3822,7 +3822,7 @@
         - '$.extraInformation.footprint'
       cloudCover: '$.extraInformation.cloudCover'
       downloadLink: '$.url'
-      title: '$.productInfo.product'
+      title: '{$.productInfo.product#remove_extension}'
       orderLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
       storageStatus: 'OFFLINE'
   auth: !plugin

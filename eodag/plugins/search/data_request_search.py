@@ -101,7 +101,6 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
-        self.download_info = {}
         self.data_request_id = None
 
     def discover_product_types(self) -> Optional[Dict[str, Any]]:
