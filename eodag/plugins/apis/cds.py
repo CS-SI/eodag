@@ -18,8 +18,8 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from urllib.parse import unquote_plus
 
 import cdsapi
@@ -31,7 +31,7 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
-from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.rest.stac import DEFAULT_BBOX
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -77,6 +77,80 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         # needed for compatibility
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
 
+    def get_product_type_cfg(self, key: str, default: Any = None) -> Any:
+        """
+        Get the value of a configuration option specific to the current product type.
+
+        This method retrieves the value of a configuration option from the
+        `_product_type_config` attribute. If the option is not found, the provided
+        default value is returned.
+
+        :param key: The configuration option key.
+        :type key: str
+        :param default: The default value to be returned if the option is not found (default is None).
+        :type default: Any
+
+        :return: The value of the specified configuration option or the default value.
+        :rtype: Any
+        """
+        product_type_cfg = getattr(self.config, "product_type_config", {})
+        return product_type_cfg.get(key, default)
+
+    def _preprocess_search_params(self, params: Dict[Any]) -> None:
+        """Preprocess search parameters before making a request to the CDS API.
+
+        This method is responsible for checking and updating the provided search parameters
+        to ensure that required parameters like 'productType', 'startTimeFromAscendingNode',
+        'completionTimeFromAscendingNode', and 'geometry' are properly set. If not specified
+        in the input parameters, default values or values from the configuration are used.
+
+        :param params: Search parameters to be preprocessed.
+        :type params: dict
+        """
+        _dc_qs = params.get("_dc_qs", None)
+        if _dc_qs is not None:
+            # if available, update search params using datacube query-string
+            _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
+            if "/" in _dc_qp.get("date", ""):
+                (
+                    params["startTimeFromAscendingNode"],
+                    params["completionTimeFromAscendingNode"],
+                ) = _dc_qp["date"].split("/")
+            else:
+                params["startTimeFromAscendingNode"] = params[
+                    "completionTimeFromAscendingNode"
+                ] = _dc_qp["date"]
+
+            if "/" in _dc_qp.get("area", ""):
+                params["geometry"] = _dc_qp["area"].split("/")
+
+        now = datetime.utcnow().isoformat(timespec="seconds")
+
+        # productType
+        dataset = params.get("dataset", None)
+        params["productType"] = params.get("productType", dataset)
+
+        # dates
+        mission_start = self.get_product_type_cfg("missionStartDate")
+        default_end = (
+            now
+            if params.get("startTimeFromAscendingNode")
+            else mission_start + timedelta(days=1)
+        )
+        mission_end = self.get_product_type_cfg("missionEndDate", default_end)
+
+        params["startTimeFromAscendingNode"] = params.get(
+            "startTimeFromAscendingNode", mission_start
+        )
+
+        params["completionTimeFromAscendingNode"] = params.get(
+            "completionTimeFromAscendingNode", mission_end
+        )
+
+        # geometry
+        geometry = params.get("geometry", DEFAULT_BBOX)
+        params["geometry"] = get_geometry_from_various(geometry=geometry)
+
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""
         return [{}]
@@ -91,50 +165,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
-        _dc_qs = kwargs.get("_dc_qs", None)
-        if _dc_qs is not None:
-            _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
-            if "/" in _dc_qp.get("date", ""):
-                (
-                    kwargs["startTimeFromAscendingNode"],
-                    kwargs["completionTimeFromAscendingNode"],
-                ) = _dc_qp["date"].split("/")
-            else:
-                kwargs["startTimeFromAscendingNode"] = kwargs[
-                    "completionTimeFromAscendingNode"
-                ] = _dc_qp["date"]
-
-            if "/" in _dc_qp.get("area", ""):
-                kwargs["geometry"] = _dc_qp["area"].split("/")
-
-        # check productType, dates, geometry, use defaults if not specified
-        # productType
-        if not kwargs.get("productType"):
-            kwargs["productType"] = kwargs.get("dataset", None)
-        # start date
-        if "startTimeFromAscendingNode" not in kwargs:
-            kwargs["startTimeFromAscendingNode"] = (
-                getattr(self.config, "product_type_config", {}).get(
-                    "missionStartDate", None
-                )
-                or DEFAULT_MISSION_START_DATE
-            )
-        # end date
-        if "completionTimeFromAscendingNode" not in kwargs:
-            kwargs["completionTimeFromAscendingNode"] = getattr(
-                self.config, "product_type_config", {}
-            ).get("missionEndDate", None) or datetime.utcnow().isoformat(
-                timespec="seconds"
-            )
-        # geometry
-        if not kwargs.get("geometry", None):
-            kwargs["geometry"] = [
-                -180,
-                -90,
-                180,
-                90,
-            ]
-        kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
+        self._preprocess_search_params(kwargs)
 
         return BuildPostSearchResult.query(
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
@@ -181,7 +212,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         api_key = getattr(self.config, "credentials", {}).get("password", None)
         url = getattr(self.config, "api_endpoint", None)
         if not all([uid, api_key, url]):
-            raise AuthenticationError("Missing authentication informations")
+            raise AuthenticationError("Missing authentication information")
 
         auth_dict: Dict[str, str] = {"key": f"{uid}:{api_key}", "url": url}
 

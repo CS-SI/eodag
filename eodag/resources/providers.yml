@@ -2168,7 +2168,7 @@
         - filter
         - '$.filter'
       forcing_type:
-        - forcing_type:
+        - forcing_type
         - '$.forcing_type'
       format:
         - format
