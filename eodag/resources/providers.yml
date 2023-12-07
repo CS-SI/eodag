@@ -987,7 +987,7 @@
         # - '$.geometry'
         - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
       # The url of the quicklook
-      quicklook: '$.properties.quicklook'
+      quicklook: '$.properties.thumbnail'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/download/{uid}'
@@ -3064,11 +3064,15 @@
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
         - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      # The url of the quicklook
+      quicklook: '$.properties.thumbnail'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '$.properties.status'
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      thumbnail: '$.properties.thumbnail'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
