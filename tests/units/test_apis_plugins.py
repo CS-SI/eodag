@@ -114,7 +114,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "grid": "2/2",
             "param": "228164",  # total cloud cover parameter
             "time": "00",
-            "type": "pf",
+            "type": "cf",
             "class": "ti",
         }
 

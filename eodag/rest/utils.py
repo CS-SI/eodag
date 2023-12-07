@@ -656,7 +656,11 @@ def get_stac_item_by_id(
     """
     product_type = catalogs[0]
     found_products = search_product_by_id(item_id, product_type=product_type)
+
     if len(found_products) > 0:
+        found_products[0].product_type = eodag_api.get_alias_from_product_type(
+            found_products[0].product_type
+        )
         return StacItem(
             url=url,
             stac_config=stac_config,
@@ -974,6 +978,9 @@ def search_stac_items(
             product_type=result_catalog.search_args["product_type"],
             arguments=search_products_arguments,
         )
+
+    for record in search_results:
+        record.product_type = eodag_api.get_alias_from_product_type(record.product_type)
 
     search_results.method = method
     if method == "POST":
