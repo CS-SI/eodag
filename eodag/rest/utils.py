@@ -45,10 +45,11 @@ from dateutil import tz
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from opentelemetry import metrics
-from opentelemetry.exporter.prometheus import PrometheusMetricReader
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.metrics import CallbackOptions, Observation
 from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics._internal.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
@@ -1215,9 +1216,12 @@ def telemetry_init(app: FastAPI):
     :param app: FastAPI to automatically instrument.
     :type app: FastAPI"""
 
-    # Start Prometheus client
+    if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+        return None
+
+    # Start OTLP exporter
     resource = Resource(attributes={SERVICE_NAME: "eodag-serve-rest"})
-    reader = PrometheusMetricReader()
+    reader = PeriodicExportingMetricReader(OTLPMetricExporter())
     meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
     metrics.set_meter_provider(meter_provider)
 

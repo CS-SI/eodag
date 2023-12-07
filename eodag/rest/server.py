@@ -38,7 +38,6 @@ from typing import (
 )
 
 import pkg_resources
-import prometheus_client
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
@@ -130,8 +129,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(lifespan=lifespan, title="EODAG", docs_url="/api.html")
-prometheus_app = prometheus_client.make_asgi_app(prometheus_client.registry.REGISTRY)
-app.mount("/metrics", prometheus_app, "OpenTelemetry Prometheus Exporter")
 
 # conf from resources/stac_api.yml
 stac_api_config = load_stac_api_config()
