@@ -474,7 +474,8 @@ class QueryStringSearch(Search):
 
         # remove "sortBy" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string once metadata mapping will be done
-        self.sort_by_params = kwargs.pop("sortBy", None)
+        sort_by_params = self.SortByParams(sort_by_params=kwargs.pop("sortBy", None))
+        self.sort_by_params = sort_by_params.sort_by_params
 
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
@@ -514,7 +515,7 @@ class QueryStringSearch(Search):
 
         self.query_params = qp
         self.query_string = qs
-        if self.sort_by_params is not None and self.pre_validate_sort_by_input():
+        if self.sort_by_params is not None:
             self.transform_sort_by_params_for_search_request()
         # if sorting params do not contain anything, set them to the empty string to put them into the query string
         self.sort_by_params = self.sort_by_params or ""
@@ -557,63 +558,19 @@ class QueryStringSearch(Search):
             urlencode(query_params, doseq=True, quote_via=quote_via),
         )
 
-    def pre_validate_sort_by_input(self):
-        """Before transforming "sortBy" parameter for the search request, check if the provider supports
-        sorting feature and if the parameter is a list which is not empty, otherwise raise errors.
-        Other validations on elements of the list will be tested while transforming"""
+    def transform_sort_by_params_for_search_request(self) -> None:
+        """Build the sorting part of the query string by transforming
+        the "sortBy" parameter into a provider-specific string"""
         if not hasattr(self.config, "sort"):
             raise ValidationError(
                 "{} does not support sorting feature".format(self.provider)
             )
-
-        if not isinstance(self.sort_by_params, list):
-            raise ValidationError(
-                "'sortBy' search parameter must be set to a list of tuples of sortable parameters "
-                "and their sorting order, got {} instead".format(
-                    type(self.sort_by_params)
-                )
-            )
-
-        if not self.sort_by_params:
-            raise ValidationError(
-                "'sortBy' search parameter must be set to a list of tuples of sortable parameters "
-                "and their sorting order, got an empty list instead"
-            )
-        return True
-
-    def transform_sort_by_params_for_search_request(self):
-        """Build the sorting part of the query string by transforming
-        the "sortBy" parameter into a provider-specific string"""
         # remove duplicates
         self.sort_by_params = list(set(self.sort_by_params))
         sort_by_params_qs = ""
         sort_by_params_tmp = []
         for sort_by_param in self.sort_by_params:
-            if not isinstance(sort_by_param, tuple):
-                raise ValidationError(
-                    "The '{}' element of the 'sortBy' search parameter list must be a tuple of sortable parameters "
-                    "and their sorting order, got {} instead".format(
-                        sort_by_param, type(sort_by_param)
-                    )
-                )
-            if len(sort_by_param) != 2:
-                raise ValidationError(
-                    "The {} tuple of the 'sortBy' search parameter list must be of length 2 like in the "
-                    "following pattern: (<sorting parameter>, <sorting order>), got a length of {} instead".format(
-                        sort_by_param, len(sort_by_param)
-                    )
-                )
-            if not isinstance(sort_by_param[0], str) or not isinstance(
-                sort_by_param[1], str
-            ):
-                raise ValidationError(
-                    "The {} element of the 'sortBy' search parameter list must be a tuple of sortable parameters "
-                    "and their sorting order which are both strings, got a tuple of ({}, {}) instead".format(
-                        sort_by_param, type(sort_by_param[0]), type(sort_by_param[1])
-                    )
-                )
             # Remove leading and trailing whitespace(s) if exist
-            sort_by_param = (sort_by_param[0].strip(), sort_by_param[1].strip())
             eodag_sort_param = sort_by_param[0]
             try:
                 provider_sort_param = self.config.sort["sort_by_mapping"][
@@ -635,38 +592,21 @@ class QueryStringSearch(Search):
                     params,
                 )
             sort_order = sort_by_param[1]
-            if sort_order[:3].upper() == "ASC":
+            if sort_order == "ASC":
                 sort_by_param = (provider_sort_param, "ascending")
-            elif sort_order[:3].upper() == "DES":
-                sort_by_param = (provider_sort_param, "descending")
             else:
-                raise ValidationError(
-                    "Sorting order of '{}' is not correct: it must be set to 'ASC' (ASCENDING) or "
-                    "'DESC' (DESCENDING), got '{}' instead".format(
-                        eodag_sort_param, sort_order
-                    ),
-                    set([eodag_sort_param]),
-                )
-
-            # handle cases with a parameter called several times to sort
-            ignore_param = False
+                sort_by_param = (provider_sort_param, "descending")
             for sort_by_param_tmp in sort_by_params_tmp:
-                # if two sorting parameters are equal, we can not add both:
-                # either their sorting order is also equal, then it would be a duplication in the request,
-                # or their sorting order is different, then there would be a contradiction that would raise an error
+                # since duplicated tuples have been removed, if two sorting parameters are equal,
+                # then their sorting order is different and there is a contradiction that would raise an error
                 if sort_by_param[0] == sort_by_param_tmp[0]:
-                    ignore_param = True
-                    if sort_by_param[1] != sort_by_param_tmp[1]:
-                        raise ValidationError(
-                            "'{}' parameter is called several times to sort results with different sorting orders. "
-                            "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
-                                eodag_sort_param
-                            ),
-                            set([eodag_sort_param]),
-                        )
-            if ignore_param:
-                continue
-
+                    raise ValidationError(
+                        "'{}' parameter is called several times to sort results with different sorting orders. "
+                        "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
+                            eodag_sort_param
+                        ),
+                        set([eodag_sort_param]),
+                    )
             sort_by_params_tmp.append(sort_by_param)
             # after adding a tuple to the list, check if the provider allows to sort with another sorting parameter
             if (
@@ -683,6 +623,7 @@ class QueryStringSearch(Search):
                 sort_param=sort_by_param[0], sort_order=sort_by_param[1]
             )
         self.sort_by_params = sort_by_params_qs
+        return None
 
     def collect_search_urls(
         self,
