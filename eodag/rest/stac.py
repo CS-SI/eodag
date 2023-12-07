@@ -405,6 +405,7 @@ class StacItem(StacCommon):
                     provider=self.provider, fetch_providers=False
                 )
                 if pt["ID"] == product_type
+                or ("alias" in pt and pt["alias"] == product_type)
             ][0]
         except IndexError:
             raise NoMatchingProductType(
@@ -624,7 +625,9 @@ class StacCollection(StacCommon):
                 providers = [
                     plugin.provider
                     for plugin in self.eodag_api._plugins_manager.get_search_plugins(
-                        product_type=product_type["ID"]
+                        product_type=(
+                            product_type.get("_id", None) or product_type["ID"]
+                        )
                     )
                 ]
             providers_models: List[Dict[str, Any]] = []

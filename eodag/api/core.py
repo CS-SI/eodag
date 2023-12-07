@@ -245,6 +245,7 @@ class EODataAccessGateway:
 
             product_types_schema = Schema(
                 ID=fields.STORED,
+                alias=fields.ID,
                 abstract=fields.STORED,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
@@ -497,9 +498,11 @@ class EODataAccessGateway:
                 for product_type_id in provider_supported_products:
                     if product_type_id == GENERIC_PRODUCT_TYPE:
                         continue
-                    product_type = dict(
-                        ID=product_type_id, **self.product_types_config[product_type_id]
-                    )
+                    config = self.product_types_config[product_type_id]
+                    if "alias" in config:
+                        config["_id"] = product_type_id
+                        product_type_id = config["alias"]
+                    product_type = dict(ID=product_type_id, **config)
                     if product_type_id not in product_types:
                         product_types.append(product_type)
                 return sorted(product_types, key=itemgetter("ID"))
@@ -821,8 +824,52 @@ class EODataAccessGateway:
         else:
             return sorted(tuple(self.providers_config.keys()))
 
+    def get_product_type_from_alias(self, alias_or_id: str) -> str:
+        """Return the ID of a product type by either its ID or alias
+
+        :param alias_or_id: Alias of the product type. If an existing ID is given, this
+                            method will directly return the given value.
+        :type alias_or_id: str
+        :returns: Internal name of the product type.
+        :rtype: str
+        """
+        product_types = [
+            k
+            for k, v in self.product_types_config.items()
+            if v.get("alias", None) == alias_or_id
+        ]
+
+        if len(product_types) > 1:
+            raise NoMatchingProductType(
+                f"Too many matching product types for alias {alias_or_id}: {product_types}"
+            )
+
+        if len(product_types) == 0:
+            if alias_or_id in self.product_types_config:
+                return alias_or_id
+            else:
+                raise NoMatchingProductType(
+                    f"Could not find product type from alias or ID {alias_or_id}"
+                )
+
+        return product_types[0]
+
+    def get_alias_from_product_type(self, product_type: str) -> str:
+        """Return the alias of a product type by its ID. If no alias was defined for the
+        given product type, its ID is returned instead.
+
+        :param product_type: product type ID
+        :type product_type: str
+        :returns: Alias of the product type or its ID if no alias has been defined for it.
+        :rtype: str
+        """
+        if product_type not in self.product_types_config:
+            raise NoMatchingProductType(product_type)
+
+        return self.product_types_config[product_type].get("alias", product_type)
+
     def guess_product_type(self, **kwargs: Any) -> List[str]:
-        """Find the eodag product type code that best matches a set of search params
+        """Find eodag product types codes that best match a set of search params
 
         :param kwargs: A set of search parameters as keywords arguments
         :returns: The best match for the given parameters
@@ -1223,7 +1270,7 @@ class EODataAccessGateway:
         # Get the search plugin and the maximized value
         # of items_per_page if defined for the provider used.
         try:
-            product_type = (
+            product_type = self.get_product_type_from_alias(
                 kwargs.get("productType", None) or self.guess_product_type(**kwargs)[0]
             )
         except NoMatchingProductType:
@@ -1314,9 +1361,13 @@ class EODataAccessGateway:
                   of EO products retrieved (0 or 1)
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
         """
-        get_search_plugins_kwargs = dict(
-            provider=provider, product_type=kwargs.get("productType", None)
-        )
+        product_type = kwargs.get("productType", None)
+        if product_type is not None:
+            try:
+                product_type = self.get_product_type_from_alias(product_type)
+            except NoMatchingProductType:
+                logger.warning("product type %s not found", product_type)
+        get_search_plugins_kwargs = dict(provider=provider, product_type=product_type)
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
         )
@@ -1424,7 +1475,13 @@ class EODataAccessGateway:
                 else:
                     return [], kwargs
 
+        if product_type is not None:
+            try:
+                product_type = self.get_product_type_from_alias(product_type)
+            except NoMatchingProductType:
+                logger.warning("unknown product type " + product_type)
         kwargs["productType"] = product_type
+
         if start is not None:
             kwargs["startTimeFromAscendingNode"] = start
         if end is not None:
@@ -1508,6 +1565,7 @@ class EODataAccessGateway:
                             search_plugin.provider, fetch_providers=False
                         )
                         if p["ID"] == product_type
+                        or ("_id" in p and p["_id"] == product_type)
                     ][0],
                     **{"productType": product_type},
                 )
@@ -1652,6 +1710,14 @@ class EODataAccessGateway:
                         pass
                     else:
                         eo_product.product_type = guesses[0]
+
+                try:
+                    if eo_product.product_type is not None:
+                        eo_product.product_type = self.get_product_type_from_alias(
+                            eo_product.product_type
+                        )
+                except NoMatchingProductType:
+                    logger.warning("product type %s not found", eo_product.product_type)
 
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(
