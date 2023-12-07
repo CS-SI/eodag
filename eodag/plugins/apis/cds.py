@@ -31,7 +31,7 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
-from eodag.rest.stac import DEFAULT_BBOX
+from eodag.rest.stac import DEFAULT_BBOX, DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -94,7 +94,9 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         :rtype: Any
         """
         product_type_cfg = getattr(self.config, "product_type_config", {})
-        return product_type_cfg.get(key, default)
+        non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
+
+        return non_none_cfg.get(key, default)
 
     def _preprocess_search_params(self, params: Dict[Any]) -> None:
         """Preprocess search parameters before making a request to the CDS API.
@@ -124,31 +126,36 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             if "/" in _dc_qp.get("area", ""):
                 params["geometry"] = _dc_qp["area"].split("/")
 
-        now = datetime.utcnow().isoformat(timespec="seconds")
+        non_none_params = {k: v for k, v in params.items() if v}
 
         # productType
         dataset = params.get("dataset", None)
-        params["productType"] = params.get("productType", dataset)
+        params["productType"] = non_none_params.get("productType", dataset)
 
         # dates
-        mission_start = self.get_product_type_cfg("missionStartDate")
-        default_end = (
-            now
+        default_start_str = DEFAULT_MISSION_START_DATE.replace(
+            "Z", "+00:00"
+        )  # before 3.11
+        mission_start_dt = datetime.fromisoformat(
+            self.get_product_type_cfg("missionStartDate", default_start_str)
+        )
+
+        default_end_str = (
+            datetime.utcnow()
             if params.get("startTimeFromAscendingNode")
-            else mission_start + timedelta(days=1)
-        )
-        mission_end = self.get_product_type_cfg("missionEndDate", default_end)
+            else mission_start_dt + timedelta(days=1)
+        ).isoformat()
+        mission_end_str = self.get_product_type_cfg("missionEndDate", default_end_str)
 
-        params["startTimeFromAscendingNode"] = params.get(
-            "startTimeFromAscendingNode", mission_start
+        params["startTimeFromAscendingNode"] = non_none_params.get(
+            "startTimeFromAscendingNode", mission_start_dt.isoformat()
         )
-
-        params["completionTimeFromAscendingNode"] = params.get(
-            "completionTimeFromAscendingNode", mission_end
+        params["completionTimeFromAscendingNode"] = non_none_params.get(
+            "completionTimeFromAscendingNode", mission_end_str
         )
 
         # geometry
-        geometry = params.get("geometry", DEFAULT_BBOX)
+        geometry = non_none_params.get("geometry", DEFAULT_BBOX)
         params["geometry"] = get_geometry_from_various(geometry=geometry)
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
