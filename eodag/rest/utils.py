@@ -535,7 +535,10 @@ def search_products(
 
 
 def search_product_by_id(
-    uid: str, product_type: Optional[str] = None, provider: Optional[str] = None
+    uid: str,
+    product_type: Optional[str] = None,
+    provider: Optional[str] = None,
+    **kwargs: Any,
 ) -> SearchResult:
     """Search a product by its id
 
@@ -545,6 +548,8 @@ def search_product_by_id(
     :type product_type: str
     :param provider: (optional) The provider to be used
     :type provider: str
+    :param kwargs: additional search parameters
+    :type kwargs: Any
     :returns: A search result
     :rtype: :class:`~eodag.api.search_result.SearchResult`
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
@@ -552,7 +557,7 @@ def search_product_by_id(
     """
     try:
         products, _ = eodag_api.search(
-            id=uid, productType=product_type, provider=provider
+            id=uid, productType=product_type, provider=provider, **kwargs
         )
         return products
     except ValidationError:
@@ -638,6 +643,7 @@ def get_stac_item_by_id(
     catalogs: List[str],
     root: str = "/",
     provider: Optional[str] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Build STAC item by id
 
@@ -651,11 +657,17 @@ def get_stac_item_by_id(
     :type root: str
     :param provider: (optional) Chosen provider
     :type provider: str
+    :param kwargs: additional search parameters
+    :type kwargs: Any
     :returns: Collection dictionary
     :rtype: dict
     """
     product_type = catalogs[0]
-    found_products = search_product_by_id(item_id, product_type=product_type)
+    _dc_qs = kwargs.get("_dc_qs", None)
+
+    found_products = search_product_by_id(
+        item_id, product_type=product_type, _dc_qs=_dc_qs
+    )
 
     if len(found_products) > 0:
         found_products[0].product_type = eodag_api.get_alias_from_product_type(
@@ -677,6 +689,7 @@ def download_stac_item_by_id_stream(
     item_id: str,
     provider: Optional[str] = None,
     asset: Optional[str] = None,
+    **kwargs: Any,
 ) -> StreamingResponse:
     """Download item
 
@@ -686,10 +699,14 @@ def download_stac_item_by_id_stream(
     :type item_id: str
     :param provider: (optional) Chosen provider
     :type provider: str
+    :param kwargs: additional download parameters
+    :type kwargs: Any
     :returns: a stream of the downloaded data (zip file)
     :rtype: StreamingResponse
     """
     product_type = catalogs[0]
+    _dc_qs = kwargs.get("_dc_qs", None)
+
     search_plugin = next(
         eodag_api._plugins_manager.get_search_plugins(product_type, provider)
     )
@@ -712,8 +729,9 @@ def download_stac_item_by_id_stream(
         }
         product = EOProduct(provider or product_data["provider"], properties)
     else:
+
         search_results = search_product_by_id(
-            item_id, product_type=product_type, provider=provider
+            item_id, product_type=product_type, provider=provider, _dc_qs=_dc_qs
         )
         if len(search_results) > 0:
             product = search_results[0]
