@@ -2084,6 +2084,7 @@
     type: CdsApi
     api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
     extract: false
+    flatten_top_dirs: True
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2400,6 +2401,7 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
+    flatten_top_dirs: True
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'

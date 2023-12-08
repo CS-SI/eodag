@@ -401,6 +401,8 @@ class HTTPDownload(Download):
                     progress_callback,
                     **kwargs,
                 )
+                if kwargs.get("asset", None) is None:
+                    product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError as e:
                 if kwargs.get("asset", None) is not None:

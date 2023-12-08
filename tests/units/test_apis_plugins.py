@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import io
 import logging
 import os
 import unittest
@@ -825,19 +826,35 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert auth_dict["url"] == self.api_plugin.config.api_endpoint
         del self.api_plugin.config.credentials
 
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
-    @mock.patch("cdsapi.api.Client.retrieve", autospec=True)
+    @mock.patch("cdsapi.api.Client._api", autospec=True)
     def test_plugins_apis_cds_download(
-        self, mock_client_retrieve, mock_cds_authenticate, mock_fetch_product_types_list
+        self,
+        mock_client_api,
+        mock_cds_authenticate,
+        mock_fetch_product_types_list,
+        mock_get,
+        mock_head,
     ):
         """CdsApi.download must call the authenticate function and cdsapi Client retrieve"""
         mock_cds_authenticate.return_value = {
             "key": "foo:bar",
             "url": "http://foo.bar.baz",
         }
+        mock_client_api.return_value.location = "http://somewhere/something"
+
+        mock_get.return_value.__enter__.return_value.iter_content.return_value = (
+            io.BytesIO(b"some content")
+        )
+        mock_get.return_value.__enter__.return_value.headers = {
+            "content-disposition": ""
+        }
+        mock_head.return_value.headers = {"content-disposition": ""}
 
         dag = EODataAccessGateway()
         dag.set_preferred_provider("cop_ads")
@@ -853,16 +870,15 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         query_str = "".join(urlsplit(eoproduct.location).fragment.split("?", 1)[1:])
         expected_download_request = geojson.loads(query_str)
         expected_dataset_name = expected_download_request.pop("dataset")
-        expected_path = os.path.join(
-            output_data_path, "%s.grib" % eoproduct.properties["title"]
-        )
+        expected_url = f"{mock_cds_authenticate.return_value['url']}/resources/{expected_dataset_name}"
+        expected_path = os.path.join(output_data_path, eoproduct.properties["title"])
 
         path = eoproduct.download(outputs_prefix=output_data_path)
-        mock_client_retrieve.assert_called_once_with(
+        mock_client_api.assert_called_once_with(
             mock.ANY,  # instance
-            name=expected_dataset_name,
-            request=expected_download_request,
-            target=expected_path,
+            expected_url,
+            expected_download_request,
+            "POST",
         )
 
         assert path == expected_path
