@@ -354,7 +354,7 @@ def stac_collections_item_download(
     provider = arguments.pop("provider", None)
 
     return download_stac_item_by_id_stream(
-        catalogs=[collection_id], item_id=item_id, provider=provider
+        catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
     )
 
 
@@ -373,7 +373,11 @@ def stac_collections_item_download_asset(
     provider = arguments.pop("provider", None)
 
     return download_stac_item_by_id_stream(
-        catalogs=[collection_id], item_id=item_id, provider=provider, asset=asset_filter
+        catalogs=[collection_id],
+        item_id=item_id,
+        provider=provider,
+        asset=asset_filter,
+        **arguments,
     )
 
 
@@ -397,6 +401,7 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
         root=url_root,
         catalogs=[collection_id],
         provider=provider,
+        **arguments,
     )
 
     if response:
@@ -542,7 +547,7 @@ def stac_catalogs_item_download(
     list_catalog = catalogs.strip("/").split("/")
 
     return download_stac_item_by_id_stream(
-        catalogs=list_catalog, item_id=item_id, provider=provider
+        catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
     )
 
 
@@ -563,7 +568,11 @@ def stac_catalogs_item_download_asset(
     catalogs = catalogs.strip("/").split("/")
 
     return download_stac_item_by_id_stream(
-        catalogs=catalogs, item_id=item_id, provider=provider, asset=asset_filter
+        catalogs=catalogs,
+        item_id=item_id,
+        provider=provider,
+        asset=asset_filter,
+        **arguments,
     )
 
 
@@ -588,6 +597,7 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
         root=url_root,
         catalogs=list_catalog,
         provider=provider,
+        **arguments,
     )
 
     if response:

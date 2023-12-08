@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from urllib.parse import unquote_plus
 
 import cdsapi
 import geojson
@@ -88,6 +89,22 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
+
+        _dc_qs = kwargs.get("_dc_qs", None)
+        if _dc_qs is not None:
+            _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
+            if "/" in _dc_qp.get("date", ""):
+                (
+                    kwargs["startTimeFromAscendingNode"],
+                    kwargs["completionTimeFromAscendingNode"],
+                ) = _dc_qp["date"].split("/")
+            else:
+                kwargs["startTimeFromAscendingNode"] = kwargs[
+                    "completionTimeFromAscendingNode"
+                ] = _dc_qp["date"]
+
+            if "/" in _dc_qp.get("area", ""):
+                kwargs["geometry"] = _dc_qp["area"].split("/")
 
         # check productType, dates, geometry, use defaults if not specified
         # productType
