@@ -975,7 +975,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response_filename, expected_file)
 
     @mock.patch(
-        "eodag.plugins.apis.cds.CdsApi.authenticate",
+        "eodag.plugins.apis.usgs.UsgsApi.authenticate",
         autospec=True,
     )
     @mock.patch(
