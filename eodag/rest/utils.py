@@ -432,9 +432,8 @@ def get_sort_by(
                     raise ValidationError(
                         "'{}' parameter is called several times to sort results with different sorting orders. "
                         "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
-                            eodag_sort_param
+                            stac_sort_param
                         ),
-                        set(eodag_sort_param),
                     )
         if ignore_param:
             continue
