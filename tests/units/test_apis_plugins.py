@@ -706,7 +706,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            datetime.utcnow().isoformat(),
+            "2015-01-02T00:00:00Z",
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
