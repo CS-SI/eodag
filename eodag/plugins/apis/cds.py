@@ -19,15 +19,16 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import unquote_plus
 
 import cdsapi
 import geojson
 import requests
 
+from eodag.api.product._assets import Asset
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import Download
+from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
@@ -55,7 +56,7 @@ logger = logging.getLogger("eodag.apis.cds")
 CDS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 
 
-class CdsApi(Download, Api, BuildPostSearchResult):
+class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
     """A plugin that enables to build download-request and download data on CDS API.
 
     Builds a single ready-to-download :class:`~eodag.api.product._product.EOProduct`
@@ -197,32 +198,8 @@ class CdsApi(Download, Api, BuildPostSearchResult):
 
         return auth_dict
 
-    def download(
-        self,
-        product: EOProduct,
-        auth: Optional[PluginConfig] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
-    ) -> Optional[str]:
-        """Download data from providers using CDS API"""
-
-        product_extension = CDS_KNOWN_FORMATS[product.properties.get("format", "grib")]
-
-        # Prepare download
-        fs_path, record_filename = self._prepare_download(
-            product,
-            progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
-            **kwargs,
-        )
-
-        if not fs_path or not record_filename:
-            if fs_path:
-                product.location = path_to_uri(fs_path)
-            return fs_path
-
+    def _prepare_download_link(self, product):
+        """Update product download link with http url obtained from cds api"""
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
         query_str = "".join(urlsplit(product.location).fragment.split("?", 1)[1:])
@@ -250,26 +227,74 @@ class CdsApi(Download, Api, BuildPostSearchResult):
         )
         try:
             client = self._get_cds_client(**auth_dict)
-            client.retrieve(name=dataset_name, request=download_request, target=fs_path)
+            result = client._api(
+                "%s/resources/%s" % (client.url, dataset_name), download_request, "POST"
+            )
+            # update product download link through a new asset
+            product.assets["data"] = Asset(product, "data", {"href": result.location})
         except Exception as e:
             logger.error(e)
             raise DownloadError(e)
 
-        with open(record_filename, "w") as fh:
-            fh.write(product.properties["downloadLink"])
-        logger.debug("Download recorded in %s", record_filename)
+    def download(
+        self,
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Any,
+    ) -> Optional[str]:
+        """Download data from providers using CDS API"""
 
-        # do not try to extract or delete grib/netcdf
-        kwargs["extract"] = False
+        product_extension = CDS_KNOWN_FORMATS[product.properties.get("format", "grib")]
 
-        product_path = self._finalize(
-            fs_path,
+        # Prepare download
+        fs_path, record_filename = self._prepare_download(
+            product,
             progress_callback=progress_callback,
             outputs_extension=f".{product_extension}",
             **kwargs,
         )
-        product.location = path_to_uri(product_path)
-        return product_path
+
+        if not fs_path or not record_filename:
+            if fs_path:
+                product.location = path_to_uri(fs_path)
+            return fs_path
+
+        self._prepare_download_link(product)
+
+        try:
+            return super(CdsApi, self).download(
+                product,
+                progress_callback=progress_callback,
+                **kwargs,
+            )
+        except Exception as e:
+            logger.error(e)
+            raise DownloadError(e)
+
+    def _stream_download_dict(
+        self,
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
+        It contains a generator to streamed download chunks and the response headers."""
+
+        self._prepare_download_link(product)
+        return super(CdsApi, self)._stream_download_dict(
+            product,
+            auth=auth,
+            progress_callback=progress_callback,
+            wait=wait,
+            timeout=timeout,
+            **kwargs,
+        )
 
     def download_all(
         self,
