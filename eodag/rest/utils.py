@@ -388,6 +388,7 @@ def get_sort_by(
         if (
             stac_sort_param not in stac_config["item"]["properties"]
             and stac_sort_param != "id"
+            or stac_sort_param == "datetime"
         ):
             raise ValidationError(
                 "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
@@ -401,7 +402,6 @@ def get_sort_by(
             not in search_plugin.config.sort["sort_by_mapping"].keys()
         ):
             params = set(search_plugin.config.sort["sort_by_mapping"].keys())
-            params.add(stac_sort_param)
             raise ValidationError(
                 "'{}' parameter is not sortable with {}. "
                 "Here is the list of sortable parameters with {}: {}".format(
@@ -1262,7 +1262,8 @@ def rename_to_stac_standard(key: str) -> str:
     for stac_property, value in stac_config_properties.items():
         if isinstance(value, list):
             value = value[0]
-        if str(value).endswith(key):
+        # only "start_datetime" must match "startTimeFromAscendingNode", not "datetime"
+        if str(value).endswith(key) and stac_property != "datetime":
             return stac_property
 
     if key in OSEO_METADATA_MAPPING:
@@ -1284,8 +1285,9 @@ def rename_from_stac_to_eodag_standard(key: str) -> str:
     stac_config_properties = stac_config["item"]["properties"]
 
     for stac_property, value in stac_config_properties.items():
-        # "license" STAC property does not have its matching EODAG name
-        if key == stac_property and key != "license":
+        # "license" STAC property does not have its matching EODAG name and
+        # only "start_datetime" must match "startTimeFromAscendingNode", not "datetime"
+        if key == stac_property and key != "license" and key != "datetime":
             if isinstance(value, list):
                 value = value[0]
             eodag_property = str(value).split(".")[-1]
