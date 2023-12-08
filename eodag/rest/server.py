@@ -274,7 +274,6 @@ async def handle_invalid_usage_with_validation_error(request: Request, error):
 @app.exception_handler(NoMatchingProductType)
 @app.exception_handler(UnsupportedProductType)
 @app.exception_handler(UnsupportedProvider)
-@app.exception_handler(ValidationError)
 async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResponse:
     """Invalid usage [400] errors handle"""
     logger.warning(traceback.format_exc())
@@ -377,6 +376,7 @@ class SearchBody(BaseModel):
     query: Optional[Dict[str, Any]] = None
     ids: Optional[List[str]] = None
     sortby: Optional[List[PostSearchSortbyParam]] = None
+
 
 @router.get(
     "/collections/{collection_id}/items/{item_id}/download",
