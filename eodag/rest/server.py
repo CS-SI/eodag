@@ -44,11 +44,13 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse, StreamingResponse
+from opentelemetry import trace
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
+    OverheadTimer,
     QueryableProperty,
     Queryables,
     download_stac_item_by_id_stream,
@@ -62,8 +64,10 @@ from eodag.rest.utils import (
     get_stac_conformance,
     get_stac_extension_oseo,
     get_stac_item_by_id,
+    overhead_timers,
     record_searched_product_type,
     search_stac_items,
+    telemetry,
     telemetry_init,
 )
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
@@ -350,14 +354,32 @@ def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StreamingResponse:
     """STAC collection item download"""
-    logger.debug(f"URL: {request.url}")
+    tracer = trace.get_tracer("eodag.tracer")
+    with tracer.start_as_current_span("server-download") as span:
+        timer = OverheadTimer()
+        timer.start_global_timer()
+        trace_id = span.get_span_context().trace_id
+        overhead_timers[trace_id] = timer
+        logger.debug(f"URL: {request.url}")
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+        arguments = dict(request.query_params)
+        provider = arguments.pop("provider", None)
 
-    return download_stac_item_by_id_stream(
-        catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
-    )
+        response = download_stac_item_by_id_stream(
+            catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
+        )
+
+        timer.stop_global_timer()
+        attributes = {"provider": str(provider)}
+        telemetry["request_duration_seconds"].record(
+            timer.get_global_time(), attributes
+        )
+        telemetry["request_overhead_duration_seconds"].record(
+            timer.get_overhead_time(), attributes
+        )
+        del overhead_timers[trace_id]
+
+        return response
 
 
 @router.get(
@@ -541,16 +563,34 @@ def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StreamingResponse:
     """STAC Catalog item download"""
-    logger.debug(f"URL: {request.url}")
+    tracer = trace.get_tracer("eodag.tracer")
+    with tracer.start_as_current_span("server-download") as span:
+        timer = OverheadTimer()
+        timer.start_global_timer()
+        trace_id = span.get_span_context().trace_id
+        overhead_timers[trace_id] = timer
+        logger.debug(f"URL: {request.url}")
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+        arguments = dict(request.query_params)
+        provider = arguments.pop("provider", None)
 
-    list_catalog = catalogs.strip("/").split("/")
+        list_catalog = catalogs.strip("/").split("/")
 
-    return download_stac_item_by_id_stream(
-        catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
-    )
+        response = download_stac_item_by_id_stream(
+            catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
+        )
+
+        timer.stop_global_timer()
+        attributes = {"provider": str(provider)}
+        telemetry["request_duration_seconds"].record(
+            timer.get_global_time(), attributes
+        )
+        telemetry["request_overhead_duration_seconds"].record(
+            timer.get_overhead_time(), attributes
+        )
+        del overhead_timers[trace_id]
+
+        return response
 
 
 @router.get(
@@ -701,36 +741,51 @@ def stac_search(
     request: Request, search_body: Optional[SearchBody] = None
 ) -> ORJSONResponse:
     """STAC collections items"""
-    logger.debug(f"URL: {request.url}")
-    logger.debug(f"Body: {search_body}")
+    tracer = trace.get_tracer("eodag.tracer")
+    with tracer.start_as_current_span("server-search") as span:
+        timer = OverheadTimer()
+        timer.start_global_timer()
+        trace_id = span.get_span_context().trace_id
+        overhead_timers[trace_id] = timer
+        logger.debug(f"URL: {request.url}")
+        logger.debug(f"Body: {search_body}")
 
-    url = request.state.url
-    url_root = request.state.url_root
+        url = request.state.url
+        url_root = request.state.url_root
 
-    if search_body is None:
-        body = {}
-    else:
-        body = vars(search_body)
+        if search_body is None:
+            body = {}
+        else:
+            body = vars(search_body)
 
-    arguments = dict(request.query_params, **body)
-    provider = arguments.pop("provider", None)
+        arguments = dict(request.query_params, **body)
+        provider = arguments.pop("provider", None)
 
-    # metrics
-    collections = arguments.get("collections", None)
-    product_type = collections.split(",")[0] if collections else None
-    record_searched_product_type(product_type)
+        # metrics
+        args_collections = arguments.get("collections", None)
+        product_type = args_collections.split(",")[0] if args_collections else None
+        record_searched_product_type(product_type)
 
-    response = search_stac_items(
-        url=url,
-        arguments=arguments,
-        root=url_root,
-        provider=provider,
-        method=request.method,
-    )
-    resp = ORJSONResponse(
-        content=response, status_code=200, media_type="application/json"
-    )
-    return resp
+        response = search_stac_items(
+            url=url,
+            arguments=arguments,
+            root=url_root,
+            provider=provider,
+            method=request.method,
+        )
+        resp = ORJSONResponse(
+            content=response, status_code=200, media_type="application/json"
+        )
+        timer.stop_global_timer()
+        attributes = {"provider": str(provider)}
+        telemetry["request_duration_seconds"].record(
+            timer.get_global_time(), attributes
+        )
+        telemetry["request_overhead_duration_seconds"].record(
+            timer.get_overhead_time(), attributes
+        )
+        del overhead_timers[trace_id]
+        return resp
 
 
 app.include_router(router)
