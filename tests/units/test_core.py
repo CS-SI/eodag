@@ -2151,6 +2151,196 @@ class TestCoreSearch(TestCoreBase):
             "dummy_next_page_url_tpl",
         )
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
+    def test_search_sort_by(self, mock_normalize_results, mock__request):
+        """search used with "sortBy" argument must sort results by sorting parameter(s) in their sorting order"""
+        mock__request.return_value.json.return_value = {
+            "properties": {"totalResults": 2},
+            "features": [],
+            "links": [{"rel": "next", "href": "url/to/next/page"}],
+        }
+
+        p1 = EOProduct(
+            "dummy", dict(geometry="POINT (0 0)", id="1", eodagSortParam="1")
+        )
+        p1.search_intersection = None
+        p2 = EOProduct(
+            "dummy", dict(geometry="POINT (0 0)", id="2", eodagSortParam="2")
+        )
+        p2.search_intersection = None
+        mock_normalize_results.return_value = [p1, p2]
+
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                sort:
+                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_mapping:
+                        eodagSortParam: providerSortParam
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        products, estimate = dag.search(
+            provider="dummy_provider",
+            productType="S2_MSI_L1C",
+            sortBy=[("eodagSortParam", "ASC")],
+        )
+
+        self.assertEqual(
+            mock__request.call_args[0][1],
+            "https://api.my_new_provider/search?&sortParam=providerSortParam"
+            "&sortOrder=ascending&maxRecords=20&page=1&exactCount=1",
+        )
+        self.assertLessEqual(
+            products[0].properties["eodagSortParam"],
+            products[1].properties["eodagSortParam"],
+        )
+
+    def test_search_sort_by_errors(
+        self,
+    ):
+        """search used with "sortBy" argument must raise errors if the argument is incorrect or if the provider does
+        not support a maximum number of sorting parameter, one sorting parameter or the sorting feature"""
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        # raise an error with a provider which does not support sorting feature
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("eodagSortParam", "ASC")],
+            )
+            self.assertIn(
+                "dummy_provider does not support sorting feature", str(cm_logs.output)
+            )
+
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                sort:
+                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_mapping:
+                        eodagSortParam: providerSortParam
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        # raise an error with syntax errors
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=["eodagSortParam ASC"],
+            )
+            self.assertIn("Input should be a valid tuple", str(cm_logs.output))
+        # raise an error with a wrong sorting order
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("eodagSortParam", " wrong_order ")],
+            )
+            self.assertIn(
+                "Sorting order must be set to \\'ASC\\' (ASCENDING) or "
+                "\\'DESC\\' (DESCENDING), got \\'WRONG_ORDER\\' instead",
+                str(cm_logs.output),
+            )
+        # raise an error with a parameter not sortable with a provider
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("otherEodagSortParam", "ASC")],
+            )
+            self.assertIn(
+                "\\'otherEodagSortParam\\' parameter is not sortable with dummy_provider. "
+                "Here is the list of sortable parameters with dummy_provider: eodagSortParam",
+                str(cm_logs.output),
+            )
+        # raise an error with a sorting order called with different values for a same sorting parameter
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("eodagSortParam", "ASC"), ("eodagSortParam", "DESC")],
+            )
+            self.assertIn(
+                "\\'eodagSortParam\\' parameter is called several times to sort results with different sorting "
+                "orders. Please set it to only one (\\'ASC\\' (ASCENDING) or \\'DESC\\' (DESCENDING))",
+                str(cm_logs.output),
+            )
+
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                sort:
+                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_mapping:
+                        eodagSortParam: providerSortParam
+                        otherEodagSortParam: otherProviderSortParam
+                    max_sort_params: 1
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        # raise an error with more sorting parameters than supported by the provider
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("eodagSortParam", "ASC"), ("otherEodagSortParam", "ASC")],
+            )
+            self.assertIn(
+                "Search results can be sorted by only 1 parameter(s) with dummy_provider",
+                str(cm_logs.output),
+            )
+
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_search_all_must_collect_them_all(self, search_plugin, prepare_seach):
