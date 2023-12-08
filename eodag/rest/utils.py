@@ -369,6 +369,10 @@ def get_sort_by(
     for sort_by_param in sort_by_params_tmp.split(","):
         # Remove leading and trailing whitespace(s) if exist
         sort_by_param = str(sort_by_param.strip())
+        if not sort_by_param or sort_by_param in ["+", "-"]:
+            raise ValidationError(
+                "Syntax error in the search request, at least one sorting parameter is empty"
+            )
         if sort_by_param[0] in ["+", "-"]:
             stac_sort_param = sort_by_param[1:]
         else:
