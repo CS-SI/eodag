@@ -252,16 +252,25 @@ class StacItem(StacCommon):
                 },
             )
 
-            # append provider query-arg to download link
+            # parse download link
+            url_parts = urlparse(str(product_item["assets"]["downloadLink"]["href"]))
+            query_dict = parse_qs(url_parts.query)
+            without_arg_url = (
+                f"{url_parts.scheme}://{url_parts.netloc}{url_parts.path}"
+                if url_parts.scheme
+                else f"{url_parts.netloc}{url_parts.path}"
+            )
+
+            # add provider to query-args
             if self.provider:
-                parts = urlparse(str(product_item["assets"]["downloadLink"]["href"]))
-                query_dict = parse_qs(parts.query)
                 query_dict.update(provider=[self.provider])
-                without_arg_url = (
-                    f"{parts.scheme}://{parts.netloc}{parts.path}"
-                    if parts.scheme
-                    else f"{parts.netloc}{parts.path}"
-                )
+            # add datacube query-string to query-args
+            _dc_qs = product_item["assets"]["downloadLink"].pop("_dc_qs", None)
+            if _dc_qs:
+                query_dict.update(_dc_qs=_dc_qs)
+
+            # update download link with up-to-date query-args
+            if query_dict:
                 product_item["assets"]["downloadLink"][
                     "href"
                 ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
@@ -271,22 +280,13 @@ class StacItem(StacCommon):
             if getattr(product, "assets", False):
                 # replace origin asset urls with eodag-server ones
                 for asset_key, asset_value in origin_assets.items():
-
-                    parts = urlparse(product_item["assets"]["downloadLink"]["href"])
-                    if parts.query:
-                        query_dict = parse_qs(parts.query)
-                        without_arg_url = (
-                            f"{parts.scheme}://{parts.netloc}{parts.path}"
-                            if parts.scheme
-                            else f"{parts.netloc}{parts.path}"
-                        ) + f"/{asset_key}"
+                    origin_assets[asset_key]["href"] = without_arg_url
+                    if query_dict:
                         origin_assets[asset_key][
                             "href"
-                        ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                        ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
                     else:
-                        origin_assets[asset_key][
-                            "href"
-                        ] = f"{product_item['assets']['downloadLink']['href']}/{asset_key}"
+                        origin_assets[asset_key]["href"] += f"/{asset_key}"
 
                 product_item["assets"] = dict(product_item["assets"], **origin_assets)
 
@@ -317,6 +317,18 @@ class StacItem(StacCommon):
 
             # remove empty properties
             product_item = self.__filter_item_properties_values(product_item)
+
+            # update item link with datacube query-string
+            if _dc_qs:
+                url_parts = urlparse(str(product_item["links"][0]["href"]))
+                without_arg_url = (
+                    f"{url_parts.scheme}://{url_parts.netloc}{url_parts.path}"
+                    if url_parts.scheme
+                    else f"{url_parts.netloc}{url_parts.path}"
+                )
+                product_item["links"][0][
+                    "href"
+                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
 
             item_list.append(product_item)
 
