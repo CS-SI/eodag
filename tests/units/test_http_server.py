@@ -31,6 +31,7 @@ from shapely.geometry import box
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
+    TEST_RESOURCES_PATH,
     AuthenticationError,
     SearchResult,
     parse_header,
@@ -47,6 +48,11 @@ class RequestTestCase(unittest.TestCase):
         super(RequestTestCase, cls).setUpClass()
 
         cls.tested_product_type = "S2_MSI_L1C"
+
+        # load fake credentials to prevent providers needing auth for search to be pruned
+        os.environ["EODAG_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
+        )
 
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
@@ -987,13 +993,13 @@ class RequestTestCase(unittest.TestCase):
         # use an external python API provider for this test and reset downloader
         self._request_valid_raw.patchings[0].kwargs["return_value"][0][
             0
-        ].provider = "cop_cds"
+        ].provider = "usgs"
         self._request_valid_raw.patchings[0].kwargs["return_value"][0][
             0
         ].downloader = None
 
         self._request_valid_raw(
-            "collections/some-collection/items/foo/download?provider=cop_cds"
+            "collections/some-collection/items/foo/download?provider=usgs"
         )
         mock_download.assert_called_once()
         # downloaded file should have been immediatly deleted from the server
