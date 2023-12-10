@@ -2106,6 +2106,12 @@
       accuracy:
         - accuracy
         - '$.accuracy'
+      aerosol_type:
+        - aerosol_type
+        - '$.aerosol_type'
+      altitude:
+        - altitude
+        - '$.altitude'
       anoffset:
         - anoffset
         - '$.anoffset'
@@ -2217,6 +2223,9 @@
       levtype:
         - levtype
         - '$.levtype'
+      location:
+        - location
+        - '$.location'
       longitude:
         - longitude
         - '$.longitude'
@@ -2366,15 +2375,18 @@
         geometry:
           - 'area={geometry#to_nwse_bounds}'
           - '$.geometry'
-          # 72, -25, 30,
-          #   45,
     CAMS_EU_AIR_QUALITY_RE:
       dataset: cams-europe-air-quality-reanalyses
       type: validated_reanalysis
       format: zip
-      variable: carbon_monoxide
+      variable: nitrogen_dioxide
       model: ensemble
       level: '0'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     CAMS_GRF:
       dataset: cams-global-radiative-forcings
       format: zip
@@ -2384,6 +2396,11 @@
       sky_type: all_sky
       level: surface
       version: '2'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     CAMS_GRF_AUX:
       dataset: cams-global-radiative-forcing-auxilliary-variables
       band: short_wave
@@ -2392,6 +2409,12 @@
       format: zip
       variable: aerosol_radiation_effect
       aerosol_type: marine
+      level: surface
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
       sky_type: clear
@@ -2399,7 +2422,7 @@
       time_reference: true_solar_time
       location:
         latitude: 0
-        lontitude: 0
+        longitude: 0
       altitude: -999
       format: csv
     CAMS_GREENHOUSE_EGG4_MONTHLY:
@@ -2407,6 +2430,11 @@
       format: grib
       variable: snow_albedo
       api_product_type: monthly_mean
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     CAMS_GREENHOUSE_EGG4:
       dataset: cams-global-ghg-reanalysis-egg4
       format: grib
@@ -2419,12 +2447,22 @@
       quantity: mean_column
       input_observations: surface
       time_aggregation: instantaneous
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     CAMS_GLOBAL_EMISSIONS:
       dataset: cams-global-emission-inventories
       version: latest
       format: zip
       variable: acids
       source: anthropogenic
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
       format: grib
@@ -2435,7 +2473,11 @@
       format: grib
       variable: 2m_dewpoint_temperature
       api_product_type: monthly_mean
-
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       format: grib
@@ -2551,6 +2593,9 @@
       frequency:
         - frequency
         - '$.frequency'
+      gcm:
+        - gcm
+        - '$.gcm'
       grid:
         - grid
         - '$.grid'
@@ -2739,61 +2784,81 @@
       api_product_type: reanalysis
       time: '00:00'
       format: grib
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     ERA5_LAND:
       dataset: reanalysis-era5-land
-      api_product_type: reanalysis
-      time: '00:00'
+      variable: 2m_dewpoint_temperature
+      time: '01:00'
       format: grib
     ERA5_LAND_MONTHLY:
       dataset: reanalysis-era5-land-monthly-means
-      api_product_type: reanalysis
+      api_product_type: monthly_averaged_reanalysis
+      variable: 2m_dewpoint_temperature
       time: '00:00'
       format: grib
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     ERA5_SL_MONTHLY:
       dataset: reanalysis-era5-single-levels-monthly-means
       api_product_type: reanalysis
       time: '00:00'
       format: grib
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     UERRA_EUROPE_SL:
       dataset: reanalysis-uerra-europe-single-levels
       origin: mescan_surfex
+      variable: 10m_wind_direction
       time: '00:00'
       format: grib
     SATELLITE_SEA_LEVEL_BLACK_SEA:
       dataset: satellite-sea-level-black-sea
       format: zip
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     GLACIERS_DIST_RANDOLPH:
       dataset: insitu-glaciers-extent
-      variable': glacier_area
-      product_type: gridded
+      variable: glacier_area
+      api_product_type: gridded
       version: '6_0'
       format: zip
     FIRE_HISTORICAL:
       dataset: cems-fire-historical-v1
       grid: original_grid
-      dataset_type: consolidated_type
+      dataset_type: consolidated_dataset
       api_product_type: reanalysis
+      variable: build_up_index
+      system_version: '4_1'
       format: grib
-      metadata_mapping:
-        completionTimeFromAscendingNode:
-          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     GLOFAS_FORECAST:
-      dataset: cems-glofas-historical
+      dataset: cems-glofas-forecast
       system_version: operational
       variable: river_discharge_in_the_last_24_hours
       format: grib
       hydrological_model: lisflood
-      api_product_type: consolidated
+      api_product_type: control_forecast
       leadtime_hour: '24'
     GLOFAS_REFORECAST:
       dataset: cems-glofas-reforecast
       variable: river_discharge_in_the_last_24_hours
       format: grib
       system_version: version_4_0
-      hydrological_model: control_reforecast
+      hydrological_model: lisflood
       api_product_type: control_reforecast
-      leadtime_hour: '72'
+      leadtime_hour: '24'
     GLOFAS_HISTORICAL:
       dataset: cems-glofas-historical
       system_version: version_4_0
@@ -2812,6 +2877,11 @@
       system_version: operational
       hydrological_model: lisflood
       leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     GLOFAS_SEASONAL_REFORECAST:
       dataset: cems-glofas-seasonal-reforecast
       format: grib
@@ -2819,6 +2889,11 @@
       system_version: version_4_0
       hydrological_model: lisflood
       leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"hyear": {_date#interval_to_datetime_dict}["year"], "hmonth": {_date#interval_to_datetime_dict}["month"], "hday": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     EFAS_FORECAST:
       dataset: efas-forecast
       format: grib.zip
@@ -2827,7 +2902,7 @@
       api_product_type: control_forecast
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_level
-      time: '00.00'
+      time: '00:00'
       leadtime_hour: '24'
     EFAS_HISTORICAL:
       dataset: efas-historical
@@ -2835,42 +2910,71 @@
       model_levels: surface_level
       variable: snow_depth_water_equivalent
       system_version: version_5_0
-      time: '00.00'
+      time: '00:00'
       metadata_mapping:
         completionTimeFromAscendingNode:
           - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
           - '{$.completionTimeFromAscendingNode#to_iso_date}'
     EFAS_REFORECAST:
       dataset: efas-reforecast
+      system_version: version_5_0
       format: grib.zip
       api_product_type: control_forecast
-      variable: snow_depth_water_equivalent
+      variable: river_discharge_in_the_last_6_hours
       model_levels: surface_level
-      leadtime_hour: '72'
+      leadtime_hour: '6'
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     EFAS_SEASONAL:
       dataset: efas-seasonal
+      system_version: operational
       format: grib.zip
       variable: river_discharge_in_the_last_24_hours
-      model_levels: surface_levels
+      model_levels: surface_level
+      leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     EFAS_SEASONAL_REFORECAST:
       dataset: efas-seasonal-reforecast
+      system_version: version_5_0
       format: grib.zip
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_levels
+      leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"hyear": {_date#interval_to_datetime_dict}["year"], "hmonth": {_date#interval_to_datetime_dict}["month"], "hday": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
       format: zip
       processing_level: level_2
-      variable: co2
-      sensor_and_algorithm: airs_nlis
-      version: '3.0'
+      variable: xco2
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4.0'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     SATELLITE_METHANE:
       dataset: satellite-methane
       format: zip
       processing_level: level_2
-      variable: ch4
-      sensor_and_algorithm: iasi_metop_a_nlis
-      version: '9.1'
+      variable: xch4
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4.0'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     SEASONAL_POSTPROCESSED_PL:
       dataset: seasonal-postprocessed-pressure-levels
       format: grib
@@ -2880,46 +2984,66 @@
       pressure_level: '10'
       api_product_type: 'ensemble_mean'
       leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     SEASONAL_POSTPROCESSED_SL:
       dataset: seasonal-postprocessed-single-levels
       format: grib
       originating_centre: ecmwf
       system: '4'
-      variable: geopotential_anomaly
+      variable: 2m_dewpoint_temperature_anomaly
       api_product_type: 'ensemble_mean'
       leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     SEASONAL_ORIGINAL_SL:
       dataset: seasonal-original-single-levels
       format: grib
       originating_centre: ecmwf
-      system: '4'
+      system: '5'
       variable: 10m_u_component_of_wind
-      leadtime_hour: '72'
+      leadtime_hour: '6'
     SEASONAL_ORIGINAL_PL:
       dataset: seasonal-original-pressure-levels
       format: grib
       originating_centre: ecmwf
-      system: '4'
+      system: '5'
       variable: geopotential
       pressure_level: '10'
-      leadtime_hour: '72'
+      leadtime_hour: '12'
     SEASONAL_MONTHLY_PL:
       dataset: seasonal-monthly-pressure-levels
       format: grib
       originating_centre: ecmwf
-      system: '4'
+      system: '5'
       variable: geopotential
       pressure_level: '10'
-      api_product_type: ensemble_mean
+      api_product_type: monthly_mean
       leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     SEASONAL_MONTHLY_SL:
       dataset: seasonal-monthly-single-levels
       format: grib
       originating_centre: ecmwf
-      system: '4'
+      system: '5'
       variable: 10m_u_component_of_wind
-      api_product_type: ensemble_mean
+      api_product_type: monthly_mean
       leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     SIS_HYDRO_MET_PROJ:
       dataset: sis-hydrology-meteorology-derived-projections
       format: zip

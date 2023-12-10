@@ -2090,7 +2090,7 @@ CAMS_GAC_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS global atmospheric composition forecasts
-  missionStartDate: "2003-01-01T00:00:00Z"
+  missionStartDate: "2015-01-02T00:00:00Z"
 
 CAMS_EU_AIR_QUALITY_FORECAST:
   abstract: |
@@ -2149,7 +2149,7 @@ CAMS_SOLAR_RADIATION:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS solar radiation time-series
-  missionStartDate: "2004-02-01T00:00:00Z"
+  missionStartDate: "2004-01-02T00:00:00Z"
 
 CAMS_GREENHOUSE_INVERSION:
   abstract: |
@@ -2626,7 +2626,7 @@ UERRA_EUROPE_SL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: UERRA regional reanalysis for Europe on single levels from 1961 to 2019
-  missionStartDate: "1918-10-18T00:00:00Z"
+  missionStartDate: "1961-01-01T00:00:00Z"
 
 GLACIERS_ELEVATION_AND_MASS_CHANGE:
   abstract: |
@@ -2784,7 +2784,7 @@ SEASONAL_POSTPROCESSED_PL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast anomalies on pressure levels
-  missionStartDate: "2017-01-01T00:00:00Z"
+  missionStartDate: "2017-09-01T00:00:00Z"
 
 SATELLITE_SEA_LEVEL_BLACK_SEA:
   abstract: |
@@ -2864,7 +2864,7 @@ SEASONAL_POSTPROCESSED_SL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast anomalies on single levels
-  missionStartDate: "2017-01-01T00:00:00Z"
+  missionStartDate: "2017-09-01T00:00:00Z"
 
 SEASONAL_ORIGINAL_SL:
   abstract: |
@@ -2914,7 +2914,7 @@ SEASONAL_ORIGINAL_SL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast daily and subdaily data on single levels
-  missionStartDate: "2017-01-01T00:00:00Z"
+  missionStartDate: "1981-01-01T00:00:00Z"
 
 SEASONAL_ORIGINAL_PL:
   abstract: |
@@ -2958,7 +2958,7 @@ SEASONAL_ORIGINAL_PL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast subdaily data on pressure levels
-  missionStartDate: "1993-01-01T00:00:00Z"
+  missionStartDate: "1981-01-01T00:00:00Z"
 
 SEASONAL_MONTHLY_PL:
   abstract: |
@@ -3001,7 +3001,7 @@ SEASONAL_MONTHLY_PL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast monthly statistics on pressure levels
-  missionStartDate: "1993-01-01T00:00:00Z"
+  missionStartDate: "1981-01-01T00:00:00Z"
 
 SEASONAL_MONTHLY_SL:
   abstract: |
@@ -3052,7 +3052,7 @@ SEASONAL_MONTHLY_SL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecast monthly statistics on single levels
-  missionStartDate: "1993-01-01T00:00:00Z"
+  missionStartDate: "1981-01-01T00:00:00Z"
   missionEndDate: "2023-05-01T00:00:00Z"
 
 SIS_HYDRO_MET_PROJ:
@@ -3117,7 +3117,7 @@ FIRE_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Fire danger indices historical data from the Copernicus Emergency Management Service
-  missionStartDate: "1979-01-01T00:00:00Z"
+  missionStartDate: "1940-01-03T00:00:00Z"
 
 GLOFAS_FORECAST:
   abstract: |
@@ -3137,7 +3137,7 @@ GLOFAS_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related forecasted data by the Global Flood Awareness System
-  missionStartDate: "2019-11-05T00:00:00Z"
+  missionStartDate: "2021-05-26T00:00:00Z"
 
 GLOFAS_HISTORICAL:
   abstract: |
@@ -3186,7 +3186,7 @@ GLOFAS_REFORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the Global Flood Awareness System
-  missionStartDate: "1999-01-03T00:00:00Z"
+  missionStartDate: "2003-03-27T00:00:00Z"
   missionEndDate: "2018-12-30T23:59:00Z"
 
 GLOFAS_SEASONAL:
@@ -3217,7 +3217,7 @@ GLOFAS_SEASONAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecasts of river discharge and related data by the Global Flood Awareness System
-  missionStartDate: "2020-01-12T00:00:00Z"
+  missionStartDate: "2021-06-01T00:00:00Z"
 
 GLOFAS_SEASONAL_REFORECAST:
   abstract: |
@@ -3251,7 +3251,7 @@ GLOFAS_SEASONAL_REFORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
-  missionStartDate: "2020-01-12T00:00:00Z"
+  missionStartDate: "1981-01-01T00:00:00Z"
 
 EFAS_FORECAST:
   abstract: |
@@ -3322,7 +3322,7 @@ EFAS_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related historical data from the European Flood Awareness System
-  missionStartDate: "1991-01-02T00:00:00Z"
+  missionStartDate: "1992-01-02T00:00:00Z"
 
 EFAS_REFORECAST:
   abstract: |
@@ -3358,7 +3358,7 @@ EFAS_REFORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the European Flood Awareness System
-  missionStartDate: "1999-01-03T00:00:00Z"
+  missionStartDate: "2003-03-27T00:00:00Z"
   missionEndDate: "2018-12-30T00:00:00Z"
 
 EFAS_SEASONAL:
