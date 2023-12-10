@@ -146,13 +146,12 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             if params.get("startTimeFromAscendingNode")
             else mission_start_dt + timedelta(days=1)
         ).isoformat()
-        mission_end_str = self.get_product_type_cfg("missionEndDate", default_end_str)
 
         params["startTimeFromAscendingNode"] = non_none_params.get(
             "startTimeFromAscendingNode", mission_start_dt.isoformat()
         )
         params["completionTimeFromAscendingNode"] = non_none_params.get(
-            "completionTimeFromAscendingNode", mission_end_str
+            "completionTimeFromAscendingNode", default_end_str
         )
 
         # geometry
