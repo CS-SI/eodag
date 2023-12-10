@@ -723,7 +723,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
         )
 
     def test_plugins_apis_cds_query_without_producttype(self):
