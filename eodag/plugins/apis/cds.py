@@ -133,11 +133,12 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         params["productType"] = non_none_params.get("productType", dataset)
 
         # dates
-        default_start_str = DEFAULT_MISSION_START_DATE.replace(
-            "Z", "+00:00"
-        )  # before 3.11
         mission_start_dt = datetime.fromisoformat(
-            self.get_product_type_cfg("missionStartDate", default_start_str)
+            self.get_product_type_cfg(
+                "missionStartDate", DEFAULT_MISSION_START_DATE
+            ).replace(
+                "Z", "+00:00"
+            )  # before 3.11
         )
 
         default_end_str = (
