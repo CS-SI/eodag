@@ -31,7 +31,7 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
-from eodag.rest.stac import DEFAULT_BBOX, DEFAULT_MISSION_START_DATE
+from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -155,8 +155,8 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         )
 
         # geometry
-        geometry = non_none_params.get("geometry", DEFAULT_BBOX)
-        params["geometry"] = get_geometry_from_various(geometry=geometry)
+        if "geometry" in params:
+            params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""

@@ -1874,6 +1874,7 @@
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://apps.ecmwf.int/datasets/data/{dataset}'
@@ -2097,6 +2098,7 @@
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://ads.atmosphere.copernicus.eu/cdsapp#!/dataset/{dataset}'
@@ -2451,6 +2453,7 @@
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://cds.climate.copernicus.eu/cdsapp#!/dataset/{dataset}'
@@ -3202,6 +3205,7 @@
       geometry:
         - '{{"geometry": {geometry#to_geojson} }}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       productType: '$.queries[0].domain'
       storageStatus: '{$.requiresJobQueue#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
       downloadLink: 'https://my.meteoblue.com/dataset/query'

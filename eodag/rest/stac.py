@@ -62,7 +62,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.rest.stac")
 
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
-DEFAULT_BBOX = [-180, -90, 180, 90]
 STAC_CATALOGS_PREFIX = "catalogs"
 
 

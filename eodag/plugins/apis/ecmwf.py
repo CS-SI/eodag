@@ -115,15 +115,10 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             ).get("missionEndDate", None) or datetime.utcnow().isoformat(
                 timespec="seconds"
             )
+
         # geometry
-        if not kwargs.get("geometry", None):
-            kwargs["geometry"] = [
-                -180,
-                -90,
-                180,
-                90,
-            ]
-        kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
+        if "geometry" in kwargs:
+            kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
         return BuildPostSearchResult.query(
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
