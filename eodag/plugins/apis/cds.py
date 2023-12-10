@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import unquote_plus
 
 import cdsapi
@@ -284,8 +284,8 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         **kwargs: Any,
     ) -> Optional[str]:
         """Download data from providers using CDS API"""
-
-        product_extension = CDS_KNOWN_FORMATS[product.properties.get("format", "grib")]
+        product_format = product.properties.get("format", "grib")
+        product_extension = CDS_KNOWN_FORMATS.get(product_format, product_format)
 
         # Prepare download
         fs_path, record_filename = self._prepare_download(
