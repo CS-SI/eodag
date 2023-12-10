@@ -800,7 +800,10 @@ def properties_from_json(
             else:
                 properties[metadata] = path_or_text
         else:
-            match = path_or_text.find(json)
+            try:
+                match = path_or_text.find(json)
+            except KeyError:
+                match = []
             if len(match) == 1:
                 extracted_value = match[0].value
                 used_jsonpaths.append(match[0].full_path)
