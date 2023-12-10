@@ -2360,7 +2360,14 @@
       variable: alder_pollen
       type: forecast
       time: '00:00'
+      level: '0'
       leadtime_hour: '0'
+      metadata_mapping:
+        geometry:
+          - 'area={geometry#to_nwse_bounds}'
+          - '$.geometry'
+          # 72, -25, 30,
+          #   45,
     CAMS_EU_AIR_QUALITY_RE:
       dataset: cams-europe-air-quality-reanalyses
       type: validated_reanalysis
@@ -2384,11 +2391,16 @@
       version: '1.5'
       format: zip
       variable: aerosol_radiation_effect
+      aerosol_type: marine
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
       sky_type: clear
       time_step: 1minute
       time_reference: true_solar_time
+      location:
+        latitude: 0
+        lontitude: 0
+      altitude: -999
       format: csv
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: cams-global-ghg-reanalysis-egg4-monthly
@@ -2752,7 +2764,9 @@
       format: zip
     GLACIERS_DIST_RANDOLPH:
       dataset: insitu-glaciers-extent
-      version: '5_0'
+      variable': glacier_area
+      product_type: gridded
+      version: '6_0'
       format: zip
     FIRE_HISTORICAL:
       dataset: cems-fire-historical-v1
@@ -2760,6 +2774,10 @@
       dataset_type: consolidated_type
       api_product_type: reanalysis
       format: grib
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     GLOFAS_FORECAST:
       dataset: cems-glofas-historical
       system_version: operational
@@ -2783,6 +2801,10 @@
       format: grib
       hydrological_model: lisflood
       api_product_type: consolidated
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     GLOFAS_SEASONAL:
       dataset: cems-glofas-seasonal
       variable: river_discharge_in_the_last_24_hours
@@ -2794,7 +2816,7 @@
       dataset: cems-glofas-seasonal-reforecast
       format: grib
       variable: river_discharge_in_the_last_24_hours
-      system_version: operational
+      system_version: version_4_0
       hydrological_model: lisflood
       leadtime_hour: '24'
     EFAS_FORECAST:
@@ -2806,14 +2828,18 @@
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_level
       time: '00.00'
-      leadtime_hour: '72'
+      leadtime_hour: '24'
     EFAS_HISTORICAL:
       dataset: efas-historical
       format: grib.zip
       model_levels: surface_level
       variable: snow_depth_water_equivalent
       system_version: version_5_0
-      productType: EO:ECMWF:DAT:EFAS_HISTORICAL
+      time: '00.00'
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     EFAS_REFORECAST:
       dataset: efas-reforecast
       format: grib.zip
@@ -2903,10 +2929,11 @@
       processing_type: original
       time_aggregation: monthly_mean
       horizontal_resolution: 5_km
-      experiment: rcp_2_6
-      rcm: cclm_8_17
+      experiment: degree_scenario
+      rcm: cclm4_8_17
+      gcm: ec_earth
       ensemble_member: r12i1p1
-      period: '2011_2040'
+      period: '1_5_c'
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'

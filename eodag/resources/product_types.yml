@@ -3155,7 +3155,7 @@ GLOFAS_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related historical data from the Global Flood Awareness System
-  missionStartDate: "1991-01-01T00:00:00Z"
+  missionStartDate: "1979-01-01T00:00:00Z"
 
 GLOFAS_REFORECAST:
   abstract: |
@@ -3289,7 +3289,7 @@ EFAS_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related forecasted data by the European Flood Awareness System
-  missionStartDate: "2018-10-10T00:00:00Z"
+  missionStartDate: "2018-10-11T00:00:00Z"
 
 EFAS_HISTORICAL:
   abstract: |
@@ -3322,7 +3322,7 @@ EFAS_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related historical data from the European Flood Awareness System
-  missionStartDate: "1991-01-01T00:00:00Z"
+  missionStartDate: "1991-01-02T00:00:00Z"
 
 EFAS_REFORECAST:
   abstract: |
