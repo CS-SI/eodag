@@ -29,7 +29,7 @@ from fastapi.testclient import TestClient
 from shapely.geometry import box
 
 from eodag.utils import USER_AGENT, MockResponse
-from tests import TEST_RESOURCES_PATH, mock
+from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     TEST_RESOURCES_PATH,
