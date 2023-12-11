@@ -1063,12 +1063,12 @@ class RequestTestCase(unittest.TestCase):
         )
 
         res = self._request_valid(
-            f"collections/{self.tested_product_type}/queryables?provider=planetary_computer",
+            "collections/S1_SAR_GRD/queryables?provider=planetary_computer",
             check_links=False,
         )
         mock_requests_get.assert_called_once_with(
-            url=f"https://planetarycomputer.microsoft.com/api/stac/v1/collections/"
-            f"{self.tested_product_type}/queryables",
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/collections/"
+            "sentinel-1-grd/queryables",
             headers=USER_AGENT,
         )
         self.assertEqual(30, len(res["properties"]))
