@@ -2292,7 +2292,7 @@ class TestCoreSearch(TestCoreBase):
             )
             self.assertIn(
                 "\\'otherEodagSortParam\\' parameter is not sortable with dummy_provider. "
-                "Here is the list of sortable parameters with dummy_provider: eodagSortParam",
+                "Here is the list of sortable parameter(s) with dummy_provider: eodagSortParam",
                 str(cm_logs.output),
             )
         # raise an error with a sorting order called with different values for a same sorting parameter

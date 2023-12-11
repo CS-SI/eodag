@@ -248,6 +248,35 @@ class TestStacUtils(unittest.TestCase):
     def test_get_geometry(self):
         pass  # TODO
 
+    def test_get_sort_by(self):
+        """get_sort_by must extract the list of sorting parameters and
+        their sorting order from sortby request args or raise an error if needed"""
+        # raise an error with an empty string as sortby argument
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by({"sortby": ""})
+        self.assertEqual(
+            context.exception.message, "sortby argument is empty, please fill in it"
+        )
+        # raise an error with at least one empty sorting parameter
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by({"sortby": "+start_datetime,,+end_datetime"})
+        self.assertEqual(
+            context.exception.message,
+            "Syntax error in the search request, at least one sorting parameter is empty",
+        )
+
+        # do not raise an error if sortby argument is set well
+        sort_by_params = self.rest_utils.get_sort_by({"sortby": "+start_datetime"})
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC")])
+        sort_by_params = self.rest_utils.get_sort_by({"sortby": "start_datetime"})
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC")])
+        sort_by_params = self.rest_utils.get_sort_by({"sortby": "-start_datetime"})
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "DESC")])
+        sort_by_params = self.rest_utils.get_sort_by({"sortby": "+start_datetime,+end_datetime"})
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC"), ("completionTimeFromAscendingNode", "ASC")])
+        sort_by_params = self.rest_utils.get_sort_by({"sortby": "+start_datetime,-end_datetime"})
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC"), ("completionTimeFromAscendingNode", "DESC")])
+
     def test_home_page_content(self):
         """get_home_page_content runs without any error"""
         with pytest.warns(
