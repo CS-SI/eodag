@@ -1278,7 +1278,7 @@ def add_provider_product_type_queryables(
             product_type,
             provider,
         )
-        return {}
+        return queryables
     try:
         headers = USER_AGENT
         if hasattr(search_plugin, "auth"):
@@ -1289,7 +1289,7 @@ def add_provider_product_type_queryables(
     except requests.exceptions.HTTPError as err:
         if err.response.status_code == 404:
             logger.info("provider %s does not support queryables", provider)
-            return {}
+            return queryables
         else:
             raise RequestError(str(err))
     else:
@@ -1297,7 +1297,7 @@ def add_provider_product_type_queryables(
             provider_queryables = res.json()["properties"]
             return _format_provider_queryables(provider_queryables, queryables)
         else:
-            return {}
+            return queryables
 
 
 def _format_provider_queryables(
