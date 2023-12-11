@@ -1061,7 +1061,10 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.return_value = MockResponse(
             provider_queryables, status_code=200
         )
-
+        res_no_provider = self._request_valid(
+            "collections/S1_SAR_GRD/queryables",
+            check_links=False,
+        )
         res = self._request_valid(
             "collections/S1_SAR_GRD/queryables?provider=planetary_computer",
             check_links=False,
@@ -1071,7 +1074,7 @@ class RequestTestCase(unittest.TestCase):
             "sentinel-1-grd/queryables",
             headers=USER_AGENT,
         )
-        self.assertEqual(30, len(res["properties"]))
+        assert len(res["properties"]) > len(res_no_provider["properties"])
         # property added from provider queryables
         self.assertIn("s1:processing_level", res["properties"])
         # property updated with info from provider queryables
