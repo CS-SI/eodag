@@ -19,14 +19,16 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import unquote_plus
 
 import cdsapi
 import geojson
 import requests
+from dateutil.parser import isoparse
 
 from eodag.api.product._assets import Asset
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
@@ -38,8 +40,10 @@ from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     datetime_range,
+    deepcopy,
     get_geometry_from_various,
     path_to_uri,
+    urlencode,
     urlsplit,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
@@ -76,6 +80,41 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         self.config.__dict__.setdefault("free_text_search_operations", {})
         # needed for compatibility
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
+
+        # parse jsonpath on init: product type specific metadata-mapping
+        for product_type in self.config.products.keys():
+            if "metadata_mapping" in self.config.products[product_type].keys():
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
+                # Complete and ready to use product type specific metadata-mapping
+                product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
+
+                # update config using provider product type definition metadata_mapping
+                # from another product
+                other_product_for_mapping = cast(
+                    str,
+                    self.config.products[product_type].get(
+                        "metadata_mapping_from_product", ""
+                    ),
+                )
+                if other_product_for_mapping:
+                    other_product_type_def_params = self.get_product_type_def_params(
+                        other_product_for_mapping,  # **kwargs
+                    )
+                    product_type_metadata_mapping.update(
+                        other_product_type_def_params.get("metadata_mapping", {})
+                    )
+                # from current product
+                product_type_metadata_mapping.update(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
+
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = product_type_metadata_mapping
 
     def get_product_type_cfg(self, key: str, default: Any = None) -> Any:
         """
@@ -154,9 +193,29 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             "completionTimeFromAscendingNode", default_end_str
         )
 
+        # temporary _date parameter mixing start & end
+        end_date = isoparse(params["completionTimeFromAscendingNode"]) + timedelta(
+            days=-1
+        )
+        params[
+            "_date"
+        ] = f"{params['startTimeFromAscendingNode']}/{end_date.isoformat()}"
+
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+
+    def build_query_string(
+        self, product_type: str, **kwargs: Any
+    ) -> Tuple[Dict[str, Any], str]:
+        """Build The query string using the search parameters"""
+        qp, _ = BuildPostSearchResult.build_query_string(
+            self, product_type=product_type, **kwargs
+        )
+        if "_date" in qp:
+            qp.update(qp.pop("_date", {}))
+
+        return qp, urlencode(qp, doseq=True, quote_via=lambda x, *_args, **_kwargs: x)
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""

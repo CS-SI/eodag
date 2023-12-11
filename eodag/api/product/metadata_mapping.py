@@ -682,7 +682,9 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return product_type
 
         @staticmethod
-        def convert_to_datetime_dict(date: str, format: str) -> Dict[str, List[str]]:
+        def convert_to_datetime_dict(
+            date: str, format: str
+        ) -> Dict[str, Union[List[str], str]]:
             """Convert a date (str) to a dictionary where values are in the format given in argument
 
             date == "2021-04-21T18:27:19.123Z" and format == "list" => {
@@ -730,6 +732,48 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                     "minute": date_object.strftime("%M"),
                     "second": date_object.strftime("%S"),
                 }
+
+        @staticmethod
+        def convert_interval_to_datetime_dict(
+            date: str, separator: str = "/"
+        ) -> Dict[str, List[str]]:
+            """Convert a date interval ('/' separated str) to a dictionary where values are lists
+
+            date == "2021-04-21/2021-04-22" => {
+                "year": ["2021"],
+                "month": ["04"],
+                "day": ["21", "22"],
+            }
+            """
+            if separator not in date:
+                raise ValueError(
+                    f"Could not format {date} using convert_interval_to_datetime_dict: {separator} separator missing"
+                )
+            start, end = date.split(separator)
+            start_utc_date = MetadataFormatter.convert_to_iso_utc_datetime(start)
+            end_utc_date = MetadataFormatter.convert_to_iso_utc_datetime(end)
+            start_date_object = datetime.strptime(
+                start_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
+            end_date_object = datetime.strptime(end_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+            delta_utc_date = end_date_object - start_date_object
+
+            years = set()
+            months = set()
+            days = set()
+
+            for i in range(delta_utc_date.days + 1):
+                date_object = start_date_object + timedelta(days=i)
+                years.add(date_object.strftime("%Y"))
+                months.add(date_object.strftime("%m"))
+                days.add(date_object.strftime("%d"))
+
+            return {
+                "year": list(years),
+                "month": list(months),
+                "day": list(days),
+            }
 
         @staticmethod
         def convert_get_ecmwf_time(date: str) -> List[str]:
