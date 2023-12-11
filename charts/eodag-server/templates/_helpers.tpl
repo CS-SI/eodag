@@ -53,7 +53,7 @@ Create EODAG Server app version
 {{- end -}}
 
 {{/*
-Return the proper image name
+Return the proper EODAG server image name
 */}}
 {{- define "eodag-server.image" -}}
 {{- $registryName := .Values.image.registry -}}
@@ -68,6 +68,30 @@ Return the proper image name
 {{- if .Values.image.digest }}
     {{- $separator = "@" -}}
     {{- $termination = .Values.image.digest | toString -}}
+{{- end -}}
+{{- if $registryName }}
+    {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}
+{{- else -}}
+    {{- printf "%s%s%s"  $repositoryName $separator $termination -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the proper EODAG server image name
+*/}}
+{{- define "otel-collector.image" -}}
+{{- $registryName := .Values.otel.collector.image.registry -}}
+{{- $repositoryName := .Values.otel.collector.image.repository -}}
+{{- $separator := ":" -}}
+{{- $termination := .Values.otel.collector.image.tag | toString -}}
+{{- if .Values.global }}
+    {{- if .Values.global.imageRegistry }}
+     {{- $registryName = .Values.global.imageRegistry -}}
+    {{- end -}}
+{{- end -}}
+{{- if .Values.otel.collector.image.digest }}
+    {{- $separator = "@" -}}
+    {{- $termination = .Values.otel.collector.image.digest | toString -}}
 {{- end -}}
 {{- if $registryName }}
     {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}
