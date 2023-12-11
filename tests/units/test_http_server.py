@@ -1169,6 +1169,7 @@ class RequestTestCase(unittest.TestCase):
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
         )
+
         self.assertListEqual(
             list(res.keys()),
             [
@@ -1181,6 +1182,7 @@ class RequestTestCase(unittest.TestCase):
                 "additionalProperties",
             ],
         )
+
         # property added from provider queryables
         self.assertIn("s1:processing_level", res["properties"])
         # property updated with info from provider queryables
