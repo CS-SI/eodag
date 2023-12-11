@@ -349,9 +349,7 @@ def get_geometry(arguments: Dict[str, Any]) -> Optional[BaseGeometry]:
     return geom
 
 
-def get_sort_by(
-    arguments: Dict[str, Any], provider: Optional[str]
-) -> Optional[List[Tuple[str, str]]]:
+def get_sort_by(arguments: Dict[str, Any]) -> Optional[List[Tuple[str, str]]]:
     """Get sortby criteria from search arguments
 
     :param arguments: Request args
@@ -382,7 +380,7 @@ def get_sort_by(
         if stac_sort_param.startswith(prefix):
             stac_sort_param = stac_sort_param[len(prefix) :]
         eodag_sort_param = EODAGSearch.to_eodag(stac_sort_param)
-        sort_order = "DESC" if sort_by_param[:1] == "-" else "ASC"
+        sort_order = "DESC" if sort_by_param[0] == "-" else "ASC"
         sort_by_params.append((eodag_sort_param, sort_order))
     return sort_by_params
 
@@ -518,7 +516,7 @@ def search_products(
         page, items_per_page = get_pagination_info(arguments)
         dtstart, dtend = get_datetime(arguments)
         geom = get_geometry(arguments)
-        sort_by = get_sort_by(arguments, provider)
+        sort_by = get_sort_by(arguments)
 
         criterias = {
             "productType": product_type if product_type else arg_product_type,
