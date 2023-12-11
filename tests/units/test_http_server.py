@@ -1158,6 +1158,7 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.reset_mock()
 
         # provider specified
+
         res = self._request_valid(
             "collections/S1_SAR_GRD/queryables?provider=planetary_computer",
             check_links=False,
