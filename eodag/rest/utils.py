@@ -43,9 +43,9 @@ from urllib.parse import urlencode
 import dateutil.parser
 from dateutil import tz
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from shapely.geometry import Polygon, shape
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
 
 import eodag
 from eodag import EOProduct
@@ -1345,7 +1345,7 @@ class PostSearchSortbyParam(TypedDict):
 
     __pydantic_config__ = ConfigDict(extra="forbid")
 
-    field: str
+    field: Annotated[str, StringConstraints(strip_whitespace=True)]
     direction: Literal["asc", "desc"]
 
 

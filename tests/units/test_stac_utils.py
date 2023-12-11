@@ -410,6 +410,54 @@ class TestStacUtils(unittest.TestCase):
         # restore initial provider configuration
         del self.rest_utils.eodag_api.providers_config["dummy_provider"]
 
+    def test_convert_sortby_to_get_format(self):
+        """convert_sortby_to_get_format must convert sortby body request args
+        from POST to GET format and raise an error if needed"""
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [{"field": "start_datetime", "direction": "asc"}]
+        )
+        self.assertEqual(get_format, "+start_datetime")
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [
+                {"field": "start_datetime", "direction": "asc"},
+                {"field": "end_datetime", "direction": "asc"},
+            ]
+        )
+        self.assertEqual(get_format, "+start_datetime,+end_datetime")
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [
+                {"field": "start_datetime", "direction": "asc"},
+                {"field": "end_datetime", "direction": "desc"},
+            ]
+        )
+        self.assertEqual(get_format, "+start_datetime,-end_datetime")
+
+        # let sorting parameters as they are even if they are not
+        # STAC-formatted because it is already handled in get_sort_by
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [{"field": "wrong_sorting_parameter", "direction": "asc"}]
+        )
+        self.assertEqual(get_format, "+wrong_sorting_parameter")
+
+        # raise a KeyError with a missing key, but in practice it is
+        # a ValidationError from Pydantic library raised in server mode
+        with self.assertRaises(KeyError) as context:
+            self.rest_utils.convert_sortby_to_get_format([{"field": "start_datetime"}])
+        self.assertEqual(context.exception.args[0], "direction")
+        with self.assertRaises(KeyError) as context:
+            self.rest_utils.convert_sortby_to_get_format([{"direction": "desc"}])
+        self.assertEqual(context.exception.args[0], "field")
+        # raise a KeyError with a wrong key, but in practice it is
+        # a ValidationError from Pydantic library raised in server mode
+        with self.assertRaises(KeyError) as context:
+            self.rest_utils.convert_sortby_to_get_format(
+                [{"wrong_key": "start_datetime", "direction": "asc"}]
+            )
+        self.assertEqual(context.exception.args[0], "field")
+
+        # in practice, a ValidationError from Pydantic library is raised in server mode
+        # with a wrong sorting order or syntax errors but theses cases can not be tested here
+
     def test_home_page_content(self):
         """get_home_page_content runs without any error"""
         with pytest.warns(
