@@ -2113,7 +2113,7 @@ class TestCoreSearch(TestCoreBase):
         dag.update_providers_config(dummy_provider_config)
         # raise an error with a provider which does not support sorting feature
         with self.assertRaises(ValidationError) as context:
-            _, _ = dag.search(
+            dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
                 sortBy=[("eodagSortParam", "ASC")],
@@ -2144,7 +2144,7 @@ class TestCoreSearch(TestCoreBase):
         dag.update_providers_config(dummy_provider_config)
         # raise an error with syntax errors
         with self.assertRaises(ValidationError) as context:
-            _, _ = dag.search(
+            dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
                 sortBy=["eodagSortParam ASC"],
@@ -2155,7 +2155,7 @@ class TestCoreSearch(TestCoreBase):
         )
         # raise an error with a wrong sorting order
         with self.assertRaises(ValidationError) as context:
-            _, _ = dag.search(
+            dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
                 sortBy=[("eodagSortParam", " wrong_order ")],
@@ -2166,19 +2166,19 @@ class TestCoreSearch(TestCoreBase):
         )
         # raise an error with a parameter not sortable with a provider
         with self.assertRaises(ValidationError) as context:
-            _, _ = dag.search(
+            dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
                 sortBy=[("otherEodagSortParam", "ASC")],
             )
         self.assertIn(
             "'otherEodagSortParam' parameter is not sortable with dummy_provider. "
-            "Here is the list of sortable parameters with dummy_provider: eodagSortParam",
+            "Here is the list of sortable parameter(s) with dummy_provider: eodagSortParam",
             str(context.exception.errors_to_raise),
         )
         # raise an error with a sorting order called with different values for a same sorting parameter
         with self.assertRaises(ValidationError) as context:
-            _, _ = dag.search(
+            dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
                 sortBy=[("eodagSortParam", "ASC"), ("eodagSortParam", "DESC")],
@@ -2212,7 +2212,7 @@ class TestCoreSearch(TestCoreBase):
         dag.update_providers_config(dummy_provider_config)
         # raise an error with more sorting parameters than supported by the provider
         with self.assertRaises(ValidationError) as context:
-            _, _ = dag.search(
+            dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
                 sortBy=[("eodagSortParam", "ASC"), ("otherEodagSortParam", "ASC")],

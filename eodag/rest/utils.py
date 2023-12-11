@@ -359,6 +359,8 @@ def get_sort_by(
     sort_by_params_tmp = arguments.pop("sortby", None)
     if sort_by_params_tmp is None:
         return None
+    if not sort_by_params_tmp:
+        raise ValidationError("sortby argument is empty, please fill in it")
 
     sorting_supported_by_provider = False
     if provider is not None:
@@ -371,8 +373,6 @@ def get_sort_by(
             )
         else:
             sorting_supported_by_provider = True
-    if not sort_by_params_tmp:
-        raise ValidationError("sortby argument is empty, please fill in it")
     sort_by_params = []
     for sort_by_param in sort_by_params_tmp.split(","):
         # Remove leading and trailing whitespace(s) if exist
@@ -395,7 +395,7 @@ def get_sort_by(
             or stac_sort_param == "datetime"
         ):
             raise ValidationError(
-                "'{}' sorting parameter is not STAC-standardized or not handled by EODAG".format(
+                "'{}' sorting parameter is not STAC-formatted or not handled by EODAG".format(
                     stac_sort_param
                 )
             )
@@ -408,7 +408,7 @@ def get_sort_by(
             params = set(search_plugin.config.sort["sort_by_mapping"].keys())
             raise ValidationError(
                 "'{}' parameter is not sortable with {}. "
-                "Here is the list of sortable parameters with {}: {}".format(
+                "Here is the list of sortable parameter(s) with {}: {}".format(
                     stac_sort_param,
                     provider,
                     provider,

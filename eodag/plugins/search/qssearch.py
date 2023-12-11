@@ -553,7 +553,7 @@ class QueryStringSearch(Search):
                 params.add(eodag_sort_param)
                 raise ValidationError(
                     "'{}' parameter is not sortable with {}. "
-                    "Here is the list of sortable parameters with {}: {}".format(
+                    "Here is the list of sortable parameter(s) with {}: {}".format(
                         eodag_sort_param,
                         self.provider,
                         self.provider,
