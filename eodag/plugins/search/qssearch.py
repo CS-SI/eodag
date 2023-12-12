@@ -449,7 +449,9 @@ class QueryStringSearch(Search):
         # remove "sortBy" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string once metadata mapping will be done
         sort_by_params = self.SortByParams(sort_by_params=kwargs.pop("sortBy", None))
-        self.sort_by_params = sort_by_params.sort_by_params
+        self.sort_by_params = sort_by_params.sort_by_params or getattr(
+            self.config, "sort", {}
+        ).get("sort_by_default", None)
 
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
