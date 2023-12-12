@@ -20,7 +20,6 @@ from __future__ import annotations
 import io
 import logging
 import os
-import re
 import traceback
 from contextlib import asynccontextmanager
 from distutils import dist
@@ -33,7 +32,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Set,
     Union,
 )
 
@@ -47,12 +45,9 @@ from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from eodag.api.queryables import Queryables
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
-    QueryableProperty,
-    Queryables,
-    add_provider_product_type_queryables,
-    add_provider_queryables,
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
@@ -85,7 +80,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("eodag.rest.server")
-CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")
 
 
 class APIRouter(FastAPIRouter):
@@ -468,20 +462,12 @@ def list_collection_queryables(
     logger.debug(f"URL: {request.url}")
 
     queryables = Queryables(q_id=request.state.url, additional_properties=False)
-    conf_args = [collection_id, provider] if provider else [collection_id]
 
-    provider_properties: Set[str] = set(
-        fetch_collection_queryable_properties(*conf_args)
+    collection_queryables = fetch_collection_queryable_properties(
+        collection_id, provider
     )
-
-    for prop in sorted(provider_properties):
-        titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop.split(":")[-1]).title()
-        queryables[prop] = QueryableProperty(description=titled_name)
-
-    if provider:
-        queryables = add_provider_product_type_queryables(
-            provider, collection_id, queryables
-        )
+    for key, collection_queryable in collection_queryables.items():
+        queryables[key] = collection_queryable
 
     return jsonable_encoder(queryables)
 
@@ -690,7 +676,7 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     logger.debug(f"URL: {request.url}")
     queryables = Queryables(q_id=request.state.url)
     if provider:
-        queryables = add_provider_queryables(provider, queryables)
+        queryables = fetch_collection_queryable_properties(None, provider)
 
     return jsonable_encoder(queryables)
 
