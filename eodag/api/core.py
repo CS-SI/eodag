@@ -539,8 +539,8 @@ class EODataAccessGateway:
                     if product_type_id == GENERIC_PRODUCT_TYPE:
                         continue
                     config = self.product_types_config[product_type_id]
+                    config["_id"] = product_type_id
                     if "alias" in config:
-                        config["_id"] = product_type_id
                         product_type_id = config["alias"]
                     product_type = dict(ID=product_type_id, **config)
                     if product_type_id not in product_types:
@@ -1618,8 +1618,7 @@ class EODataAccessGateway:
                         for p in self.list_product_types(
                             search_plugin.provider, fetch_providers=False
                         )
-                        if p["ID"] == product_type
-                        or ("_id" in p and p["_id"] == product_type)
+                        if p["_id"] == product_type
                     ][0],
                     **{"productType": product_type},
                 )

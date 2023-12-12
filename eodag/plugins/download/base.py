@@ -43,6 +43,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     ProgressCallback,
+    StreamResponse,
     sanitize,
     uri_to_path,
 )
@@ -150,7 +151,7 @@ class Download(PluginTopic):
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    ) -> StreamResponse:
         r"""
         Base _stream_download_dict method. Not available, it must be defined for each plugin.
 
