@@ -250,13 +250,22 @@ async def handle_invalid_usage_with_validation_error(request: Request, error):
             "No result could be obtained from any available provider "
             "and the following error(s) was (were) raised:"
         )
-        for e in error.errors_to_raise:
+        for i, e in enumerate(error.errors_to_raise):
+            error.message += " " if i == 0 else " | "
             if e.__class__.__name__ not in ERRORS_WITH_500_STATUS_CODE:
-                error.message += f"\n- {e.provider}: {e.args[0]}"
+                error.message += f"{e.provider}: {e.args[0]}"
                 if getattr(e, "parameters", set()):
                     error.parameters.update(e.parameters)
             else:
-                error.message += f"\n- {e.provider}: a internal error appeared"
+                error.message += f"{e.provider}: an internal error appeared"
+        if error.result_and_error_free_providers:
+            joined_validated_providers = ", ".join(
+                error.result_and_error_free_providers
+            )
+            error.message += (
+                f" | Neither result nor error found with the following provider(s): {joined_validated_providers}. "
+                "Please try again by changing parameters"
+            )
     if error.parameters:
         for error_param in error.parameters:
             stac_param = rename_to_stac_standard(error_param)

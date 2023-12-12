@@ -24,6 +24,8 @@ class ValidationError(Exception):
     """Error validating data"""
 
     errors_to_raise: Set[Exception] = set()
+    provider: str = None
+    result_and_error_free_providers = set()
 
     def __init__(self, message: str, parameters: Set = set()) -> None:
         self.message = message

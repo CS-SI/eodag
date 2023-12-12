@@ -1007,6 +1007,7 @@ class EODataAccessGateway:
             items_per_page=items_per_page,
         )
         self.errors_to_raise = set()
+        result_and_error_free_providers = set()
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1016,11 +1017,16 @@ class EODataAccessGateway:
                 raise_errors=raise_errors,
                 **search_kwargs,
             )
-            if len(search_results) == 0 and i < len(search_plugins) - 1:
-                logger.warning(
-                    f"No result could be obtained from provider {search_plugin.provider}, "
-                    "we will try to get the data from another provider",
-                )
+            if len(search_results) == 0:
+                if search_plugin.provider not in [
+                    e.provider for e in self.errors_to_raise
+                ]:
+                    result_and_error_free_providers.add(search_plugin.provider)
+                if i < len(search_plugins) - 1:
+                    logger.warning(
+                        f"No result could be obtained from provider {search_plugin.provider}, "
+                        "we will try to get the data from another provider",
+                    )
             elif len(search_results) > 0:
                 return search_results, total_results
 
@@ -1030,6 +1036,9 @@ class EODataAccessGateway:
                 "appeared while searching. You may change your search parameters."
             )
             validation_error.errors_to_raise = self.errors_to_raise
+            validation_error.result_and_error_free_providers = (
+                result_and_error_free_providers
+            )
             raise validation_error
         logger.error("No result could be obtained from any available provider")
         return SearchResult([]), 0
