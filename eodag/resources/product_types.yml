@@ -3753,7 +3753,7 @@ POLYTOPE_TEST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: polytope test product
-  missionStartDate: "1984-01-01T00:00:00Z"
+  missionStartDate: "2020-07-01T00:00:00Z"
 
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
