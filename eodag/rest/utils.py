@@ -24,13 +24,11 @@ import logging
 import os
 import re
 from shutil import make_archive, rmtree
-from time import perf_counter
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
-    Iterable,
     Iterator,
     List,
     NamedTuple,
@@ -45,16 +43,6 @@ import dateutil.parser
 from dateutil import tz
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-from opentelemetry import metrics, trace
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.metrics import CallbackOptions, Observation
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics._internal.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
 
@@ -82,6 +70,7 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
     ValidationError,
 )
+from eodag.utils.otel import telemetry
 
 if TYPE_CHECKING:
     from io import BufferedReader
@@ -110,9 +99,6 @@ stac_config = load_stac_config()
 stac_provider_config = load_stac_provider_config()
 
 STAC_QUERY_PATTERN = "query.*.*"
-
-telemetry = {}
-overhead_timers = {}
 
 
 @_deprecated(
@@ -1224,136 +1210,4 @@ def telemetry_init(app: FastAPI):
     if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
         return None
 
-    # Start OTLP exporter
-    resource = Resource(attributes={SERVICE_NAME: "eodag-serve-rest"})
-    # trace
-    tracer_provider = TracerProvider(resource=resource)
-    processor = BatchSpanProcessor(OTLPSpanExporter())
-    tracer_provider.add_span_processor(processor)
-    trace.set_tracer_provider(tracer_provider)
-    # metrics
-    reader = PeriodicExportingMetricReader(OTLPMetricExporter())
-    meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
-    metrics.set_meter_provider(meter_provider)
-
-    # FastAPI instrumentation
-    FastAPIInstrumentor.instrument_app(app, meter_provider=meter_provider)
-
-    # Manual instrumentation
-    meter = metrics.get_meter("eodag.meter")
-    telemetry["search_product_type_total"] = meter.create_counter(
-        name="eodag.core.search_product_type_total",
-        description="The number of searches by product type",
-    )
-    telemetry["downloaded_data_bytes_total"] = meter.create_counter(
-        name="eodag.download.downloaded_data_bytes_total",
-        description="Measure data downloaded from each provider",
-    )
-    telemetry["available_providers"] = meter.create_observable_gauge(
-        name="eodag.core.available_providers",
-        callbacks=[_available_providers_callback],
-        description="The number available providers",
-    )
-    telemetry["available_product_types"] = meter.create_observable_gauge(
-        name="eodag.core.available_product_types",
-        callbacks=[_available_product_types_callback],
-        description="The number available product types",
-    )
-    telemetry["request_duration_seconds"] = meter.create_histogram(
-        name="eodag.server.request_duration_seconds",
-        unit="s",
-        description="Measures the duration of the inbound HTTP request",
-    )
-    telemetry["request_overhead_duration_seconds"] = meter.create_histogram(
-        name="eodag.server.request_overhead_duration_seconds",
-        unit="s",
-        description="Measures the duration of the EODAG overhead on the inbound HTTP request",
-    )
-    telemetry["outbound_request_duration_seconds"] = meter.create_histogram(
-        name="eodag.core.outbound_request_duration_seconds",
-        unit="s",
-        description="Measures the duration of the outbound HTTP request",
-    )
-
-
-def _available_providers_callback(options: CallbackOptions) -> Iterable[Observation]:
-    return [
-        Observation(
-            len(eodag_api.available_providers()),
-            {"label": "Available Providers"},
-        )
-    ]
-
-
-def _available_product_types_callback(
-    options: CallbackOptions,
-) -> Iterable[Observation]:
-    return [
-        Observation(
-            len(eodag_api.list_product_types()),
-            {"label": "Available Product Types"},
-        )
-    ]
-
-
-def record_downloaded_data(provider: str, byte_count: int):
-    """Measure the downloaded bytes for a given provider.
-
-    :param provider: The provider from which the data is downloaded.
-    :type provider: str
-    :param byte_count: Number of bytes downloaded.
-    :type byte_count: int
-    """
-    if telemetry:
-        telemetry["downloaded_data_bytes_total"].add(
-            byte_count,
-            {"provider": provider},
-        )
-
-
-def record_searched_product_type(product_type: str):
-    """Measure the number of times a product type is searcher.
-
-    :param product_type: The product type.
-    :type product_type: str
-    """
-    if telemetry:
-        telemetry["search_product_type_total"].add(1, {"product_type": product_type})
-
-
-class OverheadTimer:
-    """Timer class  to calculate the overhead of a task relative to other sub-tasks"""
-
-    def __init__(self):
-        self._start_global_timestamp: float = None
-        self._end_global_timestamp: float = None
-        self._subtasks_time: float = 0.0
-
-    def start_global_timer(self):
-        """Start the timer of the main task"""
-        self._start_global_timestamp: float = perf_counter()
-        self._subtasks_time: float = 0.0
-
-    def stop_global_timer(self):
-        """Stop the timer of the main task"""
-        self._end_global_timestamp: float = perf_counter()
-
-    def record_subtask_time(self, time: float):
-        """Record the execution time of a subtask"""
-        self._subtasks_time += time
-
-    def get_global_time(self):
-        """Calculate the execution time of the main task
-
-        :returns: The global execution time
-        :rtype: float
-        """
-        return self._end_global_timestamp - self._start_global_timestamp
-
-    def get_overhead_time(self):
-        """Calculate the overhead time of the main task relative to the sub-tasks
-
-        :returns: The overhead time
-        :rtype: float
-        """
-        return self.get_global_time() - self._subtasks_time
+    telemetry.configure_instruments(eodag_api, app)

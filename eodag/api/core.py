@@ -35,7 +35,6 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
-from eodag import rest
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
@@ -77,6 +76,7 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
     UnsupportedProvider,
 )
+from eodag.utils.otel import telemetry
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
@@ -1640,7 +1640,7 @@ class EODataAccessGateway:
             tracer = trace.get_tracer("eodag.tracer")
             with tracer.start_as_current_span("core-search") as span:
                 trace_id = span.get_span_context().trace_id
-                timer = rest.utils.overhead_timers.get(trace_id)
+                timer = telemetry.get_overhead_timer(trace_id)
                 start_time = perf_counter()
 
                 if need_auth and auth_plugin and can_authenticate:
@@ -1652,11 +1652,10 @@ class EODataAccessGateway:
 
                 end_time = perf_counter()
                 total_time = end_time - start_time
+                telemetry.record_outbound_request_duration(
+                    search_plugin.provider, total_time
+                )
                 if timer:
-                    attributes = {"provider": str(search_plugin.provider)}
-                    rest.utils.telemetry["outbound_request_duration_seconds"].record(
-                        total_time, attributes
-                    )
                     timer.record_subtask_time(total_time)
 
             # Only do the pagination computations when it makes sense. For example,
