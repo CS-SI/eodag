@@ -860,7 +860,7 @@ class StacCatalog(StacCommon):
         self.update_data(parsed_dict)
 
         # update search args
-        self.search_args.update({"product_type": product_type})
+        self.search_args.update({"productType": product_type})
 
         return parsed_dict
 
@@ -1049,8 +1049,8 @@ class StacCatalog(StacCommon):
                 "year": datetime_min.year,
                 "month": datetime_min.month,
                 "day": datetime_min.day,
-                "min": datetime_min.isoformat().replace("+00:00", "") + "Z",
-                "max": datetime_max.isoformat().replace("+00:00", "") + "Z",
+                "min": datetime_min.isoformat().replace("+00:00", "Z"),
+                "max": datetime_max.isoformat().replace("+00:00", "Z"),
             },
         )
         parsed_dict: Dict[str, Any] = format_dict_items(catalog_model, **format_args)
@@ -1060,8 +1060,8 @@ class StacCatalog(StacCommon):
         # update search args
         self.search_args.update(
             {
-                "dtstart": datetime_min.isoformat().split("T")[0],
-                "dtend": datetime_max.isoformat().split("T")[0],
+                "start": datetime_min.isoformat().replace("+00:00", "Z"),
+                "end": datetime_max.isoformat().replace("+00:00", "Z"),
             }
         )
         return parsed_dict
@@ -1096,7 +1096,7 @@ class StacCatalog(StacCommon):
         self.update_data(parsed_dict)
 
         # update search args
-        self.search_args.update({"query": {"eo:cloud_cover": {"lte": cloud_cover}}})
+        self.search_args.update({"cloudCover": cloud_cover})
 
         return parsed_dict
 

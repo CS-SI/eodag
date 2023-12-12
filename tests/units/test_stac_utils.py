@@ -58,7 +58,7 @@ class TestStacUtils(unittest.TestCase):
             "query": {"eo:cloud_cover": {"lte": "10"}},
             "filter": "latestIntersect",
         }
-        cls.criterias = {
+        cls.criteria = {
             "productType": "S2_MSI_L1C",
             "page": 1,
             "items_per_page": 1,
@@ -67,7 +67,7 @@ class TestStacUtils(unittest.TestCase):
         }
         cls.empty_products = SearchResult([])
         cls.empty_arguments = {}
-        cls.empty_criterias = {}
+        cls.empty_criteria = {}
 
         # mock os.environ to empty env
         cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
@@ -165,8 +165,8 @@ class TestStacUtils(unittest.TestCase):
             {"query.eo:cloud_cover.lte": "10", "query.foo.eq": "bar"},
         )
 
-    def test_get_criterias_from_metadata_mapping(self):
-        """get_criterias_from_metadata_mapping must extract search criterias
+    def test_get_criteria_from_metadata_mapping(self):
+        """get_criteria_from_metadata_mapping must extract search criteria
         from request arguments with metadata_mapping config"""
         metadata_mapping = {
             "doi": [
@@ -191,10 +191,10 @@ class TestStacUtils(unittest.TestCase):
         arguments = {
             "query": {"eo:cloud_cover": {"lte": "10"}, "foo": {"eq": "bar"}},
         }
-        criterias = self.rest_utils.get_criterias_from_metadata_mapping(
+        criteria = self.rest_utils.get_criteria_from_metadata_mapping(
             metadata_mapping, arguments
         )
-        self.assertEqual(criterias, {"cloudCover": "10", "foo": "bar"})
+        self.assertEqual(criteria, {"cloudCover": "10", "foo": "bar"})
 
     def test_get_date(self):
         """Date validation function must correctly validate dates"""

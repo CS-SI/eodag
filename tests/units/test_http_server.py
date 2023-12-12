@@ -496,12 +496,13 @@ class RequestTestCase(unittest.TestCase):
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
+                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
             ),
         )
         self.assertEqual(len(result1.features), 2)
+        # TODO: filter=latestIntersect collide with STAC filter extension
         result2 = self._request_valid(
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&filter=latestIntersect",
             expected_search_kwargs=dict(
@@ -522,8 +523,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -533,7 +534,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -543,7 +544,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -553,8 +554,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -576,8 +577,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -590,8 +591,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -604,8 +605,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -618,8 +619,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -642,15 +643,17 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_catalog_browse_date_search(self):
-        """Browsing catalogs with date filtering through eodag server should return a valid response"""
+        """
+        Browsing catalogs with date filtering through eodag server should return a valid response
+        """
         self._request_valid(
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         # args & catalog intersection
@@ -660,8 +663,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -670,8 +673,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -680,8 +683,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-01-05T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -690,8 +693,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-05T00:00:00",
-                end="2018-01-05T00:00:00",
+                start="2018-01-05T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
             ),
         )
         result = self._request_valid(
@@ -707,7 +710,6 @@ class RequestTestCase(unittest.TestCase):
                 "id": "foo",
                 "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
             },
         )
 
@@ -719,7 +721,6 @@ class RequestTestCase(unittest.TestCase):
                 "id": "foo",
                 "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
             },
         )
 
@@ -782,8 +783,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -797,7 +798,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -811,7 +812,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00",
+                end="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -825,8 +826,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
             ),
         )
 

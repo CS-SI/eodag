@@ -1,0 +1,1 @@
+"""EODAG rest models"""
