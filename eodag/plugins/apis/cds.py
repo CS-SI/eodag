@@ -180,11 +180,17 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             )  # before 3.11
         )
 
+        default_end_from_cfg = self.config.products.get(params["productType"], {}).get(
+            "_default_end_date", None
+        )
         default_end_str = (
-            datetime.utcnow()
-            if params.get("startTimeFromAscendingNode")
-            else mission_start_dt + timedelta(days=1)
-        ).isoformat()
+            default_end_from_cfg
+            or (
+                datetime.utcnow()
+                if params.get("startTimeFromAscendingNode")
+                else mission_start_dt + timedelta(days=1)
+            ).isoformat()
+        )
 
         params["startTimeFromAscendingNode"] = non_none_params.get(
             "startTimeFromAscendingNode", mission_start_dt.isoformat()

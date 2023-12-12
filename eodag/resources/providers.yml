@@ -2358,10 +2358,12 @@
       variable: ammonium_aerosol_optical_depth_550nm
       time: '00:00'
       leadtime_hour: '0'
+      _default_end_date: '2019-07-12T00:00Z'
     CAMS_GFE_GFAS:
       dataset: cams-global-fire-emissions-gfas
       format: grib
       variable: altitude_of_plume_bottom
+      _default_end_date: '2018-07-03T00:00Z'
     CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: cams-europe-air-quality-forecasts
       model: ensemble
