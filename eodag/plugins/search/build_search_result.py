@@ -126,15 +126,18 @@ class BuildPostSearchResult(PostJsonSearch):
             ):
                 next_page_query_obj = orjson.loads(
                     self.config.pagination["next_page_query_obj"].format()
-
                 )
             else:
                 # update result with query parameters without pagination (or search-only params)
-                if isinstance(
-                    self.config.pagination["next_page_query_obj"], str
-                ) and hasattr(self, "query_params_unpaginated"):
+                if (
+                    "next_page_query_obj" in self.config.pagination
+                    and isinstance(self.config.pagination["next_page_query_obj"], str)
+                    and hasattr(self, "query_params_unpaginated")
+                ):
                     unpaginated_query_params = self.query_params_unpaginated
-                elif isinstance(self.config.pagination["next_page_query_obj"], str):
+                elif "next_page_query_obj" in self.config.pagination and isinstance(
+                    self.config.pagination["next_page_query_obj"], str
+                ):
                     next_page_query_obj = orjson.loads(
                         self.config.pagination["next_page_query_obj"].format()
                     )
@@ -185,6 +188,7 @@ class BuildPostSearchResult(PostJsonSearch):
         parsed_properties["id"] = parsed_properties["title"] = product_id
 
         # update downloadLink
+
         add_params_to_download_link = kwargs.get("params_in_download_link", True)
         if add_params_to_download_link:
             parsed_properties["downloadLink"] += f"?{qs}"
