@@ -49,7 +49,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from eodag.config import load_stac_api_config
 from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.utils import (
-    OverheadTimer,
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
@@ -61,10 +60,7 @@ from eodag.rest.utils import (
     get_stac_conformance,
     get_stac_extension_oseo,
     get_stac_item_by_id,
-    overhead_timers,
-    record_searched_product_type,
     search_stac_items,
-    telemetry,
     telemetry_init,
 )
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
@@ -79,6 +75,7 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
 )
+from eodag.utils.otel import telemetry
 
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
@@ -352,10 +349,9 @@ def stac_collections_item_download(
     """STAC collection item download"""
     tracer = trace.get_tracer("eodag.tracer")
     with tracer.start_as_current_span("server-download") as span:
-        timer = OverheadTimer()
-        timer.start_global_timer()
         trace_id = span.get_span_context().trace_id
-        overhead_timers[trace_id] = timer
+        timer = telemetry.create_overhead_timer(trace_id)
+        timer.start_global_timer()
         logger.debug(f"URL: {request.url}")
 
         arguments = dict(request.query_params)
@@ -366,14 +362,9 @@ def stac_collections_item_download(
         )
 
         timer.stop_global_timer()
-        attributes = {"provider": str(provider)}
-        telemetry["request_duration_seconds"].record(
-            timer.get_global_time(), attributes
-        )
-        telemetry["request_overhead_duration_seconds"].record(
-            timer.get_overhead_time(), attributes
-        )
-        del overhead_timers[trace_id]
+        telemetry.record_request_duration(provider, timer.get_global_time())
+        telemetry.record_request_overhead_duration(provider, timer.get_overhead_time())
+        telemetry.delete_overhead_timer(trace_id)
 
         return response
 
@@ -558,10 +549,9 @@ def stac_catalogs_item_download(
     """STAC Catalog item download"""
     tracer = trace.get_tracer("eodag.tracer")
     with tracer.start_as_current_span("server-download") as span:
-        timer = OverheadTimer()
-        timer.start_global_timer()
         trace_id = span.get_span_context().trace_id
-        overhead_timers[trace_id] = timer
+        timer = telemetry.create_overhead_timer(trace_id)
+        timer.start_global_timer()
         logger.debug(f"URL: {request.url}")
 
         arguments = dict(request.query_params)
@@ -574,14 +564,9 @@ def stac_catalogs_item_download(
         )
 
         timer.stop_global_timer()
-        attributes = {"provider": str(provider)}
-        telemetry["request_duration_seconds"].record(
-            timer.get_global_time(), attributes
-        )
-        telemetry["request_overhead_duration_seconds"].record(
-            timer.get_overhead_time(), attributes
-        )
-        del overhead_timers[trace_id]
+        telemetry.record_request_duration(provider, timer.get_global_time())
+        telemetry.record_request_overhead_duration(provider, timer.get_overhead_time())
+        telemetry.delete_overhead_timer(trace_id)
 
         return response
 
@@ -741,10 +726,9 @@ def stac_search(
     """STAC collections items"""
     tracer = trace.get_tracer("eodag.tracer")
     with tracer.start_as_current_span("server-search") as span:
-        timer = OverheadTimer()
-        timer.start_global_timer()
         trace_id = span.get_span_context().trace_id
-        overhead_timers[trace_id] = timer
+        timer = telemetry.create_overhead_timer(trace_id)
+        timer.start_global_timer()
         logger.debug(f"URL: {request.url}")
         logger.debug(f"Body: {search_body}")
 
@@ -762,7 +746,7 @@ def stac_search(
         # metrics
         args_collections = arguments.get("collections", None)
         product_type = args_collections.split(",")[0] if args_collections else None
-        record_searched_product_type(product_type)
+        telemetry.record_searched_product_type(product_type)
 
         response = search_stac_items(
             url=url,
@@ -775,14 +759,9 @@ def stac_search(
             content=response, status_code=200, media_type="application/json"
         )
         timer.stop_global_timer()
-        attributes = {"provider": str(provider)}
-        telemetry["request_duration_seconds"].record(
-            timer.get_global_time(), attributes
-        )
-        telemetry["request_overhead_duration_seconds"].record(
-            timer.get_overhead_time(), attributes
-        )
-        del overhead_timers[trace_id]
+        telemetry.record_request_duration(provider, timer.get_global_time())
+        telemetry.record_request_overhead_duration(provider, timer.get_overhead_time())
+        telemetry.delete_overhead_timer(trace_id)
         return resp
 
 

@@ -38,7 +38,6 @@ from typing import (
     Union,
 )
 
-from eodag import rest
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -53,6 +52,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
 )
 from eodag.utils.notebook import NotebookWidgets
+from eodag.utils.otel import telemetry
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -717,7 +717,7 @@ class Download(PluginTopic):
 
         def wrapper(*args, **kwargs):
             # metrics
-            rest.utils.record_downloaded_data(self.provider, args[0])
+            telemetry.record_downloaded_data(self.provider, args[0])
             progress_callback(*args, **kwargs)
 
         return wrapper
