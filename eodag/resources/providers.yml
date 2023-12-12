@@ -883,6 +883,8 @@
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
       sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
       sort_by_mapping:
         startTimeFromAscendingNode: startDate
