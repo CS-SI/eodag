@@ -29,27 +29,29 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    List,
-    Optional,
-    Union,
+    Optional
 )
+from urllib.parse import unquote_plus
 
+import orjson
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import ValidationError as pydanticValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryables
+from eodag.rest.model.search_post_request import SearchPostRequest
 from eodag.rest.utils import (
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
+    format_pydantic_error,
     get_detailled_collections_list,
     get_stac_api_version,
     get_stac_catalogs,
@@ -57,10 +59,9 @@ from eodag.rest.utils import (
     get_stac_collections,
     get_stac_conformance,
     get_stac_extension_oseo,
-    get_stac_item_by_id,
     search_stac_items,
 )
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
+from eodag.utils import parse_header, update_nested_dict
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -77,7 +78,6 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
     from requests import Response
-
 
 logger = logging.getLogger("eodag.rest.server")
 ERRORS_WITH_500_STATUS_CODE = {
@@ -162,7 +162,7 @@ def eodag_openapi() -> Dict[str, Any]:
 
     openapi_schema["info"]["description"] = (
         root_catalog["description"]
-        + " (stac-api-spec {})".format(stac_api_version)
+        + f" (stac-api-spec {stac_api_version})"
         + "<details><summary>Available collections / product types</summary>"
         + "".join(
             [
@@ -280,7 +280,7 @@ async def handle_resource_not_found(
 @app.exception_handler(AuthenticationError)
 async def handle_auth_error(request: Request, error: Exception) -> ORJSONResponse:
     """These errors should be sent as internal server error to the client"""
-    logger.error(f"{type(error).__name__}: {str(error)}")
+    logger.error("%s: %s", type(error).__name__, str(error))
     return await default_exception_handler(
         request,
         HTTPException(
@@ -347,12 +347,11 @@ async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
 @router.get("/", tags=["Capabilities"])
 def catalogs_root(request: Request) -> Any:
     """STAC catalogs root"""
-    logger.debug(f"URL: {request.url}")
+    logger.debug("URL: %s", request.url)
 
     response = get_stac_catalogs(
         url=request.state.url,
         root=request.state.url_root,
-        catalogs=[],
         provider=request.query_params.get("provider", None),
     )
 
@@ -371,26 +370,10 @@ def conformance() -> Any:
 @router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
 def stac_extension_oseo(request: Request) -> Any:
     """STAC OGC / OpenSearch extension for EO"""
-    logger.debug(f"URL: {request.url}")
+    logger.debug("URL: %s", request.url)
     response = get_stac_extension_oseo(url=request.state.url)
 
     return jsonable_encoder(response)
-
-
-class SearchBody(BaseModel):
-    """
-    class which describes the body of a search request
-    """
-
-    provider: Optional[str] = None
-    collections: Union[List[str], str]
-    datetime: Optional[str] = None
-    bbox: Optional[List[Union[int, float]]] = None
-    intersects: Optional[Dict[str, Any]] = None
-    limit: Optional[int] = DEFAULT_ITEMS_PER_PAGE
-    page: Optional[int] = 1
-    query: Optional[Dict[str, Any]] = None
-    ids: Optional[List[str]] = None
 
 
 @router.get(
@@ -402,7 +385,7 @@ def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StreamingResponse:
     """STAC collection item download"""
-    logger.debug(f"URL: {request.url}")
+    logger.debug("URL: %s", request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -421,7 +404,7 @@ def stac_collections_item_download_asset(
     collection_id, item_id, asset_filter, request: Request
 ):
     """STAC collection item asset download"""
-    logger.debug(f"URL: {request.url}")
+    logger.debug("URL: %s", request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -442,20 +425,21 @@ def stac_collections_item_download_asset(
 )
 def stac_collections_item(collection_id: str, item_id: str, request: Request) -> Any:
     """STAC collection item by id"""
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
+    logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+    base_args = dict(request.query_params, **{"ids": [item_id]})
 
-    response = get_stac_item_by_id(
-        url=url,
-        item_id=item_id,
-        root=url_root,
+    clean = {k: v for k, v in base_args.items() if v is not None}
+    try:
+        search_request = SearchPostRequest.model_validate(clean)
+    except pydanticValidationError as e:
+        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
+
+    response = search_stac_items(
+        url=request.state.url,
+        search_request=search_request,
+        root=request.state.url_root,
         catalogs=[collection_id],
-        provider=provider,
-        **arguments,
     )
 
     if response:
@@ -463,9 +447,7 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     else:
         raise HTTPException(
             status_code=404,
-            detail="No item found matching `{}` id in collection `{}`".format(
-                item_id, collection_id
-            ),
+            detail=f"No item found matching `{item_id}` id in collection `{collection_id}`",
         )
 
 
@@ -474,23 +456,27 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_items(collection_id: str, request: Request) -> Any:
+def stac_collections_items(request: Request, collection_id: str) -> Any:
     """STAC collections items"""
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
+    logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+    base_args = dict(request.query_params)
+
+    clean = {k: v for k, v in base_args.items() if v is not None}
+    try:
+        search_request = SearchPostRequest.model_validate(clean)
+    except pydanticValidationError as e:
+        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
-        url=url,
-        arguments=arguments,
-        root=url_root,
-        provider=provider,
+        url=request.state.url,
+        search_request=search_request,
+        root=request.state.url_root,
         catalogs=[collection_id],
     )
-    return jsonable_encoder(response)
+    return ORJSONResponse(
+        content=response, status_code=200, media_type="application/json"
+    )
 
 
 @router.get(
@@ -500,7 +486,7 @@ def stac_collections_items(collection_id: str, request: Request) -> Any:
     response_model_exclude_none=True,
 )
 def list_collection_queryables(
-    request: Request, collection_id: str, provider: Optional[str] = None
+    request: Request, collection_id: str, provider: Optional[str] = None, **kwargs: Any
 ) -> Any:
     """Returns the list of queryable properties for a specific collection.
 
@@ -517,15 +503,12 @@ def list_collection_queryables(
     :returns: A json object containing the list of available queryable properties for the specified collection.
     :rtype: Any
     """
-    logger.debug(f"URL: {request.url}")
-    query_params = request.query_params.items()
-    additional_params = dict(query_params)
-    additional_params.pop("provider", None)
+    logger.debug("URL: %s", request.url)
 
     queryables = StacQueryables(q_id=request.state.url, additional_properties=False)
 
     collection_queryables = fetch_collection_queryable_properties(
-        collection_id, provider, **additional_params
+        collection_id, provider, **kwargs
     )
     for key, collection_queryable in collection_queryables.items():
         queryables[key] = collection_queryable
@@ -541,16 +524,14 @@ def list_collection_queryables(
 )
 def collection_by_id(collection_id: str, request: Request) -> Any:
     """STAC collection by id"""
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url_root + "/collections"
-    url_root = request.state.url_root
+    logger.debug("URL: %s", request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_collection_by_id(
-        url=url,
-        root=url_root,
+        url=request.state.url_root + "/collections",
+        root=request.state.url_root,
         collection_id=collection_id,
         provider=provider,
     )
@@ -566,18 +547,17 @@ def collection_by_id(collection_id: str, request: Request) -> Any:
 def collections(request: Request) -> Any:
     """STAC collections
 
-    Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
+    Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType,
+    processingLevel
     """
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
+    logger.debug("URL: %s", request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     response = get_stac_collections(
-        url=url,
-        root=url_root,
+        url=request.state.url,
+        root=request.state.url_root,
         arguments=arguments,
         provider=provider,
     )
@@ -594,7 +574,7 @@ def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StreamingResponse:
     """STAC Catalog item download"""
-    logger.debug(f"URL: {request.url}")
+    logger.debug("URL: %s", request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -615,7 +595,7 @@ def stac_catalogs_item_download_asset(
     catalogs, item_id, asset_filter, request: Request
 ):
     """STAC Catalog item asset download"""
-    logger.debug(f"URL: {request.url}")
+    logger.debug("URL: %s", request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -638,21 +618,23 @@ def stac_catalogs_item_download_asset(
 )
 def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     """Fetch catalog's single features."""
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+    logger.debug("URL: %s", request.url)
 
     list_catalog = catalogs.strip("/").split("/")
-    response = get_stac_item_by_id(
-        url=url,
-        item_id=item_id,
-        root=url_root,
+
+    base_args = dict(request.query_params, **{"ids": [item_id]})
+
+    clean = {k: v for k, v in base_args.items() if v is not None}
+    try:
+        search_request = SearchPostRequest.model_validate(clean)
+    except pydanticValidationError as e:
+        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
+
+    response = search_stac_items(
+        url=request.state.url,
+        search_request=search_request,
+        root=request.state.url_root,
         catalogs=list_catalog,
-        provider=provider,
-        **arguments,
     )
 
     if response:
@@ -660,9 +642,7 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     else:
         raise HTTPException(
             status_code=404,
-            detail="No item found matching `{}` id in catalog `{}`".format(
-                item_id, catalogs
-            ),
+            detail=f"No item found matching `{item_id}` id in catalog `{catalogs}`",
         )
 
 
@@ -674,21 +654,23 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
 def stac_catalogs_items(catalogs: str, request: Request) -> Any:
     """Fetch catalog's features
     '"""
-    logger.debug(f"URL: {request.url}")
-    url = request.state.url
-    url_root = request.state.url_root
+    logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+    base_args = dict(request.query_params)
 
     list_catalog = catalogs.strip("/").split("/")
 
+    clean = {k: v for k, v in base_args.items() if v is not None}
+    try:
+        search_request = SearchPostRequest.model_validate(clean)
+    except pydanticValidationError as e:
+        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
+
     response = search_stac_items(
-        url=url,
-        arguments=arguments,
-        root=url_root,
+        url=request.state.url,
+        search_request=search_request,
+        root=request.state.url_root,
         catalogs=list_catalog,
-        provider=provider,
     )
     return jsonable_encoder(response)
 
@@ -700,7 +682,7 @@ def stac_catalogs_items(catalogs: str, request: Request) -> Any:
 )
 def stac_catalogs(catalogs: str, request: Request) -> Any:
     """Describe the given catalog and list available sub-catalogs"""
-    logger.debug(f"URL: {request.url}")
+    logger.debug("URL: %s", request.url)
     url = request.state.url
     url_root = request.state.url_root
 
@@ -753,40 +735,71 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     tags=["STAC"],
     include_in_schema=False,
 )
+def get_search(
+    request: Request,
+    provider: Optional[str] = None,
+    collections: Optional[str] = None,
+    datetime: Optional[str] = None,
+    bbox: Optional[str] = None,
+    intersects: Optional[str] = None,
+    ids: Optional[str] = None,
+    limit: Optional[int] = None,
+    query: Optional[str] = None,
+    page: Optional[int] = 1,
+    sortby: Optional[str] = None,
+):
+    """Handler for GET /search"""
+    logger.debug("URL: %s", request.state.url)
+    base_args = {
+        "provider": provider,
+        "collections": collections,
+        "ids": ids,
+        "datetime": datetime,
+        "bbox": bbox,
+        "intersects": orjson.loads(unquote_plus(intersects)) if intersects else None,
+        "limit": limit,
+        "query": orjson.loads(unquote_plus(query)) if query else None,
+        "page": page,
+        "sortby": sortby,
+    }
+
+    clean = {k: v for k, v in base_args.items() if v is not None}
+    try:
+        search_request = SearchPostRequest.model_validate(clean)
+    except pydanticValidationError as e:
+        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
+
+    response = search_stac_items(
+        url=request.state.url,
+        search_request=search_request,
+        root=request.state.url_root,
+        method=request.method,
+    )
+
+    return ORJSONResponse(
+        content=response, status_code=200, media_type="application/json"
+    )
+
+
 @router.post(
     "/search",
     tags=["STAC"],
     include_in_schema=False,
 )
-def stac_search(
-    request: Request, search_body: Optional[SearchBody] = None
-) -> ORJSONResponse:
-    """STAC collections items"""
-    logger.debug(f"URL: {request.url}")
-    logger.debug(f"Body: {search_body}")
-
-    url = request.state.url
-    url_root = request.state.url_root
-
-    if search_body is None:
-        body = {}
-    else:
-        body = vars(search_body)
-
-    arguments = dict(request.query_params, **body)
-    provider = arguments.pop("provider", None)
+def post_search(request: Request, search_request: SearchPostRequest) -> ORJSONResponse:
+    """STAC post search"""
+    logger.debug("URL: %s", request.url)
+    logger.debug("Body: %s", search_request)
 
     response = search_stac_items(
-        url=url,
-        arguments=arguments,
-        root=url_root,
-        provider=provider,
+        url=request.state.url,
+        search_request=search_request,
+        root=request.state.url_root,
         method=request.method,
     )
-    resp = ORJSONResponse(
+    return ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
     )
-    return resp
 
 
 app.include_router(router)

@@ -56,6 +56,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 # All modules using these should import them from utils package
@@ -89,7 +90,7 @@ from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests import HTTPError
 from shapely.geometry import Polygon, shape
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
@@ -1083,7 +1084,10 @@ def get_geometry_from_various(
         geom_arg = query_args["geometry"]
 
         bbox_keys = ["lonmin", "latmin", "lonmax", "latmax"]
-        if isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
+        if isinstance(geom_arg, dict) and geom_arg.get("type") in GEOMETRY_TYPES:
+            # geojson geometry
+            geom = cast(BaseGeometry, shape(geom_arg))
+        elif isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
             # bbox dict
             geom = Polygon(
                 (
