@@ -151,7 +151,10 @@ def format_provider_queryables(
 
     """
     for queryable, data in provider_queryables.items():
-        attributes = {"description": queryable}
+        titled_name = re.sub(
+            CAMEL_TO_SPACE_TITLED, " ", queryable.split(":")[-1]
+        ).title()
+        attributes = {"description": titled_name}
         if "type" in data:
             if isinstance(data["type"], list):
                 attributes["type"] = data["type"]

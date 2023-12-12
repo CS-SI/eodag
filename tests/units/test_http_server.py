@@ -1038,7 +1038,7 @@ class RequestTestCase(unittest.TestCase):
         """Request to /queryables should return a valid response."""
         self._request_valid("queryables", check_links=False)
 
-    @mock.patch("eodag.rest.utils.requests.get", autospec=True)
+    @mock.patch("eodag.api.core.requests.get", autospec=True)
     def test_queryables_with_provider(self, mock_requests_get):
         self._request_valid("queryables?provider=planetary_computer", check_links=False)
         mock_requests_get.assert_called_once_with(
@@ -1052,7 +1052,7 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/queryables", check_links=False
         )
 
-    @mock.patch("eodag.rest.utils.requests.get", autospec=True)
+    @mock.patch("eodag.api.core.requests.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):
         """Request a collection-specific list of queryables for a given provider."""
         queryables_path = os.path.join(TEST_RESOURCES_PATH, "stac/queryables.json")
@@ -1074,9 +1074,9 @@ class RequestTestCase(unittest.TestCase):
             "sentinel-1-grd/queryables",
             headers=USER_AGENT,
         )
-        assert len(res["properties"]) > len(res_no_provider["properties"])
         # property added from provider queryables
         self.assertIn("s1:processing_level", res["properties"])
+        self.assertNotIn("s1:processing_level", res_no_provider["properties"])
         # property updated with info from provider queryables
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])

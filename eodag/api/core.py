@@ -2126,7 +2126,11 @@ class EODataAccessGateway:
             )
 
             for key, value in metadata_mapping.items():
-                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
+                if (
+                    isinstance(value, list)
+                    and "TimeFromAscendingNode" not in key
+                    and key not in provider_queryables
+                ):
                     queryable = format_queryable(key)
                     provider_queryables[key] = queryable
 
