@@ -49,6 +49,7 @@ from whoosh.qparser import QueryParser
 from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
+
 )
 from eodag.api.search_result import SearchResult
 from eodag.config import (
@@ -2139,6 +2140,14 @@ class EODataAccessGateway:
         ):
             self.fetch_product_types_list()
 
+        default_queryables = Queryables().get_base_properties()
+
+        if provider is None and product_type is None:
+            return default_queryables
+
+        plugins = self._plugins_manager.get_search_plugins(product_type, provider)
+        provider_plugin = None
+
         # dictionary of the queryable properties of the providers supporting the given product type
         providers_available_queryables: Dict[
             str, Dict[str, Annotated[Any, FieldInfo]]
@@ -2228,4 +2237,5 @@ class EODataAccessGateway:
         )
 
         return provider_queryables
+
 

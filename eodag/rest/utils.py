@@ -40,7 +40,6 @@ from typing import (
 from urllib.parse import urlencode
 
 import dateutil.parser
-import requests
 from dateutil import tz
 from fastapi.responses import StreamingResponse
 from shapely.geometry import Polygon, shape
@@ -60,7 +59,6 @@ from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
-    USER_AGENT,
     _deprecated,
     dict_items_recursive_apply,
     string_to_jsonpath,
@@ -69,7 +67,6 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
-    RequestError,
     UnsupportedProductType,
     ValidationError,
 )
@@ -1224,6 +1221,9 @@ def _format_provider_queryables(
             attributes["ref"] = data["ref"]
         queryables[queryable] = QueryableProperty(**attributes)
     return queryables
+=======
+    return eodag_api.get_queryables(**kwargs)
+>>>>>>> refactor: restructuring of queryable methods
 
 
 def eodag_api_init() -> None:
