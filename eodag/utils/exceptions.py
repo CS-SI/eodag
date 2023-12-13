@@ -17,11 +17,19 @@
 # limitations under the License.
 
 
+from typing import Set
+
+
 class ValidationError(Exception):
     """Error validating data"""
 
-    def __init__(self, message: str) -> None:
+    errors_to_raise: Set[Exception] = set()
+    provider: str = None
+    result_and_error_free_providers = set()
+
+    def __init__(self, message: str, parameters: Set = set()) -> None:
         self.message = message
+        self.parameters = parameters
 
 
 class PluginNotFoundError(Exception):

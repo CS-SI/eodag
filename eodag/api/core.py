@@ -75,6 +75,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.otel import telemetry
 from eodag.utils.stac_reader import fetch_stac_items
@@ -189,6 +190,7 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
+        self.errors_to_raise = set()
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -991,7 +993,6 @@ class EODataAccessGateway:
             provider=provider,
             **kwargs,
         )
-
         if search_kwargs.get("id"):
             # adds minimal pagination to be able to check only 1 product is returned
             search_kwargs.update(
@@ -1008,6 +1009,8 @@ class EODataAccessGateway:
             page=page,
             items_per_page=items_per_page,
         )
+        self.errors_to_raise = set()
+        result_and_error_free_providers = set()
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1017,14 +1020,29 @@ class EODataAccessGateway:
                 raise_errors=raise_errors,
                 **search_kwargs,
             )
-            if len(search_results) == 0 and i < len(search_plugins) - 1:
-                logger.warning(
-                    f"No result could be obtained from provider {search_plugin.provider}, "
-                    "we will try to get the data from another provider",
-                )
+            if len(search_results) == 0:
+                if search_plugin.provider not in [
+                    e.provider for e in self.errors_to_raise
+                ]:
+                    result_and_error_free_providers.add(search_plugin.provider)
+                if i < len(search_plugins) - 1:
+                    logger.warning(
+                        f"No result could be obtained from provider {search_plugin.provider}, "
+                        "we will try to get the data from another provider",
+                    )
             elif len(search_results) > 0:
                 return search_results, total_results
 
+        if self.errors_to_raise:
+            validation_error = ValidationError(
+                "No result could be obtained from any available provider and error(s) "
+                "appeared while searching. You may change your search parameters."
+            )
+            validation_error.errors_to_raise = self.errors_to_raise
+            validation_error.result_and_error_free_providers = (
+                result_and_error_free_providers
+            )
+            raise validation_error
         logger.error("No result could be obtained from any available provider")
         return SearchResult([]), 0
 
@@ -1774,11 +1792,14 @@ class EODataAccessGateway:
                         "available in the searched collection (e.g. SENTINEL2) instead of "
                         "the total number of products matching the search criteria"
                     )
-        except Exception:
+        except Exception as e:
             log_msg = f"No result from provider '{search_plugin.provider}' due to an error during search."
             if not raise_errors:
                 log_msg += " Raise verbosity of log messages for details"
             logger.info(log_msg)
+            # keep only the message from exception args
+            if len(e.args) > 1:
+                e.args = (e.args[0],)
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next
@@ -1788,6 +1809,8 @@ class EODataAccessGateway:
                     "Error while searching on provider %s (ignored):",
                     search_plugin.provider,
                 )
+                e.provider = search_plugin.provider
+                self.errors_to_raise.add(e)
         return SearchResult(results), total_results
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:

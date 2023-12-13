@@ -248,6 +248,216 @@ class TestStacUtils(unittest.TestCase):
     def test_get_geometry(self):
         pass  # TODO
 
+    def test_get_sort_by(self):
+        """get_sort_by must extract the list of sorting parameters and
+        their sorting order from sortby request args or raise an error if needed"""
+        # raise an error with an empty string as sortby argument
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by({"sortby": ""}, None)
+        self.assertEqual(
+            context.exception.message, "sortby argument is empty, please fill in it"
+        )
+        # raise an error with at least one empty sorting parameter
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by(
+                {"sortby": "+start_datetime,,+end_datetime"}, None
+            )
+        self.assertEqual(
+            context.exception.message,
+            "Syntax error in the search request, at least one sorting parameter is empty",
+        )
+        # raise an error with a non-STAC-formatted parameter or a STAC-formatted parameter which is not handled by EODAG
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by({"sortby": "+non_stac_parameter"}, None)
+        self.assertEqual(
+            context.exception.message,
+            "'non_stac_parameter' sorting parameter is not STAC-formatted or not handled by EODAG",
+        )
+        # raise an error with a sorting order called with different values for a same sorting parameter
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by(
+                {"sortby": "+start_datetime,-start_datetime"}, None
+            )
+        self.assertEqual(
+            context.exception.message,
+            "'start_datetime' parameter is called several times to sort results with different sorting orders. "
+            "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
+        )
+
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: 'dummy_next_page_url_tpl'
+                    next_page_url_key_path: '$.links[?(@.rel="next")].href'
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        self.rest_utils.eodag_api.update_providers_config(dummy_provider_config)
+
+        # raise an error with a provider which does not support sorting feature
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by({"sortby": "+start_datetime"}, "dummy_provider")
+        self.assertEqual(
+            context.exception.message, "dummy_provider does not support sorting feature"
+        )
+
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: 'dummy_next_page_url_tpl'
+                    next_page_url_key_path: '$.links[?(@.rel="next")].href'
+                sort:
+                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_mapping:
+                        startTimeFromAscendingNode: providerStartDateSortParam
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        self.rest_utils.eodag_api.update_providers_config(dummy_provider_config)
+
+        # raise an error with a parameter not sortable with a provider
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by({"sortby": "+end_datetime"}, "dummy_provider")
+        # the error is not catched by the app exception handler which runs only in server mode while in practice,
+        # the second sentence of the error must be: "Here is the list of sortable parameter(s) with
+        # dummy_provider: start_datetime"
+        self.assertEqual(
+            context.exception.message,
+            "'end_datetime' parameter is not sortable with dummy_provider. "
+            "Here is the list of sortable parameter(s) with dummy_provider: startTimeFromAscendingNode",
+        )
+
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: 'dummy_next_page_url_tpl'
+                    next_page_url_key_path: '$.links[?(@.rel="next")].href'
+                sort:
+                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_mapping:
+                        startTimeFromAscendingNode: providerStartDateSortParam
+                        completionTimeFromAscendingNode: providerEndDateSortParam
+                    max_sort_params: 1
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        self.rest_utils.eodag_api.update_providers_config(dummy_provider_config)
+
+        # raise an error with more sorting parameters than supported by the provider
+        with self.assertRaises(ValidationError) as context:
+            self.rest_utils.get_sort_by(
+                {"sortby": "+start_datetime,-end_datetime"}, "dummy_provider"
+            )
+        self.assertEqual(
+            context.exception.message,
+            "Search results can be sorted by only 1 parameter(s) with dummy_provider",
+        )
+
+        # do not raise an error if sortby argument is set well
+        sort_by_params = self.rest_utils.get_sort_by(
+            {"sortby": "+start_datetime"}, "dummy_provider"
+        )
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC")])
+        sort_by_params = self.rest_utils.get_sort_by(
+            {"sortby": "+start_datetime"}, None
+        )
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC")])
+        sort_by_params = self.rest_utils.get_sort_by({"sortby": "start_datetime"}, None)
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC")])
+        sort_by_params = self.rest_utils.get_sort_by(
+            {"sortby": "-start_datetime"}, None
+        )
+        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "DESC")])
+        sort_by_params = self.rest_utils.get_sort_by(
+            {"sortby": "+start_datetime,+end_datetime"}, None
+        )
+        self.assertEqual(
+            sort_by_params,
+            [
+                ("startTimeFromAscendingNode", "ASC"),
+                ("completionTimeFromAscendingNode", "ASC"),
+            ],
+        )
+        sort_by_params = self.rest_utils.get_sort_by(
+            {"sortby": "+start_datetime,-end_datetime"}, None
+        )
+        self.assertEqual(
+            sort_by_params,
+            [
+                ("startTimeFromAscendingNode", "ASC"),
+                ("completionTimeFromAscendingNode", "DESC"),
+            ],
+        )
+
+        # restore initial provider configuration
+        del self.rest_utils.eodag_api.providers_config["dummy_provider"]
+
+    def test_convert_sortby_to_get_format(self):
+        """convert_sortby_to_get_format must convert sortby body request args
+        from POST to GET format and raise an error if needed"""
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [{"field": "start_datetime", "direction": "asc"}]
+        )
+        self.assertEqual(get_format, "+start_datetime")
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [
+                {"field": "start_datetime", "direction": "asc"},
+                {"field": "end_datetime", "direction": "asc"},
+            ]
+        )
+        self.assertEqual(get_format, "+start_datetime,+end_datetime")
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [
+                {"field": "start_datetime", "direction": "asc"},
+                {"field": "end_datetime", "direction": "desc"},
+            ]
+        )
+        self.assertEqual(get_format, "+start_datetime,-end_datetime")
+
+        # let sorting parameters as they are even if they are not
+        # STAC-formatted because it is already handled in get_sort_by
+        get_format = self.rest_utils.convert_sortby_to_get_format(
+            [{"field": "wrong_sorting_parameter", "direction": "asc"}]
+        )
+        self.assertEqual(get_format, "+wrong_sorting_parameter")
+
+        # raise a KeyError with a missing key, but in practice it is
+        # a ValidationError from Pydantic library raised in server mode
+        with self.assertRaises(KeyError) as context:
+            self.rest_utils.convert_sortby_to_get_format([{"field": "start_datetime"}])
+        self.assertEqual(context.exception.args[0], "direction")
+        with self.assertRaises(KeyError) as context:
+            self.rest_utils.convert_sortby_to_get_format([{"direction": "desc"}])
+        self.assertEqual(context.exception.args[0], "field")
+        # raise a KeyError with a wrong key, but in practice it is
+        # a ValidationError from Pydantic library raised in server mode
+        with self.assertRaises(KeyError) as context:
+            self.rest_utils.convert_sortby_to_get_format(
+                [{"wrong_key": "start_datetime", "direction": "asc"}]
+            )
+        self.assertEqual(context.exception.args[0], "field")
+
+        # in practice, a ValidationError from Pydantic library is raised in server mode
+        # with a wrong sorting order or syntax errors but theses cases can not be tested here
+
     def test_home_page_content(self):
         """get_home_page_content runs without any error"""
         with pytest.warns(
@@ -326,9 +536,12 @@ class TestStacUtils(unittest.TestCase):
         self.rest_utils.get_stac_extension_oseo(url="")
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.do_search", autospec=True
     )
-    def test_get_stac_item_by_id(self, mock_do_search):
+    def test_get_stac_item_by_id(self, mock_do_search, mock_count_hits):
         """get_stac_item_by_id returns None if no StacItem was found"""
         mock_do_search.return_value = [
             {
@@ -342,6 +555,7 @@ class TestStacUtils(unittest.TestCase):
             )
         )
         mock_do_search.return_value = []
+        mock_count_hits.return_value = 0
         self.assertIsNone(
             self.rest_utils.get_stac_item_by_id(
                 url="", item_id="", catalogs=["S3_MSI_L1C"]

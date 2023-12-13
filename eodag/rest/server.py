@@ -50,8 +50,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.utils import (
+    PostSearchSortbyParam,
     QueryableProperty,
     Queryables,
+    convert_sortby_to_get_format,
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
@@ -63,6 +65,7 @@ from eodag.rest.utils import (
     get_stac_conformance,
     get_stac_extension_oseo,
     get_stac_item_by_id,
+    rename_to_stac_standard,
     search_stac_items,
     telemetry_init,
 )
@@ -87,6 +90,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.rest.server")
 CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")
+ERRORS_WITH_500_STATUS_CODE = {
+    "MisconfiguredError",
+    "AuthenticationError",
+    "DownloadError",
+    "RequestError",
+}
 
 
 class APIRouter(FastAPIRouter):
@@ -235,10 +244,48 @@ async def default_exception_handler(
     )
 
 
+@app.exception_handler(ValidationError)
+async def handle_invalid_usage_with_validation_error(request: Request, error):
+    """Invalid usage [400] errors handle with ValidationError"""
+    if error.errors_to_raise:
+        error.parameters = set()
+        error.message = (
+            "No result could be obtained from any available provider "
+            "and the following error(s) was (were) raised:"
+        )
+        for i, e in enumerate(error.errors_to_raise):
+            error.message += " " if i == 0 else " | "
+            if e.__class__.__name__ not in ERRORS_WITH_500_STATUS_CODE:
+                error.message += f"{e.provider}: {e.args[0]}"
+                if getattr(e, "parameters", set()):
+                    error.parameters.update(e.parameters)
+            else:
+                error.message += f"{e.provider}: an internal error appeared"
+        if error.result_and_error_free_providers:
+            joined_validated_providers = ", ".join(
+                error.result_and_error_free_providers
+            )
+            error.message += (
+                f" | Neither result nor error found with the following provider(s): {joined_validated_providers}. "
+                "Please try again by changing parameters"
+            )
+    if error.parameters:
+        for error_param in error.parameters:
+            stac_param = rename_to_stac_standard(error_param)
+            error.message = error.message.replace(error_param, stac_param)
+    logger.warning(traceback.format_exc())
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=400,
+            detail=f"{type(error).__name__}: {str(error.message)}",
+        ),
+    )
+
+
 @app.exception_handler(NoMatchingProductType)
 @app.exception_handler(UnsupportedProductType)
 @app.exception_handler(UnsupportedProvider)
-@app.exception_handler(ValidationError)
 async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResponse:
     """Invalid usage [400] errors handle"""
     logger.warning(traceback.format_exc())
@@ -340,6 +387,7 @@ class SearchBody(BaseModel):
     page: Optional[int] = 1
     query: Optional[Dict[str, Any]] = None
     ids: Optional[List[str]] = None
+    sortby: Optional[List[PostSearchSortbyParam]] = None
 
 
 @router.get(
@@ -737,10 +785,12 @@ def stac_search(
         url = request.state.url
         url_root = request.state.url_root
 
-        if search_body is None:
-            body = {}
-        else:
-            body = vars(search_body)
+    if search_body is None:
+        body = {}
+    else:
+        body = vars(search_body)
+        if body["sortby"] is not None:
+            body["sortby"] = convert_sortby_to_get_format(body["sortby"])
 
         arguments = dict(request.query_params, **body)
         provider = arguments.pop("provider", None)

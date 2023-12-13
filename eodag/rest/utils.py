@@ -31,6 +31,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     NamedTuple,
     Optional,
     Set,
@@ -43,8 +44,9 @@ import dateutil.parser
 from dateutil import tz
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from shapely.geometry import Polygon, shape
+from typing_extensions import Annotated, TypedDict
 
 import eodag
 from eodag import EOProduct
@@ -346,6 +348,113 @@ def get_geometry(arguments: Dict[str, Any]) -> Optional[BaseGeometry]:
     return geom
 
 
+def get_sort_by(
+    arguments: Union[dict, None], provider: Union[str, None]
+) -> Optional[List[Tuple[str, str]]]:
+    """Get sortby criteria from search arguments
+
+    :param arguments: Request args
+    :type arguments: dict
+    :returns: Sorting parameters and their sorting order from sortby arguments
+    :rtype: Optional[List[Tuple[str, str]]]
+    """
+    sort_by_params_tmp = arguments.pop("sortby", None)
+    if sort_by_params_tmp is None:
+        return None
+    if not sort_by_params_tmp:
+        raise ValidationError("sortby argument is empty, please fill in it")
+
+    sorting_supported_by_provider = False
+    if provider is not None:
+        search_plugin = next(
+            eodag_api._plugins_manager.get_search_plugins(provider=provider)
+        )
+        if not hasattr(search_plugin.config, "sort"):
+            raise ValidationError(
+                "{} does not support sorting feature".format(provider)
+            )
+        else:
+            sorting_supported_by_provider = True
+    sort_by_params = []
+    for sort_by_param in sort_by_params_tmp.split(","):
+        # Remove leading and trailing whitespace(s) if exist
+        sort_by_param = str(sort_by_param.strip())
+        if not sort_by_param or sort_by_param in ["+", "-"]:
+            raise ValidationError(
+                "Syntax error in the search request, at least one sorting parameter is empty"
+            )
+        if sort_by_param[0] in ["+", "-"]:
+            stac_sort_param = sort_by_param[1:]
+        else:
+            stac_sort_param = sort_by_param
+        # remove "properties." prefix
+        prefix = "properties."
+        if stac_sort_param.startswith(prefix):
+            stac_sort_param = stac_sort_param[len(prefix) :]
+        if (
+            stac_sort_param not in stac_config["item"]["properties"]
+            and stac_sort_param != "id"
+            or stac_sort_param == "datetime"
+        ):
+            raise ValidationError(
+                "'{}' sorting parameter is not STAC-formatted or not handled by EODAG".format(
+                    stac_sort_param
+                )
+            )
+        eodag_sort_param = rename_from_stac_to_eodag_standard(stac_sort_param)
+        if (
+            sorting_supported_by_provider
+            and eodag_sort_param
+            not in search_plugin.config.sort["sort_by_mapping"].keys()
+        ):
+            params = set(search_plugin.config.sort["sort_by_mapping"].keys())
+            raise ValidationError(
+                "'{}' parameter is not sortable with {}. "
+                "Here is the list of sortable parameter(s) with {}: {}".format(
+                    stac_sort_param,
+                    provider,
+                    provider,
+                    ", ".join(
+                        k for k in search_plugin.config.sort["sort_by_mapping"].keys()
+                    ),
+                ),
+                params,
+            )
+        sort_order = "DESC" if sort_by_param[:1] == "-" else "ASC"
+
+        # handle cases with a parameter called several times to sort
+        ignore_param = False
+        for sort_by_param in sort_by_params:
+            # if two sorting parameters are equal, we can not add both:
+            # either their sorting order is also equal, then it would be a duplication in the request,
+            # or their sorting order is different, then there would be a contradiction that would raise an error
+            if sort_by_param[0] == eodag_sort_param:
+                ignore_param = True
+                if sort_by_param[1] != sort_order:
+                    raise ValidationError(
+                        "'{}' parameter is called several times to sort results with different sorting orders. "
+                        "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
+                            stac_sort_param
+                        ),
+                    )
+        if ignore_param:
+            continue
+
+        sort_by_params.append((eodag_sort_param, sort_order))
+        if (
+            sorting_supported_by_provider
+            and search_plugin.config.sort.get("max_sort_params", None)
+            and len(sort_by_params) > search_plugin.config.sort["max_sort_params"]
+        ):
+            raise ValidationError(
+                "Search results can be sorted by only "
+                "{} parameter(s) with {}".format(
+                    search_plugin.config.sort["max_sort_params"], provider
+                )
+            )
+    return sort_by_params
+
+
 def get_datetime(arguments: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
     """Get the datetime criterias from the search arguments
 
@@ -477,6 +586,7 @@ def search_products(
         page, items_per_page = get_pagination_info(arguments)
         dtstart, dtend = get_datetime(arguments)
         geom = get_geometry(arguments)
+        sort_by = get_sort_by(arguments, provider)
 
         criterias = {
             "productType": product_type if product_type else arg_product_type,
@@ -486,6 +596,7 @@ def search_products(
             "end": dtend,
             "geom": geom,
             "provider": provider,
+            "sortBy": sort_by,
         }
 
         if stac_formatted:
@@ -1143,7 +1254,7 @@ class Queryables(BaseModel):
 
 
 def rename_to_stac_standard(key: str) -> str:
-    """Fetch the queryable properties for a collection.
+    """Rename an EODAG property to its matching STAC-standardized name.
 
     :param key: The camelCase key name obtained from a collection's metadata mapping.
     :type key: str
@@ -1157,12 +1268,36 @@ def rename_to_stac_standard(key: str) -> str:
     for stac_property, value in stac_config_properties.items():
         if isinstance(value, list):
             value = value[0]
-        if str(value).endswith(key):
+        # only "start_datetime" must match "startTimeFromAscendingNode", not "datetime"
+        if str(value).endswith(key) and stac_property != "datetime":
             return stac_property
 
     if key in OSEO_METADATA_MAPPING:
         return "oseo:" + key
 
+    return key
+
+
+def rename_from_stac_to_eodag_standard(key: str) -> str:
+    """Rename a STAC search parameter to its matching EODAG name
+
+    :param key: The STAC-standardized key name from a EODAG STAC server search
+    :type key: str
+    :returns: The EODAG-standardized property name if it exists, else the default STAC name
+    :rtype: str
+    """
+    # Load the stac config properties for renaming the STAC properties
+    # to their EODAG standard
+    stac_config_properties = stac_config["item"]["properties"]
+
+    for stac_property, value in stac_config_properties.items():
+        # "license" STAC property does not have its matching EODAG name and
+        # only "start_datetime" must match "startTimeFromAscendingNode", not "datetime"
+        if key == stac_property and key != "license" and key != "datetime":
+            if isinstance(value, list):
+                value = value[0]
+            eodag_property = str(value).split(".")[-1]
+            return eodag_property
     return key
 
 
@@ -1212,3 +1347,31 @@ def telemetry_init(app: FastAPI):
         return None
 
     telemetry.configure_instruments(eodag_api, app)
+
+
+class PostSearchSortbyParam(TypedDict):
+    """A class representing a parameter with which we want to sort results and its sorting order in a POST search
+
+    :param field: The name of the parameter with which we want to sort results
+    :type field: str
+    :param direction: The sorting order of the parameter
+    :type direction: str
+    """
+
+    __pydantic_config__ = ConfigDict(extra="forbid")
+
+    field: Annotated[str, StringConstraints(strip_whitespace=True)]
+    direction: Literal["asc", "desc"]
+
+
+def convert_sortby_to_get_format(
+    sortby_post_params: List[PostSearchSortbyParam],
+) -> str:
+    """
+    Convert sortby filter parameter POST syntax to GET syntax
+    """
+    get_format = ""
+    for sortby_post_param in sortby_post_params:
+        prefix = "+" if sortby_post_param["direction"] == "asc" else "-"
+        get_format += prefix + sortby_post_param["field"] + ","
+    return get_format.rstrip(",")

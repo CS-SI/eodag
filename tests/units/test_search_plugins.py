@@ -156,7 +156,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_xml_count_and_search_mundi(
+    def test_plugins_search_querystringsearch_xml_count_and_search_mundi(
         self, mock__request
     ):
         """A query with a QueryStringSearch (mundi here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
@@ -200,7 +200,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_xml_no_count_and_search_mundi(
+    def test_plugins_search_querystringsearch_xml_no_count_and_search_mundi(
         self, mock__request, mock_count_hits
     ):
         """A query with a QueryStringSearch (here mundi) without a count"""
@@ -245,7 +245,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_xml_distinct_product_type_mtd_mapping(
+    def test_plugins_search_querystringsearch_xml_distinct_product_type_mtd_mapping(
         self, mock__request, mock_count_hits
     ):
         """The metadata mapping for XML QueryStringSearch should not mix specific product-types metadata-mapping"""
@@ -290,7 +290,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_count_and_search_peps(self, mock__request):
+    def test_plugins_search_querystringsearch_count_and_search_peps(
+        self, mock__request
+    ):
         """A query with a QueryStringSearch (peps here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
         with open(self.provider_resp_dir / "peps_search.json") as f:
             peps_resp_search = json.load(f)
@@ -332,7 +334,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_no_count_and_search_peps(
+    def test_plugins_search_querystringsearch_no_count_and_search_peps(
         self, mock__request, mock_count_hits
     ):
         """A query with a QueryStringSearch (here peps) without a count"""
@@ -376,7 +378,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_search_cloudcover_peps(
+    def test_plugins_search_querystringsearch_search_cloudcover_peps(
         self, mock__request, mock_normalize_results
     ):
         """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar product types"""  # noqa
@@ -393,7 +395,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_discover_product_types(
+    def test_plugins_search_querystringsearch_discover_product_types(
         self, mock__request
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
@@ -441,7 +443,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_discover_product_types_keywords(
+    def test_plugins_search_querystringsearch_discover_product_types_keywords(
         self, mock__request
     ):
         """QueryStringSearch.discover_product_types must return a dict with well formatted keywords"""
@@ -486,7 +488,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringseach_distinct_product_type_mtd_mapping(
+    def test_plugins_search_querystringsearch_distinct_product_type_mtd_mapping(
         self, mock__request
     ):
         """The metadata mapping for QueryStringSearch should not mix specific product-types metadata-mapping"""
