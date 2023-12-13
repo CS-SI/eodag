@@ -18,6 +18,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import sys
 from time import perf_counter
 from typing import TYPE_CHECKING, Dict, Iterable
 
@@ -37,7 +39,7 @@ try:
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.metrics import CallbackOptions, Instrument, Observation
     from opentelemetry.sdk.metrics import MeterProvider
-    from opentelemetry.sdk.metrics._internal.export import PeriodicExportingMetricReader
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
     from opentelemetry.sdk.resources import SERVICE_NAME, Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -100,7 +102,7 @@ class Telemetry:
         self._eodag_app: FastAPI = None
         self._instruments: Dict[str, Instrument] = {}
         self._overhead_timers: Dict[str, OverheadTimer] = {}
-        self._instrumented: bool = False
+        self._is_instrumented: bool = False
 
     def configure_instruments(self, eodag_api: EODataAccessGateway, eodag_app: FastAPI):
         """Configure the instrumentation.
@@ -110,6 +112,12 @@ class Telemetry:
         :param eodag_app: EODAG's app
         :type eodag_app: FastAPI
         """
+
+        if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+            return None
+        if "opentelemetry" not in sys.modules:
+            return None
+
         self._eodag_api = eodag_api
         self._eodag_app = eodag_app
         self._instruments.clear()
@@ -167,7 +175,7 @@ class Telemetry:
             unit="s",
             description="Measure the duration of the outbound HTTP request",
         )
-        self._instrumented = True
+        self._is_instrumented = True
 
     def _available_providers_callback(
         self, options: CallbackOptions
@@ -212,7 +220,7 @@ class Telemetry:
         :param byte_count: Number of bytes downloaded.
         :type byte_count: int
         """
-        if not self._instrumented:
+        if not self._is_instrumented:
             return
 
         self._instruments["downloaded_data_bytes_total"].add(
@@ -226,7 +234,7 @@ class Telemetry:
         :param product_type: The product type.
         :type product_type: str
         """
-        if not self._instrumented:
+        if not self._is_instrumented:
             return
 
         self._instruments["searched_product_types_total"].add(
@@ -241,7 +249,7 @@ class Telemetry:
         :param time: Duration of the request.
         :type time: float
         """
-        if not self._instrumented:
+        if not self._is_instrumented:
             return
 
         attributes = {"provider": str(provider)}
@@ -255,7 +263,7 @@ class Telemetry:
         :param time: Duration of the overhead.
         :type time: float
         """
-        if not self._instrumented:
+        if not self._is_instrumented:
             return
 
         attributes = {"provider": str(provider)}
@@ -269,7 +277,7 @@ class Telemetry:
         :param time: Duration of the request.
         :type time: float
         """
-        if not self._instrumented:
+        if not self._is_instrumented:
             return
 
         attributes = {"provider": str(provider)}
@@ -286,8 +294,10 @@ class Telemetry:
         :returns: The new timer.
         :rtype: OverheadTimer
         """
+        if not self._is_instrumented:
+            return OverheadTimer()
         timer = OverheadTimer()
-        self._overhead_timers[timer_id] = OverheadTimer()
+        self._overhead_timers[timer_id] = timer
         return timer
 
     def delete_overhead_timer(self, timer_id: str):
@@ -296,6 +306,8 @@ class Telemetry:
         :param timer_id: The ID of the timer to delete.
         :type timer_id: str
         """
+        if not self._is_instrumented:
+            return None
         del self._overhead_timers[timer_id]
 
     def get_overhead_timer(self, timer_id: str) -> OverheadTimer:
@@ -306,7 +318,19 @@ class Telemetry:
         :returns: The timer.
         :rtype: OverheadTimer
         """
+        if not self._is_instrumented:
+            return OverheadTimer()
         return self._overhead_timers[timer_id]
+
+    def get_current_trace_id(self):
+        """Get the trace ID of the current span
+
+        :returns: The trace ID.
+        :rtype: int
+        """
+        if not self._is_instrumented:
+            return None
+        return trace.get_current_span().get_span_context().trace_id
 
 
 telemetry: Telemetry = Telemetry()

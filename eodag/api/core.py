@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tupl
 import geojson
 import pkg_resources
 import yaml.parser
-from opentelemetry import trace
 from pkg_resources import resource_filename
 from whoosh import analysis, fields
 from whoosh.fields import Schema
@@ -1655,26 +1654,21 @@ class EODataAccessGateway:
         total_results = 0
 
         try:
-            tracer = trace.get_tracer("eodag.tracer")
-            with tracer.start_as_current_span("core-search") as span:
-                trace_id = span.get_span_context().trace_id
-                timer = telemetry.get_overhead_timer(trace_id)
-                start_time = perf_counter()
+            trace_id = telemetry.get_current_trace_id()
+            timer = telemetry.get_overhead_timer(trace_id)
+            start_time = perf_counter()
 
-                if need_auth and auth_plugin and can_authenticate:
-                    search_plugin.auth = auth_plugin.authenticate()
+            if need_auth and auth_plugin and can_authenticate:
+                search_plugin.auth = auth_plugin.authenticate()
 
-                res, nb_res = search_plugin.query(
-                    count=count, auth=auth_plugin, **kwargs
-                )
+            res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
-                end_time = perf_counter()
-                total_time = end_time - start_time
-                telemetry.record_outbound_request_duration(
-                    search_plugin.provider, total_time
-                )
-                if timer:
-                    timer.record_subtask_time(total_time)
+            end_time = perf_counter()
+            total_time = end_time - start_time
+            telemetry.record_outbound_request_duration(
+                search_plugin.provider, total_time
+            )
+            timer.record_subtask_time(total_time)
 
             # Only do the pagination computations when it makes sense. For example,
             # for a search by id, we can reasonably guess that the provider will return
