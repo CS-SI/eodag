@@ -1097,8 +1097,4 @@ def telemetry_init(app: FastAPI):
 
     :param app: FastAPI to automatically instrument.
     :type app: FastAPI"""
-
-    if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
-        return None
-
     telemetry.configure_instruments(eodag_api, app)
