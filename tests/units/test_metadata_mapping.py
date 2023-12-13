@@ -17,6 +17,7 @@
 # limitations under the License.
 import unittest
 
+import orjson
 from jsonpath_ng.ext import parse
 from lxml import etree
 from shapely import wkt
@@ -489,6 +490,18 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, date="2023-01-31T00:00"), str(expected_result)
         )
+
+    def test_convert_interval_to_datetime_dict(self):
+        to_format = "{date#interval_to_datetime_dict}"
+        formated = format_metadata(to_format, date="2023-01-31T00:00/2023-02-03T00:00")
+        expected_result = {
+            "year": ["2023"],
+            "month": ["01", "02"],
+            "day": ["31", "01", "02", "03"],
+        }
+        formated_dict = orjson.loads(formated.replace("'", '"'))
+        for k in expected_result.keys():
+            self.assertCountEqual(formated_dict[k], expected_result[k])
 
     def test_convert_get_ecmwf_time(self):
         to_format = "{date#get_ecmwf_time}"

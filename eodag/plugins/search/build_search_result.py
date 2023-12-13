@@ -27,11 +27,7 @@ import orjson
 from jsonpath_ng import Fields
 
 from eodag.api.product import EOProduct
-from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
-    NOT_MAPPED,
-    properties_from_json,
-)
+from eodag.api.product.metadata_mapping import properties_from_json
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.utils import dict_items_recursive_sort
 
@@ -159,13 +155,6 @@ class BuildPostSearchResult(PostJsonSearch):
         if not product_type:
             product_type = parsed_properties.get("productType", None)
 
-        # filter available mapped properties
-        product_available_properties = {
-            k: v
-            for (k, v) in parsed_properties.items()
-            if v not in (NOT_AVAILABLE, NOT_MAPPED)
-        }
-
         # build product id
         id_prefix = (product_type or self.provider).upper()
         product_id = "%s_%s_%s" % (
@@ -175,31 +164,29 @@ class BuildPostSearchResult(PostJsonSearch):
             .replace("-", ""),
             query_hash,
         )
-        product_available_properties["id"] = product_available_properties[
-            "title"
-        ] = product_id
+        parsed_properties["id"] = parsed_properties["title"] = product_id
 
         # update downloadLink
-        product_available_properties["downloadLink"] += f"?{qs}"
-        product_available_properties["_dc_qs"] = quote_plus(qs)
+        parsed_properties["downloadLink"] += f"?{qs}"
+        parsed_properties["_dc_qs"] = quote_plus(qs)
 
         # parse metadata needing downloadLink
         for param, mapping in self.config.metadata_mapping.items():
             if Fields("downloadLink") in mapping:
-                product_available_properties.update(
-                    properties_from_json(product_available_properties, {param: mapping})
+                parsed_properties.update(
+                    properties_from_json(parsed_properties, {param: mapping})
                 )
 
         # use product_type_config as default properties
-        product_available_properties = dict(
+        parsed_properties = dict(
             getattr(self.config, "product_type_config", {}),
-            **product_available_properties,
+            **parsed_properties,
         )
 
         product = EOProduct(
             provider=self.provider,
             productType=product_type,
-            properties=product_available_properties,
+            properties=parsed_properties,
         )
 
         return [
