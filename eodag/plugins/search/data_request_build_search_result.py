@@ -1,7 +1,9 @@
 import logging
 import re
 from datetime import datetime
+from urllib.parse import unquote_plus
 
+import geojson
 import requests
 from requests import Session
 
@@ -48,9 +50,14 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
                     and isinstance(self.config.metadata_mapping[k], list)
                 }
             )
-            self.request_params = format_query_params(
-                product_type, self.config, **keywords
-            )
+            _dc_qs = kwargs.get("_dc_qs", None)
+            if _dc_qs is not None:
+                _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
+                self.request_params = _dc_qp
+            else:
+                self.request_params = format_query_params(
+                    product_type, self.config, **keywords
+                )
             collection = self._map_product_type(product_type)
             if not collection:
                 raise MisconfiguredError
@@ -95,14 +102,12 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
                 kwargs["completionTimeFromAscendingNode"] = getattr(
                     self.config, "product_type_config", {}
                 ).get("missionEndDate", datetime.utcnow().isoformat())
-
         return BuildPostSearchResult.query(
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
         )
 
     def normalize_results(self, results, **kwargs):
         """create a formatted result"""
-        kwargs["params_in_download_link"] = False
         products = BuildPostSearchResult.normalize_results(self, results, **kwargs)
         if "id" in kwargs:
             request_header = USER_AGENT
@@ -130,10 +135,10 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
                     elif not request_id:
                         if req[params_entry] == str(self.request_params):
                             request_id = req["id"]
-            if not request_id:
-                raise NotAvailableError(
-                    "request with parameters %s not found", str(self.request_params)
-                )
+                if not request_id:
+                    raise NotAvailableError(
+                        "request with parameters %s not found", str(self.request_params)
+                    )
             for p in products:
                 p.properties["downloadLink"] = p.properties["downloadLink"].replace(
                     "request_id", str(request_id)
