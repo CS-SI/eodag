@@ -275,20 +275,28 @@ class StacItem(StacCommon):
                     "href"
                 ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
 
-            # add origin assets to product assets
-            origin_assets = product_item["assets"].pop("origin_assets")
+            # move origin asset urls to alternate links and replace with eodag-server ones
+            origin_assets = product_item["assets"].pop("origin_assets", {})
             if getattr(product, "assets", False):
                 # replace origin asset urls with eodag-server ones
                 for asset_key, asset_value in origin_assets.items():
-                    origin_assets[asset_key]["href"] = without_arg_url
+                    # use origin asset as default
+                    product_item["assets"][asset_key] = asset_value
+                    # origin assets as alternate link
+                    product_item["assets"][asset_key]["alternate"] = {
+                        "origin": {
+                            "title": "Origin asset link",
+                            "href": asset_value["href"],
+                        }
+                    }
+                    # use server-mode assets download links
+                    asset_value["href"] = without_arg_url
                     if query_dict:
-                        origin_assets[asset_key][
+                        product_item["assets"][asset_key][
                             "href"
                         ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
                     else:
-                        origin_assets[asset_key]["href"] += f"/{asset_key}"
-
-                product_item["assets"] = dict(product_item["assets"], **origin_assets)
+                        product_item["assets"][asset_key]["href"] += f"/{asset_key}"
 
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
