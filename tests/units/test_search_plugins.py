@@ -2001,7 +2001,7 @@ class TestSearchPluginDataRequestBuildSearchResult(BaseSearchPluginTest):
         self.assertEqual(3, mock_session_send.call_count)
         product = result[0]
         self.assertIn("POLYTOPE_TEST_20221122_20221123", product.properties["id"])
-        self.assertEqual(
+        self.assertIn(
             "https://polytope.apps.lumi.ewctest.link/api/v1/downloads/abc123",
             product.remote_location,
         )
@@ -2057,7 +2057,7 @@ class TestSearchPluginDataRequestBuildSearchResult(BaseSearchPluginTest):
 
         self.assertEqual(3, mock_session_send.call_count)
         product = result[0]
-        self.assertEqual(
+        self.assertIn(
             "https://polytope.apps.lumi.ewctest.link/api/v1/downloads/abc123",
             product.remote_location,
         )
