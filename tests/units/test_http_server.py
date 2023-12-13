@@ -49,17 +49,24 @@ class RequestTestCase(unittest.TestCase):
 
         cls.tested_product_type = "S2_MSI_L1C"
 
-        # load fake credentials to prevent providers needing auth for search to be pruned
-        os.environ["EODAG_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
-        )
-
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
         cls.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
         cls.expanduser_mock.start()
+
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
+
+        # disable product types fetch
+        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+
+        # load fake credentials to prevent providers needing auth for search to be pruned
+        os.environ["EODAG_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
+        )
 
         # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
         # reload eodag.rest.utils to prevent eodag_api cache conflicts
@@ -69,13 +76,6 @@ class RequestTestCase(unittest.TestCase):
         from eodag.rest import server as eodag_http_server
 
         cls.eodag_http_server = eodag_http_server
-
-        # mock os.environ to empty env
-        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
-        cls.mock_os_environ.start()
-
-        # disable product types fetch
-        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
 
     @classmethod
     def tearDownClass(cls):
