@@ -76,6 +76,34 @@ image:
   ##
   pullSecrets: []
 
+## OpenTelemetry Collector image version
+## ref: https://hub.docker.com/r/otel/opentelemetry-collector-contrib
+## @param image.registry OpenTelemetry Collector image registry
+## @param image.repository OpenTelemetry Collector image repository
+## @param image.tag Overrides the OpenTelemetry Collector image tag
+## @param image.pullPolicy EODAG Server image pull policy
+## Number of replicas to deploy
+##
+otel:
+  enabled: false
+  endpoint: "http://localhost:4318"
+  interval: 60000
+  timeout: 10
+  collector:
+    enabled: false
+    image:
+      registry: docker.io
+      repository: otel/opentelemetry-collector-contrib
+      tag: "0.90.1"
+      ports:
+        otlpReceiver: 4318
+        prometheusExporter: 8000
+      ## Specify a imagePullPolicy
+      ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+      ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+      ##
+      pullPolicy: IfNotPresent
+
 ## @param replicaCount Number of EODAG Server replicas
 ##
 replicaCount: 1
@@ -464,6 +492,49 @@ providers: ""
 #         outputs_extension: .zip
 #       GENERIC_PRODUCT_TYPE:
 #         dataset: '{productType}'
+
+## @param otelCollectorConfig Optional overwrite of OpenTelemetry Collector default configuration
+otelCollectorConfig: |-
+  extensions:
+    health_check:
+    pprof:
+      endpoint: 0.0.0.0:1777
+    zpages:
+      endpoint: 0.0.0.0:55679
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4317
+    # Collect own metrics
+    prometheus:
+      config:
+        scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+          - targets: ['0.0.0.0:8888']
+  processors:
+    batch:
+  exporters:
+    debug:
+      verbosity: detailed
+    # Data sources: metrics
+    prometheus:
+      endpoint: 0.0.0.0:8000
+      namespace: eodag-otelcol-exporter
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [debug]
+      metrics:
+  #      receivers: [otlp, prometheus]
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [debug,prometheus]
+    extensions: [health_check, pprof, zpages]
 
 ## @param config [object] EODAG configuration
 ## doc: https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html

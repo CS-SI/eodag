@@ -41,6 +41,7 @@ from urllib.parse import urlencode
 
 import dateutil.parser
 from dateutil import tz
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from shapely.geometry import Polygon, shape
@@ -69,6 +70,7 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
     ValidationError,
 )
+from eodag.utils.otel import telemetry
 
 if TYPE_CHECKING:
     from io import BufferedReader
@@ -1198,3 +1200,15 @@ def eodag_api_init() -> None:
     # pre-build search plugins
     for provider in eodag_api.available_providers():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
+
+
+def telemetry_init(app: FastAPI):
+    """Init telemetry
+
+    :param app: FastAPI to automatically instrument.
+    :type app: FastAPI"""
+
+    if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+        return None
+
+    telemetry.configure_instruments(eodag_api, app)
