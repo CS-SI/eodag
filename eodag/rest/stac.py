@@ -17,10 +17,10 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
 import logging
 import os
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -359,10 +359,7 @@ class StacItem(StacCommon):
                     items_model["links"][i]["href"] = catalog["url"]
 
         search_results.timeStamp = (
-            datetime.datetime.now(datetime.timezone.utc)
-            .isoformat()
-            .replace("+00:00", "")
-            + "Z"
+            datetime.now(timezone.utc).isoformat().replace("+00:00", "") + "Z"
         )
 
         # parse jsonpath
@@ -987,7 +984,7 @@ class StacCatalog(StacCommon):
 
         return parsed_dict
 
-    def get_datetime_extent(self) -> Tuple[datetime.datetime, datetime.datetime]:
+    def get_datetime_extent(self) -> Tuple[datetime, datetime]:
         """Returns catalog temporal extent as datetime objs
 
         :returns: Start & stop dates
@@ -996,9 +993,7 @@ class StacCatalog(StacCommon):
         extent_date_min = dateutil.parser.parse(DEFAULT_MISSION_START_DATE).replace(
             tzinfo=tz.UTC
         )
-        extent_date_max = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=tz.UTC
-        )
+        extent_date_max = datetime.now(timezone.utc).replace(tzinfo=tz.UTC)
         for interval in self.data["extent"]["temporal"]["interval"]:
             extent_date_min_str, extent_date_max_str = interval
             # date min
@@ -1019,16 +1014,16 @@ class StacCatalog(StacCommon):
 
     def set_stac_date(
         self,
-        datetime_min: datetime.datetime,
-        datetime_max: datetime.datetime,
+        datetime_min: datetime,
+        datetime_max: datetime,
         catalog_model: Dict[str, Any],
     ):
         """Updates catalog data using given dates
 
         :param datetime_min: Date min of interval
-        :type datetime_min: :class:`datetime.datetime`
+        :type datetime_min: :class:`datetime`
         :param datetime_max: Date max of interval
-        :type datetime_max: :class:`datetime.datetime`
+        :type datetime_max: :class:`datetime`
         :param catalog_model: Catalog model to use, from yml stac_config[catalogs]
         :type catalog_model: dict
         :returns: Updated catalog

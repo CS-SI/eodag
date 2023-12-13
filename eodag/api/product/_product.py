@@ -134,7 +134,7 @@ class EOProduct:
                 f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
             )
         elif properties["geometry"] == NOT_AVAILABLE:
-            product_geometry = properties["defaultGeometry"]
+            product_geometry = properties.pop("defaultGeometry")
         else:
             product_geometry = properties["geometry"]
         # Let's try 'latmin lonmin latmax lonmax'

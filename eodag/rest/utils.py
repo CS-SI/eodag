@@ -931,6 +931,7 @@ def search_stac_items(
         )
 
         # check if time filtering appears both in search arguments and catalog
+        # (for catalogs built by date: i.e. `year/2020/month/05`)
         if set(["dtstart", "dtend"]) <= set(arguments.keys()) and set(
             ["dtstart", "dtend"]
         ) <= set(result_catalog.search_args.keys()):

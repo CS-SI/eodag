@@ -489,10 +489,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, wait_sec=15)
 
-    @unittest.skip(
-        "The public datasets service will not be available during the DHS Move, "
-        + "see https://confluence.ecmwf.int/x/jSKADQ"
-    )
     def test_end_to_end_search_download_ecmwf(self):
         product = self.execute_search(
             *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS

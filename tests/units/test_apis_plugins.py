@@ -638,27 +638,9 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         self.product_dataset = "cams-global-reanalysis-eac4"
         self.product_type_params = {
             "dataset": self.product_dataset,
-            "stream": "oper",
-            "class": "mc",
-            "expver": "0001",
-            "variable": [
-                "dust_aerosol_0.03-0.55um_mixing_ratio",
-                "dust_aerosol_0.55-0.9um_mixing_ratio",
-                "dust_aerosol_0.9-20um_mixing_ratio",
-                "dust_aerosol_optical_depth_550nm",
-                "hydrophilic_black_carbon_aerosol_mixing_ratio",
-                "hydrophilic_organic_matter_aerosol_mixing_ratio",
-                "hydrophobic_black_carbon_aerosol_mixing_ratio",
-                "hydrophobic_organic_matter_aerosol_mixing_ratio",
-                "sea_salt_aerosol_0.03-0.5um_mixing_ratio",
-                "sea_salt_aerosol_0.5-5um_mixing_ratio",
-                "sea_salt_aerosol_5-20um_mixing_ratio",
-                "sea_salt_aerosol_optical_depth_550nm",
-                "sulphate_aerosol_optical_depth_550nm",
-            ],
-            "model_level": [str(i) for i in range(1, 61)],
+            "format": "grib",
+            "variable": "2m_dewpoint_temperature",
             "time": "00:00",
-            "format": "netcdf",
         }
         self.custom_query_params = {
             "dataset": "cams-global-ghg-reanalysis-egg4",
@@ -724,7 +706,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            datetime.utcnow().isoformat(),
+            "2015-01-02T00:00:00Z",
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
@@ -741,7 +723,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
         )
 
     def test_plugins_apis_cds_query_without_producttype(self):

@@ -115,15 +115,10 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             ).get("missionEndDate", None) or datetime.utcnow().isoformat(
                 timespec="seconds"
             )
+
         # geometry
-        if not kwargs.get("geometry", None):
-            kwargs["geometry"] = [
-                -180,
-                -90,
-                180,
-                90,
-            ]
-        kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
+        if "geometry" in kwargs:
+            kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
         return BuildPostSearchResult.query(
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
@@ -168,10 +163,8 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         **kwargs: Any,
     ) -> Optional[str]:
         """Download data from ECMWF MARS"""
-
-        product_extension = ECMWF_MARS_KNOWN_FORMATS[
-            product.properties.get("format", "grib")
-        ]
+        product_format = product.properties.get("format", "grib")
+        product_extension = ECMWF_MARS_KNOWN_FORMATS.get(product_format, product_format)
 
         # Prepare download
         fs_path, record_filename = self._prepare_download(
