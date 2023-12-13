@@ -453,9 +453,15 @@ class TestStacUtils(unittest.TestCase):
             "assets"
         ].items():
             self.assertIn(k, response["features"][0]["assets"].keys())
+            # check asset server-mode download link
             self.assertEqual(
                 response["features"][0]["assets"][k]["href"],
                 f"http://foo/collections/S2_MSI_L2A/items/{product_id}/download/{k}?provider=earth_search",
+            )
+            # check asset origin download link
+            self.assertEqual(
+                response["features"][0]["assets"][k]["alternate"]["origin"]["href"],
+                self.earth_search_resp_search_json["features"][0]["assets"][k]["href"],
             )
         # preferred provider should not be changed
         self.assertEqual("peps", self.rest_utils.eodag_api.get_preferred_provider()[0])
