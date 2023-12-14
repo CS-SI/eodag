@@ -2238,4 +2238,3 @@ class EODataAccessGateway:
 
         return provider_queryables
 
-
