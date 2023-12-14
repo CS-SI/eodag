@@ -34,18 +34,44 @@ def rename_to_stac_standard(key: str) -> str:
     return key
 
 
-class QueryableProperty(BaseModel):
+class BaseQueryableProperty(BaseModel):
+    """A class representing a queryable property.
+
+    :param description: The description of the queryables property
+    :type description: str
+    :param type: (optional) possible types of the property
+    :type type: list[str]
+    """
+
+    description: str
+    type: Optional[list] = None
+
+    def update_properties(self, new_properties: dict):
+        """updates the properties with the given new properties keeping already existing value"""
+        if "type" in new_properties and not self.type:
+            self.type = new_properties["type"]
+
+
+class QueryableProperty(BaseQueryableProperty):
     """A class representing a queryable property.
 
     :param description: The description of the queryables property
     :type description: str
     :param ref: (optional) A reference link to the schema of the property.
     :type ref: str
+    :param type: (optional) possible types of the property
+    :type type: list[str]
     """
 
     description: str
     ref: Optional[str] = Field(default=None, serialization_alias="$ref")
     type: Optional[list] = None
+
+    def update_properties(self, new_properties: dict):
+        """updates the properties with the given new properties keeping already existing value"""
+        super().update_properties(new_properties)
+        if "ref" in new_properties and not self.ref:
+            self.ref = new_properties["ref"]
 
 
 class Queryables(BaseModel):
@@ -105,26 +131,34 @@ class Queryables(BaseModel):
         default=True, serialization_alias="additionalProperties"
     )
 
-    def get_properties(self) -> Dict[str, QueryableProperty]:
+    def get_base_properties(self) -> Dict[str, BaseQueryableProperty]:
         """Get the queryable properties.
 
         :returns: A dictionary containing queryable properties.
         :rtype: typing.Dict[str, QueryableProperty]
         """
-        return self.properties
+        base_properties = {}
+        for key, property in self.properties.items():
+            base_property = BaseQueryableProperty(
+                description=property.description, type=property.type
+            )
+            base_properties[key] = base_property
+        return base_properties
 
     def __contains__(self, name: str) -> bool:
         return name in self.properties
 
-    def __setitem__(self, name: str, qprop: QueryableProperty) -> None:
+    def __setitem__(self, name: str, qprop: BaseQueryableProperty) -> None:
         self.properties[name] = qprop
 
 
-def format_queryable(queryable_key: str) -> QueryableProperty:
+def format_queryable(queryable_key: str, base=True) -> BaseQueryableProperty:
     """
     creates a queryable property from a property key
     :param queryable_key: key of the property for which the queryable property shall be created
     :type queryable_key: str
+    :param base: if a base queryable object or an extended queryable object should be created
+    :type base: bool
     :returns: queryable property for the given key
     :rtype: QueryableProperty
     """
@@ -133,11 +167,13 @@ def format_queryable(queryable_key: str) -> QueryableProperty:
     else:
         stac_key = queryable_key
     titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", stac_key.split(":")[-1]).title()
+    if base:
+        return BaseQueryableProperty(description=titled_name)
     return QueryableProperty(description=titled_name)
 
 
 def format_provider_queryables(
-    provider_queryables: dict, queryables: dict
+    provider_queryables: dict, queryables: dict, base: bool = True
 ) -> Dict[str, Any]:
     """
     formats the provider queryables and adds them to the existing queryables
@@ -145,22 +181,31 @@ def format_provider_queryables(
     :type provider_queryables: dict
     :param queryables: default queryables to which provider queryables will be added
     :type queryables: dict
+    :param base: if a base queryable object or an extended queryable object should be created
+    :type base: bool
     :returns queryable_properties: A dict containing the formatted queryable properties
                                        including queryables fetched from the provider.
     :rtype dict
-
     """
     for queryable, data in provider_queryables.items():
         titled_name = re.sub(
             CAMEL_TO_SPACE_TITLED, " ", queryable.split(":")[-1]
         ).title()
         attributes = {"description": titled_name}
+        if queryable in queryables:
+            queryable_prop = queryables[queryable]
+        else:
+            if base:
+                queryable_prop = BaseQueryableProperty(description=titled_name)
+            else:
+                queryable_prop = QueryableProperty(description=titled_name)
         if "type" in data:
             if isinstance(data["type"], list):
                 attributes["type"] = data["type"]
             else:
                 attributes["type"] = [data["type"]]
-        if "ref" in data:
+        if "ref" in data and not base:
             attributes["ref"] = data["ref"]
-        queryables[queryable] = QueryableProperty(**attributes)
+        queryable_prop.update_properties(attributes)
+        queryables[queryable] = queryable_prop
     return queryables

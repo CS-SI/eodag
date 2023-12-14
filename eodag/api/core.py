@@ -36,7 +36,7 @@ from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.queryables import (
-    QueryableProperty,
+    BaseQueryableProperty,
     Queryables,
     format_provider_queryables,
     format_queryable,
@@ -2082,18 +2082,26 @@ class EODataAccessGateway:
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
     def get_queryables(
-        self, provider: Optional[str] = None, product_type: Optional[str] = None
-    ) -> dict[str, QueryableProperty]:
+        self,
+        provider: Optional[str] = None,
+        product_type: Optional[str] = None,
+        base: Optional[bool] = True,
+    ) -> dict[str, BaseQueryableProperty]:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param product_type: (optional) The EODAG product type.
         :type product_type: str
         :param provider: (optional) The provider.
         :type provider: str
-        :returns: A set containing the EODAG queryable properties.
-        :rtype: set
+        :param base: if base queryable objects or extended queryable objects should be created
+        :type base: bool
+        :returns: A dict containing the EODAG queryable properties.
+        :rtype: dict
         """
-        default_queryables = Queryables().properties
+        if base:
+            default_queryables = Queryables().get_base_properties()
+        else:
+            default_queryables = Queryables().properties
         if provider is None and product_type is None:
             return default_queryables
 
@@ -2131,7 +2139,7 @@ class EODataAccessGateway:
                     and "TimeFromAscendingNode" not in key
                     and key not in provider_queryables
                 ):
-                    queryable = format_queryable(key)
+                    queryable = format_queryable(key, base)
                     provider_queryables[key] = queryable
 
             all_queryable_properties[plugin.provider] = provider_queryables
@@ -2151,15 +2159,21 @@ class EODataAccessGateway:
                     provider,
                     product_type,
                     all_queryable_properties[provider],
+                    base,
                 )
+                print(provider_queryables)
             else:
                 provider_queryables = self._add_provider_queryables(
-                    provider_plugin, provider, all_queryable_properties[provider]
+                    provider_plugin, provider, all_queryable_properties[provider], base
                 )
             return provider_queryables
 
     def _add_provider_queryables(
-        self, search_plugin: Union[Search, Api], provider: str, queryables: dict
+        self,
+        search_plugin: Union[Search, Api],
+        provider: str,
+        queryables: dict,
+        base: bool,
     ) -> Dict[str, Any]:
         """Add the queryables fetched from the given provider to the default queryables.
         If the queryables endpoint is not supported by the provider, the original queryables are returned
@@ -2167,6 +2181,8 @@ class EODataAccessGateway:
         :type provider: str
         :param queryables: default queryables to which provider queryables will be added
         :type queryables: dict
+        :param base: if base queryable objects or extended queryable objects should be created
+        :type base: bool
         :returns queryable_properties: A dict containing the formatted queryable properties
                                        including queryables fetched from the provider.
         :rtype dict
@@ -2201,7 +2217,7 @@ class EODataAccessGateway:
                 raise RequestError(str(err))
         else:
             provider_queryables = res.json()["properties"]
-            return format_provider_queryables(provider_queryables, queryables)
+            return format_provider_queryables(provider_queryables, queryables, base)
 
     def _add_provider_product_type_queryables(
         self,
@@ -2209,6 +2225,7 @@ class EODataAccessGateway:
         provider: str,
         product_type: str,
         queryables: dict,
+        base: bool,
     ) -> Dict[str, Any]:
         """Add the queryables fetched from the given provider for the given product type
         to the default queryables derived from the metadata mapping.
@@ -2219,6 +2236,8 @@ class EODataAccessGateway:
         :type product_type: str
         :param queryables: default queryables to which provider queryables will be added
         :type queryables: dict
+        :param base: if base queryable objects or extended queryable objects should be created
+        :type base: bool
         :returns queryable_properties: A dict containing the formatted queryable properties
                                        including queryables fetched from the provider.
         :rtype dict
@@ -2266,6 +2285,6 @@ class EODataAccessGateway:
         else:
             if "properties" in res.json():
                 provider_queryables = res.json()["properties"]
-                return format_provider_queryables(provider_queryables, queryables)
+                return format_provider_queryables(provider_queryables, queryables, base)
             else:
                 return queryables

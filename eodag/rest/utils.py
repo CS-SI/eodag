@@ -46,7 +46,7 @@ from shapely.geometry import Polygon, shape
 import eodag
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
-from eodag.api.queryables import QueryableProperty
+from eodag.api.queryables import BaseQueryableProperty
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config, load_stac_provider_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
@@ -1055,7 +1055,7 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
 
 def fetch_collection_queryable_properties(
     collection_id: Optional[str] = None, provider: Optional[str] = None
-) -> Dict[str, QueryableProperty]:
+) -> Dict[str, BaseQueryableProperty]:
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
@@ -1066,7 +1066,7 @@ def fetch_collection_queryable_properties(
     :rtype queryable_properties: set
     """
     # Fetch the metadata mapping for collection-specific queryables
-    kwargs = {}
+    kwargs = {"base": False}
     if collection_id is not None:
         kwargs["product_type"] = collection_id
     if provider is not None:

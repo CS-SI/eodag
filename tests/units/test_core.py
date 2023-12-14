@@ -32,7 +32,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
-from eodag.api.queryables import QueryableProperty, Queryables
+from eodag.api.queryables import BaseQueryableProperty, Queryables
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -1011,7 +1011,7 @@ class TestCore(TestCoreBase):
         with self.assertRaises(UnsupportedProductType):
             self.dag.get_queryables(product_type="not_existing_product_type")
 
-        expected_result = Queryables().properties
+        expected_result = Queryables().get_base_properties()
         queryables = self.dag.get_queryables()
         self.assertDictEqual(expected_result, queryables)
 
@@ -1030,16 +1030,22 @@ class TestCore(TestCoreBase):
             key = key_parts[0].lower()
             if len(key_parts) > 1:
                 key += key_parts[1]
-            expected_result[key] = QueryableProperty(description=property)
-        expected_result["platformSerialIdentifier"] = QueryableProperty(
+            expected_result[key] = BaseQueryableProperty(description=property)
+        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
             description="Platform"
         )
-        expected_result["resolution"] = QueryableProperty(description="Gsd")
-        expected_result["orbitNumber"] = QueryableProperty(description="Absolute Orbit")
-        expected_result["orbitDirection"] = QueryableProperty(description="Orbit State")
-        expected_result["processingLevel"] = QueryableProperty(description="Level")
-        expected_result["instrument"] = QueryableProperty(description="Instruments")
-        expected_result["sensorMode"] = QueryableProperty(description="Instrument Mode")
+        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
+        expected_result["orbitNumber"] = BaseQueryableProperty(
+            description="Absolute Orbit"
+        )
+        expected_result["orbitDirection"] = BaseQueryableProperty(
+            description="Orbit State"
+        )
+        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
+        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
+        expected_result["sensorMode"] = BaseQueryableProperty(
+            description="Instrument Mode"
+        )
         queryables = self.dag.get_queryables(provider="peps")
         self.assertDictEqual(expected_result, queryables)
 
@@ -1052,22 +1058,28 @@ class TestCore(TestCoreBase):
             "Polarization Mode",
             "Tile Identifier",
         }
-        expected_result = Queryables().properties
+        expected_result = Queryables().get_base_properties()
         for property in expected_properties:
             key_parts = property.split(" ")
             key = key_parts[0].lower()
             if len(key_parts) > 1:
                 key += key_parts[1]
-            expected_result[key] = QueryableProperty(description=property)
-        expected_result["platformSerialIdentifier"] = QueryableProperty(
+            expected_result[key] = BaseQueryableProperty(description=property)
+        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
             description="Platform"
         )
-        expected_result["resolution"] = QueryableProperty(description="Gsd")
-        expected_result["orbitNumber"] = QueryableProperty(description="Absolute Orbit")
-        expected_result["orbitDirection"] = QueryableProperty(description="Orbit State")
-        expected_result["processingLevel"] = QueryableProperty(description="Level")
-        expected_result["instrument"] = QueryableProperty(description="Instruments")
-        expected_result["sensorMode"] = QueryableProperty(description="Instrument Mode")
+        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
+        expected_result["orbitNumber"] = BaseQueryableProperty(
+            description="Absolute Orbit"
+        )
+        expected_result["orbitDirection"] = BaseQueryableProperty(
+            description="Orbit State"
+        )
+        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
+        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
+        expected_result["sensorMode"] = BaseQueryableProperty(
+            description="Instrument Mode"
+        )
 
         queryables = self.dag.get_queryables(provider="peps", product_type="S1_SAR_GRD")
         self.assertDictEqual(queryables, expected_result)
