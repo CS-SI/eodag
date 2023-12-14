@@ -790,7 +790,16 @@ def stac_search(
 
     # metrics
     args_collections = arguments.get("collections", None)
-    product_type = args_collections.split(",")[0] if args_collections else None
+    if isinstance(args_collections, str):
+        product_type = args_collections.split(",")[0] if args_collections else None
+    elif isinstance(args_collections, list) and len(args_collections) > 0:
+        product_type = args_collections[0]
+    else:
+        product_type = None
+    if not product_type:
+        raise ValidationError(
+            "Cannot get product_type from collections %s" % args_collections
+        )
     telemetry.record_searched_product_type(product_type)
 
     response = search_stac_items(
