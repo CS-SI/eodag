@@ -152,18 +152,20 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         if _dc_qs is not None:
             # if available, update search params using datacube query-string
             _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
-            if "/" in _dc_qp.get("date", ""):
+            _dc_qp_date = _dc_qp.get("date", "")
+            _dc_qp_area = _dc_qp.get("area", "")
+            if "/" in _dc_qp_date:
                 (
                     params["startTimeFromAscendingNode"],
                     params["completionTimeFromAscendingNode"],
-                ) = _dc_qp["date"].split("/")
+                ) = _dc_qp_date.split("/")
             else:
                 params["startTimeFromAscendingNode"] = params[
                     "completionTimeFromAscendingNode"
-                ] = _dc_qp["date"]
+                ] = _dc_qp_date
 
-            if "/" in _dc_qp.get("area", ""):
-                params["geometry"] = _dc_qp["area"].split("/")
+            if "/" in _dc_qp_area:
+                params["geometry"] = _dc_qp_area.split("/")
 
         non_none_params = {k: v for k, v in params.items() if v}
 
