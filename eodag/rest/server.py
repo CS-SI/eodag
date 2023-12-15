@@ -728,10 +728,10 @@ def stac_search(
     url = request.state.url
     url_root = request.state.url_root
 
-        if search_body is None:
-            body = {}
-        else:
-            body = vars(search_body)
+    if search_body is None:
+        body = {}
+    else:
+        body = vars(search_body)
 
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)

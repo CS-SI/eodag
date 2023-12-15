@@ -505,7 +505,7 @@ otelCollectorConfig: |-
     otlp:
       protocols:
         http:
-          endpoint: 0.0.0.0:4317
+          endpoint: 0.0.0.0:4318
     # Collect own metrics
     prometheus:
       config:

@@ -77,7 +77,7 @@ Return the proper EODAG server image name
 {{- end -}}
 
 {{/*
-Return the proper EODAG server image name
+Return the proper OpenTelemetry Collector image name
 */}}
 {{- define "otel-collector.image" -}}
 {{- $registryName := .Values.otel.collector.image.registry -}}
