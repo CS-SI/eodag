@@ -2081,7 +2081,7 @@ class EODataAccessGateway:
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
-    def get_queryables(
+    def list_queryables(
         self,
         provider: Optional[str] = None,
         product_type: Optional[str] = None,
@@ -2161,7 +2161,6 @@ class EODataAccessGateway:
                     all_queryable_properties[provider],
                     base,
                 )
-                print(provider_queryables)
             else:
                 provider_queryables = self._add_provider_queryables(
                     provider_plugin, provider, all_queryable_properties[provider], base

@@ -1071,7 +1071,7 @@ def fetch_collection_queryable_properties(
         kwargs["product_type"] = collection_id
     if provider is not None:
         kwargs["provider"] = provider
-    return eodag_api.get_queryables(**kwargs)
+    return eodag_api.list_queryables(**kwargs)
 
 
 def eodag_api_init() -> None:

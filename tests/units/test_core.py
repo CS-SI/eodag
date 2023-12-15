@@ -1006,13 +1006,13 @@ class TestCore(TestCoreBase):
     def test_get_queryables(self):
         """get_queryables must return queryables list adapted to provider and product-type"""
         with self.assertRaises(UnsupportedProvider):
-            self.dag.get_queryables(provider="not_existing_provider")
+            self.dag.list_queryables(provider="not_existing_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.get_queryables(product_type="not_existing_product_type")
+            self.dag.list_queryables(product_type="not_existing_product_type")
 
         expected_result = Queryables().get_base_properties()
-        queryables = self.dag.get_queryables()
+        queryables = self.dag.list_queryables()
         self.assertDictEqual(expected_result, queryables)
 
         expected_properties = {
@@ -1046,7 +1046,7 @@ class TestCore(TestCoreBase):
         expected_result["sensorMode"] = BaseQueryableProperty(
             description="Instrument Mode"
         )
-        queryables = self.dag.get_queryables(provider="peps")
+        queryables = self.dag.list_queryables(provider="peps")
         self.assertDictEqual(expected_result, queryables)
 
         expected_properties = {
@@ -1081,10 +1081,12 @@ class TestCore(TestCoreBase):
             description="Instrument Mode"
         )
 
-        queryables = self.dag.get_queryables(provider="peps", product_type="S1_SAR_GRD")
+        queryables = self.dag.list_queryables(
+            provider="peps", product_type="S1_SAR_GRD"
+        )
         self.assertDictEqual(queryables, expected_result)
 
-        queryables = self.dag.get_queryables(product_type="S2_MSI_L1C")
+        queryables = self.dag.list_queryables(product_type="S2_MSI_L1C")
         self.assertIn("awsPath", queryables.keys())
         self.assertIn("id", queryables.keys())
         self.assertIn("illuminationAzimuthAngle", queryables.keys())
