@@ -53,11 +53,14 @@ class BaseQueryableProperty(BaseModel):
 
     description: str
     type: Optional[list] = None
+    values: Optional[list] = None
 
     def update_properties(self, new_properties: dict):
         """updates the properties with the given new properties keeping already existing value"""
         if "type" in new_properties and not self.type:
             self.type = new_properties["type"]
+        if "values" in new_properties and not self.values:
+            self.values = new_properties["values"]
 
 
 class QueryableProperty(BaseQueryableProperty):
@@ -148,7 +151,9 @@ class Queryables(BaseModel):
         base_properties = {}
         for key, property in self.properties.items():
             base_property = BaseQueryableProperty(
-                description=property.description, type=property.type
+                description=property.description,
+                type=property.type,
+                values=property.values,
             )
             base_properties[key] = base_property
         return base_properties
@@ -160,24 +165,31 @@ class Queryables(BaseModel):
         self.properties[name] = qprop
 
 
-def format_queryable(queryable_key: str, base=True) -> BaseQueryableProperty:
+def format_queryable(
+    queryable_key: str, base: bool = True, attributes: Dict[str, Any] = None
+) -> BaseQueryableProperty:
     """
     creates a queryable property from a property key
     :param queryable_key: key of the property for which the queryable property shall be created
     :type queryable_key: str
     :param base: if a base queryable object or an extended queryable object should be created
     :type base: bool
+    :param attributes: attributes of the queryable property
+    :type attributes: dict[str,Any]
     :returns: queryable property for the given key
     :rtype: QueryableProperty
     """
+    if not attributes:
+        attributes = {}
     if queryable_key not in ["start", "end", "geom", "locations", "id"]:
         stac_key = rename_to_stac_standard(queryable_key)
     else:
         stac_key = queryable_key
     titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", stac_key.split(":")[-1]).title()
+    attributes["description"] = titled_name
     if base:
-        return BaseQueryableProperty(description=titled_name)
-    return QueryableProperty(description=titled_name)
+        return BaseQueryableProperty(**attributes)
+    return QueryableProperty(**attributes)
 
 
 def format_provider_queryables(
@@ -210,6 +222,8 @@ def format_provider_queryables(
                 attributes["type"] = [data["type"]]
         if "ref" in data and not base:
             attributes["ref"] = data["ref"]
+        if "enum" in data:
+            attributes["values"] = data["enum"]
         queryable_prop.update_properties(attributes)
         queryables[queryable] = queryable_prop
     return queryables
@@ -406,13 +420,18 @@ def get_queryables_from_constraints(
     constraints = _fetch_constraints(constraints_file_url, plugin)
     if not constraints:
         return {}
-    constraint_params = set()
+    constraint_params = {}
     for constraint in constraints:
         for key in constraint.keys():
-            constraint_params.add(key)
+            if key in constraint_params:
+                constraint_params[key].update(constraint[key])
+            else:
+                constraint_params[key] = set(constraint[key])
     queryables = {}
     for key in constraint_params:
-        queryables[key] = format_queryable(key, base)
+        queryables[key] = format_queryable(
+            key, base, {"values": sorted(constraint_params[key])}
+        )
     return queryables
 
 
