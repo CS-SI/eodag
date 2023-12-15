@@ -2093,6 +2093,7 @@
     api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
     extract: false
     flatten_top_dirs: True
+    constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -3823,6 +3824,8 @@
       total_items_nb_key_path: '$.totItems'
     discover_product_types:
       fetch_url: null
+    constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/{dataset}"
+    constraints_entry: constraints
     metadata_mapping:
       productType:
         - '{{"datasetId": "{productType}"}}'

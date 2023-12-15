@@ -46,10 +46,22 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
+<<<<<<< HEAD
 from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
 
+=======
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.queryables import (
+    BaseQueryableProperty,
+    QueryableProperty,
+    Queryables,
+    get_provider_product_type_queryables,
+    get_provider_queryables,
+    get_queryables_from_constraints,
+    get_queryables_from_metadata_mapping,
+>>>>>>> feat: only list product type specific queryables based on provider information
 )
 from eodag.api.search_result import SearchResult
 from eodag.config import (
@@ -91,7 +103,6 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     PluginImplementationError,
     RequestError,
-    UnsupportedProductType,
     UnsupportedProvider,
 )
 from eodag.utils.stac_reader import fetch_stac_items
