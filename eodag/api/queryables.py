@@ -11,7 +11,7 @@ from eodag.config import load_stac_config
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
 from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import RequestError
+from eodag.utils.exceptions import NotAvailableError, RequestError
 
 CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")
 logger = logging.getLogger("eodag.queryables")
@@ -384,7 +384,7 @@ def get_provider_product_type_queryables(
 
 
 def get_queryables_from_constraints(
-    plugin: Union[Search, Api], product_type: str, base: bool
+    plugin: Union[Search, Api], product_type: str, base: bool, **kwargs: dict
 ) -> Dict[str, Any]:
     """
     creates queryables from the parameters given in the constraints data fetched from the provider
@@ -421,17 +421,68 @@ def get_queryables_from_constraints(
     if not constraints:
         return {}
     constraint_params = {}
-    for constraint in constraints:
-        for key in constraint.keys():
-            if key in constraint_params:
-                constraint_params[key].update(constraint[key])
-            else:
-                constraint_params[key] = set(constraint[key])
+    if len(kwargs) == 0:
+        # get values from constraints without additional filters
+        for constraint in constraints:
+            for key in constraint.keys():
+                if key in constraint_params:
+                    constraint_params[key].update(constraint[key])
+                else:
+                    constraint_params[key] = set(constraint[key])
+    else:
+        # get values from constraints with additional filters
+        constraint_params = _get_constraint_queryables_with_additional_params(
+            constraints, kwargs
+        )
     queryables = {}
     for key in constraint_params:
         queryables[key] = format_queryable(
             key, base, {"values": sorted(constraint_params[key])}
         )
+    return queryables
+
+
+def _get_constraint_queryables_with_additional_params(
+    constraints: list, params: Dict[str, Any]
+):
+    constraint_matches = {}
+    params_available = {k: False for k in params.keys()}
+    # check which constraints match the given parameters
+    for i, constraint in enumerate(constraints):
+        params_matched = {k: False for k in params.keys()}
+        for param, value in params.items():
+            if param in constraint:
+                params_available[param] = True
+                if value in constraint[param]:
+                    params_matched[param] = True
+        constraint_matches[i] = params_matched
+
+    # check if all parameters are availeble in the constraints
+    for param, available in params_available.items():
+        if not available:
+            raise NotAvailableError(f"parameter {param} is not queryable")
+
+    # add values of constraints matching params
+    queryables = {}
+    for num, matches in constraint_matches.items():
+        if False not in matches.values():
+            for key in constraints[num]:
+                if key in queryables:
+                    queryables[key].update(constraints[num][key])
+                elif key not in params:
+                    queryables[key] = set()
+
+    # check if constraints matching params have been found
+    if len(queryables) == 0:
+        if len(params) > 1:
+            raise NotAvailableError(
+                f"combination of values {str(params)} is not possible"
+            )
+        else:
+            raise NotAvailableError(
+                f"value {list(params.values())[0]} not available for param {list(params.keys())[0]}"
+            )
+
     return queryables
 
 

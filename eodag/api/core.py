@@ -89,6 +89,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     NoMatchingProductType,
+    NotAvailableError,
     PluginImplementationError,
     RequestError,
     UnsupportedProvider,
