@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import functools
 import hashlib
 import logging
 import os
@@ -692,3 +693,27 @@ class Download(PluginTopic):
             return download_and_retry
 
         return decorator
+
+    def progress_callback_decorator(
+        self, progress_callback: ProgressCallback, **decorator_kwargs: Any
+    ) -> Callable[[Any, Any], None]:
+        """No-op decorator for the progress_callback.
+
+        Patching this function can be useful, for example, to implement automatic
+        instrumentation that needs more context information.
+
+        :param progress_callback: A method or a callable object
+                                  which takes a current size and a maximum
+                                  size as inputs and handle progress bar
+                                  creation and update to give the user a
+                                  feedback on the download progress
+        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
+        :param decorator_kwargs: Additional arguments used by the wrapper
+        :type decorator_kwargs: Any
+        """
+
+        @functools.wraps(progress_callback)
+        def progress_callback_wrapper(*args: Any, **kwargs: Any) -> None:
+            progress_callback(*args, **kwargs)
+
+        return progress_callback_wrapper
