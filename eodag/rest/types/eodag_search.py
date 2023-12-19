@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic import (
     BaseModel,
@@ -25,6 +25,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+
+from pygeofilter.parsers.cql2_json import parse as parse_json
 from shapely.geometry import (
     GeometryCollection,
     LinearRing,
@@ -36,6 +38,8 @@ from shapely.geometry import (
     Polygon,
 )
 
+from eodag.rest.utils import is_dict_str_any, is_list_str
+from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE
 
 Geometry = Union[
@@ -115,6 +119,99 @@ class EODAGSearch(BaseModel):
         for key in ["datetime", "crunch", "intersects", "bbox"]:
             values.pop(key, None)
         return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def convert_collections_to_product_type(
+        cls, values: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """convert collections and collection to productType"""
+        collections = values.pop("collections", [])
+        collection = values.pop("collection", [])
+
+        if collection and isinstance(collection, str):
+            collection = [collection]
+        elif collection and not is_list_str(collection):  # type: ignore
+            raise ValueError("Collection must be a string or a list of strings")
+
+        if collections and not is_list_str(collections):  # type: ignore
+            raise ValueError("Collections must a list of strings")
+
+        combined_collections = cast(
+            List[str],
+            [c for c in collections if c]  # type: ignore
+            + [c for c in collection if c and c not in collections],  # type: ignore
+        )
+
+        if len(combined_collections) > 1:
+            raise ValueError("Only one collection is supported per search")
+
+        if combined_collections:
+            values["productType"] = combined_collections[0]
+
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def convert_query_to_dict(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert a STAC query parameter filter with the "eq" operator to a dict.
+        """
+        query = values.pop("query", None)
+        if query is None:
+            return values
+
+        if not is_dict_str_any(query):
+            raise ValueError("Invalid query syntax")
+
+        query_props: Dict[str, Any] = {}
+        for property_name, conditions in cast(Dict[str, Any], query).items():
+            # Remove the "properties." prefix if present
+            prop = property_name.removeprefix("properties.")
+
+            # Check if exactly one operator is specified per property
+            if not is_dict_str_any(conditions) or len(conditions) != 1:  # type: ignore
+                raise ValueError(
+                    "Query filter: exactly 1 operator must be specified per property"
+                )
+
+            # Retrieve the operator and its value
+            operator, value = next(iter(cast(Dict[str, Any], conditions).items()))
+
+            # Validate the operator
+            if operator == "lte" and prop != "eo:cloud_cover":
+                raise ValueError(
+                    'Query filter: "lte" operator is only supported for eo:cloud_cover'
+                )
+
+            if operator not in ("eq", "lte"):
+                raise ValueError(
+                    'Query filter: only the "eq" and "lte" operators are supported'
+                    ', with "lte" only for eo:cloud_cover'
+                )
+
+            # Add the property name and value to the result dictionary
+            query_props[prop] = value
+
+        return {**values, **query_props}
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_cql(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process cql2 filter
+        """
+        values.pop("filter_lang", None)
+        filter_ = values.pop("filter", None)
+        if not filter_:
+            return values
+        parsing_result = EodagEvaluator().evaluate(parse_json(filter_))  # type: ignore
+        if not is_dict_str_any(parsing_result):
+            raise ValueError(
+                "Error in parsing filter: the result is not a proper dictionary"
+            )
+        cql_args: Dict[str, Any] = cast(Dict[str, Any], parsing_result)
+        return {**values, **cql_args}
 
     @field_validator("instrument", mode="before")
     @classmethod

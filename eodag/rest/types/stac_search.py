@@ -1,13 +1,34 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+# -*- coding: utf-8 -*-
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Model describing a STAC search POST request"""
+from __future__ import annotations
+
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union, cast
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
+    FieldValidationInfo,
+    StringConstraints,
     conint,
     conlist,
     field_validator,
-    root_validator,
-    validator,
 )
 from shapely.geometry import (
     GeometryCollection,
@@ -20,18 +41,20 @@ from shapely.geometry import (
     Polygon,
     shape,
 )
-from shapely.geometry.base import GEOMETRY_TYPES
+from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
+from typing_extensions import Annotated
 
-from eodag.rest.rfc3339 import rfc3339_str_to_datetime, str_to_interval
+from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime, str_to_interval
 
 PositiveInt = conint(gt=0)
 
 NumType = Union[float, int]
+
 BBox = Union[
-    conlist(NumType, min_length=4, max_length=4),  # 2D bbox
-    conlist(NumType, min_length=6, max_length=6),  # 3D bbox
-    Tuple[NumType, NumType, NumType, NumType],  # 2D bbox
-    Tuple[NumType, NumType, NumType, NumType, NumType, NumType],  # 3D bbox
+    conlist(NumType, min_length=4, max_length=4),
+    conlist(NumType, min_length=6, max_length=6),
+    Tuple[NumType, NumType, NumType, NumType],
+    Tuple[NumType, NumType, NumType, NumType, NumType, NumType],
 ]
 
 Geometry = Union[
@@ -45,6 +68,26 @@ Geometry = Union[
     LinearRing,
     GeometryCollection,
 ]
+
+
+Direction = Annotated[Literal["asc", "desc"], StringConstraints(min_length=1)]
+
+
+class Sortby(BaseModel):
+    """
+    A class representing a parameter with which we want to sort results and its sorting order in a
+    POST search
+
+    :param field: The name of the parameter with which we want to sort results
+    :type field: str
+    :param direction: The sorting order of the parameter
+    :type direction: str
+    """
+
+    __pydantic_config__ = ConfigDict(extra="forbid")
+
+    field: Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)]
+    direction: Direction
 
 
 class SearchPostRequest(BaseModel):
@@ -69,8 +112,12 @@ class SearchPostRequest(BaseModel):
     query: Optional[Dict[str, Any]] = None
     filter: Optional[Dict[str, Any]] = None
     filter_lang: Optional[str] = Field(
-        None, alias="filter-lang", description="The language used for filtering."
+        None,
+        alias="filter-lang",
+        description="The language used for filtering.",
+        validate_default=True,
     )
+    sortby: Optional[List[Sortby]] = None
 
     class Config:
         """Model config"""
@@ -78,17 +125,19 @@ class SearchPostRequest(BaseModel):
         populate_by_name = True
         arbitrary_types_allowed = True
 
-    @root_validator(pre=True)
+    @field_validator("filter_lang")
     @classmethod
-    def check_filter_lang(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_filter_lang(
+        cls, v: Optional[str], info: FieldValidationInfo
+    ) -> Optional[str]:
         """Verify filter-lang has correct value"""
-        _filter = values.get("filter")
-        filter_lang = values.get("filter-lang")
-        if _filter and not filter_lang:
-            raise ValueError("filter-lang must be set if filter is provided")
-        if _filter and filter_lang and filter_lang != "cql2-json":
+        if v is None and info.data.get("filter"):
+            raise ValueError('"filter-lang" is required if "filter" is provided')
+        if v and not info.data.get("filter"):
+            raise ValueError('"filter-lang" set but "filter" is missing')
+        if v != "cql2-json" and info.data.get("filter"):
             raise ValueError('Only filter language "cql2-json" is accepted')
-        return values
+        return v
 
     @property
     def start_date(self) -> Optional[str]:
@@ -100,7 +149,7 @@ class SearchPostRequest(BaseModel):
         """Extract the end date from the datetime string."""
         return self.get_dates(pos="end")
 
-    @validator("ids", "collections", pre=True)
+    @field_validator("ids", "collections", mode="before")
     @classmethod
     def str_to_str_list(cls, v: Union[str, List[str]]) -> List[str]:
         """Convert ids and collections strings to list of strings"""
@@ -108,17 +157,20 @@ class SearchPostRequest(BaseModel):
             return [i.strip() for i in v.split(",")]
         return v
 
-    @validator("intersects")
+    @field_validator("intersects")
     @classmethod
-    def validate_spatial(cls, v: Geometry, values: Dict[str, Any]) -> Geometry:
+    def validate_spatial(cls, v: Geometry, info: FieldValidationInfo) -> Geometry:
         """Check bbox and intersects are not both supplied."""
-        if values["bbox"]:
+        if info.data.get("bbox"):
             raise ValueError("intersects and bbox parameters are mutually exclusive")
 
-        if not isinstance(v, dict) or not v.get("type") in GEOMETRY_TYPES:
-            raise ValueError("Not a valid geometry")
+        if isinstance(v, BaseGeometry):
+            return v
 
-        return shape(v)
+        if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES:  # type: ignore
+            return shape(v)
+
+        raise ValueError("Not a valid geometry")
 
     @field_validator("bbox", mode="before")
     @classmethod
@@ -154,7 +206,7 @@ class SearchPostRequest(BaseModel):
 
         return v
 
-    @validator("datetime")
+    @field_validator("datetime")
     @classmethod
     def validate_datetime(cls, v: str) -> str:
         """Validate datetime."""
@@ -164,14 +216,14 @@ class SearchPostRequest(BaseModel):
             # Single date is interpreted as end date
             values = ["..", v]
 
-        dates = []
+        dates: List[str] = []
         for value in values:
             if value == ".." or value == "":
                 dates.append("..")
                 continue
 
             # throws ValueError if invalid RFC 3339 string
-            dates.append(rfc3339_str_to_datetime(value))
+            dates.append(rfc3339_str_to_datetime(value).isoformat())
 
         if dates[0] == ".." and dates[1] == "..":
             raise ValueError(
@@ -194,13 +246,16 @@ class SearchPostRequest(BaseModel):
         mutually exclusive.
         """
         if self.bbox:
-            return Polygon(
-                (
-                    (self.bbox[0], self.bbox[1]),
-                    (self.bbox[0], self.bbox[3]),
-                    (self.bbox[2], self.bbox[3]),
-                    (self.bbox[2], self.bbox[1]),
-                )
+            return cast(
+                Polygon,
+                Polygon(
+                    (
+                        (self.bbox[0], self.bbox[1]),
+                        (self.bbox[0], self.bbox[3]),
+                        (self.bbox[2], self.bbox[3]),
+                        (self.bbox[2], self.bbox[1]),
+                    )
+                ),
             )
         if self.intersects:
             return self.intersects
@@ -224,3 +279,20 @@ class SearchPostRequest(BaseModel):
             return end.isoformat() if end else None
         else:
             return start.isoformat() if start else None
+
+
+def sortby2list(
+    v: Optional[str],
+) -> Optional[List[Sortby]]:
+    """
+    Convert sortby filter parameter GET syntax to POST syntax
+    """
+    if not v:
+        return None
+    sortby: List[Sortby] = []
+    for sortby_param in v.split(","):
+        sortby_param = sortby_param.strip()
+        direction: Direction = "desc" if sortby_param.startswith("-") else "asc"
+        field = sortby_param.lstrip("+-")
+        sortby.append(Sortby(field=field, direction=direction))
+    return sortby

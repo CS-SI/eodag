@@ -20,13 +20,22 @@ import importlib
 import json
 import os
 import unittest
+from datetime import datetime, timezone
 from tempfile import TemporaryDirectory
+from urllib.parse import quote_plus, unquote_plus
 
+import orjson
 import pytest
+from pygeofilter import ast
+from pygeofilter.values import Geometry
 
+import eodag.rest.utils.rfc3339 as rfc3339
+from eodag.rest.types.stac_search import SearchPostRequest
+from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
 from tests.context import RequestError, SearchResult
+from tests.utils import mock_request
 
 
 class TestStacUtils(unittest.TestCase):
@@ -134,25 +143,6 @@ class TestStacUtils(unittest.TestCase):
         self.assertEqual(self.products, products_empty_filter)
         self.assertNotEqual(self.products, products_filtered)
 
-    @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
-        autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C", "abstract": "test"}],
-    )
-    def test_format_product_types(self, list_pt):
-        """format_product_types must return a string representation of the product types"""
-        product_types = self.rest_utils.eodag_api.list_product_types(
-            fetch_providers=False
-        )
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method format_product_types",
-        ):
-            self.assertEqual(
-                self.rest_utils.format_product_types(product_types),
-                "* *__S2_MSI_L1C__*: test",
-            )
-
     def test_get_arguments_query_paths(self):
         """get_arguments_query_paths must extract the query paths and their values from a request arguments"""
         arguments = {
@@ -164,103 +154,6 @@ class TestStacUtils(unittest.TestCase):
             arguments_query_path,
             {"query.eo:cloud_cover.lte": "10", "query.foo.eq": "bar"},
         )
-
-    def test_get_criteria_from_metadata_mapping(self):
-        """get_criteria_from_metadata_mapping must extract search criteria
-        from request arguments with metadata_mapping config"""
-        metadata_mapping = {
-            "doi": [
-                '{{"query":{{"sci:doi":{{"eq":"{doi}"}}}}}}',
-                '$.properties."sci:doi"',
-            ],
-            "platform": [
-                '{{"query":{{"constellation":{{"eq":"{platform}"}}}}}}',
-                "$.properties.constellation",
-            ],
-            "cloudCover": [
-                '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}',
-                '$.properties."eo:cloud_cover"',
-            ],
-            "productVersion": [
-                '{{"query":{{"version":{{"eq":"{productVersion}"}}}}}}',
-                "$.properties.version",
-            ],
-            "id": ['{{"ids":["{id}"]}}', "$.id"],
-            "downloadLink": "%(base_uri)s/collections/{productType}/items/{id}",
-        }
-        arguments = {
-            "query": {"eo:cloud_cover": {"lte": "10"}, "foo": {"eq": "bar"}},
-        }
-        criteria = self.rest_utils.get_criteria_from_metadata_mapping(
-            metadata_mapping, arguments
-        )
-        self.assertEqual(criteria, {"cloudCover": "10", "foo": "bar"})
-
-    def test_get_date(self):
-        """Date validation function must correctly validate dates"""
-        self.rest_utils.get_date("2018-01-01")
-        self.rest_utils.get_date("2018-01-01T")
-        self.rest_utils.get_date("2018-01-01T00:00")
-        self.rest_utils.get_date("2018-01-01T00:00:00")
-        self.rest_utils.get_date("2018-01-01T00:00:00Z")
-        self.rest_utils.get_date("20180101")
-
-        self.assertRaises(ValidationError, self.rest_utils.get_date, "foo")
-        self.assertRaises(ValidationError, self.rest_utils.get_date, "foo2018-01-01")
-
-        self.assertIsNone(self.rest_utils.get_date(None))
-
-    def test_get_datetime(self):
-        """get_datetime must extract start and end datetime from datetime request args"""
-        start = "2021-01-01T00:00:00"
-        end = "2021-01-28T00:00:00"
-
-        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"{start}/{end}"})
-        self.assertEqual(dtstart, start)
-        self.assertEqual(dtend, end)
-
-        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"../{end}"})
-        self.assertEqual(dtstart, None)
-        self.assertEqual(dtend, end)
-
-        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"{start}/.."})
-        self.assertEqual(dtstart, start)
-        self.assertEqual(dtend, None)
-
-        dtstart, dtend = self.rest_utils.get_datetime({"datetime": start})
-        self.assertEqual(dtstart, start)
-        self.assertEqual(dtstart, dtend)
-
-        dtstart, dtend = self.rest_utils.get_datetime({"dtstart": start, "dtend": end})
-        self.assertEqual(dtstart, start)
-        self.assertEqual(dtend, end)
-
-    @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
-        autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C"}],
-    )
-    def test_detailled_collections_list(self, list_pt):
-        """get_detailled_collections_list returned list is non-empty"""
-        self.assertTrue(self.rest_utils.get_detailled_collections_list())
-        self.assertTrue(list_pt.called)
-
-    def test_get_geometry(self):
-        pass  # TODO
-
-    def test_home_page_content(self):
-        """get_home_page_content runs without any error"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method get_home_page_content",
-        ):
-            self.rest_utils.get_home_page_content("http://127.0.0.1/")
-
-    def test_get_int(self):
-        """get_int must raise a ValidationError for strings that cannot be interpreted as integers"""
-        self.rest_utils.get_int("1")
-        with self.assertRaises(ValidationError):
-            self.rest_utils.get_int("a")
 
     def test_get_metadata_query_paths(self):
         """get_metadata_query_paths returns query paths from metadata_mapping and their corresponding names"""
@@ -277,20 +170,12 @@ class TestStacUtils(unittest.TestCase):
             metadata_query_paths, {"query.eo:cloud_cover.lte": "cloudCover"}
         )
 
-    def test_get_pagination_info(self):
-        """get_pagination_info must raise a ValidationError if wrong values are given"""
-        self.rest_utils.get_pagination_info({})
-        with self.assertRaises(ValidationError):
-            self.rest_utils.get_pagination_info({"page": "-1"})
-        with self.assertRaises(ValidationError):
-            self.rest_utils.get_pagination_info({"limit": "-1"})
-
-    def test_get_product_types(self):
-        """get_product_types use"""
-        self.assertTrue(self.rest_utils.get_product_types())
-        self.assertTrue(
-            self.rest_utils.get_product_types(filters={"sensorType": "OPTICAL"})
+    def test_str2json(self):
+        """str2json return a Python dict from a string dict representation"""
+        json_dict = self.rest_utils.str2json(
+            "collections", '{"collections": ["S1_SAR_GRD"]}'
         )
+        self.assertEqual(json_dict, {"collections": ["S1_SAR_GRD"]})
 
     def test_get_stac_catalogs(self):
         """get_stac_catalogs runs without any error"""
@@ -532,47 +417,178 @@ class TestStacUtils(unittest.TestCase):
 
         next_link = [link for link in response["links"] if link["rel"] == "next"][0]
 
+        json_obj = {"key": "value with spaces"}
+        json_str_quoted = quote_plus(orjson.dumps(json_obj).decode())
+        json_str_unquoted = unquote_plus(json_str_quoted)
         self.assertEqual(
-            next_link,
+            self.rest_utils.str2json("key", json_str_quoted),
+            orjson.loads(json_str_unquoted),
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            self.rest_utils.str2json("key", "invalid json")
+            self.assertEqual("key: Incorrect JSON object", str(exc_info.value))
+
+    def test_str2list(self):
+        """str2list convert a str variable to a list variable"""
+        self.assertIsNone(self.rest_utils.str2list(None))
+        self.assertEqual(self.rest_utils.str2list(""), None)
+        self.assertEqual(self.rest_utils.str2list("value"), ["value"])
+        self.assertEqual(
+            self.rest_utils.str2list("value1,value2,value3"),
+            ["value1", "value2", "value3"],
+        )
+
+    def test_is_list_str(self):
+        """is_list_str verifies whether the input variable is of type List[str]"""
+        self.assertTrue(self.rest_utils.is_list_str(["value1", "value2", "value3"]))
+        self.assertFalse(self.rest_utils.is_list_str(["value1", 2, "value3"]))
+        self.assertFalse(self.rest_utils.is_list_str("not a list"))
+        self.assertFalse(self.rest_utils.is_list_str(None))
+
+    def test_is_dict_str_any(self):
+        """is_dict_str_any verifies whether the input variable is of type Dict[str, Any]"""
+        self.assertTrue(
+            self.rest_utils.is_dict_str_any({"key1": "value1", "key2": "value2"})
+        )
+        self.assertTrue(
+            self.rest_utils.is_dict_str_any({"key1": 123, "key2": [1, 2, 3]})
+        )
+        self.assertFalse(
+            self.rest_utils.is_dict_str_any({123: "value1", "key2": "value2"})
+        )
+        self.assertFalse(self.rest_utils.is_dict_str_any("not a dict"))
+        self.assertFalse(self.rest_utils.is_dict_str_any(None))
+
+    def test_get_next_link_post(self):
+        """Verify search next link for POST request"""
+        mr = mock_request(url="http://foo/search", body={"page": 2}, method="POST")
+        sr = SearchPostRequest.model_validate(mr.json.return_value)
+
+        next_link, next_body = self.rest_utils.get_next_link(mr, sr)
+
+        self.assertEqual(next_link, "http://foo/search")
+        self.assertEqual(next_body, {"page": 3})
+
+    def test_get_next_link_get(self):
+        """Verify search next link for GET request"""
+        mr = mock_request("http://foo/search")
+        next_link, next_body = self.rest_utils.get_next_link(
+            mr, SearchPostRequest.model_validate({})
+        )
+
+        self.assertEqual(next_link, "http://foo/search?page=2")
+        self.assertIsNone(next_body)
+
+
+class TestEodagCql2jsonEvaluator(unittest.TestCase):
+    def setUp(self):
+        self.evaluator = EodagEvaluator()
+
+    def test_attribute(self):
+        self.assertEqual(self.evaluator.attribute("test"), "test")
+        self.assertEqual(
+            self.evaluator.attribute(ast.Attribute("test")), ast.Attribute("test")
+        )
+        self.assertEqual(self.evaluator.attribute(123), 123)
+        self.assertEqual(self.evaluator.attribute(123.456), 123.456)
+
+    def test_spatial(self):
+        geometry = Geometry({"type": "Point", "coordinates": [125.6, 10.1]})
+        self.assertEqual(
+            self.evaluator.spatial(geometry),
+            {"type": "Point", "coordinates": [125.6, 10.1]},
+        )
+
+    def test_temporal(self):
+        dt = datetime.now()
+        self.assertEqual(self.evaluator.temporal(dt), dt.isoformat())
+
+    def test_interval(self):
+        result = self.evaluator.interval(None, "value1", "value2")
+        self.assertEqual(result, ["value1", "value2"])
+
+    def test_predicate(self):
+        attribute = ast.Attribute("test")
+        value = "value"
+        self.assertEqual(
+            self.evaluator.predicate(ast.Equal(attribute, value), attribute, value),
+            {"test": "value"},
+        )
+        self.assertEqual(
+            self.evaluator.predicate(
+                ast.GeometryIntersects(attribute, value), attribute, value
+            ),
+            {"test": "value"},
+        )
+        self.assertEqual(
+            self.evaluator.predicate(
+                ast.LessEqual(attribute, datetime(2022, 1, 1)),
+                attribute,
+                datetime(2022, 1, 1),
+            ),
+            {"end_datetime": datetime(2022, 1, 1)},
+        )
+        self.assertEqual(
+            self.evaluator.predicate(
+                ast.GreaterEqual(attribute, datetime(2022, 1, 1)),
+                attribute,
+                datetime(2022, 1, 1),
+            ),
+            {"start_datetime": datetime(2022, 1, 1)},
+        )
+        self.assertEqual(
+            self.evaluator.predicate(
+                ast.TimeOverlaps(
+                    attribute, [datetime(2022, 1, 1), datetime(2022, 12, 31)]
+                ),
+                attribute,
+                [datetime(2022, 1, 1), datetime(2022, 12, 31)],
+            ),
             {
-                "method": "GET",
-                "body": None,
-                "rel": "next",
-                "href": "http://foo/search?collections=S2_MSI_L1C&page=2",
-                "title": "Next page",
-                "type": "application/geo+json",
+                "start_datetime": datetime(2022, 1, 1),
+                "end_datetime": datetime(2022, 12, 31),
             },
         )
 
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch._request",
-        autospec=True,
-    )
-    def test_search_stac_items_post(self, mock__request):
-        """search_stac_items runs with GET method"""
-        # mock the QueryStringSearch request with the S2_MSI_L1C peps response search dictionary
-        mock__request.return_value = mock.Mock()
-        mock__request.return_value.json.return_value = self.peps_resp_search_json
-
-        response = self.rest_utils.search_stac_items(
-            url="http://foo/search",
-            arguments={"collections": ["S2_MSI_L1C"], "page": 2},
-            root="http://foo/",
-            method="POST",
-        )
-
-        mock__request.assert_called()
-
-        next_link = [link for link in response["links"] if link["rel"] == "next"][0]
-
+    def test_contains(self):
+        attribute = ast.Attribute("test")
+        sub_nodes = ["value1", "value2"]
         self.assertEqual(
-            next_link,
-            {
-                "method": "POST",
-                "rel": "next",
-                "href": "http://foo/search",
-                "title": "Next page",
-                "type": "application/geo+json",
-                "body": {"collections": ["S2_MSI_L1C"], "page": 3},
-            },
+            self.evaluator.contains(
+                ast.In(attribute, sub_nodes, False), attribute, "value1", "value2"
+            ),
+            {"test": ["value1", "value2"]},
         )
+
+    def test_combination(self):
+        self.assertEqual(
+            self.evaluator.combination(None, {"key1": "value1"}, {"key2": "value2"}),
+            {"key1": "value1", "key2": "value2"},
+        )
+
+
+class TestRfc3339(unittest.TestCase):
+    def test_rfc3339_str_to_datetime(self):
+        test_str = "2023-12-18T16:41:35Z"
+        expected_result = datetime(2023, 12, 18, 16, 41, 35, tzinfo=timezone.utc)
+        self.assertEqual(rfc3339.rfc3339_str_to_datetime(test_str), expected_result)
+
+    def test_str_to_interval(self):
+        test_str = "2023-12-18T16:41:35Z/2023-12-19T16:41:35Z"
+        expected_result = (
+            datetime(2023, 12, 18, 16, 41, 35, tzinfo=timezone.utc),
+            datetime(2023, 12, 19, 16, 41, 35, tzinfo=timezone.utc),
+        )
+        self.assertEqual(rfc3339.str_to_interval(test_str), expected_result)
+
+    def test_now_in_utc(self):
+        now = rfc3339.now_in_utc()
+        self.assertEqual(now.tzinfo, timezone.utc)
+
+    def test_now_to_rfc3339_str(self):
+        now = rfc3339.now_in_utc()
+        now_str = rfc3339.now_to_rfc3339_str()
+        now_from_str = datetime.fromisoformat(now_str.replace("Z", "+00:00"))
+        time_diff = now - now_from_str
+        self.assertTrue(abs(time_diff.total_seconds()) < 1)
