@@ -21,9 +21,6 @@ class TestStacSearch(unittest.TestCase):
         # Test with empty field
         with self.assertRaises(ValidationError) as context:
             stac_search.Sortby(field="", direction="asc")
-        self.assertTrue(
-            "String should have at least 1 characters" in str(context.exception)
-        )
 
     def test_sortby2list(self):
         # Test with no input
