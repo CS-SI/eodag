@@ -25,7 +25,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-
 from pygeofilter.parsers.cql2_json import parse as parse_json
 from shapely.geometry import (
     GeometryCollection,
@@ -167,7 +166,10 @@ class EODAGSearch(BaseModel):
         query_props: Dict[str, Any] = {}
         for property_name, conditions in cast(Dict[str, Any], query).items():
             # Remove the "properties." prefix if present
-            prop = property_name.removeprefix("properties.")
+            prefix = "properties."
+            prop = property_name
+            if property_name.startswith(prefix):
+                prop = property_name[len(prefix) :]
 
             # Check if exactly one operator is specified per property
             if not is_dict_str_any(conditions) or len(conditions) != 1:  # type: ignore

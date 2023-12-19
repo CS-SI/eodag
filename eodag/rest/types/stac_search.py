@@ -24,11 +24,11 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    FieldValidationInfo,
     StringConstraints,
     conint,
     conlist,
     field_validator,
+    model_validator,
 )
 from shapely.geometry import (
     GeometryCollection,
@@ -58,7 +58,6 @@ BBox = Union[
 ]
 
 Geometry = Union[
-    Dict[str, Any],
     Point,
     MultiPoint,
     LineString,
@@ -97,6 +96,8 @@ class SearchPostRequest(BaseModel):
     Overrides the validation for datetime and spatial filter from the base request model.
     """
 
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+
     provider: Optional[str] = None
     collections: Optional[List[str]] = None
     ids: Optional[List[str]] = None
@@ -120,25 +121,23 @@ class SearchPostRequest(BaseModel):
     sortby: Optional[List[Sortby]] = None
     crunch: Optional[str] = None
 
-    class Config:
-        """Model config"""
-
-        populate_by_name = True
-        arbitrary_types_allowed = True
-
-    @field_validator("filter_lang")
-    @classmethod
-    def check_filter_lang(
-        cls, v: Optional[str], info: FieldValidationInfo
-    ) -> Optional[str]:
+    @model_validator(mode="after")
+    def check_filter_lang(self) -> SearchPostRequest:
         """Verify filter-lang has correct value"""
-        if v is None and info.data.get("filter"):
+        if not self.filter_lang and self.filter:
             raise ValueError('"filter-lang" is required if "filter" is provided')
-        if v and not info.data.get("filter"):
+        if self.filter_lang and not self.filter:
             raise ValueError('"filter-lang" set but "filter" is missing')
-        if v != "cql2-json" and info.data.get("filter"):
+        if self.filter_lang != "cql2-json" and self.filter:
             raise ValueError('Only filter language "cql2-json" is accepted')
-        return v
+        return self
+
+    @model_validator(mode="after")
+    def only_one_spatial(self) -> SearchPostRequest:
+        """Check bbox and intersects are not both supplied."""
+        if self.bbox and self.intersects:
+            raise ValueError("intersects and bbox parameters are mutually exclusive")
+        return self
 
     @property
     def start_date(self) -> Optional[str]:
@@ -158,13 +157,10 @@ class SearchPostRequest(BaseModel):
             return [i.strip() for i in v.split(",")]
         return v
 
-    @field_validator("intersects")
+    @field_validator("intersects", mode="before")
     @classmethod
-    def validate_spatial(cls, v: Geometry, info: FieldValidationInfo) -> Geometry:
-        """Check bbox and intersects are not both supplied."""
-        if info.data.get("bbox"):
-            raise ValueError("intersects and bbox parameters are mutually exclusive")
-
+    def validate_intersects(cls, v: Union[Dict[str, Any], Geometry]) -> Geometry:
+        """Verify format of intersects"""
         if isinstance(v, BaseGeometry):
             return v
 
