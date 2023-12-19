@@ -108,33 +108,6 @@ class TestStacUtils(unittest.TestCase):
         # stop os.environ
         cls.mock_os_environ.stop()
 
-    def test_get_arguments_query_paths(self):
-        """get_arguments_query_paths must extract the query paths and their values from a request arguments"""
-        arguments = {
-            "another": "example",
-            "query": {"eo:cloud_cover": {"lte": "10"}, "foo": {"eq": "bar"}},
-        }
-        arguments_query_path = self.rest_utils.get_arguments_query_paths(arguments)
-        self.assertEqual(
-            arguments_query_path,
-            {"query.eo:cloud_cover.lte": "10", "query.foo.eq": "bar"},
-        )
-
-    def test_get_metadata_query_paths(self):
-        """get_metadata_query_paths returns query paths from metadata_mapping and their corresponding names"""
-        metadata_mapping = {
-            "cloudCover": [
-                '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}',
-                '$.properties."eo:cloud_cover"',
-            ]
-        }
-        metadata_query_paths = self.rest_utils.get_metadata_query_paths(
-            metadata_mapping
-        )
-        self.assertEqual(
-            metadata_query_paths, {"query.eo:cloud_cover.lte": "cloudCover"}
-        )
-
     def test_str2json(self):
         """str2json return a Python dict from a string dict representation"""
         json_dict = self.rest_utils.str2json(

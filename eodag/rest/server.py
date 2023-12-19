@@ -603,9 +603,8 @@ def stac_catalogs_items(catalogs: str, request: Request) -> Any:
 
     list_catalog = catalogs.strip("/").split("/")
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
     try:
-        search_request = SearchPostRequest.model_validate(clean)
+        search_request = SearchPostRequest.model_validate(base_args)
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
