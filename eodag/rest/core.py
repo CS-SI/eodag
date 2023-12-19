@@ -235,7 +235,7 @@ def download_stac_item_by_id_stream(
         product = EOProduct(provider or product_data["provider"], properties)
     else:
         search_results, _ = eodag_api.search(
-            id=item_id, product_type=product_type, provider=provider, **kwargs
+            id=item_id, productType=product_type, provider=provider, **kwargs
         )
         if len(search_results) > 0:
             product = cast(EOProduct, search_results[0])
