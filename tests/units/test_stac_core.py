@@ -101,39 +101,34 @@ class TestStacCore(unittest.TestCase):
         # stop os.environ
         cls.mock_os_environ.stop()
 
-    def test_filter_products_unknown_cruncher_raise_error(self):
-        """filter_products must raise a ValidationError if an unknown cruncher is given"""
+    def test_crunch_products_unknown_cruncher_raise_error(self):
+        """crunch_products must raise a ValidationError if an unknown cruncher is given"""
         with self.assertRaises(ValidationError) as context:
-            self.rest_core.filter_products(
-                self.products, {"filter": "unknown_cruncher"}
-            )
-        self.assertTrue("unknown filter name" in str(context.exception))
+            self.rest_core.crunch_products(self.products, "unknown_cruncher")
+        self.assertTrue("Unknown crunch name" in str(context.exception))
 
-    def test_filter_products_missing_additional_parameters_raise_error(self):
-        """filter_products must raise a ValidationError if additional parameters are required by the cruncher"""
+    def test_crunch_products_missing_additional_parameters_raise_error(self):
+        """crunch_products must raise a ValidationError if additional parameters are required by the cruncher"""
         with self.assertRaises(ValidationError) as context:
-            self.rest_core.filter_products(self.products, {"filter": "latestByName"})
-        self.assertTrue("additional parameters required" in str(context.exception))
+            self.rest_core.crunch_products(self.products, "filterLatestByName")
+        self.assertTrue("require additional parameters" in str(context.exception))
 
-    def test_filter_products_filter_misuse_raise_error(self):
-        """filter_products must raise a ValidationError if the cruncher is not used correctly"""
+    def test_crunch_products_filter_misuse_raise_error(self):
+        """crunch_products must raise a ValidationError if the cruncher is not used correctly"""
         with self.assertRaises(ValidationError):
-            self.rest_core.filter_products(
+            self.rest_core.crunch_products(
                 self.products,
-                {"filter": "latestByName", "name_pattern": "MisconfiguredError"},
+                "filterLatestByName",
+                **{"name_pattern": "MisconfiguredError"},
             )
 
-    def test_filter_products(self):
-        """filter_products returns a SearchResult corresponding to the filter"""
-        products_empty_filter = self.rest_core.filter_products(self.products, {})
-        products_filtered = self.rest_core.filter_products(
+    def test_crunch_products(self):
+        """crunch_products returns a SearchResult corresponding to the filter"""
+        products_filtered = self.rest_core.crunch_products(
             self.products,
-            {
-                "filter": "latestByName",
-                "name_pattern": r"S2[AB]_MSIL1C_20(?P<tileid>\d{6}).*T21NY.*",
-            },
+            "filterLatestByName",
+            **{"name_pattern": r"S2[AB]_MSIL1C_20(?P<tileid>\d{6}).*T21NY.*"},
         )
-        self.assertEqual(self.products, products_empty_filter)
         self.assertNotEqual(self.products, products_filtered)
 
     @mock.patch(
@@ -311,7 +306,6 @@ class TestStacCore(unittest.TestCase):
             next_link,
             {
                 "method": "GET",
-                "body": None,
                 "rel": "next",
                 "href": "http://foo/search?collections=S2_MSI_L1C&page=2",
                 "title": "Next page",

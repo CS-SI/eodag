@@ -108,41 +108,6 @@ class TestStacUtils(unittest.TestCase):
         # stop os.environ
         cls.mock_os_environ.stop()
 
-    def test_filter_products_unknown_cruncher_raise_error(self):
-        """filter_products must raise a ValidationError if an unknown cruncher is given"""
-        with self.assertRaises(ValidationError) as context:
-            self.rest_utils.filter_products(
-                self.products, {"filter": "unknown_cruncher"}
-            )
-        self.assertTrue("unknown filter name" in str(context.exception))
-
-    def test_filter_products_missing_additional_parameters_raise_error(self):
-        """filter_products must raise a ValidationError if additional parameters are required by the cruncher"""
-        with self.assertRaises(ValidationError) as context:
-            self.rest_utils.filter_products(self.products, {"filter": "latestByName"})
-        self.assertTrue("additional parameters required" in str(context.exception))
-
-    def test_filter_products_filter_misuse_raise_error(self):
-        """filter_products must raise a ValidationError if the cruncher is not used correctly"""
-        with self.assertRaises(ValidationError):
-            self.rest_utils.filter_products(
-                self.products,
-                {"filter": "latestByName", "name_pattern": "MisconfiguredError"},
-            )
-
-    def test_filter_products(self):
-        """filter_products returns a SearchResult corresponding to the filter"""
-        products_empty_filter = self.rest_utils.filter_products(self.products, {})
-        products_filtered = self.rest_utils.filter_products(
-            self.products,
-            {
-                "filter": "latestByName",
-                "name_pattern": r"S2[AB]_MSIL1C_20(?P<tileid>\d{6}).*T21NY.*",
-            },
-        )
-        self.assertEqual(self.products, products_empty_filter)
-        self.assertNotEqual(self.products, products_filtered)
-
     def test_get_arguments_query_paths(self):
         """get_arguments_query_paths must extract the query paths and their values from a request arguments"""
         arguments = {
@@ -465,20 +430,37 @@ class TestStacUtils(unittest.TestCase):
         mr = mock_request(url="http://foo/search", body={"page": 2}, method="POST")
         sr = SearchPostRequest.model_validate(mr.json.return_value)
 
-        next_link, next_body = self.rest_utils.get_next_link(mr, sr)
+        next_link = self.rest_utils.get_next_link(mr, sr, 100, 20)
 
-        self.assertEqual(next_link, "http://foo/search")
-        self.assertEqual(next_body, {"page": 3})
+        self.assertEqual(
+            next_link,
+            {
+                "rel": "next",
+                "href": "http://foo/search",
+                "title": "Next page",
+                "method": "POST",
+                "body": {"page": 3},
+                "type": "application/geo+json",
+            },
+        )
 
     def test_get_next_link_get(self):
         """Verify search next link for GET request"""
         mr = mock_request("http://foo/search")
-        next_link, next_body = self.rest_utils.get_next_link(
-            mr, SearchPostRequest.model_validate({})
+        next_link = self.rest_utils.get_next_link(
+            mr, SearchPostRequest.model_validate({}), 100, 20
         )
 
-        self.assertEqual(next_link, "http://foo/search?page=2")
-        self.assertIsNone(next_body)
+        self.assertEqual(
+            next_link,
+            {
+                "rel": "next",
+                "href": "http://foo/search?page=2",
+                "title": "Next page",
+                "method": "GET",
+                "type": "application/geo+json",
+            },
+        )
 
 
 class TestEodagCql2jsonEvaluator(unittest.TestCase):

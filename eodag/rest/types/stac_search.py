@@ -118,6 +118,7 @@ class SearchPostRequest(BaseModel):
         validate_default=True,
     )
     sortby: Optional[List[Sortby]] = None
+    crunch: Optional[str] = None
 
     class Config:
         """Model config"""

@@ -688,6 +688,7 @@ def get_search(
     query: Optional[str] = None,
     page: Optional[int] = None,
     sortby: Optional[str] = None,
+    crunch: Optional[str] = None,
 ):
     """Handler for GET /search"""
     logger.debug("URL: %s", request.state.url)
@@ -702,6 +703,7 @@ def get_search(
         "query": str2json("query", query),
         "page": page,
         "sortby": sortby2list(sortby),
+        "crunch": crunch,
     }
     clean = {k: v for k, v in base_args.items() if v is not None}
 

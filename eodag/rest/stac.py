@@ -346,7 +346,11 @@ class StacItem(StacCommon):
         return item_list
 
     def get_stac_items(
-        self, search_results: SearchResult, catalog: Dict[str, Any]
+        self,
+        search_results: SearchResult,
+        total: int,
+        catalog: Dict[str, Any],
+        next_link: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Build STAC items from EODAG search results
 
@@ -359,36 +363,34 @@ class StacItem(StacCommon):
         """
         items_model = deepcopy(self.stac_config["items"])
 
-        search_results.numberMatched = search_results.properties["totalResults"]
-        search_results.numberReturned = len(search_results)
-
-        # next page link
         if "?" in self.url:
             # search endpoint: use page url as self link
             for i, _ in enumerate(items_model["links"]):
                 if items_model["links"][i]["rel"] == "self":
                     items_model["links"][i]["href"] = catalog["url"]
 
-        search_results.timeStamp = (
-            datetime.now(timezone.utc).isoformat().replace("+00:00", "") + "Z"
+        timestamp = (
+            datetime.now(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
         )
 
         # parse jsonpath
         items = jsonpath_parse_dict_items(
-            items_model, {"search_results": search_results.__dict__}
+            items_model,
+            {
+                "numberMatched": total,
+                "numberReturned": len(search_results),
+                "timeStamp": timestamp,
+            },
         )
         # parse f-strings
         format_args = deepcopy(self.stac_config)
         format_args["catalog"] = catalog
         items = format_dict_items(items, **format_args)
 
-        # last page: remove next page link
-        if (
-            search_results.properties["itemsPerPage"]
-            * search_results.properties["page"]
-            >= search_results.properties["totalResults"]
-        ):
-            items["links"] = [link for link in items["links"] if link["rel"] != "next"]
+        if next_link:
+            items["links"].append(next_link)
 
         # provide static catalog to build features
         if "search?" in catalog["url"]:
