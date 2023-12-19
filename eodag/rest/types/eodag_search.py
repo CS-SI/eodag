@@ -65,8 +65,8 @@ class EODAGSearch(BaseModel):
     provider: Optional[str] = Field(None)
     ids: Optional[List[str]] = Field(None)
     geom: Optional[Geometry] = Field(None, alias="geometry")
-    start: Optional[str] = Field(None, alias="start_datetime")
-    end: Optional[str] = Field(None, alias="end_datetime")
+    startTimeFromAscendingNode: Optional[str] = Field(None, alias="start_datetime")
+    completionTimeFromAscendingNode: Optional[str] = Field(None, alias="end_datetime")
     publicationDate: Optional[str] = Field(None, alias="published")
     creationDate: Optional[str] = Field(None, alias="created")
     modificationDate: Optional[str] = Field(None, alias="updated")
@@ -234,9 +234,7 @@ class EODAGSearch(BaseModel):
         """
         eodag_sortby: List[Tuple[str, str]] = []
         for sortby_post_param in sortby_post_params:
-            field = cls.snake_to_camel(
-                cls.alias_to_property(sortby_post_param["field"])
-            )
+            field = cls.snake_to_camel(cls.to_eodag(sortby_post_param["field"]))
             eodag_sortby.append((field, sortby_post_param["direction"]))
         return eodag_sortby
 
@@ -255,7 +253,7 @@ class EODAGSearch(BaseModel):
 
         return v
 
-    @field_validator("start", "end")
+    @field_validator("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
     @classmethod
     def cleanup_dates(cls, v: str) -> str:
         """proper format dates"""
@@ -271,7 +269,7 @@ class EODAGSearch(BaseModel):
         return components[0] + "".join(x.title() for x in components[1:])
 
     @classmethod
-    def alias_to_property(cls, value: str) -> str:
+    def to_eodag(cls, value: str) -> str:
         """Convert a STAC parameter to its matching EODAG name"""
         alias_map = {
             field_info.alias: name
@@ -279,3 +277,11 @@ class EODAGSearch(BaseModel):
             if field_info.alias
         }
         return alias_map.get(value, value)
+
+    @classmethod
+    def to_stac(cls, field_name: str) -> str:
+        """Get the alias of a field in a Pydantic model"""
+        field = cls.model_fields.get(field_name)
+        if field is not None and field.alias is not None:
+            return field.alias
+        return field_name
