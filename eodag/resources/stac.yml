@@ -147,20 +147,12 @@ items:
     - rel: parent
       title: "{catalog[id]}"
       href: "{catalog[url]}"
-    # implement next/prev page links
-    # https://github.com/radiantearth/stac-spec/blob/master/api-spec/api-spec.md#paging-extension
-    - rel: next
-      href: '$.search_results.next'
-      title: Next page
-      type: application/geo+json
-      method: '$.search_results.method'
-      body: '$.search_results.body'
   # time and date when the response was generated
-  timeStamp: '$.search_results.timeStamp'
+  timeStamp: '$.timeStamp'
   # count request result
-  numberMatched: '$.search_results.numberMatched'
+  numberMatched: '$.numberMatched'
   # len(features)
-  numberReturned: '$.search_results.numberReturned'
+  numberReturned: '$.numberReturned'
 
 # https://stacspec.org/STAC-api.html#operation/getFeature
 item:

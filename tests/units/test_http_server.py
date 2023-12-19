@@ -158,7 +158,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(resp_json["links"][0]["href"], "httpz://bar/")
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         return_value=(
             SearchResult.from_geojson(
@@ -459,7 +459,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_not_found("search?collections=ZZZ&bbox=0,43,1,44")
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         side_effect=AuthenticationError("you are no authorized"),
     )
@@ -484,14 +484,14 @@ class RequestTestCase(unittest.TestCase):
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
+                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
             ),
         )
         self.assertEqual(len(result1.features), 2)
         result2 = self._request_valid(
-            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&filter=latestIntersect",
+            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&crunch=filterLatestIntersect",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
@@ -510,8 +510,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -521,7 +521,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -531,7 +531,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -541,8 +541,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -564,8 +564,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -578,8 +578,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -592,8 +592,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -606,8 +606,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -630,15 +630,17 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_catalog_browse_date_search(self):
-        """Browsing catalogs with date filtering through eodag server should return a valid response"""
+        """
+        Browsing catalogs with date filtering through eodag server should return a valid response
+        """
         self._request_valid(
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         # args & catalog intersection
@@ -648,8 +650,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -658,8 +660,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -668,8 +670,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-01-05T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -678,8 +680,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-05T00:00:00",
-                end="2018-01-05T00:00:00",
+                start="2018-01-05T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
             ),
         )
         result = self._request_valid(
@@ -693,9 +695,7 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
-                "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
             },
         )
 
@@ -705,9 +705,7 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
-                "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
             },
         )
 
@@ -770,8 +768,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -785,7 +783,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -799,7 +797,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00",
+                end="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -813,8 +811,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
             ),
         )
 
@@ -895,10 +893,10 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]
+        "eodag.rest.core.eodag_api.guess_product_type", autospec=True, return_value=[]
     )
     @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
+        "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
         return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
     )
@@ -934,7 +932,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
+        "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
         return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
     )
@@ -989,7 +987,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.rest.utils.eodag_api.download",
+        "eodag.rest.core.eodag_api.download",
         autospec=True,
     )
     def test_download_item_from_collection_api_plugin(self, mock_download, mock_auth):
