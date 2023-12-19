@@ -52,6 +52,7 @@ from eodag.rest.core import (
     get_stac_collections,
     get_stac_conformance,
     get_stac_extension_oseo,
+    get_stac_item_by_id,
     search_stac_items,
 )
 from eodag.rest.types.eodag_search import EODAGSearch
@@ -423,20 +424,19 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     """STAC collection item by id"""
     logger.debug("URL: %s", request.url)
 
-    base_args: Dict[str, Any] = dict(
-        request.query_params, **{"ids": [item_id], "collections": [collection_id]}
-    )
+    url = request.state.url
+    url_root = request.state.url_root
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
-    try:
-        search_request = SearchPostRequest.model_validate(clean)
-    except pydanticValidationError as e:
-        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
 
-    response = search_stac_items(
-        request=request,
-        search_request=search_request,
+    response = get_stac_item_by_id(
+        url=url,
+        item_id=item_id,
+        root=url_root,
         catalogs=[collection_id],
+        provider=provider,
+        **arguments,
     )
 
     if response:
@@ -617,19 +617,20 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     """Fetch catalog's single features."""
     logger.debug("URL: %s", request.url)
 
+    url = request.state.url
+    url_root = request.state.url_root
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
     list_catalog = catalogs.strip("/").split("/")
-
-    base_args = dict(request.query_params, **{"ids": [item_id]})
-
-    try:
-        search_request = SearchPostRequest.model_validate(base_args)
-    except pydanticValidationError as e:
-        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
-
-    response = search_stac_items(
-        request=request,
-        search_request=search_request,
+    response = get_stac_item_by_id(
+        url=url,
+        item_id=item_id,
+        root=url_root,
         catalogs=list_catalog,
+        provider=provider,
+        **arguments,
     )
 
     if response:

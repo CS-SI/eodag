@@ -3,9 +3,9 @@ import glob
 import logging
 import os
 import re
+from io import BufferedReader
 from shutil import make_archive, rmtree
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -14,7 +14,6 @@ from typing import (
     Optional,
     cast,
 )
-from urllib.parse import urlencode
 
 import dateutil
 from fastapi import Request
@@ -37,10 +36,6 @@ from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryableProperty
 from eodag.rest.types.stac_search import SearchPostRequest
-
-if TYPE_CHECKING:
-    from io import BufferedReader
-
 from eodag.rest.utils import filter_products, format_pydantic_error, get_next_link
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
 
@@ -591,10 +586,52 @@ def fetch_collection_queryable_properties(
     return stac_queryables
 
 
-def eodag_api_init() -> None:
-    """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
-    eodag_api.fetch_product_types_list()
+@_deprecated(
+    reason="Used to format output from deprecated function get_home_page_content",
+    version="2.6.1",
+)
+def get_templates_path() -> str:
+    """Returns Jinja templates path"""
+    return os.path.join(os.path.dirname(__file__), "templates")
 
-    # pre-build search plugins
-    for provider in eodag_api.available_providers():
-        next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
+
+def get_stac_item_by_id(
+    url: str,
+    item_id: str,
+    catalogs: List[str],
+    root: str = "/",
+    provider: Optional[str] = None,
+    **kwargs: Any,
+) -> Optional[Dict[str, Any]]:
+    """Build STAC item by id
+
+    :param url: Requested URL
+    :type url: str
+    :param item_id: Product ID
+    :type item_id: str
+    :param catalogs: Catalogs list (only first is used as product_type)
+    :type catalogs: list
+    :param root: (optional) API root
+    :type root: str
+    :param provider: (optional) Chosen provider
+    :type provider: str
+    :param kwargs: additional search parameters
+    :type kwargs: Any
+    :returns: Collection dictionary
+    :rtype: dict
+    """
+    found_products, _ = eodag_api.search(id=item_id, productType=catalogs[0], **kwargs)
+
+    if len(found_products) > 0:
+        found_products[0].product_type = eodag_api.get_alias_from_product_type(
+            found_products[0].product_type
+        )
+        return StacItem(
+            url=url,
+            stac_config=stac_config,
+            provider=provider,
+            eodag_api=eodag_api,
+            root=root,
+        ).get_stac_item_from_product(product=found_products[0])
+    else:
+        return None
