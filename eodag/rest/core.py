@@ -32,11 +32,14 @@ from eodag.utils.exceptions import (
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config
+from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
+from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
+from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryableProperty
 from eodag.rest.types.stac_search import SearchPostRequest
-from eodag.rest.utils import filter_products, format_pydantic_error, get_next_link
+from eodag.rest.utils import Cruncher, format_pydantic_error, get_next_link
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
 
 
@@ -45,6 +48,12 @@ eodag_api = eodag.EODataAccessGateway()
 logger = logging.getLogger("eodag.rest.core")
 
 stac_config = load_stac_config()
+
+crunchers = {
+    "filterLatestIntersect": Cruncher(FilterLatestIntersect, []),
+    "filterLatestByName": Cruncher(FilterLatestByName, ["name_pattern"]),
+    "filterOverlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
+}
 
 
 @_deprecated(reason="No more needed with STAC API + Swagger", version="2.6.1")
@@ -142,36 +151,23 @@ def search_stac_items(
             )
             if len(products) == 1:
                 search_results.extend(products)
-        search_results.properties = {
-            "page": 1,
-            "itemsPerPage": len(search_results),
-            "totalResults": len(search_results),
-        }
+        total = len(search_results)
 
     elif time_interval_overlap(eodag_args, catalog):
         criteria = {**catalog.search_args, **eodag_args.model_dump(exclude_none=True)}
 
-        products, total = eodag_api.search(**criteria)
-        search_results = filter_products(products, eodag_args.model_dump(), **criteria)
-        search_results.properties = {
-            "page": eodag_args.page,
-            "itemsPerPage": eodag_args.items_per_page,
-            "totalResults": total,
-        }
+        search_results, total = eodag_api.search(**criteria)
+        if search_request.crunch:
+            search_results = crunch_products(
+                search_results, search_request.crunch, **criteria
+            )
     else:
         # return empty results
         search_results = SearchResult([])
-        search_results.properties = {
-            "page": eodag_args.page,
-            "itemsPerPage": eodag_args.items_per_page,
-            "totalResults": 0,
-        }
+        total = 0
 
     for record in search_results:
         record.product_type = eodag_api.get_alias_from_product_type(record.product_type)
-
-    search_results.method = request.method
-    search_results.next, search_results.body = get_next_link(request, search_request)
 
     items = StacItem(
         url=request.state.url,
@@ -181,6 +177,10 @@ def search_stac_items(
         root=request.state.url_root,
     ).get_stac_items(
         search_results=search_results,
+        total=total,
+        next_link=get_next_link(
+            request, search_request, total, eodag_args.items_per_page
+        ),
         catalog=dict(
             catalog.get_stac_catalog(),
             **{"url": catalog.url, "root": catalog.root},
@@ -635,3 +635,30 @@ def get_stac_item_by_id(
         ).get_stac_item_from_product(product=found_products[0])
     else:
         return None
+
+
+def crunch_products(
+    products: SearchResult, cruncher_name: str, **kwargs: Any
+) -> SearchResult:
+    """Apply an eodag cruncher to filter products"""
+    cruncher = crunchers.get(cruncher_name)
+    if not cruncher:
+        raise ValidationError(
+            f'Unknown crunch name. Use one of: {", ".join(crunchers.keys())}'
+        )
+
+    cruncher_config: Dict[str, Any] = dict()
+    for config_param in cruncher.config_params:
+        config_param_value = kwargs.get(config_param)
+        if not config_param_value:
+            raise ValidationError(
+                f'cruncher {cruncher} require additional parameters: {", ".join(cruncher.config_params)}'
+            )
+        cruncher_config[config_param] = config_param_value
+
+    try:
+        products = products.crunch(cruncher.clazz(cruncher_config), **kwargs)
+    except MisconfiguredError as e:
+        raise ValidationError(str(e)) from e
+
+    return products

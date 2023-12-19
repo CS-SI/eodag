@@ -502,9 +502,8 @@ class RequestTestCase(unittest.TestCase):
             ),
         )
         self.assertEqual(len(result1.features), 2)
-        # TODO: filter=latestIntersect collide with STAC filter extension
         result2 = self._request_valid(
-            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&filter=latestIntersect",
+            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&crunch=filterLatestIntersect",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,

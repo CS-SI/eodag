@@ -20,13 +20,12 @@ from __future__ import annotations
 
 import ast
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional
 from urllib.parse import unquote_plus, urlencode
 
 import orjson
 from fastapi import Request
 
-from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
 from pydantic import ValidationError as pydanticValidationError
 
 from eodag.utils import string_to_jsonpath
-from eodag.utils.exceptions import MisconfiguredError, ValidationError
+from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.rest.utils")
 
@@ -68,33 +67,6 @@ def format_pydantic_error(e: pydanticValidationError) -> str:
     error_header = f"Invalid request, {e.error_count()} error(s): "
     error_messages = [err["msg"] for err in e.errors()]
     return error_header + "; ".join(set(error_messages))
-
-
-def filter_products(
-    products: SearchResult, arguments: Dict[str, Any], **kwargs: Any
-) -> SearchResult:
-    """Apply an eodag cruncher to filter products"""
-    filter_name = arguments.get("filter")
-    if filter_name:
-        cruncher = crunchers.get(filter_name)
-        if not cruncher:
-            raise ValidationError("unknown filter name")
-
-        cruncher_config: Dict[str, Any] = dict()
-        for config_param in cruncher.config_params:
-            config_param_value = arguments.get(config_param)
-            if not config_param_value:
-                raise ValidationError(
-                    f'filter additional parameters required: {", ".join(cruncher.config_params)}'
-                )
-            cruncher_config[config_param] = config_param_value
-
-        try:
-            products = products.crunch(cruncher.clazz(cruncher_config), **kwargs)
-        except MisconfiguredError as e:
-            raise ValidationError(str(e))
-
-    return products
 
 
 def get_metadata_query_paths(metadata_mapping: Dict[str, Any]) -> Dict[str, Any]:
@@ -180,14 +152,36 @@ def str2json(k: str, v: Optional[str] = None) -> Optional[Dict[str, Any]]:
 
 
 def get_next_link(
-    request: Request, search_request: SearchPostRequest
-) -> Tuple[str, Optional[Dict[str, Any]]]:
+    request: Request,
+    search_request: SearchPostRequest,
+    totalResults: int,
+    items_per_page: int,
+) -> Optional[Dict[str, Any]]:
     """Generate next link URL and body"""
-    if request.method == "POST":
-        body = search_request.model_dump(exclude_none=True)
-        body["page"] = int(body.get("page", 1)) + 1
-        return (str(request.url), body)
+    body = search_request.model_dump(exclude_none=True)
 
     params = dict(request.query_params)
-    params["page"] = str(int(params.get("page", 1)) + 1)
-    return (f"{request.state.url}?{urlencode(params)}", None)
+
+    page = int(body.get("page", 0) or params.get("page", 0)) or 1
+
+    if items_per_page * page >= totalResults:
+        return None
+
+    url: str
+    if request.method == "POST":
+        body["page"] = page + 1
+        url = str(request.url)
+    else:
+        params["page"] = str(page + 1)
+        url = f"{request.state.url}?{urlencode(params)}"
+
+    next: Dict[str, Any] = {
+        "rel": "next",
+        "href": url,
+        "title": "Next page",
+        "method": request.method,
+        "type": "application/geo+json",
+    }
+    if request.method == "POST":
+        next["body"] = body
+    return next
