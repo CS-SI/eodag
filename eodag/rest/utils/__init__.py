@@ -18,7 +18,6 @@
 """EODAG REST utils"""
 from __future__ import annotations
 
-import ast
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional
 from urllib.parse import unquote_plus, urlencode
@@ -35,7 +34,6 @@ if TYPE_CHECKING:
 
 from pydantic import ValidationError as pydanticValidationError
 
-from eodag.utils import string_to_jsonpath
 from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.rest.utils")
@@ -55,9 +53,6 @@ crunchers = {
 }
 
 
-STAC_QUERY_PATTERN = "query.*.*"
-
-
 def format_pydantic_error(e: pydanticValidationError) -> str:
     """Format Pydantic ValidationError
 
@@ -67,57 +62,6 @@ def format_pydantic_error(e: pydanticValidationError) -> str:
     error_header = f"Invalid request, {e.error_count()} error(s): "
     error_messages = [err["msg"] for err in e.errors()]
     return error_header + "; ".join(set(error_messages))
-
-
-def get_metadata_query_paths(metadata_mapping: Dict[str, Any]) -> Dict[str, Any]:
-    """Get dict of query paths and their names from metadata_mapping
-
-    :param metadata_mapping: STAC metadata mapping (see 'resources/stac_provider.yml')
-    :type metadata_mapping: dict
-    :returns: Mapping of query paths with their corresponding names
-    :rtype: dict
-    """
-    metadata_query_paths: Dict[str, Any] = {}
-    for metadata_name, metadata_spec in metadata_mapping.items():
-        # When metadata_spec have a length of 1 the query path is not specified
-        if len(metadata_spec) == 2:
-            metadata_query_template = metadata_spec[0]
-            try:
-                # We create the dict corresponding to the metadata query of the metadata
-                metadata_query_dict = ast.literal_eval(
-                    metadata_query_template.format(**{metadata_name: None})
-                )
-                # We check if our query path pattern matches one or more of the dict path
-                matches = [
-                    (str(match.full_path))
-                    for match in string_to_jsonpath(
-                        STAC_QUERY_PATTERN, force=True
-                    ).find(metadata_query_dict)
-                ]
-                if matches:
-                    metadata_query_path = matches[0]
-                    metadata_query_paths[metadata_query_path] = metadata_name
-            except KeyError:
-                pass
-    return metadata_query_paths
-
-
-def get_arguments_query_paths(arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """Get dict of query paths and their values from arguments
-
-    Build a mapping of the query paths present in the arguments
-    with their values. All matching paths of our STAC_QUERY_PATTERN
-    ('query.*.*') are used.
-
-    :param arguments: Request args
-    :type arguments: dict
-    :returns: Mapping of query paths with their corresponding values
-    :rtype: dict
-    """
-    return dict(
-        (str(match.full_path), match.value)
-        for match in string_to_jsonpath(STAC_QUERY_PATTERN, force=True).find(arguments)
-    )
 
 
 def is_dict_str_any(var: Any) -> bool:
