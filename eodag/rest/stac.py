@@ -369,11 +369,7 @@ class StacItem(StacCommon):
                 if items_model["links"][i]["rel"] == "self":
                     items_model["links"][i]["href"] = catalog["url"]
 
-        timestamp = (
-            datetime.now(timezone.utc)
-            .isoformat()
-            .replace("+00:00", "Z")
-        )
+        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         # parse jsonpath
         items = jsonpath_parse_dict_items(
