@@ -161,7 +161,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(resp_json["links"][0]["href"], "httpz://bar/")
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         return_value=(
             SearchResult.from_geojson(
@@ -452,7 +452,7 @@ class RequestTestCase(unittest.TestCase):
         self._request_not_found("search?collections=ZZZ&bbox=0,43,1,44")
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         side_effect=AuthenticationError("you are not authorized"),
     )
@@ -908,10 +908,10 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]
+        "eodag.rest.core.eodag_api.guess_product_type", autospec=True, return_value=[]
     )
     @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
+        "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
         return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
     )
@@ -947,7 +947,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
+        "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
         return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
     )
@@ -1002,7 +1002,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.rest.utils.eodag_api.download",
+        "eodag.rest.core.eodag_api.download",
         autospec=True,
     )
     def test_download_item_from_collection_api_plugin(self, mock_download, mock_auth):

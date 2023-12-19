@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 import os
-import traceback
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from typing import (
@@ -31,9 +30,7 @@ from typing import (
     Dict,
     Optional
 )
-from urllib.parse import unquote_plus
 
-import orjson
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
@@ -44,13 +41,10 @@ from pydantic import ValidationError as pydanticValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
-from eodag.rest.types.stac_queryables import StacQueryables
-from eodag.rest.model.search_post_request import SearchPostRequest
-from eodag.rest.utils import (
+from eodag.rest.core import (
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
-    format_pydantic_error,
     get_detailled_collections_list,
     get_stac_api_version,
     get_stac_catalogs,
@@ -60,6 +54,9 @@ from eodag.rest.utils import (
     get_stac_extension_oseo,
     search_stac_items,
 )
+from eodag.rest.types.stac_queryables import StacQueryables
+from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
+from eodag.rest.utils import format_pydantic_error, str2json, str2list
 from eodag.utils import parse_header, update_nested_dict
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -195,8 +192,8 @@ async def forward_middleware(
 
     if "forwarded" in request.headers:
         header_forwarded = parse_header(request.headers["forwarded"])
-        forwarded_host = header_forwarded.get_param("host", None) or forwarded_host
-        forwarded_proto = header_forwarded.get_param("proto", None) or forwarded_proto
+        forwarded_host = str(header_forwarded.get_param("host", None)) or forwarded_host
+        forwarded_proto = str(header_forwarded.get_param("proto", None)) or forwarded_proto
 
     request.state.url_root = f"{forwarded_proto or request.url.scheme}://{forwarded_host or request.url.netloc}"
     request.state.url = f"{request.state.url_root}{request.url.path}"
@@ -227,7 +224,6 @@ async def default_exception_handler(
 @app.exception_handler(ValidationError)
 async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResponse:
     """Invalid usage [400] errors handle"""
-    logger.warning(traceback.format_exc())
     return await default_exception_handler(
         request,
         HTTPException(
@@ -349,7 +345,7 @@ def stac_collections_item_download(
     include_in_schema=False,
 )
 def stac_collections_item_download_asset(
-    collection_id, item_id, asset_filter, request: Request
+    collection_id: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC collection item asset download"""
     logger.debug("URL: %s", request.url)
@@ -375,7 +371,9 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     """STAC collection item by id"""
     logger.debug("URL: %s", request.url)
 
-    base_args = dict(request.query_params, **{"ids": [item_id]})
+    base_args: Dict[str, Any] = dict(
+        request.query_params, **{"ids": [item_id], "collections": [collection_id]}
+    )
 
     clean = {k: v for k, v in base_args.items() if v is not None}
     try:
@@ -384,9 +382,8 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
-        url=request.state.url,
+        request=request,
         search_request=search_request,
-        root=request.state.url_root,
         catalogs=[collection_id],
     )
 
@@ -408,7 +405,8 @@ def stac_collections_items(request: Request, collection_id: str) -> Any:
     """STAC collections items"""
     logger.debug("URL: %s", request.url)
 
-    base_args = dict(request.query_params)
+    base_args: Dict[str, Any] = dict(request.query_params)
+    base_args["collections"] = [collection_id]
 
     clean = {k: v for k, v in base_args.items() if v is not None}
     try:
@@ -417,9 +415,8 @@ def stac_collections_items(request: Request, collection_id: str) -> Any:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
-        url=request.state.url,
+        request=request,
         search_request=search_request,
-        root=request.state.url_root,
         catalogs=[collection_id],
     )
     return ORJSONResponse(
@@ -451,7 +448,7 @@ def list_collection_queryables(
     :returns: A json object containing the list of available queryable properties for the specified collection.
     :rtype: Any
     """
-    logger.debug("URL: %s", request.url)
+    logger.debug(f"URL: {request.url}")
 
     queryables = StacQueryables(q_id=request.state.url, additional_properties=False)
 
@@ -540,7 +537,7 @@ def stac_catalogs_item_download(
     include_in_schema=False,
 )
 def stac_catalogs_item_download_asset(
-    catalogs, item_id, asset_filter, request: Request
+    catalogs: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC Catalog item asset download"""
     logger.debug("URL: %s", request.url)
@@ -548,10 +545,10 @@ def stac_catalogs_item_download_asset(
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
 
     return download_stac_item_by_id_stream(
-        catalogs=catalogs,
+        catalogs=list_catalog,
         item_id=item_id,
         provider=provider,
         asset=asset_filter,
@@ -572,16 +569,14 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
 
     base_args = dict(request.query_params, **{"ids": [item_id]})
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
     try:
-        search_request = SearchPostRequest.model_validate(clean)
+        search_request = SearchPostRequest.model_validate(base_args)
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
-        url=request.state.url,
+        request=request,
         search_request=search_request,
-        root=request.state.url_root,
         catalogs=list_catalog,
     )
 
@@ -608,16 +603,14 @@ def stac_catalogs_items(catalogs: str, request: Request) -> Any:
 
     list_catalog = catalogs.strip("/").split("/")
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
     try:
-        search_request = SearchPostRequest.model_validate(clean)
+        search_request = SearchPostRequest.model_validate(base_args)
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
-        url=request.state.url,
+        request=request,
         search_request=search_request,
-        root=request.state.url_root,
         catalogs=list_catalog,
     )
     return jsonable_encoder(response)
@@ -677,7 +670,6 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
 
     return jsonable_encoder(queryables)
 
-
 @router.get(
     "/search",
     tags=["STAC"],
@@ -687,43 +679,40 @@ def get_search(
     request: Request,
     provider: Optional[str] = None,
     collections: Optional[str] = None,
-    datetime: Optional[str] = None,
-    bbox: Optional[str] = None,
-    intersects: Optional[str] = None,
     ids: Optional[str] = None,
+    bbox: Optional[str] = None,
+    datetime: Optional[str] = None,
+    intersects: Optional[str] = None,
     limit: Optional[int] = None,
     query: Optional[str] = None,
-    page: Optional[int] = 1,
+    page: Optional[int] = None,
     sortby: Optional[str] = None,
 ):
     """Handler for GET /search"""
     logger.debug("URL: %s", request.state.url)
     base_args = {
         "provider": provider,
-        "collections": collections,
-        "ids": ids,
+        "collections": str2list(collections),
+        "ids": str2list(ids),
         "datetime": datetime,
-        "bbox": bbox,
-        "intersects": orjson.loads(unquote_plus(intersects)) if intersects else None,
+        "bbox": str2list(bbox),
+        "intersects": str2json("intersects", intersects),
         "limit": limit,
-        "query": orjson.loads(unquote_plus(query)) if query else None,
+        "query": str2json("query", query),
         "page": page,
-        "sortby": sortby,
+        "sortby": sortby2list(sortby),
     }
-
     clean = {k: v for k, v in base_args.items() if v is not None}
+
     try:
         search_request = SearchPostRequest.model_validate(clean)
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
-        url=request.state.url,
+        request=request,
         search_request=search_request,
-        root=request.state.url_root,
-        method=request.method,
     )
-
     return ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
     )
@@ -740,10 +729,8 @@ def post_search(request: Request, search_request: SearchPostRequest) -> ORJSONRe
     logger.debug("Body: %s", search_request)
 
     response = search_stac_items(
-        url=request.state.url,
+        request=request,
         search_request=search_request,
-        root=request.state.url_root,
-        method=request.method,
     )
     return ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
