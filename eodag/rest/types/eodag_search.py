@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 from pygeofilter.parsers.cql2_json import parse as parse_json
@@ -30,7 +30,8 @@ from shapely.geometry import (
     Polygon,
 )
 
-from eodag.rest.cql_evaluate import EodagEvaluator
+from eodag.rest.utils import is_dict_str_any, is_list_str
+from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE
 
 Geometry = Union[
@@ -46,10 +47,10 @@ Geometry = Union[
 ]
 
 
-class STACtoEODAGModel(BaseModel):
+class EODAGSearch(BaseModel):
     """Model used to convert a STAC formated request to an EODAG formated one"""
 
-    productType: Optional[str] = Field(None, alias="collections")
+    productType: Optional[str] = Field(None, alias="collections", validate_default=True)
     provider: Optional[str] = Field(None)
     ids: Optional[List[str]] = Field(None)
     geom: Optional[Geometry]
@@ -80,6 +81,7 @@ class STACtoEODAGModel(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: Optional[int] = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
+    sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
 
     class Config:
         """Model config"""
@@ -88,28 +90,12 @@ class STACtoEODAGModel(BaseModel):
         populate_by_name = True
         arbitrary_types_allowed = True
 
-    @field_validator("start", "end")
-    @classmethod
-    def cleanup_dates(cls, v: str) -> str:
-        """proper format dates"""
-        if v.endswith("+00:00"):
-            return v.replace("+00:00", "") + "Z"
-        return v
-
-    @field_validator("instrument", mode="before")
-    @classmethod
-    def join_instruments(cls, v: Union[str, List[str]]) -> str:
-        """convert instruments to instrument"""
-        if isinstance(v, list):
-            return ",".join(v)
-        return v
-
     @model_validator(mode="before")
     @classmethod
     def remove_custom_extensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """process unknown and oseo EODAG custom extensions fields"""
         # Transform EODAG custom extensions OSEO and UNK.
-        keys_to_update = {}
+        keys_to_update: Dict[str, str] = {}
         for key in values.keys():
             if key.startswith("unk:"):
                 keys_to_update[key] = key[len("unk:") :]
@@ -123,70 +109,9 @@ class STACtoEODAGModel(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def convert_query_to_dict(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Convert a STAC query parameter filter with the "eq" operator to a dict.
-        """
-        query = values.pop("query", None)
-        if query is None:
-            return values
-
-        if not isinstance(query, dict):
-            raise SyntaxError("Invalid query syntax")
-
-        query_props = {}
-        for property_name, conditions in query.items():
-            # Remove the "properties." prefix if present
-            prop = property_name.removeprefix("properties.")
-
-            # Check if exactly one operator is specified per property
-            if len(conditions) != 1:
-                raise ValueError("Exactly 1 operator must be specified per property")
-
-            # Retrieve the operator and its value
-            operator, value = next(iter(conditions.items()))
-
-            # Validate the operator
-            if operator == "lte" and prop != "eo:cloud_cover":
-                raise ValueError('"lte" operator is only supported for eo:cloud_cover')
-
-            if operator not in ("eq", "lte"):
-                raise ValueError(
-                    'Only the "eq" and "lte" operators are supported'
-                    ', with "lte" only for eo:cloud_cover'
-                )
-
-            # Add the property name and value to the result dictionary
-            query_props[prop] = value
-
-        return {**values, **query_props}
-
-    @model_validator(mode="before")
-    @classmethod
-    def convert_collections_to_product_type(
-        cls, values: Dict[str, Any], info: ValidationInfo
-    ) -> Dict[str, Any]:
-        """convert collections and collection to productType"""
-        collections = values.pop("collections", None)
-        collection = values.pop("collection", None)
-
-        if not isinstance(collections, list):
-            collections = [collections]
-        if not isinstance(collection, list):
-            collection = [collection]
-
-        combined_collections = [c for c in collections if c] + [
-            c for c in collection if c and c not in collections
-        ]
-
-        if len(combined_collections) > 1:
-            raise ValueError("Only one collection is supported per search")
-
-        if combined_collections:
-            values["productType"] = combined_collections[0]
-        elif info.context and not info.context.get("isCatalog"):
-            raise ValueError("A collection is required")
-
+    def remove_datetime(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove datetime replaced by start_date and end_date"""
+        values.pop("datetime", None)
         return values
 
     @model_validator(mode="before")
@@ -204,6 +129,81 @@ class STACtoEODAGModel(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
+    def convert_collections_to_product_type(
+        cls, values: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """convert collections and collection to productType"""
+        collections = values.pop("collections", [])
+        collection = values.pop("collection", [])
+
+        if collection and isinstance(collection, str):
+            collection = [collection]
+        elif collection and not is_list_str(collection):  # type: ignore
+            raise ValueError("Collection must be a string or a list of strings")
+
+        if collections and not is_list_str(collections):  # type: ignore
+            raise ValueError("Collections must a list of strings")
+
+        combined_collections = cast(
+            List[str],
+            [c for c in collections if c]  # type: ignore
+            + [c for c in collection if c and c not in collections],  # type: ignore
+        )
+
+        if len(combined_collections) > 1:
+            raise ValueError("Only one collection is supported per search")
+
+        if combined_collections:
+            values["productType"] = combined_collections[0]
+
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def convert_query_to_dict(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert a STAC query parameter filter with the "eq" operator to a dict.
+        """
+        query = values.pop("query", None)
+        if query is None:
+            return values
+
+        if not is_dict_str_any(query):
+            raise ValueError("Invalid query syntax")
+
+        query_props: Dict[str, Any] = {}
+        for property_name, conditions in cast(Dict[str, Any], query).items():
+            # Remove the "properties." prefix if present
+            prop = property_name.removeprefix("properties.")
+
+            # Check if exactly one operator is specified per property
+            if not is_dict_str_any(conditions) or len(conditions) != 1:  # type: ignore
+                raise ValueError(
+                    "Query filter: exactly 1 operator must be specified per property"
+                )
+
+            # Retrieve the operator and its value
+            operator, value = next(iter(cast(Dict[str, Any], conditions).items()))
+
+            # Validate the operator
+            if operator == "lte" and prop != "eo:cloud_cover":
+                raise ValueError(
+                    'Query filter: "lte" operator is only supported for eo:cloud_cover'
+                )
+
+            if operator not in ("eq", "lte"):
+                raise ValueError(
+                    'Query filter: only the "eq" and "lte" operators are supported'
+                    ', with "lte" only for eo:cloud_cover'
+                )
+
+            # Add the property name and value to the result dictionary
+            query_props[prop] = value
+
+        return {**values, **query_props}
+
+    @model_validator(mode="before")
+    @classmethod
     def parse_cql(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process cql2 filter
@@ -212,15 +212,61 @@ class STACtoEODAGModel(BaseModel):
         filter_ = values.pop("filter", None)
         if not filter_:
             return values
-        cql_args: Dict[str, Any] = EodagEvaluator().evaluate(parse_json(filter_))
+        parsing_result = EodagEvaluator().evaluate(parse_json(filter_))  # type: ignore
+        if not is_dict_str_any(parsing_result):
+            raise ValueError(
+                "Error in parsing filter: the result is not a proper dictionary"
+            )
+        cql_args: Dict[str, Any] = cast(Dict[str, Any], parsing_result)
         return {**values, **cql_args}
 
-    @model_validator(mode="before")
+    @field_validator("instrument", mode="before")
     @classmethod
-    def remove_datetime(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Remove datetime replaced by start_date and end_date"""
-        values.pop("datetime", None)
-        return values
+    def join_instruments(cls, v: Union[str, List[str]]) -> str:
+        """convert instruments to instrument"""
+        if isinstance(v, list):
+            return ",".join(v)
+        return v
+
+    @field_validator("sortBy", mode="before")
+    @classmethod
+    def convert_stac_to_eodag_sortby(
+        cls,
+        sortby_post_params: List[Dict[str, str]],
+    ) -> List[Tuple[str, str]]:
+        """
+        Convert STAC POST sortby to EODAG sortby
+        """
+        eodag_sortby: List[Tuple[str, str]] = []
+        for sortby_post_param in sortby_post_params:
+            field = cls.snake_to_camel(
+                cls.alias_to_property(sortby_post_param["field"])
+            )
+            eodag_sortby.append((field, sortby_post_param["direction"]))
+        return eodag_sortby
+
+    @field_validator("productType")
+    @classmethod
+    def verify_producttype_is_present(
+        cls, v: Optional[str], info: ValidationInfo
+    ) -> Optional[str]:
+        """Verify productType is present when required"""
+        if not v and (
+            not info
+            or not getattr(info, "context", None)
+            or not info.context.get("isCatalog")  # type: ignore
+        ):
+            raise ValueError("A collection is required")
+
+        return v
+
+    @field_validator("start", "end")
+    @classmethod
+    def cleanup_dates(cls, v: str) -> str:
+        """proper format dates"""
+        if v.endswith("+00:00"):
+            return v.replace("+00:00", "") + "Z"
+        return v
 
     @classmethod
     def snake_to_camel(cls, snake_str: str) -> str:
@@ -228,3 +274,13 @@ class STACtoEODAGModel(BaseModel):
         # Split the string by underscore and capitalize each component except the first one
         components = snake_str.split("_")
         return components[0] + "".join(x.title() for x in components[1:])
+
+    @classmethod
+    def alias_to_property(cls, value: str) -> str:
+        """Convert a STAC parameter to its matching EODAG name"""
+        alias_map = {
+            field_info.alias: name
+            for name, field_info in cls.model_fields.items()
+            if field_info.alias
+        }
+        return alias_map.get(value, value)
