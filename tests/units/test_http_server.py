@@ -686,7 +686,6 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
-                "provider": None,
                 "productType": self.tested_product_type,
             },
         )
@@ -697,7 +696,6 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
-                "provider": None,
                 "productType": self.tested_product_type,
             },
         )
