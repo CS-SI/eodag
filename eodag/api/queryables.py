@@ -248,14 +248,7 @@ def get_queryables_from_metadata_mapping(
     """
     provider_queryables = default_queryables
 
-    metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
-
-    # product_type-specific metadata-mapping
-    metadata_mapping.update(
-        getattr(plugin.config, "products", {})
-        .get(product_type, {})
-        .get("metadata_mapping", {})
-    )
+    metadata_mapping = _get_metadata_mapping(plugin, product_type)
 
     for key, value in metadata_mapping.items():
         if (
@@ -267,6 +260,34 @@ def get_queryables_from_metadata_mapping(
             provider_queryables[key] = queryable
 
     return provider_queryables
+
+
+def _get_metadata_mapping(plugin: Union[Search, Api], product_type: str = None):
+    metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
+
+    # product_type-specific metadata-mapping
+    if product_type:
+        metadata_mapping.update(
+            getattr(plugin.config, "products", {})
+            .get(product_type, {})
+            .get("metadata_mapping", {})
+        )
+    return metadata_mapping
+
+
+def _map_to_eodag_keys(
+    queryables: Dict[str, Any], plugin: Union[Search, Api], product_type: str = None
+) -> Dict[str, Any]:
+    metadata_mapping = _get_metadata_mapping(plugin, product_type)
+    new_queryables = {}
+    for key, values in metadata_mapping.items():
+        if isinstance(values, list):
+            provider_str = values[0]
+            for queryable in queryables:
+                pattern = "[^_A-Za-z]" + queryable
+                if queryable == provider_str or re.search(pattern, provider_str):
+                    new_queryables[key] = queryables.get(queryable)
+    return new_queryables
 
 
 def get_provider_queryables(
@@ -313,6 +334,7 @@ def get_provider_queryables(
             raise RequestError(str(err))
     else:
         provider_queryables = res.json()["properties"]
+        provider_queryables = _map_to_eodag_keys(provider_queryables, search_plugin)
         return format_provider_queryables(provider_queryables, base)
 
 
@@ -378,6 +400,9 @@ def get_provider_product_type_queryables(
     else:
         if "properties" in res.json():
             provider_queryables = res.json()["properties"]
+            provider_queryables = _map_to_eodag_keys(
+                provider_queryables, search_plugin, product_type
+            )
             return format_provider_queryables(provider_queryables, base)
         else:
             return {}
@@ -432,32 +457,41 @@ def get_queryables_from_constraints(
     else:
         # get values from constraints with additional filters
         constraint_params = _get_constraint_queryables_with_additional_params(
-            constraints, kwargs
+            constraints, kwargs, plugin, product_type
         )
     queryables = {}
     for key in constraint_params:
         queryables[key] = format_queryable(
             key, base, {"values": sorted(constraint_params[key])}
         )
-    return queryables
+
+    return _map_to_eodag_keys(queryables, plugin, product_type)
 
 
 def _get_constraint_queryables_with_additional_params(
-    constraints: list, params: Dict[str, Any]
+    constraints: list,
+    params: Dict[str, Any],
+    plugin: Union[Search, Api],
+    product_type: str,
 ):
     constraint_matches = {}
     params_available = {k: False for k in params.keys()}
     # check which constraints match the given parameters
+    eodag_provider_key_mapping = {}
     for i, constraint in enumerate(constraints):
         params_matched = {k: False for k in params.keys()}
         for param, value in params.items():
-            if param in constraint:
+            provider_key = get_provider_queryable_key(
+                param, constraint, plugin, product_type
+            )
+            eodag_provider_key_mapping[provider_key] = param
+            if provider_key:
                 params_available[param] = True
-                if value in constraint[param]:
+                if value in constraint[provider_key]:
                     params_matched[param] = True
         constraint_matches[i] = params_matched
 
-    # check if all parameters are availeble in the constraints
+    # check if all parameters are available in the constraints
     for param, available in params_available.items():
         if not available:
             raise NotAvailableError(f"parameter {param} is not queryable")
@@ -469,7 +503,7 @@ def _get_constraint_queryables_with_additional_params(
             for key in constraints[num]:
                 if key in queryables:
                     queryables[key].update(constraints[num][key])
-                elif key not in params:
+                elif key not in eodag_provider_key_mapping:
                     queryables[key] = set()
 
     # check if constraints matching params have been found
@@ -514,3 +548,52 @@ def _fetch_constraints(constraints_url: str, plugin: Union[Search, Api]) -> list
         else:
             constraints = constraints_data
         return constraints
+
+
+def get_provider_queryable_key(
+    eodag_key: str,
+    provider_queryables: Dict[str, Any],
+    plugin: Union[Search, Api],
+    product_type: str = None,
+) -> str:
+    """finds the provider queryable corresponding to the given eodag key based on the metadata mapping
+    :param eodag_key: key in eodag
+    :type eodag_key: str
+    :param provider_queryables: queryables returned from the provider
+    :type provider_queryables: dict
+    :param plugin: plugin from which the config is taken
+    :type plugin: Union[Api, Search]
+    :param product_type: product type for which the metadata shuld be used
+    :type product_type: str
+    :returns: provider queryable key
+    :rtype: str
+    """
+    metadata_mapping = _get_metadata_mapping(plugin, product_type)
+    if eodag_key not in metadata_mapping:
+        return ""
+    mapping_key = metadata_mapping[eodag_key]
+    if isinstance(mapping_key, list):
+        for queryable in provider_queryables:
+            if queryable in mapping_key[0]:
+                return queryable
+        return ""
+    else:
+        return eodag_key
+
+
+def merge_default_queryables(
+    default_queryables: Dict[str, Any], queryables: Dict[str, Any]
+):
+    """merges the given default queryables with the queryables fetched from the provider
+    :param default_queryables: default queryables
+    :type default_queryables: dict
+    :param queryables: queryables fetched from the provider (queryables endpoint or constraints)
+    :type queryables: dict
+    """
+    to_remove = []
+    for queryable in queryables:
+        if "TimeFromAscendingNode" in queryable:
+            to_remove.append(queryable)
+    for queryable_key in to_remove:
+        queryables.pop(queryable_key)
+    queryables.update(default_queryables)
