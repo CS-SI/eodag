@@ -53,7 +53,7 @@ class EODAGSearch(BaseModel):
     productType: Optional[str] = Field(None, alias="collections", validate_default=True)
     provider: Optional[str] = Field(None)
     ids: Optional[List[str]] = Field(None)
-    geom: Optional[Geometry]
+    geom: Optional[Geometry] = Field(None, alias="geometry")
     start: Optional[str] = Field(None, alias="start_datetime")
     end: Optional[str] = Field(None, alias="end_datetime")
     publicationDate: Optional[str] = Field(None, alias="published")
@@ -80,7 +80,7 @@ class EODAGSearch(BaseModel):
     )
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
-    items_per_page: Optional[int] = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
+    items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
     sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
 
     class Config:
@@ -109,22 +109,10 @@ class EODAGSearch(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def remove_datetime(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Remove datetime replaced by start_date and end_date"""
-        values.pop("datetime", None)
-        return values
-
-    @model_validator(mode="before")
-    @classmethod
-    def assemble_geom(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Convert intersects and bbox to geom.
-
-        geom is pulled from geometry.
-        """
-        values.pop("intersects", None)
-        values.pop("bbox", None)
-        values["geom"] = values.pop("geometry", None)
+    def remove_keys(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove 'datetime', 'crunch', 'intersects', and 'bbox' keys"""
+        for key in ["datetime", "crunch", "intersects", "bbox"]:
+            values.pop(key, None)
         return values
 
     @model_validator(mode="before")

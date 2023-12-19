@@ -224,8 +224,13 @@ class TestEODAGSearch(unittest.TestCase):
             },
         )
 
-    def test_remove_datetime(self):
-        values = {"datetime": "2023-12-18T16:41:35Z", "collection": "value"}
+    def test_remove_keys(self):
+        values = {
+            "datetime": "2023-12-18T16:41:35Z",
+            "collection": "value",
+            "bbox": "value",
+            "intersects": {"type": "Point", "coordinates": [1, 1]},
+        }
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(values).model_dump(
                 exclude_none=True
@@ -239,8 +244,6 @@ class TestEODAGSearch(unittest.TestCase):
 
     def test_assemble_geom(self):
         values = {
-            "intersects": {"type": "Point", "coordinates": [1, 1]},
-            "bbox": "value",
             "geometry": {"type": "Point", "coordinates": [1, 1]},
             "collection": "value",
         }
