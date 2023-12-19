@@ -17,7 +17,14 @@
 # limitations under the License.
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 from pygeofilter.parsers.cql2_json import parse as parse_json
 from shapely.geometry import (
     GeometryCollection,
@@ -49,6 +56,10 @@ Geometry = Union[
 
 class EODAGSearch(BaseModel):
     """Model used to convert a STAC formated request to an EODAG formated one"""
+
+    model_config = ConfigDict(
+        extra="allow", populate_by_name=True, arbitrary_types_allowed=True
+    )
 
     productType: Optional[str] = Field(None, alias="collections", validate_default=True)
     provider: Optional[str] = Field(None)
@@ -82,13 +93,6 @@ class EODAGSearch(BaseModel):
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
     sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
-
-    class Config:
-        """Model config"""
-
-        extra = "allow"
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
     @model_validator(mode="before")
     @classmethod
@@ -162,7 +166,10 @@ class EODAGSearch(BaseModel):
         query_props: Dict[str, Any] = {}
         for property_name, conditions in cast(Dict[str, Any], query).items():
             # Remove the "properties." prefix if present
-            prop = property_name.removeprefix("properties.")
+            prefix = "properties."
+            prop = property_name
+            if property_name.startswith(prefix):
+                prop = property_name[len(prefix) :]
 
             # Check if exactly one operator is specified per property
             if not is_dict_str_any(conditions) or len(conditions) != 1:  # type: ignore

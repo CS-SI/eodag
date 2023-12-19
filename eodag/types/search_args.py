@@ -18,7 +18,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import BaseModel, Field, conint, field_validator
+from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
 from shapely import wkt
 from shapely.errors import GEOSException
 from shapely.geometry import Polygon, shape
@@ -36,6 +36,8 @@ PositiveInt = conint(gt=0)
 class SearchArgs(BaseModel):
     """Represents an EODAG search"""
 
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
+
     provider: Optional[str] = Field(None)
     productType: Optional[str] = Field(None)
     id: Optional[str] = Field(None)
@@ -45,14 +47,6 @@ class SearchArgs(BaseModel):
     locations: Optional[Dict[str, str]] = Field(None)
     page: Optional[PositiveInt] = Field(DEFAULT_PAGE)  # type: ignore
     items_per_page: Optional[PositiveInt] = Field(DEFAULT_ITEMS_PER_PAGE)  # type: ignore
-
-    __pydantic_extra__: Dict[str, Union[int, str, bool, dict]]
-
-    class Config:
-        """Model config"""
-
-        extra = "allow"  # use a literal value here
-        arbitrary_types_allowed = True
 
     @field_validator("start", "end", mode="before")
     @classmethod
