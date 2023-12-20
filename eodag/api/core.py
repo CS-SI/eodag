@@ -2125,6 +2125,9 @@ class EODataAccessGateway:
         if provider is None and product_type is None:
             return default_queryables
 
+        if product_type:
+            product_type = self.get_product_type_from_alias(product_type)
+
         plugins = self._plugins_manager.get_search_plugins(product_type, provider)
 
         # dictionary of the queryable properties of the providers supporting the given product type
