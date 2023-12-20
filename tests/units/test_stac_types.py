@@ -473,14 +473,14 @@ class TestEODAGSearch(unittest.TestCase):
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(
                 {
-                    "start": "2023-12-18T16:41:35+00:00",
-                    "end": "2023-12-19T16:41:35+00:00",
+                    "startTimeFromAscendingNode": "2023-12-18T16:41:35+00:00",
+                    "completionTimeFromAscendingNode": "2023-12-19T16:41:35+00:00",
                     "collection": "test_collection",
                 }
             ).model_dump(exclude_none=True),
             {
-                "start": "2023-12-18T16:41:35Z",
-                "end": "2023-12-19T16:41:35Z",
+                "startTimeFromAscendingNode": "2023-12-18T16:41:35Z",
+                "completionTimeFromAscendingNode": "2023-12-19T16:41:35Z",
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
@@ -491,14 +491,14 @@ class TestEODAGSearch(unittest.TestCase):
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(
                 {
-                    "start": "2023-12-20T16:41:35",
-                    "end": "2023-12-21T16:41:35",
+                    "startTimeFromAscendingNode": "2023-12-20T16:41:35",
+                    "completionTimeFromAscendingNode": "2023-12-21T16:41:35",
                     "collection": "test_collection",
                 }
             ).model_dump(exclude_none=True),
             {
-                "start": "2023-12-20T16:41:35",
-                "end": "2023-12-21T16:41:35",
+                "startTimeFromAscendingNode": "2023-12-20T16:41:35",
+                "completionTimeFromAscendingNode": "2023-12-21T16:41:35",
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
@@ -526,28 +526,27 @@ class TestEODAGSearch(unittest.TestCase):
     def test_alias_to_property(self):
         # Test with valid aliases
         self.assertEqual(
-            eodag_search.EODAGSearch.alias_to_property("collections"), "productType"
+            eodag_search.EODAGSearch.to_eodag("collections"), "productType"
         )
         self.assertEqual(
-            eodag_search.EODAGSearch.alias_to_property("start_datetime"), "start"
+            eodag_search.EODAGSearch.to_eodag("start_datetime"),
+            "startTimeFromAscendingNode",
         )
         self.assertEqual(
-            eodag_search.EODAGSearch.alias_to_property("platform"),
+            eodag_search.EODAGSearch.to_eodag("platform"),
             "platformSerialIdentifier",
         )
 
         # Test with invalid alias
         self.assertEqual(
-            eodag_search.EODAGSearch.alias_to_property("invalid_alias"), "invalid_alias"
+            eodag_search.EODAGSearch.to_eodag("invalid_alias"), "invalid_alias"
         )
 
         # Test with empty string
-        self.assertEqual(eodag_search.EODAGSearch.alias_to_property(""), "")
+        self.assertEqual(eodag_search.EODAGSearch.to_eodag(""), "")
 
         # Test with alias that has no corresponding property
-        self.assertEqual(
-            eodag_search.EODAGSearch.alias_to_property("provider"), "provider"
-        )
+        self.assertEqual(eodag_search.EODAGSearch.to_eodag("provider"), "provider")
 
 
 class TestQueryables(unittest.TestCase):
