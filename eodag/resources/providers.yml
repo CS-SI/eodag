@@ -6781,14 +6781,12 @@
     POLYTOPE_TEST:
       productType: destination-earth
       class: rd
-      expver: i4vo
-      stream: lwda
+      expver: i6dy
+      stream: oper
       time: 0000
-      domain: g
       type: fc
       levtype: sfc
-      anoffset: 9
-      step: 3
+      step: 1
       param: 31
   download: !plugin
     type: HTTPDownload
