@@ -479,6 +479,13 @@ class QueryStringSearch(Search):
         self.sort_by_params = sort_by_params.sort_by_params or getattr(
             self.config, "sort", {}
         ).get("sort_by_default", None)
+        if not sort_by_params.sort_by_params and getattr(self.config, "sort", {}).get(
+            "sort_by_default", None
+        ):
+            logger.info(
+                f"{self.provider} is configured with default sorting by '{self.sort_by_params[0][0]}' "
+                f"in {'ascending' if self.sort_by_params[0][1] == 'ASC' else 'descending'} order"
+            )
 
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
