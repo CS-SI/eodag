@@ -97,7 +97,7 @@ otel:
       tag: "0.90.1"
       ports:
         otlpReceiver: 4318
-        prometheusExporter: 8000
+        prometheusExporter: 8888
       ## Specify a imagePullPolicy
       ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
       ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -590,11 +590,13 @@ service:
   ##
   ports:
     http: 8080
+
   ## @param service.nodePorts [object] Specify the nodePort values for the LoadBalancer and NodePort service types.
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
   ##
   nodePorts:
     http: ""
+    metrics: ""
   ## @param service.sessionAffinity Control where client requests go, to the same pod or round-robin
   ## Values: ClientIP or None
   ## ref: https://kubernetes.io/docs/user-guide/services/
