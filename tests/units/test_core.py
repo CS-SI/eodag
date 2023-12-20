@@ -214,7 +214,6 @@ class TestCore(TestCoreBase):
             "creodias",
             "earth_search",
             "onda",
-            "peps",
             "planetary_computer",
             "sara",
             "wekeo",
