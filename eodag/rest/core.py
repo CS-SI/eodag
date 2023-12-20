@@ -628,7 +628,9 @@ def get_stac_item_by_id(
     :returns: Collection dictionary
     :rtype: dict
     """
-    found_products, _ = eodag_api.search(id=item_id, productType=catalogs[0], **kwargs)
+    found_products, _ = eodag_api.search(
+        id=item_id, productType=catalogs[0], provider=provider, **kwargs
+    )
 
     if len(found_products) > 0:
         found_products[0].product_type = eodag_api.get_alias_from_product_type(
