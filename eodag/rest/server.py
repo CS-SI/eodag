@@ -425,7 +425,12 @@ def stac_collections_item_download_asset(
 )
 def stac_collections_item(collection_id: str, item_id: str, request: Request) -> Any:
     """STAC collection item by id"""
+    trace_id = telemetry.get_current_trace_id()
+    timer = telemetry.create_overhead_timer(trace_id)
+    timer.start_global_timer()
     logger.debug("URL: %s", request.url)
+
+    telemetry.record_searched_product_type(collection_id)
 
     url = request.state.url
     url_root = request.state.url_root
@@ -441,6 +446,15 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
         provider=provider,
         **arguments,
     )
+
+    timer.stop_global_timer()
+    telemetry.record_request_duration(
+        arguments.get("provider", ""), timer.get_global_time()
+    )
+    telemetry.record_request_overhead_duration(
+        arguments.get("provider", ""), timer.get_overhead_time()
+    )
+    telemetry.delete_overhead_timer(trace_id)
 
     if response:
         return jsonable_encoder(response)
@@ -458,7 +472,12 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
 )
 def stac_collections_items(request: Request, collection_id: str) -> Any:
     """STAC collections items"""
+    trace_id = telemetry.get_current_trace_id()
+    timer = telemetry.create_overhead_timer(trace_id)
+    timer.start_global_timer()
     logger.debug("URL: %s", request.url)
+
+    telemetry.record_searched_product_type(collection_id)
 
     base_args: Dict[str, Any] = dict(request.query_params)
     base_args["collections"] = [collection_id]
@@ -474,9 +493,18 @@ def stac_collections_items(request: Request, collection_id: str) -> Any:
         search_request=search_request,
         catalogs=[collection_id],
     )
-    return ORJSONResponse(
+    resp = ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
     )
+    timer.stop_global_timer()
+    telemetry.record_request_duration(
+        search_request.provider or "", timer.get_global_time()
+    )
+    telemetry.record_request_overhead_duration(
+        search_request.provider or "", timer.get_overhead_time()
+    )
+    telemetry.delete_overhead_timer(trace_id)
+    return resp
 
 
 @router.get(
