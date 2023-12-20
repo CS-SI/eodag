@@ -3737,6 +3737,10 @@
   products:
     S1_SAR_GRD:
       productType: sentinel-1-grd
+      metadata_mapping:
+        processingLevel:
+          - '{{"query":{{"s1:processing_level":{{"eq":"{processingLevel}"}}}}}}'
+          - '$.properties."s1:processing_level"'
     S2_MSI_L2A:
       productType: sentinel-2-l2a
     LANDSAT_C2L1:

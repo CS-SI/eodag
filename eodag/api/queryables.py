@@ -241,6 +241,8 @@ def get_queryables_from_metadata_mapping(
     :type plugin: Union[Search, Api]
     :param product_type: EODAG product type
     :type product_type: str
+    :param default_queryables: default queryables to which the metadata queryables are added
+    :type default_queryables: dict
     :param base: if base queryable objects or extended queryable objects should be created
     :type base: bool
     :returns queryable_properties: A dict containing the formatted queryable properties
@@ -409,7 +411,7 @@ def get_provider_product_type_queryables(
 
 
 def get_queryables_from_constraints(
-    plugin: Union[Search, Api], product_type: str, base: bool, **kwargs: dict
+    plugin: Union[Search, Api], product_type: str, base: bool = True, **kwargs: dict
 ) -> Dict[str, Any]:
     """
     creates queryables from the parameters given in the constraints data fetched from the provider
@@ -504,7 +506,7 @@ def _get_constraint_queryables_with_additional_params(
                 if key in queryables:
                     queryables[key].update(constraints[num][key])
                 elif key not in eodag_provider_key_mapping:
-                    queryables[key] = set()
+                    queryables[key] = set(constraints[num][key])
 
     # check if constraints matching params have been found
     if len(queryables) == 0:
@@ -563,7 +565,7 @@ def get_provider_queryable_key(
     :type provider_queryables: dict
     :param plugin: plugin from which the config is taken
     :type plugin: Union[Api, Search]
-    :param product_type: product type for which the metadata shuld be used
+    :param product_type: product type for which the metadata should be used
     :type product_type: str
     :returns: provider queryable key
     :rtype: str
