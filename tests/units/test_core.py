@@ -32,6 +32,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
+from eodag.api.queryables import BaseQueryableProperty, Queryables
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -1014,90 +1015,90 @@ class TestCore(TestCoreBase):
     def test_get_queryables(self):
         """get_queryables must return queryables list adapted to provider and product-type"""
         with self.assertRaises(UnsupportedProvider):
-            self.dag.get_queryables(provider="not_existing_provider")
+            self.dag.list_queryables(provider="not_existing_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.get_queryables(product_type="not_existing_product_type")
+            self.dag.list_queryables(product_type="not_existing_product_type")
 
-        expected_result = {"productType", "start", "end", "geom", "locations", "id"}
-        queryables = self.dag.get_queryables()
-        self.assertSetEqual(queryables, expected_result)
+        expected_result = Queryables().get_base_properties()
+        queryables = self.dag.list_queryables()
+        self.assertDictEqual(expected_result, queryables)
 
-        expected_result = {
-            "start",
-            "end",
-            "geom",
-            "locations",
-            "productType",
-            "platformSerialIdentifier",
-            "instrument",
-            "processingLevel",
-            "resolution",
-            "organisationName",
-            "parentIdentifier",
-            "orbitNumber",
-            "orbitDirection",
-            "swathIdentifier",
-            "cloudCover",
-            "snowCover",
-            "sensorMode",
-            "polarizationMode",
-            "id",
-            "tileIdentifier",
-            "geometry",
+        expected_properties = {
+            "Product Type",
+            "Organisation Name",
+            "Parent Identifier",
+            "Swath Identifier",
+            "Cloud Cover",
+            "Snow Cover",
+            "Polarization Mode",
+            "Tile Identifier",
         }
-        queryables = self.dag.get_queryables(provider="peps")
-        self.assertSetEqual(queryables, expected_result)
-
-        expected_result = {
-            "start",
-            "end",
-            "geom",
-            "locations",
-            "productType",
-            "platformSerialIdentifier",
-            "instrument",
-            "processingLevel",
-            "resolution",
-            "organisationName",
-            "parentIdentifier",
-            "orbitNumber",
-            "orbitDirection",
-            "swathIdentifier",
-            "snowCover",
-            "sensorMode",
-            "polarizationMode",
-            "id",
-            "tileIdentifier",
-            "geometry",
-        }
-        queryables = self.dag.get_queryables(provider="peps", product_type="S1_SAR_GRD")
-        self.assertSetEqual(queryables, expected_result)
-
-        expected_result = {"productType", "start", "end", "geom", "locations", "id"}
-        queryables = self.dag.get_queryables(product_type="S2_MSI_L1C")
-        self.assertSetEqual(queryables, expected_result)
-
-        expected_result = {
-            "productType",
-            "start",
-            "end",
-            "geom",
-            "locations",
-            "geometry",
-            "platformSerialIdentifier",
-            "title",
-            "cloudCover",
-            "illuminationAzimuthAngle",
-            "illuminationZenithAngle",
-            "awsPath",
-            "productPath",
-            "id",
-        }
-        queryables = self.dag.get_queryables(
-            provider="aws_eos", product_type="S2_MSI_L1C"
+        for property in expected_properties:
+            key_parts = property.split(" ")
+            key = key_parts[0].lower()
+            if len(key_parts) > 1:
+                key += key_parts[1]
+            expected_result[key] = BaseQueryableProperty(description=property)
+        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
+            description="Platform"
         )
-        self.assertSetEqual(queryables, expected_result)
+        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
+        expected_result["orbitNumber"] = BaseQueryableProperty(
+            description="Absolute Orbit"
+        )
+        expected_result["orbitDirection"] = BaseQueryableProperty(
+            description="Orbit State"
+        )
+        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
+        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
+        expected_result["sensorMode"] = BaseQueryableProperty(
+            description="Instrument Mode"
+        )
+        queryables = self.dag.list_queryables(provider="peps")
+        self.assertDictEqual(expected_result, queryables)
+
+        expected_properties = {
+            "Product Type",
+            "Organisation Name",
+            "Parent Identifier",
+            "Swath Identifier",
+            "Snow Cover",
+            "Polarization Mode",
+            "Tile Identifier",
+        }
+        expected_result = Queryables().get_base_properties()
+        for property in expected_properties:
+            key_parts = property.split(" ")
+            key = key_parts[0].lower()
+            if len(key_parts) > 1:
+                key += key_parts[1]
+            expected_result[key] = BaseQueryableProperty(description=property)
+        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
+            description="Platform"
+        )
+        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
+        expected_result["orbitNumber"] = BaseQueryableProperty(
+            description="Absolute Orbit"
+        )
+        expected_result["orbitDirection"] = BaseQueryableProperty(
+            description="Orbit State"
+        )
+        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
+        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
+        expected_result["sensorMode"] = BaseQueryableProperty(
+            description="Instrument Mode"
+        )
+
+        queryables = self.dag.list_queryables(
+            provider="peps", product_type="S1_SAR_GRD"
+        )
+        self.assertDictEqual(queryables, expected_result)
+
+        queryables = self.dag.list_queryables(product_type="S2_MSI_L1C")
+        self.assertIn("awsPath", queryables.keys())
+        self.assertIn("id", queryables.keys())
+        self.assertIn("illuminationAzimuthAngle", queryables.keys())
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

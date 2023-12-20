@@ -1,0 +1,36 @@
+{
+  "$id": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-1-grd/queryables",
+  "type": "object",
+  "title": "STAC Queryables.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "id": {
+      "$ref": "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/definitions/core/allOf/2/properties/id",
+      "title": "Item ID",
+      "description": "Item identifier"
+    },
+    "datetime": {
+      "type": "string",
+      "title": "Acquired",
+      "format": "date-time",
+      "pattern": "(\\+00:00|Z)$",
+      "description": "Datetime"
+    },
+    "geometry": {
+      "$ref": "https://geojson.org/schema/Feature.json",
+      "title": "Item Geometry",
+      "description": "Item Geometry"
+    },
+    "platform": {
+      "enum": [
+        "SENTINEL-1A",
+        "SENTINEL-1B"
+      ],
+      "type": "string",
+      "title": "Platform"
+    },
+    "s1:processing_level":{
+      "type":"string"
+    }
+  }
+}

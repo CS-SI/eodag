@@ -22,10 +22,11 @@ import os
 import re
 import shutil
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import geojson
 import pkg_resources
+import requests
 import yaml.parser
 from pkg_resources import resource_filename
 from whoosh import analysis, fields
@@ -34,6 +35,12 @@ from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.queryables import (
+    BaseQueryableProperty,
+    Queryables,
+    format_provider_queryables,
+    format_queryable,
+)
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
@@ -56,6 +63,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
+    USER_AGENT,
     MockResponse,
     _deprecated,
     deepcopy,
@@ -2073,23 +2081,32 @@ class EODataAccessGateway:
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
-    def get_queryables(
-        self, provider: Optional[str] = None, product_type: Optional[str] = None
-    ) -> Set[str]:
+    def list_queryables(
+        self,
+        provider: Optional[str] = None,
+        product_type: Optional[str] = None,
+        base: Optional[bool] = True,
+    ) -> dict[str, BaseQueryableProperty]:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param product_type: (optional) The EODAG product type.
         :type product_type: str
         :param provider: (optional) The provider.
         :type provider: str
-        :returns: A set containing the EODAG queryable properties.
-        :rtype: set
+        :param base: if base queryable objects or extended queryable objects should be created
+        :type base: bool
+        :returns: A dict containing the EODAG queryable properties.
+        :rtype: dict
         """
-        default_queryables = {"productType", "start", "end", "geom", "locations", "id"}
+        if base:
+            default_queryables = Queryables().get_base_properties()
+        else:
+            default_queryables = Queryables().properties
         if provider is None and product_type is None:
             return default_queryables
 
         plugins = self._plugins_manager.get_search_plugins(product_type, provider)
+        provider_plugin = None
 
         # dictionary of the queryable properties of the providers supporting the given product type
         all_queryable_properties = dict()
@@ -2105,7 +2122,7 @@ class EODataAccessGateway:
                     f"{product_type} is not available for provider {provider}"
                 )
 
-            provider_queryables = set(default_queryables)
+            provider_queryables = default_queryables
 
             metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
 
@@ -2117,13 +2134,156 @@ class EODataAccessGateway:
             )
 
             for key, value in metadata_mapping.items():
-                if isinstance(value, list) and "TimeFromAscendingNode" not in key:
-                    provider_queryables.add(key)
+                if (
+                    isinstance(value, list)
+                    and "TimeFromAscendingNode" not in key
+                    and key not in provider_queryables
+                ):
+                    queryable = format_queryable(key, base)
+                    provider_queryables[key] = queryable
 
             all_queryable_properties[plugin.provider] = provider_queryables
+            if provider and plugin.provider == provider:
+                provider_plugin = plugin
+                break
 
         if provider is None:
-            # intersection of the queryables among the providers
-            return set.intersection(*all_queryable_properties.values())
+            result = {}
+            for queryables in all_queryable_properties.values():
+                result.update(queryables)
+            return result
         else:
-            return all_queryable_properties[provider]
+            if product_type:
+                provider_queryables = self._add_provider_product_type_queryables(
+                    provider_plugin,
+                    provider,
+                    product_type,
+                    all_queryable_properties[provider],
+                    base,
+                )
+            else:
+                provider_queryables = self._add_provider_queryables(
+                    provider_plugin, provider, all_queryable_properties[provider], base
+                )
+            return provider_queryables
+
+    def _add_provider_queryables(
+        self,
+        search_plugin: Union[Search, Api],
+        provider: str,
+        queryables: dict,
+        base: bool,
+    ) -> Dict[str, Any]:
+        """Add the queryables fetched from the given provider to the default queryables.
+        If the queryables endpoint is not supported by the provider, the original queryables are returned
+        :param provider: The provider.
+        :type provider: str
+        :param queryables: default queryables to which provider queryables will be added
+        :type queryables: dict
+        :param base: if base queryable objects or extended queryable objects should be created
+        :type base: bool
+        :returns queryable_properties: A dict containing the formatted queryable properties
+                                       including queryables fetched from the provider.
+        :rtype dict
+        """
+
+        search_type = search_plugin.config.type
+        if search_type == "StacSearch":
+            queryables_url = search_plugin.config.api_endpoint.replace(
+                "/search", "/queryables"
+            )
+        else:
+            queryables_url = ""
+        if not queryables_url:
+            logger.info(
+                "no url was found for %s provider-specific queryables", provider
+            )
+            return queryables
+        try:
+            headers = USER_AGENT
+            if hasattr(search_plugin, "auth"):
+                res = requests.get(
+                    queryables_url, headers=headers, auth=search_plugin.auth
+                )
+            else:
+                res = requests.get(queryables_url, headers=headers)
+            res.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 404:
+                logger.info("provider %s does not support queryables", provider)
+                return queryables
+            else:
+                raise RequestError(str(err))
+        else:
+            provider_queryables = res.json()["properties"]
+            return format_provider_queryables(provider_queryables, queryables, base)
+
+    def _add_provider_product_type_queryables(
+        self,
+        search_plugin: Union[Search, Api],
+        provider: str,
+        product_type: str,
+        queryables: dict,
+        base: bool,
+    ) -> Dict[str, Any]:
+        """Add the queryables fetched from the given provider for the given product type
+        to the default queryables derived from the metadata mapping.
+        If the queryables endpoint is not supported by the provider, the original queryables are returned.
+        :param provider: The provider.
+        :type provider: str
+        :param product_type: EODAG product type
+        :type product_type: str
+        :param queryables: default queryables to which provider queryables will be added
+        :type queryables: dict
+        :param base: if base queryable objects or extended queryable objects should be created
+        :type base: bool
+        :returns queryable_properties: A dict containing the formatted queryable properties
+                                       including queryables fetched from the provider.
+        :rtype dict
+        """
+        search_type = search_plugin.config.type
+        provider_product_type = search_plugin.config.products.get(product_type, {}).get(
+            "productType", None
+        )
+        if not provider_product_type:
+            logger.warning(
+                "provider product type mapping for product type %s not found",
+                product_type,
+            )
+            provider_product_type = product_type
+        if search_type == "StacSearch":
+            api_url = search_plugin.config.api_endpoint.replace("/search", "/")
+            queryables_url = (
+                api_url + "collections/" + provider_product_type + "/queryables"
+            )
+        else:
+            queryables_url = ""
+
+        if not queryables_url:
+            logger.info(
+                "no url was found for %s on %s provider-specific queryables",
+                product_type,
+                provider,
+            )
+            return queryables
+        try:
+            headers = USER_AGENT
+            if hasattr(search_plugin, "auth"):
+                res = requests.get(
+                    queryables_url, headers=headers, auth=search_plugin.auth
+                )
+            else:
+                res = requests.get(queryables_url, headers=headers)
+            res.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 404:
+                logger.info("provider %s does not support queryables", provider)
+                return queryables
+            else:
+                raise RequestError(str(err))
+        else:
+            if "properties" in res.json():
+                provider_queryables = res.json()["properties"]
+                return format_provider_queryables(provider_queryables, queryables, base)
+            else:
+                return queryables
