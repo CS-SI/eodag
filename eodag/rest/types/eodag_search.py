@@ -93,6 +93,7 @@ class EODAGSearch(BaseModel):
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
     sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
+    server_mode: bool = True
 
     @model_validator(mode="before")
     @classmethod
