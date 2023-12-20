@@ -522,8 +522,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-25T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -533,7 +533,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -543,7 +543,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -553,8 +553,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-20T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -576,8 +576,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-25T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -590,8 +590,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-01T00:00:00Z",
+                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -604,8 +604,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-25T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -618,8 +618,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -651,8 +651,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-01T00:00:00Z",
+                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
             ),
         )
         # args & catalog intersection
@@ -662,8 +662,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -672,8 +672,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -682,8 +682,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-01-05T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-01T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-05T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -692,8 +692,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-05T00:00:00Z",
-                end="2018-01-05T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-05T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-05T00:00:00Z",
             ),
         )
         result = self._request_valid(
@@ -708,6 +708,7 @@ class RequestTestCase(unittest.TestCase):
             expected_search_kwargs={
                 "id": "foo",
                 "productType": self.tested_product_type,
+                "provider": None,
             },
         )
 
@@ -718,6 +719,7 @@ class RequestTestCase(unittest.TestCase):
             expected_search_kwargs={
                 "id": "foo",
                 "productType": self.tested_product_type,
+                "provider": None,
             },
         )
 
@@ -780,8 +782,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-25T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -795,7 +797,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -809,7 +811,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -823,8 +825,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-20T00:00:00Z",
+                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                completionTimeFromAscendingNode="2018-01-20T00:00:00Z",
             ),
         )
 
