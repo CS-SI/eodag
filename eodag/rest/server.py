@@ -753,6 +753,7 @@ def get_search(
     """Handler for GET /search"""
     trace_id = telemetry.get_current_trace_id()
     timer = telemetry.create_overhead_timer(trace_id)
+    timer.start_global_timer()
     logger.debug("URL: %s", request.state.url)
 
     # metrics
