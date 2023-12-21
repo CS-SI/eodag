@@ -230,14 +230,18 @@ class StacItem(StacCommon):
                     )
 
         item_list: List[Dict[str, Any]] = []
+        product: EOProduct
         for product in search_results:
             # parse jsonpath
+            p = self.eodag_api.get_providers(product.provider)[0]
             provider_dict = jsonpath_parse_dict_items(
                 provider_model,
                 {
-                    "provider": self.eodag_api.providers_config[
-                        product.provider
-                    ].__dict__
+                    "name": p.public_name or p.name,
+                    "description": p.description,
+                    "url": p.url,
+                    "roles": p.roles,
+                    "priority": p.priority,
                 },
             )
 
@@ -649,9 +653,16 @@ class StacCollection(StacCommon):
                 ]
             providers_models: List[Dict[str, Any]] = []
             for provider in providers:
+                p = self.eodag_api.get_providers(provider)[0]
                 provider_m = jsonpath_parse_dict_items(
                     provider_model,
-                    {"provider": self.eodag_api.providers_config[provider].__dict__},
+                    {
+                        "name": p.public_name or p.name,
+                        "description": p.description,
+                        "url": p.url,
+                        "roles": p.roles,
+                        "priority": p.priority,
+                    },
                 )
                 providers_models.append(provider_m)
 

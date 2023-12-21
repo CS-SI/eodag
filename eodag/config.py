@@ -119,12 +119,16 @@ class ProviderConfig(yaml.YAMLObject):
     """
 
     name: str
+    public_name: Optional[str] = None
     priority: int = 0  # Set default priority to 0
-    api: Optional[PluginConfig]
-    search: Optional[PluginConfig]
-    products: Optional[Dict[str, Any]]
-    download: Optional[PluginConfig]
-    auth: Optional[PluginConfig]
+    description: Optional[str] = None
+    url: Optional[str] = None
+    roles: List[str] = ["host"]
+    api: Optional[PluginConfig] = None
+    search: Optional[PluginConfig] = None
+    products: Optional[Dict[str, Any]] = None
+    download: Optional[PluginConfig] = None
+    auth: Optional[PluginConfig] = None
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper

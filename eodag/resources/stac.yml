@@ -122,12 +122,12 @@ collection:
     processing:level: '$.product_type.processingLevel'
 
 provider:
-  name: '$.provider.name'
-  description: '$.provider.description'
+  name: '$.name'
+  description: '$.description'
   # one or more of "producer" "licensor" "processor" "host"
-  roles: '$.provider.roles'
-  url: '$.provider.url'
-  priority: '$.provider.priority'
+  roles: '$.roles'
+  url: '$.url'
+  priority: '$.priority'
 
 # Data ------------------------------------------------------------------------
 

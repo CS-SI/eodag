@@ -715,6 +715,7 @@
 ---
 !provider
   name: peps
+  public_name: test_here
   priority: 1
   description: |
     The PEPS platform, the French "mirror site", redistributes the products of Sentinel satellites,
@@ -868,6 +869,7 @@
 ---
 !provider
   name: creodias
+  public_name: test_here
   priority: 0
   description: CloudFerro DIAS
   roles:

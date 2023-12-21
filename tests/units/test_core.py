@@ -33,6 +33,10 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.api.queryables import BaseQueryableProperty, Queryables
+from eodag.config import PluginConfig
+from eodag.plugins.download.base import Download
+from eodag.plugins.search.base import Search
+from eodag.types.provider import Provider
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -1545,12 +1549,12 @@ class TestCoreSearch(TestCoreBase):
         try:
             self.dag.set_preferred_provider("peps")
             base = {"productType": "S2_MSI_L1C"}
-            search_plugins, _ = self.dag._prepare_search(**base)
+            providers, _ = self.dag._prepare_search(**base)
             # Just check that the title has been set correctly. There are more (e.g.
             # abstract, platform, etc.) but this is sufficient to check that the
             # product_type_config dict has been created and populated.
             self.assertEqual(
-                search_plugins[0].config.product_type_config["title"],
+                providers[0].search.config.product_type_config["title"],
                 "SENTINEL2 Level-1C",
             )
         finally:
@@ -1567,11 +1571,11 @@ class TestCoreSearch(TestCoreBase):
         try:
             self.dag.set_preferred_provider("peps")
             base = {"productType": "product_unknown_to_eodag"}
-            search_plugins, _ = self.dag._prepare_search(**base)
+            providers, _ = self.dag._prepare_search(**base)
             # product_type_config is still created if the product is not known to eodag
             # however it contains no data.
             self.assertIsNone(
-                search_plugins[0].config.product_type_config["title"],
+                providers[0].search.config.product_type_config["title"],
             )
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
@@ -1582,8 +1586,8 @@ class TestCoreSearch(TestCoreBase):
         try:
             self.dag.set_preferred_provider("peps")
             base = {"productType": "S2_MSI_L1C"}
-            search_plugins, _ = self.dag._prepare_search(**base)
-            self.assertEqual(search_plugins[0].provider, "peps")
+            providers, _ = self.dag._prepare_search(**base)
+            self.assertEqual(providers[0].search.provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
@@ -1595,16 +1599,16 @@ class TestCoreSearch(TestCoreBase):
         try:
             self.dag.set_preferred_provider("peps")
             base = {"productType": "S2_MSI_ALIAS"}
-            search_plugins, _ = self.dag._prepare_search(**base)
-            self.assertEqual(search_plugins[0].provider, "peps")
+            providers, _ = self.dag._prepare_search(**base)
+            self.assertEqual(providers[0].search.provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_no_plugins_when_search_by_id(self):
         """_prepare_search must not return the search and auth plugins for a search by id"""
         base = {"id": "some_id", "provider": "some_provider"}
-        search_plugins, prepared_search = self.dag._prepare_search(**base)
-        self.assertListEqual(search_plugins, [])
+        providers, prepared_search = self.dag._prepare_search(**base)
+        self.assertListEqual(providers, [])
         self.assertNotIn("auth", prepared_search)
 
     def test__prepare_search_peps_plugins_product_not_available(self):
@@ -1618,8 +1622,8 @@ class TestCoreSearch(TestCoreBase):
         try:
             self.dag.set_preferred_provider("theia")
             base = {"productType": "S2_MSI_L1C"}
-            search_plugins, _ = self.dag._prepare_search(**base)
-            self.assertEqual(search_plugins[0].provider, "peps")
+            providers, _ = self.dag._prepare_search(**base)
+            self.assertEqual(providers[0].search.provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
@@ -1696,8 +1700,15 @@ class TestCoreSearch(TestCoreBase):
             pagination = {"max_items_per_page": 1}
 
         search_plugin.config = DummyConfig()
+
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
+
         sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
+            provider=provider,
             items_per_page=2,
         )
         self.assertIsInstance(sr, SearchResult)
@@ -1717,7 +1728,12 @@ class TestCoreSearch(TestCoreBase):
             pagination = {}
 
         search_plugin.config = DummyConfig()
-        sr, estimate = self.dag._do_search(search_plugin=search_plugin)
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
+        sr, estimate = self.dag._do_search(provider=provider)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), self.search_results_size)
         self.assertEqual(estimate, self.search_results_size)
@@ -1736,7 +1752,12 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
-        sr, estimate = self.dag._do_search(search_plugin=search_plugin, count=False)
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
+        sr, estimate = self.dag._do_search(provider=provider, count=False)
         self.assertIsNone(estimate)
         self.assertEqual(len(sr), self.search_results_size)
 
@@ -1753,8 +1774,13 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
 
         page = 4
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
         sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
+            provider=provider,
             page=page,
             items_per_page=2,
         )
@@ -1778,8 +1804,13 @@ class TestCoreSearch(TestCoreBase):
 
         page = 4
         items_per_page = 10
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
         sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
+            provider=provider,
             page=page,
             items_per_page=items_per_page,
         )
@@ -1809,8 +1840,13 @@ class TestCoreSearch(TestCoreBase):
 
         page = 4
         items_per_page = 10
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
         sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
+            provider=provider,
             page=page,
             items_per_page=items_per_page,
         )
@@ -1824,11 +1860,14 @@ class TestCoreSearch(TestCoreBase):
         class DummyConfig:
             pagination = {}
 
-        class DummySearchPlugin:
-            provider = "peps"
-            config = DummyConfig()
+        search_plugin = Search(provider="peps", config=DummyConfig())
 
-        sr, estimate = self.dag._do_search(search_plugin=DummySearchPlugin())
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
+        sr, estimate = self.dag._do_search(provider=provider)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), 0)
         self.assertEqual(estimate, 0)
@@ -1857,8 +1896,13 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
         with self.assertRaises(PluginImplementationError):
-            self.dag._do_search(search_plugin=search_plugin, raise_errors=True)
+            self.dag._do_search(provider=provider, raise_errors=True)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_register_downloader_if_search_intersection(self, search_plugin):
@@ -1874,7 +1918,12 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
-        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
+        sr, _ = self.dag._do_search(provider=provider)
         for product in sr:
             self.assertIsNotNone(product.downloader)
 
@@ -1893,7 +1942,12 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
         search_plugin.provider = "peps"
         search_plugin.query.return_value = ([DummyProduct(), DummyProduct()], 2)
-        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        provider = Provider(
+            name="peps",
+            search=search_plugin,
+            download=Download(provider="peps", config=PluginConfig()),
+        )
+        sr, _ = self.dag._do_search(provider=provider)
         for product in sr:
             self.assertIsNone(product.downloader)
 

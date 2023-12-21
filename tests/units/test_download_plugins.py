@@ -86,7 +86,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
         self.tmp_dir.cleanup()
 
     def get_download_plugin(self, product):
-        return self.plugins_manager.get_download_plugin(product)
+        return self.plugins_manager.get_download_plugin(product.provider)
 
     def get_auth_plugin(self, provider):
         return self.plugins_manager.get_auth_plugin(provider)
@@ -101,7 +101,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         Path(product_file.name).touch()
         self.assertNotEqual(self.product.location, self.product.remote_location)
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
 
         with self.assertLogs(level="INFO") as cm:
             fs_path, record_filename = plugin._prepare_download(self.product)
@@ -114,7 +114,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
         self.assertEqual(self.product.remote_location, "")
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
 
         fs_path, record_filename = plugin._prepare_download(self.product)
 
@@ -128,7 +128,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         self.product.properties["id"] = "alsô"
         self.product.location = self.product.remote_location = "somewhere"
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
 
         fs_path, _ = plugin._prepare_download(self.product)
 
@@ -139,7 +139,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         if os.name == "nt":
             self.skipTest("windows permissions too complex to set for this test")
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "somewhere"
         # read only output dir
         outdir = TemporaryDirectory()
@@ -157,7 +157,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_ok(self, mock_requests_session_request):
         """HTTPDownload.download() must create an outputfile"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
 
@@ -176,7 +176,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must ignore assets if configured to"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = (
             self.product.remote_location
         ) = "http://somewhere/dowload_from_location"
@@ -236,7 +236,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must create an outputfile"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
@@ -288,7 +288,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must create an outputfile"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
@@ -318,7 +318,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must create an outputfile"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
@@ -359,7 +359,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must create an outputfile"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
@@ -392,7 +392,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must get assets sizes"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.assets.clear()
         self.product.assets.update(
@@ -474,7 +474,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must handle one local asset"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
@@ -499,7 +499,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must handle several local assets"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
@@ -540,7 +540,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_get(self, mock_request):
         """HTTPDownload.orderDownload() must request using orderLink and GET protocol"""
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.properties["orderLink"] = "http://somewhere/order"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
 
@@ -561,7 +561,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):
         """HTTPDownload.orderDownload() must request using orderLink and POST protocol"""
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.properties["storageStatus"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
 
@@ -594,7 +594,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     def test_plugins_download_http_order_status(self):
         """HTTPDownload.orderDownloadStatus() must request status using orderStatusLink"""
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         plugin.config.order_status_percent = "progress_percentage"
         plugin.config.order_status_error = {"that": "failed"}
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
@@ -631,7 +631,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     def test_plugins_download_http_order_status_search_again(self):
         """HTTPDownload.orderDownloadStatus() must search again after success if needed"""
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         plugin.config.order_status_success = {"status": "great-success"}
         plugin.config.order_status_on_success = {
             "need_search": True,
@@ -682,7 +682,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
     def setUp(self):
         super(TestDownloadPluginHttpRetry, self).setUp()
 
-        self.plugin = self.get_download_plugin(self.product)
+        self.plugin = self.get_download_plugin(self.product.provider)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
@@ -854,7 +854,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     def test_plugins_download_aws_get_bucket_prefix(self):
         """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         plugin.config.products["S2_MSI_L2A"]["default_bucket"] = "default_bucket"
 
         bucket, prefix = plugin.get_product_bucket_name_and_prefix(self.product)
@@ -896,7 +896,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     ):
         """AwsDownload.download() must not call safe build methods if not needed"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and no flatten_top_dirs
@@ -939,7 +939,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     ):
         """AwsDownload.download() must not call safe build methods if not needed"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and flatten_top_dirs
@@ -984,7 +984,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     ):
         """AwsDownload.download() must call safe build methods if needed"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
         execpected_output = os.path.join(
             self.output_dir, self.product.properties["title"]
@@ -1058,7 +1058,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     ):
         """AwsDownload.download() must call safe build methods if needed"""
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
         self.product.properties["tilePath"] = "http://example.com/tilePath"
         self.product.assets.clear()
@@ -1185,7 +1185,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
 
         self.product.properties["storageStatus"] = ONLINE_STATUS
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         auth = self.get_auth_plugin(self.product.provider)
         self.product.register_downloader(plugin, auth)
 
@@ -1261,7 +1261,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         # unvalid location
         self.product.location = self.product.remote_location = "somewhere"
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(self.product.provider)
         auth = self.get_auth_plugin(self.product.provider)
         self.product.register_downloader(plugin, auth)
 

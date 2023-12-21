@@ -740,7 +740,9 @@ def download_stac_item_by_id_stream(
             )
 
     if product.downloader is None:
-        download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
+        download_plugin = eodag_api._plugins_manager.get_download_plugin(
+            product.provider
+        )
         auth_plugin = eodag_api._plugins_manager.get_auth_plugin(
             download_plugin.provider
         )

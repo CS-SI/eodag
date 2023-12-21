@@ -43,10 +43,9 @@ from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE
-from eodag.utils.exceptions import UnsupportedProvider
+from eodag.utils.exceptions import MisconfiguredError, UnsupportedProvider
 
 if TYPE_CHECKING:
-    from eodag.api.product import EOProduct
     from eodag.config import PluginConfig, ProviderConfig
     from eodag.plugins.base import PluginTopic
 
@@ -72,6 +71,8 @@ class PluginManager:
     """
 
     supported_topics = {"search", "download", "crunch", "auth", "api"}
+
+    provider_config: Dict[str, ProviderConfig]
 
     def __init__(self, providers_config: Dict[str, ProviderConfig]) -> None:
         self.providers_config = providers_config
@@ -116,7 +117,7 @@ class PluginManager:
                         self.providers_config = plugin_providers_config
         self.rebuild()
 
-    def rebuild(self, providers_config=None):
+    def rebuild(self, providers_config: Optional[Dict[str, ProviderConfig]] = None):
         """(Re)Build plugin manager mapping and cache"""
         if providers_config is not None:
             self.providers_config = providers_config
@@ -170,16 +171,20 @@ class PluginManager:
 
         def get_plugin() -> Union[Search, Api]:
             plugin: Union[Search, Api]
-            try:
+            if config.search:
                 config.search.products = config.products
                 config.search.priority = config.priority
                 plugin = cast(
                     Search, self._build_plugin(config.name, config.search, Search)
                 )
-            except AttributeError:
+            elif config.api:
                 config.api.products = config.products
                 config.api.priority = config.priority
                 plugin = cast(Api, self._build_plugin(config.name, config.api, Api))
+            else:
+                raise MisconfiguredError(
+                    f"Provider {provider} must have a Search plugin or an Api plugin"
+                )
             return plugin
 
         if provider is not None:
@@ -210,7 +215,7 @@ class PluginManager:
             ]:
                 yield get_plugin()
 
-    def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
+    def get_download_plugin(self, provider: str) -> Union[Download, Api]:
         """Build and return the download plugin capable of downloading the given
         product.
 
@@ -219,20 +224,21 @@ class PluginManager:
         :returns: The download plugin capable of downloading the product
         :rtype: :class:`~eodag.plugins.download.Download` or :class:`~eodag.plugins.download.Api`
         """
-        plugin_conf = self.providers_config[product.provider]
-        try:
+        plugin_conf = self.providers_config[provider]
+        if plugin_conf.download:
             plugin_conf.download.priority = plugin_conf.priority
-            plugin = cast(
+            plugin: Union[Download, Api] = cast(
                 Download,
-                self._build_plugin(product.provider, plugin_conf.download, Download),
+                self._build_plugin(provider, plugin_conf.download, Download),
             )
-            return plugin
-        except AttributeError:
+        elif plugin_conf.api:
             plugin_conf.api.priority = plugin_conf.priority
-            plugin = cast(
-                Api, self._build_plugin(product.provider, plugin_conf.api, Api)
+            plugin = cast(Api, self._build_plugin(provider, plugin_conf.api, Api))
+        else:
+            raise MisconfiguredError(
+                f"Provider {provider} must have a download plugin or an Api plugin"
             )
-            return plugin
+        return plugin
 
     def get_auth_plugin(self, provider: str) -> Optional[Authentication]:
         """Build and return the authentication plugin for the given product_type and
@@ -244,17 +250,17 @@ class PluginManager:
         :rtype: :class:`~eodag.plugins.authentication.Authentication`
         """
         plugin_conf = self.providers_config[provider]
-        try:
-            plugin_conf.auth.priority = plugin_conf.priority
-            plugin = cast(
-                Authentication,
-                self._build_plugin(provider, plugin_conf.auth, Authentication),
-            )
-            return plugin
-        except AttributeError:
+        if not plugin_conf.auth:
             # We guess the plugin being built is of type Api, therefore no need
             # for an Auth plugin.
             return None
+
+        plugin_conf.auth.priority = plugin_conf.priority
+        plugin = cast(
+            Authentication,
+            self._build_plugin(provider, plugin_conf.auth, Authentication),
+        )
+        return plugin
 
     @staticmethod
     def get_crunch_plugin(name: str, **options: Any) -> Crunch:
