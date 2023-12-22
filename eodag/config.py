@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+from annotated_types import Gt
 import logging
 import os
 import tempfile
@@ -47,6 +48,7 @@ from requests.auth import AuthBase
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
+    Annotated,
     cached_yaml_load,
     cached_yaml_load_all,
     cast_scalar_value,
@@ -228,6 +230,15 @@ class PluginConfig(yaml.YAMLObject):
         count_endpoint: str
         start_page: int
 
+    class Sort(TypedDict):
+        """Configuration for sort during search"""
+
+        sort_by_default: List[Tuple[str, str]]
+        sort_url_tpl: str
+        # TODO: sort_body_tpl: Dict
+        sort_by_mapping: Dict[str, str]
+        max_sort_params: Annotated[int, Gt(0)]
+
     class OrderStatusOnSuccess(TypedDict):
         """Configuration for order on-success during download"""
 
@@ -251,6 +262,7 @@ class PluginConfig(yaml.YAMLObject):
     result_type: str
     results_entry: str
     pagination: PluginConfig.Pagination
+    sort: PluginConfig.Sort
     query_params_key: str
     discover_metadata: Dict[str, str]
     discover_product_types: Dict[str, Any]

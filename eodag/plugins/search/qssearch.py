@@ -475,11 +475,11 @@ class QueryStringSearch(Search):
 
         # remove "sortBy" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string once metadata mapping will be done
-        sort_by_params = self.SortByParams(sort_by_params=kwargs.pop("sortBy", None))
-        self.sort_by_params = sort_by_params.sort_by_params or getattr(
+        sort_by_params = kwargs.pop("sortBy", None)
+        self.sort_by_params = sort_by_params or getattr(
             self.config, "sort", {}
         ).get("sort_by_default", None)
-        if not sort_by_params.sort_by_params and getattr(self.config, "sort", {}).get(
+        if not sort_by_params and getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         ):
             logger.info(

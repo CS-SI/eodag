@@ -1085,10 +1085,10 @@ class TestCore(TestCoreBase):
     ):
         """list_queryables must return queryables list adapted to provider and product-type"""
         with self.assertRaises(UnsupportedProvider):
-            self.dag.list_queryables(provider="not_existing_provider")
+            self.dag.list_queryables(provider="not_supported_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.list_queryables(productType="not_existing_product_type")
+            self.dag.list_queryables(product_type="not_supported_product_type")
 
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
@@ -1158,6 +1158,74 @@ class TestCore(TestCoreBase):
             "format": None,
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+
+    def test_list_sortables(self):
+        """list_sortables must return sortable(s) and its (their) maximum  number dict adapted to provider"""
+        # raise an error if the provider is unsupported
+        with self.assertRaises(UnsupportedProvider):
+            self.dag.list_sortables(provider="not_supported_provider")
+
+        # check if all providers are listed if the method does not have argument
+        expected_result = {
+            "peps": None,
+            "usgs": None,
+            "creodias": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "aws_eos": None,
+            "theia": None,
+            "onda": None,
+            "astraea_eod": None,
+            "usgs_satapi_aws": None,
+            "earth_search": None,
+            "earth_search_cog": None,
+            "earth_search_gcs": None,
+            "ecmwf": None,
+            "cop_ads": None,
+            "cop_cds": None,
+            "sara": None,
+            "meteoblue": None,
+            "cop_dataspace": None,
+            "planetary_computer": None,
+            "hydroweb_next": None,
+            "wekeo": None,
+            "creodias_s3": None,
+        }
+        sortables = self.dag.list_sortables()
+        self.assertDictEqual(sortables, expected_result)
+
+        # check if only sortables of the provider given in argument are displayed and if they are set to None
+        # when the provider does not support the sorting feature
+        expected_result = {"peps": None}
+        sortables = self.dag.list_sortables(provider="peps")
+        self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
+        self.assertDictEqual(sortables, expected_result)
+
+        # check if sortable parameter(s) and its (their) maximum number of a provider are set
+        # to their value when the provider supports the sorting feature and has a maximum number of sortables
+        expected_result = {
+            "creodias": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                ],
+                "max_sort_params": 1,
+            }
+        }
+        sortables = self.dag.list_sortables(provider="creodias")
+        self.assertTrue(hasattr(self.dag.providers_config["creodias"].search, "sort"))
+        self.assertTrue(
+            self.dag.providers_config["creodias"].search.sort.get("max_sort_params")
+        )
+        self.assertDictEqual(sortables, expected_result)
+
+        # TODO: provider supports the sorting feature and does not have a maximum number of sortables
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
@@ -2261,26 +2329,6 @@ class TestCoreSearch(TestCoreBase):
                     productType: '{productType}'
         """
         dag.update_providers_config(dummy_provider_config)
-        # raise an error with syntax errors
-        with self.assertLogs(level="ERROR") as cm_logs:
-            dag.search(
-                provider="dummy_provider",
-                productType="S2_MSI_L1C",
-                sortBy=["eodagSortParam ASC"],
-            )
-            self.assertIn("Input should be a valid tuple", str(cm_logs.output))
-        # raise an error with a wrong sorting order
-        with self.assertLogs(level="ERROR") as cm_logs:
-            dag.search(
-                provider="dummy_provider",
-                productType="S2_MSI_L1C",
-                sortBy=[("eodagSortParam", " wrong_order ")],
-            )
-            self.assertIn(
-                "Sorting order must be set to \\'ASC\\' (ASCENDING) or "
-                "\\'DESC\\' (DESCENDING), got \\'WRONG_ORDER\\' instead",
-                str(cm_logs.output),
-            )
         # raise an error with a parameter not sortable with a provider
         with self.assertLogs(level="ERROR") as cm_logs:
             dag.search(
