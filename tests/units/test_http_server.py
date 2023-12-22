@@ -428,6 +428,9 @@ class RequestTestCase(unittest.TestCase):
         self._request_not_valid(
             f"search?collections={self.tested_product_type}&bbox=a,43,1,44"
         )
+        self._request_not_valid(
+            f"search?collections={self.tested_product_type}&sortby=not_sortable_param",
+        )
 
         self._request_valid(
             f"search?collections={self.tested_product_type}",
@@ -444,6 +447,18 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
+            ),
+        )
+        self._request_valid(
+            f"search?collections={self.tested_product_type}&sortby=+start_datetime,-published",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                sortBy=[
+                    ("startTimeFromAscendingNode", "ASC"),
+                    ("publicationDate", "DESC"),
+                ],
             ),
         )
 
@@ -852,6 +867,29 @@ class RequestTestCase(unittest.TestCase):
                     "productType": self.tested_product_type,
                 },
             ],
+        )
+
+    def test_sort_by_post_search(self):
+        """POST search with sortBy through eodag server should return a valid response"""
+        self._request_valid(
+            "search",
+            protocol="POST",
+            post_data={
+                "collections": [self.tested_product_type],
+                "sortby": [
+                    {"field": "start_datetime", "direction": "asc"},
+                    {"field": "published", "direction": "desc"},
+                ],
+            },
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                sortBy=[
+                    ("startTimeFromAscendingNode", "ASC"),
+                    ("publicationDate", "DESC"),
+                ],
+            ),
         )
 
     def test_search_response_contains_pagination_info(self):
