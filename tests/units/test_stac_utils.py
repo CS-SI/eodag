@@ -273,9 +273,21 @@ class TestStacUtils(unittest.TestCase):
         sort_by_params = self.rest_utils.get_sort_by({"sortby": "-start_datetime"})
         self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "DESC")])
         sort_by_params = self.rest_utils.get_sort_by({"sortby": "+start_datetime,+end_datetime"})
-        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC"), ("completionTimeFromAscendingNode", "ASC")])
+        self.assertEqual(
+            sort_by_params,
+            [
+                ("startTimeFromAscendingNode", "ASC"),
+                ("completionTimeFromAscendingNode", "ASC"),
+            ],
+        )
         sort_by_params = self.rest_utils.get_sort_by({"sortby": "+start_datetime,-end_datetime"})
-        self.assertEqual(sort_by_params, [("startTimeFromAscendingNode", "ASC"), ("completionTimeFromAscendingNode", "DESC")])
+        self.assertEqual(
+            sort_by_params,
+            [
+                ("startTimeFromAscendingNode", "ASC"),
+                ("completionTimeFromAscendingNode", "DESC"),
+            ],
+        )
 
     def test_convert_sortby_to_get_format(self):
         """convert_sortby_to_get_format must convert sortby body request args
