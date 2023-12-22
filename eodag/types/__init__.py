@@ -18,7 +18,8 @@
 """EODAG types"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
+from annotated_types import Gt
 
 from pydantic import Field
 from pydantic.fields import FieldInfo
@@ -219,3 +220,16 @@ def model_fields_to_annotated_tuple(
         new_field_info.annotation = None
         annotated_model_fields[param] = (Annotated[field_type, new_field_info], None)
     return annotated_model_fields
+
+class ProviderSortables(TypedDict):
+    """A class representing sortable parameter(s) of a provider and the allowed
+    maximum number of used sortable(s) in a search request with the provider
+
+    :param sortables: The list of sortable parameter(s) of a provider
+    :type sortables: list[str]
+    :param max_sort_params: (optional) The allowed maximum number of used sortable(s) in a search request with the provider
+    :type max_sort_params: int
+    """
+
+    sortables: List[str]
+    max_sort_params: Annotated[Optional[int], Gt(0)]

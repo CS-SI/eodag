@@ -18,10 +18,8 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from pydantic import AfterValidator, BaseModel, StringConstraints, conlist
 from typing_extensions import Annotated
 
 from eodag.api.product.metadata_mapping import (
@@ -161,33 +159,3 @@ class Search(PluginTopic):
         return self.config.products.get(product_type, {}).get(
             "metadata_mapping", self.config.metadata_mapping
         )
-
-    def check_sort_order_pattern_matching(sort_order: str) -> str:
-        """Check if the sorting order of a sorting parameter is correct, i.e. it starts with "ASC" or "DES"
-
-        :param sort_order: the desired sorting order for a given sorting parameter
-        :type sort_order: str
-        :returns: The product type specific metadata-mapping
-        :rtype: str
-        """
-        pattern = r"^(ASC|DES)[a-zA-Z]*$"
-        assert (
-            re.match(pattern, sort_order) is not None
-        ), f"Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), got '{sort_order}' instead"
-        return sort_order[:3]
-
-    SortOrder = Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, to_upper=True),
-        AfterValidator(check_sort_order_pattern_matching),
-    ]
-    SortByParamsList = conlist(Tuple[str, SortOrder], min_length=1)
-
-    class SortByParams(BaseModel):
-        """A class representing "sortBy" argument value
-
-        :param sort_by_params: (optional) Sorting parameters and their sorting order from "sortBy" argument
-        :type sort_by_params: str
-        """
-
-        sort_by_params: Optional[Search.SortByParamsList] = None
