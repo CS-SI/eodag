@@ -33,6 +33,8 @@ from eodag.utils import (
 )
 
 if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
+
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
@@ -86,6 +88,12 @@ class Search(PluginTopic):
 
     def discover_product_types(self) -> Optional[Dict[str, Any]]:
         """Fetch product types list from provider using `discover_product_types` conf"""
+        return None
+
+    def discover_queryables(
+        self, product_type: Optional[str] = None
+    ) -> Optional[Dict[str, FieldInfo]]:
+        """Fetch queryables list from provider using `discover_queryables` conf"""
         return None
 
     def map_product_type(

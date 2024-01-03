@@ -18,9 +18,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
+
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
@@ -88,6 +90,12 @@ class Api(PluginTopic):
         the search criteria. If ``count`` is False, the second element returned must be ``None``.
         """
         raise NotImplementedError("A Api plugin must implement a method named query")
+
+    def discover_queryables(
+        self, product_type: Optional[str] = None
+    ) -> Optional[Dict[str, FieldInfo]]:
+        """Fetch queryables list from provider using `discover_queryables` conf"""
+        return None
 
     def download(
         self,
