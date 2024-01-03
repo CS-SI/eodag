@@ -1517,6 +1517,9 @@
     type: StacSearch
     api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
     need_auth: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # 2021/03/19: The docs (https://eod-catalog-svc-prod.astraea.earth/api.html#operation/getSearchSTAC)
       # say the max is 10_000. In practice 1_000 products are returned if more are asked (even greater
@@ -1634,6 +1637,9 @@
     type: StacSearch
     api_endpoint: https://landsatlook.usgs.gov/stac-server/search
     need_auth: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
       # but in practive if an Internal Server Error is returned for more than
@@ -1680,6 +1686,9 @@
     need_auth: false
     discover_product_types:
       results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1774,6 +1783,9 @@
     need_auth: false
     discover_product_types:
       fetch_url: null
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1809,6 +1821,9 @@
     need_auth: false
     discover_product_types:
       fetch_url: null
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -3759,6 +3774,9 @@
     api_endpoint: https://hydroweb.next.theia-land.fr/api/v1/rs-catalog/stac/search
     need_auth: true
     auth_error_code: 401
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       max_items_per_page: 10_000
     metadata_mapping:

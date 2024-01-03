@@ -27,6 +27,8 @@ import orjson
 import requests
 import yaml
 from lxml import etree
+from pydantic import create_model
+from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 
@@ -34,11 +36,13 @@ from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     format_query_params,
+    get_queryable_from_provider,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
     properties_from_xml,
 )
 from eodag.plugins.search.base import Search
+from eodag.types import json_field_definition_to_python
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
@@ -238,6 +242,16 @@ class QueryStringSearch(Search):
                 self.config.discover_product_types[
                     "generic_product_type_parsable_metadata"
                 ]
+            )
+
+        # parse jsonpath on init: queryables discovery
+        if (
+            getattr(self.config, "discover_queryables", {}).get("results_entry", None)
+            and getattr(self.config, "discover_queryables", {}).get("result_type", None)
+            == "json"
+        ):
+            self.config.discover_queryables["results_entry"] = string_to_jsonpath(
+                self.config.discover_queryables["results_entry"], force=True
             )
 
         # parse jsonpath on init: product type specific metadata-mapping
@@ -1226,3 +1240,81 @@ class StacSearch(PostJsonSearch):
             product.assets.update(product.properties.pop("assets", {}))
 
         return products
+
+    def discover_queryables(
+        self, product_type: Optional[str] = None
+    ) -> Optional[Dict[str, FieldInfo]]:
+        """Fetch queryables list from provider using `discover_queryables` conf
+
+        :param product_type: (optional) product type
+        :type product_type: str
+        :returns: fetched queryable parameters dict
+        :rtype: dict
+        """
+        provider_product_type = self.config.products.get(product_type, {}).get(
+            "productType", product_type
+        )
+
+        python_queryables: Dict[str, FieldInfo] = dict()
+
+        try:
+            unparsed_fetch_url = (
+                self.config.discover_queryables["product_type_fetch_url"]
+                if provider_product_type
+                else self.config.discover_queryables["fetch_url"]
+            )
+
+            fetch_url = unparsed_fetch_url.format(
+                provider_product_type=provider_product_type, **self.config.__dict__
+            )
+            response = QueryStringSearch._request(
+                self,
+                fetch_url,
+                info_message="Fetching queryables: {}".format(fetch_url),
+                exception_message="Skipping error while fetching queryables for "
+                "{} {} instance:".format(self.provider, self.__class__.__name__),
+            )
+        except (RequestError, KeyError, AttributeError):
+            return None
+        else:
+            json_queryables = dict()
+            try:
+                resp_as_json = response.json()
+
+                # extract results from response json
+                json_queryables = [
+                    match.value
+                    for match in self.config.discover_queryables["results_entry"].find(
+                        resp_as_json
+                    )
+                ][0]
+
+            except KeyError as e:
+                logger.warning(
+                    "Incomplete %s discover_queryables configuration: %s",
+                    self.provider,
+                    e,
+                )
+            except IndexError:
+                logger.info(
+                    "No queryable found for %s on %s", product_type, self.provider
+                )
+                return None
+
+            # convert json results to pydantic model fields
+            field_definitions = dict()
+            for json_param, json_mtd in json_queryables.items():
+                param = (
+                    get_queryable_from_provider(
+                        json_param, self.config.metadata_mapping
+                    )
+                    or json_param
+                )
+                field_definitions[param] = (
+                    json_field_definition_to_python(json_mtd),
+                    None,
+                )
+
+            python_queryables = create_model("m", **field_definitions).model_fields
+
+        return python_queryables

@@ -1354,6 +1354,24 @@ def _get_queryables(
     return queryables
 
 
+def get_queryable_from_provider(
+    provider_queryable: str, metadata_mapping: Dict[str, Union[str, List[str]]]
+) -> Optional[str]:
+    """Get EODAG configured queryable parameter from provider queryable parameter
+
+    :param provider_queryable: provider queryable parameter
+    :type provider_queryable: str
+    :param metadata_mapping: metadata-mapping configuration
+    :type metadata_mapping: Dict[str, Union[str, List[str]]])
+    :returns: EODAG configured queryable parameter or None
+    :rtype: Optional[str]
+    """
+    for param, param_conf in metadata_mapping.items():
+        if isinstance(param_conf, list) and provider_queryable in param_conf[0]:
+            return param
+    return None
+
+
 # Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html
 # For a metadata to be queryable, The way to query it must be specified in the
 # provider metadata_mapping configuration parameter. It will be automatically
