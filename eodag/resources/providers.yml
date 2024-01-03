@@ -3099,10 +3099,19 @@
     api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{collection}/search.json'
     need_auth: false
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_by_mapping:
+        startTimeFromAscendingNode: startDate
+        completionTimeFromAscendingNode: completionDate
+        sensorMode: sensorMode
+      max_sort_params: 1
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
@@ -3451,9 +3460,19 @@
     need_auth: false
     timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
+      next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_by_mapping:
+        startTimeFromAscendingNode: startDate
+        completionTimeFromAscendingNode: completionDate
+        publicationDate: published
+        modificationDate: updated
+      max_sort_params: 1
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'

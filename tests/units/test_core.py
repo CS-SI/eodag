@@ -1145,9 +1145,24 @@ class TestCore(TestCoreBase):
             "ecmwf": None,
             "cop_ads": None,
             "cop_cds": None,
-            "sara": None,
+            "sara": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "sensorMode",
+                ],
+                "max_sort_params": 1,
+            },
             "meteoblue": None,
-            "cop_dataspace": None,
+            "cop_dataspace": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                    "modificationDate",
+                ],
+                "max_sort_params": 1,
+            },
             "planetary_computer": None,
             "hydroweb_next": None,
             "wekeo": None,
