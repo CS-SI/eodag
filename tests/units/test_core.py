@@ -1179,7 +1179,10 @@ class TestCore(TestCoreBase):
             },
             "aws_eos": None,
             "theia": None,
-            "onda": None,
+            "onda": {
+                "sortables": ["startTimeFromAscendingNode", "uid"],
+                "max_sort_params": 1,
+            },
             "astraea_eod": None,
             "usgs_satapi_aws": None,
             "earth_search": None,
@@ -2289,7 +2292,7 @@ class TestCoreSearch(TestCoreBase):
         )
 
         self.assertIn(
-            "&sortParam=providerSortParam&sortOrder=descending",
+            "&sortParam=providerSortParam&sortOrder=desc",
             mock__request.call_args[0][1],
         )
 

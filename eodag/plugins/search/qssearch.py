@@ -603,9 +603,9 @@ class QueryStringSearch(Search):
                 )
             sort_order = sort_by_param[1]
             if sort_order == "ASC":
-                sort_by_param = (provider_sort_param, "ascending")
+                sort_by_param = (provider_sort_param, "asc")
             else:
-                sort_by_param = (provider_sort_param, "descending")
+                sort_by_param = (provider_sort_param, "desc")
             for sort_by_param_tmp in sort_by_params_tmp:
                 # since duplicated tuples have been removed, if two sorting parameters are equal,
                 # then their sorting order is different and there is a contradiction that would raise an error
