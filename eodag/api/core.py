@@ -49,7 +49,6 @@ from whoosh.qparser import QueryParser
 from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
-
 )
 from eodag.api.search_result import SearchResult
 from eodag.config import (
@@ -2237,4 +2236,3 @@ class EODataAccessGateway:
         )
 
         return provider_queryables
-
