@@ -41,6 +41,7 @@ from copy import deepcopy as copy_deepcopy
 from datetime import datetime as dt
 from email.message import Message
 from glob import glob
+from importlib.metadata import metadata
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
@@ -93,11 +94,6 @@ if TYPE_CHECKING:
 
     from eodag.api.product import EOProduct
 
-try:
-    from importlib.metadata import metadata  # type: ignore
-except ImportError:  # pragma: no cover
-    # for python < 3.8
-    from importlib_metadata import metadata  # type: ignore
 
 logger = py_logging.getLogger("eodag.utils")
 

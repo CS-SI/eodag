@@ -17,11 +17,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-try:
-    from importlib.metadata import metadata  # type: ignore
-except ImportError:  # pragma: no cover
-    # for python < 3.8
-    from importlib_metadata import metadata  # type: ignore
+from importlib.metadata import metadata
 from typing import Dict
 
 # -- General configuration ------------------------------------------------
