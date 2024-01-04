@@ -52,6 +52,7 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
     RequestError,
+    ValidationError,
 )
 
 if TYPE_CHECKING:
@@ -117,6 +118,8 @@ class UsgsApi(Download, Api):
             raise NoMatchingProductType(
                 "Cannot search on USGS without productType specified"
             )
+        if kwargs.get("sortBy"):
+            raise ValidationError("USGS does not support sorting feature")
 
         self.authenticate()
 
