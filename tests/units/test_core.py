@@ -32,7 +32,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
-from eodag.api.queryables import BaseQueryableProperty, Queryables
+from eodag.rest.types.queryables import BaseQueryableProperty, Queryables
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
