@@ -53,7 +53,7 @@ from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
-from eodag.rest.types.queryables import QueryableProperty
+from eodag.rest.types.stac_queryables import StacQueryableProperty
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
@@ -1057,7 +1057,7 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
 
 def fetch_collection_queryable_properties(
     collection_id: Optional[str] = None, provider: Optional[str] = None
-) -> Dict[str, QueryableProperty]:
+) -> Dict[str, StacQueryableProperty]:
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
@@ -1065,7 +1065,7 @@ def fetch_collection_queryable_properties(
     :param provider: (optional) The provider.
     :type provider: str
     :returns: A set containing the STAC standardized queryable properties for a collection.
-    :rtype Dict[str, QueryableProperty]: set
+    :rtype Dict[str, StacQueryableProperty]: set
     """
     python_queryables = eodag_api.list_queryables(
         provider=provider, product_type=collection_id
@@ -1074,9 +1074,9 @@ def fetch_collection_queryable_properties(
     stac_queryables = dict()
     for param, queryable in python_queryables.items():
         stac_param = EODAGSearch.to_stac(param)
-        stac_queryables[stac_param] = QueryableProperty.from_python_field_definition(
-            stac_param, queryable
-        )
+        stac_queryables[
+            stac_param
+        ] = StacQueryableProperty.from_python_field_definition(stac_param, queryable)
 
     return stac_queryables
 

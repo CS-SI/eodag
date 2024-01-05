@@ -46,7 +46,7 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
-from eodag.rest.types.queryables import Queryables
+from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.utils import (
     download_stac_item_by_id_stream,
     eodag_api_init,
@@ -461,7 +461,7 @@ def list_collection_queryables(
     """
     logger.debug(f"URL: {request.url}")
 
-    queryables = Queryables(q_id=request.state.url, additional_properties=False)
+    queryables = StacQueryables(q_id=request.state.url, additional_properties=False)
 
     collection_queryables = fetch_collection_queryable_properties(
         collection_id, provider
@@ -674,7 +674,7 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
-    queryables = Queryables(q_id=request.state.url)
+    queryables = StacQueryables(q_id=request.state.url)
     if provider:
         queryables = fetch_collection_queryable_properties(None, provider)
 

@@ -32,7 +32,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
-from eodag.rest.types.queryables import BaseQueryableProperty, Queryables
+from eodag.rest.types.stac_queryables import StacQueryableProperty, StacQueryables
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -1019,7 +1019,7 @@ class TestCore(TestCoreBase):
         with self.assertRaises(UnsupportedProductType):
             self.dag.list_queryables(product_type="not_existing_product_type")
 
-        expected_result = Queryables().get_base_properties()
+        expected_result = StacQueryables().get_properties()
         queryables = self.dag.list_queryables()
         self.assertDictEqual(expected_result, queryables)
 
@@ -1038,20 +1038,20 @@ class TestCore(TestCoreBase):
             key = key_parts[0].lower()
             if len(key_parts) > 1:
                 key += key_parts[1]
-            expected_result[key] = BaseQueryableProperty(description=property)
-        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
+            expected_result[key] = StacQueryableProperty(description=property)
+        expected_result["platformSerialIdentifier"] = StacQueryableProperty(
             description="Platform"
         )
-        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
-        expected_result["orbitNumber"] = BaseQueryableProperty(
+        expected_result["resolution"] = StacQueryableProperty(description="Gsd")
+        expected_result["orbitNumber"] = StacQueryableProperty(
             description="Absolute Orbit"
         )
-        expected_result["orbitDirection"] = BaseQueryableProperty(
+        expected_result["orbitDirection"] = StacQueryableProperty(
             description="Orbit State"
         )
-        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
-        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
-        expected_result["sensorMode"] = BaseQueryableProperty(
+        expected_result["processingLevel"] = StacQueryableProperty(description="Level")
+        expected_result["instrument"] = StacQueryableProperty(description="Instruments")
+        expected_result["sensorMode"] = StacQueryableProperty(
             description="Instrument Mode"
         )
         queryables = self.dag.list_queryables(provider="peps")
@@ -1066,26 +1066,26 @@ class TestCore(TestCoreBase):
             "Polarization Mode",
             "Tile Identifier",
         }
-        expected_result = Queryables().get_base_properties()
+        expected_result = StacQueryables().get_properties()
         for property in expected_properties:
             key_parts = property.split(" ")
             key = key_parts[0].lower()
             if len(key_parts) > 1:
                 key += key_parts[1]
-            expected_result[key] = BaseQueryableProperty(description=property)
-        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
+            expected_result[key] = StacQueryableProperty(description=property)
+        expected_result["platformSerialIdentifier"] = StacQueryableProperty(
             description="Platform"
         )
-        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
-        expected_result["orbitNumber"] = BaseQueryableProperty(
+        expected_result["resolution"] = StacQueryableProperty(description="Gsd")
+        expected_result["orbitNumber"] = StacQueryableProperty(
             description="Absolute Orbit"
         )
-        expected_result["orbitDirection"] = BaseQueryableProperty(
+        expected_result["orbitDirection"] = StacQueryableProperty(
             description="Orbit State"
         )
-        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
-        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
-        expected_result["sensorMode"] = BaseQueryableProperty(
+        expected_result["processingLevel"] = StacQueryableProperty(description="Level")
+        expected_result["instrument"] = StacQueryableProperty(description="Instruments")
+        expected_result["sensorMode"] = StacQueryableProperty(
             description="Instrument Mode"
         )
 
