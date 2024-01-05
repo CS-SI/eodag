@@ -51,6 +51,7 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.types import model_fields_to_annotated_tuple
 from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -63,6 +64,7 @@ from eodag.utils import (
     MockResponse,
     _deprecated,
     deepcopy,
+    get_args,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
@@ -81,7 +83,6 @@ from eodag.utils.exceptions import (
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
     from shapely.geometry.base import BaseGeometry
     from whoosh.index import Index
 
@@ -89,7 +90,7 @@ if TYPE_CHECKING:
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
-    from eodag.utils import DownloadedCallback, ProgressCallback
+    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback
 
 logger = logging.getLogger("eodag.core")
 
@@ -2082,7 +2083,7 @@ class EODataAccessGateway:
         self,
         provider: Optional[str] = None,
         product_type: Optional[str] = None,
-    ) -> Dict[str, FieldInfo]:
+    ) -> Dict[str, Tuple[Annotated, Any]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
@@ -2098,11 +2099,14 @@ class EODataAccessGateway:
         ):
             self.fetch_product_types_list()
 
+        # dictionary of the queryable properties of the providers supporting the given product type
+        providers_available_queryables: Dict[
+            str, Dict[str, Tuple[Annotated, Any]]
+        ] = dict()
+
         if provider is None and product_type is None:
-            return CommonQueryables.model_fields
+            return model_fields_to_annotated_tuple(CommonQueryables.model_fields)
         elif provider is None:
-            # dictionary of the queryable properties of the providers supporting the given product type
-            providers_available_queryables: Dict[str, Dict[str, FieldInfo]] = dict()
             for plugin in self._plugins_manager.get_search_plugins(
                 product_type, provider
             ):
@@ -2124,17 +2128,15 @@ class EODataAccessGateway:
                 if k in queryables_keys
             }
 
-        all_queryables = Queryables.model_fields
+        all_queryables = model_fields_to_annotated_tuple(Queryables.model_fields)
 
-        # dictionary of the queryable properties of the providers supporting the given product type
-        providers_available_queryables: Dict[str, Dict[str, FieldInfo]] = dict()
         try:
             plugin = next(
                 self._plugins_manager.get_search_plugins(product_type, provider)
             )
         except StopIteration:
             # return default queryables if no plugin is found
-            return CommonQueryables.model_fields
+            return model_fields_to_annotated_tuple(CommonQueryables.model_fields)
 
         providers_available_queryables[plugin.provider] = dict()
 
@@ -2166,7 +2168,13 @@ class EODataAccessGateway:
                 del metadata_mapping[param]
 
         for key, value in all_queryables.items():
-            if value.is_required() or ((value.alias or key) in metadata_mapping):
+            annotated_args = get_args(value[0])
+            if len(annotated_args) < 1:
+                continue
+            field_info = annotated_args[1]
+            if field_info.is_required() or (
+                (field_info.alias or key) in metadata_mapping
+            ):
                 providers_available_queryables[plugin.provider][key] = value
 
         provider_queryables = plugin.discover_queryables(product_type) or dict()

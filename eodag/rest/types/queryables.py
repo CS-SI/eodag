@@ -1,10 +1,31 @@
+# -*- coding: utf-8 -*-
+# Copyright 2023, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from __future__ import annotations
+
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.config import load_stac_config
+from eodag.types import python_field_definition_to_json
+from eodag.utils import Annotated
 
 CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")
 
@@ -65,13 +86,26 @@ class QueryableProperty(BaseQueryableProperty):
 
     description: str
     ref: Optional[str] = Field(default=None, serialization_alias="$ref")
-    type: Optional[list] = None
+    type: Optional[Union[str, List[str]]] = None
 
     def update_properties(self, new_properties: dict):
         """updates the properties with the given new properties keeping already existing value"""
-        super().update_properties(new_properties)
+        if "type" in new_properties and not self.type:
+            self.type = new_properties["type"]
         if "ref" in new_properties and not self.ref:
             self.ref = new_properties["ref"]
+
+    @classmethod
+    def from_python_field_definition(
+        cls, id: str, python_field_definition: Tuple[Annotated, Any]
+    ) -> QueryableProperty:
+        """Build Model from python_field_definition"""
+        def_dict = python_field_definition_to_json(python_field_definition)
+
+        if not def_dict.get("description", None):
+            def_dict["description"] = def_dict.get("title", None) or id
+
+        return cls(**def_dict)
 
 
 class Queryables(BaseModel):
@@ -148,8 +182,10 @@ class Queryables(BaseModel):
     def __contains__(self, name: str) -> bool:
         return name in self.properties
 
-    def __setitem__(self, name: str, qprop: BaseQueryableProperty) -> None:
-        self.properties[name] = qprop
+    def __setitem__(self, name: str, qprop: QueryableProperty) -> None:
+        # only keep "datetime" queryable for dates
+        if "name" not in ("start_datetime", "end_datetime"):
+            self.properties[name] = qprop
 
 
 def format_queryable(queryable_key: str, base=True) -> BaseQueryableProperty:

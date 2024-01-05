@@ -46,13 +46,14 @@ from shapely.geometry import Polygon, shape
 import eodag
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
-from eodag.api.queryables import BaseQueryableProperty
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config, load_stac_provider_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
+from eodag.rest.types.eodag_search import EODAGSearch
+from eodag.rest.types.queryables import QueryableProperty
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
@@ -1056,23 +1057,28 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
 
 def fetch_collection_queryable_properties(
     collection_id: Optional[str] = None, provider: Optional[str] = None
-) -> Dict[str, BaseQueryableProperty]:
+) -> Dict[str, QueryableProperty]:
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
     :type collection_id: str
     :param provider: (optional) The provider.
     :type provider: str
-    :returns queryable_properties: A set containing the STAC standardized queryable properties for a collection.
-    :rtype queryable_properties: set
+    :returns: A set containing the STAC standardized queryable properties for a collection.
+    :rtype Dict[str, QueryableProperty]: set
     """
-    # Fetch the metadata mapping for collection-specific queryables
-    kwargs = {"base": False}
-    if collection_id is not None:
-        kwargs["product_type"] = collection_id
-    if provider is not None:
-        kwargs["provider"] = provider
-    return eodag_api.list_queryables(**kwargs)
+    python_queryables = eodag_api.list_queryables(
+        provider=provider, product_type=collection_id
+    )
+
+    stac_queryables = dict()
+    for param, queryable in python_queryables.items():
+        stac_param = EODAGSearch.to_stac(param)
+        stac_queryables[stac_param] = QueryableProperty.from_python_field_definition(
+            stac_param, queryable
+        )
+
+    return stac_queryables
 
 
 def eodag_api_init() -> None:

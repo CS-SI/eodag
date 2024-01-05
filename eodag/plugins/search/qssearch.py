@@ -42,13 +42,14 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.search.base import Search
-from eodag.types import json_field_definition_to_python
+from eodag.types import json_field_definition_to_python, model_fields_to_annotated_tuple
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
+    Annotated,
     _deprecated,
     deepcopy,
     dict_items_recursive_apply,
@@ -1243,7 +1244,7 @@ class StacSearch(PostJsonSearch):
 
     def discover_queryables(
         self, product_type: Optional[str] = None
-    ) -> Optional[Dict[str, FieldInfo]]:
+    ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
         :param product_type: (optional) product type
@@ -1310,11 +1311,8 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param
                 )
-                field_definitions[param] = (
-                    json_field_definition_to_python(json_mtd),
-                    None,
-                )
+                field_definitions[param] = json_field_definition_to_python(json_mtd)
 
             python_queryables = create_model("m", **field_definitions).model_fields
 
-        return python_queryables
+        return model_fields_to_annotated_tuple(python_queryables)

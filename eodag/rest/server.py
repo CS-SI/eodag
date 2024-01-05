@@ -45,8 +45,8 @@ from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from eodag.api.queryables import Queryables
 from eodag.config import load_stac_api_config
+from eodag.rest.types.queryables import Queryables
 from eodag.rest.utils import (
     download_stac_item_by_id_stream,
     eodag_api_init,

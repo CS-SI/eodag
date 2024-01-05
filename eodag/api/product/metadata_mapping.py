@@ -47,6 +47,7 @@ from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import transform
 
+from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
@@ -1368,8 +1369,27 @@ def get_queryable_from_provider(
     """
     for param, param_conf in metadata_mapping.items():
         if isinstance(param_conf, list) and provider_queryable in param_conf[0]:
-            return param
+            return Queryables.get_queryable_from_alias(param)
     return None
+
+
+def get_provider_queryable_path(
+    queryable: str, metadata_mapping: Dict[str, Union[str, List[str]]]
+) -> Optional[str]:
+    """Get EODAG configured queryable path from its parameter
+
+    :param queryable: eodag queryable parameter
+    :type queryable: str
+    :param metadata_mapping: metadata-mapping configuration
+    :type metadata_mapping: Dict[str, Union[str, List[str]]])
+    :returns: EODAG configured queryable path or None
+    :rtype: Optional[str]
+    """
+    parameter_conf = metadata_mapping.get(queryable, None)
+    if isinstance(parameter_conf, list):
+        return parameter_conf[0]
+    else:
+        return None
 
 
 # Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html

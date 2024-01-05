@@ -62,8 +62,8 @@ class EODAGSearch(BaseModel):
     provider: Optional[str] = Field(None)
     ids: Optional[List[str]] = Field(None)
     geom: Optional[Geometry] = Field(None, alias="geometry")
-    startTimeFromAscendingNode: Optional[str] = Field(None, alias="start_datetime")
-    completionTimeFromAscendingNode: Optional[str] = Field(None, alias="end_datetime")
+    start: Optional[str] = Field(None, alias="start_datetime")
+    end: Optional[str] = Field(None, alias="end_datetime")
     publicationDate: Optional[str] = Field(None, alias="published")
     creationDate: Optional[str] = Field(None, alias="created")
     modificationDate: Optional[str] = Field(None, alias="updated")
@@ -154,7 +154,7 @@ class EODAGSearch(BaseModel):
 
         return v
 
-    @field_validator("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
+    @field_validator("start", "end")
     @classmethod
     def cleanup_dates(cls, v: str) -> str:
         """proper format dates"""

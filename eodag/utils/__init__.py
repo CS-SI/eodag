@@ -71,6 +71,12 @@ from urllib.parse import (  # noqa; noqa
 )
 from urllib.request import url2pathname
 
+try:
+    from typing import Annotated, get_args, get_origin  # noqa
+except ImportError:
+    # for python < 3.9
+    from typing_extensions import Annotated, get_args, get_origin  # noqa
+
 import click
 import orjson
 import shapefile

@@ -34,6 +34,22 @@ class CommonQueryables(BaseModel):
     end: Annotated[Optional[str], Field(None, alias="completionTimeFromAscendingNode")]
     geom: Annotated[Optional[str], Field(None, alias="geometry")]
 
+    @classmethod
+    def get_queryable_from_alias(cls, value: str) -> str:
+        """Get queryable parameter from alias
+
+        >>> CommonQueryables.get_queryable_from_alias('startTimeFromAscendingNode')
+        'start'
+        >>> CommonQueryables.get_queryable_from_alias('productType')
+        'productType'
+        """
+        alias_map = {
+            field_info.alias: name
+            for name, field_info in cls.model_fields.items()
+            if field_info.alias
+        }
+        return alias_map.get(value, value)
+
 
 class Queryables(CommonQueryables):
     """A class representing all search queryable properties."""
