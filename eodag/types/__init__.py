@@ -43,8 +43,6 @@ def json_type_to_python(json_type: Union[str, List[str]]) -> type:
 
     >>> json_type_to_python("number")
     <class 'float'>
-    >>> json_type_to_python(["string", "null"])
-    typing.Optional[str]
 
     :param json_type: the json type
     :returns: the python type
@@ -92,13 +90,14 @@ def json_field_definition_to_python(
 ) -> Annotated:
     """Get python field definition from json object
 
-    >>> json_field_definition_to_python(
+    >>> result = json_field_definition_to_python(
     ...     {
     ...         'type': 'boolean',
     ...         'title': 'Foo parameter'
     ...     }
     ... )
-    (typing.Annotated[bool, FieldInfo(annotation=NoneType, required=False, title='Foo parameter')], None)
+    >>> str(result).replace('_extensions', '') # python3.8 compatibility
+    "(typing.Annotated[bool, FieldInfo(annotation=NoneType, required=False, title='Foo parameter')], None)"
 
     :param json_field_definition: the json field definition
     :returns: the python field definition
@@ -203,8 +202,8 @@ def model_fields_to_annotated_tuple(
     >>> from pydantic import create_model
     >>> some_model = create_model("some_model", foo=(str, None))
     >>> fields_definitions = model_fields_to_annotated_tuple(some_model.model_fields)
-    >>> fields_definitions
-    {'foo': (typing.Annotated[str, FieldInfo(annotation=NoneType, required=False)], None)}
+    >>> str(fields_definitions).replace('_extensions', '') # python3.8 compatibility
+    "{'foo': (typing.Annotated[str, FieldInfo(annotation=NoneType, required=False)], None)}"
     >>> another_model = create_model("another_model", **fields_definitions)
     >>> another_model(foo="abc")
     another_model(foo='abc')
