@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from pydantic import Field
 from pydantic.fields import FieldInfo
 
-from eodag.utils import Annotated, get_args, get_origin
+from eodag.utils import Annotated, copy_deepcopy, get_args, get_origin
 from eodag.utils.exceptions import ValidationError
 
 # Types mapping from JSON Schema and OpenAPI 3.1.0 specifications to Python
@@ -215,6 +215,7 @@ def model_fields_to_annotated_tuple(
     annotated_model_fields = dict()
     for param, field_info in model_fields.items():
         field_type = field_info.annotation or type(None)
-        field_info.annotation = None
-        annotated_model_fields[param] = (Annotated[field_type, field_info], None)
+        new_field_info = copy_deepcopy(field_info)
+        new_field_info.annotation = None
+        annotated_model_fields[param] = (Annotated[field_type, new_field_info], None)
     return annotated_model_fields
