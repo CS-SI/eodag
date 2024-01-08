@@ -6860,7 +6860,7 @@
       thumbnail: '$.properties.thumbnail'
   download: !plugin
     type: CreodiasS3Download
-    flatten_top_dirs: False
+    flatten_top_dirs: True
     base_uri: 'https://eodata.cloudferro.com'
     s3_bucket: 'eodata'
   auth: !plugin
