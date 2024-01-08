@@ -2090,8 +2090,10 @@ class EODataAccessGateway:
         :type provider: str
         :param product_type: (optional) The EODAG product type.
         :type product_type: str
-        :returns: A dict containing the EODAG queryable properties.
-        :rtype: dict
+        :returns: A dict containing the EODAG queryable properties, associating
+                  parameters to a tuple containing their annotaded type and default
+                  value
+        :rtype: Dict[str, Tuple[Annotated, Any]]
         """
         # unknown product type
         if product_type is not None and product_type not in self.list_product_types(
