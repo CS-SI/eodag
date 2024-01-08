@@ -35,7 +35,7 @@ from eodag.utils import (
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
-
+    from eodag.utils import Annotated
 
 logger = logging.getLogger("eodag.search.base")
 
@@ -86,6 +86,12 @@ class Search(PluginTopic):
 
     def discover_product_types(self) -> Optional[Dict[str, Any]]:
         """Fetch product types list from provider using `discover_product_types` conf"""
+        return None
+
+    def discover_queryables(
+        self, product_type: Optional[str] = None
+    ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:
+        """Fetch queryables list from provider using `discover_queryables` conf"""
         return None
 
     def map_product_type(

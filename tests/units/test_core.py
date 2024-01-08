@@ -32,16 +32,17 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
-from eodag.api.queryables import BaseQueryableProperty, Queryables
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
+    CommonQueryables,
     EODataAccessGateway,
     EOProduct,
     NoMatchingProductType,
     PluginImplementationError,
     ProviderConfig,
+    Queryables,
     RequestError,
     SearchResult,
     UnsupportedProductType,
@@ -49,6 +50,7 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     makedirs,
+    model_fields_to_annotated_tuple,
 )
 from tests.utils import mock, write_eodag_conf_with_fake_credentials
 
@@ -1011,93 +1013,48 @@ class TestCore(TestCoreBase):
         # run a 2nd time: check that it does not raise an error
         self.dag.update_providers_config(new_config)
 
-    def test_get_queryables(self):
-        """get_queryables must return queryables list adapted to provider and product-type"""
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_list_queryables(
+        self, mock_discover_queryables, mock_fetch_product_types_list
+    ):
+        """list_queryables must return queryables list adapted to provider and product-type"""
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_existing_provider")
 
         with self.assertRaises(UnsupportedProductType):
             self.dag.list_queryables(product_type="not_existing_product_type")
 
-        expected_result = Queryables().get_base_properties()
-        queryables = self.dag.list_queryables()
-        self.assertDictEqual(expected_result, queryables)
+        queryables_none_none = self.dag.list_queryables()
+        expected_result = model_fields_to_annotated_tuple(CommonQueryables.model_fields)
+        self.assertEqual(len(queryables_none_none), len(expected_result))
+        for key, queryable in queryables_none_none.items():
+            # compare obj.__repr__
+            self.assertEqual(str(expected_result[key]), str(queryable))
 
-        expected_properties = {
-            "Product Type",
-            "Organisation Name",
-            "Parent Identifier",
-            "Swath Identifier",
-            "Cloud Cover",
-            "Snow Cover",
-            "Polarization Mode",
-            "Tile Identifier",
-        }
-        for property in expected_properties:
-            key_parts = property.split(" ")
-            key = key_parts[0].lower()
-            if len(key_parts) > 1:
-                key += key_parts[1]
-            expected_result[key] = BaseQueryableProperty(description=property)
-        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
-            description="Platform"
+        queryables_peps_none = self.dag.list_queryables(provider="peps")
+        expected_longer_result = model_fields_to_annotated_tuple(
+            Queryables.model_fields
         )
-        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
-        expected_result["orbitNumber"] = BaseQueryableProperty(
-            description="Absolute Orbit"
-        )
-        expected_result["orbitDirection"] = BaseQueryableProperty(
-            description="Orbit State"
-        )
-        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
-        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
-        expected_result["sensorMode"] = BaseQueryableProperty(
-            description="Instrument Mode"
-        )
-        queryables = self.dag.list_queryables(provider="peps")
-        self.assertDictEqual(expected_result, queryables)
+        self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
+        self.assertLess(len(queryables_peps_none), len(expected_longer_result))
+        for key, queryable in queryables_peps_none.items():
+            # compare obj.__repr__
+            self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
-        expected_properties = {
-            "Product Type",
-            "Organisation Name",
-            "Parent Identifier",
-            "Swath Identifier",
-            "Snow Cover",
-            "Polarization Mode",
-            "Tile Identifier",
-        }
-        expected_result = Queryables().get_base_properties()
-        for property in expected_properties:
-            key_parts = property.split(" ")
-            key = key_parts[0].lower()
-            if len(key_parts) > 1:
-                key += key_parts[1]
-            expected_result[key] = BaseQueryableProperty(description=property)
-        expected_result["platformSerialIdentifier"] = BaseQueryableProperty(
-            description="Platform"
-        )
-        expected_result["resolution"] = BaseQueryableProperty(description="Gsd")
-        expected_result["orbitNumber"] = BaseQueryableProperty(
-            description="Absolute Orbit"
-        )
-        expected_result["orbitDirection"] = BaseQueryableProperty(
-            description="Orbit State"
-        )
-        expected_result["processingLevel"] = BaseQueryableProperty(description="Level")
-        expected_result["instrument"] = BaseQueryableProperty(description="Instruments")
-        expected_result["sensorMode"] = BaseQueryableProperty(
-            description="Instrument Mode"
-        )
-
-        queryables = self.dag.list_queryables(
+        queryables_peps_s1grd = self.dag.list_queryables(
             provider="peps", product_type="S1_SAR_GRD"
         )
-        self.assertDictEqual(queryables, expected_result)
-
-        queryables = self.dag.list_queryables(product_type="S2_MSI_L1C")
-        self.assertIn("awsPath", queryables.keys())
-        self.assertIn("id", queryables.keys())
-        self.assertIn("illuminationAzimuthAngle", queryables.keys())
+        self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
+        self.assertLess(len(queryables_peps_s1grd), len(queryables_peps_none))
+        self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
+        for key, queryable in queryables_peps_s1grd.items():
+            # compare obj.__repr__
+            self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

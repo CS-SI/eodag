@@ -47,13 +47,7 @@ import os
 import shutil
 import sys
 import textwrap
-
-try:
-    from importlib.metadata import metadata  # type: ignore
-except ImportError:  # pragma: no cover
-    # for python < 3.8
-    from importlib_metadata import metadata  # type: ignore
-
+from importlib.metadata import metadata
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
 
 import click

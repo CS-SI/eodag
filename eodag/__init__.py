@@ -23,17 +23,12 @@
 # exactly as below)
 """EODAG package"""
 import warnings
+from importlib.metadata import PackageNotFoundError, version
 
 from .api.core import EODataAccessGateway  # noqa
 from .api.product import EOProduct  # noqa
 from .api.search_result import SearchResult  # noqa
 from .utils.logging import setup_logging  # noqa
-
-try:
-    from importlib.metadata import PackageNotFoundError, version  # type: ignore
-except ImportError:  # pragma: no cover
-    # for python < 3.8
-    from importlib_metadata import PackageNotFoundError, version  # type: ignore
 
 try:
     __version__ = version(__name__)
