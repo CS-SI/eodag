@@ -32,6 +32,7 @@ from eodag.utils import USER_AGENT, MockResponse
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
+    HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
     AuthenticationError,
     SearchResult,
@@ -1038,11 +1039,12 @@ class RequestTestCase(unittest.TestCase):
         """Request to /queryables should return a valid response."""
         self._request_valid("queryables", check_links=False)
 
-    @mock.patch("eodag.api.core.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_queryables_with_provider(self, mock_requests_get):
         self._request_valid("queryables?provider=planetary_computer", check_links=False)
         mock_requests_get.assert_called_once_with(
-            url="https://planetarycomputer.microsoft.com/api/stac/v1/queryables",
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
+            timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
         )
 
@@ -1052,7 +1054,7 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/queryables", check_links=False
         )
 
-    @mock.patch("eodag.api.core.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):
         """Request a collection-specific list of queryables for a given provider."""
         queryables_path = os.path.join(TEST_RESOURCES_PATH, "stac/queryables.json")
@@ -1061,22 +1063,41 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.return_value = MockResponse(
             provider_queryables, status_code=200
         )
+
+        # no provider specified (only 1 available for the moment) : queryables intresection returned
         res_no_provider = self._request_valid(
             "collections/S1_SAR_GRD/queryables",
             check_links=False,
         )
+        mock_requests_get.assert_called_once_with(
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
+            "sentinel-1-grd/queryables",
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+        )
+        # returned queryables
+        self.assertListEqual(
+            list(res_no_provider["properties"].keys()),
+            ["id", "collection", "geometry", "bbox", "datetime", "collections"],
+        )
+        self.assertIn("collection", res_no_provider["properties"])
+        self.assertNotIn("s1:processing_level", res_no_provider["properties"])
+
+        mock_requests_get.reset_mock()
+
+        # provider specified
         res = self._request_valid(
             "collections/S1_SAR_GRD/queryables?provider=planetary_computer",
             check_links=False,
         )
         mock_requests_get.assert_called_once_with(
-            url="https://planetarycomputer.microsoft.com/api/stac/v1/collections/"
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
             "sentinel-1-grd/queryables",
+            timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
         )
         # property added from provider queryables
         self.assertIn("s1:processing_level", res["properties"])
-        self.assertNotIn("s1:processing_level", res_no_provider["properties"])
         # property updated with info from provider queryables
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
