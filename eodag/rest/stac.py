@@ -166,6 +166,21 @@ class StacCommon:
 
     __geo_interface__ = property(as_dict)
 
+    def get_provider_dict(self, provider: str) -> Dict[str, Any]:
+        """Generate STAC provider dict"""
+        provider_config = [
+            p
+            for p in self.eodag_api.providers_config.values()
+            if provider in [p.name, getattr(p, "group", None)]
+        ][0]
+        return {
+            "name": getattr(provider_config, "group", provider_config.name),
+            "description": provider_config.description,
+            "roles": provider_config.roles,
+            "url": provider_config.url,
+            "priority": provider_config.priority,
+        }
+
 
 class StacItem(StacCommon):
     """Stac item object
@@ -216,7 +231,6 @@ class StacItem(StacCommon):
         item_model = self.__filter_item_model_properties(
             self.stac_config["item"], str(search_results[0].product_type)
         )
-        provider_model = deepcopy(self.stac_config["provider"])
 
         # check if some items need to be converted
         need_conversion: Dict[str, Any] = {}
@@ -234,23 +248,13 @@ class StacItem(StacCommon):
 
         item_list: List[Dict[str, Any]] = []
         for product in search_results:
-            # parse jsonpath
-            provider_dict = jsonpath_parse_dict_items(
-                provider_model,
-                {
-                    "provider": self.eodag_api.providers_config[
-                        product.provider
-                    ].__dict__
-                },
-            )
-
             product_dict = deepcopy(product.__dict__)
 
             product_item = jsonpath_parse_dict_items(
                 item_model,
                 {
                     "product": product_dict,
-                    "providers": [provider_dict],
+                    "providers": [self.get_provider_dict(product.provider)],
                 },
             )
             # parse download link
@@ -551,12 +555,6 @@ class StacItem(StacCommon):
         item_model = self.__filter_item_model_properties(
             self.stac_config["item"], product_type
         )
-        provider_model = deepcopy(self.stac_config["provider"])
-
-        provider_dict = jsonpath_parse_dict_items(
-            provider_model,
-            {"provider": self.eodag_api.providers_config[product.provider].__dict__},
-        )
 
         catalog = StacCatalog(
             url=self.url.split("/items")[0],
@@ -575,7 +573,7 @@ class StacItem(StacCommon):
             item_model,
             {
                 "product": product_dict,
-                "providers": provider_dict,
+                "providers": self.get_provider_dict(product.provider),
             },
         )
         # parse f-strings
@@ -662,7 +660,6 @@ class StacCollection(StacCommon):
         :rtype: list
         """
         collection_model = deepcopy(self.stac_config["collection"])
-        provider_model = deepcopy(self.stac_config["provider"])
 
         product_types = self.__get_product_types(filters)
 
@@ -683,11 +680,7 @@ class StacCollection(StacCommon):
                 )
             providers_models: List[Dict[str, Any]] = []
             for provider in providers:
-                provider_m = jsonpath_parse_dict_items(
-                    provider_model,
-                    {"provider": provider},
-                )
-                providers_models.append(provider_m)
+                providers_models.append(self.get_provider_dict(provider["name"]))
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(
