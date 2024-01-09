@@ -2182,5 +2182,9 @@ class EODataAccessGateway:
         provider_queryables = plugin.discover_queryables(product_type) or dict()
         # use EODAG configured queryables by default
         provider_queryables.update(providers_available_queryables[provider])
+        # always keep at least CommonQueryables
+        provider_queryables.update(
+            model_fields_to_annotated_tuple(CommonQueryables.model_fields)
+        )
 
         return provider_queryables
