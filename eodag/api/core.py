@@ -88,9 +88,9 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     NoMatchingProductType,
-    NotAvailableError,
     PluginImplementationError,
     RequestError,
+    UnsupportedProductType,
     UnsupportedProvider,
 )
 from eodag.utils.stac_reader import fetch_stac_items
@@ -2138,14 +2138,6 @@ class EODataAccessGateway:
             fetch_providers=False
         ):
             self.fetch_product_types_list()
-
-        default_queryables = Queryables().get_base_properties()
-
-        if provider is None and product_type is None:
-            return default_queryables
-
-        plugins = self._plugins_manager.get_search_plugins(product_type, provider)
-        provider_plugin = None
 
         # dictionary of the queryable properties of the providers supporting the given product type
         providers_available_queryables: Dict[
