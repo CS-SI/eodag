@@ -1037,11 +1037,37 @@ class RequestTestCase(unittest.TestCase):
 
     def test_queryables(self):
         """Request to /queryables should return a valid response."""
-        self._request_valid("queryables", check_links=False)
+        resp = self._request_valid("queryables", check_links=False)
+        self.assertListEqual(
+            list(resp.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_queryables_with_provider(self, mock_requests_get):
-        self._request_valid("queryables?provider=planetary_computer", check_links=False)
+        resp = self._request_valid(
+            "queryables?provider=planetary_computer", check_links=False
+        )
+        self.assertListEqual(
+            list(resp.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
         mock_requests_get.assert_called_once_with(
             url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
             timeout=HTTP_REQ_TIMEOUT,
@@ -1050,8 +1076,20 @@ class RequestTestCase(unittest.TestCase):
 
     def test_product_type_queryables(self):
         """Request to /collections/{collection_id}/queryables should return a valid response."""
-        self._request_valid(
+        resp = self._request_valid(
             f"collections/{self.tested_product_type}/queryables", check_links=False
+        )
+        self.assertListEqual(
+            list(resp.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
         )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
@@ -1077,6 +1115,18 @@ class RequestTestCase(unittest.TestCase):
         )
         # returned queryables
         self.assertListEqual(
+            list(res_no_provider.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
+        self.assertListEqual(
             list(res_no_provider["properties"].keys()),
             ["id", "collection", "geometry", "bbox", "datetime", "collections"],
         )
@@ -1095,6 +1145,18 @@ class RequestTestCase(unittest.TestCase):
             "sentinel-1-grd/queryables",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
+        )
+        self.assertListEqual(
+            list(res.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
         )
         # property added from provider queryables
         self.assertIn("s1:processing_level", res["properties"])
