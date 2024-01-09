@@ -676,7 +676,9 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     logger.debug(f"URL: {request.url}")
     queryables = StacQueryables(q_id=request.state.url)
     if provider:
-        queryables = fetch_collection_queryable_properties(None, provider)
+        queryables.properties.update(
+            fetch_collection_queryable_properties(None, provider)
+        )
 
     return jsonable_encoder(queryables)
 
