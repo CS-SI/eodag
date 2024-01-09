@@ -445,8 +445,6 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
                     provider=provider, fetch_providers=fetch_providers
                 )
                 if pt["ID"] in guessed_product_types
-                or "alias" in pt
-                and pt["alias"] in guessed_product_types
             ]
         else:
             product_types = dag.list_product_types(
