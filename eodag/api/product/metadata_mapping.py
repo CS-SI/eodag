@@ -1367,8 +1367,11 @@ def get_queryable_from_provider(
     :returns: EODAG configured queryable parameter or None
     :rtype: Optional[str]
     """
+    pattern = "[^_A-Za-z]" + provider_queryable
     for param, param_conf in metadata_mapping.items():
-        if isinstance(param_conf, list) and provider_queryable in param_conf[0]:
+        if isinstance(param_conf, list) and (
+            provider_queryable == param_conf[0] or re.search(pattern, param_conf[0])
+        ):
             return Queryables.get_queryable_from_alias(param)
     return None
 

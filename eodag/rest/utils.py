@@ -1076,7 +1076,7 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
 
 
 def fetch_collection_queryable_properties(
-    collection_id: Optional[str] = None, provider: Optional[str] = None
+    collection_id: Optional[str] = None, provider: Optional[str] = None, **kwargs
 ) -> Dict[str, StacQueryableProperty]:
     """Fetch the queryable properties for a collection.
 
@@ -1088,7 +1088,7 @@ def fetch_collection_queryable_properties(
     :rtype Dict[str, StacQueryableProperty]: set
     """
     python_queryables = eodag_api.list_queryables(
-        provider=provider, product_type=collection_id
+        provider=provider, product_type=collection_id, **kwargs
     )
 
     stac_queryables = dict()

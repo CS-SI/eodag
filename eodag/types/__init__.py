@@ -111,9 +111,8 @@ def json_field_definition_to_python(
         pattern=json_field_definition.get("pattern", None),
     )
 
-    if (
-        "enum" in json_field_definition
-        and isinstance(json_field_definition["enum"], list)
+    if "enum" in json_field_definition and (
+        isinstance(json_field_definition["enum"], list)
         or isinstance(json_field_definition["enum"], set)
     ):
         python_type = Literal[tuple(sorted(json_field_definition["enum"]))]  # type: ignore

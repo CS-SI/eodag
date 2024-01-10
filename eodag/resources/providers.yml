@@ -2171,9 +2171,6 @@
       expver:
         - expver
         - '$.expver'
-      fcmonth:
-        - fcmonth
-        - '$.fcmonth'
       fcperiod:
         - fcperiod
         - '$.fcperiod'
