@@ -2186,9 +2186,6 @@
       format:
         - format
         - '$.format'
-      frame:
-        - frame
-        - '$.frame'
       frequency:
         - frequency
         - '$.frequency'
@@ -2595,9 +2592,6 @@
       format:
         - format
         - '$.format'
-      frame:
-        - frame
-        - '$.frame'
       frequency:
         - frequency
         - '$.frequency'

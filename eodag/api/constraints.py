@@ -39,7 +39,7 @@ def get_constraint_queryables_with_additional_params(
     for i, constraint in enumerate(constraints):
         params_matched = {k: False for k in params.keys()}
         for param, value in params.items():
-            provider_key = get_provider_queryable_key(
+            provider_key = _get_provider_queryable_key(
                 param, constraint, plugin, product_type
             )
             eodag_provider_key_mapping[provider_key] = param
@@ -118,7 +118,7 @@ def fetch_constraints(constraints_url: str, plugin: Union[Search, Api]) -> list:
         return constraints
 
 
-def get_provider_queryable_key(
+def _get_provider_queryable_key(
     eodag_key: str,
     provider_queryables: Dict[str, Any],
     plugin: Union[Search, Api],

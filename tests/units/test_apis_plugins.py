@@ -17,6 +17,7 @@
 # limitations under the License.
 import ast
 import io
+import json
 import logging
 import os
 import unittest
@@ -29,6 +30,8 @@ import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
+from eodag.utils import MockResponse
+from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_MISSION_START_DATE,
@@ -910,3 +913,23 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         assert mock_cds_download.call_count == len(eoproducts)
         assert len(paths) == len(eoproducts)
+
+    @mock.patch("eodag.api.constraints.requests.get", autospec=True)
+    def test_plugins_apis_cds_discover_queryables(self, mock_requests_constraints):
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        mock_requests_constraints.return_value = MockResponse(
+            constraints, status_code=200
+        )
+        queryables = self.api_plugin.discover_queryables(
+            product_type="CAMS_EU_AIR_QUALITY_RE"
+        )
+        self.assertEqual(7, len(queryables))
+        self.assertIn("variable", queryables)
+        # with additional param
+        queryables = self.api_plugin.discover_queryables(
+            product_type="CAMS_EU_AIR_QUALITY_RE", variable="a"
+        )
+        self.assertEqual(6, len(queryables))
+        self.assertNotIn("variable", queryables)

@@ -23,6 +23,7 @@ import socket
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 import geojson
 from fastapi.testclient import TestClient
@@ -1158,7 +1159,6 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.reset_mock()
 
         # provider specified
-
         res = self._request_valid(
             "collections/S1_SAR_GRD/queryables?provider=planetary_computer",
             check_links=False,
@@ -1189,3 +1189,24 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
 
+    @mock.patch("eodag.api.constraints.requests.get", autospec=True)
+    def test_product_type_queryables_from_constraints(self, mock_requests_constraints):
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        mock_requests_constraints.return_value = MockResponse(
+            constraints, status_code=200
+        )
+        res = self._request_valid(
+            "collections/ERA5_SL/queryables?provider=cop_cds",
+            check_links=False,
+        )
+
+        mock_requests_constraints.assert_called_once_with(
+            url="http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
+            "reanalysis-era5-single-levels/constraints.json",
+            headers=USER_AGENT,
+        )
+        self.assertEqual(13, len(res["properties"]))
+        self.assertIn("year", res["properties"])
+        self.assertIn("id", res["properties"])
