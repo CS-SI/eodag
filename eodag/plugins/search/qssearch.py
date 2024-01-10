@@ -276,15 +276,24 @@ class QueryStringSearch(Search):
                 )
                 if other_product_for_mapping:
                     other_product_type_def_params = self.get_product_type_def_params(
-                        other_product_for_mapping,  # **kwargs
+                        other_product_for_mapping,
                     )
-                    product_type_metadata_mapping.update(
-                        other_product_type_def_params.get("metadata_mapping", {})
+                    other_product_type_mtd_mapping = (
+                        mtd_cfg_as_conversion_and_querypath(
+                            other_product_type_def_params.get("metadata_mapping", {})
+                        )
                     )
-                # from current product
-                product_type_metadata_mapping.update(
-                    self.config.products[product_type]["metadata_mapping"]
-                )
+                    # updated mapping at the end
+                    for metadata, mapping in other_product_type_mtd_mapping.items():
+                        product_type_metadata_mapping.pop(metadata, None)
+                        product_type_metadata_mapping[metadata] = mapping
+
+                # from current product, updated mapping at the end
+                for metadata, mapping in self.config.products[product_type][
+                    "metadata_mapping"
+                ].items():
+                    product_type_metadata_mapping.pop(metadata, None)
+                    product_type_metadata_mapping[metadata] = mapping
 
                 self.config.products[product_type][
                     "metadata_mapping"
