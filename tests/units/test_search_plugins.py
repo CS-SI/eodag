@@ -1233,6 +1233,42 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertNotIn("bar", products[0].properties)
 
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping_astraea_eod(
+        self, mock__request
+    ):
+        """The metadata mapping for a astraea_eod should correctly build assets"""
+        mock__request.return_value = mock.Mock()
+        result = {
+            "features": [
+                {
+                    "id": "foo",
+                    "geometry": None,
+                    "assets": {
+                        "productInfo": {"href": "s3://foo.bar/baz/productInfo.json"}
+                    },
+                },
+            ],
+        }
+        product_type = "S1_SAR_GRD"
+        mock__request.return_value.json.side_effect = [result]
+        search_plugin = self.get_search_plugin(product_type, "astraea_eod")
+
+        products, _ = search_plugin.query(
+            productType=product_type,
+            auth=None,
+        )
+        self.assertIn("productInfo", products[0].assets)
+        self.assertEqual(
+            products[0].assets["productInfo"]["href"],
+            "s3://foo.bar/baz/productInfo.json",
+        )
+        self.assertIn("manifest.safe", products[0].assets)
+        self.assertEqual(
+            products[0].assets["manifest.safe"]["href"],
+            "s3://foo.bar/baz/manifest.safe",
+        )
+
 
 class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
