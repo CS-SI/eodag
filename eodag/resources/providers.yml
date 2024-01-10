@@ -2504,6 +2504,9 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     flatten_top_dirs: True
     constraints_file_url: "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json"
     metadata_mapping:
@@ -2583,9 +2586,6 @@
       expver:
         - expver
         - '$.expver'
-      fcmonth:
-        - fcmonth
-        - '$.fcmonth'
       fcperiod:
         - fcperiod
         - '$.fcperiod'

@@ -2122,6 +2122,7 @@ class EODataAccessGateway:
         self,
         provider: Optional[str] = None,
         product_type: Optional[str] = None,
+        **kwargs: Any
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
@@ -2219,7 +2220,9 @@ class EODataAccessGateway:
             ):
                 providers_available_queryables[plugin.provider][key] = value
 
-        provider_queryables = plugin.discover_queryables(product_type) or dict()
+        provider_queryables = (
+            plugin.discover_queryables(product_type, **kwargs) or dict()
+        )
         # use EODAG configured queryables by default
         provider_queryables.update(providers_available_queryables[provider])
         # always keep at least CommonQueryables

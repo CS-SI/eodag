@@ -96,7 +96,7 @@ class Api(PluginTopic):
         return None
 
     def discover_queryables(
-        self, product_type: Optional[str] = None
+        self, product_type: Optional[str] = None, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf"""
         return None

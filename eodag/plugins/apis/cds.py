@@ -26,19 +26,29 @@ import cdsapi
 import geojson
 import requests
 from dateutil.parser import isoparse
+from pydantic import create_model
 
+from eodag.api.constraints import (
+    fetch_constraints,
+    get_constraint_queryables_with_additional_params,
+)
 from eodag.api.product._assets import Asset
-from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.product.metadata_mapping import (
+    get_queryable_from_provider,
+    mtd_cfg_as_conversion_and_querypath,
+)
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.types import json_field_definition_to_python, model_fields_to_annotated_tuple
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
+    Annotated,
     datetime_range,
     deepcopy,
     get_geometry_from_various,
@@ -421,3 +431,53 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             timeout=timeout,
             **kwargs,
         )
+
+    def discover_queryables(
+        self, product_type: Optional[str] = None, **kwargs: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:
+        """Fetch queryables list from provider using `discover_queryables` conf
+
+        :param product_type: (optional) product type
+        :type product_type: str
+        :returns: fetched queryable parameters dict
+        :rtype: dict
+        """
+        constraints_file_url = getattr(self.config, "constraints_file_url", "")
+        if not constraints_file_url:
+            return {}
+        provider_product_type = self.config.products.get(product_type, {}).get(
+            "dataset", None
+        )
+        if "{" in constraints_file_url:
+            constraints_file_url = constraints_file_url.format(
+                dataset=provider_product_type
+            )
+        constraints = fetch_constraints(constraints_file_url, self)
+        if not constraints:
+            return {}
+        constraint_params = {}
+        if len(kwargs) == 0:
+            # get values from constraints without additional filters
+            for constraint in constraints:
+                for key in constraint.keys():
+                    if key in constraint_params:
+                        constraint_params[key]["enum"].update(constraint[key])
+                    else:
+                        constraint_params[key] = {}
+                        constraint_params[key]["enum"] = set(constraint[key])
+        else:
+            # get values from constraints with additional filters
+            constraint_params = get_constraint_queryables_with_additional_params(
+                constraints, kwargs, self, product_type
+            )
+
+        field_definitions = dict()
+        for json_param, json_mtd in constraint_params.items():
+            param = (
+                get_queryable_from_provider(json_param, self.config.metadata_mapping)
+                or json_param
+            )
+            field_definitions[param] = json_field_definition_to_python(json_mtd)
+
+        python_queryables = create_model("m", **field_definitions).model_fields
+        return model_fields_to_annotated_tuple(python_queryables)
