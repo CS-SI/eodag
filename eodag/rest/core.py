@@ -5,15 +5,7 @@ import os
 import re
 from io import BufferedReader
 from shutil import make_archive, rmtree
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    cast,
-)
+from typing import Any, Callable, Dict, Iterator, List, Optional, cast
 
 import dateutil
 from fastapi import Request
@@ -94,22 +86,30 @@ def search_stac_items(
     search_request: SearchPostRequest,
     catalogs: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    """Get items collection dict for given catalogs list
+    """
+    Search and retrieve STAC items from the given catalogs.
 
-    :param url: Requested URL
-    :type url: str
-    :param arguments: Request args
-    :type arguments: dict
-    :param root: (optional) API root
-    :type root: str
-    :param catalogs: (optional) Catalogs list
-    :type catalogs: list
-    :param provider: (optional) Chosen provider
-    :type provider: str
-    :param method: (optional) search request HTTP method ('GET' or 'POST')
-    :type method: str
-    :returns: Catalog dictionnary
-    :rtype: dict
+    This function takes a search request and optional catalogs list, performs a search using EODAG API, and returns a
+    dictionary of STAC items.
+
+    :param request: The incoming HTTP request with state information.
+    :type request: Request
+    :param search_request: The search criteria for STAC items.
+    :type search_request: SearchPostRequest
+    :param catalogs: (optional) A list of catalogs to search within. Defaults to None.
+    :type catalogs: Optional[List[str]]
+    :returns: A dictionary containing the STAC items and related metadata.
+    :rtype: Dict[str, Any]
+
+    The function handles the conversion of search criteria into STAC and EODAG compatible formats, validates the input
+    using pydantic, and constructs the appropriate URLs for querying the STAC API. It also manages pagination and the
+    construction of the 'next' link for the response.
+
+    If specific item IDs are provided, it retrieves the corresponding products. Otherwise, it performs a search based on
+    the provided criteria and time interval overlap checks.
+
+    The results are then formatted into STAC items and returned as part of the response dictionary, which includes the
+    items themselves, total count, and the next link if applicable.
     """
     stac_args = search_request.model_dump(exclude_none=True)
     if search_request.start_date:
@@ -126,7 +126,7 @@ def search_stac_items(
     except pydanticValidationError as e:
         raise ValidationError(format_pydantic_error(e)) from e
 
-    catalog_url = request.state.url.replace("/items", "")
+    catalog_url = re.sub("/items.*", "", request.state.url)
 
     # TODO: catalog search_args should be in EODAG format
     catalog = StacCatalog(
@@ -526,10 +526,10 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     :rtype: dict
     """
 
-    apply_method: Callable[[str, str], str] = lambda _, x: str(x).replace("$.product.", "$.")
-    item_mapping = dict_items_recursive_apply(
-        stac_config["item"], apply_method
+    apply_method: Callable[[str, str], str] = lambda _, x: str(x).replace(
+        "$.product.", "$."
     )
+    item_mapping = dict_items_recursive_apply(stac_config["item"], apply_method)
 
     # all properties as string type by default
     oseo_properties = {
@@ -603,50 +603,6 @@ def get_templates_path() -> str:
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def get_stac_item_by_id(
-    url: str,
-    item_id: str,
-    catalogs: List[str],
-    root: str = "/",
-    provider: Optional[str] = None,
-    **kwargs: Any,
-) -> Optional[Dict[str, Any]]:
-    """Build STAC item by id
-
-    :param url: Requested URL
-    :type url: str
-    :param item_id: Product ID
-    :type item_id: str
-    :param catalogs: Catalogs list (only first is used as product_type)
-    :type catalogs: list
-    :param root: (optional) API root
-    :type root: str
-    :param provider: (optional) Chosen provider
-    :type provider: str
-    :param kwargs: additional search parameters
-    :type kwargs: Any
-    :returns: Collection dictionary
-    :rtype: dict
-    """
-    found_products, _ = eodag_api.search(
-        id=item_id, productType=catalogs[0], provider=provider, **kwargs
-    )
-
-    if len(found_products) > 0:
-        found_products[0].product_type = eodag_api.get_alias_from_product_type(
-            found_products[0].product_type
-        )
-        return StacItem(
-            url=url,
-            stac_config=stac_config,
-            provider=provider,
-            eodag_api=eodag_api,
-            root=root,
-        ).get_stac_item_from_product(product=found_products[0])
-    else:
-        return None
-
-
 def crunch_products(
     products: SearchResult, cruncher_name: str, **kwargs: Any
 ) -> SearchResult:
@@ -672,3 +628,12 @@ def crunch_products(
         raise ValidationError(str(e)) from e
 
     return products
+
+
+def eodag_api_init() -> None:
+    """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
+    eodag_api.fetch_product_types_list()
+
+    # pre-build search plugins
+    for provider in eodag_api.available_providers():
+        next(eodag_api._plugins_manager.get_search_plugins(provider=provider))

@@ -28,7 +28,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Optional
+    Optional,
 )
 
 from fastapi import APIRouter as FastAPIRouter
@@ -52,7 +52,6 @@ from eodag.rest.core import (
     get_stac_collections,
     get_stac_conformance,
     get_stac_extension_oseo,
-    get_stac_item_by_id,
     search_stac_items,
 )
 from eodag.rest.types.eodag_search import EODAGSearch
@@ -201,7 +200,9 @@ async def forward_middleware(
     if "forwarded" in request.headers:
         header_forwarded = parse_header(request.headers["forwarded"])
         forwarded_host = str(header_forwarded.get_param("host", None)) or forwarded_host
-        forwarded_proto = str(header_forwarded.get_param("proto", None)) or forwarded_proto
+        forwarded_proto = (
+            str(header_forwarded.get_param("proto", None)) or forwarded_proto
+        )
 
     request.state.url_root = f"{forwarded_proto or request.url.scheme}://{forwarded_host or request.url.netloc}"
     request.state.url = f"{request.state.url_root}{request.url.path}"
@@ -424,28 +425,24 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     """STAC collection item by id"""
     logger.debug("URL: %s", request.url)
 
-    url = request.state.url
-    url_root = request.state.url_root
+    base_args: Dict[str, Any] = dict(request.query_params)
+    base_args["ids"] = [item_id]
+    base_args["collections"] = [collection_id]
+    base_args["limit"] = 1
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+    clean = {k: v for k, v in base_args.items() if v is not None}
 
-    response = get_stac_item_by_id(
-        url=url,
-        item_id=item_id,
-        root=url_root,
-        catalogs=[collection_id],
-        provider=provider,
-        **arguments,
-    )
+    search_request = SearchPostRequest.model_validate(clean)
 
-    if response:
-        return jsonable_encoder(response)
-    else:
+    item_collection = search_stac_items(request, search_request)
+
+    if not item_collection["features"]:
         raise HTTPException(
-            status_code=404,
-            detail=f"No item found matching `{item_id}` id in collection `{collection_id}`",
+            status_code=400,
+            detail=f"Item {item_id} in Collection {collection_id} does not exist.",
         )
+
+    return jsonable_encoder(item_collection["features"][0])
 
 
 @router.get(
@@ -617,29 +614,25 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     """Fetch catalog's single features."""
     logger.debug("URL: %s", request.url)
 
-    url = request.state.url
-    url_root = request.state.url_root
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
     list_catalog = catalogs.strip("/").split("/")
-    response = get_stac_item_by_id(
-        url=url,
-        item_id=item_id,
-        root=url_root,
-        catalogs=list_catalog,
-        provider=provider,
-        **arguments,
-    )
 
-    if response:
-        return jsonable_encoder(response)
-    else:
+    base_args: Dict[str, Any] = dict(request.query_params)
+    base_args["ids"] = [item_id]
+    base_args["limit"] = 1
+
+    clean = {k: v for k, v in base_args.items() if v is not None}
+
+    search_request = SearchPostRequest.model_validate(clean)
+
+    item_collection = search_stac_items(request, search_request, catalogs=list_catalog)
+
+    if not item_collection["features"]:
         raise HTTPException(
-            status_code=404,
-            detail=f"No item found matching `{item_id}` id in catalog `{catalogs}`",
+            status_code=400,
+            detail=f"Item {item_id} in Catalog {catalogs} does not exist.",
         )
+
+    return jsonable_encoder(item_collection["features"][0])
 
 
 @router.get(
@@ -722,6 +715,7 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
         )
 
     return jsonable_encoder(queryables)
+
 
 @router.get(
     "/search",

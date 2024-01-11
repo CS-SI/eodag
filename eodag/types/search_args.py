@@ -68,12 +68,12 @@ class SearchArgs(BaseModel):
     def check_geom(cls, v: Any) -> BaseGeometry:
         """Validate geom"""
         # GeoJSON geometry
-        if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES: # type: ignore
+        if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES:  # type: ignore
             return cast(BaseGeometry, shape(v))
 
         # Bounding Box
         if isinstance(v, (list, tuple, dict)):
-            return BBox(v).to_polygon() # type: ignore
+            return BBox(v).to_polygon()  # type: ignore
 
         if isinstance(v, str):
             # WKT geometry
