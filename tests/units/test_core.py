@@ -567,7 +567,7 @@ class TestCore(TestCoreBase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        "eodag.plugins.apis.ecmwf.EcmwfApi.discover_product_types",
         autospec=True,
         return_value={
             "providers_config": {"foo": {"productType": "foo"}},

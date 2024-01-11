@@ -75,7 +75,7 @@ try:
     from typing import Annotated, get_args, get_origin  # noqa
 except ImportError:
     # for python < 3.9
-    from typing_extensions import Annotated, get_args, get_origin  # noqa
+    from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
 
 import click
 import orjson
@@ -917,7 +917,7 @@ def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
     return result_list
 
 
-def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, Child, Root]:
+def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     """Get jsonpath for "$.foo.bar" like string
 
     >>> string_to_jsonpath(None, "$.foo.bar")

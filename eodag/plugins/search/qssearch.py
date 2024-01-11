@@ -19,7 +19,8 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, cast
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, cast
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -333,6 +334,11 @@ class QueryStringSearch(Search):
             return None
         else:
             try:
+                conf_update_dict = {
+                    "providers_config": {},
+                    "product_types_config": {},
+                }
+
                 if self.config.discover_product_types["result_type"] == "json":
                     resp_as_json = response.json()
                     # extract results from response json
@@ -342,11 +348,6 @@ class QueryStringSearch(Search):
                             "results_entry"
                         ].find(resp_as_json)
                     ]
-
-                    conf_update_dict = {
-                        "providers_config": {},
-                        "product_types_config": {},
-                    }
 
                     for product_type_result in result:
                         # providers_config extraction
@@ -473,8 +474,10 @@ class QueryStringSearch(Search):
         )
 
         # provider product type specific conf
-        self.product_type_def_params = self.get_product_type_def_params(
-            product_type, **kwargs
+        self.product_type_def_params = (
+            self.get_product_type_def_params(product_type, **kwargs)
+            if product_type is not None
+            else {}
         )
 
         # if product_type_def_params is set, remove product_type as it may conflict with this conf
@@ -486,15 +489,15 @@ class QueryStringSearch(Search):
                 self.config.metadata_mapping,
                 **self.product_type_def_params.get("metadata_mapping", {}),
             )
-        keywords.update(
-            {
-                k: v
-                for k, v in self.product_type_def_params.items()
-                if k not in keywords.keys()
-                and k in product_type_metadata_mapping.keys()
-                and isinstance(product_type_metadata_mapping[k], list)
-            }
-        )
+            keywords.update(
+                {
+                    k: v
+                    for k, v in self.product_type_def_params.items()
+                    if k not in keywords.keys()
+                    and k in product_type_metadata_mapping.keys()
+                    and isinstance(product_type_metadata_mapping[k], list)
+                }
+            )
 
         qp, qs = self.build_query_string(product_type, **keywords)
 
@@ -521,7 +524,8 @@ class QueryStringSearch(Search):
     )
     def update_metadata_mapping(self, metadata_mapping: Dict[str, Any]) -> None:
         """Update plugin metadata_mapping with input metadata_mapping configuration"""
-        self.config.metadata_mapping.update(metadata_mapping)
+        if self.config.metadata_mapping:
+            self.config.metadata_mapping.update(metadata_mapping)
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
@@ -532,11 +536,10 @@ class QueryStringSearch(Search):
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
+        quote_via: Callable[[Any], str] = lambda x, *_args, **_kwargs: x
         return (
             query_params,
-            urlencode(
-                query_params, doseq=True, quote_via=lambda x, *_args, **_kwargs: x
-            ),
+            urlencode(query_params, doseq=True, quote_via=quote_via),
         )
 
     def collect_search_urls(
@@ -570,12 +573,18 @@ class QueryStringSearch(Search):
                     ).format(collection=collection)
                     if count_endpoint:
                         count_url = "{}?{}".format(count_endpoint, self.query_string)
-                        _total_results = self.count_hits(
-                            count_url, result_type=self.config.result_type
+                        _total_results = (
+                            self.count_hits(
+                                count_url, result_type=self.config.result_type
+                            )
+                            or 0
                         )
                         if getattr(self.config, "merge_responses", False):
-                            total_results = _total_results or 0
+                            total_results = _total_results
                         else:
+                            total_results = (
+                                0 if total_results is None else total_results
+                            )
                             total_results += _total_results or 0
                 next_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
@@ -601,9 +610,9 @@ class QueryStringSearch(Search):
         :param items_per_page: (optional) The number of items to return for one page
         :type items_per_page: int
         """
+        total_items_nb = 0
         if getattr(self, "need_count", False):
             # extract total_items_nb from search results
-            total_items_nb = 0
             if self.config.result_type == "json":
                 total_items_nb_key_path_parsed = self.config.pagination[
                     "total_items_nb_key_path"
@@ -629,12 +638,15 @@ class QueryStringSearch(Search):
             if self.config.result_type == "xml":
                 root_node = etree.fromstring(response.content)
                 namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
-                result = [
-                    etree.tostring(entry)
-                    for entry in root_node.xpath(
-                        self.config.results_entry, namespaces=namespaces
-                    )
-                ]
+                results_xpath = root_node.xpath(
+                    self.config.results_entry or "//ns:entry", namespaces=namespaces
+                )
+                result = (
+                    [etree.tostring(element_or_tree=entry) for entry in results_xpath]
+                    if isinstance(results_xpath, Iterable)
+                    else []
+                )
+
                 if next_page_url_key_path or next_page_query_obj_key_path:
                     raise NotImplementedError(
                         "Setting the next page url from an XML response has not "
@@ -643,11 +655,16 @@ class QueryStringSearch(Search):
                 if getattr(self, "need_count", False):
                     # extract total_items_nb from search results
                     try:
-                        total_nb_results = root_node.xpath(
-                            self.config.pagination["total_items_nb_key_path"],
+                        total_nb_results_xpath = root_node.xpath(
+                            str(self.config.pagination["total_items_nb_key_path"]),
                             namespaces={
                                 k or "ns": v for k, v in root_node.nsmap.items()
                             },
+                        )
+                        total_nb_results = (
+                            total_nb_results_xpath
+                            if isinstance(total_nb_results_xpath, Iterable)
+                            else []
                         )[0]
                         _total_items_nb = int(total_nb_results)
 
@@ -757,7 +774,7 @@ class QueryStringSearch(Search):
             products.append(product)
         return products
 
-    def count_hits(self, count_url: str, result_type: str = "json") -> int:
+    def count_hits(self, count_url: str, result_type: Optional[str] = "json") -> int:
         """Count the number of results satisfying some criteria"""
         # Handle a very annoying special case :'(
         url = count_url.replace("$format=json&", "")
