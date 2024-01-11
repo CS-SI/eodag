@@ -473,14 +473,14 @@ class TestEODAGSearch(unittest.TestCase):
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(
                 {
-                    "startTimeFromAscendingNode": "2023-12-18T16:41:35+00:00",
-                    "completionTimeFromAscendingNode": "2023-12-19T16:41:35+00:00",
+                    "start": "2023-12-18T16:41:35+00:00",
+                    "end": "2023-12-19T16:41:35+00:00",
                     "collection": "test_collection",
                 }
             ).model_dump(exclude_none=True),
             {
-                "startTimeFromAscendingNode": "2023-12-18T16:41:35Z",
-                "completionTimeFromAscendingNode": "2023-12-19T16:41:35Z",
+                "start": "2023-12-18T16:41:35Z",
+                "end": "2023-12-19T16:41:35Z",
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
@@ -491,14 +491,14 @@ class TestEODAGSearch(unittest.TestCase):
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(
                 {
-                    "startTimeFromAscendingNode": "2023-12-20T16:41:35",
-                    "completionTimeFromAscendingNode": "2023-12-21T16:41:35",
+                    "start": "2023-12-20T16:41:35",
+                    "end": "2023-12-21T16:41:35",
                     "collection": "test_collection",
                 }
             ).model_dump(exclude_none=True),
             {
-                "startTimeFromAscendingNode": "2023-12-20T16:41:35",
-                "completionTimeFromAscendingNode": "2023-12-21T16:41:35",
+                "start": "2023-12-20T16:41:35",
+                "end": "2023-12-21T16:41:35",
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
@@ -530,7 +530,7 @@ class TestEODAGSearch(unittest.TestCase):
         )
         self.assertEqual(
             eodag_search.EODAGSearch.to_eodag("start_datetime"),
-            "startTimeFromAscendingNode",
+            "start",
         )
         self.assertEqual(
             eodag_search.EODAGSearch.to_eodag("platform"),

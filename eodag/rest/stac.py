@@ -1058,12 +1058,8 @@ class StacCatalog(StacCommon):
         # update search args
         self.search_args.update(
             {
-                "startTimeFromAscendingNode": datetime_min.isoformat().replace(
-                    "+00:00", "Z"
-                ),
-                "completionTimeFromAscendingNode": datetime_max.isoformat().replace(
-                    "+00:00", "Z"
-                ),
+                "start": datetime_min.isoformat().replace("+00:00", "Z"),
+                "end": datetime_max.isoformat().replace("+00:00", "Z"),
             }
         )
         return parsed_dict
