@@ -3,7 +3,7 @@ from unittest import mock
 
 from pydantic_core import ValidationError
 
-from eodag.rest.types import eodag_search, queryables, stac_search
+from eodag.rest.types import eodag_search, stac_search
 
 
 class TestStacSearch(unittest.TestCase):
@@ -547,26 +547,3 @@ class TestEODAGSearch(unittest.TestCase):
 
         # Test with alias that has no corresponding property
         self.assertEqual(eodag_search.EODAGSearch.to_eodag("provider"), "provider")
-
-
-class TestQueryables(unittest.TestCase):
-    def setUp(self):
-        self.queryables = queryables.Queryables()
-
-    def test_get_properties(self):
-        properties = self.queryables.get_properties()
-        self.assertIsInstance(properties, dict)
-        for key, value in properties.items():
-            self.assertIsInstance(key, str)
-            self.assertIsInstance(value, queryables.QueryableProperty)
-
-    def test_contains(self):
-        self.assertTrue("id" in self.queryables)
-        self.assertFalse("nonexistent_property" in self.queryables)
-
-    def test_setitem(self):
-        new_property = queryables.QueryableProperty(
-            description="New property", ref="https://example.com"
-        )
-        self.queryables["new_property"] = new_property
-        self.assertEqual(self.queryables.get_properties()["new_property"], new_property)
