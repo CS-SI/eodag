@@ -21,6 +21,7 @@ import logging
 import os
 import tempfile
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     ItemsView,
@@ -28,6 +29,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    TypedDict,
     Union,
     ValuesView,
 )
@@ -53,6 +55,10 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    from jsonpath_ng import JSONPath
+    from requests.auth import AuthBase
 
 logger = logging.getLogger("eodag.config")
 
@@ -120,11 +126,12 @@ class ProviderConfig(yaml.YAMLObject):
 
     name: str
     priority: int = 0  # Set default priority to 0
-    api: Optional[PluginConfig]
-    search: Optional[PluginConfig]
-    products: Optional[Dict[str, Any]]
-    download: Optional[PluginConfig]
-    auth: Optional[PluginConfig]
+    api: PluginConfig
+    search: PluginConfig
+    products: Dict[str, Any]
+    download: PluginConfig
+    auth: PluginConfig
+    product_types_fetched: bool  # set in core.update_product_types_list
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
@@ -208,9 +215,90 @@ class PluginConfig(yaml.YAMLObject):
     :type free_params: dict
     """
 
+    class Pagination(TypedDict):
+        """Search pagination configuration"""
+
+        max_items_per_page: int
+        total_items_nb_key_path: Union[str, JSONPath]
+        next_page_url_key_path: Union[str, JSONPath]
+        next_page_query_obj_key_path: Union[str, JSONPath]
+        next_page_merge_key_path: Union[str, JSONPath]
+        next_page_url_tpl: str
+        next_page_query_obj: str
+        count_endpoint: str
+        start_page: int
+
+    class OrderStatusOnSuccess(TypedDict):
+        """Configuration for order on-success during download"""
+
+        need_search: bool
+        result_type: str
+        results_entry: str
+        metadata_mapping: Dict[str, Union[str, List[str]]]
+
     name: str
-    metadata_mapping: Optional[Dict[str, str]]
-    free_params: Optional[Dict[Any, Any]]
+    type: str
+
+    # search & api ---------------------------------------------------------------------
+    priority: int  # copied from ProviderConfig in PluginManager.get_search_plugins()
+    products: Dict[
+        str, Any
+    ]  # copied from ProviderConfig in PluginManager.get_search_plugins()
+    product_type_config: Dict[str, Any]  # set in core._prepare_search
+    auth: Union[AuthBase, Dict[str, str]]  # set in core._do_search
+    api_endpoint: str
+    need_auth: bool
+    result_type: str
+    results_entry: str
+    pagination: Pagination
+    query_params_key: str
+    discover_metadata: Dict[str, str]
+    discover_product_types: Dict[str, Any]
+    discover_queryables: Dict[str, Any]
+    metadata_mapping: Dict[str, Union[str, List[str]]]
+    free_params: Dict[Any, Any]
+    free_text_search_operations: Dict[str, Any]  # ODataV4Search
+    metadata_pre_mapping: Dict[str, Any]  # ODataV4Search
+    data_request_url: str  # DataRequestSearch
+    status_url: str  # DataRequestSearch
+    result_url: str  # DataRequestSearch
+    search_definition: Dict[str, Any]  # CSWSearch
+    merge_responses: bool  # PostJsonSearch for aws_eos
+    collection: bool  # PostJsonSearch for aws_eos
+    max_connections: int  # StaticStacSearch
+    timeout: int  # StaticStacSearch
+
+    # download -------------------------------------------------------------------------
+    base_uri: str
+    outputs_prefix: str
+    extract: bool
+    order_enabled: bool  # HTTPDownload
+    order_method: str  # HTTPDownload
+    order_headers: Dict[str, str]  # HTTPDownload
+    order_status_on_success: OrderStatusOnSuccess
+    bucket_path_level: int  # S3RestDownload
+
+    # auth -----------------------------------------------------------------------------
+    credentials: Dict[str, str]
+    auth_uri: str
+    auth_base_uri: str
+    auth_error_code: int
+    headers: Dict[str, str]
+    token_provision: str  # KeycloakOIDCPasswordAuth
+    client_id: str  # KeycloakOIDCPasswordAuth
+    client_secret: str  # KeycloakOIDCPasswordAuth
+    realm: str  # KeycloakOIDCPasswordAuth
+    user_consent_needed: str  # OIDCAuthorizationCodeFlowAuth
+    authentication_uri_source: str  # OIDCAuthorizationCodeFlowAuth
+    redirect_uri: str  # OIDCAuthorizationCodeFlowAuth
+    authorization_uri: str  # OIDCAuthorizationCodeFlowAuth
+    login_form_xpath: str  # OIDCAuthorizationCodeFlowAuth
+    user_consent_form_xpath: str  # OIDCAuthorizationCodeFlowAuth
+    user_consent_form_data: str  # OIDCAuthorizationCodeFlowAuth
+    token_exchange_post_data_method: str  # OIDCAuthorizationCodeFlowAuth
+    token_uri: str  # OIDCAuthorizationCodeFlowAuth
+    token_key: str  # OIDCAuthorizationCodeFlowAuth
+    signed_url_key: str  # SASAuth
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
