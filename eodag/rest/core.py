@@ -149,8 +149,7 @@ def search_stac_items(
                 productType=catalogs[0] if catalogs else eodag_args.productType,
                 provider=eodag_args.provider,
             )
-            if len(products) == 1:
-                search_results.extend(products)
+            search_results.extend(products)
         total = len(search_results)
 
     elif time_interval_overlap(eodag_args, catalog):
@@ -441,41 +440,33 @@ def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool
     """fix search date filter based on catalog date range"""
     # check if time filtering appears both in search arguments and catalog
     # (for catalogs built by date: i.e. `year/2020/month/05`)
-    if not set(
-        ["startTimeFromAscendingNode", "completionTimeFromAscendingNode"]
-    ) <= set(eodag_args.model_dump().keys()) or not set(
-        ["startTimeFromAscendingNode", "completionTimeFromAscendingNode"]
-    ) <= set(
-        catalog.search_args.keys()
-    ):
+    if not set(["start", "end"]) <= set(eodag_args.model_dump().keys()) or not set(
+        ["start", "end"]
+    ) <= set(catalog.search_args.keys()):
         return True
 
     search_date_min = cast(
         datetime.datetime,
-        dateutil.parser.parse(eodag_args.startTimeFromAscendingNode)  # type: ignore
-        if eodag_args.startTimeFromAscendingNode
+        dateutil.parser.parse(eodag_args.start)  # type: ignore
+        if eodag_args.start
         else datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
     )
     search_date_max = cast(
         datetime.datetime,
-        dateutil.parser.parse(eodag_args.completionTimeFromAscendingNode)  # type: ignore
-        if eodag_args.completionTimeFromAscendingNode
+        dateutil.parser.parse(eodag_args.end)  # type: ignore
+        if eodag_args.end
         else datetime.datetime.now(tz=datetime.timezone.utc),
     )
 
-    catalog_date_min = rfc3339_str_to_datetime(
-        catalog.search_args["startTimeFromAscendingNode"]
-    )
-    catalog_date_max = rfc3339_str_to_datetime(
-        catalog.search_args["completionTimeFromAscendingNode"]
-    )
+    catalog_date_min = rfc3339_str_to_datetime(catalog.search_args["start"])
+    catalog_date_max = rfc3339_str_to_datetime(catalog.search_args["end"])
     # check if date intervals overlap
     if (search_date_min <= catalog_date_max) and (search_date_max >= catalog_date_min):
         # use intersection
-        eodag_args.startTimeFromAscendingNode = (
+        eodag_args.start = (
             max(search_date_min, catalog_date_min).isoformat().replace("+00:00", "Z")
         )
-        eodag_args.completionTimeFromAscendingNode = (
+        eodag_args.end = (
             min(search_date_max, catalog_date_max).isoformat().replace("+00:00", "Z")
         )
         return True

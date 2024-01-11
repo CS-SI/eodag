@@ -72,10 +72,10 @@ class RequestTestCase(unittest.TestCase):
         )
 
         # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
-        # reload eodag.rest.utils to prevent eodag_api cache conflicts
-        import eodag.rest.utils
+        # reload eodag.rest.core to prevent eodag_api cache conflicts
+        import eodag.rest.core
 
-        importlib.reload(eodag.rest.utils)
+        importlib.reload(eodag.rest.core)
         from eodag.rest import server as eodag_http_server
 
         cls.eodag_http_server = eodag_http_server
@@ -171,8 +171,7 @@ class RequestTestCase(unittest.TestCase):
                             "properties": {
                                 "snowCover": None,
                                 "resolution": None,
-                                "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
-                                ".035Z",
+                                "end": "2018-02-16T00:12:14" ".035Z",
                                 "keyword": {},
                                 "productType": "OCN",
                                 "downloadLink": (
@@ -201,8 +200,7 @@ class RequestTestCase(unittest.TestCase):
                                     "type": "Polygon",
                                 },
                                 "organisationName": None,
-                                "startTimeFromAscendingNode": "2018-02-15T23:53:22"
-                                ".871Z",
+                                "start": "2018-02-15T23:53:22" ".871Z",
                                 "platform": None,
                                 "sensorType": None,
                                 "processingLevel": None,
@@ -232,8 +230,7 @@ class RequestTestCase(unittest.TestCase):
                             "properties": {
                                 "snowCover": None,
                                 "resolution": None,
-                                "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
-                                ".035Z",
+                                "end": "2018-02-17T00:12:14" ".035Z",
                                 "keyword": {},
                                 "productType": "OCN",
                                 "downloadLink": (
@@ -262,8 +259,7 @@ class RequestTestCase(unittest.TestCase):
                                     "type": "Polygon",
                                 },
                                 "organisationName": None,
-                                "startTimeFromAscendingNode": "2018-02-16T23:53:22"
-                                ".871Z",
+                                "start": "2018-02-16T23:53:22" ".871Z",
                                 "platform": None,
                                 "sensorType": None,
                                 "processingLevel": None,
@@ -522,8 +518,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -533,7 +529,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -543,7 +539,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -553,8 +549,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -576,8 +572,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -590,8 +586,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-01T00:00:00Z",
-                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -604,8 +600,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -618,8 +614,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
             ),
         )
@@ -651,8 +647,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-01T00:00:00Z",
-                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         # args & catalog intersection
@@ -662,8 +658,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -672,8 +668,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-02-01T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -682,8 +678,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-01T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-05T00:00:00Z",
+                start="2018-01-01T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -692,8 +688,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-05T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-05T00:00:00Z",
+                start="2018-01-05T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
             ),
         )
         result = self._request_valid(
@@ -782,8 +778,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -797,7 +793,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -811,7 +807,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                completionTimeFromAscendingNode="2018-01-25T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
             ),
         )
         self._request_valid(
@@ -825,8 +821,8 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                startTimeFromAscendingNode="2018-01-20T00:00:00Z",
-                completionTimeFromAscendingNode="2018-01-20T00:00:00Z",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
             ),
         )
 
