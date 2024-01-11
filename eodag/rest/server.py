@@ -60,6 +60,7 @@ from eodag.rest.utils import (
     get_stac_extension_oseo,
     get_stac_item_by_id,
     search_stac_items,
+    telemetry_init,
 )
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
 from eodag.utils.exceptions import (
@@ -725,3 +726,4 @@ def stac_search(
 
 
 app.include_router(router)
+telemetry_init(app)
