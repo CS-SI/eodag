@@ -21,12 +21,23 @@ import datetime
 import logging
 import os
 import re
+import sys
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
 
 import dateutil
 from cachetools.func import lru_cache
+from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse, StreamingResponse
+from opentelemetry import metrics, trace
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics._internal.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
 
@@ -75,6 +86,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     ValidationError,
 )
+from eodag.utils.instrumentation.eodag import EODAGInstrumentor
 
 if TYPE_CHECKING:
     from typing import Any, Dict, List, Optional, Union
@@ -760,3 +772,41 @@ def eodag_api_init() -> None:
     # pre-build search plugins
     for provider in eodag_api.available_providers():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
+
+
+def telemetry_init(fastapi_app: FastAPI = None):
+    """Init telemetry
+
+    :param fastapi_app: FastAPI to automatically instrument.
+    :type fastapi_app: FastAPI"""
+
+    if not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+        return None
+    if "opentelemetry" not in sys.modules:
+        return None
+
+    # Start OTLP exporter
+    resource = Resource(attributes={SERVICE_NAME: "eodag-serve-rest"})
+    # trace
+    tracer_provider = TracerProvider(resource=resource)
+    processor = BatchSpanProcessor(OTLPSpanExporter())
+    tracer_provider.add_span_processor(processor)
+    trace.set_tracer_provider(tracer_provider)
+    # metrics
+    reader = PeriodicExportingMetricReader(OTLPMetricExporter())
+    meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
+    metrics.set_meter_provider(meter_provider)
+
+    # Auto instrumentation
+    if fastapi_app:
+        logger.debug("Instrument FastAPI app")
+        FastAPIInstrumentor.instrument_app(
+            app=fastapi_app,
+            tracer_provider=tracer_provider,
+            meter_provider=meter_provider,
+        )
+    logger.debug("Instrument EODAG app")
+    EODAGInstrumentor(eodag_api).instrument(
+        tracer_provider=tracer_provider,
+        meter_provider=meter_provider,
+    )
