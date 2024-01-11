@@ -461,14 +461,11 @@ class AwsDownload(Download):
                     os.makedirs(chunk_abs_path_dir)
 
                 if not os.path.isfile(chunk_abs_path):
-                    wrapped_progress_callback = self._record_downloaded_data(
-                        progress_callback
-                    )
                     product_chunk.Bucket().download_file(
                         product_chunk.key,
                         chunk_abs_path,
                         ExtraArgs=getattr(s3_objects, "_params", {}),
-                        Callback=wrapped_progress_callback,
+                        Callback=progress_callback,
                     )
 
         except AuthenticationError as e:

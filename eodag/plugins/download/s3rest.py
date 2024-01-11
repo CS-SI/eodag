@@ -314,13 +314,10 @@ class S3RestDownload(Download):
                         )
                     else:
                         with open(local_filename, "wb") as fhandle:
-                            wrapped_progress_callback = self._record_downloaded_data(
-                                progress_callback
-                            )
                             for chunk in stream.iter_content(chunk_size=64 * 1024):
                                 if chunk:
                                     fhandle.write(chunk)
-                                    wrapped_progress_callback(len(chunk))
+                                    progress_callback(len(chunk))
 
             with open(record_filename, "w") as fh:
                 fh.write(product.remote_location)

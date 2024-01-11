@@ -689,12 +689,9 @@ class HTTPDownload(Download):
                 stream_size = self._check_stream_size(product)
                 product.headers = self.stream.headers
                 progress_callback.reset(total=stream_size)
-                wrapped_progress_callback = self._record_downloaded_data(
-                    progress_callback
-                )
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
-                        wrapped_progress_callback(len(chunk))
+                        progress_callback(len(chunk))
                         yield chunk
 
     def _get_assets_values(

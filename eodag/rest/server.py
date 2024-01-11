@@ -60,7 +60,6 @@ from eodag.rest.utils import (
     get_stac_extension_oseo,
     get_stac_item_by_id,
     search_stac_items,
-    telemetry_init,
 )
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
 from eodag.utils.exceptions import (
@@ -74,7 +73,6 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
 )
-from eodag.utils.otel import telemetry
 
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
@@ -346,24 +344,14 @@ def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StreamingResponse:
     """STAC collection item download"""
-    trace_id = telemetry.get_current_trace_id()
-    timer = telemetry.create_overhead_timer(trace_id)
-    timer.start_global_timer()
     logger.debug(f"URL: {request.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    response = download_stac_item_by_id_stream(
+    return download_stac_item_by_id_stream(
         catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
     )
-
-    timer.stop_global_timer()
-    telemetry.record_request_duration(provider, timer.get_global_time())
-    telemetry.record_request_overhead_duration(provider, timer.get_overhead_time())
-    telemetry.delete_overhead_timer(trace_id)
-
-    return response
 
 
 @router.get(
@@ -544,9 +532,6 @@ def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StreamingResponse:
     """STAC Catalog item download"""
-    trace_id = telemetry.get_current_trace_id()
-    timer = telemetry.create_overhead_timer(trace_id)
-    timer.start_global_timer()
     logger.debug(f"URL: {request.url}")
 
     arguments = dict(request.query_params)
@@ -554,16 +539,9 @@ def stac_catalogs_item_download(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    response = download_stac_item_by_id_stream(
+    return download_stac_item_by_id_stream(
         catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
     )
-
-    timer.stop_global_timer()
-    telemetry.record_request_duration(provider, timer.get_global_time())
-    telemetry.record_request_overhead_duration(provider, timer.get_overhead_time())
-    telemetry.delete_overhead_timer(trace_id)
-
-    return response
 
 
 @router.get(
@@ -719,9 +697,6 @@ def stac_search(
     request: Request, search_body: Optional[SearchBody] = None
 ) -> ORJSONResponse:
     """STAC collections items"""
-    trace_id = telemetry.get_current_trace_id()
-    timer = telemetry.create_overhead_timer(trace_id)
-    timer.start_global_timer()
     logger.debug(f"URL: {request.url}")
     logger.debug(f"Body: {search_body}")
 
@@ -736,20 +711,6 @@ def stac_search(
     arguments = dict(request.query_params, **body)
     provider = arguments.pop("provider", None)
 
-    # metrics
-    args_collections = arguments.get("collections", None)
-    if isinstance(args_collections, str):
-        product_type = args_collections.split(",")[0] if args_collections else None
-    elif isinstance(args_collections, list) and len(args_collections) > 0:
-        product_type = args_collections[0]
-    else:
-        product_type = None
-    if not product_type:
-        raise ValidationError(
-            "Cannot get product_type from collections %s" % args_collections
-        )
-    telemetry.record_searched_product_type(product_type)
-
     response = search_stac_items(
         url=url,
         arguments=arguments,
@@ -760,12 +721,7 @@ def stac_search(
     resp = ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
     )
-    timer.stop_global_timer()
-    telemetry.record_request_duration(provider, timer.get_global_time())
-    telemetry.record_request_overhead_duration(provider, timer.get_overhead_time())
-    telemetry.delete_overhead_timer(trace_id)
     return resp
 
 
 app.include_router(router)
-telemetry_init(app)
