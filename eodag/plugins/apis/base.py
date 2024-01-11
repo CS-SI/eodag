@@ -89,6 +89,10 @@ class Api(PluginTopic):
         """
         raise NotImplementedError("A Api plugin must implement a method named query")
 
+    def discover_product_types(self) -> Optional[Dict[str, Any]]:
+        """Fetch product types list from provider using `discover_product_types` conf"""
+        return None
+
     def discover_queryables(
         self, product_type: Optional[str] = None
     ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:

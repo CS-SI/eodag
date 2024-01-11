@@ -265,7 +265,7 @@ class EODataAccessGateway:
                 missionEndDate=fields.ID,
                 keywords=fields.KEYWORD(analyzer=kw_analyzer),
             )
-            non_indexable_fields = []
+            non_indexable_fields: List[str] = []
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types(fetch_providers=False):
@@ -726,7 +726,9 @@ class EODataAccessGateway:
 
         return ext_product_types_conf
 
-    def update_product_types_list(self, ext_product_types_conf: Dict[str, Any]) -> None:
+    def update_product_types_list(
+        self, ext_product_types_conf: Dict[str, Optional[Dict[str, Dict[str, Any]]]]
+    ) -> None:
         """Update eodag product types list
 
         :param ext_product_types_conf: external product types configuration
@@ -735,16 +737,17 @@ class EODataAccessGateway:
         for provider, new_product_types_conf in ext_product_types_conf.items():
             if new_product_types_conf and provider in self.providers_config:
                 try:
-                    if hasattr(self.providers_config[provider], "search"):
-                        search_plugin_config = self.providers_config[provider].search
-                    elif hasattr(self.providers_config[provider], "api"):
-                        search_plugin_config = self.providers_config[provider].api
-                    else:
+                    search_plugin_config = getattr(
+                        self.providers_config[provider], "search", None
+                    ) or getattr(self.providers_config[provider], "api", None)
+                    if search_plugin_config is None:
                         continue
                     if not hasattr(search_plugin_config, "discover_product_types"):
                         # conf has been updated and provider product types are no more discoverable
                         continue
-                    provider_products_config = self.providers_config[provider].products
+                    provider_products_config = (
+                        self.providers_config[provider].products or {}
+                    )
                 except UnsupportedProvider:
                     logger.debug(
                         "Ignoring external product types for unknown provider %s",

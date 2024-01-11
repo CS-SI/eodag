@@ -1105,7 +1105,7 @@ def properties_from_xml(
 
 def mtd_cfg_as_conversion_and_querypath(
     src_dict: Dict[str, Any],
-    dest_dict: Optional[Dict[str, Any]] = {},
+    dest_dict: Dict[str, Any] = {},
     result_type: str = "json",
 ) -> Dict[str, Any]:
     """Metadata configuration dictionary to querypath with conversion dictionnary
