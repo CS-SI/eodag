@@ -173,13 +173,16 @@ class StacCommon:
             for p in self.eodag_api.providers_config.values()
             if provider in [p.name, getattr(p, "group", None)]
         ][0]
-        return {
+        provider_dict = {
             "name": getattr(provider_config, "group", provider_config.name),
-            "description": provider_config.description,
             "roles": provider_config.roles,
-            "url": provider_config.url,
             "priority": provider_config.priority,
         }
+        if hasattr(provider_config, "description"):
+            provider_dict["description"] = provider_config.description
+        if hasattr(provider_config, "url"):
+            provider_dict["url"] = provider_config.url
+        return provider_dict
 
 
 class StacItem(StacCommon):

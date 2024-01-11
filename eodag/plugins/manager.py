@@ -188,31 +188,28 @@ class PluginManager:
                 )
             return plugin
 
-        configs: List[ProviderConfig] = list(self.providers_config.values())
+        if product_type and product_type in self.product_type_to_provider_config_map:
+            configs = self.product_type_to_provider_config_map[product_type]
+            if not configs:
+                logger.info(
+                    "UnsupportedProductType: %s, using generic settings", product_type
+                )
+                configs = self.product_type_to_provider_config_map[GENERIC_PRODUCT_TYPE]
+        else:
+            configs = list(self.providers_config.values())
+
         if provider:
             configs = [
                 c
-                for c in self.providers_config.values()
+                for c in configs
                 if provider in [getattr(c, "group", None), c.name]  # type: ignore
             ]
-
-        if product_type:
-            configs = self.product_type_to_provider_config_map[product_type]
 
         if not configs:
             raise UnsupportedProvider
 
-        try:
-            for config in sorted(configs, key=attrgetter("priority"), reverse=True):
-                yield get_plugin()
-        except KeyError:
-            logger.info(
-                "UnsupportedProductType: %s, using generic settings", product_type
-            )
-            for config in self.product_type_to_provider_config_map[
-                GENERIC_PRODUCT_TYPE
-            ]:
-                yield get_plugin()
+        for config in sorted(configs, key=attrgetter("priority"), reverse=True):
+            yield get_plugin()
 
     def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
         """Build and return the download plugin capable of downloading the given
