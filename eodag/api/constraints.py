@@ -36,6 +36,7 @@ def get_constraint_queryables_with_additional_params(
     params_available = {k: False for k in params.keys()}
     # check which constraints match the given parameters
     eodag_provider_key_mapping = {}
+    values_available = {k: set() for k in params.keys()}
     for i, constraint in enumerate(constraints):
         params_matched = {k: False for k in params.keys()}
         for param, value in params.items():
@@ -47,6 +48,7 @@ def get_constraint_queryables_with_additional_params(
                 params_available[param] = True
                 if value in constraint[provider_key]:
                     params_matched[param] = True
+                values_available[provider_key].update(constraint[provider_key])
         constraint_matches[i] = params_matched
 
     # check if all parameters are available in the constraints
@@ -73,7 +75,8 @@ def get_constraint_queryables_with_additional_params(
             )
         else:
             raise NotAvailableError(
-                f"value {list(params.values())[0]} not available for param {list(params.keys())[0]}"
+                f"value {list(params.values())[0]} not available for param {list(params.keys())[0]}, "
+                f"possible values: {str(values_available[list(params.keys())[0]])}"
             )
 
     return queryables
