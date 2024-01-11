@@ -60,7 +60,12 @@ from eodag.utils import (
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    RequestError,
+    TimeOutError,
+)
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -879,6 +884,9 @@ class QueryStringSearch(Search):
                     url, timeout=timeout, headers=USER_AGENT, **kwargs
                 )
                 response.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            logger.exception("request to %s timed out", url)
+            raise TimeOutError(str(exc))
         except (requests.RequestException, URLError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
