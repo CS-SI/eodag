@@ -95,3 +95,7 @@ class NoMatchingProductType(Exception):
 
 class STACOpenerError(Exception):
     """An error indicating that a STAC file could not be opened"""
+
+
+class TimeOutError(RequestError):
+    """An error indicating that a timeout has occurred"""
