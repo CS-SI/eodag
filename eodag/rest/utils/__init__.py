@@ -91,14 +91,14 @@ def str2json(k: str, v: Optional[str] = None) -> Optional[Dict[str, Any]]:
         return None
     try:
         return orjson.loads(unquote_plus(v))
-    except orjson.JSONDecodeError:
-        raise ValidationError(f"{k}: Incorrect JSON object")
+    except orjson.JSONDecodeError as e:
+        raise ValidationError(f"{k}: Incorrect JSON object") from e
 
 
 def get_next_link(
     request: Request,
     search_request: SearchPostRequest,
-    totalResults: int,
+    total_results: int,
     items_per_page: int,
 ) -> Optional[Dict[str, Any]]:
     """Generate next link URL and body"""
@@ -108,7 +108,7 @@ def get_next_link(
 
     page = int(body.get("page", 0) or params.get("page", 0)) or 1
 
-    if items_per_page * page >= totalResults:
+    if items_per_page * page >= total_results:
         return None
 
     url: str

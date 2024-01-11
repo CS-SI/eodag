@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from typing import (
@@ -38,6 +39,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
+from pygeofilter.backends.cql2_json import to_cql2
+from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
@@ -734,10 +737,21 @@ def get_search(
     query: Optional[str] = None,
     page: Optional[int] = None,
     sortby: Optional[str] = None,
+    filter: Optional[str] = None,  # pylint: disable=redefined-builtin
+    filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
 ):
     """Handler for GET /search"""
     logger.debug("URL: %s", request.state.url)
+
+    query_params = str(request.query_params)
+
+    # Kludgy fix because using factory does not allow alias for filter-lang
+    if filter_lang is None:
+        match = re.search(r"filter-lang=([a-z0-9-]+)", query_params, re.IGNORECASE)
+        if match:
+            filter_lang = match.group(1)
+
     base_args = {
         "provider": provider,
         "collections": str2list(collections),
@@ -751,7 +765,16 @@ def get_search(
         "sortby": sortby2list(sortby),
         "crunch": crunch,
     }
-    clean = {k: v for k, v in base_args.items() if v is not None}
+
+    if filter:
+        if filter_lang == "cql2-text":
+            ast = parse_cql2_text(filter)
+            base_args["filter"] = str2json(to_cql2(ast))  # type: ignore
+            base_args["filter-lang"] = "cql2-json"
+        elif filter_lang == "cql-json":
+            base_args["filter"] = str2json(filter)
+
+    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
 
     try:
         search_request = SearchPostRequest.model_validate(clean)
