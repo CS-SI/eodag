@@ -2152,7 +2152,7 @@ class EODataAccessGateway:
                 product_type, provider
             ):
                 providers_available_queryables[plugin.provider] = self.list_queryables(
-                    provider=plugin.provider, product_type=product_type
+                    provider=plugin.provider, product_type=product_type, **kwargs
                 )
 
             # return providers queryables intersection
