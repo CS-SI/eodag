@@ -22,6 +22,7 @@ import os
 import re
 from contextlib import asynccontextmanager
 from importlib.metadata import version
+from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -795,9 +796,27 @@ def get_search(
     tags=["STAC"],
     include_in_schema=False,
 )
-def post_search(request: Request, search_request: SearchPostRequest) -> ORJSONResponse:
+async def post_search(request: Request) -> ORJSONResponse:
     """STAC post search"""
     logger.debug("URL: %s", request.url)
+
+    content_type = request.headers.get("Content-Type")
+
+    if content_type is None:
+        raise HTTPException(status_code=400, detail="No Content-Type provided")
+    if content_type != "application/json":
+        raise HTTPException(status_code=400, detail="Content-Type not supported")
+
+    try:
+        payload = await request.json()
+    except JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail="Invalid JSON data") from e
+
+    try:
+        search_request = SearchPostRequest.model_validate(payload)
+    except pydanticValidationError as e:
+        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
+
     logger.debug("Body: %s", search_request)
 
     response = search_stac_items(
