@@ -66,19 +66,19 @@ class EodagEvaluator(Evaluator):
         Verify the property is first attribute in each predicate
         """
         if not isinstance(lhs, ast.Attribute):
-            raise SyntaxError(f"First element in {node} must be the property")
+            raise ValueError(f"First element in {node} must be the property")
 
         if isinstance(node, (ast.Equal, ast.GeometryIntersects)):
             return {lhs.name: rhs}
 
         if isinstance(node, ast.LessEqual):
             if not isinstance(node.rhs, dt):
-                raise SyntaxError("<= is only supported for datetime")
+                raise ValueError("<= is only supported for datetime")
             return {"end_datetime": rhs}
 
         if isinstance(node, ast.GreaterEqual):
             if not isinstance(node.rhs, dt):
-                raise SyntaxError(">= is only supported for datetime")
+                raise ValueError(">= is only supported for datetime")
             return {"start_datetime": rhs}
 
         if isinstance(node, ast.TimeOverlaps):

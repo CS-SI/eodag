@@ -113,7 +113,7 @@ class SearchPostRequest(BaseModel):
     query: Optional[Dict[str, Any]] = None
     filter: Optional[Dict[str, Any]] = None
     filter_lang: Optional[str] = Field(
-        None,
+        "cql2-json",
         alias="filter-lang",
         description="The language used for filtering.",
         validate_default=True,
