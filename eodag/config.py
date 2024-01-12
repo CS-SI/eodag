@@ -235,7 +235,7 @@ class PluginConfig(yaml.YAMLObject):
 
         sort_by_default: List[Tuple[str, str]]
         sort_url_tpl: str
-        # TODO: sort_body_tpl: Dict
+        sort_body_tpl: Dict[str, Dict[str, str]]
         sort_by_mapping: Dict[str, str]
         max_sort_params: Annotated[int, Gt(0)]
 

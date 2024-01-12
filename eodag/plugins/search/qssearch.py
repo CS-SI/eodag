@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -60,13 +60,7 @@ from eodag.utils import (
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import (
-    AuthenticationError,
-    MisconfiguredError,
-    RequestError,
-    TimeOutError,
-    ValidationError,
-)
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError, TimeOutError
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -184,7 +178,9 @@ class QueryStringSearch(Search):
         self.search_urls: List[str] = []
         self.query_params: Dict[str, str] = dict()
         self.query_string = ""
-        self.sort_by_params = None
+        self.sort_by_params: Optional[
+            Union[str, Dict[str, List[Dict[str, str]]]]
+        ] = None
         self.next_page_url = None
         self.next_page_query_obj = None
         self.next_page_merge = None
@@ -566,73 +562,6 @@ class QueryStringSearch(Search):
             query_params,
             urlencode(query_params, doseq=True, quote_via=quote_via),
         )
-
-    def transform_sort_by_params_for_search_request(self) -> None:
-        """Build the sorting part of the query string by transforming
-        the "sortBy" parameter into a provider-specific string"""
-        if not hasattr(self.config, "sort"):
-            raise ValidationError(
-                "{} does not support sorting feature".format(self.provider)
-            )
-        # remove duplicates
-        self.sort_by_params = list(set(self.sort_by_params))
-        sort_by_params_qs = ""
-        sort_by_params_tmp = []
-        for sort_by_param in self.sort_by_params:
-            # Remove leading and trailing whitespace(s) if exist
-            eodag_sort_param = sort_by_param[0]
-            try:
-                provider_sort_param = self.config.sort["sort_by_mapping"][
-                    eodag_sort_param
-                ]
-            except KeyError:
-                params = set(self.config.sort["sort_by_mapping"].keys())
-                params.add(eodag_sort_param)
-                raise ValidationError(
-                    "'{}' parameter is not sortable with {}. "
-                    "Here is the list of sortable parameter(s) with {}: {}".format(
-                        eodag_sort_param,
-                        self.provider,
-                        self.provider,
-                        ", ".join(
-                            k for k in self.config.sort["sort_by_mapping"].keys()
-                        ),
-                    ),
-                    params,
-                )
-            sort_order = sort_by_param[1]
-            if sort_order == "ASC":
-                sort_by_param = (provider_sort_param, "asc")
-            else:
-                sort_by_param = (provider_sort_param, "desc")
-            for sort_by_param_tmp in sort_by_params_tmp:
-                # since duplicated tuples have been removed, if two sorting parameters are equal,
-                # then their sorting order is different and there is a contradiction that would raise an error
-                if sort_by_param[0] == sort_by_param_tmp[0]:
-                    raise ValidationError(
-                        "'{}' parameter is called several times to sort results with different sorting orders. "
-                        "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
-                            eodag_sort_param
-                        ),
-                        set([eodag_sort_param]),
-                    )
-            sort_by_params_tmp.append(sort_by_param)
-            # after adding a tuple to the list, check if the provider allows to sort with another sorting parameter
-            if (
-                self.config.sort.get("max_sort_params", None)
-                and len(sort_by_params_tmp) > self.config.sort["max_sort_params"]
-            ):
-                raise ValidationError(
-                    "Search results can be sorted by only "
-                    "{} parameter(s) with {}".format(
-                        self.config.sort["max_sort_params"], self.provider
-                    )
-                )
-            sort_by_params_qs += self.config.sort["sort_url_tpl"].format(
-                sort_param=sort_by_param[0], sort_order=sort_by_param[1]
-            )
-        self.sort_by_params = sort_by_params_qs
-        return None
 
     def collect_search_urls(
         self,
@@ -1119,6 +1048,19 @@ class PostJsonSearch(QueryStringSearch):
         product_type = kwargs.get("productType", None)
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
+        # remove "sortBy" from search args if exists because it is not part of metadata mapping,
+        # it will complete the query body once metadata mapping will be done
+        sort_by_params = kwargs.pop("sortBy", None)
+        self.sort_by_params = sort_by_params or getattr(
+            self.config, "sort", {}
+        ).get("sort_by_default", None)
+        if not sort_by_params and getattr(self.config, "sort", {}).get(
+            "sort_by_default", None
+        ):
+            logger.info(
+                f"{self.provider} is configured with default sorting by '{self.sort_by_params[0][0]}' "
+                f"in {'ascending' if self.sort_by_params[0][1] == 'ASC' else 'descending'} order"
+            )
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
@@ -1203,7 +1145,11 @@ class PostJsonSearch(QueryStringSearch):
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
             return [], 0
-        self.query_params = qp
+        if self.sort_by_params is not None:
+            self.transform_sort_by_params_for_search_request()
+        self.query_params = (
+            qp if not self.sort_by_params else dict(qp, **self.sort_by_params)
+        )
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )

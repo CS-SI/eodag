@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from typing_extensions import Annotated
 
@@ -33,6 +33,7 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     format_dict_items,
 )
+from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
@@ -159,3 +160,90 @@ class Search(PluginTopic):
         return self.config.products.get(product_type, {}).get(
             "metadata_mapping", self.config.metadata_mapping
         )
+
+    def transform_sort_by_params_for_search_request(self) -> None:
+        """Build the sorting part of the query string or body by transforming
+        the "sortBy" parameter into a provider-specific string or dictionnary"""
+        if not hasattr(self.config, "sort"):
+            raise ValidationError(
+                "{} does not support sorting feature".format(self.provider)
+            )
+        # remove duplicates
+        self.sort_by_params = list(set(self.sort_by_params))
+        sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]]
+        if self.config.sort.get("sort_url_tpl"):
+            sort_by_params = ""
+        else:
+            sort_by_keyword_in_search_body = list(
+                self.config.sort["sort_body_tpl"].keys()
+            )[0]
+            sort_by_params = {sort_by_keyword_in_search_body: []}
+        sort_by_params_tmp = []
+        for sort_by_param_arg in self.sort_by_params:
+            # Remove leading and trailing whitespace(s) if exist
+            eodag_sort_param = sort_by_param_arg[0]
+            try:
+                provider_sort_param = self.config.sort["sort_by_mapping"][
+                    eodag_sort_param
+                ]
+            except KeyError:
+                params = set(self.config.sort["sort_by_mapping"].keys())
+                params.add(eodag_sort_param)
+                raise ValidationError(
+                    "'{}' parameter is not sortable with {}. "
+                    "Here is the list of sortable parameter(s) with {}: {}".format(
+                        eodag_sort_param,
+                        self.provider,
+                        self.provider,
+                        ", ".join(
+                            k for k in self.config.sort["sort_by_mapping"].keys()
+                        ),
+                    ),
+                    params,
+                )
+            sort_order = sort_by_param_arg[1]
+            sort_by_param: Union[Tuple[str, str], Dict[str, str]]
+            if sort_order == "ASC" and self.config.sort.get("sort_url_tpl"):
+                sort_by_param = (provider_sort_param, "asc")
+            elif sort_order == "ASC":
+                sort_by_param = {"field": provider_sort_param, "direction": "asc"}
+            elif sort_order == "DES" and self.config.sort.get("sort_url_tpl"):
+                sort_by_param = (provider_sort_param, "desc")
+            else:
+                sort_by_param = {"field": provider_sort_param, "direction": "desc"}
+            for sort_by_param_tmp in sort_by_params_tmp:
+                # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
+                # then their sorting order is different and there is a contradiction that would raise an error
+                if (
+                    self.config.sort.get("sort_url_tpl")
+                    and sort_by_param[0] == sort_by_param_tmp[0]
+                    or self.config.sort.get("sort_body_tpl")
+                    and sort_by_param["field"] == sort_by_param_tmp["field"]
+                ):
+                    raise ValidationError(
+                        "'{}' parameter is called several times to sort results with different sorting orders. "
+                        "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
+                            eodag_sort_param
+                        ),
+                        set([eodag_sort_param]),
+                    )
+            sort_by_params_tmp.append(sort_by_param)
+            # check if the limit number of sorting parameter(s) is respected with this sorting parameter
+            if (
+                self.config.sort.get("max_sort_params", None)
+                and len(sort_by_params_tmp) > self.config.sort["max_sort_params"]
+            ):
+                raise ValidationError(
+                    "Search results can be sorted by only "
+                    "{} parameter(s) with {}".format(
+                        self.config.sort["max_sort_params"], self.provider
+                    )
+                )
+            if self.config.sort.get("sort_url_tpl"):
+                sort_by_params += self.config.sort["sort_url_tpl"].format(
+                    sort_param=sort_by_param[0], sort_order=sort_by_param[1]
+                )
+            else:
+                sort_by_params[sort_by_keyword_in_search_body].append(sort_by_param)
+        self.sort_by_params = sort_by_params
+        return None
