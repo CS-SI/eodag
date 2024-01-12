@@ -769,7 +769,7 @@ def get_search(
     if filter:
         if filter_lang == "cql2-text":
             ast = parse_cql2_text(filter)
-            base_args["filter"] = str2json(to_cql2(ast))  # type: ignore
+            base_args["filter"] = str2json("filter", to_cql2(ast))  # type: ignore
             base_args["filter-lang"] = "cql2-json"
         elif filter_lang == "cql-json":
             base_args["filter"] = str2json(filter)
