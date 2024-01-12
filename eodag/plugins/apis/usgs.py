@@ -327,7 +327,9 @@ class UsgsApi(Download, Api):
                         stream.raise_for_status()
                     except RequestException as e:
                         if e.response and hasattr(e.response, "content"):
-                            error_message = f"{e.response.content} - {e}"
+                            error_message = (
+                                f"{e.response.content.decode('utf-8')} - {e}"
+                            )
                         else:
                             error_message = str(e)
                         raise NotAvailableError(error_message)
@@ -341,7 +343,7 @@ class UsgsApi(Download, Api):
                                     progress_callback(len(chunk))
             except requests.exceptions.Timeout as e:
                 if e.response and hasattr(e.response, "content"):
-                    error_message = f"{e.response.content} - {e}"
+                    error_message = f"{e.response.content.decode('utf-8')} - {e}"
                 else:
                     error_message = str(e)
                 raise NotAvailableError(error_message)

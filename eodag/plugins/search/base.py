@@ -33,6 +33,8 @@ from eodag.utils import (
 )
 
 if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
+
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
     from eodag.utils import Annotated
@@ -90,7 +92,7 @@ class Search(PluginTopic):
 
     def discover_queryables(
         self, product_type: Optional[str] = None
-    ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:
+    ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
         """Fetch queryables list from provider using `discover_queryables` conf"""
         return None
 

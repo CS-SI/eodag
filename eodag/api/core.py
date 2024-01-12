@@ -83,6 +83,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
     from shapely.geometry.base import BaseGeometry
     from whoosh.index import Index
 
@@ -2086,7 +2087,7 @@ class EODataAccessGateway:
         self,
         provider: Optional[str] = None,
         product_type: Optional[str] = None,
-    ) -> Dict[str, Tuple[Annotated, Any]]:
+    ) -> Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
@@ -2096,7 +2097,7 @@ class EODataAccessGateway:
         :returns: A dict containing the EODAG queryable properties, associating
                   parameters to a tuple containing their annotaded type and default
                   value
-        :rtype: Dict[str, Tuple[Annotated, Any]]
+        :rtype: Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]
         """
         # unknown product type
         if product_type is not None and product_type not in self.list_product_types(
@@ -2106,7 +2107,7 @@ class EODataAccessGateway:
 
         # dictionary of the queryable properties of the providers supporting the given product type
         providers_available_queryables: Dict[
-            str, Dict[str, Tuple[Annotated, Any]]
+            str, Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]
         ] = dict()
 
         if provider is None and product_type is None:
