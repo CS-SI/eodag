@@ -1577,3 +1577,4 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
                 stubber.activate()
                 setattr(auth_plugin, "s3_client", client)
                 product.register_downloader(download_plugin, auth_plugin)
+
