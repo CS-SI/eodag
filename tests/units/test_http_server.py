@@ -171,7 +171,8 @@ class RequestTestCase(unittest.TestCase):
                             "properties": {
                                 "snowCover": None,
                                 "resolution": None,
-                                "end": "2018-02-16T00:12:14" ".035Z",
+                                "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
+                                ".035Z",
                                 "keyword": {},
                                 "productType": "OCN",
                                 "downloadLink": (
@@ -200,7 +201,8 @@ class RequestTestCase(unittest.TestCase):
                                     "type": "Polygon",
                                 },
                                 "organisationName": None,
-                                "start": "2018-02-15T23:53:22" ".871Z",
+                                "startTimeFromAscendingNode": "2018-02-15T23:53:22"
+                                ".871Z",
                                 "platform": None,
                                 "sensorType": None,
                                 "processingLevel": None,
@@ -230,7 +232,8 @@ class RequestTestCase(unittest.TestCase):
                             "properties": {
                                 "snowCover": None,
                                 "resolution": None,
-                                "end": "2018-02-17T00:12:14" ".035Z",
+                                "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
+                                ".035Z",
                                 "keyword": {},
                                 "productType": "OCN",
                                 "downloadLink": (
@@ -259,7 +262,8 @@ class RequestTestCase(unittest.TestCase):
                                     "type": "Polygon",
                                 },
                                 "organisationName": None,
-                                "start": "2018-02-16T23:53:22" ".871Z",
+                                "startTimeFromAscendingNode": "2018-02-16T23:53:22"
+                                ".871Z",
                                 "platform": None,
                                 "sensorType": None,
                                 "processingLevel": None,
