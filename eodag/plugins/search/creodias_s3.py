@@ -94,6 +94,7 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
 
             # update driver
             product.driver = product.get_driver()
+
         except botocore.exceptions.ClientError as e:
             if str(auth.config.auth_error_code) in str(e):
                 raise AuthenticationError(
