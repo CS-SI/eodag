@@ -22,9 +22,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+import boto3
 import dateutil
 import responses
 import yaml
+from botocore.stub import Stubber
 from requests import RequestException
 
 from tests.context import (
@@ -1514,3 +1516,35 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             )
 
         run()
+
+
+class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginCreodiasS3Search, self).setUp()
+        self.provider = "creodias_s3"
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_plugins_search_creodias_s3_links(self, mock_request):
+        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
+        client = boto3.client("s3")
+        stubber = Stubber(client)
+        s3_response_file = (
+            Path(TEST_RESOURCES_PATH) / "provider_responses/creodias_s3_objects.json"
+        )
+        with open(s3_response_file) as f:
+            list_objects_response = json.load(f)
+        creodias_search_result_file = (
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+        )
+        with open(creodias_search_result_file) as f:
+            creodias_search_result = json.load(f)
+        mock_request.return_value = MockResponse(creodias_search_result, 200)
+        stubber.add_response("list_objects", list_objects_response)
+        stubber.activate()
+        res = search_plugin.query("S1_SAR_GRD")
+        assets = res[0][0].assets
+        # check if s3 links have been created correctly
+        for asset in assets:
+            self.assertIn(
+                "s3://eodata/Sentinel-1/Sentinel-1/SAR/GRD/2014/10/10", asset["href"]
+            )
