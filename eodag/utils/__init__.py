@@ -373,29 +373,9 @@ def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
                         and current_value_type == list
                     ):
                         mapping1[m1_keys_lowercase.get(key, key)] = value
-                    elif isinstance(value, str):
-                        # Bool is a type with special meaning in Python, thus the special
-                        # case
-                        if current_value_type is bool:
-                            if value.capitalize() not in ("True", "False"):
-                                raise ValueError(
-                                    "Only true or false strings (case insensitive) are "
-                                    "allowed for booleans"
-                                )
-                            # Get the real Python value of the boolean. e.g: value='tRuE'
-                            # => eval(value.capitalize())=True.
-                            # str.capitalize() transforms the first character of the string
-                            # to a capital letter
-                            mapping1[m1_keys_lowercase.get(key, key)] = eval(
-                                value.capitalize()
-                            )
-                        else:
-                            mapping1[
-                                m1_keys_lowercase.get(key, key)
-                            ] = current_value_type(value)
                     else:
-                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
-                            value
+                        mapping1[m1_keys_lowercase.get(key, key)] = cast_scalar_value(
+                            value, current_value_type
                         )
                 except (TypeError, ValueError):
                     # Ignore any override value that does not have the same type
@@ -1398,3 +1378,34 @@ def parse_header(header: str) -> Message:
     m = Message()
     m["content-type"] = header
     return m
+
+
+def cast_scalar_value(value: Any, new_type: Any) -> Any:
+    """Convert a scalar (not nested) value type to the given one
+
+    >>> cast_scalar_value('1', int)
+    1
+    >>> cast_scalar_value(1, str)
+    '1'
+    >>> cast_scalar_value('false', bool)
+    False
+
+    :param value: the scalar value to convert
+    :param new_type: the wanted type
+    :returns: scalar value converted to new_type
+    """
+    if isinstance(value, str) and new_type is bool:
+        # Bool is a type with special meaning in Python, thus the special
+        # case
+        if value.capitalize() not in ("True", "False"):
+            raise ValueError(
+                "Only true or false strings (case insensitive) are "
+                "allowed for booleans"
+            )
+        # Get the real Python value of the boolean. e.g: value='tRuE'
+        # => eval(value.capitalize())=True.
+        # str.capitalize() transforms the first character of the string
+        # to a capital letter
+        return eval(value.capitalize())
+
+    return new_type(value)
