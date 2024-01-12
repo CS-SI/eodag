@@ -1,5 +1,4 @@
 import logging
-import os
 from types import MethodType
 from typing import Any, Dict, List
 
@@ -8,17 +7,12 @@ from botocore.exceptions import BotoCoreError
 
 from eodag import EOProduct
 from eodag.config import PluginConfig
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.utils.exceptions import RequestError
 
 DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
 logger = logging.getLogger("eodag.search.creodiass3")
-AWS_ACCESS_KEY_ID = os.environ.get(
-    "EODAG__CREODIAS_S3__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID", "foo"
-)
-AWS_SECRET_ACCESS_KEY = os.environ.get(
-    "EODAG__CREODIAS_S3__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY", "bar"
-)
 
 
 def patched_register_downloader(self, downloader, authenticator):
@@ -37,13 +31,13 @@ def patched_register_downloader(self, downloader, authenticator):
     self.register_downloader_only(downloader, authenticator)
     # and also update assets
     try:
-        _update_assets(self, downloader.config)
+        _update_assets(self, downloader.config, authenticator)
     except BotoCoreError as e:
         logger.error(f"could not update assets: {str(e)}")
         raise RequestError(e)
 
 
-def _update_assets(product: EOProduct, config: PluginConfig):
+def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
     product.assets = {}
     prefix = (
         product.properties.get("productIdentifier", None).replace("/eodata/", "") + "/"
@@ -51,8 +45,8 @@ def _update_assets(product: EOProduct, config: PluginConfig):
     if prefix:
         s3 = boto3.client(
             "s3",
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            aws_access_key_id=auth.config.credentials["aws_access_key_id"],
+            aws_secret_access_key=auth.config.credentials["aws_secret_access_key"],
             endpoint_url=config.base_uri,
         )
 

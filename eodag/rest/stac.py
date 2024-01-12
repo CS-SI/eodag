@@ -242,7 +242,10 @@ class StacItem(StacCommon):
             )
 
             product_dict = deepcopy(product.__dict__)
-            product_dict["assets"] = product.assets.as_dict()
+            if isinstance(product.assets, dict):
+                product_dict["assets"] = product.assets
+            else:
+                product_dict["assets"] = product.assets.as_dict()
 
             product_item = jsonpath_parse_dict_items(
                 item_model,
