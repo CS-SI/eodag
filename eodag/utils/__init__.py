@@ -136,6 +136,7 @@ DEFAULT_ITEMS_PER_PAGE = 20
 # Default maximum number of items per page requested by search_all. 50 instead of 20
 # (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
+DEFAULT_DEQUE_MAX_LEN = 100
 
 
 def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
