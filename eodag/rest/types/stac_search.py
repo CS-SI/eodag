@@ -126,8 +126,6 @@ class SearchPostRequest(BaseModel):
         """Verify filter-lang has correct value"""
         if not self.filter_lang and self.filter:
             raise ValueError('"filter-lang" is required if "filter" is provided')
-        if self.filter_lang and not self.filter:
-            raise ValueError('"filter-lang" set but "filter" is missing')
         if self.filter_lang != "cql2-json" and self.filter:
             raise ValueError('Only filter language "cql2-json" is accepted')
         return self
