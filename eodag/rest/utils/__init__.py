@@ -65,14 +65,14 @@ def format_pydantic_error(e: pydanticValidationError) -> str:
 
 
 def is_dict_str_any(var: Any) -> bool:
-    """Verify whether the variable is of type Dict[str, Any]"""
+    """Verify whether the variable is of type dict[str, Any]"""
     if isinstance(var, Dict):
         return all(isinstance(k, str) for k in var.keys())  # type: ignore
     return False
 
 
 def is_list_str(var: Any) -> bool:
-    """Verify whether the variable is of type Dict[str, Any]"""
+    """Verify whether the variable is of type list[str]"""
     if isinstance(var, List):
         return all(isinstance(e, str) for e in var)  # type: ignore
     return False
@@ -93,6 +93,27 @@ def str2json(k: str, v: Optional[str] = None) -> Optional[Dict[str, Any]]:
         return orjson.loads(unquote_plus(v))
     except orjson.JSONDecodeError as e:
         raise ValidationError(f"{k}: Incorrect JSON object") from e
+
+
+def flatten_list(nested_list: List[Any]) -> List[Any]:
+    """Flatten a nested list structure into a single list."""
+    if not isinstance(nested_list, list):
+        return [nested_list]
+    else:
+        flattened: List[Any] = []
+        for element in nested_list:
+            flattened.extend(flatten_list(element))
+        return flattened
+
+
+def list_to_str_list(input_list: List[Any]) -> List[str]:
+    """Attempt to convert a list of any type to a list of strings."""
+    try:
+        # Try to convert each element to a string
+        return [str(element) for element in input_list]
+    except Exception as e:
+        # Raise an exception if any element cannot be converted
+        raise TypeError(f"Failed to convert to List[str]: {e}") from e
 
 
 def get_next_link(
