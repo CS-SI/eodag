@@ -15,12 +15,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import (
+    AliasChoices,
+    AliasPath,
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     ValidationInfo,
     field_validator,
     model_validator,
@@ -37,7 +40,12 @@ from shapely.geometry import (
     Polygon,
 )
 
-from eodag.rest.utils import is_dict_str_any, is_list_str
+from eodag.rest.utils import (
+    flatten_list,
+    is_dict_str_any,
+    is_list_str,
+    list_to_str_list,
+)
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE
 
@@ -66,8 +74,14 @@ class EODAGSearch(BaseModel):
     ids: Optional[List[str]] = Field(None)
     id: Optional[List[str]] = Field(None, alias="ids")
     geom: Optional[Geometry] = Field(None, alias="geometry")
-    start: Optional[str] = Field(None, alias="start_datetime")
+    start: Optional[str] = Field(
+        None,
+        alias="start_datetime",
+        validation_alias=AliasChoices("start_datetime", "datetime"),
+    )
     end: Optional[str] = Field(None, alias="end_datetime")
+    startTimeFromAscendingNode: Optional[str] = Field(None, alias="start_datetime")
+    completionTimeFromAscendingNode: Optional[str] = Field(None, alias="end_datetime")
     publicationDate: Optional[str] = Field(None, alias="published")
     creationDate: Optional[str] = Field(None, alias="created")
     modificationDate: Optional[str] = Field(None, alias="updated")
@@ -93,6 +107,8 @@ class EODAGSearch(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
+
+    _to_eodag_map: Dict[str, str] = PrivateAttr()
 
     @model_validator(mode="before")
     @classmethod
@@ -223,6 +239,30 @@ class EODAGSearch(BaseModel):
             return ",".join(v)
         return v
 
+    @field_validator("sortBy", mode="before")
+    @classmethod
+    def convert_stac_to_eodag_sortby(
+        cls,
+        sortby_post_params: List[Dict[str, str]],
+    ) -> List[Tuple[str, str]]:
+        """
+        Convert STAC POST sortby to EODAG sortby
+        """
+        special_fields = {
+            "start": "startTimeFromAscendingNode",
+            "end": "completionTimeFromAscendingNode",
+        }
+        return [
+            (
+                special_fields.get(
+                    cls.snake_to_camel(cls.to_eodag(param["field"])),
+                    cls.snake_to_camel(cls.to_eodag(param["field"])),
+                ),
+                param["direction"],
+            )
+            for param in sortby_post_params
+        ]
+
     @field_validator("productType")
     @classmethod
     def verify_producttype_is_present(
@@ -254,14 +294,27 @@ class EODAGSearch(BaseModel):
         return components[0] + "".join(x.title() for x in components[1:])
 
     @classmethod
+    def _create_to_eodag_map(cls) -> None:
+        """Create mapping to convert fields from STAC to EODAG"""
+        cls._to_eodag_map = {}
+        for name, field_info in cls.model_fields.items():
+            if field_info.validation_alias:
+                if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
+                    for a in list_to_str_list(
+                        flatten_list(field_info.validation_alias.convert_to_aliases())
+                    ):
+                        cls._to_eodag_map[a] = name
+                else:
+                    cls._to_eodag_map[field_info.validation_alias] = name
+            elif field_info.alias:
+                cls._to_eodag_map[field_info.alias] = name
+
+    @classmethod
     def to_eodag(cls, value: str) -> str:
         """Convert a STAC parameter to its matching EODAG name"""
-        alias_map = {
-            field_info.alias: name
-            for name, field_info in cls.model_fields.items()
-            if field_info.alias
-        }
-        return alias_map.get(value, value)
+        if not isinstance(cls._to_eodag_map, dict) or not cls._to_eodag_map:
+            cls._create_to_eodag_map()
+        return cls._to_eodag_map.get(value, value)
 
     @classmethod
     def to_stac(cls, field_name: str) -> str:
