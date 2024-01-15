@@ -1526,7 +1526,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_plugins_search_creodias_s3_links(self, mock_request):
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
-        client = boto3.client("s3")
+        client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
         stubber = Stubber(client)
         s3_response_file = (
             Path(TEST_RESOURCES_PATH) / "provider_responses/creodias_s3_objects.json"
