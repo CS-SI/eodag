@@ -1270,7 +1270,7 @@ class StacSearch(PostJsonSearch):
 
     def discover_queryables(
         self, product_type: Optional[str] = None
-    ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:
+    ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
         :param product_type: (optional) product type

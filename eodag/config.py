@@ -20,8 +20,8 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+from inspect import isclass
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     ItemsView,
@@ -32,6 +32,7 @@ from typing import (
     TypedDict,
     Union,
     ValuesView,
+    get_type_hints,
 )
 
 import orjson
@@ -39,13 +40,16 @@ import requests
 import yaml
 import yaml.constructor
 import yaml.parser
+from jsonpath_ng import JSONPath
 from pkg_resources import resource_filename
+from requests.auth import AuthBase
 
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
+    cast_scalar_value,
     deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
@@ -55,10 +59,6 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
-
-if TYPE_CHECKING:
-    from jsonpath_ng import JSONPath
-    from requests.auth import AuthBase
 
 logger = logging.getLogger("eodag.config")
 
@@ -250,7 +250,7 @@ class PluginConfig(yaml.YAMLObject):
     need_auth: bool
     result_type: str
     results_entry: str
-    pagination: Pagination
+    pagination: PluginConfig.Pagination
     query_params_key: str
     discover_metadata: Dict[str, str]
     discover_product_types: Dict[str, Any]
@@ -266,7 +266,7 @@ class PluginConfig(yaml.YAMLObject):
     merge_responses: bool  # PostJsonSearch for aws_eos
     collection: bool  # PostJsonSearch for aws_eos
     max_connections: int  # StaticStacSearch
-    timeout: int  # StaticStacSearch
+    timeout: float  # StaticStacSearch
 
     # download -------------------------------------------------------------------------
     base_uri: str
@@ -275,7 +275,7 @@ class PluginConfig(yaml.YAMLObject):
     order_enabled: bool  # HTTPDownload
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload
-    order_status_on_success: OrderStatusOnSuccess
+    order_status_on_success: PluginConfig.OrderStatusOnSuccess
     bucket_path_level: int  # S3RestDownload
 
     # auth -----------------------------------------------------------------------------
@@ -471,13 +471,38 @@ def override_config_from_env(config: Dict[str, Any]) -> None:
         :type mapping: dict
         """
         parts = env_var.split("__")
-        if len(parts) == 1:
+        iter_parts = iter(parts)
+        env_type = get_type_hints(PluginConfig).get(next(iter_parts, ""), str)
+        child_env_type = (
+            get_type_hints(env_type).get(next(iter_parts, ""), None)
+            if isclass(env_type)
+            else None
+        )
+        if len(parts) == 2 and child_env_type:
+            # for nested config (pagination, ...)
+            # try converting env_value type from type hints
+            try:
+                env_value = cast_scalar_value(env_value, child_env_type)
+            except TypeError:
+                logger.warning(
+                    f"Could not convert {parts} value {env_value} to {child_env_type}"
+                )
+            mapping.setdefault(parts[0], {})
+            mapping[parts[0]][parts[1]] = env_value
+        elif len(parts) == 1:
+            # try converting env_value type from type hints
+            try:
+                env_value = cast_scalar_value(env_value, env_type)
+            except TypeError:
+                logger.warning(
+                    f"Could not convert {parts[0]} value {env_value} to {env_type}"
+                )
             mapping[parts[0]] = env_value
         else:
             new_map = mapping.setdefault(parts[0], {})
             build_mapping_from_env("__".join(parts[1:]), env_value, new_map)
 
-    mapping_from_env = {}
+    mapping_from_env: Dict[str, Any] = {}
     for env_var in os.environ:
         if env_var.startswith("EODAG__"):
             build_mapping_from_env(
@@ -500,7 +525,6 @@ def override_config_from_mapping(
     :type mapping: dict
     """
     for provider, new_conf in mapping.items():
-        new_conf: Dict[str, Any]
         old_conf: Optional[Dict[str, Any]] = config.get(provider)
         if old_conf is not None:
             old_conf.update(new_conf)

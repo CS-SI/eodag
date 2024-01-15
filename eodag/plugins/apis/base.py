@@ -21,6 +21,8 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
+
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
@@ -95,7 +97,7 @@ class Api(PluginTopic):
 
     def discover_queryables(
         self, product_type: Optional[str] = None
-    ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:
+    ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
         """Fetch queryables list from provider using `discover_queryables` conf"""
         return None
 

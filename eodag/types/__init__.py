@@ -122,7 +122,7 @@ def json_field_definition_to_python(
 
 
 def python_field_definition_to_json(
-    python_field_definition: Tuple[Annotated, Any]
+    python_field_definition: Tuple[Annotated[Any, FieldInfo], Any]
 ) -> Dict[str, Any]:
     """Get json field definition from python `typing.Annotated`
 
@@ -144,7 +144,8 @@ def python_field_definition_to_json(
         or len(python_field_definition) != 2
     ):
         raise ValidationError(
-            "%s must be an instance of Tuple[Annotated, Any]" % python_field_definition
+            "%s must be an instance of Tuple[Annotated[Any, FieldInfo], Any]"
+            % python_field_definition
         )
 
     python_field_annotated = python_field_definition[0]
@@ -196,7 +197,7 @@ def python_field_definition_to_json(
 
 def model_fields_to_annotated_tuple(
     model_fields: Dict[str, FieldInfo]
-) -> Dict[str, Tuple[Annotated, Any]]:
+) -> Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]:
     """Convert BaseModel.model_fields from FieldInfo to Annotated tuple usable as create_model argument
 
     >>> from pydantic import create_model

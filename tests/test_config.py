@@ -437,6 +437,11 @@ class TestConfigFunctions(unittest.TestCase):
             "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"
         os.environ["EODAG__PEPS__DOWNLOAD__OUTPUTS_PREFIX"] = "/data"
+        # check a parameter that has not been set yet
+        self.assertFalse(hasattr(default_config["peps"].search, "timeout"))
+        self.assertNotIn("start_page", default_config["peps"].search.pagination)
+        os.environ["EODAG__PEPS__SEARCH__TIMEOUT"] = "3.1"
+        os.environ["EODAG__PEPS__SEARCH__PAGINATION__START_PAGE"] = "2"
 
         config.override_config_from_env(default_config)
         usgs_conf = default_config["usgs"]
@@ -457,6 +462,8 @@ class TestConfigFunctions(unittest.TestCase):
 
         peps_conf = default_config["peps"]
         self.assertEqual(peps_conf.download.outputs_prefix, "/data")
+        self.assertEqual(peps_conf.search.timeout, 3.1)
+        self.assertEqual(peps_conf.search.pagination["start_page"], 2)
 
     @mock.patch("requests.get", autospec=True)
     def test_get_ext_product_types_conf(self, mock_get):

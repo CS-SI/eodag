@@ -104,7 +104,9 @@ class HTTPDownload(Download):
         super(HTTPDownload, self).__init__(provider, config)
         if not hasattr(self.config, "base_uri"):
             raise MisconfiguredError(
-                "{} plugin require a base_uri configuration key".format(self.__name__)
+                "{} plugin require a base_uri configuration key".format(
+                    type(self).__name__
+                )
             )
 
     def orderDownload(
@@ -166,10 +168,14 @@ class HTTPDownload(Download):
                 logger.debug(ordered_message)
                 logger.info("%s was ordered", product.properties["title"])
             except RequestException as e:
+                if e.response and hasattr(e.response, "content"):
+                    error_message = f"{e.response.content.decode('utf-8')} - {e}"
+                else:
+                    error_message = str(e)
                 logger.warning(
                     "%s could not be ordered, request returned %s",
                     product.properties["title"],
-                    f"{e.response.content} - {e}",
+                    error_message,
                 )
 
         order_metadata_mapping = getattr(self.config, "order_on_response", {}).get(
@@ -177,9 +183,8 @@ class HTTPDownload(Download):
         )
         if order_metadata_mapping:
             logger.debug("Parsing order response to update product metada-mapping")
-            order_metadata_mapping_jsonpath = {}
             order_metadata_mapping_jsonpath = mtd_cfg_as_conversion_and_querypath(
-                order_metadata_mapping, order_metadata_mapping_jsonpath
+                order_metadata_mapping,
             )
             properties_update = properties_from_json(
                 response.json(),
