@@ -91,7 +91,6 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                         "roles": [role],
                         "href": f"s3://{config.s3_bucket}/{asset['Key']}",
                     }
-
             # update driver
             product.driver = product.get_driver()
 
