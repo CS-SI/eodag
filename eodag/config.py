@@ -250,7 +250,7 @@ class PluginConfig(yaml.YAMLObject):
     need_auth: bool
     result_type: str
     results_entry: str
-    pagination: Pagination
+    pagination: PluginConfig.Pagination
     query_params_key: str
     discover_metadata: Dict[str, str]
     discover_product_types: Dict[str, Any]
@@ -275,7 +275,7 @@ class PluginConfig(yaml.YAMLObject):
     order_enabled: bool  # HTTPDownload
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload
-    order_status_on_success: OrderStatusOnSuccess
+    order_status_on_success: PluginConfig.OrderStatusOnSuccess
     bucket_path_level: int  # S3RestDownload
 
     # auth -----------------------------------------------------------------------------
