@@ -3,6 +3,7 @@ from types import MethodType
 from typing import Any, Dict, List
 
 import boto3
+import botocore
 from botocore.exceptions import BotoCoreError
 
 from eodag import EOProduct
@@ -43,36 +44,39 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
         product.properties.get("productIdentifier", None).replace("/eodata/", "") + "/"
     )
     if prefix:
-        s3 = boto3.client(
-            "s3",
-            aws_access_key_id=auth.config.credentials["aws_access_key_id"],
-            aws_secret_access_key=auth.config.credentials["aws_secret_access_key"],
-            endpoint_url=config.base_uri,
-        )
-
-        product.assets = dict()
-        for asset in s3.list_objects(
-            Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
-        )["Contents"]:
-            asset_basename = (
-                asset["Key"].split("/")[-1] if "/" in asset["Key"] else asset["Key"]
+        try:
+            s3 = boto3.client(
+                "s3",
+                aws_access_key_id=auth.config.credentials["aws_access_key_id"],
+                aws_secret_access_key=auth.config.credentials["aws_secret_access_key"],
+                endpoint_url=config.base_uri,
             )
 
-            if len(asset_basename) > 0 and asset_basename not in product.assets:
-                role = (
-                    "data"
-                    if asset_basename.split(".")[-1] in DATA_EXTENSIONS
-                    else "metadata"
+            product.assets = dict()
+            for asset in s3.list_objects(
+                Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
+            )["Contents"]:
+                asset_basename = (
+                    asset["Key"].split("/")[-1] if "/" in asset["Key"] else asset["Key"]
                 )
 
-                product.assets[asset_basename] = {
-                    "title": asset_basename,
-                    "roles": [role],
-                    "href": f"s3://{config.s3_bucket}/{asset['Key']}",
-                }
+                if len(asset_basename) > 0 and asset_basename not in product.assets:
+                    role = (
+                        "data"
+                        if asset_basename.split(".")[-1] in DATA_EXTENSIONS
+                        else "metadata"
+                    )
 
-        # update driver
-        product.driver = product.get_driver()
+                    product.assets[asset_basename] = {
+                        "title": asset_basename,
+                        "roles": [role],
+                        "href": f"s3://{config.s3_bucket}/{asset['Key']}",
+                    }
+
+            # update driver
+            product.driver = product.get_driver()
+        except botocore.exceptions.ClientError:
+            logger.error("assets for product %s could not be found", prefix)
 
 
 class CreodiasS3Search(QueryStringSearch):
