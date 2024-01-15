@@ -21,6 +21,7 @@ import logging
 from timeit import default_timer
 from typing import Any, Callable, Collection, Dict, Iterable, List, Optional
 
+from fastapi import Request
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.metrics import (
     CallbackOptions,
@@ -36,6 +37,7 @@ from eodag import EODataAccessGateway
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.rest import server
+from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.utils import ProgressCallback
 from eodag.utils.instrumentation.eodag.package import _instruments
 
@@ -123,16 +125,14 @@ def _instrument_search(
 
     @functools.wraps(wrapped_server_search_stac_items)
     def wrapper_server_search_stac_items(
-        url: str,
-        arguments: Dict[str, Any],
-        root: str = "/",
-        catalogs: List[str] = [],
-        provider: Optional[str] = None,
-        method: Optional[str] = "GET",
+        request: Request,
+        search_request: SearchPostRequest,
+        catalogs: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
 
         # use catalogs from path or if it is empty, collections from args
-        collections = arguments.get("collections", None)
+        collections = request.query_params.get("collections", None)
+        provider = request.query_params.get("provider", None)
         product_type = None
         if catalogs:
             product_type = catalogs[0]
@@ -164,7 +164,7 @@ def _instrument_search(
             # Call wrapped function
             try:
                 result = wrapped_server_search_stac_items(
-                    url, arguments, root, catalogs, provider, method
+                    request, search_request, catalogs
                 )
             except Exception as exc:
                 exception = exc
