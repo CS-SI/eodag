@@ -218,10 +218,16 @@ def _instrument_search(
         ) as span:
             exception = None
             trace_id = span.get_span_context().trace_id
+            # Note: `overhead_timers` and `trace_attributes` are populated when `server.search_stac_items`
+            # is called (see: `wrapper_server_search_stac_items`).
+            # If `QueryStringSearch._request` is called after a different operation (for example, on
+            # download), then both `timer` and `parent_attributes` are not available and no metric
+            # is generated.
             timer = overhead_timers.get(trace_id)
             parent_attributes = trace_attributes.get(trace_id)
-            parent_attributes["provider"] = self.provider
-            attributes = parent_attributes
+            if parent_attributes:
+                parent_attributes["provider"] = self.provider
+                attributes = parent_attributes
 
             start_time = default_timer()
 
@@ -236,8 +242,6 @@ def _instrument_search(
                 elapsed_time = default_timer() - start_time
 
             # Duration histograms
-            # If the search is called by an operation other than the download, then no
-            # timer is created and the metric is not generated.
             if timer:
                 timer.record_subtask_time(elapsed_time)
                 outbound_request_duration_seconds_histogram.record(
