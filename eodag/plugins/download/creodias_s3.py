@@ -1,16 +1,7 @@
-import os
-
 import boto3
 from botocore.exceptions import ClientError
 
 from eodag.plugins.download.aws import AwsDownload
-
-AWS_ACCESS_KEY_ID = os.environ.get(
-    "EODAG__CREODIAS_S3__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID", "foo"
-)
-AWS_SECRET_ACCESS_KEY = os.environ.get(
-    "EODAG__CREODIAS_S3__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY", "bar"
-)
 
 
 class CreodiasS3Download(AwsDownload):
@@ -31,8 +22,8 @@ class CreodiasS3Download(AwsDownload):
         from provided credentials"""
 
         s3_session = boto3.session.Session(
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            aws_access_key_id=auth_dict["aws_access_key_id"],
+            aws_secret_access_key=auth_dict["aws_secret_access_key"],
         )
         s3_resource = s3_session.resource(
             "s3", endpoint_url=getattr(self.config, "base_uri", None)
