@@ -891,7 +891,12 @@ class QueryStringSearch(Search):
                     self.__class__.__name__,
                     err_msg,
                 )
-            raise RequestError(str(err))
+            status_code = (
+                err.response.status_code
+                if hasattr(err, "response") and err.response is not None
+                else None
+            )
+            raise RequestError(str(err), status_code=status_code)
         return response
 
 

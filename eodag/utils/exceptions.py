@@ -73,6 +73,10 @@ class RequestError(Exception):
     """An error indicating that a HTTP request has failed. Usually eodag functions
     and methods should catch and skip this"""
 
+    def __init__(self, *args, **kwargs):
+        self.status_code = kwargs.pop("status_code", None)
+        super().__init__(*args, **kwargs)
+
 
 class NoMatchingProductType(Exception):
     """An error indicating that eodag was unable to derive a product type from a set
