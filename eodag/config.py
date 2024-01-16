@@ -267,6 +267,7 @@ class PluginConfig(yaml.YAMLObject):
     collection: bool  # PostJsonSearch for aws_eos
     max_connections: int  # StaticStacSearch
     timeout: float  # StaticStacSearch
+    s3_bucket: str  # CreodiasS3Search
 
     # download -------------------------------------------------------------------------
     base_uri: str
