@@ -33,8 +33,13 @@ from opentelemetry import metrics, trace
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.metrics import Histogram
 from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics._internal.aggregation import (
+    ExplicitBucketHistogramAggregation,
+)
 from opentelemetry.sdk.metrics._internal.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.metrics._internal.view import View
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -774,7 +779,7 @@ def eodag_api_init() -> None:
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
 
 
-def telemetry_init(fastapi_app: FastAPI = None):
+def telemetry_init(fastapi_app: Optional[FastAPI] = None) -> None:
     """Init telemetry
 
     :param fastapi_app: FastAPI to automatically instrument.
@@ -794,7 +799,27 @@ def telemetry_init(fastapi_app: FastAPI = None):
     trace.set_tracer_provider(tracer_provider)
     # metrics
     reader = PeriodicExportingMetricReader(OTLPMetricExporter())
-    meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
+    view = View(
+        instrument_type=Histogram,
+        aggregation=ExplicitBucketHistogramAggregation(
+            boundaries=(
+                0.0,
+                0.05,
+                0.1,
+                0.25,
+                0.5,
+                0.75,
+                1.0,
+                2.5,
+                5.0,
+                7.5,
+                10.0,
+            ),
+        ),
+    )
+    meter_provider = MeterProvider(
+        resource=resource, metric_readers=[reader], views=(view,)
+    )
     metrics.set_meter_provider(meter_provider)
 
     # Auto instrumentation
@@ -810,3 +835,4 @@ def telemetry_init(fastapi_app: FastAPI = None):
         tracer_provider=tracer_provider,
         meter_provider=meter_provider,
     )
+    return None
