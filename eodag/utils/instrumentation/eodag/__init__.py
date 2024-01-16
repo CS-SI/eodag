@@ -31,13 +31,17 @@ from opentelemetry.metrics import (
     get_meter,
 )
 from opentelemetry.trace import SpanKind, Tracer, get_tracer
+from opentelemetry.util import types
+from pydantic import ValidationError as pydanticValidationError
 from requests import Response
 
 from eodag import EODataAccessGateway
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.rest import server
+from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_search import SearchPostRequest
+from eodag.rest.utils import format_pydantic_error
 from eodag.utils import ProgressCallback
 from eodag.utils.instrumentation.eodag.package import _instruments
 
@@ -51,19 +55,18 @@ class OverheadTimer:
     stop_global_timer functions. The sub-tasks record their time with the
     record_subtask_time function."""
 
-    def __init__(self) -> None:
-        self._start_global_timestamp: float = None
-        self._end_global_timestamp: float = None
-        self._subtasks_time: float = 0.0
+    _start_global_timestamp: Optional[float] = None
+    _end_global_timestamp: Optional[float] = None
+    _subtasks_time: float = 0.0
 
     def start_global_timer(self) -> None:
         """Start the timer of the main task."""
-        self._start_global_timestamp: float = default_timer()
-        self._subtasks_time: float = 0.0
+        self._start_global_timestamp = default_timer()
+        self._subtasks_time = 0.0
 
     def stop_global_timer(self) -> None:
         """Stop the timer of the main task."""
-        self._end_global_timestamp: float = default_timer()
+        self._end_global_timestamp = default_timer()
 
     def record_subtask_time(self, time: float):
         """Record the execution time of a subtask.
@@ -79,6 +82,8 @@ class OverheadTimer:
         :returns: The global execution time.
         :rtype: float
         """
+        if not self._end_global_timestamp or not self._start_global_timestamp:
+            return 0.0
         return self._end_global_timestamp - self._start_global_timestamp
 
     def get_subtasks_time(self) -> float:
@@ -118,8 +123,8 @@ def _instrument_search(
     :param request_overhead_duration_seconds: EODAG overhead histogram.
     :type request_overhead_duration_seconds: Histogram
     """
-    overhead_timers: Dict[str, OverheadTimer] = {}
-    trace_attributes: Dict[str, Any] = {}
+    overhead_timers: Dict[int, OverheadTimer] = {}
+    trace_attributes: Dict[int, Any] = {}
 
     wrapped_server_search_stac_items = server.search_stac_items
 
@@ -129,28 +134,19 @@ def _instrument_search(
         search_request: SearchPostRequest,
         catalogs: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-
-        # use catalogs from path or if it is empty, collections from args
-        collections = request.query_params.get("collections", None)
-        provider = request.query_params.get("provider", None)
-        product_type = None
-        if catalogs:
-            product_type = catalogs[0]
-        elif collections:
-            if isinstance(collections, str):
-                product_type = collections.split(",")[0] if collections else None
-            elif isinstance(collections, list) and len(collections) > 0:
-                product_type = collections[0]
-            if not product_type:
-                logger.warning("Collections argument type should be Array")
+        try:
+            eodag_args = EODAGSearch.model_validate(
+                search_request.model_dump(exclude_none=True),
+                context={"isCatalog": bool(catalogs)},
+            )
+        except pydanticValidationError as e:
+            raise pydanticValidationError(format_pydantic_error(e)) from e
 
         span_name = "core-search"
-        attributes = {}
-        if provider:
-            attributes["provider"] = provider
-        if product_type:
-            attributes["product_type"] = product_type
-
+        attributes: types.Attributes = {
+            "product_type": eodag_args.productType,
+            "provider": eodag_args.provider,
+        }
         with tracer.start_as_current_span(
             span_name, kind=SpanKind.CLIENT, attributes=attributes
         ) as span:
@@ -200,12 +196,11 @@ def _instrument_search(
 
     @functools.wraps(wrapped_qssearch_request)
     def wrapper_qssearch_request(
-        self,
+        self: QueryStringSearch,
         url: str,
         info_message: Optional[str] = None,
         exception_message: Optional[str] = None,
     ) -> Response:
-
         span_name = "core-search"
         # This is the provider's product type.
         attributes = {
