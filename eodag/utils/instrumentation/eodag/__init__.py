@@ -32,6 +32,7 @@ from opentelemetry.metrics import (
 )
 from opentelemetry.trace import SpanKind, Tracer, get_tracer
 from opentelemetry.util import types
+from pydantic import ValidationError as pydanticValidationError
 from requests import Response
 
 from eodag import EODataAccessGateway
@@ -44,8 +45,6 @@ from eodag.rest.utils import format_pydantic_error
 from eodag.utils import ProgressCallback
 from eodag.utils.instrumentation.eodag.package import _instruments
 
-from pydantic import ValidationError as pydanticValidationError
-
 logger = logging.getLogger("eodag.utils.instrumentation.eodag")
 
 
@@ -56,6 +55,7 @@ class OverheadTimer:
     stop_global_timer functions. The sub-tasks record their time with the
     record_subtask_time function."""
 
+    # All the timer are in seconds
     _start_global_timestamp: Optional[float] = None
     _end_global_timestamp: Optional[float] = None
     _subtasks_time: float = 0.0
@@ -72,7 +72,7 @@ class OverheadTimer:
     def record_subtask_time(self, time: float):
         """Record the execution time of a subtask.
 
-        :param time: Duration of the subtask.
+        :param time: Duration of the subtask in seconds.
         :type time: float
         """
         self._subtasks_time += time
@@ -80,7 +80,7 @@ class OverheadTimer:
     def get_global_time(self) -> float:
         """Returns the execution time of the main task.
 
-        :returns: The global execution time.
+        :returns: The global execution time in seconds.
         :rtype: float
         """
         if not self._end_global_timestamp or not self._start_global_timestamp:
@@ -90,7 +90,7 @@ class OverheadTimer:
     def get_subtasks_time(self) -> float:
         """Returns the cumulative time of the sub-tasks.
 
-        :returns: The sub-tasks execution time.
+        :returns: The sub-tasks execution time in seconds.
         :rtype: float
         """
         return self._subtasks_time
@@ -98,7 +98,7 @@ class OverheadTimer:
     def get_overhead_time(self) -> float:
         """Returns the overhead time of the main task relative to the sub-tasks.
 
-        :returns: The overhead time.
+        :returns: The overhead time in seconds.
         :rtype: float
         """
         return self.get_global_time() - self._subtasks_time
