@@ -6865,6 +6865,7 @@
     s3_bucket: 'eodata'
   auth: !plugin
     type: AwsAuth
+    auth_error_code: 403
   products:
     # S1
     S1_SAR_RAW:
