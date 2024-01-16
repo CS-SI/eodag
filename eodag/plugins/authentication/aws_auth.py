@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Dict, Union
 from eodag.plugins.authentication.base import Authentication
 
 if TYPE_CHECKING:
+    from botocore.client import S3
     from requests.auth import AuthBase
 
     from eodag.config import PluginConfig
@@ -38,6 +39,8 @@ class AwsAuth(Authentication):
     - auth using current environment (AWS environment variables and/or ``~/aws/*``),
       will be skipped if AWS credentials are filled in eodag conf
     """
+
+    s3_client: S3
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsAuth, self).__init__(provider, config)

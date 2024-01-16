@@ -45,15 +45,17 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
     )
     if prefix:
         try:
-            s3 = boto3.client(
-                "s3",
-                aws_access_key_id=auth.config.credentials["aws_access_key_id"],
-                aws_secret_access_key=auth.config.credentials["aws_secret_access_key"],
-                endpoint_url=config.base_uri,
-            )
+            auth_dict = auth.authenticate()
+            if not getattr(auth, "s3_client", None):
+                auth.s3_client = boto3.client(
+                    "s3",
+                    endpoint_url=config.base_uri,
+                    **auth_dict,
+                )
+            logger.debug(f"Listing assets in {prefix}")
 
             product.assets = dict()
-            for asset in s3.list_objects(
+            for asset in auth.s3_client.list_objects(
                 Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
             )["Contents"]:
                 asset_basename = (
