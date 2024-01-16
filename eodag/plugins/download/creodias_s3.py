@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 # Copyright 2024, CS GROUP - France, https://www.csgroup.eu/
 #
