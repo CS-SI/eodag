@@ -234,6 +234,8 @@ def _instrument_search(
                 )
             except Exception as exc:
                 exception = exc
+                if exception.status_code:
+                    attributes["status_code"] = exception.status_code
             finally:
                 elapsed_time = default_timer() - start_time
 
